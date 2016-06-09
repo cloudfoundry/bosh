@@ -9,7 +9,7 @@ module Bosh
 
         def plan_job_instances(job, desired_instances, existing_instance_models)
 
-          ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore }
+          ignored_instances_count = existing_instance_models.count(&:ignore)
           if ignored_instances_count > 0
             @logger.info("Found #{ignored_instances_count} ignored instance(s). Will avoid doing any changes to them.")
             fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
@@ -56,12 +56,12 @@ module Bosh
         def reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           if desired_instances.count == existing_instance_models.count
             @logger.info("Desired instances count, #{desired_instances.count}, is equal to existing instances, #{existing_instance_models.count}")
-            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
-            modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.length)
+            modified_existing_instance_models =  existing_instance_models.reject(&:ignore)
+            modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.count)
           elsif desired_instances.count > existing_instance_models.count
             @logger.info("Desired instances count, #{desired_instances.count}, is greater than existing instances, #{existing_instance_models.count}")
-            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
-            modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
+            modified_existing_instance_models =  existing_instance_models.reject(&:ignore)
+            modified_desired_instances = desired_instances.slice(0, desired_instances.count - ignored_instances_count)
           else
             @logger.info("Desired instances count, #{desired_instances.count}, is less than existing instances, #{existing_instance_models.count}")
             if ignored_instances_count > desired_instances.count
@@ -69,12 +69,12 @@ module Bosh
                   "You requested to have #{desired_instances.count} instances of that instance group. Deleting ignored instances is not allowed."
             elsif ignored_instances_count == desired_instances.count
               @logger.info("Ignored instances count, #{ignored_instances_count}, is equal to desired instances, #{desired_instances.count}")
-              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
+              modified_existing_instance_models =  existing_instance_models.reject(&:ignore)
               modified_desired_instances = []
             else
               @logger.info("Ignored instances count, #{ignored_instances_count}, is less than desired instances, #{desired_instances.count}")
-              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
-              modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
+              modified_existing_instance_models =  existing_instance_models.reject(&:ignore)
+              modified_desired_instances = desired_instances.slice(0, desired_instances.count - ignored_instances_count)
             end
           end
 
@@ -125,7 +125,7 @@ module Bosh
         end
 
         def fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
-          ignored_models = existing_instance_models.select{|instance| instance.ignore}
+          ignored_models = existing_instance_models.select(&:ignore)
           ignored_models.each do |model|
             unless job.instance_states["#{model.index}"].nil?
               raise JobInstanceIgnored, "You are trying to change the state of the ignored instance '#{model.job}/#{model.uuid}'. " +
