@@ -31,6 +31,10 @@ params = {
   'flush_arp' => p('director.flush_arp'),
 }
 
+if params['db']['adapter']  == 'mysql2'
+  params['db']['connection_options']['fractional_seconds'] = true
+end
+
 params['scheduled_jobs'] = []
 
 if_p('director.snapshot_schedule') do |snapshot_schedule|

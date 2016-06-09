@@ -2,8 +2,15 @@
 
 module Bosh::Director::Models
   class Event < Sequel::Model(Bosh::Director::Config.db)
+    unrestrict_primary_key
+
+    def before_create
+      self.id ||= Time.now
+      super
+    end
+
     def validate
-      validates_presence [:timestamp, :action, :object_type]
+      validates_presence [:action, :object_type]
     end
 
     def context
