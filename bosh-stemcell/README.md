@@ -229,6 +229,36 @@ If you find yourself debugging any of the above processes, here is what you need
    `Can't find stage '<stage>' to resume from. Aborting.` so you know which stage failed and
    where you can resume from after fixing the problem.
 
-   For example:
+For example:
 
-       $ bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_config
+    $ bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_config
+
+#### How to run tests for OS Images
+The OS tests are meant to be run agains the OS environment to which they belong. When you run the `stemcell:build_os_image` rake task, it will create a .raw OS image that it runs the OS specific tests against. You will need to run the rake task the first time you create your docker container, but everytime after, as long as you do not destroy the container, you should be able to just run the specific tests. 
+
+##### Docker
+
+To run the `centos_7_spec.rb` tests for example you will need to: 
+
+* `bundle exec rake stemcell:build_os_image[centos,7,$PWD/tmp/centos_base_image.tgz]`
+* -make changes-
+
+Then run the following:
+
+    cd /opt/bosh/bosh-stemcell; OS_IMAGE=/opt/bosh/tmp/centos_base_image.tgz bundle exec rspec -fd spec/os_image/centos_7_spec.rb
+
+##### AWS
+
+In case you are running these on an AWS environment, you will need to: 
+* `bundle exec rake stemcell:build_os_image[centos,7,$PWD/tmp/centos_base_image.tgz]`
+* -make changes-
+* `vagrant rsync` in your local machine
+
+Then run the following:
+
+    export STEMCELL_IMAGE=/mnt/stemcells/aws/xen/centos/work/work/aws-xen-centos.raw
+    export STEMCELL_WORKDIR=/mnt/stemcells/aws/xen/centos/work/work
+    export OS_NAME=centos
+    cd bosh-stemcell/
+    bundle exec rspec -fd --tag ~exclude_on_aws spec/os_image/centos_7_spec.rb
+    
