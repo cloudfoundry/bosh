@@ -18,10 +18,12 @@ describe 'CIS test case verification', { stemcell_image: true, cis_check: true }
       when 'ubuntu'
         expected_cis_test_cases = expected_base_cis_test_cases + [
           'CIS-7.5.3',
+          'CIS-7.2.5',
         ]
       when 'centos'
         expected_cis_test_cases = expected_base_cis_test_cases + [
           'CIS-7.5.3',
+          'CIS-7.2.5',
         ]
       when 'rhel'
         expected_cis_test_cases = expected_base_cis_test_cases + [
