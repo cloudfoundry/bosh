@@ -499,6 +499,26 @@ describe Bosh::Cli::Client::Director do
       @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached')
     end
 
+    context 'max_in_flight provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&max_in_flight=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', max_in_flight: 77)
+      end
+    end
+
+    context 'canaries provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&canaries=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', canaries: 77)
+      end
+    end
+
     it 'changes job instance resurrection state' do
       expect(@director).to receive(:request).with(:put,
           '/deployments/foo/jobs/dea/0/resurrection',

@@ -108,6 +108,16 @@ module Bosh::Director
           end
         end
 
+        context 'when the instance is ignored' do
+          before do
+            instance_model.update(ignore: true)
+          end
+          it 'raises an error' do
+            expect { attach_disk_job.perform }.to raise_error(AttachDiskInvalidInstanceState,
+               "Instance 'job_name/fake_instance_id' in deployment 'fake_deployment_name' is in 'ignore' state. Attaching disks to ignored instances is not allowed.")
+          end
+        end
+
         context 'when orphaned disk is attached' do
           let!(:original_disk) do
             Models::PersistentDisk.make(

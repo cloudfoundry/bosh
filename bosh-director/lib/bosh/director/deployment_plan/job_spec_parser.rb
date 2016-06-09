@@ -16,7 +16,7 @@ module Bosh::Director
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [DeploymentPlan::Job] Job as build from job_spec
-      def parse(job_spec)
+      def parse(job_spec, options = {})
         @job_spec = job_spec
         @job = Job.new(@logger)
 
@@ -35,7 +35,10 @@ module Bosh::Director
         parse_resource_pool
         check_remove_dev_tools
 
-        parse_update_config
+        parse_options = {}
+        parse_options['canaries'] = options['canaries'] if options['canaries']
+        parse_options['max_in_flight'] = options['max_in_flight'] if options['max_in_flight']
+        parse_update_config(parse_options)
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
         @job.networks = networks
@@ -324,9 +327,9 @@ module Bosh::Director
         @job.env = Env.new(env_hash)
       end
 
-      def parse_update_config
+      def parse_update_config(parse_options)
         update_spec = safe_property(@job_spec, "update", class: Hash, optional: true)
-        @job.update = UpdateConfig.new(update_spec, @deployment.update)
+        @job.update = UpdateConfig.new((update_spec || {}).merge(parse_options), @deployment.update)
       end
 
       def parse_desired_instances(availability_zones, networks)

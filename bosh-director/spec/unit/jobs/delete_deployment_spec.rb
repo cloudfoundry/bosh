@@ -29,6 +29,13 @@ module Bosh::Director
       expect { job.perform }.to raise_exception DeploymentNotFound
     end
 
+    it 'fails when ignored instances exist in the to-be-deleted deployment' do
+      deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
+      BD::Models::Instance.make(deployment: deployment,job: 'foo-job', index: 0, ignore: true)
+      expect { job.perform }.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " +
+          'which contains ignored instance(s). Operation not allowed.'
+    end
+
     it 'should store new events' do
       Bosh::Director::Models::Deployment.make(name: 'test_deployment')
       expect {

@@ -53,6 +53,25 @@ describe 'cli: cloudcheck', type: :integration do
       bosh_run_cck_with_resolution(3, delete_vm_reference)
       expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
     end
+
+    context 'when there is an ignored vm' do
+      before do
+        vm_to_ignore =director.vms.select{|vm| vm.job_name == 'foobar' && vm.index == '1'}.first
+        bosh_runner.run("ignore instance #{vm_to_ignore.job_name}/#{vm_to_ignore.instance_uuid}")
+      end
+
+      it 'does not scan ignored vms and their disks' do
+        report_output= runner.run('cloudcheck --report', failure_expected: true)
+        expect(report_output).to match(regexp('Started scanning 3 vms > 0 OK, 2 unresponsive, 0 missing, 0 unbound, 1 ignored. Done'))
+        expect(report_output).to match(regexp('Started scanning 2 persistent disks > 2 OK, 0 missing, 0 inactive, 0 mount-info mismatch. Done'))
+        expect(report_output).to match(regexp('Found 2 problems'))
+
+        auto_output = runner.run('cloudcheck --auto')
+        expect(auto_output).to_not match(regexp('Started applying problem resolutions > foobar/1'))
+        expect(auto_output).to match(regexp('Started applying problem resolutions > foobar/0'))
+        expect(auto_output).to match(regexp('Started applying problem resolutions > foobar/2'))
+      end
+    end
   end
 
   context 'deployment has missing VMs' do

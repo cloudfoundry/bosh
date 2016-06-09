@@ -44,6 +44,11 @@ module Bosh::Director
           raise AttachDiskErrorUnknownInstance, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' was not found"
         end
 
+        if instance.ignore
+          raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' is in 'ignore' state. " +
+              'Attaching disks to ignored instances is not allowed.'
+        end
+
         if instance.state != 'detached' && instance.state != 'stopped'
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end

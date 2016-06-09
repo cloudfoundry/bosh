@@ -52,6 +52,14 @@ module Bosh::Director
         )
       end
 
+      def warn(message)
+        log_entry(
+          'time' => Time.now.to_i,
+          'type' => 'warning',
+          'message' => message
+        )
+      end
+
       # Adds an error entry to the event log.
       # @param [DirectorError] error Director error
       # @return [void]

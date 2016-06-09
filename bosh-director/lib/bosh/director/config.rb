@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'logging'
+require 'socket'
 
 module Bosh::Director
 
@@ -38,14 +39,15 @@ module Bosh::Director
         :enable_post_deploy,
         :generate_vm_passwords,
         :remove_dev_tools,
-        :director_ips,
         :enable_virtual_delete_vms,
+        :local_dns,
       )
 
       attr_reader(
         :db_config,
         :ignore_missing_gateway,
         :record_events,
+        :director_ips,
       )
 
       def clear
@@ -159,10 +161,12 @@ module Bosh::Director
         @enable_post_deploy = config.fetch('enable_post_deploy', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
-        @director_ips = config.fetch('director_ips', [])
         @record_events = config.fetch('record_events', false)
+        @local_dns = config.fetch('local_dns', false)
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
+
+        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
         Bosh::Clouds::Config.configure(self)
 

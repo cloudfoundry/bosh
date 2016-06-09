@@ -56,6 +56,7 @@ module Bosh::Director::Jobs
           expect(notifier).to receive(:send_end_event).ordered
           allow(job_renderer).to receive(:render_job_instances)
           allow(planner).to receive(:bind_models)
+          allow(planner).to receive(:instance_models).and_return([])
           allow(planner).to receive(:validate_packages)
           allow(planner).to receive(:compile_packages)
           allow(planner).to receive(:jobs).and_return([deployment_job])

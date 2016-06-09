@@ -85,9 +85,9 @@ module Bosh::Director
 
       attr_accessor :did_change
 
-      def self.parse(plan, job_spec, event_log, logger)
+      def self.parse(plan, job_spec, event_log, logger, parse_options = {})
         parser = JobSpecParser.new(plan, event_log, logger)
-        parser.parse(job_spec)
+        parser.parse(job_spec, parse_options)
       end
 
       def initialize(logger)

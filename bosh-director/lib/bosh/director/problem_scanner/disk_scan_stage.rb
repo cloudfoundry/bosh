@@ -11,7 +11,7 @@ module Bosh::Director::ProblemScanner
 
     def scan
       disks = Bosh::Director::Models::PersistentDisk.eager(:instance).all.select do |disk|
-        disk.instance && disk.instance.deployment_id == @deployment_id
+        disk.instance && disk.instance.deployment_id == @deployment_id && !disk.instance.ignore
       end
 
       results = Hash.new(0)

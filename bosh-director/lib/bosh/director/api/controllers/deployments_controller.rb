@@ -75,7 +75,10 @@ module Bosh::Director
             }
           }
         }
+
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
+        options['canaries'] = params[:canaries] if !!params['canaries']
+        options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
@@ -445,7 +448,7 @@ module Bosh::Director
       def deployment_has_instance_to_resurrect?(deployment)
         return false if deployment.nil?
         return false if @resurrector_manager.pause_for_all?
-        instances = @instance_manager.filter_by(deployment, resurrection_paused: false)
+        instances = @instance_manager.filter_by(deployment, resurrection_paused: false, ignore: false)
         instances.any?
       end
 
