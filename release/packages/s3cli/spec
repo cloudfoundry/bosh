@@ -1,4 +1,4 @@
 ---
 name: s3cli
 files:
-- s3cli/s3cli-0.0.31-linux-amd64
+- s3cli/s3cli-0.0.33-linux-amd64
