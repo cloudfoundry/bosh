@@ -57,9 +57,7 @@ else
   ./configure --enable-mmjsonparse --enable-gnutls --enable-relp
   make && make install
   cd ..
-
 fi
 
-
-exclusions="postfix"
+exclusions="postfix whoopsie apport"
 pkg_mgr purge --auto-remove $exclusions

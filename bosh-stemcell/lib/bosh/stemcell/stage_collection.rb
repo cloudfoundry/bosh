@@ -284,6 +284,7 @@ module Bosh::Stemcell
     def bosh_steps
       [
         :bosh_sysctl,
+        :bosh_limits,
         :bosh_users,
         :bosh_monit,
         :bosh_ntpdate,

@@ -63,6 +63,10 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'enables bad error message protection (CIS-7.2.6)' do
         should contain /^net.ipv4.icmp_ignore_bogus_error_responses=1$/
       end
+
+      it 'should disable core dumps (CIS-4.1)' do
+        should contain /^fs.suid_dumpable=0$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do

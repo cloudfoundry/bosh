@@ -460,6 +460,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'disabling core dumps (CIS-4.1)' do
+    describe file('/etc/security/limits.conf') do
+      its(:content) { should match /^\*\s+hard\s+core\s+0$/ }
+    end
+  end
+
   context 'postfix is not installed (stig: V-38622) (stig: V-38446)' do
     it "shouldn't be installed" do
       expect(package('postfix')).to_not be_installed

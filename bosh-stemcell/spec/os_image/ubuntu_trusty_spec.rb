@@ -427,4 +427,13 @@ EOF
       its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
     end
   end
+
+  context 'ensure whoopsie and apport are not installed (CIS-4.1)' do
+    describe package('apport') do
+      it { should_not be_installed }
+    end
+    describe package('whoopsie') do
+      it { should_not be_installed }
+    end
+  end
 end
