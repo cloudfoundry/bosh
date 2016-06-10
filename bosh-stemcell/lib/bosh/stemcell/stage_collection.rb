@@ -283,6 +283,7 @@ module Bosh::Stemcell
 
     def bosh_steps
       [
+        :bosh_banners,
         :bosh_sysctl,
         :bosh_limits,
         :bosh_users,

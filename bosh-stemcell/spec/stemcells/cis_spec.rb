@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'CIS test case verification', { stemcell_image: true, cis_check: true } do
+describe 'CIS test case verification', {stemcell_image: true, cis_check: true} do
 
   it 'confirms that all CIS test cases ran' do
     expected_base_cis_test_cases = %W{
@@ -11,25 +11,21 @@ describe 'CIS test case verification', { stemcell_image: true, cis_check: true }
       CIS-2.22
       CIS-2.23
       CIS-2.24
+      CIS-4.1
+      CIS-7.2.5
+      CIS-7.2.6
+      CIS-7.3.1
+      CIS-7.5.3
+      CIS-11.1
     }
 
     expected_cis_test_cases = expected_base_cis_test_cases
     case ENV['OS_NAME']
       when 'ubuntu'
         expected_cis_test_cases = expected_base_cis_test_cases + [
-          'CIS-7.5.3',
-          'CIS-7.3.1',
-          'CIS-7.2.5',
-          'CIS-7.2.6',
-          'CIS-4.1'
         ]
       when 'centos'
         expected_cis_test_cases = expected_base_cis_test_cases + [
-          'CIS-7.5.3',
-          'CIS-7.3.1',
-          'CIS-7.2.5',
-          'CIS-7.2.6',
-          'CIS-4.1'
         ]
       when 'rhel'
         expected_cis_test_cases = expected_base_cis_test_cases + [

@@ -170,7 +170,7 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^HostbasedAuthentication no$/)
     end
 
-    it 'sets Banner to /etc/issue.net (stig: V-38615 V-38593)' do
+    it 'sets Banner to /etc/issue.net (stig: V-38615 V-38593) (CIS-11.1)' do
       expect(sshd_config).to contain(/^Banner \/etc\/issue.net$/)
 
       banner = file('/etc/issue.net')
@@ -178,6 +178,25 @@ shared_examples_for 'every OS image' do
       # multiline message
       expect(banner).to contain('Unauthorized use is strictly prohibited. All access and activity')
       expect(banner).to contain('is subject to logging and monitoring.')
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
+    end
+
+    it 'sets /etc/issue (CIS-11.1)' do
+      banner = file('/etc/issue')
+      expect(banner).to contain('Authorized uses only. All activity may be monitored and reported.')
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
+    end
+
+    it 'has an empty /etc/motd (CIS-11.1)' do
+      banner = file('/etc/motd')
+      expect(banner).to match_md5checksum('d41d8cd98f00b204e9800998ecf8427e') # md5 of zero-byte file
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
     end
 
     it 'sets IgnoreRhosts to yes (stig: V-38611)' do
