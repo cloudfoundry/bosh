@@ -67,13 +67,10 @@ module Bosh::Director
 
       private
       def save_event(event)
-        event.save
-      rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
-        if e.message =~ /unique|duplicate/i
-          event.id = event.id + 0.00001
+        Bosh::Common.retryable(sleep: 0.000001, tries: 10, on: [Sequel::ValidationFailed, Sequel::DatabaseError], matching: /unique|duplicate/i) do |attempt|
+          event.id = event.id + 0.000001 if attempt > 1
           event.save
-        else
-          raise e
+          true
         end
       end
     end

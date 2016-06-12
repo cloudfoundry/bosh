@@ -16,18 +16,18 @@ describe Bosh::Director::Api::EventManager do
     it 'should take care about duplicates' do
       expect {
         Timecop.freeze do
-          2.times do
+          9.times do
             manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep'})
           end
         end
       }.not_to raise_error
-      expect(Bosh::Director::Models::Event.count).to eq(2)
+      expect(Bosh::Director::Models::Event.count).to eq(9)
     end
 
     it 'should not be deadlocked' do
       expect {
         Timecop.freeze do
-          3.times do
+          11.times do
             manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep'})
           end
         end
