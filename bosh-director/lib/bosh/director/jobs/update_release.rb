@@ -8,6 +8,8 @@ module Bosh::Director
       include DownloadHelper
 
       @queue = :normal
+      @local_fs = true
+
       @compiled_release = false
 
       attr_accessor :release_model

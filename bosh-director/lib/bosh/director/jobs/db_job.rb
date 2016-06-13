@@ -31,8 +31,13 @@ module Bosh::Director
       end
 
       def queue_name
-        @job_class.instance_variable_get(:@queue) ||
-            (@job_class.respond_to?(:queue) and @job_class.queue)
+        if (@job_class.instance_variable_get(:@local_fs) ||
+            (@job_class.respond_to?(:local_fs) and @job_class.local_fs)) && !Config.director_pool.nil?
+          Config.director_pool
+        else
+          @job_class.instance_variable_get(:@queue) ||
+              (@job_class.respond_to?(:queue) and @job_class.queue)
+        end
       end
 
       private

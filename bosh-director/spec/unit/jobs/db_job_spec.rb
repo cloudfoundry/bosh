@@ -72,5 +72,23 @@ module Bosh::Director
     it 'gets queue name from job class' do
       expect(db_job.queue_name).to eq(:normal)
     end
+
+    context 'when worker should have access to filesystem' do
+      let(:job_class) do
+        Class.new(Jobs::BaseJob) do
+          define_method :perform do
+            'foo'
+          end
+          @queue = :normal
+          @local_fs = true
+        end
+      end
+
+      before {allow(Config).to receive(:director_pool).and_return('local.hostname') }
+
+      it 'set specific queue for the job' do
+        expect(db_job.queue_name).to eq('local.hostname')
+      end
+    end
   end
 end

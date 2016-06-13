@@ -9,6 +9,7 @@ module Bosh::Director
       UPDATE_STEPS = 5
 
       @queue = :normal
+      @local_fs = true
 
       def self.job_type
         :update_stemcell
