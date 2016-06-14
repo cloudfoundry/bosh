@@ -33,7 +33,7 @@ module Bosh::Director::DeploymentPlan
     let(:az3) { AvailabilityZone.new('3', {}) }
 
     let(:deployment) { nil }
-    let(:job) { instance_double(Job, name: 'fake-job') }
+    let(:job) { instance_double(InstanceGroup, name: 'fake-job') }
 
     def desired_instance(zone = nil)
       DesiredInstance.new(job, deployment, zone, 0)

@@ -11,7 +11,7 @@ module Bosh::Director
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
-    let(:job) { instance_double(DeploymentPlan::Job,
+    let(:job) { instance_double(DeploymentPlan::InstanceGroup,
       name: 'fake-job-name',
       default_network: {}
     ) }

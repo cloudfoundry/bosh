@@ -69,7 +69,7 @@ describe Bosh::Director::VmCreator do
     template = BD::DeploymentPlan::Template.new(nil, 'fake-template')
     template.bind_existing_model(template_model)
 
-    job = BD::DeploymentPlan::Job.new(logger)
+    job = BD::DeploymentPlan::InstanceGroup.new(logger)
     job.name = 'fake-job'
     job.vm_type = vm_type
     job.stemcell = stemcell

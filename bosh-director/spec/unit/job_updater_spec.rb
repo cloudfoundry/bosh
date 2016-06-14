@@ -14,7 +14,7 @@ describe Bosh::Director::JobUpdater do
     }) }
 
   let(:job) do
-    instance_double('Bosh::Director::DeploymentPlan::Job', {
+    instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
       name: 'job_name',
       update: update_config,
       unneeded_instances: [],

@@ -15,7 +15,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   let(:job) do
-    job = BD::DeploymentPlan::Job.new(logger)
+    job = BD::DeploymentPlan::InstanceGroup.new(logger)
     job.name = 'job-name'
     job
   end

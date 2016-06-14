@@ -327,7 +327,7 @@ module Bosh::Director
             end
 
             let(:job1) do
-              instance_double('Bosh::Director::DeploymentPlan::Job', {
+              instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'job1-name',
                 canonical_name: 'job1-canonical-name',
                 templates: []
@@ -335,7 +335,7 @@ module Bosh::Director
             end
 
             let(:job2) do
-              instance_double('Bosh::Director::DeploymentPlan::Job', {
+              instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'job2-name',
                 canonical_name: 'job2-canonical-name',
                 templates: []
@@ -343,11 +343,11 @@ module Bosh::Director
             end
 
             it 'delegates to Job to parse job specs' do
-              expect(DeploymentPlan::Job).to receive(:parse).
+              expect(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
-              expect(DeploymentPlan::Job).to receive(:parse).
+              expect(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
@@ -357,11 +357,11 @@ module Bosh::Director
             context 'when canaries value is present in options' do
               let(:options) { { 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
-                expect(DeploymentPlan::Job).to receive(:parse)
+                expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
                   .and_return(job1)
 
-                expect(DeploymentPlan::Job).to receive(:parse).
+                expect(DeploymentPlan::InstanceGroup).to receive(:parse).
                   with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
@@ -372,11 +372,11 @@ module Bosh::Director
             context 'when max_in_flight value is present in options' do
               let(:options) { { 'max_in_flight'=> '42' } }
               it "replaces max_in_flight value from job's update section with option's value" do
-                expect(DeploymentPlan::Job).to receive(:parse)
+                expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                    .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
                    .and_return(job1)
 
-                expect(DeploymentPlan::Job).to receive(:parse).
+                expect(DeploymentPlan::InstanceGroup).to receive(:parse).
                   with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
@@ -385,11 +385,11 @@ module Bosh::Director
             end
 
             it 'allows to look up job by name' do
-              allow(DeploymentPlan::Job).to receive(:parse).
+              allow(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
-              allow(DeploymentPlan::Job).to receive(:parse).
+              allow(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
@@ -408,25 +408,25 @@ module Bosh::Director
             end
 
             let(:job1) do
-              instance_double('Bosh::Director::DeploymentPlan::Job', {
+              instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'job1-name',
                 canonical_name: 'same-canonical-name',
               })
             end
 
             let(:job2) do
-              instance_double('Bosh::Director::DeploymentPlan::Job', {
+              instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'job2-name',
                 canonical_name: 'same-canonical-name',
               })
             end
 
             it 'raises an error' do
-              allow(DeploymentPlan::Job).to receive(:parse).
+              allow(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
-              allow(DeploymentPlan::Job).to receive(:parse).
+              allow(DeploymentPlan::InstanceGroup).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 

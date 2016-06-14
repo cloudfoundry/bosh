@@ -65,7 +65,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'lifecycle key' do
-      Bosh::Director::DeploymentPlan::Job::VALID_LIFECYCLE_PROFILES.each do |profile|
+      Bosh::Director::DeploymentPlan::InstanceGroup::VALID_LIFECYCLE_PROFILES.each do |profile|
         it "is able to parse '#{profile}' as lifecycle profile" do
           job_spec.merge!('lifecycle' => profile)
           job = parser.parse(job_spec)
@@ -306,7 +306,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             let(:provides_link) { instance_double('Bosh::Director::DeploymentPlan::Link',name: 'zz') }
             let(:provides_template) { instance_double('Bosh::Director::DeploymentPlan::Template',name: 'z') }
-            let(:provides_job) { instance_double('Bosh::Director::DeploymentPlan::Job',name: 'y') }
+            let(:provides_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',name: 'y') }
 
 
             before do

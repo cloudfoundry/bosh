@@ -38,8 +38,8 @@ module Bosh::Director
     end
 
     describe '#perform' do
-      let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job', instances: [instance1, instance2]) }
-      let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job', instances: [instance3]) }
+      let(:job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', instances: [instance1, instance2]) }
+      let(:job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', instances: [instance3]) }
       let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
       let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
       let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }

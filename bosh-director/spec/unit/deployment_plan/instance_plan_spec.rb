@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    let(:job) { Job.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
+    let(:job) { InstanceGroup.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         bootstrap: true,

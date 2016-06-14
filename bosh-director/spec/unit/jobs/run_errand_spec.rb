@@ -61,7 +61,7 @@ module Bosh::Director
         let(:cloud_config) { Models::CloudConfig.make }
 
         context 'when job representing an errand exists' do
-          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name', needed_instance_plans: []) }
+          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
           before { allow(planner).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
 
           context 'when job can run as an errand (usually means lifecycle: errand)' do

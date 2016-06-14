@@ -67,7 +67,7 @@ module Bosh::Director
         end
 
         let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
-        let(:job) { DeploymentPlan::Job.new(logger) }
+        let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
         let(:deployment_plan) { instance_double(DeploymentPlan::Planner, ip_provider: ip_provider, model: deployment_model) }
 
         let(:stopper) { instance_double(Stopper) }

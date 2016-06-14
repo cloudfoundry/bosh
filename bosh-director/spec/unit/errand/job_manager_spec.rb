@@ -9,7 +9,7 @@ module Bosh::Director
         ip_provider: ip_provider,
         skip_drain: skip_drain
       }) }
-    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
+    let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     let(:cloud) { instance_double('Bosh::Clouds') }

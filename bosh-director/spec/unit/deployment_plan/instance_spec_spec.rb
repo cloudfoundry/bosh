@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
     let(:job) {
-      job = instance_double('Bosh::Director::DeploymentPlan::Job',
+      job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: job_spec,
         canonical_name: 'job',

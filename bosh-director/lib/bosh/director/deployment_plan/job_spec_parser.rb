@@ -18,7 +18,7 @@ module Bosh::Director
       # @return [DeploymentPlan::Job] Job as build from job_spec
       def parse(job_spec, options = {})
         @job_spec = job_spec
-        @job = Job.new(@logger)
+        @job = InstanceGroup.new(@logger)
 
         parse_name
         parse_lifecycle
@@ -66,13 +66,13 @@ module Bosh::Director
         lifecycle = safe_property(@job_spec, "lifecycle",
           :class => String,
           :optional => true,
-          :default => Job::DEFAULT_LIFECYCLE_PROFILE,
+          :default => InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
         )
 
-        unless Job::VALID_LIFECYCLE_PROFILES.include?(lifecycle)
+        unless InstanceGroup::VALID_LIFECYCLE_PROFILES.include?(lifecycle)
           raise JobInvalidLifecycle,
             "Invalid lifecycle '#{lifecycle}' for '#{@job.name}', " +
-            "valid lifecycle profiles are: #{Job::VALID_LIFECYCLE_PROFILES.join(', ')}"
+            "valid lifecycle profiles are: #{InstanceGroup::VALID_LIFECYCLE_PROFILES.join(', ')}"
         end
 
         @job.lifecycle = lifecycle
@@ -346,17 +346,17 @@ module Bosh::Director
         end
 
         instance_states.each_pair do |index_or_id, state|
-          unless Job::VALID_JOB_STATES.include?(state)
+          unless InstanceGroup::VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-              "Invalid state '#{state}' for '#{@job.name}/#{index_or_id}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
+              "Invalid state '#{state}' for '#{@job.name}/#{index_or_id}', valid states are: #{InstanceGroup::VALID_JOB_STATES.join(", ")}"
           end
 
           @job.instance_states[index_or_id] = state
         end
 
-        if @job.state && !Job::VALID_JOB_STATES.include?(@job.state)
+        if @job.state && !InstanceGroup::VALID_JOB_STATES.include?(@job.state)
           raise JobInvalidJobState,
-            "Invalid state '#{@job.state}' for '#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
+            "Invalid state '#{@job.state}' for '#{@job.name}', valid states are: #{InstanceGroup::VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times.map { DesiredInstance.new(@job, @deployment) }

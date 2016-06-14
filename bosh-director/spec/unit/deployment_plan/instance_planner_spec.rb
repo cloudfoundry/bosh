@@ -26,7 +26,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     )
   end
   let(:job) do
-    job = BD::DeploymentPlan::Job.new(logger)
+    job = BD::DeploymentPlan::InstanceGroup.new(logger)
     job.name = 'foo-job'
     job.availability_zones << az
     job

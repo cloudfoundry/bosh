@@ -18,7 +18,7 @@ module Bosh::Director
       instance
     end
     let(:instance_plan) do
-      job = instance_double(DeploymentPlan::Job, default_network: {})
+      job = instance_double(DeploymentPlan::InstanceGroup, default_network: {})
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
       instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance)
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)

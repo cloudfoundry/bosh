@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     describe '#sort' do
       let (:desired_instance) { DesiredInstance.new(job) }
       let (:job) do
-        job = Job.new(logger)
+        job = InstanceGroup.new(logger)
         job.name = 'job_name'
         job
       end

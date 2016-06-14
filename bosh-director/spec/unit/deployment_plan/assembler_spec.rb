@@ -17,7 +17,7 @@ module Bosh::Director
 
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
-      let(:job) { instance_double(DeploymentPlan::Job) }
+      let(:job) { instance_double(DeploymentPlan::InstanceGroup) }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -67,7 +67,7 @@ module Bosh::Director
 
       context 'when there are desired jobs' do
         def make_job(template_name)
-          job = DeploymentPlan::Job.new(logger)
+          job = DeploymentPlan::InstanceGroup.new(logger)
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)

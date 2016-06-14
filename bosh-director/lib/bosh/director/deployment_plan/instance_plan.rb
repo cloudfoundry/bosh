@@ -231,7 +231,7 @@ module Bosh
           # The agent job spec could be in legacy form.  job_spec cannot be,
           # though, because we got it from the spec function in job.rb which
           # automatically makes it non-legacy.
-          converted_current = Job.convert_from_legacy_spec(@instance.current_job_spec)
+          converted_current = InstanceGroup.convert_from_legacy_spec(@instance.current_job_spec)
           changed = job.spec != converted_current
           log_changes(__method__, converted_current, job.spec, @instance) if changed
           changed

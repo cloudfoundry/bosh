@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:job_migrator) { described_class.new(deployment_plan, logger) }
 
     let(:etcd_job) do
-      DeploymentPlan::Job.parse(deployment_plan, job_spec, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, job_spec, Config.event_log, logger)
     end
 
     let(:etcd_job_spec) do

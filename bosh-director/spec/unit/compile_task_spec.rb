@@ -97,7 +97,7 @@ module Bosh::Director
     end
 
     describe 'using compiled package' do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }
 
       it 'registers compiled package with job' do
         package = Models::Package.make
@@ -109,7 +109,7 @@ module Bosh::Director
         task = make(package, stemcell)
 
         job_a = job
-        job_b = instance_double('Bosh::Director::DeploymentPlan::Job')
+        job_b = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
 
         expect(job_a).to receive(:use_compiled_package).with(cp)
         expect(job_b).to receive(:use_compiled_package).with(cp)

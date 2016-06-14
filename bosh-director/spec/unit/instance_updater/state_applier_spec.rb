@@ -21,7 +21,7 @@ module Bosh::Director
     let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
 
     let(:job) do
-      job = instance_double('Bosh::Director::DeploymentPlan::Job',
+      job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: {'name' => 'job'},
         canonical_name: 'job',

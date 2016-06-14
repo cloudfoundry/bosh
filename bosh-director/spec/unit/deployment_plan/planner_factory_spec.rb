@@ -254,7 +254,7 @@ LOGMESSAGE
                 end
 
                 let(:job1) do
-                  instance_double('Bosh::Director::DeploymentPlan::Job',
+                  instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                     {
                         name: 'job1-name',
                         canonical_name: 'job1-canonical-name',
@@ -300,7 +300,7 @@ LOGMESSAGE
                 end
 
                 it 'should have a link_path' do
-                  allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(job1)
                   allow(template1).to receive(:release).and_return(release)
                   allow(template1).to receive(:template_scoped_properties).and_return({})
                   allow(job1).to receive(:all_properties).and_return({})
@@ -312,7 +312,7 @@ LOGMESSAGE
                 end
 
                 it 'should not add a link path if no links found for optional ones, and it should not fail' do
-                  allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(job1)
                   allow(template1).to receive(:release).and_return(release)
                   allow(template1).to receive(:template_scoped_properties).and_return({})
                   allow(job1).to receive(:all_properties).and_return({})
@@ -324,7 +324,7 @@ LOGMESSAGE
 
                 context 'when template properties_json has the value "null"' do
                   it 'should not throw an error' do
-                    allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                    allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(job1)
                     allow(template1).to receive(:release).and_return(release)
                     allow(template1).to receive(:template_scoped_properties).and_return({})
                     allow(job1).to receive(:all_properties).and_return({})
@@ -342,7 +342,7 @@ LOGMESSAGE
 
                 context 'when link property has no default value and no value is set in the deployment manifest' do
                   it 'should not throw an error' do
-                    allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                    allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(job1)
                     allow(template1).to receive(:release).and_return(release)
                     allow(template1).to receive(:template_scoped_properties).and_return({})
                     allow(job1).to receive(:all_properties).and_return({})

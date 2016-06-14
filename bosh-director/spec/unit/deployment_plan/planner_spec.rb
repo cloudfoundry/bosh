@@ -137,7 +137,7 @@ module Bosh::Director
         describe '#jobs_starting_on_deploy' do
           before { subject.add_job(job1) }
           let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job1-name',
                 canonical_name: 'fake-job1-cname',
                 is_service?: true,
@@ -147,7 +147,7 @@ module Bosh::Director
 
           before { subject.add_job(job2) }
           let(:job2) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job2-name',
                 canonical_name: 'fake-job2-cname',
                 lifecycle: 'errand',

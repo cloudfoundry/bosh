@@ -3,7 +3,7 @@ require 'bosh/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
-    class Job
+    class InstanceGroup
       include Bosh::Template::PropertyHelper
 
       VALID_LIFECYCLE_PROFILES = %w(service errand)

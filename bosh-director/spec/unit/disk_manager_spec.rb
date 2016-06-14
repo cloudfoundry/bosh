@@ -14,7 +14,7 @@ module Bosh::Director
 
     let(:job_persistent_disk_size) { 1024 }
     let(:job) do
-      job = DeploymentPlan::Job.new(logger)
+      job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
       job.persistent_disk_type = DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'})
       job

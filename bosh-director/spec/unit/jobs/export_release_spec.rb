@@ -134,7 +134,7 @@ module Bosh::Director
 
           it 'succeeds' do
             expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-              expect(job.first).to be_instance_of(DeploymentPlan::Job)
+              expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
               expect(job.first.release.name).to eq(release_name)
               expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
             end.and_return(package_compile_step)
@@ -172,7 +172,7 @@ module Bosh::Director
 
             it 'succeeds' do
               expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-                expect(job.first).to be_instance_of(DeploymentPlan::Job)
+                expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
                 expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
               end.and_return(package_compile_step)
               expect(package_compile_step).to receive(:perform).with no_args
@@ -201,7 +201,7 @@ module Bosh::Director
             context 'when dealing with links' do
               let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory)}
               let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
-              let(:deployment_job) { instance_double(DeploymentPlan::Job)}
+              let(:deployment_job) { instance_double(DeploymentPlan::InstanceGroup)}
 
               before {
                 allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)

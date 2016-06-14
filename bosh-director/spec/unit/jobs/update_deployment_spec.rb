@@ -11,7 +11,7 @@ module Bosh::Director::Jobs
     let(:cloud_config_id) { nil }
     let(:runtime_config_id) { nil }
     let(:options) { {} }
-    let(:deployment_job) { Bosh::Director::DeploymentPlan::Job.new(logger) }
+    let(:deployment_job) { Bosh::Director::DeploymentPlan::InstanceGroup.new(logger) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
     before do

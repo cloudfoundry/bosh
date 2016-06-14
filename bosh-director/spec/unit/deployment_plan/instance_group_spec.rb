@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bosh::Director::DeploymentPlan::Job do
-  subject(:job)    { Bosh::Director::DeploymentPlan::Job.parse(plan, spec, event_log, logger, parse_options) }
+describe Bosh::Director::DeploymentPlan::InstanceGroup do
+  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 

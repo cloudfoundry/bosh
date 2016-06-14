@@ -121,7 +121,7 @@ module Bosh::Director
       end
 
       def create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
-        job = DeploymentPlan::Job.new(logger)
+        job = DeploymentPlan::InstanceGroup.new(logger)
 
         job.name = 'dummy-job-for-compilation'
         job.stemcell = deployment_plan_stemcell

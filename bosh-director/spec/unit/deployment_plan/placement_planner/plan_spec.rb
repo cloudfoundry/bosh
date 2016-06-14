@@ -16,7 +16,7 @@ module Bosh::Director::DeploymentPlan
     let(:zone_2) {AvailabilityZone.new('zone_2', {})}
     let(:zone_3) {AvailabilityZone.new('zone_3', {})}
     let(:job) do
-      job = Job.new(logger)
+      job = InstanceGroup.new(logger)
       job.name = 'db'
       job
     end
