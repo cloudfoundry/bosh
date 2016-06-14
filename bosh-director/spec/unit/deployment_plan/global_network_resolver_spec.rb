@@ -74,41 +74,67 @@ module Bosh::Director
           })
         end
 
-        before do
-          Models::Deployment.make(
-            name: 'dummy1',
-            cloud_config: nil,
-            manifest: Psych.dump({
-              'networks' => [{
-                'name' => 'defaultA',
-                'type' => 'manual',
-                'subnets' => [{
-                  'range' => '10.10.0.0/24',
-                  'reserved' => ['10.10.0.1-10.10.0.10','10.10.0.20-10.10.0.255'],
-                  'gateway'=> '10.10.0.1'
+        context 'when two different legacy deployments reserved ranges overlap' do
+          before do
+            Models::Deployment.make(
+              name: 'dummy1',
+              cloud_config: nil,
+              manifest: Psych.dump({
+                'networks' => [{
+                  'name' => 'defaultA',
+                  'type' => 'manual',
+                  'subnets' => [{
+                    'range' => '10.10.0.0/24',
+                    'reserved' => ['10.10.0.1-10.10.0.10','10.10.0.20-10.10.0.255'],
+                    'gateway'=> '10.10.0.1'
+                  }],
                 }],
-              }],
-            })
-          )
-          Models::Deployment.make(
-            name: 'dummy2',
-            cloud_config: nil,
-            manifest: Psych.dump({
-              'networks' => [{
-                'name' => 'defaultB',
-                'type' => 'manual',
-                'subnets' => [{
-                  'range' => '10.10.0.0/24',
-                  'reserved' => ['10.10.0.2-10.10.0.20','10.10.0.30-10.10.0.255'],
-                  'gateway'=> '10.10.0.1'
+              })
+            )
+            Models::Deployment.make(
+              name: 'dummy2',
+              cloud_config: nil,
+              manifest: Psych.dump({
+                'networks' => [{
+                  'name' => 'defaultB',
+                  'type' => 'manual',
+                  'subnets' => [{
+                    'range' => '10.10.0.0/24',
+                    'reserved' => ['10.10.0.2-10.10.0.20','10.10.0.30-10.10.0.255'],
+                    'gateway'=> '10.10.0.1'
+                  }],
                 }],
-              }],
-            })
-          )
+              })
+            )
+          end
+
+          it 'returns reserved ranges' do
+            expect(global_network_resolver.reserved_ranges).not_to be_empty
+          end
         end
 
-        it 'returns reserved ranges' do
-          expect(global_network_resolver.reserved_ranges).not_to be_empty
+        context 'when the legacy deployment reserved range is overlaps with itself' do
+          before do
+            Models::Deployment.make(
+                name: 'dummy1',
+                cloud_config: nil,
+                manifest: Psych.dump({
+                   'networks' => [{
+                        'name' => 'defaultA',
+                        'type' => 'manual',
+                        'subnets' => [{
+                            'range' => '10.10.0.0/24',
+                            'reserved' => ['10.10.0.1-10.10.0.10','10.10.0.5-10.10.0.255'],
+                            'gateway'=> '10.10.0.1'
+                        }],
+                    }],
+                 })
+            )
+          end
+
+          it 'returns reserved ranges' do
+            expect(global_network_resolver.reserved_ranges).not_to be_empty
+          end
         end
       end
 

@@ -87,7 +87,7 @@ module Bosh::Director
         address_range = NetAddr::CIDRv4.new(reserved_property_entry)
         reserved_range_with_ip = reserved_ranges.find { |r| r.contains?(address_range) || r == address_range }
         reserved_ranges.delete(reserved_range_with_ip)
-        if reserved_range_with_ip != address_range
+        if (!reserved_range_with_ip.nil?) && (reserved_range_with_ip != address_range)
           remainder = reserved_range_with_ip.remainder(address_range, Objectify: true)
           reserved_ranges.merge(Set.new(remainder))
         end
