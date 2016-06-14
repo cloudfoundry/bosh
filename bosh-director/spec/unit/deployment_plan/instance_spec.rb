@@ -139,8 +139,8 @@ module Bosh::Director::DeploymentPlan
           expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
 
           instance.apply_initial_vm_state(instance_spec)
-          expect(instance_model.spec['networks']).to eq({'changed' => {}})
-          expect(instance_model.spec['env']).to eq('fake-env')
+          expect(instance_model.spec_p('networks')).to eq({'changed' => {}})
+          expect(instance_model.spec_p('env')).to eq('fake-env')
         end
       end
     end

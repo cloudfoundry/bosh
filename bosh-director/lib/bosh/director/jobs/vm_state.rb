@@ -41,7 +41,7 @@ module Bosh::Director
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
-        vm_type_name = instance.spec && instance.spec['vm_type'] ? instance.spec['vm_type']['name'] : nil
+        vm_type_name = instance.spec_p('vm_type.name')
 
         {
           :vm_cid => instance.vm_cid,

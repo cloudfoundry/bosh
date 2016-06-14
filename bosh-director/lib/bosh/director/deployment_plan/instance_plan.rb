@@ -85,7 +85,7 @@ module Bosh
           desired_network_plans = network_plans.select(&:desired?)
           obsolete_network_plans = network_plans.select(&:obsolete?)
 
-          old_network_settings = new? ? {} : @existing_instance.spec['networks']
+          old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
           new_network_settings = network_settings.to_hash
 
           changed = false
@@ -134,8 +134,8 @@ module Bosh
         end
 
         def configuration_changed?
-          changed = instance.configuration_hash != instance_model.spec['configuration_hash']
-          log_changes(__method__, instance_model.spec['configuration_hash'], instance.configuration_hash, instance) if changed
+          changed = instance.configuration_hash != instance_model.spec_p('configuration_hash')
+          log_changes(__method__, instance_model.spec_p('configuration_hash'), instance.configuration_hash, instance) if changed
           changed
         end
 
@@ -279,13 +279,13 @@ module Bosh
         end
 
         def stemcell_changed?
-          if @existing_instance && @instance.stemcell.name != @existing_instance.spec['stemcell']['name']
-            log_changes(__method__, @existing_instance.spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
+          if @existing_instance && @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
+            log_changes(__method__, @existing_instance.spec_p('stemcell.name'), @instance.stemcell.name, @existing_instance)
             return true
           end
 
-          if @existing_instance && @instance.stemcell.version != @existing_instance.spec['stemcell']['version']
-            log_changes(__method__, "version: #{@existing_instance.spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
+          if @existing_instance && @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
+            log_changes(__method__, "version: #{@existing_instance.spec_p('stemcell.version')}", "version: #{@instance.stemcell.version}", @existing_instance)
             return true
           end
 
@@ -323,7 +323,7 @@ module Bosh
 
       class ResurrectionInstancePlan < InstancePlan
         def network_settings_hash
-          @existing_instance.spec['networks']
+          @existing_instance.spec_p('networks')
         end
 
         def spec

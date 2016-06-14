@@ -99,6 +99,15 @@ module Bosh::Director::Models
       self.spec_json = Yajl::Encoder.encode(spec)
     end
 
+    def spec_p(property_path)
+      current_prop = spec
+      property_path.split('.').each do |prop|
+        return nil if current_prop.nil? || !current_prop.is_a?(Hash)
+        current_prop = current_prop[prop]
+      end
+      current_prop
+    end
+
     def vm_env
       return {} if spec.nil?
       spec['env'] || {}
