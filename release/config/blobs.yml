@@ -55,10 +55,6 @@ mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
   sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
   size: 4639216
-s3cli/s3cli-0.0.31-linux-amd64:
-  object_id: a691b107-af1b-4087-b1cb-3ee0b7fd1045
-  sha: 32130fe8d775c33695dc83ec21ae41c97d804023
-  size: 11465536
 nats/vendor/cache/eventmachine-1.0.4.gem:
   object_id: b6a8625f-3e04-41d1-ae69-57841921e254
   sha: 10fffa2d326e5fedc6aeaf65d2bd01d3c5e6f3ab
