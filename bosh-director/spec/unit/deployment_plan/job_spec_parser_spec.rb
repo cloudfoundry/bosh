@@ -316,7 +316,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               allow(provides_template).to receive(:provided_links).and_return([provides_link])
               allow(provides_job).to receive(:templates).and_return([provides_template])
-              allow(deployment_plan).to receive(:jobs).and_return([provides_job])
+              allow(deployment_plan).to receive(:instance_groups).and_return([provides_job])
 
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')

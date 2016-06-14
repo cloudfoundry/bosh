@@ -89,7 +89,7 @@ module Bosh
         def process_links(deployment)
           errors = []
 
-          deployment.jobs.each do |current_job|
+          deployment.instance_groups.each do |current_job|
             current_job.templates.each do |template|
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
                 template.link_infos[current_job.name]['consumes'].each do |name, source|

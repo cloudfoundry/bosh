@@ -26,7 +26,7 @@ module Bosh::Director
     def self.run_post_deploys_after_deployment(deployment_plan)
       return unless Config.enable_post_deploy
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        deployment_plan.jobs.each do |job|
+        deployment_plan.instance_groups.each do |job|
           # No ignored instances will ever come to this point as they were filtered out earlier
           # BUT JUST IN CASE, check for the ignore flag
           job.instances.select{|instance| instance.model[:vm_cid] != nil && instance.model.state != "stopped" && !instance.model.ignore}.each do |instance|

@@ -125,7 +125,7 @@ module Bosh::Director
       # Job tasks
 
       def check_for_changes(deployment_plan)
-        deployment_plan.jobs.each do |job|
+        deployment_plan.instance_groups.each do |job|
           return true if job.did_change
         end
         false

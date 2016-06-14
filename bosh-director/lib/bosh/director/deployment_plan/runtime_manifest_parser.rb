@@ -73,7 +73,7 @@ module Bosh::Director
             if @deployment
               valid_release_versions = @deployment.releases.map {|r| r.name }
               deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
-              deployment_jobs = @deployment.jobs
+              deployment_jobs = @deployment.instance_groups
 
               templates_from_model = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
               if templates_from_model == nil

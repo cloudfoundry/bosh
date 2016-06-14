@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
-    let(:job) { planner.jobs.first }
+    let(:job) { planner.instance_groups.first }
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
 

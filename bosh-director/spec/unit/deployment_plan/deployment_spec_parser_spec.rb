@@ -351,7 +351,7 @@ module Bosh::Director
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
-              expect(parsed_deployment.jobs).to eq([job1, job2])
+              expect(parsed_deployment.instance_groups).to eq([job1, job2])
             end
 
             context 'when canaries value is present in options' do
@@ -365,7 +365,7 @@ module Bosh::Director
                   with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
-                parsed_deployment.jobs
+                parsed_deployment.instance_groups
               end
             end
 
@@ -380,7 +380,7 @@ module Bosh::Director
                   with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
-                parsed_deployment.jobs
+                parsed_deployment.instance_groups
               end
             end
 
@@ -444,7 +444,7 @@ module Bosh::Director
           before { manifest_hash.merge!(keyword => []) }
 
           it 'parses jobs and return empty array' do
-            expect(parsed_deployment.jobs).to eq([])
+            expect(parsed_deployment.instance_groups).to eq([])
           end
         end
 
@@ -452,7 +452,7 @@ module Bosh::Director
           before { manifest_hash.delete(keyword) }
 
           it 'parses jobs and return empty array' do
-            expect(parsed_deployment.jobs).to eq([])
+            expect(parsed_deployment.instance_groups).to eq([])
           end
         end
       end

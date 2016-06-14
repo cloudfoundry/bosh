@@ -185,9 +185,9 @@ LOGMESSAGE
 
               context 'when there is one job with two availability zones' do
                 it 'has azs as specified by users' do
-                  expect(planner.jobs.length).to eq(1)
-                  expect(planner.jobs.first.availability_zones.map(&:name)).to eq(['zone1', 'zone2'])
-                  expect(planner.jobs.first.availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}, {foo: 'baz'}])
+                  expect(planner.instance_groups.length).to eq(1)
+                  expect(planner.instance_groups.first.availability_zones.map(&:name)).to eq(['zone1', 'zone2'])
+                  expect(planner.instance_groups.first.availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}, {foo: 'baz'}])
                 end
               end
 
@@ -201,13 +201,13 @@ LOGMESSAGE
                   )
                 end
                 it 'has azs as specified by users' do
-                  expect(planner.jobs.length).to eq(2)
-                  expect(planner.jobs[0].availability_zones.map(&:name)).to eq(['zone1'])
-                  expect(planner.jobs[0].availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}])
+                  expect(planner.instance_groups.length).to eq(2)
+                  expect(planner.instance_groups[0].availability_zones.map(&:name)).to eq(['zone1'])
+                  expect(planner.instance_groups[0].availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}])
 
-                  expect(planner.jobs.length).to eq(2)
-                  expect(planner.jobs[1].availability_zones.map(&:name)).to eq(['zone2'])
-                  expect(planner.jobs[1].availability_zones.map(&:cloud_properties)).to eq([{foo: 'baz'}])
+                  expect(planner.instance_groups.length).to eq(2)
+                  expect(planner.instance_groups[1].availability_zones.map(&:name)).to eq(['zone2'])
+                  expect(planner.instance_groups[1].availability_zones.map(&:cloud_properties)).to eq([{foo: 'baz'}])
                 end
               end
             end

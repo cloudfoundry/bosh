@@ -21,7 +21,7 @@ module Bosh::Director
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
-        allow(deployment_plan).to receive(:jobs).and_return([])
+        allow(deployment_plan).to receive(:instance_groups).and_return([])
         allow(deployment_plan).to receive(:existing_instances).and_return([])
         allow(deployment_plan).to receive(:candidate_existing_instances).and_return([])
         allow(deployment_plan).to receive(:resource_pools).and_return(nil)
@@ -81,7 +81,7 @@ module Bosh::Director
         let(:j1) { make_job('fake-template-1') }
         let(:j2) { make_job('fake-template-2') }
 
-        before { allow(deployment_plan).to receive(:jobs).and_return([j1, j2]) }
+        before { allow(deployment_plan).to receive(:instance_groups).and_return([j1, j2]) }
 
         it 'validates the jobs' do
           expect(j1).to receive(:validate_package_names_do_not_collide!).once

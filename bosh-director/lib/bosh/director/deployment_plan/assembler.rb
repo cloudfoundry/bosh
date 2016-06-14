@@ -24,7 +24,7 @@ module Bosh::Director
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
-      desired_jobs = @deployment_plan.jobs
+      desired_jobs = @deployment_plan.instance_groups
 
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
@@ -94,7 +94,7 @@ module Bosh::Director
     def bind_links
       links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
-      @deployment_plan.jobs.each do |job|
+      @deployment_plan.instance_groups.each do |job|
         links_resolver.resolve(job)
       end
     end
@@ -106,7 +106,7 @@ module Bosh::Director
         release.bind_templates
       end
 
-      @deployment_plan.jobs.each do |job|
+      @deployment_plan.instance_groups.each do |job|
         job.validate_package_names_do_not_collide!
       end
     end
@@ -114,7 +114,7 @@ module Bosh::Director
     # Binds properties for all templates in the deployment
     # @return [void]
     def bind_properties
-      @deployment_plan.jobs.each do |job|
+      @deployment_plan.instance_groups.each do |job|
         job.bind_properties
       end
     end

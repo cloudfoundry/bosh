@@ -420,7 +420,7 @@ module Bosh::Director
       get '/:deployment/errands', authorization: :read do
         deployment_plan = load_deployment_plan
 
-        errands = deployment_plan.jobs.select(&:is_errand?)
+        errands = deployment_plan.instance_groups.select(&:is_errand?)
 
         errand_data = errands.map do |errand|
           {"name" => errand.name}

@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       'Bosh::Director::DeploymentPlan::Planner',
       {
         name: 'deployment_name',
-        jobs: [provider_job]
+        instance_groups: [provider_job]
       }
     )
   }
@@ -258,7 +258,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
           'Bosh::Director::DeploymentPlan::Planner',
           {
               name: 'deployment_name',
-              jobs: [provider_job, additional_provider_job]
+              instance_groups: [provider_job, additional_provider_job]
           }
       )
     }

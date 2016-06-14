@@ -59,7 +59,7 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_models).and_return([])
           allow(planner).to receive(:validate_packages)
           allow(planner).to receive(:compile_packages)
-          allow(planner).to receive(:jobs).and_return([deployment_job])
+          allow(planner).to receive(:instance_groups).and_return([deployment_job])
         end
 
         it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
@@ -106,7 +106,7 @@ module Bosh::Director::Jobs
           let (:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
 
           it 'will run post-deploy scripts' do
-            allow(planner).to receive(:jobs).and_return([deployment_job])
+            allow(planner).to receive(:instance_groups).and_return([deployment_job])
             allow(deployment_job).to receive(:did_change).and_return(true)
 
             expect(Bosh::Director::PostDeploymentScriptRunner).to receive(:run_post_deploys_after_deployment)

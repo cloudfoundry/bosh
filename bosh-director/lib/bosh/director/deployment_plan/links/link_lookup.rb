@@ -24,7 +24,7 @@ module Bosh::Director
       def initialize(consumed_link, link_path, deployment_plan, link_network)
         @consumed_link = consumed_link
         @link_path = link_path
-        @jobs = deployment_plan.jobs
+        @jobs = deployment_plan.instance_groups
         @link_network = link_network
       end
 

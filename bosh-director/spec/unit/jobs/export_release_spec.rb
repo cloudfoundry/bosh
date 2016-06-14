@@ -290,7 +290,7 @@ module Bosh::Director
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
-          allow(planner).to receive(:jobs) { ['fake-job'] }
+          allow(planner).to receive(:instance_groups) { ['fake-job'] }
           allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
