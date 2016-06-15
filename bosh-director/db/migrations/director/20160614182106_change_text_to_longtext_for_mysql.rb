@@ -6,8 +6,6 @@ Sequel.migration do
       set_column_type :deployment_properties, :value, 'longtext'
       set_column_type :deployments, :link_spec_json, 'longtext'
       set_column_type :director_attributes, :value, 'longtext'
-      set_column_type :events, :error, 'longtext'
-      set_column_type :events, :context_json, 'longtext'
       set_column_type :instances, :cloud_properties, 'longtext'
       set_column_type :instances, :dns_records, 'longtext'
       set_column_type :instances, :spec_json, 'longtext'
