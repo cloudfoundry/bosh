@@ -702,10 +702,9 @@ describe 'ignore/unignore instance', type: :integration do
         bosh_runner.run("ignore instance #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}")
 
         # ===========================================
-        # TODO: make sure no jobs are started when all are already started
         start_output = bosh_runner.run("start")
         expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(start_output).to_not include('Started updating job foobar1 > foobar1/0')
+        expect(start_output).to_not include('Started updating job')
 
         # ===========================================
         stop_output = bosh_runner.run("stop")
