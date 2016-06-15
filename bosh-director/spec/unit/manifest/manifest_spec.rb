@@ -50,99 +50,160 @@ module Bosh::Director
     end
 
     describe 'resolve_aliases' do
-      context 'when manifest has releases with version latest' do
-        let(:manifest_hash) do
-          {
-            'releases' => [
-              {'name' => 'simple', 'version' => 'latest'},
-              {'name' => 'hard', 'version' => 'latest'}
-            ]
-          }
+      context 'releases' do
+        context 'when manifest has releases with version latest' do
+          let(:manifest_hash) do
+            {
+              'releases' => [
+                {'name' => 'simple', 'version' => 'latest'},
+                {'name' => 'hard', 'version' => 'latest'}
+              ]
+            }
+          end
+
+          it 'replaces latest with the latest version number' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['releases']).to eq([
+              {'name' => 'simple', 'version' => '9'},
+              {'name' => 'hard', 'version' => '1+dev.7'}
+            ])
+          end
         end
 
-        it 'replaces latest with the latest version number' do
-          manifest.resolve_aliases
-          expect(manifest.to_hash['releases']).to eq([
-            {'name' => 'simple', 'version' => '9'},
-            {'name' => 'hard', 'version' => '1+dev.7'}
-          ])
-        end
-      end
-
-      context 'when manifest has no alias' do
-        let(:manifest_hash) do
-          {
-            'releases' => [
-              {'name' => 'simple', 'version' => 9},
-              {'name' => 'hard', 'version' => '42'}
-            ]
-          }
-        end
-
-        it 'leaves it as it is and converts to string' do
-          manifest.resolve_aliases
-          expect(manifest.to_hash['releases']).to eq([
-           {'name' => 'simple', 'version' => '9'},
-           {'name' => 'hard', 'version' => '42'}
-          ])
-        end
-      end
-
-      context 'when manifest has stemcells with version latest' do
-        let(:manifest_hash) do
-          {
-            'stemcells' => [
-              {'name' => 'simple', 'version' => 'latest'},
-              {'name' => 'hard', 'version' => 'latest'}
-            ]
-          }
+        context "when manifest has releases with version using '.latest' suffix" do
+          let(:manifest_hash) do
+            {
+              'releases' => [
+                {'name' => 'simple', 'version' => '9.latest'},
+                {'name' => 'hard', 'version' => '1.latest'}
+              ]
+            }
+          end
+          it 'should replace version with the relative latest' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['releases']).to eq([
+              {'name' => 'simple', 'version' => '9'},
+              {'name' => 'hard', 'version' => '1+dev.7'}
+            ])
+          end
         end
 
-        it 'replaces latest with the latest version number' do
-          manifest.resolve_aliases
-          expect(manifest.to_hash['stemcells']).to eq([
-            {'name' => 'simple', 'version' => '3169'},
-            {'name' => 'hard', 'version' => '3146.1'}
-          ])
-        end
-      end
+        context 'when manifest has no alias' do
+          let(:manifest_hash) do
+            {
+              'releases' => [
+                {'name' => 'simple', 'version' => 9},
+                {'name' => 'hard', 'version' => '42'}
+              ]
+            }
+          end
 
-      context 'when manifest has stemcell with no alias' do
-        let(:manifest_hash) do
-          {
-            'stemcells' => [
-              {'name' => 'simple', 'version' => 42},
-              {'name' => 'hard', 'version' => 'latest'}
-            ]
-          }
-        end
-
-        it 'leaves it as it is and converts to string' do
-          manifest.resolve_aliases
-          expect(manifest.to_hash['stemcells']).to eq([
-            {'name' => 'simple', 'version' => '42'},
-            {'name' => 'hard', 'version' => '3146.1'}
-          ])
+          it 'leaves it as it is and converts to string' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['releases']).to eq([
+             {'name' => 'simple', 'version' => '9'},
+             {'name' => 'hard', 'version' => '42'}
+            ])
+          end
         end
       end
 
-      context 'when cloud config has stemcells with version latest' do
-        let(:cloud_config_hash) do
-          {
-            'resource_pools' => [
-              {
-                'name' => 'rp1',
-                'stemcell' => { 'name' => 'simple', 'version' => 'latest'}
-              }
-            ]
-          }
+      context 'stemcells' do
+        context 'when manifest has stemcells with version latest' do
+          let(:manifest_hash) do
+            {
+              'stemcells' => [
+                {'name' => 'simple', 'version' => 'latest'},
+                {'name' => 'hard', 'version' => 'latest'}
+              ]
+            }
+          end
+
+          it 'replaces latest with the latest version number' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['stemcells']).to eq([
+              {'name' => 'simple', 'version' => '3169'},
+              {'name' => 'hard', 'version' => '3146.1'}
+            ])
+          end
         end
 
-        it 'replaces latest with the latest version number' do
-          manifest.resolve_aliases
-          expect(manifest.to_hash['resource_pools'].first['stemcell']).to eq(
-            { 'name' => 'simple', 'version' => '3169'}
-          )
+        context 'when manifest has stemcell with version prefix' do
+          let(:manifest_hash) do
+            {
+              'stemcells' => [
+                {'name' => 'simple', 'version' => '3169.latest'},
+                {'name' => 'hard', 'version' => '3146.latest'},
+              ]
+            }
+          end
+
+          it 'replaces prefixed-latest with the latest version number' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['stemcells']).to eq([
+              {'name' => 'simple', 'version' => '3169'},
+              {'name' => 'hard', 'version' => '3146.1'},
+            ])
+          end
+        end
+
+        context 'when manifest has stemcell with no alias' do
+          let(:manifest_hash) do
+            {
+              'stemcells' => [
+                {'name' => 'simple', 'version' => 42},
+                {'name' => 'hard', 'version' => 'latest'}
+              ]
+            }
+          end
+
+          it 'leaves it as it is and converts to string' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['stemcells']).to eq([
+              {'name' => 'simple', 'version' => '42'},
+              {'name' => 'hard', 'version' => '3146.1'}
+            ])
+          end
+        end
+
+        context 'when cloud config has stemcells with version latest' do
+          let(:cloud_config_hash) do
+            {
+              'resource_pools' => [
+                {
+                  'name' => 'rp1',
+                  'stemcell' => { 'name' => 'simple', 'version' => 'latest'}
+                }
+              ]
+            }
+          end
+
+          it 'replaces latest with the latest version number' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['resource_pools'].first['stemcell']).to eq(
+              { 'name' => 'simple', 'version' => '3169'}
+            )
+          end
+        end
+
+        context 'when cloud config has stemcells with version prefix' do
+          let(:cloud_config_hash) do
+            {
+              'resource_pools' => [
+                {
+                  'name' => 'rp1',
+                  'stemcell' => { 'name' => 'simple', 'version' => '3169.latest'}
+                }
+              ]
+            }
+          end
+
+          it 'replaces the correct version match' do
+            manifest.resolve_aliases
+            expect(manifest.to_hash['resource_pools'].first['stemcell']).to eq(
+              { 'name' => 'simple', 'version' => '3169'}
+            )
+          end
         end
       end
     end

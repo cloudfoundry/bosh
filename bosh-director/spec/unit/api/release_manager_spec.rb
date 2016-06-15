@@ -93,6 +93,50 @@ module Bosh::Director
       end
     end
 
+    describe '#sorted_release_version' do
+      let(:release) { Models::Release.make(name: 'release-a') }
+
+      before do
+        Models::ReleaseVersion.make(version: '1', release: release)
+        Models::ReleaseVersion.make(version: '2.1', release: release)
+        Models::ReleaseVersion.make(version: '2.2', release: release)
+        Models::ReleaseVersion.make(version: '2.3', release: release)
+      end
+
+      it 'returns a transformed array' do
+        sorted_release_versions = subject.sorted_release_versions(release)
+
+        expect(sorted_release_versions[0]['version']).to eq('1')
+        expect(sorted_release_versions[1]['version']).to eq('2.1')
+        expect(sorted_release_versions[2]['version']).to eq('2.2')
+        expect(sorted_release_versions[3]['version']).to eq('2.3')
+      end
+
+      context 'when filtering by version prefix' do
+        it 'returns a limited version list' do
+          sorted_release_versions = subject.sorted_release_versions(release, '2')
+
+          expect(sorted_release_versions[0]['version']).to eq('2.1')
+          expect(sorted_release_versions[1]['version']).to eq('2.2')
+          expect(sorted_release_versions[2]['version']).to eq('2.3')
+        end
+
+        it 'returns a limited version list' do
+          sorted_release_versions = subject.sorted_release_versions(release, '2.2')
+
+          expect(sorted_release_versions[0]['version']).to eq('2.2')
+        end
+
+        context 'using a non-existant prefix' do
+          it 'returns an empty list' do
+            sorted_release_versions = subject.sorted_release_versions(release, '3')
+
+            expect(sorted_release_versions).to eq([])
+          end
+        end
+      end
+    end
+
     describe '#create_release_from_file_path' do
       let(:release_path) { '/path/to/release.tgz' }
 

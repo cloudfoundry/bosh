@@ -22,6 +22,11 @@ module Bosh::Director
           expect {subject.parse(runtime_manifest)}.to raise_error(Bosh::Director::RuntimeInvalidReleaseVersion)
         end
 
+        it "raises RuntimeInvalidReleaseVersion if a release uses relative version '.latest'" do
+          runtime_manifest['releases'][0]['version'] = '3146.latest'
+          expect {subject.parse(runtime_manifest)}.to raise_error(Bosh::Director::RuntimeInvalidReleaseVersion)
+        end
+
         it "raises RuntimeReleaseNotListedInReleases if addon job's release is not listed in releases" do
           runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
           runtime_manifest['releases'][0]['name'] = 'weird_name'

@@ -32,9 +32,9 @@ module Bosh::Director
         end
 
         @release_specs.each do |release_spec|
-          if release_spec['version'] == 'latest'
+          if release_spec['version'] =~ /(^|[\._])latest$/
             raise RuntimeInvalidReleaseVersion,
-                  "Runtime manifest contains the release '#{release_spec['name']}' with version as 'latest'. " +
+                  "Runtime manifest contains the release '#{release_spec['name']}' with version as '#{release_spec['version']}'. " +
                       "Please specify the actual version string."
           end
 
