@@ -167,6 +167,40 @@ module Bosh::Director
             vm_scanner.scan
           end
         end
+
+        context 'when a VM is ignored' do
+          before do
+            ignored_unresponsive_vm = Models::Instance.make(vm_cid: "vm-cid-smurf", agent_id: "agent-smurf", deployment: deployment, job: "job-smurf", index: 0, ignore: true)
+            ignored_responsive_vm = Models::Instance.make(vm_cid: "vm-cid-gargamel", agent_id: "agent-gargamel", deployment: deployment, job: "job-gargamel", index: 0, ignore: true)
+
+            ignored_unresponsive_agent = double(AgentClient)
+            ignored_responsive_agent =   double(AgentClient)
+            agent_options = { timeout: 10, retry_methods: { get_state: 0}}
+
+
+            allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(ignored_unresponsive_vm.credentials, ignored_unresponsive_vm.agent_id, agent_options).and_return(ignored_unresponsive_agent)
+            allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(ignored_responsive_vm.credentials, ignored_responsive_vm.agent_id, agent_options).and_return(ignored_responsive_agent)
+            allow(ignored_unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
+
+            # Working agent
+            good_state = {
+                'deployment' => 'fake-deployment',
+                'job' => {'name' => 'job-gargamel'},
+                'index' => 0
+            }
+            allow(ignored_responsive_agent).to receive(:get_state).and_return(good_state)
+            allow(ignored_responsive_agent).to receive(:list_disk).and_return([])
+
+            allow(cloud).to receive(:has_vm?).and_return(true)
+          end
+
+          it 'it is not scanned' do
+            expect(event_logger).to receive(:track_and_log).with('Checking VM states')
+            expect(event_logger).to receive(:track_and_log).with('1 OK, 2 unresponsive, 0 missing, 0 unbound, 2 ignored')
+
+            vm_scanner.scan
+          end
+        end
       end
     end
 

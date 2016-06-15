@@ -35,8 +35,8 @@ module Bosh::Director
       attr_accessor :update
 
       # @return [Array<Bosh::Director::DeploymentPlan::Job>]
-      #   All jobs in the deployment
-      attr_reader :jobs
+      #   All instance_groups in the deployment
+      attr_reader :instance_groups
 
       # Stemcells in deployment by alias
       attr_reader :stemcells
@@ -63,7 +63,7 @@ module Bosh::Director
         @model = deployment_model
 
         @stemcells = {}
-        @jobs = []
+        @instance_groups = []
         @jobs_name_index = {}
         @jobs_canonical_name_index = Set.new
 
@@ -118,10 +118,11 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        vm_deleter = VmDeleter.new(cloud, @logger)
+        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
-        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
+        arp_flusher = ArpFlusher.new
+        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
         dns_manager = DnsManagerProvider.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
@@ -132,11 +133,10 @@ module Bosh::Director
           instance_deleter,
           compilation.workers)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-          jobs,
+          instance_groups,
           compilation,
           compilation_instance_pool,
           @logger,
-          Config.event_log,
           nil
         )
         package_compile_step.perform
@@ -153,8 +153,8 @@ module Bosh::Director
       end
 
       def candidate_existing_instances
-        desired_job_names = jobs.map(&:name)
-        migrating_job_names = jobs.map(&:migrated_from).flatten.map(&:name)
+        desired_job_names = instance_groups.map(&:name)
+        migrating_job_names = instance_groups.map(&:migrated_from).flatten.map(&:name)
 
         existing_instances.select do |instance|
           desired_job_names.include?(instance.job) ||
@@ -214,7 +214,7 @@ module Bosh::Director
             "Invalid instance group name '#{job.name}', canonical name already taken"
         end
 
-        @jobs << job
+        @instance_groups << job
         @jobs_name_index[job.name] = job
         @jobs_canonical_name_index << job.canonical_name
       end
@@ -227,19 +227,19 @@ module Bosh::Director
       end
 
       def jobs_starting_on_deploy
-        jobs = []
+        instance_groups = []
 
-        @jobs.each do |job|
+        @instance_groups.each do |job|
           if job.is_service?
-            jobs << job
+            instance_groups << job
           elsif job.is_errand?
             if job.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
-              jobs << job
+              instance_groups << job
             end
           end
         end
 
-        jobs
+        instance_groups
       end
 
       def persist_updates!
@@ -279,7 +279,7 @@ module Bosh::Director
       def validate_packages
         release_manager = Bosh::Director::Api::ReleaseManager.new
         validator = DeploymentPlan::PackageValidator.new(@logger)
-        jobs.each do |job|
+        instance_groups.each do |job|
           job.templates.each do |template|
             release_model = release_manager.find_by_name(template.release.name)
             release_version_model = release_manager.find_version(release_model, template.release.version)
@@ -353,6 +353,10 @@ module Bosh::Director
       end
 
       def vm_extension(name)
+        unless @vm_extensions.has_key?(name)
+          raise "The vm_extension '#{name}' has not been configured in cloud-config."
+        end
+
         @vm_extensions[name]
       end
 

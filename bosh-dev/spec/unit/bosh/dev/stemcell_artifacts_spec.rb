@@ -77,6 +77,8 @@ module Bosh::Dev
               ['aws', 'xen-hvm', 'centos', '7', 'go', true],
               ['openstack', 'kvm', 'ubuntu', 'trusty', 'go', false],
               ['openstack', 'kvm', 'centos', '7', 'go', false],
+              ['google', 'kvm', 'ubuntu', 'trusty', 'go', false],
+              ['google', 'kvm', 'centos', '7', 'go', false],
             ])
 
             artifacts

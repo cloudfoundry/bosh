@@ -18,7 +18,7 @@ module Bosh::Director
       expected_scope = director_permissions[:admin]
 
       if subject.instance_of? Models::Deployment
-        expected_scope << deployment_team_scopes(subject, 'admin')
+        expected_scope << subject_team_scopes(subject, 'admin')
 
         if :admin == permission
           # already allowed with initial expected_scope
@@ -39,6 +39,16 @@ module Bosh::Director
           expected_scope << director_permissions[:read]
         else
           raise ArgumentError, "Unexpected permission for director: #{permission}"
+        end
+      elsif subject.instance_of?(Models::Task)
+        expected_scope << subject_team_scopes(subject, 'admin')
+
+        if :admin == permission
+          # already allowed with initial expected_scope
+        elsif :read == permission
+          expected_scope << director_permissions[:read]
+        else
+          raise ArgumentError, "Unexpected permission for task: #{permission}"
         end
       else
         raise ArgumentError, "Unexpected subject: #{subject}"
@@ -62,9 +72,9 @@ module Bosh::Director
       }
     end
 
-    def deployment_team_scopes(deployment, permission)
-      permissions = deployment.teams.nil? ? [] : deployment.teams.split(',')
-      permissions.map{ |team_name| "bosh.teams.#{team_name}.#{permission}" }
+    def subject_team_scopes(subject, permission)
+      teams = subject.teams.nil? ? [] : subject.teams
+      teams.map{ |team| "bosh.teams.#{team.name}.#{permission}" }
     end
 
     def intersect(valid_scopes, token_scopes)

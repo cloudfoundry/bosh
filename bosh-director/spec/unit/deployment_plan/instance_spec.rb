@@ -18,7 +18,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:network_resolver) { GlobalNetworkResolver.new(plan) }
+    let(:network_resolver) { GlobalNetworkResolver.new(plan, [], logger) }
     let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::Job',
         vm_type: vm_type,

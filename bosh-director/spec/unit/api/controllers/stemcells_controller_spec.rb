@@ -7,25 +7,13 @@ module Bosh::Director
 
     subject(:app) { described_class.new(config) }
     let(:config) do
-      config = Config.load_hash(test_config)
+      config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       config
     end
-    let(:temp_dir) { Dir.mktmpdir}
-    let(:test_config) do
-      config = Psych.load(spec_asset('test-director-config.yml'))
-      config['dir'] = temp_dir
-      config['blobstore'] = {
-        'provider' => 'local',
-        'options' => {'blobstore_path' => File.join(temp_dir, 'blobstore')}
-      }
-      config
-    end
 
     before { App.new(config) }
-
-    after { FileUtils.rm_rf(temp_dir) }
 
     describe 'POST', '/' do
       context 'authenticated access' do

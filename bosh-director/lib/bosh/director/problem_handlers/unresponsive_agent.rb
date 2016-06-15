@@ -32,9 +32,19 @@ module Bosh::Director
         action { validate; reboot_vm(@instance) }
       end
 
+      resolution :recreate_vm_skip_post_start do
+        plan { "Recreate VM for '#{@instance}' without waiting for processes to start" }
+        action { validate; recreate_vm_skip_post_start(@instance) }
+      end
+
       resolution :recreate_vm do
-        plan { "Recreate VM for '#{@instance}'" }
+        plan { "Recreate VM for '#{@instance}' and wait for processes to start" }
         action { validate; recreate_vm(@instance) }
+      end
+
+      resolution :delete_vm do
+        plan { 'Delete VM' }
+        action { validate; delete_vm_from_cloud(@instance) }
       end
 
       resolution :delete_vm_reference do

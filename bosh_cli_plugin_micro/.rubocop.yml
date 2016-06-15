@@ -1,7 +1,0 @@
-inherit_from: ../.rubocop.yml
-
-Void:
-  Enabled: false # many specs use == in void context
-
-LineLength:
-  Max: 100

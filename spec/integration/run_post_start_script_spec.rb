@@ -75,8 +75,8 @@ describe 'post start script', type: :integration do
     end
   end
 
-  context 'when vm is recreated with cck' do
-    it 'runs post-start script' do
+  context 'when vm is recreated with cck --auto' do
+    it 'skips running post-start script' do
       deploy_from_scratch(manifest_hash: manifest)
       current_sandbox.cpi.vm_cids.each do |vm_cid|
         current_sandbox.cpi.delete_vm(vm_cid)
@@ -86,7 +86,7 @@ describe 'post start script', type: :integration do
       agent_id = director.vms.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-      expect(agent_log).to include("/jobs/job_with_post_start_script/bin/post-start' script has successfully executed")
+      expect(agent_log).to_not include("/jobs/job_with_post_start_script/bin/post-start' script has successfully executed")
     end
   end
 end

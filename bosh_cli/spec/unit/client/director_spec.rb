@@ -214,6 +214,30 @@ describe Bosh::Cli::Client::Director do
                                .and_return([200, JSON.generate([]), {}])
         @director.list_events
       end
+
+      it 'can list events with a given deployment' do
+        expect(@director).to receive(:get).with('/events?deployment=name', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({deployment: 'name'})
+      end
+
+      it 'can list events with a given task' do
+        expect(@director).to receive(:get).with('/events?task=5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({task: '5'})
+      end
+
+      it 'can list events with a given instance id' do
+        expect(@director).to receive(:get).with('/events?instance=job/5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5'})
+      end
+
+      it 'can filter by multiple parameters' do
+        expect(@director).to receive(:get).with('/events?before_id=4&deployment=name&instance=job/5&task=6', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5', deployment: 'name', task: 6, before_id: 4})
+      end
     end
 
     it 'creates user' do
@@ -475,6 +499,26 @@ describe Bosh::Cli::Client::Director do
       @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached')
     end
 
+    context 'max_in_flight provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&max_in_flight=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', max_in_flight: 77)
+      end
+    end
+
+    context 'canaries provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&canaries=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', canaries: 77)
+      end
+    end
+
     it 'changes job instance resurrection state' do
       expect(@director).to receive(:request).with(:put,
           '/deployments/foo/jobs/dea/0/resurrection',
@@ -493,6 +537,16 @@ describe Bosh::Cli::Client::Director do
           {},
           {})
       @director.change_vm_resurrection_for_all(false)
+    end
+
+    it 'changes instance ignore state' do
+      expect(@director).to receive(:request).with(:put,
+          '/deployments/foo/instance_groups/dea/90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA/ignore',
+          'application/json',
+          '{"ignore":true}',
+          {},
+          {})
+      @director.change_instance_ignore_state('foo', 'dea', '90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA', true)
     end
 
     it 'gets task state' do

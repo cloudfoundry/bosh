@@ -125,11 +125,17 @@ module Bosh
         end
 
         def list_events(options={})
-          if options[:before_id]
-            get_json("/events?before_id=#{options[:before_id]}")
-          else
-            get_json('/events')
+          query_string = "/events"
+          delimeter = "?"
+          options[:before_time] = URI.encode(options.delete(:before)) if options[:before]
+          options[:after_time] = URI.encode(options.delete(:after)) if options[:after]
+          [:before_id, :deployment, :instance, :task, :before_time, :after_time].each do |param|
+            if options[param]
+              query_string += "#{delimeter}#{ param.to_s}=#{options[param]}"
+              delimeter = "&"
+            end
           end
+          get_json(query_string)
         end
 
         def list_errands(deployment_name)
@@ -349,11 +355,15 @@ module Bosh
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
+          canaries = options.delete(:canaries)
+          max_in_flight = options.delete(:max_in_flight)
 
           url = "/deployments/#{deployment_name}/jobs/#{job}"
           url += "/#{index_or_id}" if index_or_id
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
+          url += "&max_in_flight=#{max_in_flight}" if max_in_flight
+          url += "&canaries=#{canaries}" if canaries
 
           options[:payload]      = manifest_yaml
           options[:content_type] = 'text/yaml'
@@ -370,6 +380,12 @@ module Bosh
         def change_vm_resurrection_for_all(value)
           url     = "/resurrection"
           payload = JSON.generate('resurrection_paused' => value)
+          put(url, 'application/json', payload)
+        end
+
+        def change_instance_ignore_state(deployment_name, instance_group_name, id, ignore_state)
+          url     = "/deployments/#{deployment_name}/instance_groups/#{instance_group_name}/#{id}/ignore"
+          payload = JSON.generate('ignore' => ignore_state)
           put(url, 'application/json', payload)
         end
 

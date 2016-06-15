@@ -1,7 +1,10 @@
 ---
 platform: linux
 
-image: docker:///bosh/main-no-redis
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main
 
 inputs:
   - name: bosh-src
@@ -11,3 +14,4 @@ run:
 
 params:
   RUBY_VERSION: replace-me
+  DB:           replace-me

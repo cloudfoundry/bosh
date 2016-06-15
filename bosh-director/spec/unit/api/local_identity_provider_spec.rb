@@ -43,7 +43,7 @@ module Bosh::Director
     describe 'a request (controller integration)' do
       include Rack::Test::Methods
 
-      let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+      let(:test_config) { SpecHelper.spec_get_director_config }
       let(:config) do
         config = Config.load_hash(test_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)

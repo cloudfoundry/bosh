@@ -38,7 +38,7 @@ module Bosh::Director
       def perform
         logger.info("Processing update stemcell")
 
-        event_log.begin_stage("Update stemcell", @stemcell_url ? UPDATE_STEPS + 1 : UPDATE_STEPS)
+        begin_stage("Update stemcell", @stemcell_url ? UPDATE_STEPS + 1 : UPDATE_STEPS)
 
         track_and_log("Downloading remote stemcell") { download_remote_stemcell } if @stemcell_url
 

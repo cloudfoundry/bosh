@@ -2,11 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Runner do
-    subject { described_class.new(job, result_file, instance_manager, event_log, logs_fetcher) }
+    subject { described_class.new(job, result_file, instance_manager, logs_fetcher) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name') }
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
-    let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
     context 'when there is at least 1 instance' do
@@ -31,8 +30,8 @@ module Bosh::Director
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do
-        before { allow(event_log).to receive(:begin_stage).and_return(event_log_stage) }
         let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+        before { allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage) }
 
         before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
 
@@ -88,7 +87,7 @@ module Bosh::Director
 
           it 'records errand running in the event log' do
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
-            expect(event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
+            expect(Config.event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/0').and_yield
             subject.run
           end

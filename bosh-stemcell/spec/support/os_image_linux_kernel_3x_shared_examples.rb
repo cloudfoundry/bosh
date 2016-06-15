@@ -39,6 +39,34 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'must not send ICMPv4 redirects from any interface. (stig: V-38601)' do
         should contain /^net.ipv4.conf.all.send_redirects=0$/
       end
+
+      it 'must use reverse path filtering for IPv4 network traffic on all interfaces. (stig: V-38542)' do
+        should contain /^net.ipv4.conf.all.rp_filter=1$/
+      end
+
+      it 'must use reverse path filtering for IPv4 network traffic by default. (stig: V-38544)' do
+        should contain /^net.ipv4.conf.default.rp_filter=1$/
+      end
+
+      it 'should disable ipv6 router advertisements on all interfaces (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.all.accept_ra=0$/
+      end
+
+      it 'should disable ipv6 router advertisements by default (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.default.accept_ra=0$/
+      end
+
+      it 'should disable response to broadcast requests (CIS-7.2.5)' do
+        should contain /^net.ipv4.icmp_echo_ignore_broadcasts=1$/
+      end
+
+      it 'enables bad error message protection (CIS-7.2.6)' do
+        should contain /^net.ipv4.icmp_ignore_bogus_error_responses=1$/
+      end
+
+      it 'should disable core dumps (CIS-4.1)' do
+        should contain /^fs.suid_dumpable=0$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do

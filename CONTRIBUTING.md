@@ -16,3 +16,9 @@ Follow these steps to make a contribution to any of CF open source repositories:
         git config --global user.email "your_email@example.com"
 
 1. See [development docs](docs/README.md) to start contributing to BOSH.
+
+## Creating a Local Development Release
+
+1. Run `bundle exec rake release:create_dev_release`.
+
+2. If you need a tarball release from this then you can run `bundle exec bosh create release --with-tarball /path/to/yaml/made/in/previous/step.yml`.

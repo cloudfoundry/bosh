@@ -1,78 +1,82 @@
 AllCops:
+  TargetRubyVersion: 1.9
   Include:
-    - "**/Gemfile"
-    - Rakefile
+  - Rakefile
   Exclude:
-    - agent_client/docs/**/*
-    - bin/**/*
-    - bosh_cli/**/*
-    - bosh_cli_plugin_aws/**/*
-    - bosh_common/**/*
-    - bosh_cpi/**/*
-    - bosh-registry/**/*
-    - bosh-monitor/**/*
-    - bosh-release/**/*
-    - release/**/*
-    - simple_blobstore_server/**/*
-    - spec/**/*
-    - stemcell_builder/**/*
-    - vendor/**/*
-    - tmp/**/*
-    - go/**/*
+  - bat/**/*
 
-CollectionMethods:
-  Enabled: false # Enabling this doesn't like "inject"
-
-Encoding:
+# This one we might always want.
+Lint/AmbiguousRegexpLiteral:
   Enabled: false
 
-EndAlignment:
+Lint/UselessAssignment:
   Enabled: false
 
-LineLength:
-  Max: 119
-
-Documentation:
+Lint/UnusedBlockArgument:
   Enabled: false
 
-CaseIndentation:
+Lint/ShadowingOuterLocalVariable:
   Enabled: false
 
-ClassLength:
+Lint/ParenthesesAsGroupedExpression:
   Enabled: false
 
-DotPosition:
+Lint/NestedMethodDefinition:
   Enabled: false
 
-MethodLength:
-  CountComments: false
-  Max: 20
-
-Blocks:
-  Enabled: false # {} for multi-line blocks in RSpec expectations is very common
-
-TrivialAccessors:
-  Enabled: false # Bosh::Stemcell::Infrastructure#light? was a false positive
-
-SpecialGlobalVars:
-  Enabled: false # Unfortunately $CHILD_STATUS isn't always the same as $?
-
-AlignParameters:
+Lint/BlockAlignment:
   Enabled: false
 
-IfUnlessModifier:
-  Enabled: false # It's nice to be able to use an if on its line
-
-TrailingComma:
+Lint/UnusedMethodArgument:
   Enabled: false
 
-WordArray:
-  Enabled: false # '%w' isn't always more readable and is often less consistent
-
-inherit_from: .rubocop_todo.yml
-
-ClassLength:
+Lint/HandleExceptions:
   Enabled: false
 
-UselessSetterCall:
+Lint/RescueException:
+  Enabled: false
+
+Lint/Void:
+  Enabled: false
+
+Lint/DeprecatedClassMethods:
+  Enabled: false
+
+Lint/DuplicatedKey:
+  Enabled: false
+
+Lint/AmbiguousOperator:
+  Enabled: false
+
+Lint/AssignmentInCondition:
+  Enabled: false
+
+Lint/EndAlignment:
+  Enabled: false
+
+Lint/StringConversionInInterpolation:
+  Enabled: false
+
+Lint/IneffectiveAccessModifier:
+  Enabled: false
+
+Lint/UselessAccessModifier:
+  Enabled: false
+
+Lint/NonLocalExitFromIterator:
+  Enabled: false
+
+Lint/UnderscorePrefixedVariableName:
+  Enabled: false
+
+Lint/FormatParameterMismatch:
+  Enabled: false
+
+Lint/ImplicitStringConcatenation:
+  Enabled: false
+
+Lint/LiteralInCondition:
+  Enabled: false
+
+Lint/DefEndAlignment:
   Enabled: false

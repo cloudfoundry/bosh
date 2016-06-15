@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::CleanupArtifacts do
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
-      let(:config) {  {'remove_all' => remove_all} }
+      let(:config) { {'remove_all' => remove_all} }
 
       describe 'when user specifies --all at the command line' do
         let(:remove_all) { true }
@@ -31,6 +31,7 @@ module Bosh::Director
       let(:release_1) { Models::Release.make(name: 'release-1') }
       let(:release_2) { Models::Release.make(name: 'release-2') }
       let(:thread_pool) { instance_double(ThreadPool) }
+      let(:config) { {'remove_all' => remove_all} }
       before do
         allow(ThreadPool).to receive(:new).and_return(thread_pool)
         allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
@@ -50,7 +51,7 @@ module Bosh::Director
         package = Models::Package.make(release: release_1, blobstore_id: 'package_blob_id_1')
         package.add_release_version(release_version_1)
         Models::CompiledPackage.make(package: package, stemcell_os: stemcell_1.operating_system,
-            stemcell_version: stemcell_1.version, blobstore_id: 'compiled-package-1')
+                                     stemcell_version: stemcell_1.version, blobstore_id: 'compiled-package-1')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(stage)
@@ -63,8 +64,30 @@ module Bosh::Director
       end
 
       context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
+        let(:remove_all) { true }
         before do
           expect(blobstore).to receive(:delete).with('compiled-package-1')
+        end
+
+
+        context 'when there are ephemeral blobs' do
+          before do
+            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
+            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
+            allow(event_log).to receive(:begin_stage).and_return(stage)
+          end
+
+          it 'deletes them from blobstore and database' do
+            expect(event_log).to receive(:begin_stage).with('Deleting ephemeral blobs', 2).and_return(stage)
+
+            delete_artifacts = Jobs::CleanupArtifacts.new(config)
+            result = delete_artifacts.perform
+
+            expect(result).to eq('Deleted 2 release(s), 2 stemcell(s), 0 orphaned disk(s), 2 ephemeral blob(s)')
+            expect(Models::EphemeralBlob.all).to be_empty
+          end
         end
 
         context 'when there are orphaned disks' do
@@ -84,11 +107,10 @@ module Bosh::Director
 
             allow(cloud).to receive(:delete_disk)
 
-            config = {'remove_all' => true}
             delete_artifacts = Jobs::CleanupArtifacts.new(config)
             result = delete_artifacts.perform
 
-            expect(result).to eq('Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s)')
+            expect(result).to eq('Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s), 0 ephemeral blob(s)')
 
             expect(Models::OrphanDisk.all).to be_empty
             expect(Models::Release.all).to be_empty
@@ -110,10 +132,10 @@ module Bosh::Director
 
               allow(cloud).to receive(:delete_disk)
               allow(blobstore).to receive(:delete).with('package_blob_id_1')
-              delete_artifacts = Jobs::CleanupArtifacts.new({'remove_all' => true})
+              delete_artifacts = Jobs::CleanupArtifacts.new(config)
               result = delete_artifacts.perform
 
-              expected_result = 'Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s)'
+              expected_result = 'Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s), 0 ephemeral blob(s)'
               expect(result).to eq(expected_result)
 
               expect(Models::Stemcell.all).to be_empty
@@ -123,7 +145,7 @@ module Bosh::Director
         end
       end
 
-      context 'when cleaning up only stemcells and releases' do
+      context 'when cleaning up only stemcells, releases, and ephemeral blobs' do
         it 'logs and returns the result' do
           expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
           expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
@@ -134,7 +156,7 @@ module Bosh::Director
           expect(thread_pool).not_to receive(:process)
           result = delete_artifacts.perform
 
-          expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')
+          expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 ephemeral blob(s)')
 
           expect(Models::Release.all.count).to eq(2)
           expect(Models::Stemcell.all.count).to eq(2)
@@ -158,7 +180,7 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = delete_artifacts.perform
 
-            expected_result = 'Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s)'
+            expected_result = 'Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 ephemeral blob(s)'
             expect(result).to eq(expected_result)
 
             expect(Models::Stemcell.all.count).to eq(4)
@@ -182,7 +204,7 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = delete_artifacts.perform
 
-            expected_result = 'Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s)'
+            expected_result = 'Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 ephemeral blob(s)'
             expect(result).to eq(expected_result)
 
             expect(Models::Release.all.count).to eq(2)
@@ -220,10 +242,30 @@ module Bosh::Director
             expect(thread_pool).not_to receive(:process)
             result = delete_artifacts.perform
 
-            expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')
+            expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 ephemeral blob(s)')
 
             expect(Models::Release.all.count).to eq(4)
             expect(Models::Stemcell.all.count).to eq(4)
+          end
+        end
+
+        context 'when there are ephemeral blobs' do
+          before do
+            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
+            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
+            allow(event_log).to receive(:begin_stage).and_return(stage)
+          end
+
+          it 'deletes them from blobstore and database' do
+            expect(event_log).to receive(:begin_stage).with('Deleting ephemeral blobs', 2).and_return(stage)
+
+            delete_artifacts = Jobs::CleanupArtifacts.new({})
+            result = delete_artifacts.perform
+
+            expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 2 ephemeral blob(s)')
+            expect(Models::EphemeralBlob.all).to be_empty
           end
         end
       end

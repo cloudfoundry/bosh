@@ -186,6 +186,30 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when link is not defined in provides spec but specified in manifest' do
+      let(:consume_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'consume_job',
+          templates: [
+            {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
+          ],
+          instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [consume_job]
+        manifest
+      end
+
+      it 'should raise an error' do
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(/Job 'consume_job' does not provide link 'consumer_resource' in the release spec/)
+      end
+    end
+
     context 'when link is provided' do
       let(:links) do
         {
@@ -439,9 +463,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to process links for deployment. Errors are:
-   - "Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-     simple.mysql.database.db
-     simple.postgres.backup_database.backup_db"
+   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+        simple.mysql.database.db
+        simple.postgres.backup_database.backup_db
           EOF
         end
       end
@@ -486,7 +510,7 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(out).to include('Started copying jobs > backup_database/c6802f3d21e6c2367520629c691ab07e0e49be6d. Done')
         expect(out).to include('Started copying jobs > database/6f16ca3fad0d120eefd91334f4c8d3584886cc3d. Done')
         expect(out).to include('Started copying jobs > mongo_db/2a32a7517a77bfa606a7a4ae0ae8097bf36505df. Done')
-        expect(out).to include('Started copying jobs > node/9bf2cb66c06889609404fbe10b3c8f597463bdb5. Done')
+        expect(out).to include('Started copying jobs > node/6cd263ed6b6cef423ab50664805c0f6d9987779f. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include("Exported release 'bosh-release/0+dev.1' for 'toronto-os/1'")
@@ -832,7 +856,6 @@ Error 100: Unable to process links for deployment. Errors are:
 
       it 'catches broken link before updating vms' do
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        puts output
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
         expect(output).to include("Cannot resolve ambiguous link 'node1' (job: node, instance group: first_node). All of these match:")
@@ -906,6 +929,23 @@ Error 100: Unable to process links for deployment. Errors are:
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
          }.to_not raise_error
+       end
+
+       it 'allows access to bootstrap node' do
+         deploy_simple_manifest(manifest_hash: first_manifest)
+
+         first_deployment_vm = director.vm('first_deployment_node', '0', deployment: 'first')
+         first_deployment_template = YAML.load(first_deployment_vm.read_job_template('node', 'config.yml'))
+
+         second_manifest['jobs'][0]['instances'] = 2
+         second_manifest['jobs'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+         second_manifest['jobs'][0]['networks'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+
+         deploy_simple_manifest(manifest_hash: second_manifest)
+
+         second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
+         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+         expect(second_deployment_template['instances']['node1_bootstrap_address']).to eq(first_deployment_template['instances']['node1_bootstrap_address'])
        end
 
        context 'when user does not specify a network for consumes' do
@@ -1374,7 +1414,7 @@ Error 100: Unable to process links for deployment. Errors are:
     let (:job_with_manual_consumes_link) do
       job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'property_job',
-          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'manual_config' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}}],
+          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}
@@ -1464,10 +1504,10 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Error 100: Unable to process links for deployment. Errors are:
-   - \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
-   - \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
-   - \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("Error 100: Unable to process links for deployment. Errors are:")
+      expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
 end

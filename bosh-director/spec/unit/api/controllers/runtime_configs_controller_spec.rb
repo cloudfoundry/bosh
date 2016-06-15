@@ -6,10 +6,9 @@ module Bosh::Director
   describe Api::Controllers::RuntimeConfigsController do
     include Rack::Test::Methods
 
-    let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
     subject(:app) { Api::Controllers::RuntimeConfigsController.new(config) }
     let(:config) do
-      config = Config.load_hash(test_config)
+      config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       config

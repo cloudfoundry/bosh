@@ -72,6 +72,51 @@ describe Bosh::Cli::Command::Events do
       end
     end
 
+    context 'when filtering events by deployment name' do
+      before { expect(director).to receive(:list_events).with({target: target, deployment: 'deployment-name'}) { [] } }
+
+      it 'should invoke the director with the right options' do
+        command.options = {deployment: 'deployment-name', target: target}
+        command.list
+      end
+    end
+
+    context 'when filtering events by task name' do
+      before { expect(director).to receive(:list_events).with({target: target, task: '1'}) { [] } }
+
+      it 'should invoke the director with the right options' do
+        command.options = {task: '1', target: target}
+        command.list
+      end
+    end
+
+    context 'when filtering events by before timestamp' do
+      before { expect(director).to receive(:list_events).with({target: target, before: 'Tue Feb 16 15:15:08 UTC 2016'}) { [] } }
+
+      it 'should invoke the director with the right options' do
+        command.options = {before: 'Tue Feb 16 15:15:08 UTC 2016', target: target}
+        command.list
+      end
+    end
+
+    context 'when filtering events by after timestamp' do
+      before { expect(director).to receive(:list_events).with({target: target, after: 'Tue Feb 16 15:15:08 UTC 2016'}) { [] } }
+
+      it 'should invoke the director with the right options' do
+        command.options = {after: 'Tue Feb 16 15:15:08 UTC 2016', target: target}
+        command.list
+      end
+    end
+
+    context 'when filtering events by instance jobname/id' do
+      before { expect(director).to receive(:list_events).with({target: target, instance: 'job/1'}) { [] } }
+
+      it 'should invoke the director with the right options' do
+        command.options = {instance: 'job/1', target: target}
+        command.list
+      end
+    end
+
     context 'when there no events' do
       before { expect(director).to receive(:list_events) { [] } }
 

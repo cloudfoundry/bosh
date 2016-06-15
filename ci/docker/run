@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+if [ "" == "${1:-}" ] ; then
+  echo "ERROR: include an image name as the first argument" 2>&1
+  exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+IMAGE_NAME="$1"
+DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/$IMAGE_NAME}
+
+if [ $IMAGE_NAME == "os-image-stemcell-builder" ] ; then
+  USER_OPTION="--user ubuntu "
+fi
+
+exec docker run --privileged -v /opt/bosh:$DIR/../.. --workdir /opt/bosh $USER_OPTION -t -i $DOCKER_IMAGE

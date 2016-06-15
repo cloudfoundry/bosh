@@ -20,7 +20,7 @@ module Bosh::Director::DeploymentPlan
         ]
       }
     }
-    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_legacy_ranges: Set.new) }
+    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:availability_zones) { [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})] }
     let(:network) do
       ManualNetwork.parse(

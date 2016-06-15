@@ -5,11 +5,10 @@ module Bosh::Director
     # @param [Bosh::Director::Api::InstanceManager] instance_manager
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Bosh::Director::LogsFetcher] logs_fetcher
-    def initialize(job, result_file, instance_manager, event_log, logs_fetcher)
+    def initialize(job, result_file, instance_manager, logs_fetcher)
       @job = job
       @result_file = result_file
       @instance_manager = instance_manager
-      @event_log = event_log
       @agent_task_id = nil
       @logs_fetcher = logs_fetcher
     end
@@ -22,7 +21,7 @@ module Bosh::Director
       end
 
       agent_task_result = nil
-      event_log_stage = @event_log.begin_stage('Running errand', 1)
+      event_log_stage = Config.event_log.begin_stage('Running errand', 1)
 
       begin
         event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do

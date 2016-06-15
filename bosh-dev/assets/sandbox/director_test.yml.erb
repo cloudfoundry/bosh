@@ -31,6 +31,7 @@ db: &bosh_db
   connection_options:
     max_connections: 32
     pool_timeout: 10
+    reconnect: <%= database.adapter == 'mysql2' ? true : false %>
 
 dns:
   db: *bosh_db
@@ -55,6 +56,8 @@ scan_and_fix:
 
 snapshots:
   enabled: true
+
+flush_arp: true
 
 cloud:
   <% if external_cpi_enabled %>
@@ -105,3 +108,5 @@ generate_vm_passwords: <%= generate_vm_passwords %>
 remove_dev_tools: <%= remove_dev_tools %>
 
 record_events: true
+
+director_ips: <%= director_ips %>

@@ -2,9 +2,9 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompileTaskGenerator
-    def initialize(logger, event_log)
+    def initialize(logger, event_log_stage)
       @logger = logger
-      @event_log = event_log
+      @event_log_stage = event_log_stage
     end
 
     # The compile_tasks hash passed in by the caller will be populated with CompileTasks objects
@@ -30,7 +30,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
-      compiled_package = task.find_compiled_package(@logger, @event_log)
+      compiled_package = task.find_compiled_package(@logger, @event_log_stage)
       if compiled_package
         task.use_compiled_package(compiled_package)
       end

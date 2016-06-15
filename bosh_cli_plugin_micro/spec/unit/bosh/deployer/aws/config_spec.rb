@@ -66,6 +66,6 @@ describe Bosh::Deployer::Config do
     expect(cloud.respond_to?(:ec2)).to be(true)
     expect(cloud.ec2).to be_kind_of(AWS::EC2)
     expect(cloud.respond_to?(:registry)).to be(true)
-    expect(cloud.registry).to be_kind_of(Bosh::Registry::Client)
+    expect(cloud.registry).to be_kind_of(Bosh::Cpi::RegistryClient)
   end
 end

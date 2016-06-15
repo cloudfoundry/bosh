@@ -3,6 +3,11 @@ module Bosh::Cli::Command
     usage 'events'
     desc 'Show all deployment events'
     option '--before-id id', Integer, 'Show all events with id less or equal to given id'
+    option '--before timestamp', String, 'Show all events by the given timestamp (ex: 2016-05-08 17:26:32)'
+    option '--after timestamp', String, 'Show all events after the given timestamp (ex: 2016-05-08 17:26:32)'
+    option '--deployment name', String, 'Filter all events by the Deployment Name'
+    option '--task id', String, 'Filter all events by the task id'
+    option '--instance job_name/id', String, 'Filter all events by the instance job_name/id'
 
     def list
       auth_required

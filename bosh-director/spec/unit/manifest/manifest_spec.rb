@@ -23,6 +23,32 @@ module Bosh::Director
       Models::Stemcell.make(name: 'hard', version: '3146.1')
     end
 
+    describe '.load_from_hash' do
+      let(:cloud_config) { Models::CloudConfig.make(manifest: {}) }
+      let(:runtime_config) { Models::RuntimeConfig.make(manifest: {}) }
+
+      it 'creates a manifest object from a cloud config, a manifest text, and a runtime config' do
+        expect(
+          Manifest.load_from_hash(manifest_hash, cloud_config, runtime_config).to_yaml
+        ).to eq(manifest.to_yaml)
+      end
+    end
+
+    describe '.load_from_text' do
+      let(:cloud_config) { Models::CloudConfig.make(manifest: {}) }
+      let(:runtime_config) { Models::RuntimeConfig.make(manifest: {}) }
+
+      it 'creates a manifest object from a manifest, a cloud config, and a runtime config' do
+        expect(
+          Manifest.load_from_text(manifest_hash.to_yaml, cloud_config, runtime_config).to_yaml
+        ).to eq(manifest.to_yaml)
+      end
+
+      it 'parses empty manifests correctly' do
+        expect(Manifest.load_from_text(nil, cloud_config, runtime_config).to_yaml).to eq Manifest.new({}, cloud_config_hash, runtime_config_hash).to_yaml
+      end
+    end
+
     describe 'resolve_aliases' do
       context 'when manifest has releases with version latest' do
         let(:manifest_hash) do

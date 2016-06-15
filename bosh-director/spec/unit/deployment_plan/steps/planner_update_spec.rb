@@ -2,7 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
-    let(:event_log) { Bosh::Director::Config.event_log }
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
@@ -55,7 +54,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, Bosh::Director::Config.event_log, deployment_plan, multi_job_updater, cloud) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -143,7 +142,13 @@ module Bosh::Director::DeploymentPlan
 
           let(:cloud) { instance_double('Bosh::Cloud') }
 
-          before { allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false) }
+          let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+          before do
+            allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
+            allow(base_job).to receive(:task_id).and_return(task.id)
+            allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
+            allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
+          end
 
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }

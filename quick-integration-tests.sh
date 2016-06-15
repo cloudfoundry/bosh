@@ -14,7 +14,7 @@ echo "task outputs will be written to ${TEMP_FOLDER}"
 
 echo "task: test-integration..."
 
-export RUBY_VERSION=${RUBY_VERSION:-2.1.7}
+export RUBY_VERSION=${RUBY_VERSION:-2.3.1}
 export DB=${DB:-postgresql}
 export LOG_LEVEL=${LOG_LEVEL:-INFO}
 export NUM_GROUPS=${NUM_GROUPS:-8}

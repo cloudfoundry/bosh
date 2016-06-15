@@ -61,6 +61,7 @@ properties:
   second_static_ip: $BAT_SECOND_STATIC_IP
   uuid: $(bosh status --uuid)
   pool_size: 1
+  availability_zone: ${AVAILABILITY_ZONE}
   stemcell:
     name: ${BAT_STEMCELL_NAME}
     version: latest
@@ -81,6 +82,6 @@ EOF
 cd bats
 ./write_gemfile
 bundle install
-bundle exec rspec spec
+bundle exec rspec --tag ~multiple_manual_networks --tag ~root_partition spec
 bosh -t $BAT_DIRECTOR login admin admin
 bosh -n -t $BAT_DIRECTOR cleanup --all

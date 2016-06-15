@@ -76,6 +76,17 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
+  context 'The system must limit the ability of processes to have simultaneous write and execute access to memory. (stig: V-38597)' do
+    # Ubuntu relies on the system's hardware NX capabilities, or emulates NX if the hardware does not support it.
+    # Ubuntu has had this capability since v 11.04
+    # https://wiki.ubuntu.com/Security/Features#nx
+    it 'should run an os that emulates or uses things' do
+      major_version = os[:release].split('.')[0].to_i
+      expect(major_version).to be > 11
+    end
+  end
+
+
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
       if Bosh::Stemcell::Arch.ppc64le?
@@ -277,7 +288,7 @@ EOF
     end
   end
 
-  context 'package signature verification (stig: V-38462)' do
+  context 'package signature verification (stig: V-38462) (stig: V-38483)' do
     # verify default behavior was not changed
     describe command('grep -R AllowUnauthenticated /etc/apt/apt.conf.d/') do
       its (:stdout) { should eq('') }
@@ -290,11 +301,83 @@ EOF
     end
   end
 
-  context 'limit password reuse' do
+  context 'PAM configuration' do
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
         should contain /password.*pam_unix\.so.*remember=24/
       end
+
+      it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
+        should contain /password.*pam_unix\.so.*minlen=14/
+      end
+    end
+
+    describe file('/etc/pam.d/common-account') do
+      it 'must reset the tally of a user after successful login, esp. `sudo` (stig: V-38573)' do
+        should contain(/account.*required.*pam_tally2\.so/)
+      end
+    end
+
+    describe file('/etc/pam.d/common-auth') do
+      it 'must restrict a user account after 5 failed login attempts (stig: V-38573)' do
+        should contain(/auth.*pam_tally2\.so.*deny=5/)
+      end
+    end
+  end
+
+  # V-38498 and V-38495 are the package defaults and cannot be configured
+  context 'ensure auditd is installed (stig: V-38498) (stig: V-38495)' do
+    describe package('auditd') do
+      it { should be_installed }
+    end
+  end
+
+  context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664) (stig: V-38665)' do
+    [[644, '/usr/share/lintian/overrides/auditd'],
+    [755, '/usr/bin/auvirt'],
+    [755, '/usr/bin/ausyscall'],
+    [755, '/usr/bin/aulastlog'],
+    [755, '/usr/bin/aulast'],
+    [750, '/var/log/audit'],
+    [755, '/sbin/aureport'],
+    [755, '/sbin/auditd'],
+    [755, '/sbin/autrace'],
+    [755, '/sbin/ausearch'],
+    [755, '/sbin/augenrules'],
+    [755, '/sbin/auditctl'],
+    [755, '/sbin/audispd'],
+    [750, '/etc/audisp'],
+    [750, '/etc/audisp/plugins.d'],
+    [640, '/etc/audisp/plugins.d/af_unix.conf'],
+    [640, '/etc/audisp/plugins.d/syslog.conf'],
+    [640, '/etc/audisp/audispd.conf'],
+    [755, '/etc/init.d/auditd'],
+    [750, '/etc/audit'],
+    [750, '/etc/audit/rules.d'],
+    [640, '/etc/audit/rules.d/audit.rules'],
+    [640, '/etc/audit/audit.rules'],
+    [640, '/etc/audit/auditd.conf'],
+    [644, '/etc/default/auditd'],
+    [644, '/lib/systemd/system/auditd.service']].each do |tuple|
+      describe file(tuple[1]) do
+        it ('should be owned by root') { should be_owned_by('root')}
+        it ('should be owned by root group') { should be_grouped_into('root')}
+        it ("should have mode #{tuple[0]}") { should be_mode(tuple[0])}
+      end
+    end
+  end
+
+  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      it { should be_enabled }
+    end
+  end
+
+  context 'ensure audit package file have unmodified contents (stig: V-38637)' do
+    # ignore auditd.conf, auditd, and audit.rules since we modify these files in
+    # other stigs
+    describe command("dpkg -V audit | grep -v 'auditd.conf' | grep -v 'default/auditd' | grep -v 'audit.rules' | grep -v 'syslog.conf' | grep '^..5'") do
+      its (:stdout) { should be_empty }
     end
   end
 
@@ -329,6 +412,27 @@ EOF
 
   context 'ensure ypserv is not installed (stig: V-38603)' do
     describe package('nis') do
+      it { should_not be_installed }
+    end
+  end
+
+  context 'ensure snmp is not installed (stig: V-38660) (stig: V-38653)' do
+    describe package('snmp') do
+      it { should_not be_installed }
+    end
+  end
+
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/common-password') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+    end
+  end
+
+  context 'ensure whoopsie and apport are not installed (CIS-4.1)' do
+    describe package('apport') do
+      it { should_not be_installed }
+    end
+    describe package('whoopsie') do
       it { should_not be_installed }
     end
   end

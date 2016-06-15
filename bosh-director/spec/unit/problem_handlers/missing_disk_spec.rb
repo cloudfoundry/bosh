@@ -32,9 +32,13 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
   describe 'resolutions' do
     describe 'delete_disk_reference' do
+      let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
+      let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+
       before do
         Bosh::Director::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snapshot-cid')
         allow(agent_client).to receive(:list_disk).and_return({})
+        allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
       end
 
       def self.it_ignores_cloud_disk_errors

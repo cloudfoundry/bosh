@@ -28,8 +28,6 @@ module Bosh::Director
           )
         end
 
-        before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-        let(:event_log) { Bosh::Director::EventLog::Log.new }
         let(:cloud) {double('cloud')}
 
         before do
@@ -96,14 +94,14 @@ module Bosh::Director
 
               before do
                 allow(LogsFetcher).to receive(:new).
-                  with(event_log, be_a(Api::InstanceManager), log_bundles_cleaner, logger).
+                  with(be_a(Api::InstanceManager), log_bundles_cleaner, logger).
                   and_return(logs_fetcher)
               end
               let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(planner, deployment_job, cloud, event_log, logger).
+                  with(planner, deployment_job, cloud, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do
@@ -116,7 +114,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(deployment_job, result_file, be_a(Api::InstanceManager), event_log, logs_fetcher).
+                  with(deployment_job, result_file, be_a(Api::InstanceManager), logs_fetcher).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }

@@ -21,13 +21,13 @@ describe Bosh::Director::EventLog::Log do
 
   it 'supports tracking parallel events without being thread safe' +
      '(since stages can start in the middle of other stages)' do
-    event_log.begin_stage(:prepare, 5)
+    stage = event_log.begin_stage(:prepare, 5)
     threads = []
 
     5.times do |i|
       threads << Thread.new do
         sleep(rand()/5)
-        event_log.track(i) { sleep(rand()/5) }
+        stage.advance_and_track(i) { sleep(rand()/5) }
       end
     end
 
@@ -70,21 +70,10 @@ describe Bosh::Director::EventLog::Log do
     expect(events.size).to eq(6)
   end
 
-  it 'has a default stage of unknown' do
-    event_log.track(:task1)
-
-    events = sent_events
-    expect(events.size).to eq(2)
-    expect(events.map { |e| e['total'] }).to eq([0,0])
-    expect(events.map { |e| e['index'] }).to eq([1,1])
-    expect(events.map { |e| e['stage'] }).to eq(['unknown', 'unknown'])
-    expect(events.map { |e| e['state'] }).to eq(['started', 'finished'])
-  end
-
   it 'issues deprecation warnings' do
     time = Time.now
     Timecop.freeze(time) do
-      event_log.warn_deprecated('warning message')
+      event_log.warn_deprecated('deprecation message')
     end
 
     expect(sent_events).to eq(
@@ -92,6 +81,23 @@ describe Bosh::Director::EventLog::Log do
         {
           'time' => time.to_i,
           'type' => 'deprecation',
+          'message' => 'deprecation message',
+        }
+      ],
+    )
+  end
+
+  it 'issues generic warnings' do
+    time = Time.now
+    Timecop.freeze(time) do
+      event_log.warn('warning message')
+    end
+
+    expect(sent_events).to eq(
+      [
+        {
+          'time' => time.to_i,
+          'type' => 'warning',
           'message' => 'warning message',
         }
       ],

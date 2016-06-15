@@ -64,49 +64,53 @@ module Bosh::Director
 
           addon_jobs = safe_property(addon_spec, 'jobs', :class => Array, :default => [])
 
-          addon_jobs.each do |job|
-            if !@release_specs.find { |release_spec| release_spec['name'] == job['release'] }
+          addon_jobs.each do |addon_job|
+            if !@release_specs.find { |release_spec| release_spec['name'] == addon_job['release'] }
               raise RuntimeReleaseNotListedInReleases,
-                    "Runtime manifest specifies job '#{job['name']}' which is defined in '#{job['release']}', but '#{job['release']}' is not listed in the releases section."
+                    "Runtime manifest specifies job '#{addon_job['name']}' which is defined in '#{addon_job['release']}', but '#{addon_job['release']}' is not listed in the releases section."
             end
 
             if @deployment
               valid_release_versions = @deployment.releases.map {|r| r.name }
               deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
-              deployment_jobs = @deployment.jobs
+              deployment_jobs = @deployment.instance_groups
 
-              templates_from_model = Models::Template.where(:name => job['name'], :release_id => deployment_release_ids)
+              templates_from_model = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
               if templates_from_model == nil
-                raise "Job '#{job['name']}' not found in Template table"
+                raise "Job '#{addon_job['name']}' not found in Template table"
               end
 
-              release = @deployment.release(job['release'])
+              release = @deployment.release(addon_job['release'])
               release.bind_model
 
-              template = DeploymentPlan::Template.new(release, job['name'])
+              template = DeploymentPlan::Template.new(release, addon_job['name'])
 
               deployment_jobs.each do |j|
                 templates_from_model.each do |template_from_model|
                   if template_from_model.consumes != nil
                     template_from_model.consumes.each do |consumes|
-                      template.add_link_info(j.name, 'consumes', consumes["name"], consumes)
+                      template.add_link_from_release(j.name, 'consumes', consumes["name"], consumes)
                     end
                   end
                   if template_from_model.provides != nil
                     template_from_model.provides.each do |provides|
-                      template.add_link_info(j.name, 'provides', provides["name"], provides)
+                      template.add_link_from_release(j.name, 'provides', provides["name"], provides)
                     end
                   end
                 end
 
-                provides_links = safe_property(job, 'provides', class: Hash, optional: true)
+                provides_links = safe_property(addon_job, 'provides', class: Hash, optional: true)
                 provides_links.to_a.each do |link_name, source|
-                  template.add_link_info(j.name, "provides", link_name, source)
+                  template.add_link_from_manifest(j.name, "provides", link_name, source)
                 end
 
-                consumes_links = safe_property(job, 'consumes', class: Hash, optional: true)
+                consumes_links = safe_property(addon_job, 'consumes', class: Hash, optional: true)
                 consumes_links.to_a.each do |link_name, source|
-                  template.add_link_info(j.name, 'consumes', link_name, source)
+                  template.add_link_from_manifest(j.name, 'consumes', link_name, source)
+                end
+
+                if addon_job.has_key?('properties')
+                  template.add_template_scoped_properties(addon_job['properties'], j.name)
                 end
               end
 
@@ -122,11 +126,20 @@ module Bosh::Director
         end
       end
 
-      def merge_addon(job, templates, properties)
+      def merge_addon(job, addon_jobs, properties)
+        # iterate through deployment plan instance group jobs and see if any of them are the
+        # same name as the addon_job, if they are throw an error, otherwise add to instance group
         if job.templates
-          job.templates.concat(templates)
+          job.templates.each do |job_template|
+            addon_jobs.each do |addon_job_template|
+              if addon_job_template.name == job_template.name
+                raise "Colocated job '#{addon_job_template.name}' is already added to the instance group '#{job.name}'."
+              end
+            end
+          end
+          job.templates.concat(addon_jobs)
         else
-          job.templates = templates
+          job.templates = addon_jobs
         end
 
         if properties

@@ -179,6 +179,7 @@ module Bosh::Director
   JobUnknownAvailabilityZone = err(140018)
   JobAmbiguousEnv = err(140019)
   JobBothInstanceGroupAndJob = err(140020)
+  JobInstanceIgnored = err(140021)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
@@ -226,6 +227,8 @@ module Bosh::Director
   DeploymentDuplicateAvailabilityZoneName = err(190017)
   DeploymentInvalidMigratedFromJob = err(190018)
   DeploymentInvalidResourceSpecification = err(190019)
+  DeploymentIgnoredInstancesModification = err(190020)
+  DeploymentIgnoredInstancesDeletion = err(190021)
 
   DiskTypeInvalidDiskSize = err(200001)
 

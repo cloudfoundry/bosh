@@ -58,10 +58,9 @@ else
     tar xvfz rsyslog-8.15.0.tar.gz
     cd rsyslog-8.15.0
     ./configure --enable-mmjsonparse --enable-gnutls --enable-relp --prefix=/usr
-    make && make install
+    make && sudo make install
   "
 fi
 
-
-exclusions="postfix"
+exclusions="postfix whoopsie apport"
 pkg_mgr purge --auto-remove $exclusions

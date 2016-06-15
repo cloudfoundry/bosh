@@ -17,6 +17,10 @@ gem 'mysql2'
 gem 'pg'
 EOF
 
+if [ "`uname -m`" == "ppc64le" ]; then
+    $bundle_cmd config build.nokogiri '--use-system-libraries'
+fi
+
 $bundle_cmd config build.mysql2 \
 --with-mysql-config=$mysqlclient_dir/bin/mariadb_config \
 

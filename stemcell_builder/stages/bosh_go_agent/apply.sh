@@ -58,7 +58,9 @@ chown root:vcap /etc/at.allow
 chmod -R 0700 /etc/sv/agent
 chown -R root:root /etc/sv/agent
 
-chmod -R 0700 /etc/sv/monit
+# monit processes will inherit this directory as the default $PWD, so make sure processes can read/list
+# some scripts/packages might do this during startup and would potentially fail
+chmod -R 0755 /etc/sv/monit
 chown -R root:root /etc/sv/monit
 
 chmod 0600 /var/vcap/monit/alerts.monitrc

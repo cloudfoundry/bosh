@@ -26,7 +26,7 @@ case "$DB" in
     '
     ;;
   *)
-    echo $"Usage: DB={mysql|postgresql} $0 {commands}"
+    echo "Usage: DB={mysql|postgresql} $0 {commands}"
     exit 1
 esac
 
@@ -41,9 +41,4 @@ bundle install --local
 
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
-# For running all integration specs
 bundle exec rake --trace go spec:integration
-
-## For running individual specs
-#bundle exec rake spec:integration:install_dependencies
-#bundle exec rspec spec/integration/FILENAME:LINE_NUMBER

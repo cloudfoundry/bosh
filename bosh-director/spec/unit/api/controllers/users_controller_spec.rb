@@ -9,22 +9,7 @@ module Bosh::Director
       subject(:app) { described_class.new(config) }
       let(:config) { Config.load_hash(test_config) }
 
-      let(:temp_dir) { Dir.mktmpdir }
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-
-      after { FileUtils.rm_rf(temp_dir) }
+      let(:test_config) { SpecHelper.spec_get_director_config }
 
       context 'when user management via API is supported' do
         before { test_config.delete('user_management') }

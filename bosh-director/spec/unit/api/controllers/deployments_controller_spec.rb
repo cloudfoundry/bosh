@@ -8,24 +8,8 @@ module Bosh::Director
 
       subject(:app) { described_class.new(config) }
 
-      let(:temp_dir) { Dir.mktmpdir }
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-
-
       let(:config) do
-        config = Config.load_hash(test_config)
+        config = Config.load_hash(SpecHelper.spec_get_director_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
@@ -50,8 +34,6 @@ module Bosh::Director
         App.new(config)
         basic_authorize 'admin', 'admin'
       end
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       describe 'the date header' do
         it 'is present' do
@@ -93,7 +75,7 @@ module Bosh::Director
         end
 
         describe 'updating a deployment' do
-          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+          let!(:deployment) { Models::Deployment.create(:name => 'my-test-deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
 
           context 'without the "skip_drain" param' do
             it 'does not skip draining' do
@@ -132,10 +114,29 @@ module Bosh::Director
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_excluding('skip_drain'))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'))
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
+            end
+          end
+
+          context 'sets `new` option' do
+            it 'to false' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false))
+                          .and_return(OpenStruct.new(:id => 1))
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            end
+
+            it 'to true' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true))
+                          .and_return(OpenStruct.new(:id => 1))
+               Models::Deployment.first.delete
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
           end
 
@@ -200,9 +201,11 @@ module Bosh::Director
             it_behaves_like 'change state'
           end
 
+          let(:deployment) do
+            Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+          end
+
           it 'allows putting the job instance into different resurrection_paused values' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
@@ -211,9 +214,21 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
+          it 'allows putting the job instance into different ignore state' do
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
+            expect(instance.ignore).to be(false)
+            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(instance.reload.ignore).to be(true)
+
+            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => false), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(instance.reload.ignore).to be(false)
+          end
+
           it 'gives a nice error when uploading non valid manifest' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
@@ -226,9 +241,7 @@ module Bosh::Director
           end
 
           it 'should not validate body content when content.length is zero' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            instance = Models::Instance.
+            Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
 
@@ -238,13 +251,12 @@ module Bosh::Director
           end
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
-            deployment = Models::Deployment.create(:name => 'foo')
+            deployment
             put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect(last_response.status).to eq(400)
           end
 
           it 'can get job information' do
-            deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', uuid: 'fake_uuid', state: 'started')
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
@@ -266,6 +278,32 @@ module Bosh::Director
           it 'should return 404 if the instance cannot be found' do
             get '/foo/jobs/nats/0', {}
             expect(last_response.status).to eq(404)
+          end
+
+          context 'with a "canaries" param' do
+            it 'overrides the canaries value from the manifest' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                  .with(anything(), anything(), anything(), anything(), anything(), hash_including('canaries'=>'42') )
+                  .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?canaries=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with a "max_in_flight" param' do
+            it 'overrides the "max_in_flight" value from the manifest' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                      .with(anything(), anything(), anything(), anything(), anything(), hash_including('max_in_flight'=>'42') )
+                      .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?max_in_flight=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
           end
 
           describe 'draining' do
@@ -630,6 +668,16 @@ module Bosh::Director
               expect(last_response).not_to be_redirect
             end
           end
+
+          context 'when there are only ignored vms' do
+
+            it 'does not call the resurrector' do
+              Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: false, ignore: true)
+
+              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+              expect(last_response).not_to be_redirect
+            end
+          end
         end
 
         describe 'snapshots' do
@@ -776,7 +824,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
-                    'fake-dep-name'
+                    deployment
                   ).and_return(task)
 
                   perform({})
@@ -788,7 +836,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
-                    'fake-dep-name'
+                    deployment
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
@@ -863,6 +911,28 @@ module Bosh::Director
               expect(JSON.parse(last_response.body)['diff']).to eq([])
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
             end
+
+            context 'when cloud config exists' do
+              let(:manifest_hash) { {'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+
+              it 'ignores cloud config if network section exists' do
+                Models::Deployment.create(
+                  :name => 'fake-dep-name-no-cloud-conf',
+                  :manifest => Psych.dump(manifest_hash),
+                  cloud_config: nil,
+                  runtime_config: runtime_config
+                )
+
+                Models::CloudConfig.make(manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
+
+                manifest_hash['networks'] = [{'name'=> 'network2'}]
+                diff = post '/fake-dep-name-no-cloud-conf/diff', Psych.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
+
+                expect(diff).not_to match /very-cloudy-network/
+                expect(diff).to match /non-cloudy-network/
+                expect(diff).to match /network2/
+              end
+            end
           end
 
           context 'accessing with invalid credentials' do
@@ -886,13 +956,15 @@ module Bosh::Director
           release_version.add_template(template2)
         end
 
-        let!(:owned_deployment) { Models::Deployment.create(:name => 'owned_deployment', teams:'dev', manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
-        let!(:other_deployment) { Models::Deployment.create(:name => 'other_deployment', teams:'other', manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
+        let(:dev_team) { Models::Team.create(:name => 'dev') }
+        let(:other_team) { Models::Team.create(:name => 'other') }
+        let!(:owned_deployment) { Models::Deployment.create_with_teams(:name => 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
+        let!(:other_deployment) { Models::Deployment.create_with_teams(:name => 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
         describe 'when a user has dev team admin membership' do
 
           before {
-            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started)
-            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started)
+            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C')
+            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6')
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']
@@ -970,6 +1042,15 @@ module Bosh::Director
             end
             it 'denies access to other deployment' do
               expect(put('/other_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/instance_groups/:instancegroup/:id/ignore' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/instance_groups/dea/F0753566-CA8E-4B28-AD63-7DB3903CD98C/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
+            end
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/instance_groups/dea/72652FAA-1A9C-4803-8423-BBC3630E49C6/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
             end
           end
 

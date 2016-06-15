@@ -11,7 +11,7 @@ module Bosh::Dev
 
     describe ".release_version" do
       it "is the 2.x Ruby version defined by the BOSH release" do
-        expect(RubyVersion.release_version).to eq('2.1.7')
+        expect(RubyVersion.release_version).to eq('2.3.1')
       end
     end
 

@@ -122,16 +122,24 @@ module Bosh::Director
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
         networks_hash = template_hash['networks']
-        networks_hash_with_dns = networks_hash.each_pair do |network_name, network_settings|
+        modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
           if @full_spec['job'] != nil
             settings_with_dns = network_settings.merge({'dns_record_name' => @dns_manager.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
             networks_hash[network_name] = settings_with_dns
+          end
+
+          if network_settings['type'] == 'dynamic'
+            # Templates may get rendered before we know dynamic IPs from the Agent.
+            # Use valid IPs so that templates don't have to write conditionals around nil values.
+            networks_hash[network_name]['ip'] ||= '127.0.0.1'
+            networks_hash[network_name]['netmask'] ||= '127.0.0.1'
+            networks_hash[network_name]['gateway'] ||= '127.0.0.1'
           end
         end
 
         template_hash.merge({
         'resource_pool' => @full_spec['vm_type']['name'],
-        'networks' => networks_hash_with_dns
+        'networks' => modified_networks_hash
         })
       end
     end

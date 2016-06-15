@@ -1,0 +1,2 @@
+INSERT INTO release_versions (id, version, release_id, commit_hash, uncommitted_changes) VALUES (2, '255.3', 2, '640a2667', true);
+INSERT INTO release_versions (id, version, release_id, commit_hash, uncommitted_changes) VALUES (6, '0+dev.1', 6, '42e18a63', true);

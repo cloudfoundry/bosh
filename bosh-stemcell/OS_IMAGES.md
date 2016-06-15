@@ -7,6 +7,58 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `slli9tCdcowcNw_RLLCXvfjOb8BtDoZO`
+  - update for CIS tests
+  - built from develop (239b2b63773277363eb104309fd3de601f8bec4e)
+
+* `oPXNdD8b5WwJXZZQBEYmdIVT1.Om7z2T`
+  - update nginx to 1.11.1
+  - built from develop (1af67b94cad42ff2133e383afd6d174721253dbc)
+
+* `ApGJBfSesa7VFhEu3RLRTIqiL1R7E_3J`
+  - update for CIS tests
+  - built from develop (3dfd04cd65c73a01e2f2f1b7310a33687ab27111)
+
+* `odCwzNL6fL14dOpN4SLDwru.6_LCooLl`
+  - USN-2977-1: Linux kernel (Vivid HWE) vulnerability
+  - built from develop (ce8e1284890e0079923f26533c0e0f7f6c5b6a0e)
+
+* `YsMYRqAqNEpQPA1bNtE26bg3zH6eR9qP`
+  - periodic bump with rsyslog reload changes
+  - built from develop (15a4ef77db335b186d183323f5a1f6819c35bdce)
+
+* `IstSjjYJuckEZbTJZ9wcV12hYiX2Nzca`
+  - bumped for USN-2959-1: OpenSSL vulnerabilities
+  - built from develop (95f5d9cc816f934db64a80188cf0c9e80ab15dda)
+
+* `GvyJwqBPjPEYBVCYrUHp0R7qJUHcTJGD`
+  - includes gov1 STIGs
+  - built from develop (4bc83146a59ddca85d4a56868e520f938dc84843)
+
+* `zABsJmjq2gQgXzmDmAA7ONmkzNeM4ujN`
+  - periodic bump to include STIGs
+  - built from develop (a6d4a075ad2c58a629fbc9225d75d67cb4c1cd8a)
+
+* `tH3RcRee0EKRX7RMmELCMEfXXq0ulnik`
+  - periodic bump to include STIGs
+  - built from develop (51750c70da03484321c7c72346742de257bf2fa5)
+
+* `0M3jbAU705ItzZKPdmh6kxRJR38fmvcf`
+  - bumped for libpcre3_1:8.31-2ubuntu2.1 vulnerability
+  - built from master (d2f73ee7636f2325bf6998670228682d194627c9)
+
+* `sLe0Rz_sFs0Uy2DcZ9Xf3KQG0QsuUXos`
+  - periodic bump to include STIGs
+  - built from develop (da0fda1f8bb8ee4c63e64a549bfe3727a6ac5b69)
+
+* `C3YA77iYjAp4OazIG8ZTi7AtPVC6pOY2`
+  - periodic bump to include STIGs
+  - built from develop (c6c341baee219b90935430ef120f52fce668f496)
+
+* `djw1b9mXYwbOSDPGJoFLktHLv79kbcz_`
+  - periodic bump to include STIGs
+  - built from develop (597cbcd96e631678f7d66c31e39a2ac7ddc6c89d)
+
 * `w02UF1DU9KaAxqxP_LcLiBp0P1.cZh3T`
   - periodic bump to include STIGs
   - built from develop (7437419b800cdaf2a163fc5606ec360032f37a28)
@@ -385,6 +437,50 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `mu3VdBNY3e3ebBZuBZpqs5owfD3GuiI3`
+  - update for CIS tests
+  - built from develop (239b2b63773277363eb104309fd3de601f8bec4e)
+
+* `NIy8pyhN76gikcaqacX40uxB.ePoKNKJ`
+  - update nginx to 1.11.1
+  - built from develop (1af67b94cad42ff2133e383afd6d174721253dbc)
+
+* `WTOHgTn21GfhCJIvxY8BLEk0BXJEG7rO`
+  - update for CIS tests
+  - built from develop (3dfd04cd65c73a01e2f2f1b7310a33687ab27111)
+
+* `UGbyeTxZ1vpbhzmbSmCovLpOLRDCPd4W`
+  - periodic bump with rsyslog reload changes
+  - built from develop (15a4ef77db335b186d183323f5a1f6819c35bdce)
+
+* `pYgqTvtvYYhvVwsK1YChI_Y.p3ob5XW1`
+  - periodic bump
+  - built from develop (95f5d9cc816f934db64a80188cf0c9e80ab15dda)
+
+* `sNzzvPR7ZvX8gBdSKLIgLxaR4KNGLoWM`
+  - includes gov1 STIGs
+  - built from develop (4bc83146a59ddca85d4a56868e520f938dc84843)
+
+* `eppMU7odtc6EZpvt9ZTSxtGnBAQIhKTH`
+  - periodic bump to fix auditd STIG
+  - built from develop (a6d4a075ad2c58a629fbc9225d75d67cb4c1cd8a)
+
+* `.zprWlSz4bwjb0Te0boPm1yCSegMsoWw`
+  - periodic bump to include STIGs
+  - built from develop (51750c70da03484321c7c72346742de257bf2fa5)
+
+* `PmZTYI7LCLzSwbhTgfVf7eaBsMVccM8G`
+  - periodic bump to include STIGs
+  - built from develop (da0fda1f8bb8ee4c63e64a549bfe3727a6ac5b69)
+
+* `EOEnizgLvRMNOR26NDC9bPKvz5UYO6s9`
+  - periodic bump to include STIGs
+  - built from develop (c6c341baee219b90935430ef120f52fce668f496)
+
+* `CjpfolQ0s2ngCK4wJYgLFv3v6uT4Oc0.`
+  - periodic bump to include STIGs
+  - built from develop (597cbcd96e631678f7d66c31e39a2ac7ddc6c89d)
 
 * `UCkAP0ZnLPtOIBjuhhz5TdKSM9wb3BPn`
   - periodic bump

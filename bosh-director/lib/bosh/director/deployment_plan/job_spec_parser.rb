@@ -16,7 +16,7 @@ module Bosh::Director
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [DeploymentPlan::Job] Job as build from job_spec
-      def parse(job_spec)
+      def parse(job_spec, options = {})
         @job_spec = job_spec
         @job = Job.new(@logger)
 
@@ -35,7 +35,10 @@ module Bosh::Director
         parse_resource_pool
         check_remove_dev_tools
 
-        parse_update_config
+        parse_options = {}
+        parse_options['canaries'] = options['canaries'] if options['canaries']
+        parse_options['max_in_flight'] = options['max_in_flight'] if options['max_in_flight']
+        parse_update_config(parse_options)
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
         @job.networks = networks
@@ -165,23 +168,23 @@ module Bosh::Director
 
             if current_template_model.consumes != nil
               current_template_model.consumes.each do |consumes|
-                template.add_link_info(@job.name,'consumes', consumes["name"], consumes)
+                template.add_link_from_release(@job.name,'consumes', consumes["name"], consumes)
               end
             end
             if current_template_model.provides != nil
               current_template_model.provides.each do |provides|
-                template.add_link_info(@job.name, 'provides', provides["name"], provides)
+                template.add_link_from_release(@job.name, 'provides', provides["name"], provides)
               end
             end
 
             provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
             provides_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, "provides", link_name, source)
+              template.add_link_from_manifest(@job.name, "provides", link_name, source)
             end
 
             consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
             consumes_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, 'consumes', link_name, source)
+              template.add_link_from_manifest(@job.name, 'consumes', link_name, source)
             end
 
             if template_spec.has_key?("properties")
@@ -201,8 +204,7 @@ module Bosh::Director
         @job.templates.each do |template|
           if all_names.count(template.name) > 1
             raise JobInvalidTemplates,
-                  "Colocated job template '#{template.name}' has the same name in multiple releases. " +
-                  "BOSH cannot currently colocate two job templates with identical names from separate releases."
+                  "Colocated job '#{template.name}' is already added to the instance group '#{@job.name}'"
           end
         end
       end
@@ -325,9 +327,9 @@ module Bosh::Director
         @job.env = Env.new(env_hash)
       end
 
-      def parse_update_config
+      def parse_update_config(parse_options)
         update_spec = safe_property(@job_spec, "update", class: Hash, optional: true)
-        @job.update = UpdateConfig.new(update_spec, @deployment.update)
+        @job.update = UpdateConfig.new((update_spec || {}).merge(parse_options), @deployment.update)
       end
 
       def parse_desired_instances(availability_zones, networks)

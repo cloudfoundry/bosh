@@ -107,7 +107,7 @@ module Bosh::Director::Models
         described_class.create(name: 'fake-name', value: 'fake-uuid')
         expect {
           described_class.create(name: 'fake-name', value: 'other-fake-uuid')
-        }.to raise_error(Sequel::DatabaseError, /(column name is not unique|UNIQUE constraint failed)/)
+        }.to raise_error(Sequel::DatabaseError, /(duplicate key value|Duplicate entry|column name is not unique|UNIQUE constraint failed)/)
       end
     end
   end

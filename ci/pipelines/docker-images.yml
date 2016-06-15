@@ -1,0 +1,73 @@
+jobs:
+  - name: build-compiled-release
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: compiled-release-image
+        params:
+          build: "bosh-src/ci/docker/compiled-release"
+        get_params:
+          skip_download: true
+
+  - name: build-main
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: main-image
+        params:
+          build: "bosh-src/ci/docker/main"
+        get_params:
+          skip_download: true
+
+  - name: build-main-ruby-go
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: main-ruby-go-image
+        params:
+          build: "bosh-src/ci/docker/main-ruby-go"
+        get_params:
+          skip_download: true
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: {{branch}}
+      paths:
+        - "ci/docker"
+
+  - name: compiled-release-image
+    type: docker-image
+    source:
+      repository: bosh/compiled-release
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-image
+    type: docker-image
+    source:
+      repository: bosh/main
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-ruby-go-image
+    type: docker-image
+    source:
+      repository: bosh/main-ruby-go
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}

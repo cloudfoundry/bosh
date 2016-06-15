@@ -41,13 +41,19 @@ run_in_bosh_chroot $chroot "
 
 # Configure /var/log directory
 filenames=( auth.log daemon.log debug kern.log lpr.log mail.err mail.info \
-              mail.log mail.warn messages syslog user.log )
+              mail.log mail.warn messages news/news.crit news/news.err \
+              news/news.notice syslog user.log )
+
+
+run_in_bosh_chroot $chroot "
+  mkdir -p /var/log/news
+"
 
 for filename in ${filenames[@]}
 do
   fullpath=/var/log/$filename
   run_in_bosh_chroot $chroot "
-    touch ${fullpath} && chown syslog:adm ${fullpath} && chmod 640 ${fullpath}
+    touch ${fullpath} && chown syslog:syslog ${fullpath} && chmod 600 ${fullpath}
   "
 done
 

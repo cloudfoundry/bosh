@@ -62,32 +62,34 @@ module Bosh
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
+            'max_in_flight' => parse_numerical_arguments(options['max_in_flight']),
+            'canaries' => parse_numerical_arguments(options['canaries'])
           }
 
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
-          global_network_resolver = GlobalNetworkResolver.new(deployment)
+          deployment_planner = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
+          global_network_resolver = GlobalNetworkResolver.new(deployment_planner, Config.director_ips, @logger)
 
-          ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
-          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
-          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(deployment_manifest, plan_options)
+          ip_provider_factory = IpProviderFactory.new(deployment_planner.using_global_networking?, @logger)
+          deployment_planner.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
+          DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(deployment_manifest, plan_options)
 
           if runtime_config
-            RuntimeManifestParser.new(@logger, deployment).parse(runtime_config.manifest)
+            RuntimeManifestParser.new(@logger, deployment_planner).parse(runtime_config.manifest)
           end
 
-          process_links(deployment)
+          process_links(deployment_planner)
 
-          DeploymentValidator.new.validate(deployment)
-          deployment
+          DeploymentValidator.new.validate(deployment_planner)
+          deployment_planner
         end
 
         def process_links(deployment)
           errors = []
 
-          deployment.jobs.each do |current_job|
+          deployment.instance_groups.each do |current_job|
             current_job.templates.each do |template|
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
                 template.link_infos[current_job.name]['consumes'].each do |name, source|
@@ -115,11 +117,11 @@ module Bosh
 
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('provides')
                 template.link_infos[current_job.name]['provides'].each do |link_name, provided_link|
-                  if provided_link['properties']
+                  if provided_link['link_properties_exported']
                     ## Get default values for this job
                     default_properties = get_default_properties(deployment, template)
 
-                    provided_link['mapped_properties'] = process_link_properties(scoped_properties, default_properties, provided_link['properties'], errors)
+                    provided_link['mapped_properties'] = process_link_properties(scoped_properties, default_properties, provided_link['link_properties_exported'], errors)
                   end
                 end
               end
@@ -130,7 +132,7 @@ module Bosh
             message = 'Unable to process links for deployment. Errors are:'
 
             errors.each do |e|
-              message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+              message = "#{message}\n   - #{e.message.gsub(/\n/, "\n     ")}"
             end
 
             raise message
@@ -168,44 +170,65 @@ module Bosh
 
         def process_link_properties(scoped_properties, default_properties, link_property_list, errors)
           mapped_properties = {}
-
-          link_property_list.each do |link_property| #list of properties
-            previous_property_in_loop = {}
-            current_property_in_loop = scoped_properties
-            mapped_properties_in_loop = mapped_properties
-
-            use_defaults = false
-            property_path = link_property.split(".")
-            property_path.each do |key|
-              if !current_property_in_loop || !current_property_in_loop.has_key?(key)
-                use_defaults = true
-              else
-                current_property_in_loop = current_property_in_loop[key]
-              end
-
-              if !mapped_properties_in_loop.has_key?(key)
-                mapped_properties_in_loop[key] = {}
-              end
-              previous_property_in_loop = mapped_properties_in_loop
-              mapped_properties_in_loop = mapped_properties_in_loop[key]
-            end
-
-            if use_defaults
-              if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
-                if default_properties['properties'][link_property].has_key?('default')
-                  previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
+            link_property_list.each do |link_property|
+              property_path = link_property.split(".")
+              result = find_property(property_path, scoped_properties)
+              if !result['found']
+                if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
+                  if default_properties['properties'][link_property].has_key?('default')
+                    mapped_properties = update_mapped_properties(mapped_properties, property_path, default_properties['properties'][link_property]['default'])
+                  else
+                    mapped_properties = update_mapped_properties(mapped_properties, property_path, nil)
+                  end
                 else
-                  previous_property_in_loop[property_path.last()] = nil
+                  e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
+                  errors.push(e)
                 end
               else
-                e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
-                errors.push(e)
+                mapped_properties = update_mapped_properties(mapped_properties, property_path, result['value'])
               end
+            end
+          return mapped_properties
+        end
+
+        def find_property(property_path, scoped_properties)
+          current_node = scoped_properties
+          property_path.each do |key|
+            if !current_node || !current_node.has_key?(key)
+              return {'found'=> false, 'value' => nil}
             else
-              previous_property_in_loop[property_path.last()] = current_property_in_loop
+              current_node = current_node[key]
+            end
+          end
+          return {'found'=> true,'value'=> current_node}
+        end
+
+        def update_mapped_properties(mapped_properties, property_path, value)
+          current_node = mapped_properties
+          property_path.each_with_index do |key, index|
+            if index == property_path.size - 1
+              current_node[key] = value
+            else
+              if !current_node.has_key?(key)
+                current_node[key] = {}
+              end
+              current_node = current_node[key]
             end
           end
           return mapped_properties
+        end
+
+        def parse_numerical_arguments arg
+          case arg
+            when nil
+              nil
+            when /%/
+              raise 'percentages not yet supported for max in flight and canary cli overrides'
+            when /\A[-+]?[0-9]+\z/
+              arg.to_i
+            else
+              raise 'cannot be converted to integer'
+          end
         end
       end
     end

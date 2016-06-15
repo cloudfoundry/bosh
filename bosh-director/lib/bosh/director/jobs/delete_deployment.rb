@@ -23,14 +23,16 @@ module Bosh::Director
         with_deployment_lock(@deployment_name) do
           deployment_model = @deployment_manager.find_by_name(@deployment_name)
 
+          fail_if_ignored_instances_found(deployment_model)
+
           ip_provider = DeploymentPlan::IpProviderFactory.new(true, logger)
 
           dns_manager = DnsManagerProvider.create
           disk_manager = DiskManager.new(@cloud, logger)
           instance_deleter = InstanceDeleter.new(ip_provider, dns_manager, disk_manager, force: @force)
-          deployment_deleter = DeploymentDeleter.new(event_log, logger, dns_manager, Config.max_threads)
+          deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, dns_manager, Config.max_threads)
 
-          vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, force: @force)
+          vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, @force, Config.enable_virtual_delete_vms)
           deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter)
           add_event(parent_id)
 
@@ -42,20 +44,31 @@ module Bosh::Director
       end
 
       private
+
       def add_event(parent_id = nil, error = nil)
-        @user  = @user ||= task_manager.find_task(task_id).username
         event  = event_manager.create_event(
             {
                 parent_id:   parent_id,
-                user:        @user,
+                user:        username,
                 action:      "delete",
                 object_type: "deployment",
                 object_name: @deployment_name,
+                deployment:  @deployment_name,
                 task:        task_id,
                 error:       error
             })
         event.id
       end
+
+      def fail_if_ignored_instances_found(deployment_model)
+        deployment_model.instances.each do |instance_model|
+          if instance_model.ignore
+            raise DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment '#{deployment_model.name}', which " +
+                'contains ignored instance(s). Operation not allowed.'
+          end
+        end
+      end
+
     end
   end
 end

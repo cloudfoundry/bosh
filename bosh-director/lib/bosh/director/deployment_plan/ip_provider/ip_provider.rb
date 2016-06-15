@@ -92,7 +92,7 @@ module Bosh::Director
         end
 
         @logger.debug('Reserving existing ips')
-        network, subnet = find_network_and_subnet_containing(reservation.ip)
+        network, subnet = find_network_and_subnet_containing(reservation.ip, reservation.network.name)
         if subnet
           @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
           reservation.resolve_network(network)
@@ -140,8 +140,12 @@ module Bosh::Director
         end
       end
 
-      def find_network_and_subnet_containing(cidr_ip)
-        @networks.values.select(&:manual?).each do |network|
+      def find_network_and_subnet_containing(cidr_ip, network_name)
+        networks = @networks.values.dup
+
+        networks.unshift(networks.find { |network| network.name == network_name }).compact!
+
+        networks.select(&:manual?).each do |network|
           subnet = network.subnets.find { |subnet| subnet.is_reservable?(cidr_ip) }
           return [network, subnet] if subnet
         end

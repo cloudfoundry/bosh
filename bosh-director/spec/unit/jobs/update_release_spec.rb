@@ -370,20 +370,6 @@ module Bosh::Director
         end
       end
 
-      describe 'event_log' do
-        it 'prints that release was created' do
-          allow(Config.event_log).to receive(:begin_stage).and_call_original
-          expect(Config.event_log).to receive(:begin_stage).with('Release has been created', 1)
-          job.perform
-        end
-
-        it 'prints name and version' do
-          allow(Config.event_log).to receive(:track).and_call_original
-          expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
-          job.perform
-        end
-      end
-
       context 'when manifest contains jobs' do
         let(:manifest_jobs) do
           [
@@ -504,7 +490,14 @@ module Bosh::Director
       end
     end
 
-    describe 'rebasing release' do
+    # mysql2 seems to have an issue when starting a thread inside a transaction
+    # after the thread exits, the connection isn't immediately reaped and when
+    # the example wrapper tries to disconnect from the database it sees
+    # "connection is still in use <Thread .... dead>". Additionally, when debugging
+    # we didn't see any of the transaction data inside of the thread suggesting the
+    # thread's connection was outside the scope of the transaction.
+    # so... we're ignoring these tests which rely on that behavior...
+    describe 'rebasing release', :if => ENV['DB'] != 'mysql' do
       let(:manifest) do
         {
           'name' => 'appcloud',
@@ -754,7 +747,7 @@ module Bosh::Director
       end
 
       it 'performs the rebase if same release is being rebased twice' do
-        Config.configure(Psych.load(spec_asset('test-director-config.yml')))
+        Config.configure(SpecHelper.spec_get_director_config)
         @job.perform
 
         @release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)

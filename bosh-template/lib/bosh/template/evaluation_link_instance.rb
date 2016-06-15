@@ -11,14 +11,16 @@ module Bosh
       attr_reader :az
       attr_reader :address
       attr_reader :properties
+      attr_reader :bootstrap
 
-      def initialize(name, index, id, az, address, properties)
+      def initialize(name, index, id, az, address, properties, bootstrap)
         @name = name
         @index = index
         @id = id
         @az = az
         @address = address
         @properties = properties
+        @bootstrap = bootstrap
       end
 
       def p(*args)

@@ -1,4 +1,3 @@
-user vcap;
 worker_processes <%= p('director.nginx.workers') %>;
 daemon off;
 
@@ -12,6 +11,12 @@ events {
 http {
   include      /var/vcap/jobs/director/config/mime.types;
   default_type text/html;
+
+  client_body_temp_path /var/vcap/data/director/tmp/client_body;
+  proxy_temp_path /var/vcap/data/director/tmp/proxy;
+  fastcgi_temp_path /var/vcap/data/director/tmp/fastcgi;
+  uwsgi_temp_path /var/vcap/data/director/tmp/uwsgi;
+  scgi_temp_path /var/vcap/data/director/tmp/scgi;
 
   server_names_hash_max_size     512;
   server_names_hash_bucket_size  64;
@@ -74,7 +79,7 @@ http {
         upload_resumable on;
 
         # Store files to this directory
-        upload_store /var/vcap/data/tmp/director/;
+        upload_store /var/vcap/data/director/tmp;
 
         # Allow uploaded files to be read only by user
         upload_store_access user:r;

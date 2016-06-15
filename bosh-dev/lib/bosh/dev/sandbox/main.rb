@@ -163,6 +163,7 @@ module Bosh::Dev::Sandbox
         enable_post_deploy: @enable_post_deploy,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
+        director_ips: @director_ips
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -264,6 +265,7 @@ module Bosh::Dev::Sandbox
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
+      @director_ips = options.fetch(:director_ips, [])
     end
 
     def certificate_path
@@ -337,7 +339,7 @@ module Bosh::Dev::Sandbox
 
     def setup_database(db_opts)
       if db_opts[:type] == 'mysql'
-        @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
+        @database = Mysql.new(@name, @logger, Bosh::Core::Shell.new, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
         # all postgres connections go through this proxy (for testing automatic reconnect)

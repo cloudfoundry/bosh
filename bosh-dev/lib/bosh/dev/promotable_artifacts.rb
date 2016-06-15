@@ -6,14 +6,28 @@ require 'bosh/dev/gem_artifact'
 
 module Bosh::Dev
   class PromotableArtifacts
-    def initialize(build, logger)
+    SKIPPABLE_ARTIFACTS = ['gems', 'release', 'stemcells'].freeze
+
+    def initialize(build, logger, opts={})
       @build = build
       @logger = logger
+      @skip = opts.fetch(:skip_artifacts, [])
+      @skip.each do |artifact|
+        unless SKIPPABLE_ARTIFACTS.include?(artifact)
+          raise "Asked to skip unknown artifact type: #{artifact}. Valid artifacts are: #{SKIPPABLE_ARTIFACTS}"
+        end
+      end
       @release = ReleaseArtifact.new(build.number, @logger)
     end
 
     def all
-      gem_artifacts + release_artifacts + stemcell_artifacts
+      artifacts = []
+
+      artifacts << gem_artifacts if include_artifact? 'gems'
+      artifacts << release_artifacts if include_artifact? 'release'
+      artifacts << stemcell_artifacts if include_artifact? 'stemcells'
+
+      artifacts.flatten
     end
 
     def release_file
@@ -22,7 +36,11 @@ module Bosh::Dev
 
     private
 
-    attr_reader :build
+    attr_reader :build, :skip
+
+    def include_artifact? name
+      !skip.include?(name)
+    end
 
     def gem_artifacts
       gem_components = GemComponents.new(build.number)

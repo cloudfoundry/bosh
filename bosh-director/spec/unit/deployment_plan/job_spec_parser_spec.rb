@@ -287,7 +287,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
-              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_link_from_manifest)
               allow(template).to receive(:add_template_scoped_properties)
             end
 
@@ -316,12 +316,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               allow(provides_template).to receive(:provided_links).and_return([provides_link])
               allow(provides_job).to receive(:templates).and_return([provides_template])
-              allow(deployment_plan).to receive(:jobs).and_return([provides_job])
+              allow(deployment_plan).to receive(:instance_groups).and_return([provides_job])
 
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
-              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_link_from_manifest)
               allow(template).to receive(:add_template_scoped_properties)
             end
 
@@ -479,8 +479,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobInvalidTemplates,
-              "Colocated job template 'fake-template-name1' has the same name in multiple releases. " +
-              "BOSH cannot currently colocate two job templates with identical names from separate releases.",
+              "Colocated job 'fake-template-name1' is already added to the instance group 'fake-job-name'",
             )
           end
         end

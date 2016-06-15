@@ -1,7 +1,7 @@
+require 'logging'
 require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
@@ -69,12 +69,12 @@ namespace :spec do
     end
 
     def run_in_parallel(test_path, options={})
-      spec_path = ENV['SPEC_PATH']
+      spec_path = ENV['SPEC_PATH'] || ''
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
       tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
       command = begin
-        if spec_path
+        if '' != spec_path
           "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
           "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
@@ -125,7 +125,7 @@ namespace :spec do
 
   namespace :unit do
     desc 'Run all unit tests for ruby components'
-    task ruby: %w(rubocop) do
+    task :ruby do
       trap('INT') { exit }
       log_dir = Dir.mktmpdir
       puts "Logging spec results in #{log_dir}"
@@ -151,6 +151,12 @@ namespace :spec do
       end
     end
 
+    desc "Run unit tests for the cpi component"
+    task :cpi do
+      trap('INT') { exit }
+      unit_exec('bosh_cpi')
+    end
+
     task(:agent) do
       # Do not use exec because this task is part of other tasks
       sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
@@ -171,16 +177,19 @@ namespace :spec do
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
     task :micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
     desc 'Run system (BATs) tests (uses existing microbosh)'
     task :existing_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
 
     desc 'Deploy microbosh for system (BATs) tests'
     task :deploy_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_bats_microbosh
     end
   end

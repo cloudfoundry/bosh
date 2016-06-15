@@ -43,6 +43,25 @@ module Bosh::Dev
 
         expect(subject.create_final).to eq('/tmp/project-release/releases/dummy-3.tgz')
       end
+
+      context 'when the BOSH_FINAL_RELEASE_VERSION env var is present' do
+        before { stub_const('ENV', 'BOSH_FINAL_RELEASE_VERSION' => '2000') }
+
+        it 'creates a dev release then creates a new final release tarball with the desired version' do
+          expect(cli_session)
+            .to receive(:run_bosh)
+                  .with('create release --force')
+                  .ordered
+
+          expect(cli_session)
+            .to receive(:run_bosh)
+                  .with('create release --force --final --with-tarball --version 2000')
+                  .ordered
+                  .and_return(create_release_output)
+
+          expect(subject.create_final).to eq('/tmp/project-release/releases/dummy-3.tgz')
+        end
+      end
     end
 
     describe '#create_dev' do

@@ -41,7 +41,7 @@ module Bosh::Director
               "Please remove instance group '#{migrated_from_job.name}'."
         end
 
-        other_jobs = @deployment_plan.jobs.reject { |job| job.name == desired_job_name }
+        other_jobs = @deployment_plan.instance_groups.reject { |job| job.name == desired_job_name }
 
         migrate_to_multiple_jobs = other_jobs.any? do |job|
           job.migrated_from.any? do |other_migrated_from_job|

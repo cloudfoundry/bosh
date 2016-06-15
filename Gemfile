@@ -51,7 +51,6 @@ group :development, :test do
   gem 'rspec-its'
   gem 'rspec-instafail'
 
-  gem 'rubocop', require: false
   gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
   gem 'webmock'
@@ -64,7 +63,7 @@ group :development, :test do
   gem 'pry'
 
   # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
-  gem 'eventmachine', '1.0.3'
+  gem 'eventmachine', '1.0.4'
 
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way

@@ -123,6 +123,23 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  # V-38498 and V-38495 are the package defaults and cannot be configured
+  context 'ensure auditd is installed and enabled (stig: V-38628) (stig: V-38631) (stig: V-38632) (stig: V-38498) (stig: V-38495)' do
+    describe package('audit') do
+      it { should be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/auditd.service') do
+      it { should be_file }
+      its(:content) { should match /^ExecStart=\/sbin\/auditd/ }
+    end
+  end
+
   context 'ensure xinetd is not installed nor enabled (stig: V-38582)' do
     describe package('xinetd') do
       it('should not be installed') { should_not be_installed }
@@ -159,4 +176,57 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'ensure audit package file have correct permissions (stig: V-38663)' do
+    describe command('rpm -V audit | grep ^.M') do
+      its (:stdout) { should be_empty }
+    end
+  end
+
+  context 'ensure audit package file have correct owners (stig: V-38664)' do
+    describe command("rpm -V audit | grep '^.....U'") do
+      its (:stdout) { should be_empty }
+    end
+  end
+
+  context 'ensure audit package file have correct groups (stig: V-38665)' do
+    describe command("rpm -V audit | grep '^......G'") do
+      its (:stdout) { should be_empty }
+    end
+  end
+
+  context 'ensure audit package file have unmodified contents (stig: V-38637)' do
+    # ignore auditd.conf, and audit.rules since we modify these files in
+    # other stigs
+    describe command("rpm -V audit | grep -v 'auditd.conf' | grep -v 'audit.rules' | grep -v 'syslog.conf' | grep '^..5'") do
+      its (:stdout) { should be_empty }
+    end
+  end
+
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/system-auth') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+    end
+  end
+
+  context 'gpgcheck must be enabled (stig: V-38483)' do
+    describe file('/etc/yum.conf') do
+      its(:content) { should match /^gpgcheck=1$/ }
+    end
+  end
+
+  context 'installed by bosh_sysctl' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      it { should be_file }
+
+      it 'must limit the ability of processes to have simultaneous write and execute access to memory. (only centos) (stig: V-38597)' do
+        should contain /^kernel.exec-shield=1$/
+      end
+    end
+  end
+
+  context 'ensure net-snmp is not installed (stig: V-38660) (stig: V-38653)' do
+    describe package('net-snmp') do
+      it { should_not be_installed }
+    end
+  end
 end

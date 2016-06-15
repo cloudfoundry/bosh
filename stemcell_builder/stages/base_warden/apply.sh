@@ -26,9 +26,17 @@ ln -s /etc/sv/ssh /etc/service/ssh
 #ln -s /proc/self/mounts /etc/mtab
 #"
 
-if grep -q -i ubuntu $chroot/etc/issue
+if grep -q -i ubuntu $chroot/etc/lsb-release
 # if this is Ubuntu stemcell
 then
+  # this version of unshare has the -p flag (trusty has an old version)
+  # this is used to launch upstart as PID 1, in tests
+  # upstart does not run in normal bosh-lite containers
+  unshare_binary=$chroot/var/vcap/bosh/bin/unshare
+  cp -f $assets_dir/unshare $unshare_binary
+  chmod +x $unshare_binary
+  chown root:root $unshare_binary
+
   # Replace /usr/sbin/service with a script which calls runit
   run_in_chroot $chroot "
   dpkg-divert --local --rename --add /usr/sbin/service
@@ -55,7 +63,18 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
     "Linux": {
       "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
-      "BindMountPersistentDisk": true
+      "BindMountPersistentDisk": true,
+      "UseDirectoryAsEphemeralDisk": true
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "/var/vcap/bosh/warden-cpi-agent-env.json"
+        }
+      ]
     }
   }
 }

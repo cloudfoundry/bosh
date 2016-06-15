@@ -7,23 +7,8 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:config) { Config.load_hash(test_config) }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) {
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      }
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       it 'requires auth' do
         get '/'
@@ -46,19 +31,6 @@ module Bosh::Director
         before(:each) { basic_authorize 'admin', 'admin' }
 
         describe 'snapshots' do
-          before do
-            deployment = Models::Deployment.make(name: 'mycloud')
-
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
-            disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
-
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1)
-            disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
-          end
-
           describe 'backup' do
             describe 'creating' do
               before { App.new(config) }

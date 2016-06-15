@@ -195,6 +195,16 @@ module Bosh::Director::Models
     timestamp   { Time.now }
   end
 
+  Team.blueprint do
+    name      { Sham.name }
+  end
+
+  LocalDnsBlob.blueprint do
+    blobstore_id { Sham.blobstore_id }
+    sha1         { Sham.sha1 }
+    created_at   { Time.new }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }

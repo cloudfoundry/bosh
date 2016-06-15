@@ -8,7 +8,7 @@ module Bosh::Director
 
       subject(:app) { described_class.new(config) }
       before { allow(Api::ResourceManager).to receive(:new) }
-      let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
       describe 'POST', '/matches' do
         def perform
@@ -79,7 +79,6 @@ module Bosh::Director
                   Models::Package.make(
                     release: release,
                     name: 'fake-pkg1',
-                    version: 'fake-pkg1-version',
                     version: 'fake-pkg1-sha',
                     fingerprint: 'fake-pkg1-fingerprint',
                   )
@@ -89,7 +88,6 @@ module Bosh::Director
                   Models::Package.make(
                     release: release,
                     name: 'fake-pkg3',
-                    version: 'fake-pkg3-version',
                     version: 'fake-pkg3-sha',
                     fingerprint: 'fake-pkg3-fingerprint',
                   )
@@ -109,7 +107,6 @@ module Bosh::Director
                   Models::Package.make(
                     release: release,
                     name: 'fake-pkg5',
-                    version: 'fake-pkg5-version',
                     version: 'fake-pkg5-sha',
                     fingerprint: 'fake-pkg5-fingerprint',
                   )
@@ -138,7 +135,6 @@ module Bosh::Director
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg1',
-                  version: 'fake-pkg1-version',
                   version: 'fake-pkg1-sha',
                   fingerprint: 'fake-pkg1-fingerprint',
                 )
@@ -146,7 +142,6 @@ module Bosh::Director
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg2',
-                  version: 'fake-pkg2-version',
                   version: 'fake-pkg2-sha',
                   fingerprint: nil, # set to nil explicitly
                 )
@@ -154,7 +149,6 @@ module Bosh::Director
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg3',
-                  version: 'fake-pkg3-version',
                   version: 'fake-pkg3-sha',
                   fingerprint: 'fake-pkg3-fingerprint',
                 )

@@ -11,8 +11,8 @@ namespace :fly do
   # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration do
-    env(DB: (ENV['DB'] || 'postgresql'))
-    execute('test-integration', '-p --tag=fly-integration')
+    env(DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
+    execute('test-integration', '-p')
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
@@ -22,6 +22,11 @@ namespace :fly do
   end
 
   private
+
+  def concourse_tag
+    tag = ENV.fetch('CONCOURSE_TAG', 'fly-integration')
+    "--tag=#{tag}" unless tag.empty?
+  end
 
   def concourse_target
     "-t #{ENV['CONCOURSE_TARGET']}" if ENV.has_key?('CONCOURSE_TARGET')
@@ -38,7 +43,7 @@ namespace :fly do
 
   def execute(task, command_options = nil)
     sh("#{env} fly #{concourse_target} sync")
-    sh("#{env} fly #{concourse_target} execute #{command_options} -x -c ci/tasks/#{task}.yml -i bosh-src=$PWD")
+    sh("#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -x -c ci/tasks/#{task}.yml -i bosh-src=$PWD")
   end
 end
 

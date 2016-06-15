@@ -18,7 +18,7 @@ module Bosh::Director
       @keep_alive = keep_alive
       blobstore = App.instance.blobstores.blobstore
       log_bundles_cleaner = LogBundlesCleaner.new(blobstore, 60 * 60 * 24 * 10, logger) # 10 days
-      @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
+      @logs_fetcher = LogsFetcher.new(@instance_manager, log_bundles_cleaner, logger)
     end
 
     def perform
@@ -29,8 +29,8 @@ module Bosh::Director
         deployment = nil
         job = nil
 
-        event_log.begin_stage('Preparing deployment', 1)
-        event_log.track('Preparing deployment') do
+        event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+        event_log_stage.advance_and_track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
           deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
           deployment.bind_models
@@ -58,7 +58,7 @@ module Bosh::Director
 
         deployment.compile_packages
 
-        runner = Errand::Runner.new(job, result_file, @instance_manager, event_log, @logs_fetcher)
+        runner = Errand::Runner.new(job, result_file, @instance_manager, @logs_fetcher)
 
         cancel_blk = lambda {
           begin
@@ -83,7 +83,7 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      job_manager = Errand::JobManager.new(deployment, job, Config.cloud, event_log, logger)
+      job_manager = Errand::JobManager.new(deployment, job, Config.cloud, logger)
 
       begin
         update_instances(job_manager)

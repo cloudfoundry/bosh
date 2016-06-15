@@ -198,7 +198,7 @@ module Bosh::Director::Api
           expect {
             remover.remove(default_type)
           }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).map(:id)
+            Bosh::Director::Models::Task.filter(:type => default_type).map(:id).sort
           }.from((2..6).to_a).to((2..6).to_a - [3])
           expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
         end
@@ -229,7 +229,7 @@ module Bosh::Director::Api
           expect {
             remover.remove(default_type)
           }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).map(:id)
+            Bosh::Director::Models::Task.filter(:type => default_type).map(:id).sort
           }.from((2..6).to_a).to((2..6).to_a - [3])
           expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
         end

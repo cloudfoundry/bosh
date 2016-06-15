@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       'Bosh::Director::DeploymentPlan::Planner',
       {
         name: 'deployment_name',
-        jobs: [provider_job]
+        instance_groups: [provider_job]
       }
     )
   }
@@ -139,14 +139,17 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'when consumes block does not have from key, and a manual configuration for link' do
-    let(:link_info) { {"name" => "link_name", "manual_config"=>{"properties"=>"yay", "instances"=>"yay"} }}
-    it 'should not parse the link and set the manual_config property' do
-      link_path.parse(link_info)
-      expect(link_path.deployment).to be_nil
-      expect(link_path.job).to be_nil
-      expect(link_path.template).to be_nil
-      expect(link_path.name).to be_nil
-      expect(link_path.manual_spec).to eq({"properties"=>"yay", "instances"=>"yay"})
+
+    context 'the configuration is valid' do
+      let(:link_info) { {"name" => "link_name", "properties"=>"yay", "instances"=>"yay" }}
+      it 'should not parse the link and set the manual_config property' do
+        link_path.parse(link_info)
+        expect(link_path.deployment).to be_nil
+        expect(link_path.job).to be_nil
+        expect(link_path.template).to be_nil
+        expect(link_path.name).to be_nil
+        expect(link_path.manual_spec).to eq({"properties"=>"yay", "instances"=>"yay"})
+      end
     end
   end
 
@@ -255,7 +258,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
           'Bosh::Director::DeploymentPlan::Planner',
           {
               name: 'deployment_name',
-              jobs: [provider_job, additional_provider_job]
+              instance_groups: [provider_job, additional_provider_job]
           }
       )
     }

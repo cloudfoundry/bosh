@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'logging'
+require 'socket'
 
 module Bosh::Director
 
@@ -31,18 +32,22 @@ module Bosh::Director
         :fix_stateful_nodes,
         :enable_snapshots,
         :max_vm_create_tries,
+        :flush_arp,
         :nats_uri,
         :default_ssh_options,
         :keep_unreachable_vms,
         :enable_post_deploy,
         :generate_vm_passwords,
         :remove_dev_tools,
+        :enable_virtual_delete_vms,
+        :local_dns,
       )
 
       attr_reader(
         :db_config,
         :ignore_missing_gateway,
         :record_events,
+        :director_ips,
       )
 
       def clear
@@ -67,6 +72,7 @@ module Bosh::Director
 
       def configure(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
+        @flush_arp = config.fetch('flush_arp', false)
 
         @base_dir = config['dir']
         FileUtils.mkdir_p(@base_dir)
@@ -156,6 +162,11 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
+        @local_dns = config.fetch('local_dns', false)
+
+        @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
+
+        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
         Bosh::Clouds::Config.configure(self)
 
