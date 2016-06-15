@@ -83,58 +83,32 @@ module Bosh::Cli
         end
         if stemcell['version'] == 'latest'
           latest_version = latest_stemcells[stemcell['name']]
-        elsif stemcell['version'] =~ /\.latest$/
-          prefix = /^(.+)\.latest$/.match(stemcell['version'])[1]
-          latest_version = latest_stemcells(prefix)[stemcell['name']]
-        else
-          latest_version = stemcell['version']
-        end
-
-        if latest_version.nil?
-          err("Unable to resolve stemcell '#{stemcell['name']}' for version '#{stemcell['version']}'.")
-        end
-
-        stemcell['version'] = latest_version
-      end
-    end
-
-    private
-
-    def director_stemcells
-      @_director_stemcells ||= @director.list_stemcells
-    end
-
-    # @return String[String]
-    def latest_stemcells(prefix = nil)
-      stemcells = director_stemcells.inject({}) do |hash, stemcell|
-        unless stemcell.is_a?(Hash) && stemcell['name'] && stemcell['version']
-          err('Invalid director stemcell list format')
-        end
-        hash[stemcell['name']] ||= []
-        hash[stemcell['name']] << stemcell['version']
-        hash
-      end
-
-      unless prefix.nil?
-        stemcells.each do | name, versions |
-          stemcells[name] = versions.select do | version |
-            version.match(/^#{prefix}[\.\-$]/)
+          if latest_version.nil?
+            err("Latest version for stemcell '#{stemcell['name']}' is unknown")
           end
+          stemcell['version'] = latest_version
         end
-      end
-
-      stemcells.inject({}) do |hash, (name, versions)|
-        version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest
-
-        unless version.nil?
-          hash[name] = version.to_s
-        end
-
-        hash
       end
     end
 
-    public
+    # @return [Array]
+    def latest_stemcells
+      @_latest_stemcells ||= begin
+        stemcells = @director.list_stemcells.inject({}) do |hash, stemcell|
+          unless stemcell.is_a?(Hash) && stemcell['name'] && stemcell['version']
+            err('Invalid director stemcell list format')
+          end
+          hash[stemcell['name']] ||= []
+          hash[stemcell['name']] << stemcell['version']
+          hash
+        end
+
+        stemcells.inject({}) do |hash, (name, versions)|
+          hash[name] = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
+          hash
+        end
+      end
+    end
 
     # @param [Hash] manifest Deployment manifest (will be modified)
     # @return [void]
@@ -143,62 +117,28 @@ module Bosh::Cli
 
       releases.each do |release|
         if release['version'] == 'latest'
-          resolved_version = latest_release_versions[release['name']]
-        elsif release['version'] =~ /\.latest$/
-          director_release = director_releases.detect { |director_release| director_release['name'] == release['name'] }
-
-          if director_release
-            prefix = /^(.+)\.latest$/.match(release['version'])[1]
-
-            resolved_version = latest_release_versions_for_release(director_release, prefix)
+          latest_release_version = latest_release_versions[release['name']]
+          unless latest_release_version
+            err("Release '#{release['name']}' not found on director. Unable to resolve 'latest' alias in manifest.")
           end
-        else
-          resolved_version = release['version']
+          release['version'] = latest_release_version
         end
-
-        unless resolved_version
-          err("Unable to resolve release '#{release['name']}' for version '#{release['version']}'.")
-        end
-
-        release['version'] = resolved_version
       end
     end
-
-    private
-
-    def latest_release_versions_for_release(release, prefix = nil)
-      versions = release['versions'] || release['release_versions'].map { |release_version| release_version['version'] }
-
-      unless prefix.nil?
-        versions = versions.select { |release_version| release_version.match(/^#{prefix}[\.\-$]/) }
-      end
-
-      if versions.length == 0
-        return nil
-      end
-
-      parsed_versions = versions.map do |version|
-        {
-          original: version,
-          parsed: Bosh::Common::Version::ReleaseVersion.parse(version)
-        }
-      end
-      latest_version = parsed_versions.sort_by { |v| v[:parsed] }.last[:original]
-      return latest_version.to_s
-    end
-
-    def director_releases
-      @_director_releases ||= begin
-        @director.list_releases
-      end
-    end
-
-    public
 
     def latest_release_versions
       @_latest_release_versions ||= begin
-        director_releases.inject({}) do |hash, release|
-          hash[release['name']] = latest_release_versions_for_release(release)
+        @director.list_releases.inject({}) do |hash, release|
+          name = release['name']
+          versions = release['versions'] || release['release_versions'].map { |release_version| release_version['version'] }
+          parsed_versions = versions.map do |version|
+            {
+              original: version,
+              parsed: Bosh::Common::Version::ReleaseVersion.parse(version)
+            }
+          end
+          latest_version = parsed_versions.sort_by { |v| v[:parsed] }.last[:original]
+          hash[name] = latest_version.to_s
           hash
         end
       end
