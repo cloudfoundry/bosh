@@ -52,6 +52,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: nil
         )
         allow(instance_plan).to receive(:changed?) { false }
+        allow(instance_plan).to receive(:should_be_ignored?) { false }
         allow(instance_plan).to receive(:changes) { [] }
         allow(instance_plan).to receive(:persist_current_spec)
         [instance_plan]
@@ -71,6 +72,29 @@ describe Bosh::Director::JobUpdater do
       end
     end
 
+    context 'when instance plans should be ignored' do
+      let(:needed_instance_plans) do
+        instance_plan = BD::DeploymentPlan::InstancePlan.new(
+            instance: instance_double(BD::DeploymentPlan::Instance),
+            desired_instance: BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            existing_instance: nil
+        )
+        allow(instance_plan).to receive(:changed?) { true }
+        allow(instance_plan).to receive(:should_be_ignored?) { true }
+        allow(instance_plan).to receive(:changes) { [] }
+        allow(instance_plan).to receive(:persist_current_spec)
+        [instance_plan]
+      end
+
+      it 'should apply the insatnce plan' do
+        job_updater.update
+
+        check_event_log do |events|
+          expect(events).to be_empty
+        end
+      end
+    end
+
     context 'when job needs to be updated' do
       let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
       let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
@@ -86,6 +110,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: nil
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['dns']}
         plan
       end
@@ -96,6 +121,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['network']}
         plan
       end
@@ -106,6 +132,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { false }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { [] }
         allow(plan).to receive(:persist_current_spec)
         plan
@@ -229,6 +256,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: nil
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['dns']}
         plan
       end
@@ -239,6 +267,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['network']}
         plan
       end
@@ -249,6 +278,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['network']}
         plan
       end
@@ -259,6 +289,7 @@ describe Bosh::Director::JobUpdater do
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:should_be_ignored?) { false }
         allow(plan).to receive(:changes) { ['network']}
         plan
       end

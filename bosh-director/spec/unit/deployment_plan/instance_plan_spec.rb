@@ -605,6 +605,24 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#should_be_ignored' do
+      context 'when the instance model has ignore flag as false, default' do
+        it 'should return true' do
+          expect(instance_plan.should_be_ignored?).to eq(false)
+        end
+      end
+
+      context 'when the instance model has ignore flag as true' do
+        before do
+          instance_plan.existing_instance.update(ignore: true)
+        end
+
+        it 'should return true' do
+          expect(instance_plan.should_be_ignored?).to eq(true)
+        end
+      end
+    end
+
     context 'when there have been changes on the instance' do
       describe '#dns_changed?' do
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }

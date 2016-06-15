@@ -68,6 +68,10 @@ module Bosh
           new? ? instance.model : existing_instance
         end
 
+        def should_be_ignored?
+           !instance_model.nil? && instance_model.ignore
+        end
+
         def needs_restart?
           @instance.virtual_state == 'restart'
         end

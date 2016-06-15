@@ -87,13 +87,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
               "This operation is not allowed. You need to unignore it first."
         )
       end
-
-      it 'filters out ignored instances' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, ignore: true)
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
-
-        expect(instance_plans.count).to eq(0)
-      end
     end
 
     context 'when job has no az' do
@@ -405,119 +398,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         vip_network_plan = existing_instance_plan.network_plans.first
         expect(vip_network_plan.reservation.network).to eq(vip_network)
         expect(vip_network_plan.reservation.ip).to eq(ip_to_i('68.68.68.68'))
-      end
-    end
-  end
-
-  describe '#reject_ignored_instances_and_modify_desired_instances' do
-    context 'when the desired instances are equal to existing instances' do
-      it 'should reject the ignored instances and remove the same amount from the desired instances' do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-        existing_instance = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-
-        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance], [existing_instance], 1)
-
-        expect(new_desired_instances.length).to eq(0)
-        expect(new_existing_instances.length).to eq(0)
-      end
-
-      it 'should reject the ignored instances and remove the same amount from the desired instances' do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-        existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-        existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
-        existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name)
-
-        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances(
-          [desired_instance, desired_instance, desired_instance],
-          [existing_instance0, existing_instance1, existing_instance2],
-          2
-        )
-
-        expect(new_desired_instances.length).to eq(1)
-        expect(new_existing_instances.length).to eq(1)
-        expect(new_existing_instances.first.ignore).to eq(false)
-      end
-    end
-
-    context 'when the desired instances are greater than existing instances' do
-      it 'should reject the ignored instances and remove the same amount from the desired instances' do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-        existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-        existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name)
-
-        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances(
-          [desired_instance, desired_instance, desired_instance],
-          [existing_instance0, existing_instance1],
-          1
-        )
-
-        expect(new_desired_instances.length).to eq(2)
-        expect(new_existing_instances.length).to eq(1)
-        expect(new_existing_instances.first.ignore).to eq(false)
-      end
-    end
-
-    context 'when the desired instances are less than existing instances' do
-
-      context 'when the ignored instances are greater than desired instances' do
-        it 'should fail' do
-          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
-          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name, ignore: true)
-
-          expect {
-            instance_planner.reject_ignored_instances_and_modify_desired_instances(
-              [desired_instance, desired_instance],
-              [existing_instance0, existing_instance1, existing_instance2],
-              3
-            )
-          }.to raise_error(
-             Bosh::Director::DeploymentIgnoredInstancesModification,
-             "Instance Group 'foo-job' has 3 ignored instances." +
-                 'You requested to have 2 instances of that instance group. Deleting ignored instances is not allowed.'
-          )
-        end
-      end
-
-      context 'when the ignored instances are equal to desired instances' do
-        it 'should only keeps the ignored instances' do
-          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
-          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name, ignore: true)
-          existing_instance3 = BD::Models::Instance.make(job: 'foo-job', index: 3, availability_zone: az.name)
-
-          new_desired_instances, new_existing_instances = instance_planner.reject_ignored_instances_and_modify_desired_instances(
-              [desired_instance, desired_instance, desired_instance],
-              [existing_instance0, existing_instance1, existing_instance2, existing_instance3],
-              3
-          )
-
-          expect(new_desired_instances.length).to eq(0)
-          expect(new_existing_instances.length).to eq(1)
-          expect(new_existing_instances.first.ignore).to eq(false)
-        end
-      end
-
-      context 'when the ignored instances are less than the desired instances' do
-        it 'should keep all ignored instances inaddition to whatever is left' do
-          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
-          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
-          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name)
-          existing_instance3 = BD::Models::Instance.make(job: 'foo-job', index: 3, availability_zone: az.name)
-
-          new_desired_instances, new_existing_instances = instance_planner.reject_ignored_instances_and_modify_desired_instances(
-              [desired_instance, desired_instance, desired_instance],
-              [existing_instance0, existing_instance1, existing_instance2, existing_instance3],
-              2
-          )
-
-          expect(new_desired_instances.length).to eq(1)
-          expect(new_existing_instances.length).to eq(2)
-          expect(new_existing_instances.none?(&:ignore)).to eq(true)
-        end
       end
     end
   end

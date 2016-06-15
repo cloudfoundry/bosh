@@ -397,6 +397,75 @@ module Bosh::Director::DeploymentPlan
           end
         end
       end
+
+      describe 'when some existing instances have ignore flag as true' do
+
+        describe 'when removing an az that has ignored instances' do
+          let(:desired_azs) { [az2] }
+
+          it 'should raise' do
+            existing_0 = existing_instance_with_az(0, az1.name, [])
+            existing_0.update(ignore: true)
+            expect {
+              zone_picker.place_and_match_in([desired_instance], [existing_0])
+            }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "Instance Group '#{existing_0.job}' no longer contains AZs [\"1\"] where ignored instance(s) exist."
+          end
+        end
+
+        describe 'when not using AZs and keeping enough desired instances' do
+          let(:desired_azs) { nil }
+
+          it 'should place and match existing instances' do
+            existing_0 = existing_instance_with_az(0, nil, [])
+            existing_0.update(ignore: true)
+            results = zone_picker.place_and_match_in([desired_instance], [existing_0])
+
+            existing = results.select(&:existing?)
+            expect(existing.size).to eq(1)
+            expect(existing[0].existing_instance).to eq(existing_0)
+
+            expect(results.select(&:new?)).to be_empty
+            expect(results.select(&:obsolete?)).to eq([])
+          end
+        end
+
+        describe 'when the desired instance count drops below the number of ignored instances' do
+          let(:desired_azs) { nil }
+          it 'should raise' do
+            existing_0 = existing_instance_with_az(0, nil, [])
+            existing_0.update(ignore: true)
+            desired_instances = []
+            expect {
+              zone_picker.place_and_match_in(desired_instances, [existing_0])
+            }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
+                             "Instance Group '#{existing_0.job}' has 1 ignored instance(s). 0 instance(s) of that " +
+                                 "instance group were requested. Deleting ignored instances is not allowed."
+          end
+        end
+
+        describe 'when lowering instance count to the number of ignored instances and all ignored instances are in the same az' do
+          let(:desired_azs) { [az1,az2] }
+          it 'should not rebalance ignored instances' do
+            existing_zone1_0 = existing_instance_with_az(0, '1')
+            existing_zone1_1 = existing_instance_with_az(1, '1')
+            existing_zone2_2 = existing_instance_with_az(2, '2')
+            existing_zone2_3 = existing_instance_with_az(3, '2')
+
+            existing_zone1_0.update(ignore: true)
+            existing_zone1_1.update(ignore: true)
+
+            existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3]
+
+            results = zone_picker.place_and_match_in([desired_instance, desired_instance], existing_instances)
+            existing = results.select(&:existing?)
+            expect(results.size).to eq(4)
+            expect(existing.size).to eq(2)
+
+            obsoletes = results.select(&:obsolete?)
+            expect(obsoletes.map(&:existing_instance)).to match_array([existing_zone2_2, existing_zone2_3])
+          end
+        end
+      end
     end
   end
 end
