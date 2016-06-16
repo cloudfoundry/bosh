@@ -35,7 +35,6 @@ module Bosh::Stemcell
               :system_kernel,
               :system_kernel_modules,
               :system_ixgbevf,
-              :bosh_banners,
               :bosh_sysctl,
               :bosh_limits,
               :bosh_users,

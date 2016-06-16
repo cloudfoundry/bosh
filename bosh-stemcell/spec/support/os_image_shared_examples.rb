@@ -185,7 +185,10 @@ shared_examples_for 'every OS image' do
 
     it 'sets /etc/issue (CIS-11.1)' do
       banner = file('/etc/issue')
-      expect(banner).to contain('Authorized uses only. All activity may be monitored and reported.')
+
+      # multiline message
+      expect(banner).to contain('Unauthorized use is strictly prohibited. All access and activity')
+      expect(banner).to contain('is subject to logging and monitoring.')
       expect(banner).to be_mode('644')
       expect(banner).to be_owned_by('root')
       expect(banner).to be_grouped_into('root')
