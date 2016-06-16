@@ -34,15 +34,31 @@ if ! is_ppc64le; then
 else
   pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
 
+  function check_md5 {
+    result=`run_in_chroot ${chroot} "cd /tmp; md5sum ${1}"`
+    if [ "$result" == "$2  $1" ]; then
+      echo "Checksum is correct"
+    else
+      echo "Checksum error for $1"
+      exit 1
+    fi
+  }
+
   run_in_chroot $chroot "
     cd /tmp
-
     # on ppc64le compile from source as the .deb packages are not available
     # from the repo above
     wget http://download.rsyslog.com/liblogging/liblogging-1.0.5.tar.gz
     wget http://www.rsyslog.com/download/files/download/rsyslog/rsyslog-8.15.0.tar.gz
     wget http://download.rsyslog.com/librelp/librelp-1.2.9.tar.gz
+  "
 
+  check_md5 liblogging-1.0.5.tar.gz 44b8ce2daa1bfb84c9feaf42f9925fd7
+  check_md5 rsyslog-8.15.0.tar.gz 3fab1c48e8d8111d4cc412482e2fe39d
+  check_md5 librelp-1.2.9.tar.gz 6df8123486b6aafde90c64a0a5951892
+
+  run_in_chroot $chroot "
+    cd /tmp
     tar xvfz liblogging-1.0.5.tar.gz
     cd liblogging-1.0.5
     ./configure --disable-man-pages --prefix=/usr
@@ -59,6 +75,9 @@ else
     cd rsyslog-8.15.0
     ./configure --enable-mmjsonparse --enable-gnutls --enable-relp --prefix=/usr
     make && sudo make install
+
+    cd /tmp
+    rm -rf liblogging-* librelp-* rsyslog-*
   "
 fi
 
