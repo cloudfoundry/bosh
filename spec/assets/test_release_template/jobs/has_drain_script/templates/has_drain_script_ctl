@@ -8,7 +8,7 @@ case $1 in
     echo "test_property=<%= p('test_property') %>"
 
     <% if_p('network_name') do |net_name| %>
-      echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+      echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip.strip %>"
     <% end %>
 
     echo $$ > $PIDFILE
