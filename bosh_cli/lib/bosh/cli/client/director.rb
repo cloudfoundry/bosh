@@ -1,12 +1,12 @@
-require 'cli/core_ext'
-require 'cli/errors'
-require 'cli/cloud_config'
-require 'cli/runtime_config'
+require 'bosh/cli/core_ext'
+require 'bosh/cli/errors'
+require 'bosh/cli/cloud_config'
+require 'bosh/cli/runtime_config'
 
 require 'json'
 require 'httpclient'
 require 'base64'
-require 'cli/file_with_progress_bar'
+require 'bosh/cli/file_with_progress_bar'
 
 module Bosh
   module Cli

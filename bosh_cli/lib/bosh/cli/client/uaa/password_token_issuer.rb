@@ -1,6 +1,6 @@
 require 'uaa'
-require 'cli/client/uaa/prompt'
-require 'cli/client/uaa/access_info'
+require 'bosh/cli/client/uaa/prompt'
+require 'bosh/cli/client/uaa/access_info'
 
 module Bosh
   module Cli

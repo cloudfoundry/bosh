@@ -1,4 +1,4 @@
-require 'cli/core_ext'
+require 'bosh/cli/core_ext'
 
 module Bosh::Cli::Command
   class RuntimeConfig < Base

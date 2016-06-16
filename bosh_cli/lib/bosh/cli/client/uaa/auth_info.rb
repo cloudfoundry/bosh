@@ -1,4 +1,4 @@
-require 'cli/errors'
+require 'bosh/cli/errors'
 
 module Bosh
   module Cli

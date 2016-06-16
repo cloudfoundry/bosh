@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'cli/download_with_progress'
+require 'bosh/cli/download_with_progress'
 
 module Bosh::Cli
   describe DownloadWithProgress do

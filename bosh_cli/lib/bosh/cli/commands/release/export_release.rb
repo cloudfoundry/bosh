@@ -1,5 +1,5 @@
-require 'cli/name_version_pair'
-require 'cli/client/export_release_client'
+require 'bosh/cli/name_version_pair'
+require 'bosh/cli/client/export_release_client'
 require 'json'
 
 module Bosh::Cli::Command

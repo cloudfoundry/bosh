@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
 
-require 'cli'
+require 'bosh/cli'
 require 'fakefs/spec_helpers'
 require 'timecop'
 require 'webmock'

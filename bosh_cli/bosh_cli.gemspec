@@ -1,5 +1,5 @@
 # coding: utf-8
-require File.expand_path('../lib/cli/version', __FILE__)
+require File.expand_path('../lib/bosh/cli/version', __FILE__)
 
 version = Bosh::Cli::VERSION
 

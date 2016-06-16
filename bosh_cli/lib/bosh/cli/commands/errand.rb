@@ -1,4 +1,4 @@
-require 'cli/client/errands_client'
+require 'bosh/cli/client/errands_client'
 
 module Bosh::Cli::Command
   class Errand < Base

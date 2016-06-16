@@ -1,8 +1,8 @@
 require 'uaa'
 require 'uri'
-require 'cli/client/uaa/client_token_issuer'
-require 'cli/client/uaa/password_token_issuer'
-require 'cli/client/uaa/token_decoder'
+require 'bosh/cli/client/uaa/client_token_issuer'
+require 'bosh/cli/client/uaa/password_token_issuer'
+require 'bosh/cli/client/uaa/token_decoder'
 
 module Bosh
   module Cli
