@@ -93,7 +93,7 @@ module Bosh::Director
     end
 
     def match_resolvable_version(version)
-      /(^|(?<prefix>.+)[\._])latest$/.match(version.to_s)
+      /(^|(?<prefix>.+)\.)latest$/.match(version.to_s)
     end
   end
 end

@@ -6,7 +6,7 @@ module Bosh::Common::Version
     let(:version_list) { described_class.parse(versions) }
 
     describe '#parse' do
-      let(:versions) { ['1.0.1', '10.9-dev', '1471_2'] }
+      let(:versions) { ['1.0.1', '10.9-dev', '1471.2'] }
 
       it 'creates a new object' do
         expect(described_class.parse(versions)).to be_instance_of(described_class)
@@ -20,7 +20,7 @@ module Bosh::Common::Version
     end
 
     describe 'equals' do
-      let(:versions) { ['1.0.0', '1.0.1', '1471_2'] }
+      let(:versions) { ['1.0.0', '1.0.1', '1471.2'] }
 
       it 'supports equality comparison' do
         expect(version_list).to eq(StemcellVersionList.parse(versions))
