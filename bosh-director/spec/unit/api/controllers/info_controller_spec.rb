@@ -28,7 +28,7 @@ module Bosh::Director
           basic_authorize 'admin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
-          info_response = Yajl::Parser.parse(last_response.body)
+          info_response = JSON.parse(last_response.body)
           expect(info_response['user']).to eq('admin')
         end
 
@@ -36,7 +36,7 @@ module Bosh::Director
           basic_authorize 'notadmin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
-          info_response = Yajl::Parser.parse(last_response.body)
+          info_response = JSON.parse(last_response.body)
           expect(info_response['user']).to eq(nil)
         end
       end
@@ -78,7 +78,7 @@ module Bosh::Director
           }
         }
 
-        expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
+        expect(JSON.parse(last_response.body)).to eq(expected)
       end
 
       context 'when configured with an external CPI' do
@@ -94,7 +94,7 @@ module Bosh::Director
 
         it 'reports the cpi to be the external cpi executable path' do
           get '/'
-          expect(Yajl::Parser.parse(last_response.body)['cpi']).to eq('test-cpi')
+          expect(JSON.parse(last_response.body)['cpi']).to eq('test-cpi')
         end
       end
 
@@ -108,7 +108,7 @@ module Bosh::Director
 
         it 'reports that uaa is the authentication method and excludes the secret key' do
           get '/'
-          response_hash = Yajl::Parser.parse(last_response.body)
+          response_hash = JSON.parse(last_response.body)
           expect(response_hash['user_authentication']).to eq(
               'type' => 'uaa',
               'options' => {'url' => 'http://localhost:8080/uaa'}

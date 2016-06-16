@@ -57,7 +57,7 @@ module Bosh::Director
       describe 'API calls' do
         describe 'GET /' do
 
-          let(:parsed_body) { Yajl::Parser.parse(last_response.body) }
+          let(:parsed_body) { JSON.parse(last_response.body) }
 
           context 'when user has admin access' do
             before(:each) { basic_authorize 'admin', 'admin' }
@@ -298,7 +298,7 @@ module Bosh::Director
 
               get "/#{task.id}"
               expect(last_response.status).to eq(200)
-              task_json = Yajl::Parser.parse(last_response.body)
+              task_json = JSON.parse(last_response.body)
               expect(task_json['id']).to eq(task.id)
               expect(task_json['state']).to eq('queued')
               expect(task_json['description']).to eq('fake-description')
@@ -308,7 +308,7 @@ module Bosh::Director
 
               get "/#{task.id}"
               expect(last_response.status).to eq(200)
-              task_json = Yajl::Parser.parse(last_response.body)
+              task_json = JSON.parse(last_response.body)
               expect(task_json['id']).to eq(1)
               expect(task_json['state']).to eq('processed')
               expect(task_json['description']).to eq('fake-description')

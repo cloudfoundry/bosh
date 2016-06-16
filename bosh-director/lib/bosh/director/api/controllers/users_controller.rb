@@ -11,7 +11,7 @@ module Bosh::Director
       post '/', :consumes => [:json] do
         validate_user_management_support
 
-        user = @identity_provider.get_user_from_request(request)
+        user = @identity_provider.get_user_from_json(request.body.read)
         @identity_provider.create_user(user)
         status(204)
         nil
@@ -20,7 +20,7 @@ module Bosh::Director
       put '/:username', :consumes => [:json] do
         validate_user_management_support
 
-        user = @identity_provider.get_user_from_request(request)
+        user = @identity_provider.get_user_from_json(request.body.read)
         if user.username != params[:username]
           raise UserImmutableUsername, 'The username is immutable'
         end

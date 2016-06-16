@@ -17,7 +17,7 @@ module Bosh::Director
 
     # Publishes a payload (encoded as JSON) without expecting a response
     def send_message(client, payload)
-      message = Yajl::Encoder.encode(payload)
+      message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
       EM.schedule do
         nats.publish(client, message)
@@ -31,7 +31,7 @@ module Bosh::Director
       @lock.synchronize do
         @requests[request_id] = callback
       end
-      message = Yajl::Encoder.encode(request)
+      message = JSON.generate(request)
       @logger.debug("SENT: #{client} #{message}")
       EM.schedule do
         subscribe_inbox
@@ -85,7 +85,7 @@ module Bosh::Director
         request_id = subject.split(".").last
         callback = @lock.synchronize { @requests.delete(request_id) }
         if callback
-          message = Yajl::Parser.new.parse(message)
+          message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)
         end
       rescue Exception => e

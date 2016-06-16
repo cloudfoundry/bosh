@@ -120,7 +120,7 @@ module Bosh::Director
             active: false,
             instance: instance_model,
             size: 54,
-            cloud_properties: "cloud-props"
+            cloud_properties: {'cloud-props' => 'something'}
           )
         end
 
@@ -261,7 +261,7 @@ module Bosh::Director
                     expect(orphan_disk.availability_zone).to eq(instance_model.availability_zone)
                     expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
                     expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
-                    expect(orphan_disk.cloud_properties).to eq('cloud-props')
+                    expect(orphan_disk.cloud_properties).to eq({'cloud-props' => 'something'})
                   end
                 end
               end

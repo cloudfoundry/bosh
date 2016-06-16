@@ -42,11 +42,7 @@ module Bosh::Director
       end
 
       def encode(object)
-        if MultiJson.respond_to?(:dump) && MultiJson.respond_to?(:load)
-          MultiJson.dump object
-        else
-          MultiJson.encode object
-        end
+        JSON.generate object
       end
 
       # Given a string, returns a Ruby object.
@@ -54,12 +50,8 @@ module Bosh::Director
         return unless object
 
         begin
-          if MultiJson.respond_to?(:dump) && MultiJson.respond_to?(:load)
-            MultiJson.load object
-          else
-            MultiJson.decode object
-          end
-        rescue ::MultiJson::DecodeError => e
+          JSON.parse object
+        rescue JSON::ParserError => e
           raise DecodeException, e.message, e.backtrace
         end
       end

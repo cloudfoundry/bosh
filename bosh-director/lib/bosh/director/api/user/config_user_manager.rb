@@ -32,7 +32,7 @@ module Bosh::Director
         raise NotSupported
       end
 
-      def get_user_from_request(_)
+      def get_user_from_json(_)
         raise NotSupported
       end
     end

@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
       post '/', :consumes => :json do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         options = {
           rebase: params['rebase'] == 'true',
           fix:    params['fix'] == 'true',

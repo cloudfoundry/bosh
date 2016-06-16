@@ -154,12 +154,12 @@ module Bosh::Director
 
       put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
 
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
       end
 
       put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
       end
 
@@ -223,7 +223,7 @@ module Bosh::Director
       end
 
       get '/:deployment', authorization: :read do
-        Yajl::Encoder.encode({'manifest' => deployment.manifest})
+        JSON.generate({'manifest' => deployment.manifest})
       end
 
       get '/:deployment/vms', authorization: :read do
@@ -233,7 +233,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @deployment_manager.deployment_instances_with_vms(deployment)
-          Yajl::Encoder.encode(create_instances_response(instances))
+          JSON.generate(create_instances_response(instances))
         end
       end
 
@@ -244,7 +244,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @instance_manager.find_instances_by_deployment(deployment)
-          Yajl::Encoder.encode(create_instances_response(instances))
+          JSON.generate(create_instances_response(instances))
         end
       end
 
@@ -257,7 +257,7 @@ module Bosh::Director
       end
 
       post '/:deployment/ssh', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         task = @instance_manager.ssh(current_user, deployment, payload)
         redirect "/tasks/#{task.id}"
       end
@@ -276,13 +276,13 @@ module Bosh::Director
       end
 
       post '/:deployment/properties', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @property_manager.create_property(deployment, payload['name'], payload['value'])
         status(204)
       end
 
       put '/:deployment/properties/:property', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @property_manager.update_property(deployment, params[:property], payload['value'])
         status(204)
       end
@@ -315,12 +315,12 @@ module Bosh::Director
       end
 
       put '/:deployment/problems', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         start_task { @problem_manager.apply_resolutions(current_user, deployment, payload['resolutions']) }
       end
 
       put '/:deployment/scan_and_fix', :consumes => :json do
-        jobs_json = json_decode(request.body)['jobs']
+        jobs_json = json_decode(request.body.read)['jobs']
         payload = convert_job_instance_hash(jobs_json)
         if deployment_has_instance_to_resurrect?(deployment)
           start_task { @problem_manager.scan_and_fix(current_user, deployment, payload) }
@@ -404,7 +404,7 @@ module Bosh::Director
 
       post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
-        keep_alive = json_decode(request.body)['keep-alive'] || FALSE
+        keep_alive = json_decode(request.body.read)['keep-alive'] || FALSE
 
         task = JobQueue.new.enqueue(
           current_user,

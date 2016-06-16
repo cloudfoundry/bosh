@@ -48,7 +48,7 @@ module Bosh::Director
         end
 
         define_method :perform do
-          Yajl::Encoder.encode(@args)
+          JSON.generate(@args)
         end
       end
 
@@ -58,7 +58,7 @@ module Bosh::Director
 
       task.refresh
       expect(task.state).to eq('done')
-      expect(Yajl::Parser.parse(task.result)).to eq(['a', ['b'], {'c' => 5}])
+      expect(JSON.parse(task.result)).to eq(['a', ['b'], {'c' => 5}])
     end
 
     it 'should record the error when there is an exception' do

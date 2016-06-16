@@ -39,7 +39,7 @@ module Bosh::Director
           get '/'
 
           expect(last_response.status).to eq(200)
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
 
           expect(body.size).to eq(2)
 

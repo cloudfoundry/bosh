@@ -275,7 +275,7 @@ module Bosh::Director
               release_id: release.id,
               blobstore_id: 'postgres_package_blobstore_id',
               sha1: 'postgres_package_sha1',
-              dependency_set_json: Yajl::Encoder.encode(["ruby"]),
+              dependency_set_json: JSON.generate(["ruby"]),
           )
           package_postgres.add_compiled_package(
               sha1: 'postgres_compiled_package_sha1',

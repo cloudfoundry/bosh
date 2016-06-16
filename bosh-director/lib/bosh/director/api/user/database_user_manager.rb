@@ -40,8 +40,8 @@ module Bosh::Director
         user
       end
 
-      def get_user_from_request(request)
-        hash = Yajl::Parser.new.parse(request.body)
+      def get_user_from_json(json_user)
+        hash = JSON.parse(json_user)
         Models::User.new(:username => hash["username"],
           :password => hash["password"])
       end

@@ -22,11 +22,11 @@ module Bosh::Director::Models
     end
 
     def data
-      Yajl::Parser.parse(data_json)
+      JSON.parse(data_json)
     end
 
     def data=(raw_data)
-      self.data_json = Yajl::Encoder.encode(raw_data)
+      self.data_json = JSON.generate(raw_data)
     end
 
     def handler

@@ -36,7 +36,7 @@ module Bosh::Director
     end
 
     def parsed_result_file
-      Yajl.load(File.read(result_file_path))
+      JSON.parse(File.read(result_file_path))
     end
 
     after { FileUtils.rm_rf(result_file_path) }

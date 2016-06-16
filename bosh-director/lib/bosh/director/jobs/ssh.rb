@@ -53,7 +53,7 @@ module Bosh::Director
           end
         end
 
-        result_file.write(Yajl::Encoder.encode(ssh_info))
+        result_file.write(JSON.generate(ssh_info))
         result_file.write("\n")
 
         # task result

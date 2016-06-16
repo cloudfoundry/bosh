@@ -20,7 +20,7 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         it 'allows json body with remote stemcell location' do
-          post '/', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
+          post '/', JSON.generate('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
         end
 
@@ -33,7 +33,7 @@ module Bosh::Director
 
         context 'when a sha1 is provided' do
           it 'allows json body with remote stemcell location and sha1' do
-            post '/', Yajl::Encoder.encode({'location' => 'http://stemcell_url', 'sha1' => 'shawone'}), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate({'location' => 'http://stemcell_url', 'sha1' => 'shawone'}), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -104,7 +104,7 @@ module Bosh::Director
               perform
               expect(last_response.status).to eq(200)
 
-              body = Yajl::Parser.parse(last_response.body)
+              body = JSON.parse(last_response.body)
               expect(body).to be_an_instance_of(Array)
               expect(body.size).to eq(10)
 
@@ -127,7 +127,7 @@ module Bosh::Director
               perform
               expect(last_response.status).to eq(200)
 
-              body = Yajl::Parser.parse(last_response.body)
+              body = JSON.parse(last_response.body)
               expect(body).to be_an_instance_of(Array)
               expect(body.size).to eq(10)
 
@@ -150,7 +150,7 @@ module Bosh::Director
           it 'returns empty collection if there are no stemcells' do
             perform
             expect(last_response.status).to eq(200)
-            expect(Yajl::Parser.parse(last_response.body)).to eq([])
+            expect(JSON.parse(last_response.body)).to eq([])
           end
         end
       end

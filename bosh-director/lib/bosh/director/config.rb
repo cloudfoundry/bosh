@@ -322,7 +322,7 @@ module Bosh::Director
 
             # Lock before read to avoid director/worker race condition
             file.flock(File::LOCK_EX)
-            state = Yajl::Parser.parse(file) || {}
+            state = JSON.parse(file.read) || {}
 
             # Empty state file to prevent blocked processes from attempting to set UUID
             file.truncate(0)

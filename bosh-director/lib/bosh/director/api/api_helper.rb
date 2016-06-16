@@ -43,11 +43,11 @@ module Bosh::Director
       end
 
       def json_encode(payload)
-        Yajl::Encoder.encode(payload)
+        JSON.generate(payload)
       end
 
       def json_decode(payload)
-        Yajl::Parser.parse(payload)
+        JSON.parse(payload)
       end
 
       def start_task

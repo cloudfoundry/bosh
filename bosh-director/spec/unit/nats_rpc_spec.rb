@@ -18,7 +18,7 @@ describe Bosh::Director::NatsRpc do
       expect(nats).to receive(:subscribe).with('director.123.>')
       expect(nats).to receive(:publish) do |subject, message|
         expect(subject).to eql('test_client')
-        payload = Yajl::Parser.parse(message)
+        payload = JSON.parse(message)
         expect(payload).to eql({
           'method' => 'a',
           'arguments' => [5],

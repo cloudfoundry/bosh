@@ -25,7 +25,7 @@ module Bosh::Director
           get '/'
           expect(last_response.status).to eq(200)
 
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
           expect(body).to eq([])
         end
       end
@@ -46,7 +46,7 @@ module Bosh::Director
           get '/'
           expect(last_response.status).to eq(200)
 
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
           timeout_str = lock_timeout.strftime('%s.000000')
           expect(body).to eq([
             { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' => timeout_str },
@@ -79,7 +79,7 @@ module Bosh::Director
           get '/'
           expect(last_response.status).to eq(200)
 
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
           expect(body.first['resource']).to eq %w(test-stemcell)
           expect(body.size).to eq 1
         end
@@ -96,7 +96,7 @@ module Bosh::Director
           get '/'
           expect(last_response.status).to eq(200)
 
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
           expect(body).to eq([])
         end
       end

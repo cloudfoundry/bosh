@@ -18,11 +18,11 @@ module Bosh::Director::Models
 
     def link_spec
       result = self.link_spec_json
-      result ? Yajl::Parser.parse(result) : {}
+      result ? JSON.parse(result) : {}
     end
 
     def link_spec=(data)
-      self.link_spec_json = Yajl::Encoder.encode(data)
+      self.link_spec_json = JSON.generate(data)
     end
 
     def self.create_with_teams(attributes)

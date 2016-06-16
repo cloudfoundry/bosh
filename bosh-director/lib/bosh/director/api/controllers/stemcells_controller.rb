@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class StemcellsController < BaseController
       post '/', :consumes => :json do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         options = {
             fix: params['fix'] == 'true',
             sha1: payload['sha1']

@@ -38,7 +38,7 @@ module Bosh::Director
 
           before { authorize 'admin', 'admin' }
           it 'allows json body with remote release location' do
-            post '/', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -60,7 +60,7 @@ module Bosh::Director
             before { authorize 'reader', 'reader' }
 
             it 'returns 401' do
-              post '/', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+              post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
               expect(last_response.status).to eq(401)
             end
           end
@@ -70,7 +70,7 @@ module Bosh::Director
           before { authorize 'dev-team-member', 'dev-team-member' }
 
           it 'returns 401' do
-            post '/', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(401)
           end
         end
@@ -101,14 +101,14 @@ module Bosh::Director
                  'release_versions' => [Hash['version', '2', 'commit_hash', '0b2c3d', 'uncommitted_changes', true, 'currently_deployed', false, 'job_names', []]]}
             ]
 
-            expect(body).to eq(Yajl::Encoder.encode(expected_collection))
+            expect(body).to eq(JSON.generate(expected_collection))
           end
 
           it 'returns empty collection if there are no releases' do
             get '/', {}, {}
             expect(last_response.status).to eq(200)
 
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
             expect(body).to eq([])
           end
         end
@@ -239,7 +239,7 @@ module Bosh::Director
           it 'returns versions' do
             get '/test_release'
             expect(last_response.status).to eq(200)
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
 
             expect(body['versions'].sort).to eq((1..10).map { |i| i.to_s }.sort)
           end
@@ -253,15 +253,15 @@ module Bosh::Director
                 :version => '2',
                 :blobstore_id => '123',
                 :sha1 => '12a',
-                :consumes => 'link-consumed',
-                :provides => 'link-provided',
+                :consumes => {"link-consumed": "consumed"},
+                :provides => {"link-provided": "provided"},
             )
 
             release_version.add_template(dummy_template)
 
             get '/test_release?version=1'
             expect(last_response.status).to eq(200)
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
 
             dummy_template_result = body['jobs'][0]
             expect(dummy_template_result['name']).to eq('dummy_template')

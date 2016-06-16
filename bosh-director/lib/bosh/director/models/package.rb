@@ -10,11 +10,11 @@ module Bosh::Director::Models
     def dependency_set
       json = self.dependency_set_json
 
-      ::Set.new(json ? Yajl::Parser.parse(json) : nil)
+      ::Set.new(json ? JSON.parse(json) : nil)
     end
 
     def dependency_set=(deps)
-      self.dependency_set_json = Yajl::Encoder.encode(deps.to_a)
+      self.dependency_set_json = JSON.generate(deps.to_a)
     end
 
     def validate

@@ -47,7 +47,7 @@ module Bosh::Director
           get '/'
 
           expect(last_response.status).to eq(200)
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
 
           expect(body.size).to eq(2)
 
@@ -73,7 +73,7 @@ module Bosh::Director
               'context' => {}
             }
           ]
-          expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
+          expect(JSON.parse(last_response.body)).to eq(expected)
         end
 
         it 'returns 200 events' do
@@ -83,7 +83,7 @@ module Bosh::Director
           end
 
           get '/'
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
 
           expect(body.size).to eq(200)
           response_ids = body.map { |e| e['id'].to_i }
@@ -101,7 +101,7 @@ module Bosh::Director
 
         it 'returns a filtered list of events' do
           get '?deployment=name'
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
           expect(events.size).to eq(1)
           expect(events[0]['deployment']).to eq('name')
         end
@@ -116,7 +116,7 @@ module Bosh::Director
 
         it 'returns a filtered list of events' do
           get '?task=4'
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
           expect(events.size).to eq(1)
           expect(events[0]['task']).to eq('4')
         end
@@ -131,7 +131,7 @@ module Bosh::Director
 
         it 'returns a filtered list of events' do
           get '?instance=job/4'
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
           expect(events.size).to eq(1)
           expect(events[0]['instance']).to eq('job/4')
         end
@@ -152,7 +152,7 @@ module Bosh::Director
 
           it 'returns the anded results' do
             get '?instance=job/5&task=4&deployment=name&before_id=3'
-            events = Yajl::Parser.parse(last_response.body)
+            events = JSON.parse(last_response.body)
             expect(events.size).to eq(1)
             expect(events[0]['instance']).to eq('job/5')
             expect(events[0]['task']).to eq('4')
@@ -169,7 +169,7 @@ module Bosh::Director
 
           it 'returns the correct results' do
             get "?before_time=#{URI.encode(Models::Event.all[16].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.all[14].timestamp.to_s)}"
-            events = Yajl::Parser.parse(last_response.body)
+            events = JSON.parse(last_response.body)
             expect(events.size).to eq(1)
             expect(events.first['id']).to eq('16')
           end
@@ -184,7 +184,7 @@ module Bosh::Director
 
           it 'returns the correct result' do
             get "?before_id=15&after_time=#{URI.encode(Models::Event.all[12].timestamp.to_s)}"
-            events = Yajl::Parser.parse(last_response.body)
+            events = JSON.parse(last_response.body)
             expect(events.size).to eq(1)
             expect(events.first['id']).to eq('14')
           end
@@ -207,7 +207,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?before_time=#{URI.encode(Models::Event.all[201].timestamp.to_s)}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(200) # 200 limit
           response_ids = events.map { |e| e['id'].to_i }
@@ -220,7 +220,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?before_time=#{Models::Event.all[1].timestamp.to_i}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(1)
           expect(events.first['id']).to eq('1')
@@ -231,7 +231,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?before_time=#{URI.encode(Models::Event.all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(1)
           expect(events.first['id']).to eq('1')
@@ -254,7 +254,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?after_time=#{URI.encode(Models::Event.all[9].timestamp.to_s)}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(200)
           response_ids = events.map { |e| e['id'].to_i }
@@ -267,7 +267,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?after_time=#{Models::Event.all[8].timestamp.to_i}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(1)
           expect(events.first['id']).to eq('10')
@@ -278,7 +278,7 @@ module Bosh::Director
             Models::Event.make(:timestamp => timestamp+i)
           end
           get "?after_time=#{URI.encode(Models::Event.all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(1)
           expect(events.first['id']).to eq('10')
@@ -296,7 +296,7 @@ module Bosh::Director
           end
 
           get '?before_id=230'
-          events = Yajl::Parser.parse(last_response.body)
+          events = JSON.parse(last_response.body)
 
           expect(events.size).to eq(200)
           response_ids = events.map { |e| e['id'].to_i }
@@ -315,7 +315,7 @@ module Bosh::Director
           end
 
           get '?before_id=270'
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
 
           expect(body.size).to eq(200)
           response_ids = body.map { |e| e['id'].to_i }
@@ -330,7 +330,7 @@ module Bosh::Director
             end
             Models::Event.filter("id <  ?", 5).delete
             get '?before_id=4'
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
 
             expect(last_response.status).to eq(200)
             expect(body.size).to eq(0)
@@ -342,7 +342,7 @@ module Bosh::Director
             end
             get '?before_id=3'
 
-            body         = Yajl::Parser.parse(last_response.body)
+            body         = JSON.parse(last_response.body)
             response_ids = body.map { |e| e['id'] }
 
             expect(last_response.status).to eq(200)

@@ -100,7 +100,7 @@ describe Bosh::Director::ProblemHandlers::Base do
 
   it "can be queried from the model" do
     problem = Bosh::Director::Models::DeploymentProblem.
-      make(:type => "foo", :resource_id => 1, :data_json => Yajl::Encoder.encode("message" => "hello"))
+      make(:type => "foo", :resource_id => 1, :data_json => JSON.generate("message" => "hello"))
 
     expect(problem.description).to eq("hello")
     expect(problem.resolutions).to eq([ { :name => "baz", :plan => "foo baz hello" } ])

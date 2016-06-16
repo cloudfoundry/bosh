@@ -55,11 +55,15 @@ module Bosh::Director::Models
     private
 
     def object_or_nil(value)
-      value ? Yajl::Parser.parse(value) : nil
+      if value == 'null' || value == nil
+        nil
+      else
+        JSON.parse(value)
+      end
     end
 
     def json_encode(value)
-      Yajl::Encoder.encode(value)
+      value.nil? ? 'null' : JSON.generate(value)
     end
   end
 end

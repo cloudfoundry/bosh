@@ -60,7 +60,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sinatra',          '~>1.4.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
   spec.add_dependency 'thin',             '~>1.5.0'
-  spec.add_dependency 'yajl-ruby',        '~>1.2.0'
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'

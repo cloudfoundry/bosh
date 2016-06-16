@@ -95,5 +95,14 @@ module Bosh::Director
         expect(BCrypt::Password.new(user.password)).to eq('bar')
       end
     end
+
+    describe :get_user_from_json do
+      it 'should get a user' do
+        json_body = '{"username": "user", "password": "1234"}'
+        user = @user_manager.get_user_from_json(json_body)
+        expect(user.username).to eq('user')
+        expect(user.password).to eq('1234')
+      end
+    end
   end
 end

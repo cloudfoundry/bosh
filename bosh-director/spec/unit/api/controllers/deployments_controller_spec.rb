@@ -209,7 +209,7 @@ module Bosh::Director
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
-            put '/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
+            put '/foo/jobs/dea/0/resurrection', JSON.generate('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.resurrection_paused).to be(true)
           end
@@ -219,11 +219,11 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
             expect(instance.ignore).to be(false)
-            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
+            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', JSON.generate('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.ignore).to be(true)
 
-            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => false), { 'CONTENT_TYPE' => 'application/json' }
+            put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', JSON.generate('ignore' => false), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.ignore).to be(false)
           end
@@ -272,7 +272,7 @@ module Bosh::Director
                 'disks' => %w[disk_cid]
             }
 
-            expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
+            expect(JSON.parse(last_response.body)).to eq(expected)
           end
 
           it 'should return 404 if the instance cannot be found' do
@@ -288,7 +288,7 @@ module Bosh::Director
                   .with(anything(), anything(), anything(), anything(), anything(), hash_including('canaries'=>'42') )
                   .and_return(OpenStruct.new(:id => 1))
 
-              put '/foo/jobs/dea?canaries=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put '/foo/jobs/dea?canaries=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -301,7 +301,7 @@ module Bosh::Director
                       .with(anything(), anything(), anything(), anything(), anything(), hash_including('max_in_flight'=>'42') )
                       .and_return(OpenStruct.new(:id => 1))
 
-              put '/foo/jobs/dea?max_in_flight=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put '/foo/jobs/dea?max_in_flight=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -433,7 +433,7 @@ module Bosh::Director
             get '/', {}, {}
             expect(last_response.status).to eq(200)
 
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
             expect(body).to eq([
                   {
                     'name' => 'deployment-1',
@@ -479,7 +479,7 @@ module Bosh::Director
             get '/test_deployment'
 
             expect(last_response.status).to eq(200)
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
             expect(Psych.load(body['manifest'])).to eq('foo' => 'bar')
           end
         end
@@ -509,7 +509,7 @@ module Bosh::Director
             get '/test_deployment/vms'
 
             expect(last_response.status).to eq(200)
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
             expect(body.size).to eq(8)
 
             body.each_with_index do |instance_with_vm, i|
@@ -549,7 +549,7 @@ module Bosh::Director
             get '/test_deployment/instances'
 
             expect(last_response.status).to eq(200)
-            body = Yajl::Parser.parse(last_response.body)
+            body = JSON.parse(last_response.body)
             expect(body.size).to eq(15)
 
             body.each_with_index do |instance, i|
@@ -577,21 +577,21 @@ module Bosh::Director
             get '/othercloud/properties/foo'
             expect(last_response.status).to eq(404)
 
-            post '/mycloud/properties', Yajl::Encoder.encode('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/mycloud/properties', JSON.generate('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(204)
 
             get '/mycloud/properties/foo'
             expect(last_response.status).to eq(200)
-            expect(Yajl::Parser.parse(last_response.body)['value']).to eq('bar')
+            expect(JSON.parse(last_response.body)['value']).to eq('bar')
 
             get '/othercloud/properties/foo'
             expect(last_response.status).to eq(404)
 
-            put '/mycloud/properties/foo', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/properties/foo', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(204)
 
             get '/mycloud/properties/foo'
-            expect(Yajl::Parser.parse(last_response.body)['value']).to eq('baz')
+            expect(JSON.parse(last_response.body)['value']).to eq('baz')
 
             delete '/mycloud/properties/foo'
             expect(last_response.status).to eq(204)
@@ -616,19 +616,19 @@ module Bosh::Director
           it 'exposes problem managent REST API' do
             get '/mycloud/problems'
             expect(last_response.status).to eq(200)
-            expect(Yajl::Parser.parse(last_response.body)).to eq([])
+            expect(JSON.parse(last_response.body)).to eq([])
 
             post '/mycloud/scans'
             expect_redirect_to_queued_task(last_response)
 
-            put '/mycloud/problems', Yajl::Encoder.encode('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/problems', JSON.generate('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
 
             problem = Models::DeploymentProblem.
                 create(:deployment_id => deployment.id, :resource_id => 2,
                        :type => 'test', :state => 'open', :data => {})
 
-            put '/mycloud/problems', Yajl::Encoder.encode('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/problems', JSON.generate('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -646,7 +646,7 @@ module Bosh::Director
             expect(Delayed::Job).to receive(:enqueue).with(
                                         db_job)
 
-            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
+            put '/mycloud/scan_and_fix', JSON.generate('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -664,7 +664,7 @@ module Bosh::Director
                                                          ['mycloud',
                                                           [['job', 0], ['job', 1]], false])
               expect(Delayed::Job).not_to receive(:enqueue)
-              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1]}), {'CONTENT_TYPE' => 'application/json'}
+              put '/mycloud/scan_and_fix', JSON.generate('jobs' => {'job' => [0, 1]}), {'CONTENT_TYPE' => 'application/json'}
               expect(last_response).not_to be_redirect
             end
           end
@@ -674,7 +674,7 @@ module Bosh::Director
             it 'does not call the resurrector' do
               Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: false, ignore: true)
 
-              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+              put '/mycloud/scan_and_fix', JSON.generate('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
               expect(last_response).not_to be_redirect
             end
           end
