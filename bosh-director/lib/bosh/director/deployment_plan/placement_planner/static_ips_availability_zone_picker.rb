@@ -21,7 +21,14 @@ module Bosh
             desired_instances = desired_instances.dup
 
             instance_plans = place_existing_instance_plans(desired_instances, existing_instance_models)
-            place_new_instance_plans(desired_instances, instance_plans)
+            instance_plans = place_new_instance_plans(desired_instances, instance_plans)
+
+            if ignored_instances_are_obsolete?(instance_plans)
+              raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}' an attempt was made to remove a static ip"+
+                  ' that is used by an ignored instance. This operation is not allowed.'
+            end
+
+            instance_plans
           end
 
           private
@@ -230,6 +237,10 @@ module Bosh
 
           def instance_name(existing_instance_model)
             "#{existing_instance_model.job}/#{existing_instance_model.index}"
+          end
+
+          def ignored_instances_are_obsolete?(instance_plans)
+            instance_plans.select{ |i| i.obsolete? && i.should_be_ignored? }.any?
           end
         end
       end

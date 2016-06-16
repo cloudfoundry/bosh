@@ -409,6 +409,21 @@ module Bosh::Director::DeploymentPlan
                 expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.14')])
               end
+
+              context 'when the instance that was assigned that ip is in ignore state' do
+                let(:desired_instance_count) { 1 }
+                let(:static_ips) { ['192.168.1.14'] }
+
+                it 'raises an error' do
+                  existing_instances.each do |instance|
+                    instance.update(ignore: true)
+                  end
+                  expect {
+                    instance_plans
+                  }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job' an attempt was made to remove a static ip "+
+                      'that is used by an ignored instance. This operation is not allowed.'
+                end
+              end
             end
 
             context 'when static IP and AZ were changed' do
@@ -425,6 +440,16 @@ module Bosh::Director::DeploymentPlan
                 expect(existing_instance_plans.size).to eq(1)
                 expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              end
+
+              it 'raises error if removed IP belonged to an ignored instance' do
+                existing_instances.each do |instance|
+                  instance.update(ignore: true)
+                end
+                expect {
+                  instance_plans
+                }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job' an attempt was made to remove a static ip "+
+                    'that is used by an ignored instance. This operation is not allowed.'
               end
             end
           end
