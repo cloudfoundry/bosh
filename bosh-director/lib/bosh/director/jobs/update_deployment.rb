@@ -26,6 +26,10 @@ module Bosh::Director
         manifest_hash = Psych.load(manifest_text)
         logger.debug("Manifest:\n#{manifest_text}")
 
+        if Config.parse_config_values
+          manifest_hash = Bosh::Director::Jobs::Helpers::ConfigParser.parse(manifest_hash)
+        end
+
         if ignore_cloud_config?(manifest_hash)
           warning = "Ignoring cloud config. Manifest contains 'networks' section."
           logger.debug(warning)

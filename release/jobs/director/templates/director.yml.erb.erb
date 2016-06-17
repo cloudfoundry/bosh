@@ -31,6 +31,14 @@ params = {
   'flush_arp' => p('director.flush_arp'),
 }
 
+if_p('director.parse_config_values') do |parse_config_values|
+  params['parse_config_values'] = parse_config_values
+  params['config_server'] = {
+    'host' => p('director.config_server.host'),
+    'port' => p('director.config_server.port')
+  }
+end
+
 params['scheduled_jobs'] = []
 
 if_p('director.snapshot_schedule') do |snapshot_schedule|

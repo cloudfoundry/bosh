@@ -62,6 +62,21 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_groups).and_return([deployment_job])
         end
 
+        it 'replaces all config placeholders in manifest when parse_config_values flag is enabled' do
+          allow(subject).to receive(:ignore_cloud_config?).and_return(false)
+          allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(true)
+          expect(Bosh::Director::Jobs::Helpers::ConfigParser).to receive(:parse).with(YAML.load(manifest_content))
+
+          job.perform
+        end
+
+        it 'does not parse config values when parse_config_values flag is disabled' do
+          allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(false)
+          expect(Bosh::Director::Jobs::Helpers::ConfigParser).to_not receive(:parse).with(manifest_content)
+
+          job.perform
+        end
+
         it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
           expect(planner).to receive(:bind_models)
           expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
