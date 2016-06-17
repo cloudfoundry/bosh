@@ -25,8 +25,7 @@ module Bosh::Director
     def agent_client
       @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(
         @instance_model.credentials,
-        @instance_model.agent_id,
-        stop_message_timeout: @config.stop_message_timeout
+        @instance_model.agent_id
       )
     end
 

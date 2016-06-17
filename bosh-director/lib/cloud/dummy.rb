@@ -319,10 +319,6 @@ module Bosh
         JSON.parse(File.read(spec_file))
       end
 
-      def setup_dummy_nats_supervisor_with_delay(vm_cid, stop_delay = 60)
-        File.write(File.join(agent_dir_for_vm_cid(vm_cid), 'test-supervisor-settings.json'), { 'stop_delay' => stop_delay }.to_json)
-      end
-
       private
 
       def spawn_agent_process(agent_id)

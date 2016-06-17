@@ -36,7 +36,7 @@ module Bosh::Director
 
     context 'when stopping instances' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool', anything).and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 

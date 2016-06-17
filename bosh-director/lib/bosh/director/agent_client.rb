@@ -39,7 +39,6 @@ module Bosh::Director
       @client_id = client_id
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 45
-      @stop_message_timeout = options[:stop_message_timeout] || STOP_MESSAGE_TIMEOUT
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
 
@@ -132,7 +131,7 @@ module Bosh::Director
     end
 
     def stop(*args)
-      timeout = Timeout.new(@stop_message_timeout)
+      timeout = Timeout.new(STOP_MESSAGE_TIMEOUT)
       begin
         send_message_with_timeout(:stop, timeout, *args)
       rescue Exception => e
