@@ -19,8 +19,6 @@ if [ "${os_type}" == "ubuntu" ] ; then
     # Without this, auditd will read from /etc/audit/audit.rules instead
     # of /etc/audit/rules.d/*.
     sed -i 's/^USE_AUGENRULES="[Nn][Oo]"$/USE_AUGENRULES="yes"/' $chroot/etc/default/auditd
-
-    cp $assets_dir/auditd_upstart.conf $chroot/etc/init/auditd.conf
 fi
 
 if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
