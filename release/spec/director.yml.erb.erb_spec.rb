@@ -744,7 +744,7 @@ describe 'director.yml.erb.erb' do
           end
         end
 
-        context 'when the user specifies use_ssl, ssl_verify_peer, port, and host' do
+        context 'when the user specifies use_ssl, ssl_verify_peer, port, host, server_side_encryption and sse_kms_key_id' do
           before do
             deployment_manifest_fragment['properties']['blobstore'].merge!({
               'use_ssl' => false,
@@ -752,7 +752,9 @@ describe 'director.yml.erb.erb' do
               's3_signature_version' => 52,
               's3_port' => 5155,
               'host' => 'myhost.hostland.edu',
-              's3_region' => 'region'
+              's3_region' => 'region',
+              'server_side_encryption' => 'encryption',
+              'sse_kms_key_id' => 'kms-key'
             })
             deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = deployment_manifest_fragment['properties']['blobstore']
           end
@@ -768,7 +770,9 @@ describe 'director.yml.erb.erb' do
               's3_signature_version' => 52,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
-              'region' => 'region'
+              'region' => 'region',
+              'server_side_encryption' => 'encryption',
+              'sse_kms_key_id' => 'kms-key'
             })
 
             expect(parsed_yaml['compiled_package_cache']['options']).to include({
@@ -781,7 +785,9 @@ describe 'director.yml.erb.erb' do
               's3_signature_version' => 52,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
-              'region' => 'region'
+              'region' => 'region',
+              'server_side_encryption' => 'encryption',
+              'sse_kms_key_id' => 'kms-key'
             })
           end
 
@@ -814,7 +820,9 @@ describe 'director.yml.erb.erb' do
                 's3_signature_version' => 52,
                 'port' => 5155,
                 'host' => 'myhost.hostland.edu',
-                'region' => 'region'
+                'region' => 'region',
+                'server_side_encryption' => 'encryption',
+                'sse_kms_key_id' => 'kms-key'
               })
             end
 
@@ -829,6 +837,8 @@ describe 'director.yml.erb.erb' do
                     'use_ssl' => true,
                     'ssl_verify_peer' => true,
                     's3_signature_version' => 51,
+                    'server_side_encryption' => 'encryption',
+                    'sse_kms_key_id' => 'kms-key'
                   }
                 }
               end
@@ -844,7 +854,9 @@ describe 'director.yml.erb.erb' do
                   's3_signature_version' => 51,
                   'port' => 5155,
                   'host' => 'fakehost.example.com',
-                  'region' => 'region'
+                  'region' => 'region',
+                  'server_side_encryption' => 'encryption',
+                  'sse_kms_key_id' => 'kms-key'
                 })
               end
             end

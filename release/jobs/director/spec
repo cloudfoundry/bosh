@@ -265,6 +265,10 @@ properties:
     default: true
   blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  blobstore.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  blobstore.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -319,6 +323,10 @@ properties:
     default: 443
   compiled_package_cache.options.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  compiled_package_cache.options.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  compiled_package_cache.options.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
 
   ntp:
     description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
@@ -356,6 +364,10 @@ properties:
     default: true
   agent.blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  agent.blobstore.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  agent.blobstore.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:
