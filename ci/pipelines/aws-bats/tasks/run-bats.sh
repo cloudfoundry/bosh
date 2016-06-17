@@ -79,8 +79,19 @@ properties:
       security_groups: [$BAT_SECURITY_GROUP_NAME]
 EOF
 
-cd bosh-src
+# Install bats dependencies
+cd bats
+./write_gemfile
 bundle install
-bundle exec rspec --tag ~multiple_manual_networks --tag ~root_partition ../bat/spec
+
+# Install CLI from latest source
+cd ../bosh-src
+bundle install
+
+# Run bats using bats dependencies, but when it shells out use CLI from current directory (bosh-src)
+BUNDLE_GEMFILE=$PWD/../bats/Gemfile bundle exec rspec ../bats/spec --tag ~multiple_manual_networks --tag ~root_partition
+
+# Clean up
+cd ../bats
 bundle exec bosh -t $BAT_DIRECTOR login admin admin
 bundle exec bosh -n -t $BAT_DIRECTOR cleanup --all
