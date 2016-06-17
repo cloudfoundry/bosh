@@ -58,6 +58,7 @@ BATs currently supports the following tags:
   - `raw_ephemeral_storage`: BOSH agent exposes all attached instance storage to deployed jobs
   - `changing_static_ip`: `configure_networks` CPI method support [deprecated]
   - `network_reconfiguration`: `configure_networks` CPI method support [deprecated]
+  - `system_services_running`: checking if auditd, rsyslogd, cron and sshd are running
 
 Here is an example of running BATs on vSphere, skipping tests that are not applicable:
 
