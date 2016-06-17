@@ -744,16 +744,14 @@ describe 'director.yml.erb.erb' do
           end
         end
 
-        context 'when the user specifies use_ssl, ssl_verify_peer, s3_multipart_threshold, port, s3_force_path_style and host' do
+        context 'when the user specifies use_ssl, ssl_verify_peer, port, and host' do
           before do
             deployment_manifest_fragment['properties']['blobstore'].merge!({
               'use_ssl' => false,
               'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
               's3_signature_version' => 52,
               's3_port' => 5155,
               'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
               's3_region' => 'region'
             })
             deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = deployment_manifest_fragment['properties']['blobstore']
@@ -767,11 +765,9 @@ describe 'director.yml.erb.erb' do
               'secret_access_key' => 'secret',
               'use_ssl' => false,
               'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
               's3_signature_version' => 52,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
               'region' => 'region'
             })
 
@@ -782,11 +778,9 @@ describe 'director.yml.erb.erb' do
               'secret_access_key' => 'secret',
               'use_ssl' => false,
               'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
               's3_signature_version' => 52,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
               'region' => 'region'
             })
           end
@@ -801,11 +795,9 @@ describe 'director.yml.erb.erb' do
               'secret_access_key' => 'secret',
               'use_ssl' => true,
               'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
               's3_signature_version' => 52,
               'port' => 5155,
               'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
               'region' => 'region'
             })
           end
@@ -819,11 +811,9 @@ describe 'director.yml.erb.erb' do
                 'secret_access_key' => 'secret',
                 'use_ssl' => false,
                 'ssl_verify_peer' => false,
-                's3_multipart_threshold' => 123,
                 's3_signature_version' => 52,
                 'port' => 5155,
                 'host' => 'myhost.hostland.edu',
-                's3_force_path_style' => true,
                 'region' => 'region'
               })
             end
@@ -838,9 +828,7 @@ describe 'director.yml.erb.erb' do
                     'host' => 'fakehost.example.com',
                     'use_ssl' => true,
                     'ssl_verify_peer' => true,
-                    's3_force_path_style' => false,
                     's3_signature_version' => 51,
-                    's3_multipart_threshold' => 456,
                   }
                 }
               end
@@ -853,8 +841,6 @@ describe 'director.yml.erb.erb' do
                   'secret_access_key' => 'agent-secret',
                   'use_ssl' => true,
                   'ssl_verify_peer' => true,
-                  's3_force_path_style' => false,
-                  's3_multipart_threshold' => 456,
                   's3_signature_version' => 51,
                   'port' => 5155,
                   'host' => 'fakehost.example.com',

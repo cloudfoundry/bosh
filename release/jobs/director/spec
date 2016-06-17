@@ -260,15 +260,9 @@ properties:
   blobstore.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
-  blobstore.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
   blobstore.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
-  blobstore.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   blobstore.director.user:
@@ -323,12 +317,6 @@ properties:
   compiled_package_cache.options.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
-  compiled_package_cache.options.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
-  compiled_package_cache.options.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   compiled_package_cache.options.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
 
@@ -366,12 +354,6 @@ properties:
   agent.blobstore.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
-  agent.blobstore.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
-  agent.blobstore.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   agent.blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   agent.nats.address:
