@@ -79,9 +79,8 @@ properties:
       security_groups: [$BAT_SECURITY_GROUP_NAME]
 EOF
 
-cd bats
-./write_gemfile
+cd bosh-src
 bundle install
-bundle exec rspec --tag ~multiple_manual_networks --tag ~root_partition spec
-bosh -t $BAT_DIRECTOR login admin admin
-bosh -n -t $BAT_DIRECTOR cleanup --all
+bundle exec rspec --tag ~multiple_manual_networks --tag ~root_partition ../bat/spec
+bundle exec bosh -t $BAT_DIRECTOR login admin admin
+bundle exec bosh -n -t $BAT_DIRECTOR cleanup --all
