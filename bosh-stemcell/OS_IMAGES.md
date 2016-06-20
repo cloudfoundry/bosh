@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `H8wb9qIuUUJNm31lpdJ18ZqLraDdunrR`
+  - Bump OS images to fix autditd start
+  - built from 256.x (f3b9e880f8706f0d2165b54c31afa5a9995bf1cc)
+
 * `0vF4oZ2sZdrzWG91JxT3svNcm0qrlzzG`
   - Bump OS images
   - built from 256.x (cab4015d97ec03db9ee6643f0b6e32138a86c322)

@@ -31,7 +31,8 @@ module Bosh::Director::DeploymentPlan
         properties: properties)
     }
     let(:index) { 0 }
-    let(:instance) { Instance.create_from_job(job, index, 'started', plan, {}, availability_zone, logger) }
+    let(:instance_state) { {} }
+    let(:instance) { Instance.create_from_job(job, index, 'started', plan, instance_state, availability_zone, logger) }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
@@ -147,31 +148,79 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when job has dynamic network' do
-        it 'returns a valid instance template_spec' do
-          network_name = network_spec['name']
-          spec = instance_spec.as_template_spec
-          expect(spec['deployment']).to eq('fake-deployment')
-          expect(spec['name']).to eq('fake-job')
-          expect(spec['job']).to eq(job_spec)
-          expect(spec['index']).to eq(index)
-          expect(spec['networks']).to include(network_name)
+        context 'when vm does not have network ip assigned' do
+          it 'returns a valid instance template_spec' do
+            network_name = network_spec['name']
+            spec = instance_spec.as_template_spec
+            expect(spec['deployment']).to eq('fake-deployment')
+            expect(spec['name']).to eq('fake-job')
+            expect(spec['job']).to eq(job_spec)
+            expect(spec['index']).to eq(index)
+            expect(spec['networks']).to include(network_name)
 
-          expect(spec['networks'][network_name]).to include(
-                'type' => 'dynamic',
-                'dns_record_name' => '0.job.default.fake-deployment.bosh',
-                'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
-                )
+            expect(spec['networks'][network_name]).to include(
+                  'type' => 'dynamic',
+                  'ip' => '127.0.0.1',
+                  'netmask' => '127.0.0.1',
+                  'gateway' => '127.0.0.1',
+                  'dns_record_name' => '0.job.default.fake-deployment.bosh',
+                  'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
+                  )
 
-          expect(spec['persistent_disk']).to eq(0)
-          expect(spec['configuration_hash']).to be_nil
-          expect(spec['properties']).to eq(properties)
-          expect(spec['dns_domain_name']).to eq('bosh')
-          expect(spec['links']).to eq('fake-link')
-          expect(spec['id']).to eq('uuid-1')
-          expect(spec['az']).to eq('foo-az')
-          expect(spec['bootstrap']).to eq(true)
-          expect(spec['resource_pool']).to eq('fake-vm-type')
-          expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+            expect(spec['persistent_disk']).to eq(0)
+            expect(spec['configuration_hash']).to be_nil
+            expect(spec['properties']).to eq(properties)
+            expect(spec['dns_domain_name']).to eq('bosh')
+            expect(spec['links']).to eq('fake-link')
+            expect(spec['id']).to eq('uuid-1')
+            expect(spec['az']).to eq('foo-az')
+            expect(spec['bootstrap']).to eq(true)
+            expect(spec['resource_pool']).to eq('fake-vm-type')
+            expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+          end
+        end
+        context 'when vm has network ip assigned' do
+          let(:instance_state) do
+            {
+                'networks' => {
+                    'default' => {
+                        'type' => 'dynamic',
+                        'ip' => '192.0.2.19',
+                        'netmask' => '255.255.255.0',
+                        'gateway' => '192.0.2.1',
+                    }
+                }
+            }
+          end
+          it 'returns a valid instance template_spec' do
+            network_name = network_spec['name']
+            spec = instance_spec.as_template_spec
+            expect(spec['deployment']).to eq('fake-deployment')
+            expect(spec['name']).to eq('fake-job')
+            expect(spec['job']).to eq(job_spec)
+            expect(spec['index']).to eq(index)
+            expect(spec['networks']).to include(network_name)
+
+            expect(spec['networks'][network_name]).to include(
+                        'type' => 'dynamic',
+                        'ip' => '192.0.2.19',
+                        'netmask' => '255.255.255.0',
+                        'gateway' => '192.0.2.1',
+                        'dns_record_name' => '0.job.default.fake-deployment.bosh',
+                        'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
+                    )
+
+            expect(spec['persistent_disk']).to eq(0)
+            expect(spec['configuration_hash']).to be_nil
+            expect(spec['properties']).to eq(properties)
+            expect(spec['dns_domain_name']).to eq('bosh')
+            expect(spec['links']).to eq('fake-link')
+            expect(spec['id']).to eq('uuid-1')
+            expect(spec['az']).to eq('foo-az')
+            expect(spec['bootstrap']).to eq(true)
+            expect(spec['resource_pool']).to eq('fake-vm-type')
+            expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+          end
         end
       end
     end
