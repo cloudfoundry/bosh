@@ -33,7 +33,7 @@ module Bosh::Director
         object_type = options[:object_type]
         object_name = options.fetch(:object_name, nil)
         task        = options.fetch(:task, nil)
-        error       = options.fetch(:error){ |error| error ? error.to_s: nil }
+        error       = options.fetch(:error, nil)
         deployment  = options.fetch(:deployment, nil)
         instance    = options.fetch(:instance, nil)
         context     = options.fetch(:context, {})
@@ -45,7 +45,7 @@ module Bosh::Director
             action:      action,
             object_type: object_type,
             object_name: object_name,
-            error:       error,
+            error:       error ? error.to_s : nil,
             task:        task,
             deployment:  deployment,
             instance:    instance,
