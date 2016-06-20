@@ -12,8 +12,8 @@ module Bosh::Director
         events = Models::Event.order_by(Sequel.desc(:id))
 
         if params['before_id']
-          before_id = params['before_id'].to_f
-          events = events.filter("id < ?", Time.at(before_id))
+          before_id = params['before_id'].to_i
+          events = events.filter("id < ?", before_id)
         end
 
         if params['before_time']
@@ -24,7 +24,7 @@ module Bosh::Director
             body("Invalid before parameter: '#{params['before_time']}' ")
             return
           end
-          events = events.filter("id < ?", before_datetime)
+          events = events.filter("timestamp < ?", before_datetime)
         end
 
         if params['after_time']
@@ -35,7 +35,7 @@ module Bosh::Director
             body("Invalid after parameter: '#{params['after_time']}' ")
             return
           end
-          events = events.filter("id >= ?", after_datetime)
+          events = events.filter("timestamp >= ?", after_datetime)
         end
 
         if params['task']

@@ -108,20 +108,6 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
     end
 
-    describe 'db settings' do
-      context 'when db adapter is mysql2' do
-        it 'sets fractional_seconds to true' do
-          expect(parsed_yaml['db']['connection_options']['fractional_seconds']).to eq(true)
-        end
-      end
-      context 'when db adapter is not mysql2' do
-        before { deployment_manifest_fragment['properties']['director']['db']['adapter'] = 'postgres' }
-        it 'does not set fractional_seconds parameter' do
-          expect(parsed_yaml['db']['connection_options']['fractional_seconds']).to be_nil
-        end
-      end
-    end
-
     context 'when domain name specified without all other dns properties' do
       before do
         deployment_manifest_fragment['properties']['dns'] = {

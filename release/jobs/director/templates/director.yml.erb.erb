@@ -36,10 +36,6 @@ if_p('director.parse_config_values') do |parse_config_values|
   params['config_server_url'] = p('director.config_server_url')
 end
 
-if params['db']['adapter']  == 'mysql2'
-  params['db']['connection_options']['fractional_seconds'] = true
-end
-
 params['scheduled_jobs'] = []
 
 if_p('director.snapshot_schedule') do |snapshot_schedule|

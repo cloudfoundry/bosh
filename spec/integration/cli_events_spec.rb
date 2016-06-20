@@ -28,7 +28,7 @@ describe 'cli: events', type: :integration do
     expect(stable_data).to all(include('Time' => /xxx xxx xx xx:xx:xx UTC xxxx|^$/))
     expect(stable_data).to all(include('User' => /test|^$/))
     expect(stable_data).to all(include('Task' => /[0-9]{1,3}|-|^$/))
-    expect(stable_data).to all(include('ID' => /[0-9]{10}\.[0-9]{1,6} <- [0-9]{10}\.[0-9]{1,6}|[0-9]{10}\.[0-9]{1,6}|^$/))
+    expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
       {'Action' => 'delete', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},

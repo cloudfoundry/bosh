@@ -144,8 +144,8 @@ module Bosh::Director
           expect(event_1.deployment).to eq(instance_model.deployment.name)
           expect(event_1.instance).to eq(instance_model.name)
 
-          event_2 = Bosh::Director::Models::Event.all[1]
-          expect(event_2.parent_id).to eq(Bosh::Director::Models::Event.first.id)
+          event_2 = Bosh::Director::Models::Event.order(:id)[2]
+          expect(event_2.parent_id).to eq(1)
           expect(event_2.user).to eq('user')
           expect(event_2.action).to eq('create')
           expect(event_2.object_type).to eq('disk')
@@ -161,7 +161,7 @@ module Bosh::Director
             disk_manager.update_persistent_disk(instance_plan)
           }.to raise_error Exception, 'error'
 
-          event_2 = Bosh::Director::Models::Event.all[1]
+          event_2 = Bosh::Director::Models::Event.order(:id)[2]
           expect(event_2.error).to eq('error')
         end
 
@@ -387,7 +387,7 @@ module Bosh::Director
         expect(event_1.instance).to eq(instance_model.name)
 
         event_2 = Bosh::Director::Models::Event.order(:id).last
-        expect(event_2.parent_id).to eq(Bosh::Director::Models::Event.first.id)
+        expect(event_2.parent_id).to eq(1)
         expect(event_2.user).to eq('user')
         expect(event_2.action).to eq('delete')
         expect(event_2.object_type).to eq('disk')

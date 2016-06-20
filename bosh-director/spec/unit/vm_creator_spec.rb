@@ -141,8 +141,8 @@ describe Bosh::Director::VmCreator do
     expect(event_1.deployment).to eq(instance_model.deployment.name)
     expect(event_1.instance).to eq(instance_model.name)
 
-    event_2 = Bosh::Director::Models::Event.all[1]
-    expect(event_2.parent_id).to eq(Bosh::Director::Models::Event.first.id)
+    event_2 = Bosh::Director::Models::Event.order(:id)[2]
+    expect(event_2.parent_id).to eq(1)
     expect(event_2.user).to eq('user')
     expect(event_2.action).to eq('create')
     expect(event_2.object_type).to eq('vm')
@@ -158,7 +158,7 @@ describe Bosh::Director::VmCreator do
       subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
     }.to raise_error Bosh::Clouds::VMCreationFailed
 
-    event_2 = Bosh::Director::Models::Event.all[1]
+    event_2 = Bosh::Director::Models::Event.order(:id)[2]
     expect(event_2.error).to eq('Bosh::Clouds::VMCreationFailed')
   end
 

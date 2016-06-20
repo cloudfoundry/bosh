@@ -192,6 +192,7 @@ module Bosh::Director::Models
     object_type {'deployment' }
     object_name { Sham.object_name }
     user        { Sham.username }
+    timestamp   { Time.now }
   end
 
   Team.blueprint do

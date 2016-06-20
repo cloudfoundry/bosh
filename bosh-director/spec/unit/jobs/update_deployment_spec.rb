@@ -18,6 +18,7 @@ module Bosh::Director::Jobs
       allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
       Bosh::Director::App.new(config)
       allow(job).to receive(:task_id).and_return(task.id)
+      allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
     end
 
     describe '#perform' do
@@ -141,14 +142,16 @@ module Bosh::Director::Jobs
           expect(event_1.deployment).to eq('deployment-name')
           expect(event_1.object_name).to eq('deployment-name')
           expect(event_1.task).to eq("#{task.id}")
+          expect(event_1.timestamp).to eq(Time.now)
 
           event_2 = Bosh::Director::Models::Event.order(:id).last
-          expect(event_2.parent_id).to eq(Bosh::Director::Models::Event.first.id)
+          expect(event_2.parent_id).to eq(1)
           expect(event_2.user).to eq(task.username)
           expect(event_2.object_type).to eq('deployment')
           expect(event_2.deployment).to eq('deployment-name')
           expect(event_2.object_name).to eq('deployment-name')
           expect(event_2.task).to eq("#{task.id}")
+          expect(event_2.timestamp).to eq(Time.now)
         end
 
         context 'when there are releases and stemcells' do
