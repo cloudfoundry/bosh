@@ -125,7 +125,7 @@ module Bosh::Director
         end
 
         it 'should raise an exception when key is not found' do
-          expect { ConfigParser.parse(bad_manifest) }.to raise_error(/Unable to find keys \["nonexistent_name"\]/)
+          expect { ConfigParser.parse(bad_manifest) }.to raise_error(/Failed to find keys in the config server: nonexistent_name/)
         end
       end
     end

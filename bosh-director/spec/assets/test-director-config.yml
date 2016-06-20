@@ -22,10 +22,6 @@ compiled_package_cache:
   provider: local
   options:
     blobstore_path: /path/to/some/bucket
-parse_config_values: true
-config_server:
-  host: http://127.0.0.1
-  port: 9090
 snapshots:
   enabled: false
 scan_and_fix:

@@ -23,7 +23,7 @@ module Bosh::Director::Jobs
           config_values, invalid_keys = fetch_config_values(config_keys)
 
           if invalid_keys.length > 0
-            raise "Unable to find keys " + invalid_keys.to_s
+            raise "Failed to find keys in the config server: " + invalid_keys.join(", ")
           end
 
           update_manifest!(manifest, config_map, config_values)
@@ -36,7 +36,9 @@ module Bosh::Director::Jobs
           config_values = {}
 
           keys.each do |k|
-            response = Net::HTTP.get_response(config_uri(k))
+            config_server_url = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'config/', k)
+            response = Net::HTTP.get_response(config_server_url)
+            
             if response.kind_of? Net::HTTPSuccess
               config_values[k] = JSON.parse(response.body)['value']
             else
@@ -45,11 +47,6 @@ module Bosh::Director::Jobs
           end
 
           [config_values, invalid_keys]
-        end
-
-        def config_uri(key)
-          config_server_url = Bosh::Director::Config.config_server_url
-          URI('http://' + config_server_url + '/v1/config/' + key)
         end
 
         def update_manifest!(manifest, config_map, config_values)

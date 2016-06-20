@@ -50,6 +50,7 @@ module Bosh::Director
         :director_ips,
         :config_server_url,
         :parse_config_values,
+        :config_server_url,
       )
 
       def clear
@@ -173,19 +174,12 @@ module Bosh::Director
 
         @parse_config_values = config.fetch('parse_config_values', false)
         if @parse_config_values
-          config_server = config['config_server']
-
-          @config_server_host = config_server['host']
-          @config_server_port = config_server['port']
+          @config_server_url = config['config_server_url']
         end
 
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
-      end
-
-      def config_server_url
-        "#{@config_server_host}:#{@config_server_port}" if @parse_config_values
       end
 
       def log_dir

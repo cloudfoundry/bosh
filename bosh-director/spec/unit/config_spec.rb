@@ -149,16 +149,6 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe '#config_server_url' do
-    before do
-      described_class.configure(test_config)
-    end
-
-    it 'returns config server url' do
-      expect(described_class.config_server_url).to eq('http://127.0.0.1:9090')
-    end
-  end
-
   describe "#configure" do
     context "when the config specifies a file logger" do
       before { test_config["logging"]["file"] = "fake-file" }

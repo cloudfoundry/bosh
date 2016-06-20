@@ -33,10 +33,7 @@ params = {
 
 if_p('director.parse_config_values') do |parse_config_values|
   params['parse_config_values'] = parse_config_values
-  params['config_server'] = {
-    'host' => p('director.config_server.host'),
-    'port' => p('director.config_server.port')
-  }
+  params['config_server_url'] = p('director.config_server_url')
 end
 
 params['scheduled_jobs'] = []
