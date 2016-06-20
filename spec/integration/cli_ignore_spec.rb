@@ -1067,7 +1067,76 @@ describe 'ignore/unignore instance', type: :integration do
         expect(exit_code_4).to_not eq(0)
         expect(output_4).to include("Error 190020: In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
       end
+    end
+  end
 
+  context 'when changing networks configuration for instance groups containing ignored VMs' do
+    context 'when not using static ips' do
+      it 'fails when adding/removing networks from instance groups with ignored VMs' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config['azs'] = [{'name' => 'my-az1'}]
+        cloud_config['compilation']['az'] = 'my-az1'
+
+        cloud_config['networks'].first['subnets'] = [
+            {
+                'range' => '192.168.1.0/24',
+                'gateway' => '192.168.1.1',
+                'dns' => ['192.168.1.1', '192.168.1.2'],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'az' => 'my-az1'
+            }
+        ]
+
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        orig_instances = director.instances
+        expect(orig_instances.count).to eq(2)
+
+        bosh_runner.run("ignore instance #{orig_instances[0].job_name}/#{orig_instances[0].id}")
+
+        # =================================================
+        # add new network to the instance group that has ignored VM, should fail
+        cloud_config['networks'] << {
+            'name' => 'b',
+            'subnets' => [
+                {
+                    'range' => '192.168.1.0/24',
+                    'gateway' => '192.168.1.1',
+                    'dns' => ['192.168.1.1', '192.168.1.2'],
+                    'reserved' => [],
+                    'cloud_properties' => {},
+                    'az' => 'my-az1'
+                },
+            ],
+        }
+
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a', 'default' => ['dns', 'gateway']}]
+        manifest_hash['jobs'].first['networks'] << { 'name' => 'b'}
+
+        output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to_not eq(0)
+        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+
+        # =================================================
+        # remove a network from the instance group that has ignored VM, should fail
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'].first['networks'] = [{ 'name' => 'b', 'default' => ['dns', 'gateway']}]
+
+        output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to_not eq(0)
+        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+      end
+    end
+
+    context 'when using static IPs' do
       it 'does not re-assign static IPs for ignored VM, and fails when adding/removing static networks from instance groups with ignored VMs' do
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         manifest_hash['jobs'].clear

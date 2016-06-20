@@ -405,10 +405,22 @@ module Bosh::Director::DeploymentPlan
 
           it 'should raise' do
             existing_0 = existing_instance_with_az(0, az1.name, [])
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "network_A")
             existing_0.update(ignore: true)
             expect {
               zone_picker.place_and_match_in([desired_instance], [existing_0])
             }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "Instance Group '#{existing_0.job}' no longer contains AZs [\"1\"] where ignored instance(s) exist."
+          end
+        end
+
+        describe 'when adding/removing networks for instance groups with ignored vms' do
+          it 'should raise' do
+            existing_0 = existing_instance_with_az(0, az1.name, [])
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "old-network")
+            existing_0.update(ignore: true)
+            expect {
+              zone_picker.place_and_match_in([desired_instance], [existing_0])
+            }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group '#{existing_0.job}', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed."
           end
         end
 
@@ -418,6 +430,7 @@ module Bosh::Director::DeploymentPlan
           it 'should place and match existing instances' do
             existing_0 = existing_instance_with_az(0, nil, [])
             existing_0.update(ignore: true)
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "network_A")
             results = zone_picker.place_and_match_in([desired_instance], [existing_0])
 
             existing = results.select(&:existing?)
@@ -434,6 +447,8 @@ module Bosh::Director::DeploymentPlan
           it 'should raise' do
             existing_0 = existing_instance_with_az(0, nil, [])
             existing_0.update(ignore: true)
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "network_A")
+
             desired_instances = []
             expect {
               zone_picker.place_and_match_in(desired_instances, [existing_0])
@@ -450,6 +465,9 @@ module Bosh::Director::DeploymentPlan
             existing_zone1_1 = existing_instance_with_az(1, '1')
             existing_zone2_2 = existing_instance_with_az(2, '2')
             existing_zone2_3 = existing_instance_with_az(3, '2')
+
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_zone1_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "network_A")
+            Bosh::Director::Models::IpAddress.make(instance_id: existing_zone1_1.id, task_id: "my-ip-address-task-id", address: 1234567891, network_name: "network_A")
 
             existing_zone1_0.update(ignore: true)
             existing_zone1_1.update(ignore: true)

@@ -12,6 +12,8 @@ module Bosh
           end
 
           def place_and_match_in(desired_instances, existing_instance_models)
+            validate_networks_not_changed_for_ignore_vms(existing_instance_models)
+
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_models)
             desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(@desired_azs)
             @logger.debug("Desired azs: #{desired_azs_sorted.inspect}")
@@ -117,6 +119,20 @@ module Bosh
           def populate_network_plans(instance_plan)
             @networks.each do |network|
               instance_plan.network_plans << @network_planner.network_plan_with_dynamic_reservation(instance_plan, network)
+            end
+          end
+
+          def validate_networks_not_changed_for_ignore_vms(existing_instance_models)
+            existing_instance_models.each do |existing_instance_model|
+              next if !existing_instance_model.ignore
+
+              desired_networks_names = @networks.map(&:name).uniq.sort
+              existing_networks_names = existing_instance_model.ip_addresses.map(&:network_name).uniq.sort
+
+              if desired_networks_names != existing_networks_names
+                raise DeploymentIgnoredInstancesModification, "In instance group '#{existing_instance_model.job}', which contains ignored vms,"+
+                    ' an attempt was made to modify the networks. This operation is not allowed.'
+              end
             end
           end
         end
