@@ -629,6 +629,12 @@ describe Bosh::Cli::Client::Director do
       @director.delete_snapshot('foo', 'snap0a')
     end
 
+    it 'deletes vm' do
+      expect(@director).to receive(:request_and_track).
+          with(:delete, '/vms/vm_cid').and_return(true)
+      @director.delete_vm_by_cid('vm_cid')
+    end
+
     describe '#diff_deployment' do
 
       let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
