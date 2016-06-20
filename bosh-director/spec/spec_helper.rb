@@ -110,6 +110,7 @@ module SpecHelper
 
     def connect_database
       db_opts = {:max_connections => 32, :pool_timeout => 10}
+      db_opts[:fractional_seconds] = true if @director_db_helper.adapter == 'mysql2'
 
       Sequel.default_timezone = :utc
       @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)

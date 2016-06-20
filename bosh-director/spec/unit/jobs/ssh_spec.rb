@@ -31,7 +31,6 @@ module Bosh::Director
       allow(agent).to receive(:ssh).and_return({})
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Config).to receive(:record_events).and_return(true)
-      allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       Config.default_ssh_options = {'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}
       Config.result = result_file
     end
@@ -59,7 +58,6 @@ module Bosh::Director
       expect(event.instance).to eq('fake-job/fake-uuid-1')
       expect(event.task).to eq("#{task.id}")
       expect(event.context).to eq({'user' => 'user-ssh'})
-      expect(event.timestamp).to eq(Time.now)
     end
 
     it 'should store event with error' do

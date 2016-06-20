@@ -164,7 +164,7 @@ module Bosh::Director
         expect(event_1.instance).to eq('compilation-deadbeef/instance-uuid-1')
 
         event_2 = Bosh::Director::Models::Event.order(:id).last
-        expect(event_2.parent_id).to eq(1)
+        expect(event_2.parent_id).to eq(Bosh::Director::Models::Event.first.id)
         expect(event_2.user).to eq('user')
         expect(event_2.action).to eq('create')
         expect(event_2.object_type).to eq('instance')
