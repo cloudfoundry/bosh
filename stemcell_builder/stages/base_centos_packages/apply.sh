@@ -30,7 +30,7 @@ libxml2 libxml2-devel libxslt libxslt-devel \
 dhclient \
 zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
-rsync openssh-server traceroute libncurses5-dev quota \
+rsync openssh-server traceroute libncurses5-devs \
 libaio1 gdb libcap2-bin libcap-devel bzip2-devel \
 cmake sudo libuuid-devel parted NetworkManager e2fsprogs cloud-utils-growpart \
 xfsprogs"
@@ -64,5 +64,7 @@ cp $(dirname $0)/assets/rsyslog.repo ${chroot}/etc/yum.repos.d/
 pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
 run_in_chroot $chroot "yum update --assumeyes"
 
-exclusions="mlocate firewalld"
+run_in_chroot $chroot "rpm -e quota rpcbind"
+
+exclusions="mlocate firewalld rpcbind"
 pkg_mgr erase $exclusions

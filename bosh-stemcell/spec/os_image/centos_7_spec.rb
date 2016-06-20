@@ -52,7 +52,6 @@ describe 'CentOS 7 OS image', os_image: true do
       openssl-devel
       parted
       psmisc
-      quota
       readline-devel
       rpm-build
       rpmdevtools
@@ -227,6 +226,22 @@ describe 'CentOS 7 OS image', os_image: true do
   context 'ensure net-snmp is not installed (stig: V-38660) (stig: V-38653)' do
     describe package('net-snmp') do
       it { should_not be_installed }
+    end
+  end
+
+  context 'ensure rpcbind is not enabled (CIS-6.7)' do
+    describe file('/etc/init/rpcbind-boot.conf') do
+      it { should_not be_file }
+    end
+
+    describe file('/etc/init/rpcbind.conf') do
+      it { should_not be_file }
+    end
+  end
+
+  describe 'ensure nfs is not enabled (CIS-6.7)' do
+    describe command("ls /etc/rc*.d/ | grep S*nfs-kernel-server") do
+      its (:stdout) { should be_empty }
     end
   end
 end

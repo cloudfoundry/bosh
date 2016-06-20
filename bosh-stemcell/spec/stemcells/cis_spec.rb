@@ -37,6 +37,7 @@ describe 'CIS test case verification', {stemcell_image: true, cis_check: true} d
         ]
       when 'centos'
         expected_cis_test_cases = expected_base_cis_test_cases + [
+            'CIS-6.7'
         ]
       when 'rhel'
         expected_cis_test_cases = expected_base_cis_test_cases + [
