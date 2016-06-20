@@ -556,6 +556,45 @@ describe 'director.yml.erb.erb' do
       })
     end
 
+    context 'when user does neither provide url nor urls' do
+      before do
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('url')
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('urls')
+      end
+
+      it 'raises' do
+        expect { parsed_yaml }.to raise_error('UAA provider requires either url or urls key')
+      end
+    end
+
+    context 'when user does provide both url and urls' do
+      before do
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa']['urls'] = 'http://one'
+      end
+
+      it 'raises' do
+        expect { parsed_yaml }.to raise_error('UAA provider takes either url or urls key')
+      end
+    end
+
+    context 'when user provides urls' do
+      before do
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('url')
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa']['urls'] = ['http://one', 'http://two']
+      end
+
+      it 'sets only urls keys' do
+        expect(parsed_yaml['user_management']['uaa']['urls']).to eq(['http://one', 'http://two'])
+        expect(parsed_yaml['user_management']['uaa'].has_key?('url')).to be_falsey
+      end
+    end
+    context 'when user provides url' do
+      it 'sets only url keys' do
+        expect(parsed_yaml['user_management']['uaa']['url']).to eq('fake-url')
+        expect(parsed_yaml['user_management']['uaa'].has_key?('urls')).to be_falsey
+      end
+    end
+
     context 'when user does not provide UAA key' do
       before do
         deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('symmetric_key')

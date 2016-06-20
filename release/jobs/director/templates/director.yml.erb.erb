@@ -172,10 +172,25 @@ user_management = {
 
 if p('director.user_management.provider') == 'uaa'
   options = {
-    'url' => p('director.user_management.uaa.url'),
+    'url' => p('director.user_management.uaa.url', nil),
+    'urls' => p('director.user_management.uaa.urls', nil),
     'symmetric_key' => p('director.user_management.uaa.symmetric_key', nil),
     'public_key' => p('director.user_management.uaa.public_key', nil)
   }
+
+  if options['url'].nil? && options['urls'].nil?
+    raise 'UAA provider requires either url or urls key'
+  end
+
+  if options['url'] && options['urls']
+    raise 'UAA provider takes either url or urls key'
+  end
+
+  if options['url']
+    options.delete('urls')
+  elsif options['urls']
+    options.delete('url')
+  end
 
   if options['symmetric_key'].nil? && options['public_key'].nil?
     raise 'UAA provider requires symmetric or public key'

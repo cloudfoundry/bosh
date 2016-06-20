@@ -28,9 +28,38 @@ module Bosh::Director
         expect(identity_provider.client_info).to eq(
             'type' => 'uaa',
             'options' => {
-              'url' => 'http://localhost:8080/uaa'
+              'url' => 'http://localhost:8080/uaa',
+              'urls' => ['http://localhost:8080/uaa']
             }
           )
+      end
+    end
+
+    describe 'initialize' do
+      context 'if options contains url and urls' do
+        let(:provider_options) { { 'url' => 'http://one', 'urls' => ['http://one', 'http://two'] } }
+
+        it 'throws exception' do
+          expect { identity_provider }.to raise_error(ValidationExtraField)
+        end
+      end
+
+      context 'if options contain url' do
+        let(:provider_options) { { 'url' => 'http://one' } }
+
+        it 'sets url and urls in client_info' do
+          expect(identity_provider.client_info['options']['url']).to eq('http://one')
+          expect(identity_provider.client_info['options']['urls']).to eq(['http://one'])
+        end
+      end
+
+      context 'if options contain urls' do
+        let(:provider_options) { { 'urls' => ['http://one', 'http://two'] } }
+
+        it 'sets url and urls in client_info' do
+          expect(identity_provider.client_info['options']['url']).to eq('http://one')
+          expect(identity_provider.client_info['options']['urls']).to eq(['http://one', 'http://two'])
+        end
       end
     end
 

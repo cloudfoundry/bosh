@@ -84,6 +84,7 @@ module Bosh::Director
   ValidationMissingField = err(40001)
   ValidationViolatedMin = err(40002)
   ValidationViolatedMax = err(40003)
+  ValidationExtraField = err(40004)
 
   StemcellInvalidArchive = err(50000)
   StemcellImageNotFound = err(50001)

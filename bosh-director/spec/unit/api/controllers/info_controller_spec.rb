@@ -101,7 +101,7 @@ module Bosh::Director
       context 'when configured to use UAA for user management' do
         let(:test_config) { base_config.merge(
           'user_management' => {'provider' => 'uaa', 'uaa' => {
-            'url' => 'http://localhost:8080/uaa',
+            'urls' => ['http://localhost:8080/uaa'],
             'key' => 'super secret!',
           }}
         ) }
@@ -111,8 +111,32 @@ module Bosh::Director
           response_hash = JSON.parse(last_response.body)
           expect(response_hash['user_authentication']).to eq(
               'type' => 'uaa',
-              'options' => {'url' => 'http://localhost:8080/uaa'}
+              'options' => {
+                'url' => 'http://localhost:8080/uaa',
+                'urls' => ['http://localhost:8080/uaa']
+              }
             )
+        end
+
+        context 'if multiple urls are provided' do
+          let(:test_config) { base_config.merge(
+            'user_management' => {'provider' => 'uaa', 'uaa' => {
+              'urls' => ['http://localhost:8080/uaa','http://localhost:8081/uaa'],
+              'key' => 'super secret!',
+            }}
+          )}
+
+          it 'returns both and url is equals to the first element of urls' do
+            get '/'
+            response_hash = JSON.parse(last_response.body)
+            expect(response_hash['user_authentication']).to eq(
+              'type' => 'uaa',
+              'options' => {
+                'url' => 'http://localhost:8080/uaa',
+                'urls' => ['http://localhost:8080/uaa', 'http://localhost:8081/uaa']
+              }
+            )
+          end
         end
       end
     end

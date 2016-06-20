@@ -140,7 +140,9 @@ properties:
     description: 'User management implementation (local|uaa)'
     default: local
   director.user_management.uaa.url:
-    description: 'Uaa URL'
+    description: 'Uaa URL, specify either the url or the urls attribute'
+  director.user_management.uaa.urls:
+    description: 'List of Uaa URLs, specify either the url or the urls attribute'
   director.user_management.uaa.symmetric_key:
     description: 'Symmetric key to verify Uaa token'
   director.user_management.uaa.public_key:
