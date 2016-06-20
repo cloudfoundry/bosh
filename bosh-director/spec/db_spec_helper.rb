@@ -38,6 +38,7 @@ module DBSpecHelper
       @db_helper.create_db
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
+      db_opts[:fractional_seconds] = true if ENV.fetch('DB', 'sqlite') == 'mysql'
 
       @db = Sequel.connect(@db_helper.connection_string, db_opts)
     end
