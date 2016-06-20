@@ -6,6 +6,7 @@ module Bosh::Director
   describe Jobs::Backup do
     describe 'DJ job class expectations' do
       let(:job_type) { :bosh_backup }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 

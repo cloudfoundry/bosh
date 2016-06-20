@@ -3,7 +3,8 @@ module Bosh::Director
     class Ssh < BaseJob
       DEFAULT_SSH_DATA_LIFETIME = 300
       SSH_TAG = "ssh"
-      @queue = :normal
+
+      @queue = :urgent
 
       def self.job_type
         :ssh

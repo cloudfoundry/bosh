@@ -1,5 +1,4 @@
 shared_examples_for 'a DJ job' do
-  let(:queue) { :normal }
 
   describe 'described_class.job_type' do
     it 'returns a symbol representing job type' do

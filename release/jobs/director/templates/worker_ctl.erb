@@ -25,7 +25,12 @@ export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 
-export QUEUE=normal
+export QUEUE="normal,urgent"
+<% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
+if [ $INDEX -eq 1 ]; then
+  export QUEUE="urgent"
+fi
+<% end %>
 
 <% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY=<%= http_proxy %>

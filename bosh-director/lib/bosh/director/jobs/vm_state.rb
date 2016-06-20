@@ -3,7 +3,7 @@ module Bosh::Director
     class VmState < BaseJob
       TIMEOUT = 5
 
-      @queue = :normal
+      @queue = :urgent
 
       def self.job_type
         :vms

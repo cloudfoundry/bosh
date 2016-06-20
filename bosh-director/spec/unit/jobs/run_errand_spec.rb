@@ -15,6 +15,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 
