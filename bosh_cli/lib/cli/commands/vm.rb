@@ -23,6 +23,20 @@ module Bosh::Cli
           director.change_vm_resurrection(manifest.name, job, index_or_id, resurrection.paused?)
         end
       end
+
+      usage 'delete vm'
+      desc 'Deletes a vm'
+      def delete(vm_cid)
+        auth_required
+
+        unless confirmed?("Are you sure you want to delete vm '#{vm_cid}'?")
+          say('Canceled deleting vm'.make_green)
+          return
+        end
+
+        status, task_id = director.delete_vm_by_cid(vm_cid)
+        task_report(status, task_id, "Deleted vm '#{vm_cid}'")
+      end
     end
   end
 end

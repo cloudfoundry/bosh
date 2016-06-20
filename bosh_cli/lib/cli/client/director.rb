@@ -270,6 +270,10 @@ module Bosh
           request_and_track(:delete, add_query_string(url, extras), options)
         end
 
+        def delete_vm_by_cid(vm_cid)
+          request_and_track(:delete, "/vms/#{vm_cid}")
+        end
+
         def deploy(manifest_yaml, options = {})
           options = options.dup
 
