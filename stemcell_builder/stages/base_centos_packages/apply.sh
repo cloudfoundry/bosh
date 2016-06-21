@@ -64,7 +64,7 @@ cp $(dirname $0)/assets/rsyslog.repo ${chroot}/etc/yum.repos.d/
 pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
 run_in_chroot $chroot "yum update --assumeyes"
 
-run_in_chroot $chroot "rpm -e quota rpcbind"
+run_in_chroot $chroot "rpm -e rpcbind"
 
 exclusions="mlocate firewalld rpcbind"
 pkg_mgr erase $exclusions
