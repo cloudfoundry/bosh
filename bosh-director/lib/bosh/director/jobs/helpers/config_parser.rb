@@ -7,7 +7,7 @@ module Bosh::Director::Jobs
       class << self
         # Search and Replace at a config placeholders in manifest
         def parse(manifest)
-          new_manifest = Marshal.load(Marshal.dump(manifest))
+          new_manifest = Bosh::Common::DeepCopy.copy(manifest)
 
           config_map = DeepHashReplacement.replacement_map(new_manifest)
           parsed_config = apply_replacements(new_manifest, config_map)

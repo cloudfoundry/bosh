@@ -15,13 +15,13 @@ module Bosh::Director::Jobs
       def self.create_replacement_map(result, obj, path = nil)
         if obj.is_a? Array
           obj.each_with_index do |item, index|
-            new_path = path.nil? ? [] : Marshal.load(Marshal.dump(path))
+            new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
             new_path << index
             create_replacement_map(result, item, new_path)
           end
         elsif obj.is_a? Hash
           obj.each do |key, value|
-            new_path = path.nil? ? [] : Marshal.load(Marshal.dump(path))
+            new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
             new_path << key
             create_replacement_map(result, value, new_path)
           end
