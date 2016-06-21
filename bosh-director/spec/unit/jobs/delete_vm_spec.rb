@@ -74,7 +74,7 @@ module Bosh::Director
         it 'should update instance' do
           allow(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
-          expect(BD::Models::Instance.first("vm_cid")).to be_nil
+          expect(BD::Models::Instance.all.first.vm_cid).to be_nil
         end
       end
 
