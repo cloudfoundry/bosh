@@ -264,6 +264,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
+        :system_users,
         :bosh_audit
       ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end

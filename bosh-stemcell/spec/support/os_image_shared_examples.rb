@@ -310,6 +310,12 @@ shared_examples_for 'every OS image' do
         its (:stdout) { should eq('') }
       end
     end
+
+    context 'disable system accounts (CIS-10.2)' do
+      describe command('/usr/bin/awk -F: \'$1 !~ /^(root|sync|shutdown|halt)$/ && $3 < 500 && $7 !~ /^(\/usr\/sbin\/nologin|\/sbin\/nologin|\/bin\/false)$/ { print; f=1 } END { if (!f) print "none" }\' /etc/passwd') do
+        its(:stdout) { should eq("none\n") }
+      end
+    end
   end
 
   context '/etc/group file' do
