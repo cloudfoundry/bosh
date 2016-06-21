@@ -547,6 +547,11 @@ shared_examples_for 'every OS image' do
     describe 'record system administrator actions (CIS-8.1.16)' do
       its(:content) { should match /^-w \/var\/log\/sudo\.log -p wa -k actions$/ }
     end
+
+    describe 'record file system mounts (CIS-8.1.13)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+    end
   end
 
   describe 'record use of privileged programs (CIS-8.1.12)' do

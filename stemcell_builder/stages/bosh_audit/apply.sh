@@ -77,7 +77,11 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -w /etc/selinux/ -p wa -k MAC-policy
 
 # Record system administrator actions
--w /var/log/sudo.log -p wa -k actions' >> $chroot/etc/audit/rules.d/audit.rules
+-w /var/log/sudo.log -p wa -k actions
+
+# Record file system mounts
+-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts' >> $chroot/etc/audit/rules.d/audit.rules
 
     echo '
 # Record use of privileged commands' >> $chroot/etc/audit/rules.d/audit.rules

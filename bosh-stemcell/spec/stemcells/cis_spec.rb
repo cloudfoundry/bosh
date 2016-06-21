@@ -24,6 +24,7 @@ describe 'CIS test case verification', {stemcell_image: true, cis_check: true} d
       CIS-8.1.8
       CIS-8.1.9
       CIS-8.1.12
+      CIS-8.1.13
       CIS-8.1.14
       CIS-8.1.15
       CIS-8.1.16
