@@ -5,6 +5,8 @@ module Bosh::Director
       include LegacyDeploymentHelper
 
       @queue = :normal
+      @local_fs = true
+
 
       def self.job_type
         :update_deployment

@@ -19,6 +19,7 @@ module Bosh::Director
 
       @delayed_job_worker = nil
       queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
+      queues << @config.director_pool unless @config.director_pool.nil? || (queues - ['urgent']).empty?
 
       @delayed_job_worker = Delayed::Worker.new({:queues => queues})
       trap('USR1') {

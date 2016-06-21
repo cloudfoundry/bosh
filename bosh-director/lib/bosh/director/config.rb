@@ -251,6 +251,10 @@ module Bosh::Director
         @cloud
       end
 
+      def director_pool
+        @director_pool ||= Socket.gethostname
+      end
+
       def cpi_task_log
         Config.cloud_options.fetch('properties', {}).fetch('cpi_log')
       end
@@ -414,6 +418,10 @@ module Bosh::Director
 
     def log_access_events_to_syslog
       hash['log_access_events_to_syslog']
+    end
+
+    def director_pool
+      Config.director_pool
     end
 
     def configure_evil_config_singleton!
