@@ -678,6 +678,80 @@ describe 'ignore/unignore instance', type: :integration do
         expect(output).to include("Error 190021: You are trying to delete instance group 'foobar1', which contains ignored instance(s). Operation not allowed.")
       end
     end
+
+    context 'when an ignored VM has an unresponsive agent' do
+      context 'when using v1 manifest' do
+        it 'should timeout and fail' do
+          manifest_hash = Bosh::Spec::Deployments.legacy_manifest
+
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+
+          deploy_from_scratch(manifest_hash: manifest_hash, legacy: true)
+
+          initial_vms = director.vms
+          foobar1_vm1 = initial_vms[0]
+          foobar1_vm2 = initial_vms[1]
+          bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+
+          foobar1_vm1.kill_agent
+
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'foobar1',
+              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              instances: 2)
+
+          output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to_not eq(0)
+          expect(output).to include("Timed out sending 'get_state'")
+
+          modified_vms = director.vms
+          modified_foobar1_vm1 = modified_vms.select{|i| i.instance_uuid == foobar1_vm1.instance_uuid}.first
+          modified_foobar1_vm2 = modified_vms.select{|i| i.instance_uuid == foobar1_vm2.instance_uuid}.first
+
+          expect(modified_foobar1_vm1.last_known_state).to eq('unresponsive agent')
+          expect(modified_foobar1_vm2.last_known_state).to eq('running')
+        end
+      end
+
+      context 'when using v2 manifest' do
+        it 'should not contact the VM and deploys successfully' do
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest
+          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+          initial_vms = director.vms
+          foobar1_vm1 = initial_vms[0]
+          foobar1_vm2 = initial_vms[1]
+          bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+
+          foobar1_vm1.kill_agent
+
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'foobar1',
+              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              instances: 2)
+
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          expect(output).to include("Warning: You have ignored instances. They will not be changed.")
+          expect(output).to_not include("Started updating job foobar1 > foobar1/#{foobar1_vm1.index} (#{foobar1_vm1.instance_uuid})")
+          expect(output).to include("Started updating job foobar1 > foobar1/#{foobar1_vm2.index} (#{foobar1_vm2.instance_uuid})")
+
+          modified_vms = director.vms
+          modified_foobar1_vm1 = modified_vms.select{|i| i.instance_uuid == foobar1_vm1.instance_uuid}.first
+          modified_foobar1_vm2 = modified_vms.select{|i| i.instance_uuid == foobar1_vm2.instance_uuid}.first
+
+          expect(modified_foobar1_vm1.last_known_state).to eq('unresponsive agent')
+          expect(modified_foobar1_vm2.last_known_state).to eq('running')
+        end
+      end
+    end
   end
 
   context 'when starting/stopping/restarting/recreating instances' do

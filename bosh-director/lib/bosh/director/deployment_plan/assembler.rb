@@ -4,6 +4,7 @@ module Bosh::Director
   class DeploymentPlan::Assembler
     include LockHelper
     include IpUtil
+    include LegacyDeploymentHelper
 
     def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger)
       @deployment_plan = deployment_plan
@@ -66,9 +67,11 @@ module Bosh::Director
     def current_states_by_instance(existing_instances)
       lock = Mutex.new
       current_states_by_existing_instance = {}
+      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.manifest_text)
+
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         existing_instances.each do |existing_instance|
-          if existing_instance.vm_cid
+          if existing_instance.vm_cid && (!existing_instance.ignore || is_version_1_manifest)
             pool.process do
               with_thread_name("binding agent state for (#{existing_instance}") do
                 # getting current state to obtain IP of dynamic networks

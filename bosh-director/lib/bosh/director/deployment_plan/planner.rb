@@ -52,6 +52,8 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
+      attr_reader :manifest_text
+
       def initialize(attrs, manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
