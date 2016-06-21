@@ -16,3 +16,10 @@ if [ "${stemcell_operating_system_version}" == "trusty" -o "${stemcell_operating
   cp $dir/assets/60-bosh-sysctl-neigh-fix.conf $chroot/etc/sysctl.d
   chmod 0644 $chroot/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf
 fi
+
+echo '
+# Enable RFC-recommended Source Route Validation
+net.ipv4.conf.all.rp_filter=1
+net.ipv4.conf.default.rp_filter=1
+' >> $chroot/etc/sysctl.d/60-bosh-sysctl.conf
+
