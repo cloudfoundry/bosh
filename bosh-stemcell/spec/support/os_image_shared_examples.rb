@@ -573,6 +573,17 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
       its(:content) { should match /^-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
     end
+
+    describe 'record discretionary access control permission modification events (CIS-8.1.10)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+    end
   end
 
   describe 'record use of privileged programs (CIS-8.1.12)' do
