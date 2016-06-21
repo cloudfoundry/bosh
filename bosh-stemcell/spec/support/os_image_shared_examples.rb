@@ -49,9 +49,17 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe '/etc/securetty' do
-    it 'disallows virtual console access (stig: V-38492)' do
-      expect(`grep '^vc/[0-9]+' #{backend.chroot_dir}/etc/securetty`).to be_empty
+  context '/etc/securetty' do
+    context 'disallows virtual console access (stig: V-38492)' do
+      describe command("grep '^vc/[0-9]+' /etc/securetty") do
+        its(:stdout) { should be_empty }
+      end
+    end
+
+    context 'restricts root login to system console (CIS-9.4)' do
+      describe command("awk '$1 !~ /^(console|#.*|\s*)$/ { print; f=1 } END { if (!f) print \"none\" }' /etc/securetty") do
+        its(:stdout) { should eq "none\n" }
+      end
     end
   end
 
