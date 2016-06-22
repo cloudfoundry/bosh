@@ -67,6 +67,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation, [])).to eq({
+            'type' => 'manual',
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
@@ -80,6 +81,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation)).to eq({
+            'type' => 'manual',
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
