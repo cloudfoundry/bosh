@@ -47,7 +47,8 @@ You can also use `./quick-integration-tests.sh` to run all integration tests aga
 BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not easily tested at lower levels. BATs verify integration between all BOSH components and infrastructures. They run against a deployed Director and use the CLI to perform tasks. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployments, handling broken deployments). The assertions are made against CLI commands exit status, output and state of VMs after performing the command. Since BATs run on real infrastructures, they help verify that specific combinations of the Director and stemcell works.
 
 Some tests in BATs may not be applicable to a given IaaS and can be skipped using tags.
-BATs currently supports the following tags:
+BATs currently supports the following tags which are enabled by default (use `--tag ~vip_networking` to exclude them):
+
   - `core`: basic BOSH functionality which all CPIs should implement
   - `persistent_disk`: persistent disk lifecycle tests
   - `vip_networking`: static public address handling
@@ -58,6 +59,9 @@ BATs currently supports the following tags:
   - `raw_ephemeral_storage`: BOSH agent exposes all attached instance storage to deployed jobs
   - `changing_static_ip`: `configure_networks` CPI method support [deprecated]
   - `network_reconfiguration`: `configure_networks` CPI method support [deprecated]
+
+The following tags also exist but are disabled by default (use `--tag ~system_services_running:false` to include them):
+
   - `system_services_running`: checking if auditd, rsyslogd, cron and sshd are running
 
 Here is an example of running BATs on vSphere, skipping tests that are not applicable:
