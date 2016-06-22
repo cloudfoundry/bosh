@@ -15,6 +15,7 @@ module Bosh::Director
     MANIFEST_KEYS_ORDER = %w(
       azs
       vm_types
+      vm_extensions
       resource_pools
       compilation
       networks

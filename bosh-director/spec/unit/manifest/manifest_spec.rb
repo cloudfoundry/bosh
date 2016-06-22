@@ -212,6 +212,9 @@ module Bosh::Director
       subject(:new_manifest) { described_class.new(new_manifest_hash, new_cloud_config_hash, new_runtime_config_hash) }
       let(:new_manifest_hash) do
         {
+          'properties' => {
+              'something' => 'worth-redacting',
+          },
           'jobs' => [
             {
               'name' => 'useful',
@@ -220,9 +223,6 @@ module Bosh::Director
               },
             },
           ],
-          'properties' => {
-            'something' => 'worth-redacting',
-          },
         }
       end
       let(:new_cloud_config_hash) { cloud_config_hash }
