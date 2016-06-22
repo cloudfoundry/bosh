@@ -130,8 +130,7 @@ No changes
 
           deployment_diff.print(options)
 
-          expect(output.split("\n")).to eq([
-             '',
+          expect(output.split("\n").reject{|x| x==''}).to eq([
              'Detecting deployment changes',
              '----------------------------',
              'resource_pools:',
@@ -168,11 +167,13 @@ No changes
 
 Detecting deployment changes
 ----------------------------
+
   resource_pools:
   - name: a
     cloud_properties:
 +     name: new_property
 +     size: large
+
   jobs:
 + - name: new_job
 +   templates: xyz
