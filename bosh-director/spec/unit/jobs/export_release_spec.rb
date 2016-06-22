@@ -208,7 +208,7 @@ module Bosh::Director
                 allow(planner_factory).to receive(:create_from_model).and_return(planner)
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
-                allow(planner).to receive(:add_job)
+                allow(planner).to receive(:add_instance_group)
                 allow(planner).to receive(:compile_packages)
                 allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
               }

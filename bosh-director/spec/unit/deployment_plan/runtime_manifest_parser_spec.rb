@@ -87,7 +87,7 @@ module Bosh::Director
           release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, provides_json: "null", consumes_json: "null"))
 
           runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
-          job_parser = DeploymentPlan::JobSpecParser.new(deployment, event_log, logger)
+          instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, event_log, logger)
 
           release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy2', 'version' => '0.2-dev'})
           deployment.add_release(release)
@@ -96,7 +96,7 @@ module Bosh::Director
             DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
             DeploymentPlan::IpProviderFactory.new(deployment.using_global_networking?, @logger))
 
-          deployment.add_job(job_parser.parse({
+          deployment.add_instance_group(instance_group_parser.parse({
                                                   'name' => 'dummy',
                                                   'templates' => [{'name'=> 'dummy', 'release' => 'dummy2'}],
                                                   'resource_pool' => 'a',
@@ -119,7 +119,7 @@ module Bosh::Director
           release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
 
           runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
-          job_parser = DeploymentPlan::JobSpecParser.new(deployment, event_log, logger)
+          instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, event_log, logger)
 
           release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
           deployment.add_release(release)
@@ -131,7 +131,7 @@ module Bosh::Director
             DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
             DeploymentPlan::IpProviderFactory.new(deployment.using_global_networking?, @logger))
 
-          deployment.add_job(job_parser.parse({
+          deployment.add_instance_group(instance_group_parser.parse({
             'name' => 'dummy',
             'templates' => [{'name'=> 'dummy', 'release' => 'dummy'}],
             'resource_pool' => 'a',
@@ -147,8 +147,8 @@ module Bosh::Director
 
           subject.parse(runtime_manifest)
 
-          expect(deployment.job('dummy').templates.any? {|t| t.name == 'dummy_with_properties'}).to eq(true)
-          expect(deployment.job('dummy').all_properties['dummy_with_properties']['echo_value']).to eq('prop_value')
+          expect(deployment.instance_group('dummy').templates.any? {|t| t.name == 'dummy_with_properties'}).to eq(true)
+          expect(deployment.instance_group('dummy').all_properties['dummy_with_properties']['echo_value']).to eq('prop_value')
         end
       end
     end

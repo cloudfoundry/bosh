@@ -96,7 +96,7 @@ module Bosh::Director
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
-          @deployment.add_job(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
+          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
         end
       end
     end

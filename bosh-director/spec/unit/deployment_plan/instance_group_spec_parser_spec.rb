@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/director/deployment_plan/job_spec_parser'
+require 'bosh/director/deployment_plan/instance_group_spec_parser'
 
-describe Bosh::Director::DeploymentPlan::JobSpecParser do
+describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
   subject(:parser) { described_class.new(deployment_plan, event_log, logger) }
   let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 

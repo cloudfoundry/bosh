@@ -394,8 +394,8 @@ module Bosh::Director
                 and_return(job2)
 
 
-              expect(parsed_deployment.job('job1-name')).to eq(job1)
-              expect(parsed_deployment.job('job2-name')).to eq(job2)
+              expect(parsed_deployment.instance_group('job1-name')).to eq(job1)
+              expect(parsed_deployment.instance_group('job2-name')).to eq(job2)
             end
           end
 

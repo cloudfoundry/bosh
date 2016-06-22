@@ -66,8 +66,8 @@ module Bosh::Director
 
         @stemcells = {}
         @instance_groups = []
-        @jobs_name_index = {}
-        @jobs_canonical_name_index = Set.new
+        @instance_groups_name_index = {}
+        @instance_groups_canonical_name_index = Set.new
 
         @unneeded_vms = []
         @unneeded_instances = []
@@ -209,34 +209,34 @@ module Bosh::Director
       end
 
       # Adds a job by name
-      # @param [Bosh::Director::DeploymentPlan::Job] job
-      def add_job(job)
-        if @jobs_canonical_name_index.include?(job.canonical_name)
+      # @param [Bosh::Director::DeploymentPlan::InstanceGroup] instance_group
+      def add_instance_group(instance_group)
+        if @instance_groups_canonical_name_index.include?(instance_group.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
-            "Invalid instance group name '#{job.name}', canonical name already taken"
+            "Invalid instance group name '#{instance_group.name}', canonical name already taken"
         end
 
-        @instance_groups << job
-        @jobs_name_index[job.name] = job
-        @jobs_canonical_name_index << job.canonical_name
+        @instance_groups << instance_group
+        @instance_groups_name_index[instance_group.name] = instance_group
+        @instance_groups_canonical_name_index << instance_group.canonical_name
       end
 
-      # Returns a named job
-      # @param [String] name Job name
-      # @return [Bosh::Director::DeploymentPlan::Job] Job
-      def job(name)
-        @jobs_name_index[name]
+      # Returns a named instance_group
+      # @param [String] name Instance group name
+      # @return [Bosh::Director::DeploymentPlan::InstanceGroup] Instance group
+      def instance_group(name)
+        @instance_groups_name_index[name]
       end
 
       def jobs_starting_on_deploy
         instance_groups = []
 
-        @instance_groups.each do |job|
-          if job.is_service?
-            instance_groups << job
-          elsif job.is_errand?
-            if job.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
-              instance_groups << job
+        @instance_groups.each do |instance_group|
+          if instance_group.is_service?
+            instance_groups << instance_group
+          elsif instance_group.is_errand?
+            if instance_group.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
+              instance_groups << instance_group
             end
           end
         end

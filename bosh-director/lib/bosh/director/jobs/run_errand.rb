@@ -34,7 +34,7 @@ module Bosh::Director
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
           deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
           deployment.bind_models
-          job = deployment.job(@errand_name)
+          job = deployment.instance_group(@errand_name)
 
           if job.nil?
             raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"

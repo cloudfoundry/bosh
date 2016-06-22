@@ -54,7 +54,7 @@ module Bosh::Director
         release = planner.release(@release_name)
 
         export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
-        planner.add_job(export_release_job)
+        planner.add_instance_group(export_release_job)
         planner.bind_models(true)
 
         lock_timeout = 15 * 60 # 15 minutes

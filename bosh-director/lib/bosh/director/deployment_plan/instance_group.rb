@@ -1,4 +1,4 @@
-require 'bosh/director/deployment_plan/job_spec_parser'
+require 'bosh/director/deployment_plan/instance_group_spec_parser'
 require 'bosh/template/property_helper'
 
 module Bosh::Director
@@ -86,7 +86,7 @@ module Bosh::Director
       attr_accessor :did_change
 
       def self.parse(plan, job_spec, event_log, logger, parse_options = {})
-        parser = JobSpecParser.new(plan, event_log, logger)
+        parser = InstanceGroupSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec, parse_options)
       end
 

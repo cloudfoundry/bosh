@@ -2,7 +2,7 @@ require 'bosh/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
-    class JobSpecParser
+    class InstanceGroupSpecParser
       include ValidationHelper
       include Bosh::Template::PropertyHelper
       include IpUtil

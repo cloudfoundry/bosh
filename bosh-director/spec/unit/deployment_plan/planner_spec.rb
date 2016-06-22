@@ -135,7 +135,7 @@ module Bosh::Director
         end
 
         describe '#jobs_starting_on_deploy' do
-          before { subject.add_job(job1) }
+          before { subject.add_instance_group(job1) }
           let(:job1) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job1-name',
@@ -145,7 +145,7 @@ module Bosh::Director
               })
           end
 
-          before { subject.add_job(job2) }
+          before { subject.add_instance_group(job2) }
           let(:job2) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job2-name',

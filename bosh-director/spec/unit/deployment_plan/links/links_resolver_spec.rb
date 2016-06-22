@@ -107,7 +107,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   let(:logger) { Logging::Logger.new('TestLogger') }
 
   let(:api_server_job) do
-    deployment_plan.job('api-server')
+    deployment_plan.instance_group('api-server')
   end
 
   before do
@@ -197,7 +197,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           deployment_plan.bind_models
 
           links_resolver = described_class.new(deployment_plan, logger)
-          mysql_job = deployment_plan.job('mysql')
+          mysql_job = deployment_plan.instance_group('mysql')
           links_resolver.resolve(mysql_job)
 
           deployment_plan.persist_updates!
