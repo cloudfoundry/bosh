@@ -2,25 +2,24 @@ require 'set'
 
 module Bosh::Director
   class Manifest
-    def self.load_from_text(manifest_text, cloud_config, runtime_config, raw_manifest_hash = nil)
+    def self.load_from_text(manifest_text, cloud_config, runtime_config)
       manifest_text ||= '{}'
-      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config, raw_manifest_hash)
+      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config)
     end
 
-    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, raw_manifest_hash = nil)
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config)
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-      new(manifest_hash, cloud_config_hash, runtime_config_hash, raw_manifest_hash)
+      new(manifest_hash, cloud_config_hash, runtime_config_hash)
     end
 
-    attr_reader :manifest_hash, :cloud_config_hash, :runtime_config_hash, :raw_manifest_hash
+    attr_reader :manifest_hash, :cloud_config_hash, :runtime_config_hash
 
-    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash, raw_manifest_hash = nil)
+    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash)
       @manifest_hash = manifest_hash
       @cloud_config_hash = cloud_config_hash
       @runtime_config_hash = runtime_config_hash
-      @raw_manifest_hash = raw_manifest_hash || @manifest_hash
     end
 
     def resolve_aliases

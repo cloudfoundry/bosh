@@ -46,17 +46,16 @@ module Bosh
         def parse_from_manifest(manifest, cloud_config, runtime_config, options)
           manifest.resolve_aliases
           @manifest_validator.validate(manifest.manifest_hash, manifest.cloud_config_hash)
-          migrated_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
-          migrated_manifest_hash = migrated_manifest.manifest_hash
-          @logger.debug("Migrated deployment manifest:\n#{migrated_manifest.raw_manifest_hash}")
+          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest.manifest_hash, manifest.cloud_config_hash)
+          @logger.debug("Migrated deployment manifest:\n#{deployment_manifest}")
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
-          name = migrated_manifest_hash['name']
+          name = deployment_manifest['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
 
           attrs = {
             name: name,
-            properties: migrated_manifest_hash.fetch('properties', {}),
+            properties: deployment_manifest.fetch('properties', {}),
           }
 
           plan_options = {
@@ -70,12 +69,12 @@ module Bosh
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment_planner = Planner.new(attrs, migrated_manifest.raw_manifest_hash, cloud_config, runtime_config, deployment_model, plan_options)
+          deployment_planner = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment_planner, Config.director_ips, @logger)
 
           ip_provider_factory = IpProviderFactory.new(deployment_planner.using_global_networking?, @logger)
           deployment_planner.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
-          DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
+          DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(deployment_manifest, plan_options)
 
           if runtime_config
             RuntimeManifestParser.new(@logger, deployment_planner).parse(runtime_config.manifest)

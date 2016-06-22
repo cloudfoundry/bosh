@@ -49,26 +49,6 @@ module Bosh::Director
       end
     end
 
-    describe '#initialize' do
-      let(:cloud_config) { Models::CloudConfig.make(manifest: {}) }
-      let(:runtime_config) { Models::RuntimeConfig.make(manifest: {}) }
-
-      context 'with non-nil raw_manifest_hash' do
-        let(:raw_manifest_hash) { {"key"=>"value"} }
-        it 'sets raw_manifest_hash set to passed in value' do
-          manifest = Manifest.new(manifest_hash, cloud_config, runtime_config, raw_manifest_hash)
-            expect(manifest.raw_manifest_hash).to eq(raw_manifest_hash)
-        end
-      end
-
-      context 'with nil raw_manifest_hash' do
-        it 'sets raw_manifest_hash to manifest_hash' do
-          manifest = Manifest.load_from_hash(manifest_hash, cloud_config, runtime_config, nil)
-          expect(manifest.raw_manifest_hash).to eq(manifest_hash)
-        end
-      end
-    end
-
     describe 'resolve_aliases' do
       context 'releases' do
         context 'when manifest has releases with version latest' do
