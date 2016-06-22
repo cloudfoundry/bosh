@@ -131,7 +131,8 @@ lines"}
 
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
-          expect(output).to match(/  resource_pools:
+          expect(output).to match(/
+  resource_pools:
   - name: a
     cloud_properties:
 \+     name: new_property
@@ -139,6 +140,7 @@ lines"}
 -   env:
 -     bosh:
 -       password: "?<redacted>"?
+
   jobs:
   - name: job1
     properties:
