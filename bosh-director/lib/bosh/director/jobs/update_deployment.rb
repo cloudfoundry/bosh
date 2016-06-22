@@ -28,8 +28,10 @@ module Bosh::Director
         manifest_hash = Psych.load(manifest_text)
         logger.debug("Manifest:\n#{manifest_text}")
 
+        raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+
         if Config.parse_config_values
-          manifest_hash = Bosh::Director::Jobs::Helpers::ConfigParser.parse(manifest_hash)
+          manifest_hash = Bosh::Director::Jobs::Helpers::ConfigParser.parse(raw_manifest_hash)
         end
 
         if ignore_cloud_config?(manifest_hash)
@@ -53,7 +55,7 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.manifest}")
         end
 
-        deployment_manifest = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
+        deployment_manifest = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model, raw_manifest_hash)
 
         @deployment_name = deployment_manifest.to_hash['name']
 
