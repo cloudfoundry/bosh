@@ -41,3 +41,10 @@ if [ "\$BASH" ]; then
 fi
 EOS
 fi
+
+# install custom command prompt
+# due to differences in ordering between OSes, explicitly source it last
+cp $assets_dir/ps1.sh $chroot/etc/profile.d/00-bosh-ps1
+echo "source /etc/profile.d/00-bosh-ps1" >> $chroot/root/.bashrc
+echo "source /etc/profile.d/00-bosh-ps1" >> $chroot/home/vcap/.bashrc
+echo "source /etc/profile.d/00-bosh-ps1" >> $chroot/etc/skel/.bashrc
