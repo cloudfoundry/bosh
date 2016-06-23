@@ -40,11 +40,11 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
         should contain /^net.ipv4.conf.all.send_redirects=0$/
       end
 
-      it 'must use reverse path filtering for IPv4 network traffic on all interfaces. (stig: V-38542)' do
+      it 'must use reverse path filtering for IPv4 network traffic on all interfaces. (stig: V-38542) (CIS-7.2.7)' do
         should contain /^net.ipv4.conf.all.rp_filter=1$/
       end
 
-      it 'must use reverse path filtering for IPv4 network traffic by default. (stig: V-38544)' do
+      it 'must use reverse path filtering for IPv4 network traffic by default. (stig: V-38544) (CIS-7.2.7)' do
         should contain /^net.ipv4.conf.default.rp_filter=1$/
       end
 

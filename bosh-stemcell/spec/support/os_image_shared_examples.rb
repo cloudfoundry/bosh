@@ -438,13 +438,6 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'Enable RFC-recommended Source Route Validation (CIS-7.2.7)' do
-    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
-      its (:content) { should match /^net.ipv4.conf.all.rp_filter=1$/ }
-      its (:content) { should match /^net.ipv4.conf.default.rp_filter=1$/ }
-    end
-  end
-
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
