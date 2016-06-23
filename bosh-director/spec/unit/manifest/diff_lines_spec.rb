@@ -19,6 +19,7 @@ module Bosh::Director
           diff_lines.order
           expect(diff_lines.map(&:to_s)).to eq([
             'azs:',
+            '',
             'jobs:',
           ])
         end
@@ -67,13 +68,16 @@ module Bosh::Director
             '- name: z1',
             '  cloud_properties:',
             '    baz: qux',
+            '',
             'vm_types:',
             '  - name: default',
             '  cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}',
+            '',
             'vm_extensions:',
             '- name: pub-lbs',
             '  cloud_properties:',
             '    elbs: [main]',
+            '',
             'jobs:',
             '- name: job1',
             '  properties:',
@@ -100,7 +104,9 @@ module Bosh::Director
           diff_lines.order
           expect(diff_lines.map(&:to_s)).to eq([
             'azs:',
+            '',
             'jobs:',
+            '',
             'foo:',
             '  bar: baz',
           ])

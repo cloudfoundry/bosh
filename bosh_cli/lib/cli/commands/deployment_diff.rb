@@ -18,10 +18,6 @@ module Bosh::Cli::Command
         diff.each do |line_diff|
           formatted_line_diff, state = line_diff
 
-          if formatted_line_diff[/-|\s/].nil?
-            say('')
-          end
-
           # colorization explicitly disabled
           if Bosh::Cli::Config.use_color?
             case state
