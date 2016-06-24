@@ -246,7 +246,7 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist job template
       # property definitions in DB).
       def bind_properties
-        @properties = filter_properties(@all_properties)
+        @properties = extract_template_properties(@all_properties)
       end
 
       def validate_package_names_do_not_collide!
@@ -339,27 +339,6 @@ module Bosh::Director
       end
 
       private
-
-      # @param [Hash] collection All properties collection
-      # @return [Hash] Properties required by templates included in this job
-      def filter_properties(collection)
-        if @templates.none? { |template| template.properties}
-          result = {}
-          @templates.each do |template|
-            result[template.name] = collection
-          end
-          return result
-        end
-
-        if @templates.all? { |template| template.properties }
-          return extract_template_properties(collection)
-        end
-
-        raise JobIncompatibleSpecs,
-              "Instance group '#{name}' has specs with conflicting property definition styles between" +
-                  " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
-                  " 'properties' and one which doesn't."
-      end
 
       def extract_template_properties(collection)
         result = {}

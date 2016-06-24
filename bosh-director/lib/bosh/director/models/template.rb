@@ -33,7 +33,7 @@ module Bosh::Director::Models
     # @return [Hash] Template properties (as provided in job spec)
     # @return [nil] if no properties have been defined in job spec
     def properties
-      object_or_nil(self.properties_json)
+      object_or_nil(self.properties_json) || {}
     end
 
     def consumes=(consumes_spec)

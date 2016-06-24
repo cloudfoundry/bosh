@@ -187,31 +187,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
     end
 
-    context 'when none of the job specs (aka templates) specify properties' do
-      let(:foo_properties) { nil }
-      let(:bar_properties) { nil }
-
-      it 'should use the properties specified throughout the deployment manifest' do
-        job.bind_properties
-        expect(job.properties).to eq({'foo'=>props, 'bar'=>props})
-      end
-    end
-
-    context "when some job specs (aka templates) specify properties and some don't" do
-      let(:foo_properties) { nil }
-
-      it 'should raise an error' do
-        expect {
-          job.bind_properties
-        }.to raise_error(
-          Bosh::Director::JobIncompatibleSpecs,
-          "Instance group 'foobar' has specs with conflicting property definition styles" +
-          ' between its job spec templates.  This may occur if colocating jobs, one of which has a spec file' +
-          " including 'properties' and one which doesn't."
-        )
-      end
-    end
-
     context 'when the deployment manifest specifies properties for templates' do
       before do
         allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
