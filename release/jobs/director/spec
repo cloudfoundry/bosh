@@ -259,6 +259,10 @@ properties:
     default: 16777216
   blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  blobstore.server_side_encryption:
+    description: Specifies server-side encryption of the object in S3. Valid values are AES256 and aws:kms (optional; if not provided, server side encryption is not used)
+  blobstore.sse_kms_key_id:
+    description: The AWS KMS key ID that should be used to server-side encrypt the object in S3 (optional; if not provided, AWS KMS is not used)
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:

@@ -135,6 +135,14 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.s3_signature_version') do |s3_signature_version|
      blobstore_options['s3_signature_version'] = s3_signature_version
   end
+
+  if_p('blobstore.server_side_encryption') do |server_side_encryption|
+     blobstore_options['server_side_encryption'] = server_side_encryption
+  end
+
+  if_p('blobstore.sse_kms_key_id') do |sse_kms_key_id|
+     blobstore_options['sse_kms_key_id'] = sse_kms_key_id
+  end
 else
   blobstore_options = {
     'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",

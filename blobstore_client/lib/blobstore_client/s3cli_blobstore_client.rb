@@ -39,7 +39,9 @@ module Bosh
           credentials_source: @options.fetch(:credentials_source, 'none'),
           access_key_id: @options[:access_key_id],
           secret_access_key: @options[:secret_access_key],
-          signature_version: @options[:signature_version]
+          signature_version: @options[:signature_version],
+          server_side_encryption: @options[:server_side_encryption],
+          sse_kms_key_id: @options[:sse_kms_key_id]
         }
 
         @s3cli_options.reject! {|k,v| v.nil?}
