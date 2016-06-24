@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Stig test case verification', { stemcell_image: true, stig_check: true } do
+describe 'Stig test case verification', { stemcell_image: true, security_spec: true } do
   it 'confirms all stig test cases ran' do
     expected_base_stig_test_cases = %W{
       V-38443

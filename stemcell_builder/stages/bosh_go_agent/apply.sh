@@ -42,18 +42,18 @@ chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
 # Setup additional permissions
 run_in_chroot $chroot "
-echo 'vcap' > /etc/cron.allow
-echo 'vcap' > /etc/at.allow
+rm -f /etc/cron.deny
+rm -f /etc/at.deny
 
 chmod 0770 /var/lock
 chown -h root:vcap /var/lock
 chown -LR root:vcap /var/lock
 
-chmod 0640 /etc/cron.allow
-chown root:vcap /etc/cron.allow
+echo 'vcap' > /etc/cron.allow
+echo 'vcap' > /etc/at.allow
 
-chmod 0640 /etc/at.allow
-chown root:vcap /etc/at.allow
+chmod -f og-rwx /etc/at.allow /etc/cron.allow /etc/crontab /etc/cron.hourly /etc/cron.daily /etc/cron.weekly /etc/cron.monthly /etc/cron.d
+chown -f root:root /etc/at.allow /etc/cron.allow /etc/crontab /etc/cron.hourly /etc/cron.daily /etc/cron.weekly /etc/cron.monthly /etc/cron.d
 
 chmod -R 0700 /etc/sv/agent
 chown -R root:root /etc/sv/agent

@@ -13,15 +13,78 @@ describe 'Stemcell with Go Agent', stemcell_image: true do
       it { should be_valid_json_file }
     end
 
-    {
-      '/etc/cron.allow' => { mode: '640', owner: 'root', group: 'vcap' },
-      '/etc/at.allow' => { mode: '640', owner: 'root', group: 'vcap' },
-    }.each do |file_name, properties|
+    describe 'set user/group owner and permission on /etc/crontab (CIS-9.1.2)' do
+      context file('/etc/crontab') do
+        it { should be_mode('600') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
 
-      describe file(file_name) do
-        it { should be_mode(properties[:mode]) }
-        it { should be_owned_by(properties[:owner]) }
-        it { should be_grouped_into(properties[:group]) }
+    describe 'set user/group owner and permission on /etc/cron.hourly (CIS-9.1.3)' do
+      context file('/etc/cron.hourly') do
+        it { should be_directory }
+        it { should be_mode('700') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+
+    describe 'set user/group owner and permission on /etc/cron.daily (CIS-9.1.4)' do
+      context file('/etc/cron.daily') do
+        it { should be_directory }
+        it { should be_mode('700') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+
+    describe 'set user/group owner and permission on /etc/cron.weekly (CIS-9.1.5)' do
+      context file('/etc/cron.weekly') do
+        it { should be_directory }
+        it { should be_mode('700') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+
+    describe 'set user/group owner and permission on /etc/cron.monthly (CIS-9.1.6)' do
+      context file('/etc/cron.monthly') do
+        it { should be_directory }
+        it { should be_mode('700') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+
+    describe 'set user/group owner and permission on /etc/cron.d (CIS-9.1.7)' do
+      context file('/etc/cron.d') do
+        it { should be_directory }
+        it { should be_mode('700') }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+
+    describe 'restrict at/cron to authorized users (CIS-9.1.8)' do
+      context file('/etc/cron.deny') do
+        it { should_not be_file }
+      end
+
+      context file('/etc/at.deny') do
+        it { should_not be_file }
+      end
+
+      {
+          '/etc/cron.allow' => { mode: '600', owner: 'root', group: 'root' },
+          '/etc/at.allow' => { mode: '600', owner: 'root', group: 'root' },
+      }.each do |file_name, properties|
+
+        context file(file_name) do
+          it { should be_mode(properties[:mode]) }
+          it { should be_owned_by(properties[:owner]) }
+          it { should be_grouped_into(properties[:group]) }
+        end
       end
     end
 
