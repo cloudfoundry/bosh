@@ -3,7 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe Blobstores do
     subject(:blobstores) { described_class.new(config) }
-    let(:config) { Config.load_file(asset('test-director-config.yml')) }
+    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+
 
     before { allow(Bosh::Blobstore::Client).to receive(:safe_create) }
 

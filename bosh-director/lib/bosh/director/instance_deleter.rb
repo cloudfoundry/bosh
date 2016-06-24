@@ -9,8 +9,9 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
-
       @force = options.fetch(:force, false)
+      @virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
+
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
@@ -32,6 +33,14 @@ module Bosh::Director
 
           error_ignorer.with_force_check do
             @dns_manager.delete_dns_for_instance(instance_model)
+          end
+
+          error_ignorer.with_force_check do
+            @dns_manager.publish_dns_records
+          end
+
+          error_ignorer.with_force_check do
+            @dns_manager.cleanup_dns_records
           end
 
           error_ignorer.with_force_check do
@@ -92,7 +101,7 @@ module Bosh::Director
 
     # FIXME: why do we hate dependency injection?
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(@cloud, @logger, {force: @force})
+      @vm_deleter ||= VmDeleter.new(@cloud, @logger, @force, @virtual_delete_vm)
     end
   end
 end

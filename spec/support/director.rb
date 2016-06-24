@@ -26,6 +26,7 @@ module Bosh::Spec
           vm_data[:id],
           vm_data[:job_name],
           vm_data[:index],
+          vm_data[:ignore],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
           @director_nats_port,
           @logger,
@@ -125,6 +126,19 @@ module Bosh::Spec
       output = @runner.run("task #{id}")
       failed = /Task (\d+) error/.match(output)
       return output, !failed
+    end
+
+    def raw_task_events(task_id)
+      result = @runner.run("task #{task_id} --raw")
+      event_list = []
+      result.each_line do |line|
+        begin
+          event = Yajl::Parser.new.parse(line)
+          event_list << event if event
+        rescue Yajl::ParseError
+        end
+      end
+      event_list
     end
 
     def kill_vm_and_wait_for_resurrection(vm)

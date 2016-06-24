@@ -14,10 +14,3 @@ source $base_dir/lib/prelude_bosh.bash
 # in the immediate release cycle after that.
 # Lock dowon /tmp and /var/tmp - jobs should use /var/vcap/data/tmp
 chmod 0770 $chroot/tmp $chroot/var/tmp
-
-# remove setuid binaries - except su/sudo (sudoedit is hardlinked)
-run_in_bosh_chroot $chroot "
-find / -xdev -perm /6000 -a -type f \
-  -a -not \( -name sudo -o -name su -o -name sudoedit \) \
-  -exec chmod ug-s {} \;
-"

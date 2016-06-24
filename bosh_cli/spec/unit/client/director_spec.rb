@@ -499,6 +499,26 @@ describe Bosh::Cli::Client::Director do
       @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached')
     end
 
+    context 'max_in_flight provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&max_in_flight=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', max_in_flight: 77)
+      end
+    end
+
+    context 'canaries provided' do
+      it 'passes it to director' do
+        expect(@director).to receive(:request_and_track).
+          with(:put, '/deployments/foo/jobs/dea/0?state=detached&canaries=77',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', canaries: 77)
+      end
+    end
+
     it 'changes job instance resurrection state' do
       expect(@director).to receive(:request).with(:put,
           '/deployments/foo/jobs/dea/0/resurrection',
@@ -517,6 +537,16 @@ describe Bosh::Cli::Client::Director do
           {},
           {})
       @director.change_vm_resurrection_for_all(false)
+    end
+
+    it 'changes instance ignore state' do
+      expect(@director).to receive(:request).with(:put,
+          '/deployments/foo/instance_groups/dea/90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA/ignore',
+          'application/json',
+          '{"ignore":true}',
+          {},
+          {})
+      @director.change_instance_ignore_state('foo', 'dea', '90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA', true)
     end
 
     it 'gets task state' do
@@ -597,6 +627,12 @@ describe Bosh::Cli::Client::Director do
       expect(@director).to receive(:request_and_track).
         with(:delete, '/deployments/foo/snapshots/snap0a', {}).and_return(true)
       @director.delete_snapshot('foo', 'snap0a')
+    end
+
+    it 'deletes vm' do
+      expect(@director).to receive(:request_and_track).
+          with(:delete, '/vms/vm_cid').and_return(true)
+      @director.delete_vm_by_cid('vm_cid')
     end
 
     describe '#diff_deployment' do

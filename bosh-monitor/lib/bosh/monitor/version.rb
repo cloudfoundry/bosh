@@ -1,5 +1,5 @@
 module Bosh
   module Monitor
-    VERSION = '1.3232.2.0'
+    VERSION = '1.3262.0'
   end
 end

@@ -13,7 +13,7 @@ module Bosh::Director
       )
     end
     let(:instance_plan) do
-      job = DeploymentPlan::Job.new(logger)
+      job = DeploymentPlan::InstanceGroup.new(logger)
       Bosh::Director::DeploymentPlan::InstancePlan.new(
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
         existing_instance: nil,

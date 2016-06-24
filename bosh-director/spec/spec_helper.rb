@@ -62,53 +62,91 @@ module SpecHelper
       @temp_dir = Bosh::Director::Config.generate_temp_dir
     end
 
+    def spec_get_director_config
+      config = Psych.load_file(File.expand_path('assets/test-director-config.yml', __dir__))
+
+      config['db']['adapter'] = @director_db_helper.adapter
+      config['db']['host'] = '127.0.0.1'
+      config['db']['database'] = @director_db_helper.db_name
+      config['db']['user'] = @director_db_helper.username
+      config['db']['password'] = @director_db_helper.password
+      config['db']['port'] = @director_db_helper.port
+
+      config
+    end
+
     def init_database
+      @db_name = SecureRandom.uuid.gsub('-', '')
+
+      case ENV.fetch('DB', 'sqlite')
+        when 'postgresql'
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', __dir__)
+          @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, 5432)
+          @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", @init_logger, 5432)
+        when 'mysql'
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', __dir__)
+          @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger)
+          @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", @init_logger)
+        when 'sqlite'
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', __dir__)
+          @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
+          @dns_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_dns.sqlite"), @init_logger)
+        else
+          raise "Unsupported DB value: #{ENV['DB']}"
+      end
+
+      @director_db_helper.create_db
+      @dns_db_helper.create_db
+
       @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
       @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
       Sequel.extension :migration
 
-      connect_database(@temp_dir)
+      connect_database
       Delayed::Worker.backend = :sequel
 
       run_migrations
     end
 
-    def connect_database(path)
-      db     = ENV['DB_CONNECTION']     || "sqlite://#{File.join(path, "director.db")}"
-      dns_db = ENV['DNS_DB_CONNECTION'] || "sqlite://#{File.join(path, "dns.db")}"
-
+    def connect_database
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(db, db_opts)
-      @db.loggers << (logger || @init_logger)
-      Bosh::Director::Config.db = @db
+      @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)
+      @director_db.loggers << (logger || @init_logger)
+      Bosh::Director::Config.db = @director_db
 
-      @dns_db = Sequel.connect(dns_db, db_opts)
+      @dns_db = Sequel.connect(@dns_db_helper.connection_string, db_opts)
       @dns_db.loggers << (logger || @init_logger)
       Bosh::Director::Config.dns_db = @dns_db
     end
 
     def disconnect_database
-      if @db
-        @db.disconnect
-        @db = nil
+      if @director_db
+        @director_db.disconnect
+        @director_db_helper.drop_db
+
+        @director_db = nil
+        @director_db_helper = nil
       end
 
       if @dns_db
         @dns_db.disconnect
+        @dns_db_helper.drop_db
+
         @dns_db = nil
+        @dns_db_helper = nil
       end
     end
 
     def run_migrations
       Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
-      Sequel::Migrator.apply(@db, @director_migrations, nil)
+      Sequel::Migrator.apply(@director_db, @director_migrations, nil)
     end
 
     def reset(logger)
       Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.db = @director_db
       Bosh::Director::Config.dns_db = @dns_db
       Bosh::Director::Config.logger = logger
       Bosh::Director::Config.trusted_certs = ''
@@ -116,12 +154,12 @@ module SpecHelper
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Bosh::Director::Models::Dns.constants.each do |e|
@@ -131,10 +169,16 @@ module SpecHelper
     end
 
     def reset_database(example)
-      Sequel.transaction([@db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
+      Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
 
-      @db.run('UPDATE sqlite_sequence SET seq = 0')
-      @dns_db.run('UPDATE sqlite_sequence SET seq = 0')
+      if Bosh::Director::Config.db != nil; then
+        Bosh::Director::Config.db.disconnect
+      end
+
+      @director_db_helper.truncate_db
+      # leaving this commented doesn't seem to impact our tests and
+      # has the benefit of avoiding the extra time for shelling out
+      #@dns_db_helper.truncate_db
     end
   end
 end
@@ -159,6 +203,10 @@ RSpec.configure do |rspec|
     allow(threadpool).to receive(:wrap).and_yield(threadpool)
     allow(threadpool).to receive(:process).and_yield
     allow(threadpool).to receive(:wait)
+  end
+
+  rspec.after(:suite) do
+    SpecHelper.disconnect_database
   end
 end
 

@@ -26,7 +26,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     )
   end
   let(:job) do
-    job = BD::DeploymentPlan::Job.new(logger)
+    job = BD::DeploymentPlan::InstanceGroup.new(logger)
     job.name = 'foo-job'
     job.availability_zones << az
     job
@@ -72,6 +72,20 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
 
         expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
+      end
+    end
+
+    context 'when there are ignored instances' do
+      it 'fails if specifically changing the state of ignored vms' do
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, ignore: true)
+        job.instance_states = {'0' => "stopped"}
+        expect {
+          instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        }.to raise_error(
+          Bosh::Director::JobInstanceIgnored,
+          "You are trying to change the state of the ignored instance 'foo-job/#{existing_instance_model.uuid}'. " +
+              "This operation is not allowed. You need to unignore it first."
+        )
       end
     end
 
@@ -404,5 +418,20 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
       expect(obsolete_instance_plan).to be_obsolete
     end
+
+    it 'fails when trying to delete instance groups with ignored instances' do
+      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-job', index: 0)
+      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-job', index: 1, ignore: true)
+
+      existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
+
+      expect {
+        instance_planner.plan_obsolete_jobs([job], existing_instances)
+      }.to raise_error(
+         Bosh::Director::DeploymentIgnoredInstancesDeletion,
+         "You are trying to delete instance group 'bar-job', which contains ignored instance(s). Operation not allowed."
+      )
+    end
+
   end
 end

@@ -61,7 +61,7 @@ module Bosh::Director
       resolution_summary ||= 'no resolution'
 
       begin
-        track_and_log("#{problem_summary}: #{resolution_summary}") do
+        track_and_log("#{problem.description} (#{problem_summary}): #{resolution_summary}") do
           handler.apply_resolution(resolution)
         end
       rescue Bosh::Director::ProblemHandlerError => e

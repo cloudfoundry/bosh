@@ -55,7 +55,7 @@ module Bosh::Director
         link_network = link_info["network"]
         found_link_paths = []
 
-        @deployment_plan.jobs.each do |provides_job|
+        @deployment_plan.instance_groups.each do |provides_job|
           if !link_network || provides_job.has_network?(link_network)
             provides_job.templates.each do |provides_template|
               if provides_template.link_infos.has_key?(provides_job.name) && provides_template.link_infos[provides_job.name].has_key?('provides')
@@ -106,7 +106,7 @@ module Bosh::Director
 
       def get_link_path_from_deployment_plan(name, link_network)
         found_link_paths = []
-        @deployment_plan.jobs.each do |job|
+        @deployment_plan.instance_groups.each do |job|
           if !link_network || job.has_network?(link_network)
             job.templates.each do |template|
               if template.link_infos.has_key?(job.name) && template.link_infos[job.name].has_key?('provides')

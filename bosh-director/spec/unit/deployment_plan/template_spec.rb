@@ -9,6 +9,7 @@ describe Bosh::Director::DeploymentPlan::Template do
 
     context 'given properly formated arguments' do
       before {
+        template.add_link_from_release('job_name', 'provides', 'link_name', {'from' => 'link_name'})
         template.add_link_from_manifest('job_name', 'provides', 'link_name', {'properties'=>['plant'], 'from'=>'link_name'})
       }
       it 'should populate link_infos' do

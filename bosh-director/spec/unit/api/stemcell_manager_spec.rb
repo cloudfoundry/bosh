@@ -214,22 +214,56 @@ module Bosh::Director
 
           Bosh::Director::Models::Stemcell.create(
             name: 'my-stemcell-with-b-name',
-            version: '1471_2',
+            version: '1471.2',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '1471.2.1',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '1471.9',
             operating_system: 'stemcell_os',
             cid: 'cloud-id-b',
           )
         }
+
         it 'should return the stemcell matching the name with the latest version' do
           stemcell = subject.latest_by_name ('my-stemcell-with-b-name')
-          expect(stemcell.version).to eq ('1471_2')
+          expect(stemcell.version).to eq ('1471.9')
           expect(stemcell.name).to eq('my-stemcell-with-b-name')
+        end
+
+        context 'when a version prefix is supplied' do
+          context 'when the version exists' do
+            it 'should return the latest version with that prefix' do
+              stemcell = subject.latest_by_name('my-stemcell-with-b-name', '1471.2')
+              expect(stemcell.version).to eq('1471.2.1')
+            end
+          end
+
+          context 'when the stemcell exists but there is no version with given prefix' do
+            it 'should raise an error' do
+              expect {
+                subject.latest_by_name('my-stemcell-with-b-name', '1471.3')
+              }.to raise_error(
+                Bosh::Director::StemcellNotFound,
+                "Stemcell 'my-stemcell-with-b-name' exists, but version with prefix '1471.3' not found."
+              )
+            end
+          end
         end
       end
     end
 
     describe '#latest_by_os' do
-      context 'when there are no version' do
-
+      context 'when there are no versions' do
         before {
           Bosh::Director::Models::Stemcell.create(
             name: 'some-other-name',
@@ -257,14 +291,55 @@ module Bosh::Director
 
           Bosh::Director::Models::Stemcell.create(
             name: 'my-stemcell-with-b-name',
-            version: '1471_2',
+            version: '1471.2',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '1471.2.1',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '1471.3',
             operating_system: 'stemcell_os',
             cid: 'cloud-id-b',
           )
         }
+
+        context 'when a version prefix is supplied' do
+          context 'when the version exists' do
+            it 'should return the latest version with that prefix' do
+              stemcell = subject.latest_by_os('stemcell_os', '1471.2')
+              expect(stemcell.version).to eq('1471.2.1')
+            end
+          end
+
+          context 'when the stemcell exists but there is no version with given prefix' do
+            it 'should raise an error' do
+              expect {
+                subject.latest_by_os('stemcell_os', '1471.4')
+              }.to raise_error(
+                Bosh::Director::StemcellNotFound,
+                "Stemcell with Operating System 'stemcell_os' exists, but version with prefix '1471.4' not found."
+              )
+            end
+          end
+        end
+
         it 'should return the stemcell matching the name with the latest version' do
-          stemcell = subject.latest_by_os ('stemcell_os')
-          expect(stemcell.version).to eq ('1471_2')
+          stemcell = subject.latest_by_os('stemcell_os')
+          expect(stemcell.version).to eq('1471.3')
+          expect(stemcell.operating_system).to eq('stemcell_os')
+        end
+
+        it 'should return the stemcell matching the name with the latest version given a prefix' do
+          stemcell = subject.latest_by_os('stemcell_os', '1471.3')
+          expect(stemcell.version).to eq('1471.3')
           expect(stemcell.operating_system).to eq('stemcell_os')
         end
       end

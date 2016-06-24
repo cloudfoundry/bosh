@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    let(:job) { Job.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
+    let(:job) { InstanceGroup.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         bootstrap: true,
@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:instance) { Instance.create_from_job(job, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
-    let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan) }
+    let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan, [], logger) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
     let(:reservation) {
       reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
@@ -221,7 +221,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when the stemcell type has changed' do
+      context 'when the stemcell version has changed' do
         before do
           instance_plan.existing_instance.update(spec: {
               'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
@@ -238,6 +238,29 @@ module Bosh::Director::DeploymentPlan
                 'version: 2 ' +
                 'TO: ' +
                 'version: 1' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
+          instance_plan.needs_shutting_down?
+        end
+      end
+
+      context 'when the stemcell name has changed' do
+        before do
+          instance_plan.existing_instance.update(spec: {
+              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
+              'stemcell' => { 'name' => 'ubuntu-stemcell-old', 'version' => '1'},
+            })
+        end
+
+        it 'returns true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
+        it 'logs the change reason' do
+          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
+                'ubuntu-stemcell-old ' +
+                'TO: ' +
+                'ubuntu-stemcell' +
                 ' on instance ' + "#{instance_plan.existing_instance}"
             )
           instance_plan.needs_shutting_down?
@@ -297,7 +320,8 @@ module Bosh::Director::DeploymentPlan
 
       it 'should write the current spec to the database' do
         instance_plan.persist_current_spec
-        expect(instance_plan.existing_instance.reload.spec['vm_type']).to eq({'name' => 'a', 'cloud_properties' =>{}})
+        vm_type = instance_plan.existing_instance.reload.spec_p('vm_type')
+        expect(vm_type).to eq({'name' => 'a', 'cloud_properties' =>{}})
       end
     end
 
@@ -555,6 +579,46 @@ module Bosh::Director::DeploymentPlan
       describe 'when the configuration has not changed' do
         it 'should return false' do
           expect(instance_plan.configuration_changed?).to eq(false)
+        end
+      end
+    end
+
+    describe '#changes' do
+      context 'when the spec_json is nil' do
+        before do
+          instance_plan.existing_instance.update(spec_json: nil)
+        end
+
+        it 'should report changes' do
+          expect(instance_plan.changes).to_not be_empty
+        end
+      end
+
+      context 'when the spec_json is empty hash' do
+        before do
+          instance_plan.existing_instance.update(spec_json: '{}')
+        end
+
+        it 'should report changes' do
+          expect(instance_plan.changes).to_not be_empty
+        end
+      end
+    end
+
+    describe '#should_be_ignored' do
+      context 'when the instance model has ignore flag as false, default' do
+        it 'should return true' do
+          expect(instance_plan.should_be_ignored?).to eq(false)
+        end
+      end
+
+      context 'when the instance model has ignore flag as true' do
+        before do
+          instance_plan.existing_instance.update(ignore: true)
+        end
+
+        it 'should return true' do
+          expect(instance_plan.should_be_ignored?).to eq(true)
         end
       end
     end

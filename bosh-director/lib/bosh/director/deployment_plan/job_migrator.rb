@@ -33,7 +33,7 @@ module Bosh::Director
       migrated_from_instances = []
 
       migrated_from_jobs.each do |migrated_from_job|
-        existing_job = @deployment_plan.job(migrated_from_job.name)
+        existing_job = @deployment_plan.instance_group(migrated_from_job.name)
         if existing_job && existing_job.name != desired_job.name
           raise DeploymentInvalidMigratedFromJob,
             "Failed to migrate instance group '#{migrated_from_job.name}' to '#{desired_job_name}'. " +
@@ -41,7 +41,7 @@ module Bosh::Director
               "Please remove instance group '#{migrated_from_job.name}'."
         end
 
-        other_jobs = @deployment_plan.jobs.reject { |job| job.name == desired_job_name }
+        other_jobs = @deployment_plan.instance_groups.reject { |job| job.name == desired_job_name }
 
         migrate_to_multiple_jobs = other_jobs.any? do |job|
           job.migrated_from.any? do |other_migrated_from_job|

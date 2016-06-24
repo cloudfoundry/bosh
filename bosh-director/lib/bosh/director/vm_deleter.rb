@@ -1,32 +1,33 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(cloud, logger, options={})
+    def initialize(cloud, logger, force=false, enable_virtual_delete_vm=false)
       @cloud = cloud
       @logger = logger
-
-      force = options.fetch(:force, false)
       @error_ignorer = ErrorIgnorer.new(force, @logger)
+      @enable_virtual_delete_vm = enable_virtual_delete_vm
     end
 
-    def delete_for_instance(instance)
+    def delete_for_instance(instance, store_event=true)
       if instance.vm_cid
         begin
           vm_cid = instance.vm_cid
           instance_name = "#{instance.job}/#{instance.uuid}"
-          parent_id = add_event(instance.deployment.name, instance_name, vm_cid)
+          parent_id = add_event(instance.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance.vm_cid)
           instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
         rescue Exception => e
           raise e
         ensure
-          add_event(instance.deployment.name, instance_name, vm_cid, parent_id, e)
+          add_event(instance.deployment.name, instance_name, vm_cid, parent_id, e) if store_event
         end
       end
     end
 
     def delete_vm(vm_cid)
       @logger.info('Deleting VM')
-      @error_ignorer.with_force_check { @cloud.delete_vm(vm_cid) }
+      @error_ignorer.with_force_check do
+        @cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
+      end
     end
 
     private

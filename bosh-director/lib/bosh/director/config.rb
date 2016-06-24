@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'logging'
+require 'socket'
 
 module Bosh::Director
 
@@ -38,12 +39,18 @@ module Bosh::Director
         :enable_post_deploy,
         :generate_vm_passwords,
         :remove_dev_tools,
+        :enable_virtual_delete_vms,
+        :local_dns,
       )
 
       attr_reader(
         :db_config,
         :ignore_missing_gateway,
         :record_events,
+        :director_ips,
+        :config_server_url,
+        :parse_config_values,
+        :config_server_url,
       )
 
       def clear
@@ -158,6 +165,17 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
+        @local_dns = config.fetch('local_dns', false)
+
+        @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
+
+        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
+
+
+        @parse_config_values = config.fetch('parse_config_values', false)
+        if @parse_config_values
+          @config_server_url = config['config_server_url']
+        end
 
         Bosh::Clouds::Config.configure(self)
 
@@ -233,6 +251,10 @@ module Bosh::Director
         @cloud
       end
 
+      def director_pool
+        @director_pool ||= Socket.gethostname
+      end
+
       def cpi_task_log
         Config.cloud_options.fetch('properties', {}).fetch('cpi_log')
       end
@@ -298,7 +320,7 @@ module Bosh::Director
 
             # Lock before read to avoid director/worker race condition
             file.flock(File::LOCK_EX)
-            state = Yajl::Parser.parse(file) || {}
+            state = JSON.parse(file.read) || {}
 
             # Empty state file to prevent blocked processes from attempting to set UUID
             file.truncate(0)
@@ -396,6 +418,10 @@ module Bosh::Director
 
     def log_access_events_to_syslog
       hash['log_access_events_to_syslog']
+    end
+
+    def director_pool
+      Config.director_pool
     end
 
     def configure_evil_config_singleton!

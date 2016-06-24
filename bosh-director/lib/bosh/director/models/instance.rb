@@ -73,7 +73,11 @@ module Bosh::Director::Models
     def spec
       return nil if spec_json.nil?
 
-      result = Yajl::Parser.parse(spec_json)
+      begin
+        result = JSON.parse(spec_json)
+      rescue JSON::ParserError
+        return 'error'
+      end
       if result['resource_pool'].nil?
         result
       else
@@ -96,7 +100,20 @@ module Bosh::Director::Models
     end
 
     def spec=(spec)
-      self.spec_json = Yajl::Encoder.encode(spec)
+      begin
+        self.spec_json = spec.nil? ? nil : JSON.generate(spec)
+      rescue JSON::GeneratorError
+        self.spec_json = 'error'
+      end
+    end
+
+    def spec_p(property_path)
+      current_prop = spec
+      property_path.split('.').each do |prop|
+        return nil if current_prop.nil? || !current_prop.is_a?(Hash)
+        current_prop = current_prop[prop]
+      end
+      current_prop
     end
 
     def vm_env
@@ -105,12 +122,25 @@ module Bosh::Director::Models
     end
 
     def credentials
-      return nil if credentials_json.nil?
-      Yajl::Parser.parse(credentials_json)
+      object_or_nil(credentials_json)
     end
 
     def credentials=(spec)
-      self.credentials_json = Yajl::Encoder.encode(spec)
+      self.credentials_json = json_encode(spec)
+    end
+
+    private
+
+    def object_or_nil(value)
+      if value == 'null' || value.nil?
+        nil
+      else
+        JSON.parse(value)
+      end
+    end
+
+    def json_encode(value)
+      value.nil? ? 'null' : JSON.generate(value)
     end
   end
 

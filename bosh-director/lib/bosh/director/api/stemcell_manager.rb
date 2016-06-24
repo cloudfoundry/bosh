@@ -27,26 +27,40 @@ module Bosh::Director
         end
       end
 
-      def latest_by_os(os)
-        stemcells = Bosh::Director::Models::Stemcell.where(:operating_system => os)
+      def latest_by_os(os, prefix = nil)
+        stemcells = Bosh::Director::Models::Stemcell.where(:operating_system => os).all
 
-        if stemcells.nil? || stemcells.empty?
+        if stemcells.empty?
           raise StemcellNotFound,
             "Stemcell with Operating System '#{os}' doesn't exist"
         end
 
-        find_latest(stemcells)
+        latest = find_latest(stemcells, prefix)
+
+        if latest.nil?
+          raise StemcellNotFound,
+            "Stemcell with Operating System '#{os}' exists, but version with prefix '#{prefix}' not found."
+        end
+
+        latest
       end
 
-      def latest_by_name(name)
-        stemcells = Bosh::Director::Models::Stemcell.where(:name => name)
+      def latest_by_name(name, prefix = nil)
+        stemcells = Bosh::Director::Models::Stemcell.where(:name => name).all
 
-        if stemcells.nil? || stemcells.empty?
+        if stemcells.empty?
           raise StemcellNotFound,
             "Stemcell '#{name}' doesn't exist"
         end
 
-        find_latest(stemcells)
+        latest = find_latest(stemcells, prefix)
+
+        if latest.nil?
+          raise StemcellNotFound,
+            "Stemcell '#{name}' exists, but version with prefix '#{prefix}' not found."
+        end
+
+        latest
       end
 
       def find_by_os_and_version(os, version)
@@ -87,7 +101,13 @@ module Bosh::Director
 
       private
 
-      def find_latest(stemcells)
+      def find_latest(stemcells, prefix = nil)
+        unless prefix.nil?
+          stemcells = stemcells.select do |stemcell|
+            stemcell.version =~ /^#{prefix}([\.\-\+]|$)/
+          end
+        end
+
         versions = stemcells.map(&:version)
 
         latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s

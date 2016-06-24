@@ -19,6 +19,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
+      let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
 
@@ -36,7 +37,7 @@ module Bosh::Director
     end
 
     def parsed_result_file
-      Yajl.load(File.read(result_file_path))
+      JSON.parse(File.read(result_file_path))
     end
 
     after { FileUtils.rm_rf(result_file_path) }

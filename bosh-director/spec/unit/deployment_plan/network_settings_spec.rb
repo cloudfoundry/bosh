@@ -35,7 +35,7 @@ module Bosh::Director::DeploymentPlan
             }]
         },
         [],
-        GlobalNetworkResolver.new(plan),
+        GlobalNetworkResolver.new(plan, [], logger),
         logger
       )
     }
@@ -43,7 +43,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#network_settings' do
       let(:job) do
-        job = Job.new(logger)
+        job = InstanceGroup.new(logger)
         job.name = 'fake-job'
         job
       end

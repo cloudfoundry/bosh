@@ -5,13 +5,33 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
 
     subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
+
+    let(:availability_zones) { job.availability_zones }
+    let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
+    let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
+    let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
+    let(:deployment_repo) { DeploymentRepo.new }
+    let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
+    let(:desired_instance_count) { 3 }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
+    let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
-    let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, nil, {}) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
-    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
+    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
+    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
+    let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
+    let(:job) { planner.instance_groups.first }
+    let(:job_availability_zones) { ['zone1', 'zone2'] }
+    let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
+
+    let(:new_instance_plans) { instance_plans.select(&:new?) }
+    let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }
+    let(:obsolete_instance_plans) { instance_plans.select(&:obsolete?) }
+
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,
@@ -81,25 +101,6 @@ module Bosh::Director::DeploymentPlan
         ]
       }
     end
-    let(:job_availability_zones) { ['zone1', 'zone2'] }
-    let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
-    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
-    let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-    let(:deployment_repo) { DeploymentRepo.new }
-    let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
-    let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
-    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
-    let(:job) { planner.jobs.first }
-    let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
-    let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
-    let(:desired_instance_count) { 3 }
-
-    let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
-    let(:availability_zones) { job.availability_zones }
-    let(:new_instance_plans) { instance_plans.select(&:new?) }
-    let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }
-    let(:obsolete_instance_plans) { instance_plans.select(&:obsolete?) }
 
     before do
       fake_job
@@ -408,6 +409,21 @@ module Bosh::Director::DeploymentPlan
                 expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.14')])
               end
+
+              context 'when the instance that was assigned that ip is in ignore state' do
+                let(:desired_instance_count) { 1 }
+                let(:static_ips) { ['192.168.1.14'] }
+
+                it 'raises an error' do
+                  existing_instances.each do |instance|
+                    instance.update(ignore: true)
+                  end
+                  expect {
+                    instance_plans
+                  }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job', an attempt was made to remove a static ip "+
+                      'that is used by an ignored instance. This operation is not allowed.'
+                end
+              end
             end
 
             context 'when static IP and AZ were changed' do
@@ -424,6 +440,16 @@ module Bosh::Director::DeploymentPlan
                 expect(existing_instance_plans.size).to eq(1)
                 expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              end
+
+              it 'raises error if removed IP belonged to an ignored instance' do
+                existing_instances.each do |instance|
+                  instance.update(ignore: true)
+                end
+                expect {
+                  instance_plans
+                }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job', an attempt was made to remove a static ip "+
+                    'that is used by an ignored instance. This operation is not allowed.'
               end
             end
           end
@@ -486,6 +512,27 @@ module Bosh::Director::DeploymentPlan
                 expect(new_instance_plans[0].desired_instance.az.name).to eq('zone2')
                 expect(new_instance_plans[1].desired_instance.az.name).to eq('zone2')
               end
+            end
+          end
+
+          context 'when a static IP was replaced by another static IP' do
+            let(:desired_instance_count) { 2 }
+            let(:static_ips) { ['192.168.1.10', '192.168.2.11'] }
+            let(:existing_instances) do
+              [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+              ]
+            end
+
+            it 'will fail if the original static IP was assigned to an ignored VM' do
+              existing_instances.each do |instance|
+                instance.update(ignore: true)
+              end
+              expect {
+                instance_plans
+              }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
+                               "In instance group 'fake-job', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed."
             end
           end
         end
@@ -800,6 +847,36 @@ module Bosh::Director::DeploymentPlan
               expect(existing_instance_plans[0].network_plans.map(&:reservation).select(&:dynamic?).size).to eq(1)
             end
           end
+
+          context 'when networks are added or removed' do
+            context 'when there are ignored instances' do
+              let(:desired_instance_count) { 2 }
+              let(:job_networks) do
+                [
+                    {'name' => 'a', 'static_ips' => a_static_ips, 'default' => ['dns', 'gateway']},
+                    {'name' => 'b'}
+                ]
+              end
+              let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11'] }
+
+              let(:existing_instances) do
+                [
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
+                ]
+              end
+
+              it 'fails when attempting to add a network' do
+                existing_instances.each do |instance|
+                  instance.update(ignore: true)
+                end
+
+                expect {
+                  instance_plans
+                }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
+                  "In instance group 'fake-job', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed."
+              end
+            end
+          end
         end
 
         context 'when network name was changed' do
@@ -821,6 +898,17 @@ module Bosh::Director::DeploymentPlan
             expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
             expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
             expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.10')])
+          end
+
+          it 'should fail if ignored instances belonged to that network' do
+            existing_instances.each do |instance|
+              instance.update(ignore: true)
+            end
+
+            expect {
+              instance_plans
+            }.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
+              "In instance group 'fake-job', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed."
           end
         end
       end

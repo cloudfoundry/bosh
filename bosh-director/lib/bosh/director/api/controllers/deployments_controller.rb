@@ -38,6 +38,7 @@ module Bosh::Director
 
     class DeploymentsController < BaseController
       register DeploymentsSecurity
+      include LegacyDeploymentHelper
 
       def initialize(config)
         super(config)
@@ -46,6 +47,7 @@ module Bosh::Director
         @property_manager = Api::PropertyManager.new
         @instance_manager = Api::InstanceManager.new
         @deployments_repo = DeploymentPlan::DeploymentRepo.new
+        @instance_ignore_manager = Api::InstanceIgnoreManager.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -73,7 +75,10 @@ module Bosh::Director
             }
           }
         }
+
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
+        options['canaries'] = params[:canaries] if !!params['canaries']
+        options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
@@ -83,7 +88,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -113,7 +118,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -149,8 +154,13 @@ module Bosh::Director
 
       put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
 
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
+      end
+
+      put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
+        payload = json_decode(request.body.read)
+        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
       end
 
       post '/:deployment/jobs/:job/:index_or_id/snapshots' do
@@ -213,7 +223,7 @@ module Bosh::Director
       end
 
       get '/:deployment', authorization: :read do
-        Yajl::Encoder.encode({'manifest' => deployment.manifest})
+        JSON.generate({'manifest' => deployment.manifest})
       end
 
       get '/:deployment/vms', authorization: :read do
@@ -223,7 +233,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @deployment_manager.deployment_instances_with_vms(deployment)
-          Yajl::Encoder.encode(create_instances_response(instances))
+          JSON.generate(create_instances_response(instances))
         end
       end
 
@@ -234,7 +244,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @instance_manager.find_instances_by_deployment(deployment)
-          Yajl::Encoder.encode(create_instances_response(instances))
+          JSON.generate(create_instances_response(instances))
         end
       end
 
@@ -247,7 +257,7 @@ module Bosh::Director
       end
 
       post '/:deployment/ssh', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         task = @instance_manager.ssh(current_user, deployment, payload)
         redirect "/tasks/#{task.id}"
       end
@@ -266,13 +276,13 @@ module Bosh::Director
       end
 
       post '/:deployment/properties', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @property_manager.create_property(deployment, payload['name'], payload['value'])
         status(204)
       end
 
       put '/:deployment/properties/:property', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         @property_manager.update_property(deployment, params[:property], payload['value'])
         status(204)
       end
@@ -305,12 +315,12 @@ module Bosh::Director
       end
 
       put '/:deployment/problems', :consumes => [:json] do
-        payload = json_decode(request.body)
+        payload = json_decode(request.body.read)
         start_task { @problem_manager.apply_resolutions(current_user, deployment, payload['resolutions']) }
       end
 
       put '/:deployment/scan_and_fix', :consumes => :json do
-        jobs_json = json_decode(request.body)['jobs']
+        jobs_json = json_decode(request.body.read)['jobs']
         payload = convert_job_instance_hash(jobs_json)
         if deployment_has_instance_to_resurrect?(deployment)
           start_task { @problem_manager.scan_and_fix(current_user, deployment, payload) }
@@ -340,33 +350,36 @@ module Bosh::Director
         if deployment
           deployment_name = deployment['name']
           if deployment_name
-            @deployments_repo.find_or_create_by_name(deployment_name, options)
+            options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
+            deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
           end
         end
 
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_model, options)
 
         redirect "/tasks/#{task.id}"
       end
 
       post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
+
         manifest_text = request.body.read
         validate_manifest_yml(manifest_text)
 
+        manifest_hash = Psych.load(manifest_text)
+
+        ignore_cc = ignore_cloud_config?(manifest_hash)
+
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)
+          before_manifest = Manifest.load_from_text(deployment.manifest, ignore_cc ? nil : deployment.cloud_config, deployment.runtime_config)
           before_manifest.resolve_aliases
         else
           before_manifest = Manifest.load_from_text(nil, nil, nil)
         end
 
-        after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        after_manifest = Manifest.load_from_text(
-          manifest_text,
-          after_cloud_config,
-          after_runtime_config
-        )
+
+        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config)
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'
@@ -391,14 +404,14 @@ module Bosh::Director
 
       post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
-        keep_alive = json_decode(request.body)['keep-alive'] || FALSE
+        keep_alive = json_decode(request.body.read)['keep-alive'] || FALSE
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
           [deployment.name, errand_name, keep_alive],
-          deployment.name
+          deployment
         )
 
         redirect "/tasks/#{task.id}"
@@ -407,7 +420,7 @@ module Bosh::Director
       get '/:deployment/errands', authorization: :read do
         deployment_plan = load_deployment_plan
 
-        errands = deployment_plan.jobs.select(&:is_errand?)
+        errands = deployment_plan.instance_groups.select(&:is_errand?)
 
         errand_data = errands.map do |errand|
           {"name" => errand.name}
@@ -433,8 +446,9 @@ module Bosh::Director
       end
 
       def deployment_has_instance_to_resurrect?(deployment)
-        false if deployment.nil?
-        instances = @instance_manager.filter_by(deployment, resurrection_paused: false)
+        return false if deployment.nil?
+        return false if @resurrector_manager.pause_for_all?
+        instances = @instance_manager.filter_by(deployment, resurrection_paused: false, ignore: false)
         instances.any?
       end
 

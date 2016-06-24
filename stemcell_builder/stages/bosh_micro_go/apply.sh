@@ -7,7 +7,10 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-[ "$bosh_micro_enabled" == "yes" ] || exit 0
+if [ "$bosh_micro_enabled" == "no" ]; then
+  mkdir -p $chroot/$bosh_dir/../micro_bosh/data/cache
+  exit 0
+fi
 
 mkdir -p $chroot/$bosh_dir/src/micro_bosh/bosh-release
 if [ -z "${agent_gem_src_url:-}" ]; then

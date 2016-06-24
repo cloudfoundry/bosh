@@ -9,8 +9,8 @@ describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
   describe '#run' do
     let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
     let(:deployment_plan) { instance_double('Bosh::Director::Jobs::BaseJob') }
-    let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job1-name') }
-    let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job2-name') }
+    let(:job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job1-name') }
+    let(:job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job2-name') }
 
     context 'with 1+ jobs' do
       it 'updates each job serially' do
@@ -57,8 +57,8 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
   describe '#run' do
     let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
     let(:deployment_plan) { instance_double('Bosh::Director::Jobs::BaseJob') }
-    let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job1-name') }
-    let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job2-name') }
+    let(:job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job1-name') }
+    let(:job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job2-name') }
 
     let(:thread_pool) { instance_double('Bosh::Director::ThreadPool') }
 
@@ -132,8 +132,8 @@ describe Bosh::Director::DeploymentPlan::BatchMultiJobUpdater do
     end
     let(:serial_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
 
-    let(:serial_job1) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-serial-job1-name', update: serial_update_config) }
-    let(:serial_job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-serial-job2-name', update: serial_update_config) }
+    let(:serial_job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-serial-job1-name', update: serial_update_config) }
+    let(:serial_job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-serial-job2-name', update: serial_update_config) }
     let(:serial_update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', serial?: true) }
 
     before do
@@ -143,8 +143,8 @@ describe Bosh::Director::DeploymentPlan::BatchMultiJobUpdater do
     end
     let(:parallel_updater) { instance_double('Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater') }
 
-    let(:parallel_job1) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-parallel-job1-name', update: parallel_update_config) }
-    let(:parallel_job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-parallel-job2-name', update: parallel_update_config) }
+    let(:parallel_job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-parallel-job1-name', update: parallel_update_config) }
+    let(:parallel_job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-parallel-job2-name', update: parallel_update_config) }
     let(:parallel_update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', serial?: false) }
 
     context 'when all jobs need to run serially' do

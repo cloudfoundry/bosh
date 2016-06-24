@@ -15,7 +15,7 @@ module Bosh::Director
 
       DBSpecHelper.migrate(migration_file)
 
-      stemcells = db[:stemcells].all
+      stemcells = db[:stemcells].all.sort_by{|e| e[:id]}
       expect(stemcells[0][:operating_system]).to eq(stemcells[0][:name])
       expect(stemcells[1][:operating_system]).to eq('fake-operating-system')
       expect(stemcells[2][:operating_system]).to eq(stemcells[2][:name])

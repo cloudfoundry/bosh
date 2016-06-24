@@ -95,6 +95,10 @@ EOF" >> ${image_mount_point}/etc/grub.d/00_header
     # assemble config file that is read by grub2 at boot time
     run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
 
+    # set the correct root filesystem; use the ext2 filesystem's UUID
+    device_uuid=$(dumpe2fs $loopback_dev | grep UUID | awk '{print $3}')
+    sed -i s%root=${loopback_dev}%root=UUID=${device_uuid}%g ${image_mount_point}/boot/grub2/grub.cfg
+
     rm ${image_mount_point}/device.map
 
   else # Classic GRUB

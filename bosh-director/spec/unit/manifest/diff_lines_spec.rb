@@ -19,6 +19,7 @@ module Bosh::Director
           diff_lines.order
           expect(diff_lines.map(&:to_s)).to eq([
             'azs:',
+            '',
             'jobs:',
           ])
         end
@@ -26,6 +27,13 @@ module Bosh::Director
 
       context 'when indented' do
         before do
+          diff_lines << Line.new(0, 'vm_extensions:', nil)
+          diff_lines << Line.new(0, '- name: pub-lbs', nil)
+          diff_lines << Line.new(1, 'cloud_properties:', nil)
+          diff_lines << Line.new(2, 'elbs: [main]', nil)
+          diff_lines << Line.new(0, 'vm_types:', nil)
+          diff_lines << Line.new(0, '  - name: default', nil)
+          diff_lines << Line.new(1, 'cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}', nil)
           diff_lines << Line.new(0, 'jobs:', nil)
           diff_lines << Line.new(0, '- name: job1', nil)
           diff_lines << Line.new(0, '  properties:', nil)
@@ -38,6 +46,13 @@ module Bosh::Director
 
         it 're-orders lines based on desired manifest keys order' do
           expect(diff_lines.map(&:to_s)).to eq([
+            'vm_extensions:',
+            '- name: pub-lbs',
+            '  cloud_properties:',
+            '    elbs: [main]',
+            'vm_types:',
+            '  - name: default',
+            '  cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}',
             'jobs:',
             '- name: job1',
             '  properties:',
@@ -53,6 +68,16 @@ module Bosh::Director
             '- name: z1',
             '  cloud_properties:',
             '    baz: qux',
+            '',
+            'vm_types:',
+            '  - name: default',
+            '  cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}',
+            '',
+            'vm_extensions:',
+            '- name: pub-lbs',
+            '  cloud_properties:',
+            '    elbs: [main]',
+            '',
             'jobs:',
             '- name: job1',
             '  properties:',
@@ -79,7 +104,9 @@ module Bosh::Director
           diff_lines.order
           expect(diff_lines.map(&:to_s)).to eq([
             'azs:',
+            '',
             'jobs:',
+            '',
             'foo:',
             '  bar: baz',
           ])

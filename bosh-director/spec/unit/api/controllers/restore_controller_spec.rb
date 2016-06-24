@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'rack/test'
 
 module Bosh::Director
   module Api
@@ -13,6 +14,8 @@ module Bosh::Director
           'user' => 'fake-user',
           'password' => 'fake-password',
           'host' => 'fake-host',
+          'adapter' => 'sqlite',
+          'database' => '/:memory:'
         })
         config
       end

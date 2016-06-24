@@ -47,7 +47,7 @@ module Bosh::Cli::Command
         headings += ['VM Type', 'IPs']
 
         if options[:details]
-          headings += ['CID', 'Agent ID', 'Resurrection']
+          headings += ['CID', 'Agent ID', 'Resurrection', 'Ignore']
         end
         if options[:dns]
           headings += ['DNS A records']
@@ -83,7 +83,7 @@ module Bosh::Cli::Command
           row << ips
 
           if options[:details]
-            row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']
+            row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active', vm['ignore'].nil? ? 'n/a' : vm['ignore']]
           end
 
           if options[:dns]

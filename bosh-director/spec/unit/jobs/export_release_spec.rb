@@ -134,7 +134,7 @@ module Bosh::Director
 
           it 'succeeds' do
             expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-              expect(job.first).to be_instance_of(DeploymentPlan::Job)
+              expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
               expect(job.first.release.name).to eq(release_name)
               expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
             end.and_return(package_compile_step)
@@ -172,7 +172,7 @@ module Bosh::Director
 
             it 'succeeds' do
               expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-                expect(job.first).to be_instance_of(DeploymentPlan::Job)
+                expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
                 expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
               end.and_return(package_compile_step)
               expect(package_compile_step).to receive(:perform).with no_args
@@ -201,14 +201,14 @@ module Bosh::Director
             context 'when dealing with links' do
               let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory)}
               let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
-              let(:deployment_job) { instance_double(DeploymentPlan::Job)}
+              let(:deployment_job) { instance_double(DeploymentPlan::InstanceGroup)}
 
               before {
                 allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
                 allow(planner_factory).to receive(:create_from_model).and_return(planner)
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
-                allow(planner).to receive(:add_job)
+                allow(planner).to receive(:add_instance_group)
                 allow(planner).to receive(:compile_packages)
                 allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
               }
@@ -275,7 +275,7 @@ module Bosh::Director
               release_id: release.id,
               blobstore_id: 'postgres_package_blobstore_id',
               sha1: 'postgres_package_sha1',
-              dependency_set_json: Yajl::Encoder.encode(["ruby"]),
+              dependency_set_json: JSON.generate(["ruby"]),
           )
           package_postgres.add_compiled_package(
               sha1: 'postgres_compiled_package_sha1',
@@ -290,7 +290,7 @@ module Bosh::Director
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
-          allow(planner).to receive(:jobs) { ['fake-job'] }
+          allow(planner).to receive(:instance_groups) { ['fake-job'] }
           allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
@@ -300,7 +300,7 @@ module Bosh::Director
 
         it 'should order the files in the tarball' do
           allow(blobstore_client).to receive(:get)
-          allow(blobstore_client).to receive(:create)
+          allow(blobstore_client).to receive(:create).and_return('blobstore_id')
           expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
             expect(sources).to eq(['./release.MF', './jobs', './compiled_packages'])
             File.write(output_path, 'Some glorious content')
@@ -322,7 +322,7 @@ module Bosh::Director
               File.write(output_path, 'Some glorious content')
           }
 
-          expect(blobstore_client).to receive(:create)
+          expect(blobstore_client).to receive(:create).and_return('blobstore_id')
           expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby_compiled_package_sha1')
           expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres_compiled_package_sha1')
           expect(blobstore_client).to receive(:get).with('foo_blobstore_id', anything, sha1: 'foo_sha1')
@@ -364,7 +364,7 @@ version: 0.1-dev
 ))}
 
           allow(blobstore_client).to receive(:get)
-          allow(blobstore_client).to receive(:create)
+          allow(blobstore_client).to receive(:create).and_return('blobstore_id')
 
           job.perform
         end
@@ -377,6 +377,31 @@ version: 0.1-dev
            }
 
           job.perform
+        end
+
+        context 'that is successfully placed in the blobstore' do
+
+          let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'expected-sha1')}
+
+          it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
+            expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
+
+            allow(blobstore_client).to receive(:get)
+            allow(blobstore_client).to receive(:create).and_return(expected_blobstore_id)
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              File.write(output_path, 'Some glorious content')
+            }
+            allow(Digest::SHA1).to receive(:file).with(any_args).and_return(sha1_digest)
+
+            expect {
+              job.perform
+            }.to change(Bosh::Director::Models::EphemeralBlob, :count).from(0).to(1)
+
+            ephemeral_blob = Bosh::Director::Models::EphemeralBlob.first
+            expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
+            expect(ephemeral_blob.sha1).to eq('expected-sha1')
+
+          end
         end
       end
     end

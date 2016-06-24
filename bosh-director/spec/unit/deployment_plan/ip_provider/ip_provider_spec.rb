@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe IpProvider do
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
-    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_legacy_ranges: Set.new) }
+    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:networks) { {'my-manual-network' => manual_network} }
     let(:manual_network_spec) {
       {

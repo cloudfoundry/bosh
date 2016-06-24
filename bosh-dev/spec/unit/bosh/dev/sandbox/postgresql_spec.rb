@@ -17,8 +17,14 @@ module Bosh::Dev::Sandbox
     describe '#drop_db' do
       it 'drops a database' do
         expect(runner).to receive(:run).with(
-          %Q{psql -U postgres -c 'drop database "fake_db_name";' > /dev/null 2>&1})
+          %Q{echo 'revoke connect on database "fake_db_name" from public; drop database "fake_db_name";' | psql -U postgres})
         postgresql.drop_db
+      end
+    end
+
+    describe '#connection_string' do
+      it 'returns a configured string' do
+        expect(subject.connection_string).to eq('postgres://postgres:@localhost:9922/fake_db_name')
       end
     end
 

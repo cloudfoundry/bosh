@@ -15,6 +15,10 @@ module Bosh::Dev::Sandbox
       @port = port
     end
 
+    def connection_string
+      "postgres://#{@username}:#{@password}@localhost:#{@port}/#{@db_name}"
+    end
+
     # Assumption is that user running tests can
     # login via psql without entering password.
     def create_db
@@ -24,7 +28,7 @@ module Bosh::Dev::Sandbox
 
     def drop_db
       @logger.info("Dropping postgres database #{db_name}")
-      @runner.run(%Q{psql -U postgres -c 'drop database "#{db_name}";' > /dev/null 2>&1})
+      @runner.run(%Q{echo 'revoke connect on database "#{db_name}" from public; drop database "#{db_name}";' | psql -U postgres})
     end
 
     def current_tasks
@@ -47,19 +51,19 @@ module Bosh::Dev::Sandbox
 
     def truncate_db
       @logger.info("Truncating postgres database #{db_name}")
-      table_name_cmd = %Q{psql -U postgres #{db_name} -c "select tablename from pg_tables where schemaname='public';"}
-      table_names = `#{table_name_cmd}`.lines.to_a[2...-2] || []
-      table_names.map!(&:strip)
-      table_names.reject! { |name| name == "schema_migrations" }
-      table_names.each do |table_name|
-        @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' > /dev/null 2>&1})
-      end
-
-      sequence_name_cmd = %Q{psql -U postgres #{db_name} -c "select relname from pg_class where relkind = 'S';"}
-      sequence_names = `#{sequence_name_cmd}`.lines.to_a[2...-2] || []
-      sequence_names.each do |sequence_name|
-        @runner.run(%Q{psql -U postgres #{db_name} -c 'ALTER SEQUENCE #{sequence_name} RESTART WITH 1;' > /dev/null 2>&1})
-      end
+      cmds_cmd = %Q{psql -U postgres #{db_name} -c "
+        SELECT CONCAT('truncate table \\"', tablename, '\\" cascade')
+        FROM pg_tables
+        WHERE
+          schemaname = 'public' AND
+          tablename <> 'schema_migrations'
+        UNION
+        SELECT CONCAT('alter sequence ', relname, ' restart with 1')
+        FROM pg_class
+        WHERE relkind = 'S'
+       "}
+      cmds = `#{cmds_cmd}`.lines.to_a[2...-2] || []
+      @runner.run(%Q{psql -U postgres #{db_name} -c '#{cmds.join(';')}' > /dev/null 2>&1})
     end
   end
 end

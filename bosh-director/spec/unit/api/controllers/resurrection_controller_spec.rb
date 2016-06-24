@@ -7,26 +7,8 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-      let(:config) { Config.load_hash(test_config) }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       before { basic_authorize 'admin', 'admin' }
-
-      after do
-        FileUtils.rm_rf(temp_dir)
-      end
 
       it 'sets the date header' do
         get '/'
@@ -35,18 +17,15 @@ module Bosh::Director
 
       describe 'API calls' do
         describe 'resurrection' do
-          it 'allows putting all job instances into different resurrection_paused values' do
-            deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump('foo' => 'bar'))
-            instances = [
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '0', state: 'started'),
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '1', state: 'started'),
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '2', state: 'started'),
-            ]
-            put '/', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
+          it 'sets global resurrection to true' do
+            put '/', JSON.generate('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
-            instances.each do |instance|
-              expect(instance.reload.resurrection_paused).to be(true)
-            end
+            expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('true')
+          end
+          it 'sets global resurrection to false' do
+            put '/', JSON.generate('resurrection_paused' => false), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('false')
           end
         end
 

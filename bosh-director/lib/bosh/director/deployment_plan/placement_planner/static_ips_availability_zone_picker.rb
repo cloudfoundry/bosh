@@ -18,13 +18,47 @@ module Bosh
           def place_and_match_in(desired_instances, existing_instance_models)
             @networks_to_static_ips.validate_azs_are_declared_in_job_and_subnets(@desired_azs)
             @networks_to_static_ips.validate_ips_are_in_desired_azs(@desired_azs)
+            validate_ignored_instances_networks(existing_instance_models)
+
             desired_instances = desired_instances.dup
 
             instance_plans = place_existing_instance_plans(desired_instances, existing_instance_models)
-            place_new_instance_plans(desired_instances, instance_plans)
+            instance_plans = place_new_instance_plans(desired_instances, instance_plans)
+
+            if ignored_instances_are_obsolete?(instance_plans)
+              raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}', an attempt was made to remove a static ip"+
+                  ' that is used by an ignored instance. This operation is not allowed.'
+            end
+
+            instance_plans
           end
 
           private
+
+          def validate_ignored_instances_networks(existing_instance_models)
+            existing_instance_models.each do |existing_instance_model|
+              next if !existing_instance_model.ignore
+
+              # Validate that no networks were added or deleted
+              desired_networks_names = @job_networks.map(&:name).uniq.sort
+              existing_networks_names = existing_instance_model.ip_addresses.map(&:network_name).uniq.sort
+
+              if desired_networks_names != existing_networks_names
+                raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}', which contains ignored vms,"+
+                    ' an attempt was made to modify the networks. This operation is not allowed.'
+              end
+
+              # Validate that no ip addresses, that were assigned to an ignored VM, have been removed
+              existing_instance_model.ip_addresses.each do |ip_address|
+                ignored_vm_network = @job_networks.select { |n| n.name == ip_address.network_name }.first
+
+                if !ignored_vm_network.static_ips.include?(ip_address.address)
+                  raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}', an attempt was made to remove a static ip"+
+                      ' that is used by an ignored instance. This operation is not allowed.'
+                end
+              end
+            end
+          end
 
           def place_existing_instance_plans(desired_instances, existing_instance_models)
             instance_plans = []
@@ -230,6 +264,10 @@ module Bosh
 
           def instance_name(existing_instance_model)
             "#{existing_instance_model.job}/#{existing_instance_model.index}"
+          end
+
+          def ignored_instances_are_obsolete?(instance_plans)
+            instance_plans.select{ |i| i.obsolete? && i.should_be_ignored? }.any?
           end
         end
       end

@@ -15,14 +15,21 @@ module Bosh::Director
         releases
       end
 
-      def sorted_release_versions(release)
+      def sorted_release_versions(release, prefix = nil)
         sorted_version_tuples = release.versions_dataset.all.map do |version|
           {
             provided: version,
             parsed: Bosh::Common::Version::ReleaseVersion.parse(version.values[:version])
           }
         end.sort_by { |rv| rv[:parsed] }
-        release_versions = sorted_version_tuples.map do |version|
+
+        unless prefix.nil?
+          sorted_version_tuples = sorted_version_tuples.select do |version_tuple|
+            /^#{prefix}([\.\-\+]|$)/.match(version_tuple[:provided].version.to_s)
+          end
+        end
+
+        sorted_version_tuples.map do |version|
           provided = version[:provided]
           {
             'version' => provided.version.to_s,
@@ -32,8 +39,6 @@ module Bosh::Director
             'job_names' => provided.templates.map(&:name),
           }
         end
-
-        release_versions
       end
 
       def find_by_name(name)

@@ -6,6 +6,7 @@ module Bosh::Director
   describe Jobs::CloudCheck::Scan do
     describe 'DJ job class expectations' do
       let(:job_type) { :cck_scan }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 

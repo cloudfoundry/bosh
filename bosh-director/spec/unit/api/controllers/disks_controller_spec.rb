@@ -7,30 +7,13 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:config) { Config.load_hash(test_config) }
-
-      let(:temp_dir) { Dir.mktmpdir }
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
       let(:orphaned_at) { Time.now.utc }
 
       before do
         App.new(config)
       end
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       context 'orphan disks' do
         before do
@@ -56,7 +39,7 @@ module Bosh::Director
           get '/'
 
           expect(last_response.status).to eq(200)
-          body = Yajl::Parser.parse(last_response.body)
+          body = JSON.parse(last_response.body)
 
           expect(body.size).to eq(2)
 
@@ -83,6 +66,8 @@ module Bosh::Director
       end
 
       context 'put /disks/diskcid/attachments' do
+        let!(:deployment) { Models::Deployment.make(name: 'foo') }
+
         it 'requires auth' do
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'
           expect(last_response.status).to eq(401)
@@ -91,7 +76,7 @@ module Bosh::Director
         it 'queues an attach disk job' do
           basic_authorize('admin', 'admin')
           expect(Jobs::AttachDisk).to receive(:enqueue)
-                                        .with('admin', 'foo', 'dea', '17f01a35', 'vol-af4a3e40', kind_of(JobQueue))
+                                        .with('admin', deployment, 'dea', '17f01a35', 'vol-af4a3e40', kind_of(JobQueue))
                                         .and_call_original
 
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'

@@ -13,11 +13,11 @@ module Bosh::Director::Models
 
     def cloud_properties
       result = self.cloud_properties_json
-      result ? Yajl::Parser.parse(result) : {}
+      result ? JSON.parse(result) : {}
     end
 
     def cloud_properties=(cloud_properties)
-      self.cloud_properties_json = Yajl::Encoder.encode(cloud_properties)
+      self.cloud_properties_json = JSON.generate(cloud_properties)
     end
   end
 end

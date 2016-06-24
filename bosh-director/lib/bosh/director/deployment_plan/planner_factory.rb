@@ -62,32 +62,34 @@ module Bosh
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
+            'max_in_flight' => parse_numerical_arguments(options['max_in_flight']),
+            'canaries' => parse_numerical_arguments(options['canaries'])
           }
 
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
-          global_network_resolver = GlobalNetworkResolver.new(deployment)
+          deployment_planner = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
+          global_network_resolver = GlobalNetworkResolver.new(deployment_planner, Config.director_ips, @logger)
 
-          ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
-          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
-          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(deployment_manifest, plan_options)
+          ip_provider_factory = IpProviderFactory.new(deployment_planner.using_global_networking?, @logger)
+          deployment_planner.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
+          DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(deployment_manifest, plan_options)
 
           if runtime_config
-            RuntimeManifestParser.new(@logger, deployment).parse(runtime_config.manifest)
+            RuntimeManifestParser.new(@logger, deployment_planner).parse(runtime_config.manifest)
           end
 
-          process_links(deployment)
+          process_links(deployment_planner)
 
-          DeploymentValidator.new.validate(deployment)
-          deployment
+          DeploymentValidator.new.validate(deployment_planner)
+          deployment_planner
         end
 
         def process_links(deployment)
           errors = []
 
-          deployment.jobs.each do |current_job|
+          deployment.instance_groups.each do |current_job|
             current_job.templates.each do |template|
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
                 template.link_infos[current_job.name]['consumes'].each do |name, source|
@@ -130,7 +132,7 @@ module Bosh
             message = 'Unable to process links for deployment. Errors are:'
 
             errors.each do |e|
-              message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+              message = "#{message}\n   - #{e.message.gsub(/\n/, "\n     ")}"
             end
 
             raise message
@@ -214,6 +216,19 @@ module Bosh
             end
           end
           return mapped_properties
+        end
+
+        def parse_numerical_arguments arg
+          case arg
+            when nil
+              nil
+            when /%/
+              raise 'percentages not yet supported for max in flight and canary cli overrides'
+            when /\A[-+]?[0-9]+\z/
+              arg.to_i
+            else
+              raise 'cannot be converted to integer'
+          end
         end
       end
     end

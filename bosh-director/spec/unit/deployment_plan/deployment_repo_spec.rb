@@ -46,9 +46,12 @@ module Bosh
 
         context 'when scopes are provided' do
           context 'and there is an existing deployment with the same name' do
+            let(:prod_team) { [ Models::Team.make(name: 'production') ] }
+            let(:prod_dev_teams) { [ Models::Team.make(name: 'production'), Models::Team.make(name: 'dev') ] }
+
             context 'and there is at least one scope in common between the existing deployment and provided scopes' do
               it 'should not create a new deployment' do
-                existing = Models::Deployment.create(name: 'existing', teams: 'production')
+                existing = Models::Deployment.create_with_teams(name: 'existing', teams: prod_team)
 
                 expect(
                   subject.find_or_create_by_name('existing', {'scopes' => %w(bosh.teams.production.admin bosh.teams.dev.admin)})
@@ -58,7 +61,8 @@ module Bosh
 
             context 'and provided scopes are the same as teams on the existing deployment' do
               it 'should not create a new deployment' do
-                existing = Models::Deployment.create(name: 'existing', teams: 'production')
+
+                existing = Models::Deployment.create_with_teams(name: 'existing', teams: prod_dev_teams)
 
                 expect(
                   subject.find_or_create_by_name('existing', {'scopes' => ['bosh.teams.production.admin']})
@@ -68,7 +72,7 @@ module Bosh
 
             context 'and provided scope is bosh.admin' do
               it 'should not create a new deployment' do
-                existing = Models::Deployment.create(name: 'existing', teams: 'production')
+                existing = Models::Deployment.create_with_teams(name: 'existing', teams: prod_dev_teams)
 
                 expect(
                   subject.find_or_create_by_name('existing', {'scopes' => ['bosh.admin']})
@@ -78,7 +82,7 @@ module Bosh
 
             context 'and provided scope is bosh.<DIRECTOR-UUID>.admin' do
               it 'should not create a new deployment' do
-                existing = Models::Deployment.create(name: 'existing', teams: 'production')
+                existing = Models::Deployment.create_with_teams(name: 'existing', teams: prod_dev_teams)
 
                 expect(
                   subject.find_or_create_by_name('existing', {'scopes' => ['bosh.fake-director-uuid.admin']})
@@ -88,7 +92,7 @@ module Bosh
 
             context 'and provided scopes contains one of the deployment teams' do
               it 'should not create a new deployment' do
-                existing = Models::Deployment.create(name: 'existing', teams: 'production,dev')
+                existing = Models::Deployment.create_with_teams(name: 'existing', teams: prod_dev_teams)
 
                 expect(
                   subject.find_or_create_by_name('existing', {'scopes' => ['bosh.teams.dev.admin']})
@@ -103,7 +107,10 @@ module Bosh
                 subject.find_or_create_by_name('new', {'scopes' => ['bosh.teams.production.admin', 'bosh.teams.dev.admin']})
               }.to change { Models::Deployment.count }
 
-              expect(Models::Deployment.filter(name: 'new', teams: 'production,dev').count).to eq(1)
+              found = Models::Deployment.filter(name: 'new')
+              expect(found.count).to eq(1)
+              deployment = found.first
+              expect(deployment.teams.map(&:name).sort).to eq(['dev','production'])
             end
           end
         end

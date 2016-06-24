@@ -61,6 +61,7 @@ properties:
   second_static_ip: $BAT_SECOND_STATIC_IP
   uuid: $(bosh status --uuid)
   pool_size: 1
+  availability_zone: ${AVAILABILITY_ZONE}
   stemcell:
     name: ${BAT_STEMCELL_NAME}
     version: latest
@@ -78,9 +79,19 @@ properties:
       security_groups: [$BAT_SECURITY_GROUP_NAME]
 EOF
 
+# Install bats dependencies
 cd bats
 ./write_gemfile
 bundle install
-bundle exec rspec spec
-bosh -t $BAT_DIRECTOR login admin admin
-bosh -n -t $BAT_DIRECTOR cleanup --all
+
+# Install CLI from latest source
+cd ../bosh-src
+bundle install
+
+# Run bats using bats dependencies, but when it shells out use CLI from current directory (bosh-src)
+BUNDLE_GEMFILE=$PWD/../bats/Gemfile bundle exec rspec ../bats/spec --tag ~multiple_manual_networks --tag ~root_partition
+
+# Clean up
+cd ../bats
+bundle exec bosh -t $BAT_DIRECTOR login admin admin
+bundle exec bosh -n -t $BAT_DIRECTOR cleanup --all

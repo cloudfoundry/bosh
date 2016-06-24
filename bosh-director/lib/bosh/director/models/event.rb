@@ -8,11 +8,11 @@ module Bosh::Director::Models
 
     def context
       return {} if context_json.nil?
-      Yajl::Parser.parse(context_json)
+      JSON.parse(context_json)
     end
 
     def context=(data)
-      self.context_json = Yajl::Encoder.encode(data)
+      self.context_json = JSON.generate(data)
     end
   end
 end

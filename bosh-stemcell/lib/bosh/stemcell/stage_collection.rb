@@ -37,7 +37,7 @@ module Bosh::Stemcell
         :aws_cli,
         :logrotate_config,
         :dev_tools_config,
-      ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and [:bosh_ruby, :bosh_micro_go].include?(s) }
+      ]
     end
 
     def build_stemcell_image_stages
@@ -264,6 +264,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
+        :system_users,
         :bosh_audit
       ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end
@@ -284,6 +285,7 @@ module Bosh::Stemcell
     def bosh_steps
       [
         :bosh_sysctl,
+        :bosh_limits,
         :bosh_users,
         :bosh_monit,
         :bosh_ntpdate,

@@ -48,6 +48,9 @@ properties:
   director.workers:
     description: Number of director workers
     default: 3
+  director.enable_dedicated_status_worker:
+    description: "Separate worker for 'bosh vms' and 'bosh ssh'"
+    default: false
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -102,6 +105,12 @@ properties:
   director.enable_post_deploy:
     description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
+  director.parse_config_values:
+    description: When true, replace substitution values in manifest with values from config server
+    default: false
+  director.config_server_url:
+    description: URL for the config server
+    default: http://127.0.0.1:8080
   director.generate_vm_passwords:
     description: When true, a random unique password will be used for each vm if user has not specified a password
     default: false
@@ -113,6 +122,9 @@ properties:
     default: false
   director.flush_arp:
     description: Clear up arp entries when machines are recreated
+    default: false
+  director.enable_virtual_delete_vms:
+    description: When true, bosh will not delete vm from cloud when instance update, just destroy vm record in db
     default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
@@ -128,7 +140,9 @@ properties:
     description: 'User management implementation (local|uaa)'
     default: local
   director.user_management.uaa.url:
-    description: 'Uaa URL'
+    description: 'Uaa URL, specify either the url or the urls attribute'
+  director.user_management.uaa.urls:
+    description: 'List of Uaa URLs, specify either the url or the urls attribute'
   director.user_management.uaa.symmetric_key:
     description: 'Symmetric key to verify Uaa token'
   director.user_management.uaa.public_key:
@@ -248,17 +262,15 @@ properties:
   blobstore.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
-  blobstore.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
   blobstore.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
-  blobstore.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  blobstore.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  blobstore.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -311,14 +323,12 @@ properties:
   compiled_package_cache.options.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
-  compiled_package_cache.options.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
-  compiled_package_cache.options.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   compiled_package_cache.options.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  compiled_package_cache.options.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  compiled_package_cache.options.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
 
   ntp:
     description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
@@ -354,14 +364,12 @@ properties:
   agent.blobstore.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
-  agent.blobstore.s3_force_path_style:
-    description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false
-  agent.blobstore.s3_multipart_threshold:
-    description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216
   agent.blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
+  agent.blobstore.server_side_encryption:
+    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
+  agent.blobstore.sse_kms_key_id:
+    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:

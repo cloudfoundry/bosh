@@ -1,9 +1,9 @@
 ---
 name: ruby
 files:
+- ruby/ruby-2.3.1.tar.gz
+- ruby/rubygems-2.6.4.tgz
+- ruby/bundler-1.11.2.gem
 - ruby/yaml-0.1.5.tar.gz
-- ruby/ruby-2.1.7.tar.gz
-- ruby/rubygems-2.4.8.tgz
-- ruby/bundler-1.10.6.gem
 - config/config.guess
 - config/config.sub

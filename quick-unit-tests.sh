@@ -14,10 +14,10 @@ echo "task outputs will be written to ${TEMP_FOLDER}"
 
 echo "task: test-unit..."
 
-export RUBY_VERSION=${RUBY_VERSION:-1.9.3}
-fly ${target} execute -c ci/tasks/test-unit.yml -x -i bosh-src=.
+#export RUBY_VERSION=${RUBY_VERSION:-1.9.3}
+#fly ${target} execute -c ci/tasks/test-unit.yml -x -i bosh-src=.
 
-echo "task: test-unit..."
+#echo "task: test-unit..."
 
 export RUBY_VERSION=${RUBY_VERSION:-2.1.7}
 fly ${target} execute -c ci/tasks/test-unit.yml -x -i bosh-src=.

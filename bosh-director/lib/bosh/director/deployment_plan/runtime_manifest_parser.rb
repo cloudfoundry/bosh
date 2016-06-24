@@ -32,9 +32,9 @@ module Bosh::Director
         end
 
         @release_specs.each do |release_spec|
-          if release_spec['version'] == 'latest'
+          if release_spec['version'] =~ /(^|[\._])latest$/
             raise RuntimeInvalidReleaseVersion,
-                  "Runtime manifest contains the release '#{release_spec['name']}' with version as 'latest'. " +
+                  "Runtime manifest contains the release '#{release_spec['name']}' with version as '#{release_spec['version']}'. " +
                       "Please specify the actual version string."
           end
 
@@ -73,7 +73,7 @@ module Bosh::Director
             if @deployment
               valid_release_versions = @deployment.releases.map {|r| r.name }
               deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
-              deployment_jobs = @deployment.jobs
+              deployment_jobs = @deployment.instance_groups
 
               templates_from_model = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
               if templates_from_model == nil
@@ -126,11 +126,20 @@ module Bosh::Director
         end
       end
 
-      def merge_addon(job, templates, properties)
+      def merge_addon(job, addon_jobs, properties)
+        # iterate through deployment plan instance group jobs and see if any of them are the
+        # same name as the addon_job, if they are throw an error, otherwise add to instance group
         if job.templates
-          job.templates.concat(templates)
+          job.templates.each do |job_template|
+            addon_jobs.each do |addon_job_template|
+              if addon_job_template.name == job_template.name
+                raise "Colocated job '#{addon_job_template.name}' is already added to the instance group '#{job.name}'."
+              end
+            end
+          end
+          job.templates.concat(addon_jobs)
         else
-          job.templates = templates
+          job.templates = addon_jobs
         end
 
         if properties

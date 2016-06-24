@@ -2,3 +2,5 @@
 name: postgres
 files:
 - postgres/postgresql-9.0.23.tar.gz
+- config/config.guess
+- config/config.sub

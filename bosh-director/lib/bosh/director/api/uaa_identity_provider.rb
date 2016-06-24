@@ -7,8 +7,13 @@ module Bosh
         MAX_TOKEN_EXTENSION_TIME_IN_SECONDS = 3600
 
         def initialize(options)
-          @url = options.fetch('url')
-          Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
+          raise ValidationExtraField if options.has_key?('url') && options.has_key?('urls')
+          if options.has_key?('url')
+            @urls = [options.fetch('url')]
+          else
+            @urls = options.fetch('urls')
+          end
+          Config.logger.debug "Initializing UAA Identity provider with urls #{@urls}"
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
@@ -20,7 +25,8 @@ module Bosh
           {
             'type' => 'uaa',
             'options' => {
-              'url' => @url
+              'url' => @urls.first,
+              'urls' => @urls
             }
           }
         end

@@ -8,7 +8,7 @@ PIDFILE=$RUN_DIR/worker_$INDEX.pid
 RUNAS=vcap
 
 # Postgres
-PATH=/var/vcap/packages/postgres/bin:$PATH
+PATH=/var/vcap/packages/postgres-9.4/bin:/var/vcap/packages/postgres/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 
 # MySQL
@@ -21,11 +21,16 @@ PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH LD_LIBRARY_PATH
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.1.0
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 
-export QUEUE=normal
+export QUEUE="normal,urgent"
+<% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
+if [ $INDEX -eq 1 ]; then
+  export QUEUE="urgent"
+fi
+<% end %>
 
 <% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY=<%= http_proxy %>

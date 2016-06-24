@@ -61,9 +61,9 @@ module Bosh::Common::Version
 
       describe 'version numbers that use underscores as separators' do
         it 'orders them in numerical order' do
-          expect(described_class.parse_and_compare('1741', '1741_0')).to eq(0)
-          expect(described_class.parse_and_compare('1741_0', '1741_1')).to eq(-1)
-          expect(described_class.parse_and_compare('1741_2', '1741_1')).to eq(1)
+          expect(described_class.parse_and_compare('1741', '1741.0')).to eq(0)
+          expect(described_class.parse_and_compare('1741.0', '1741.1')).to eq(-1)
+          expect(described_class.parse_and_compare('1741.2', '1741.1')).to eq(1)
         end
       end
     end

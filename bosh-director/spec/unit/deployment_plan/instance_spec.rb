@@ -18,9 +18,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:network_resolver) { GlobalNetworkResolver.new(plan) }
+    let(:network_resolver) { GlobalNetworkResolver.new(plan, [], logger) }
     let(:job) do
-      instance_double('Bosh::Director::DeploymentPlan::Job',
+      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         vm_type: vm_type,
         stemcell: stemcell,
         env: env,
@@ -45,7 +45,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
     describe '#bind_existing_instance_model' do
-      let(:job) { Job.new(logger) }
+      let(:job) { InstanceGroup.new(logger) }
 
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
@@ -79,7 +79,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'applying state' do
-      let(:job) { Job.new(logger) }
+      let(:job) { InstanceGroup.new(logger) }
 
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
@@ -139,8 +139,8 @@ module Bosh::Director::DeploymentPlan
           expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
 
           instance.apply_initial_vm_state(instance_spec)
-          expect(instance_model.spec['networks']).to eq({'changed' => {}})
-          expect(instance_model.spec['env']).to eq('fake-env')
+          expect(instance_model.spec_p('networks')).to eq({'changed' => {}})
+          expect(instance_model.spec_p('env')).to eq('fake-env')
         end
       end
     end

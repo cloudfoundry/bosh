@@ -125,7 +125,7 @@ namespace :spec do
 
   namespace :unit do
     desc 'Run all unit tests for ruby components'
-    task ruby: %w(rubocop) do
+    task :ruby do
       trap('INT') { exit }
       log_dir = Dir.mktmpdir
       puts "Logging spec results in #{log_dir}"

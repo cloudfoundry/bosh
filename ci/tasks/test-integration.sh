@@ -26,7 +26,7 @@ case "$DB" in
     '
     ;;
   *)
-    echo $"Usage: DB={mysql|postgresql} $0 {commands}"
+    echo "Usage: DB={mysql|postgresql} $0 {commands}"
     exit 1
 esac
 

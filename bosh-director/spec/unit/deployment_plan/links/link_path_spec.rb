@@ -22,7 +22,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   }
   let(:provider_job) {
     instance_double(
-        'Bosh::Director::DeploymentPlan::Job',
+        'Bosh::Director::DeploymentPlan::InstanceGroup',
         {
             name: 'provider_job',
             templates: [template]
@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       'Bosh::Director::DeploymentPlan::Planner',
       {
         name: 'deployment_name',
-        jobs: [provider_job]
+        instance_groups: [provider_job]
       }
     )
   }
@@ -246,7 +246,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     }
     let(:additional_provider_job) {
       instance_double(
-          'Bosh::Director::DeploymentPlan::Job',
+          'Bosh::Director::DeploymentPlan::InstanceGroup',
           {
               name: 'additional_provider_job',
               templates: [additional_template]
@@ -258,7 +258,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
           'Bosh::Director::DeploymentPlan::Planner',
           {
               name: 'deployment_name',
-              jobs: [provider_job, additional_provider_job]
+              instance_groups: [provider_job, additional_provider_job]
           }
       )
     }

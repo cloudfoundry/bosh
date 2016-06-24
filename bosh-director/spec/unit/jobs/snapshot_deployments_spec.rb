@@ -7,6 +7,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :snapshot_deployments }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 

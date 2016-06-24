@@ -6,7 +6,7 @@ module Bosh::Director
 
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
-    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
+    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger, false, false) }
     let(:arp_flusher) { ArpFlusher.new }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
@@ -126,7 +126,7 @@ module Bosh::Director
 
       @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
 
-      @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
+      @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'dea',
         release: @release,
         templates: [@t_dea, @t_warden],
@@ -134,7 +134,7 @@ module Bosh::Director
         stemcell: @stemcell_a
       )
 
-      @j_router = instance_double('Bosh::Director::DeploymentPlan::Job',
+      @j_router = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'router',
         release: @release,
         templates: [@t_nginx, @t_router, @t_warden],
@@ -142,7 +142,7 @@ module Bosh::Director
         stemcell: @stemcell_b
       )
 
-      @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job',
+      @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'needs_ruby',
         release: @release,
         templates: [@t_deps_ruby],
@@ -275,7 +275,7 @@ module Bosh::Director
       before do
         prepare_samples
 
-        @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
+        @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
           name: 'dea',
           release: @release,
           templates: [@t_dea, @t_warden],
@@ -437,7 +437,7 @@ module Bosh::Director
         release_version_model = Models::ReleaseVersion.make
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell = make_stemcell
-        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', stemcell: stemcell)
+        job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', release: release_version, name: 'job_name', stemcell: stemcell)
         package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
@@ -567,7 +567,7 @@ module Bosh::Director
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
 
         instance_double(
-          'Bosh::Director::DeploymentPlan::Job',
+          'Bosh::Director::DeploymentPlan::InstanceGroup',
           name: 'job-with-one-package',
           release: release,
           templates: [template],

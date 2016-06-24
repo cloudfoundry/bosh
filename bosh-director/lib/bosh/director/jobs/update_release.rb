@@ -8,6 +8,8 @@ module Bosh::Director
       include DownloadHelper
 
       @queue = :normal
+      @local_fs = true
+
       @compiled_release = false
 
       attr_accessor :release_model
@@ -98,7 +100,7 @@ module Bosh::Director
 
         begin
           @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
-          logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'") unless @version == @manifest["version"]
+          logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'") unless @version.to_s == @manifest["version"]
         rescue SemiSemantic::ParseError
           raise ReleaseVersionInvalid, "Release version invalid: #{@manifest["version"]}"
         end

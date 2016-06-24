@@ -3,7 +3,7 @@ module Bosh::Director
     class VmState < BaseJob
       TIMEOUT = 5
 
-      @queue = :normal
+      @queue = :urgent
 
       def self.job_type
         :vms
@@ -41,7 +41,7 @@ module Bosh::Director
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
-        vm_type_name = instance.spec && instance.spec['vm_type'] ? instance.spec['vm_type']['name'] : nil
+        vm_type_name = instance.spec_p('vm_type.name')
 
         {
           :vm_cid => instance.vm_cid,
@@ -60,7 +60,8 @@ module Bosh::Director
           :resurrection_paused => instance.resurrection_paused,
           :az => instance.availability_zone,
           :id => instance.uuid,
-          :bootstrap => instance.bootstrap
+          :bootstrap => instance.bootstrap,
+          :ignore => instance.ignore
         }
       end
 

@@ -22,11 +22,19 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :delete_deployment }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 
     it 'should fail if the deployment is not found' do
       expect { job.perform }.to raise_exception DeploymentNotFound
+    end
+
+    it 'fails when ignored instances exist in the to-be-deleted deployment' do
+      deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
+      BD::Models::Instance.make(deployment: deployment,job: 'foo-job', index: 0, ignore: true)
+      expect { job.perform }.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " +
+          'which contains ignored instance(s). Operation not allowed.'
     end
 
     it 'should store new events' do

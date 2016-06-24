@@ -12,7 +12,7 @@ module Bosh::Director
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
-    let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+    let(:test_config) { SpecHelper.spec_get_director_config }
     let(:config) do
       config = Config.load_hash(test_config)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
@@ -28,9 +28,38 @@ module Bosh::Director
         expect(identity_provider.client_info).to eq(
             'type' => 'uaa',
             'options' => {
-              'url' => 'http://localhost:8080/uaa'
+              'url' => 'http://localhost:8080/uaa',
+              'urls' => ['http://localhost:8080/uaa']
             }
           )
+      end
+    end
+
+    describe 'initialize' do
+      context 'if options contains url and urls' do
+        let(:provider_options) { { 'url' => 'http://one', 'urls' => ['http://one', 'http://two'] } }
+
+        it 'throws exception' do
+          expect { identity_provider }.to raise_error(ValidationExtraField)
+        end
+      end
+
+      context 'if options contain url' do
+        let(:provider_options) { { 'url' => 'http://one' } }
+
+        it 'sets url and urls in client_info' do
+          expect(identity_provider.client_info['options']['url']).to eq('http://one')
+          expect(identity_provider.client_info['options']['urls']).to eq(['http://one'])
+        end
+      end
+
+      context 'if options contain urls' do
+        let(:provider_options) { { 'urls' => ['http://one', 'http://two'] } }
+
+        it 'sets url and urls in client_info' do
+          expect(identity_provider.client_info['options']['url']).to eq('http://one')
+          expect(identity_provider.client_info['options']['urls']).to eq(['http://one', 'http://two'])
+        end
       end
     end
 

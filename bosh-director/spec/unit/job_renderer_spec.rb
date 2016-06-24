@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     subject(:renderer) { described_class.new(blobstore, logger) }
-    let(:job) { DeploymentPlan::Job.new(logger) }
+    let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before do

@@ -107,7 +107,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   let(:logger) { Logging::Logger.new('TestLogger') }
 
   let(:api_server_job) do
-    deployment_plan.job('api-server')
+    deployment_plan.instance_group('api-server')
   end
 
   before do
@@ -197,7 +197,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           deployment_plan.bind_models
 
           links_resolver = described_class.new(deployment_plan, logger)
-          mysql_job = deployment_plan.job('mysql')
+          mysql_job = deployment_plan.instance_group('mysql')
           links_resolver.resolve(mysql_job)
 
           deployment_plan.persist_updates!
@@ -242,7 +242,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect {
             links_resolver.resolve(api_server_job)
           }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't find deployment non-existent\"")
+   - Can't find deployment non-existent")
         end
       end
     end
@@ -316,7 +316,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't find deployment non-existant\"")
+   - Can't find deployment non-existant")
       end
     end
 
@@ -328,7 +328,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.\"")
+   - Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.")
       end
     end
 

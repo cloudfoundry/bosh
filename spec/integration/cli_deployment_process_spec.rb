@@ -127,11 +127,13 @@ lines"}
           upload_cloud_config(cloud_config_hash: new_cloud_config)
           output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
-          puts output
+          # some IDEs strip out excess whitespace on empty lines; workaround
+          output.gsub!(/^\s+$/,'')
 
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
-          expect(output).to match(/  resource_pools:
+          expect(output).to match(/
+  resource_pools:
   - name: a
     cloud_properties:
 \+     name: new_property
@@ -139,6 +141,7 @@ lines"}
 -   env:
 -     bosh:
 -       password: "?<redacted>"?
+
   jobs:
   - name: job1
     properties:

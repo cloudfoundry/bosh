@@ -21,7 +21,7 @@ module Bosh::Director
     let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
 
     let(:job) do
-      job = instance_double('Bosh::Director::DeploymentPlan::Job',
+      job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: {'name' => 'job'},
         canonical_name: 'job',
@@ -92,6 +92,16 @@ module Bosh::Director
       expect(instance_model.spec).to eq(instance_plan.spec.full_spec)
     end
 
+    it 'can skip post start if run_post_start is false' do
+      expect(agent_client).to_not receive(:run_script).with('post-start', {})
+      state_applier.apply(update_config, false)
+    end
+
+    it 'runs post start by default' do
+      expect(agent_client).to receive(:run_script).with('post-start', {})
+      state_applier.apply(update_config)
+    end
+
     it 'cleans rendered templates after applying' do
       expect(agent_client).to receive(:apply).ordered
       expect(rendered_job_templates_cleaner).to receive(:clean).ordered
@@ -125,6 +135,15 @@ module Bosh::Director
 
           it 'divides the interval into 1 second steps' do
             expect(state_applier).to receive(:sleep).with(1.0).exactly(8).times
+            expect { state_applier.apply(update_config) }.to raise_error
+          end
+        end
+        
+        context 'when the interval length is longer than 150 seconds' do
+          let(:update_watch_time) { '1000-301000' }
+
+          it 'divides the interval into 15 seconds steps' do
+            expect(state_applier).to receive(:sleep).with(15.0).exactly(20).times
             expect { state_applier.apply(update_config) }.to raise_error
           end
         end

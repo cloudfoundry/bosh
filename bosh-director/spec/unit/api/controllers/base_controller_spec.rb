@@ -8,30 +8,15 @@ module Bosh
         describe BaseController do
           include Rack::Test::Methods
 
-          let(:config) { Config.new(test_config) }
           subject(:app) { Support::TestController.new(config, requires_authentication) }
+          let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
           let(:identity_provider) { Support::TestIdentityProvider.new(config.get_uuid_provider) }
 
-          let(:temp_dir) { Dir.mktmpdir }
-          let(:test_config) { base_config }
-          let(:base_config) {
-            blobstore_dir = File.join(temp_dir, 'blobstore')
-            FileUtils.mkdir_p(blobstore_dir)
-
-            config = Psych.load(spec_asset('test-director-config.yml'))
-            config['dir'] = temp_dir
-            config['blobstore'] = {
-              'provider' => 'local',
-              'options' => {'blobstore_path' => blobstore_dir}
-            }
-            config['snapshots']['enabled'] = true
-            config
-          }
           before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
-          after { FileUtils.rm_rf(temp_dir) }
+
 
           it 'sets the date header' do
             get '/test_route'

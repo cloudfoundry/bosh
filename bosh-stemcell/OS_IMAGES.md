@@ -7,21 +7,33 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `nCKJ9eNJmSh2c_Kcld59BsPGl77ip7aW`
-  - Bump OS images
-  - built from 256.x (c6ef19f22b4e88e6ce73605e02981d77d0f4c9d7)
+* `OIJ7Qeu3QZMG3J0rSoI6lx8hdcZfaV5R`
+  - update for CIS tests
+  - built from develop (99aebc025dc4093981395d75be52369ced2d7131)
 
-* `TtMChc77Z.r8mYkG.OvEVaAUpzjRyHbx`
+* `Nh0.et3GyuktazQ9_jOwJGqByyicDrgV`
+  - update for CIS tests
+  - built from develop (a8d26078eb4a2fb277068381c76da638f40b5b36)
+
+* `oPXNdD8b5WwJXZZQBEYmdIVT1.Om7z2T`
+  - update nginx to 1.11.1
+  - built from develop (1af67b94cad42ff2133e383afd6d174721253dbc)
+
+* `ApGJBfSesa7VFhEu3RLRTIqiL1R7E_3J`
+  - update for CIS tests
+  - built from develop (3dfd04cd65c73a01e2f2f1b7310a33687ab27111)
+
+* `odCwzNL6fL14dOpN4SLDwru.6_LCooLl`
   - USN-2977-1: Linux kernel (Vivid HWE) vulnerability
-  - built from 256.x (0bb431cd8cffbb2b22589eb98ccddeee8177ef05)
+  - built from develop (ce8e1284890e0079923f26533c0e0f7f6c5b6a0e)
 
-* `rZZbZGNdsqz5VLZNsOtO9o2NI7aTaej5`
-  - rsyslog is reloaded upon logrotation (instead of restarted)
-  - built from 256.x (de22afef97f7304bacf6c7fe08cd91430d1b56ec)
+* `YsMYRqAqNEpQPA1bNtE26bg3zH6eR9qP`
+  - periodic bump with rsyslog reload changes
+  - built from develop (15a4ef77db335b186d183323f5a1f6819c35bdce)
 
-* `nPfyi.7Z9VDhvwyVT0_m_M1OlwJOes5o`
-  - USN-2959-1: OpenSSL vulnerabilities
-  - built from 256.x (108a503ae3d5ee27959cf24a5dccdd592430de4c)
+* `IstSjjYJuckEZbTJZ9wcV12hYiX2Nzca`
+  - bumped for USN-2959-1: OpenSSL vulnerabilities
+  - built from develop (95f5d9cc816f934db64a80188cf0c9e80ab15dda)
 
 * `GvyJwqBPjPEYBVCYrUHp0R7qJUHcTJGD`
   - includes gov1 STIGs
@@ -430,13 +442,29 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
-* `i7.hPWLx3iPixiaVpJDxskkg_CUXu_Rf`
-  - bump OS images
-  - built from 256.x (c6ef19f22b4e88e6ce73605e02981d77d0f4c9d7)
+* `yhFKKsGF1r62vIA4UpTjc1qcRCT1fJVp`
+  - update for CIS tests
+  - built from develop (99aebc025dc4093981395d75be52369ced2d7131)
 
-* `CiUo.LMh2eoPIP668WYzbnhcPJD4sSwu`
-  - rsyslog is reloaded upon logrotation (instead of restarted)
-  - built from develop (de22afef97f7304bacf6c7fe08cd91430d1b56ec)
+* `cQdYcoXI4hjmFlxBRyRvC2ROUcdJJEnl`
+  - update for CIS tests
+  - built from develop (a8d26078eb4a2fb277068381c76da638f40b5b36)
+
+* `NIy8pyhN76gikcaqacX40uxB.ePoKNKJ`
+  - update nginx to 1.11.1
+  - built from develop (1af67b94cad42ff2133e383afd6d174721253dbc)
+
+* `WTOHgTn21GfhCJIvxY8BLEk0BXJEG7rO`
+  - update for CIS tests
+  - built from develop (3dfd04cd65c73a01e2f2f1b7310a33687ab27111)
+
+* `UGbyeTxZ1vpbhzmbSmCovLpOLRDCPd4W`
+  - periodic bump with rsyslog reload changes
+  - built from develop (15a4ef77db335b186d183323f5a1f6819c35bdce)
+
+* `pYgqTvtvYYhvVwsK1YChI_Y.p3ob5XW1`
+  - periodic bump
+  - built from develop (95f5d9cc816f934db64a80188cf0c9e80ab15dda)
 
 * `sNzzvPR7ZvX8gBdSKLIgLxaR4KNGLoWM`
   - includes gov1 STIGs

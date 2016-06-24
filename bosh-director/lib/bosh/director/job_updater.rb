@@ -18,7 +18,9 @@ module Bosh::Director
       delete_unneeded_instances
 
       instance_plans = @job.needed_instance_plans.select do | instance_plan |
-        if instance_plan.changed?
+        if instance_plan.should_be_ignored?
+          false
+        elsif instance_plan.changed?
           true
         else
           # no changes necessary for the agent, but some metadata may have

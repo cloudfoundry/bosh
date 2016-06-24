@@ -49,9 +49,17 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe '/etc/securetty' do
-    it 'disallows virtual console access (stig: V-38492)' do
-      expect(`grep '^vc/[0-9]+' #{backend.chroot_dir}/etc/securetty`).to be_empty
+  context '/etc/securetty' do
+    context 'disallows virtual console access (stig: V-38492)' do
+      describe command("grep '^vc/[0-9]+' /etc/securetty") do
+        its(:stdout) { should be_empty }
+      end
+    end
+
+    context 'restricts root login to system console (CIS-9.4)' do
+      describe command("awk '$1 !~ /^(console|#.*|\s*)$/ { print; f=1 } END { if (!f) print \"none\" }' /etc/securetty") do
+        its(:stdout) { should eq "none\n" }
+      end
     end
   end
 
@@ -170,7 +178,7 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^HostbasedAuthentication no$/)
     end
 
-    it 'sets Banner to /etc/issue.net (stig: V-38615 V-38593)' do
+    it 'sets Banner to /etc/issue.net (stig: V-38615 V-38593) (CIS-11.1)' do
       expect(sshd_config).to contain(/^Banner \/etc\/issue.net$/)
 
       banner = file('/etc/issue.net')
@@ -178,6 +186,28 @@ shared_examples_for 'every OS image' do
       # multiline message
       expect(banner).to contain('Unauthorized use is strictly prohibited. All access and activity')
       expect(banner).to contain('is subject to logging and monitoring.')
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
+    end
+
+    it 'sets /etc/issue (CIS-11.1)' do
+      banner = file('/etc/issue')
+
+      # multiline message
+      expect(banner).to contain('Unauthorized use is strictly prohibited. All access and activity')
+      expect(banner).to contain('is subject to logging and monitoring.')
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
+    end
+
+    it 'has an empty /etc/motd (CIS-11.1)' do
+      banner = file('/etc/motd')
+      expect(banner).to match_md5checksum('d41d8cd98f00b204e9800998ecf8427e') # md5 of zero-byte file
+      expect(banner).to be_mode('644')
+      expect(banner).to be_owned_by('root')
+      expect(banner).to be_grouped_into('root')
     end
 
     it 'sets IgnoreRhosts to yes (stig: V-38611)' do
@@ -278,6 +308,12 @@ shared_examples_for 'every OS image' do
     context 'should not contain password hash (stig: V-38499)' do
       describe command('grep -v "^#" /etc/passwd | awk -F: \'($2 != "x") {print}\'') do
         its (:stdout) { should eq('') }
+      end
+    end
+
+    context 'disable system accounts (CIS-10.2)' do
+      describe command('/usr/bin/awk -F: \'$1 !~ /^(root|sync|shutdown|halt)$/ && $3 < 500 && $7 !~ /^(\/usr\/sbin\/nologin|\/sbin\/nologin|\/bin\/false)$/ { print; f=1 } END { if (!f) print "none" }\' /etc/passwd') do
+        its(:stdout) { should eq("none\n") }
       end
     end
   end
@@ -395,6 +431,13 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'IPv6 should be disabled (stig: V-38546)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv6\.conf\.all\.disable_ipv6=1$/ }
+      its (:content) { should match /^net\.ipv6\.conf\.default\.disable_ipv6=1$/ }
+    end
+  end
+
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
@@ -450,13 +493,111 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
-    describe file('/etc/audit/rules.d/audit.rules') do
+  describe file('/etc/audit/rules.d/audit.rules') do
+    describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
       its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
       its(:content) { should match /^-w \/bin\/kmod -p x -k modules$/ }
       its(:content) { should match /-a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -k modules/ }
+    end
+
+    describe 'events that modify system date and time must be recorded (CIS-8.1.4)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S clock_settime -k time-change$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S clock_settime -k time-change$/ }
+      its(:content) { should match /^-w \/etc\/localtime -p wa -k time-change$/ }
+    end
+
+    describe 'file deletion events must be recorded (CIS-8.1.14)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+    end
+
+    describe 'audit rules are made immutable (CIS-8.1.18)' do
+      it 'last line should be -e 2' do
+        expect(subject.content.split("\n").last).to eq "-e 2"
+      end
+    end
+
+    describe 'record changes to sudoers file (CIS-8.1.15)' do
+      its(:content) { should match /^-w \/etc\/sudoers -p wa -k scope$/ }
+    end
+
+    describe 'record login and logout events (CIS-8.1.8)' do
+      its(:content) { should match /^-w \/var\/log\/faillog -p wa -k logins$/ }
+      its(:content) { should match /^-w \/var\/log\/lastlog -p wa -k logins$/ }
+      its(:content) { should match /^-w \/var\/log\/tallylog -p wa -k logins$/ }
+    end
+
+    describe 'record session initiation events (CIS-8.1.9)' do
+      its(:content) { should match /^-w \/var\/run\/utmp -p wa -k session$/ }
+      its(:content) { should match /^-w \/var\/log\/wtmp -p wa -k session$/ }
+      its(:content) { should match /^-w \/var\/log\/btmp -p wa -k session$/ }
+    end
+
+    describe 'record events that modify user/group information (CIS-8.1.5)' do
+      its(:content) { should match /^-w \/etc\/group -p wa -k identity$/ }
+      its(:content) { should match /^-w \/etc\/passwd -p wa -k identity$/ }
+      its(:content) { should match /^-w \/etc\/gshadow -p wa -k identity$/ }
+      its(:content) { should match /^-w \/etc\/shadow -p wa -k identity$/ }
+      its(:content) { should match /^-w \/etc\/security\/opasswd -p wa -k identity$/ }
+    end
+
+    describe 'record events that modify system network environment (CIS-8.1.6)' do
+      its(:content) { should match /^-a exit,always -F arch=b64 -S sethostname -S setdomainname -k system-locale$/ }
+      its(:content) { should match /^-a exit,always -F arch=b32 -S sethostname -S setdomainname -k system-locale$/ }
+      its(:content) { should match /^-w \/etc\/issue -p wa -k system-locale$/ }
+      its(:content) { should match /^-w \/etc\/issue\.net -p wa -k system-locale$/ }
+      its(:content) { should match /^-w \/etc\/hosts -p wa -k system-locale$/ }
+      its(:content) { should match /^-w \/etc\/network -p wa -k system-locale$/ }
+    end
+
+    describe 'record events that modify systems mandatory access controls (CIS-8.1.7)' do
+      its(:content) { should match /^-w \/etc\/selinux\/ -p wa -k MAC-policy$/ }
+    end
+
+    describe 'record system administrator actions (CIS-8.1.16)' do
+      its(:content) { should match /^-w \/var\/log\/sudo\.log -p wa -k actions$/ }
+    end
+
+    describe 'record file system mounts (CIS-8.1.13)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+    end
+
+    describe 'record discretionary access control permission modification events (CIS-8.1.10)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+    end
+  end
+
+  describe 'record use of privileged programs (CIS-8.1.12)' do
+    let(:privileged_binaries) {
+      backend.run_command("find /bin /sbin /usr/bin /usr/sbin /boot -xdev \\( -perm -4000 -o -perm -2000 \\) -type f")
+        .stdout
+        .split
+    }
+
+    describe file('/etc/audit/rules.d/audit.rules') do
+      its(:content) do
+        privileged_binaries.each do |privileged_binary|
+          should match /^-a always,exit -F path=#{privileged_binary} -F perm=x -F auid>=500 -F auid!=4294967295 -k privileged$/
+        end
+      end
+    end
+  end
+
+  describe 'disabling core dumps (CIS-4.1)' do
+    describe file('/etc/security/limits.conf') do
+      its(:content) { should match /^\*\s+hard\s+core\s+0$/ }
     end
   end
 

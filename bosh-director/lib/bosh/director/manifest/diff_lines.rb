@@ -15,6 +15,7 @@ module Bosh::Director
     MANIFEST_KEYS_ORDER = %w(
       azs
       vm_types
+      vm_extensions
       resource_pools
       compilation
       networks
@@ -37,6 +38,7 @@ module Bosh::Director
         if line.indent == 0 && line.text !~ /^[ -]/
           key = line.text
           sections[key] = []
+          sections[key] << Line.new(0, '', nil)
         end
 
         sections[key] << line
@@ -56,6 +58,8 @@ module Bosh::Director
         end
       end
 
+      # ignore the empty line before the first section
+      ordered_lines.shift
       self.replace(ordered_lines)
     end
   end

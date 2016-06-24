@@ -26,7 +26,7 @@ ln -s /etc/sv/ssh /etc/service/ssh
 #ln -s /proc/self/mounts /etc/mtab
 #"
 
-if grep -q -i ubuntu $chroot/etc/issue
+if grep -q -i ubuntu $chroot/etc/lsb-release
 # if this is Ubuntu stemcell
 then
   # this version of unshare has the -p flag (trusty has an old version)

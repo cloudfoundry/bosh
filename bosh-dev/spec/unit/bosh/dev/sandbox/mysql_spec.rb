@@ -22,6 +22,12 @@ module Bosh::Dev::Sandbox
       end
     end
 
+    describe '#connection_string' do
+      it 'returns a configured string' do
+        expect(subject.connection_string).to eq('mysql2://root:password@localhost:3306/fake_db_name')
+      end
+    end
+
     describe '#db_name' do
       it 'returns the configured database name' do
         expect(subject.db_name).to eq('fake_db_name')

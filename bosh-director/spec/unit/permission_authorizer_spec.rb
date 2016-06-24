@@ -148,8 +148,80 @@ module Bosh::Director
         end
       end
 
+      describe 'task' do
+        describe 'deployment-specific' do
+          let(:teams) { [ Models::Team.make(name: 'security') ] }
+          let(:acl_subject) {
+            task = Models::Task.make(id: 1, deployment_name: 'test-deployment')
+            task.teams = teams
+            task
+          }
+
+          describe 'admin rights' do
+            let(:acl_right) { :admin }
+
+            it 'allows global scopes' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.admin' ])).to eq(true)
+            end
+
+            it 'allows director-specific scopes' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.admin' ])).to eq(true)
+            end
+
+            it 'allows team scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.teams.security.admin' ])).to eq(true)
+            end
+
+            it 'denies others' do
+              expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                  'bosh.teams.fraud.admin',       # unrelated team specific admins
+                  'bosh.teams.security.haha',     # team specific unsupported scope
+              ])).to eq(false)
+            end
+          end
+
+          describe 'read rights' do
+            let(:acl_right) { :read }
+
+            it 'allows global admin scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.admin' ])).to eq(true)
+            end
+
+            it 'allows global read scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.read' ])).to eq(true)
+            end
+
+            it 'allows director-specific admin scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.admin' ])).to eq(true)
+            end
+
+            it 'allows director-specific read scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.read' ])).to eq(true)
+            end
+
+            it 'allows team scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.teams.security.admin' ])).to eq(true)
+            end
+
+            it 'denies others' do
+              expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                  'bosh.teams.fraud.admin',       # unrelated team specific admins
+                  'bosh.teams.security.haha',     # team specific unsupported scope
+              ])).to eq(false)
+            end
+          end
+        end
+      end
+
       describe 'deployment' do
-        let(:acl_subject) { Models::Deployment.make(name: 'favorite', teams: 'security') }
+        let(:teams) { [ Models::Team.make(name: 'security'), Models::Team.make(name: 'bosh') ] }
+        let(:acl_subject) do
+          deployment = Models::Deployment.make(name: 'favorite')
+          deployment.teams = teams
+          deployment
+        end
 
         describe 'checking admin rights' do
           let(:acl_right) { :admin }

@@ -31,6 +31,7 @@ module Bosh::Director
       @event_logger.track_and_log('Checking VM states') do
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           instances.each do |instance|
+            next if instance.ignore
             pool.process do
               scan_result = scan_vm(instance)
               lock.synchronize { results[scan_result] += 1 }
@@ -39,10 +40,13 @@ module Bosh::Director
         end
       end
 
+      ignored_instances_count = instances.count(&:ignore)
+
       @event_logger.track_and_log("#{results[:ok]} OK, " +
         "#{results[:unresponsive]} unresponsive, " +
         "#{results[:missing]} missing, " +
-        "#{results[:unbound]} unbound")
+        "#{results[:unbound]} unbound" +
+        (ignored_instances_count>0 ? ", #{ignored_instances_count} ignored" : ''))
     end
 
     private

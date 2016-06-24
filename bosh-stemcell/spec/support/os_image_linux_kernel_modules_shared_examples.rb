@@ -41,4 +41,46 @@ shared_examples_for 'a Linux kernel module configured OS image' do
       it { should contain 'options ipv6 disable=1' }
     end
   end
+
+  context 'prevent cramfs module from being loaded (CIS-2.18)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install cramfs /bin/true' }
+    end
+  end
+
+  context 'prevent freevxfs module from being loaded (CIS-2.19)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install freevxfs /bin/true' }
+    end
+  end
+  context 'prevent jffs2 module from being loaded (CIS-2.20)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install jffs2 /bin/true' }
+    end
+  end
+  context 'prevent hfs module from being loaded (CIS-2.21)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install hfs /bin/true' }
+    end
+  end
+  context 'prevent hfsplus module from being loaded (CIS-2.22)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install hfsplus /bin/true' }
+    end
+  end
+  context 'prevent squashfs module from being loaded (CIS-2.23)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install squashfs /bin/true' }
+    end
+  end
+  context 'prevent udf module from being loaded (CIS-2.24)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install udf /bin/true' }
+    end
+  end
+  context 'disable RDS (CIS-7.5.3)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install rds /bin/true' }
+    end
+  end
 end

@@ -143,6 +143,7 @@ describe Bosh::Cli::Command::Instances do
           },
         ],
         'resurrection_paused' => true,
+        'ignore' => false,
         'az' => 'az1'
       }
     }
@@ -210,6 +211,7 @@ describe Bosh::Cli::Command::Instances do
           },
         ],
         'resurrection_paused' => true,
+        'ignore' => false,
         'az' => 'az2'
       }
     }
@@ -438,15 +440,15 @@ describe Bosh::Cli::Command::Instances do
         it 'shows vm details with active disk' do
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output '
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       |
-              |          |         |     |         | 192.168.0.2 |         |           |          |              |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
-              |          |         |     |         | 192.168.0.4 |         |           |          |              |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       | false  |
+              |          |         |     |         | 192.168.0.2 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
             '
           end
           expect(command).to receive(:say).with('Instances total: 2')
@@ -457,15 +459,15 @@ describe Bosh::Cli::Command::Instances do
           vm1_state['disk_cid'] = nil
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output '
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | n/a       | agent1   | paused       |
-              |          |         |     |         | 192.168.0.2 |         |           |          |              |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
-              |          |         |     |         | 192.168.0.4 |         |           |          |              |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | n/a       | agent1   | paused       | false  |
+              |          |         |     |         | 192.168.0.2 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
             '
           end
           expect(command).to receive(:say).with('Instances total: 2')
@@ -477,15 +479,15 @@ describe Bosh::Cli::Command::Instances do
           vm2_state.delete('disk_cid')
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output '
-              +----------+---------+-----+---------+-------------+---------+----------+--------------+
-              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Agent ID | Resurrection |
-              +----------+---------+-----+---------+-------------+---------+----------+--------------+
-              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | agent1   | paused       |
-              |          |         |     |         | 192.168.0.2 |         |          |              |
-              +----------+---------+-----+---------+-------------+---------+----------+--------------+
-              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | agent2   | paused       |
-              |          |         |     |         | 192.168.0.4 |         |          |              |
-              +----------+---------+-----+---------+-------------+---------+----------+--------------+
+              +----------+---------+-----+---------+-------------+---------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+----------+--------------+--------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | agent1   | paused       | false  |
+              |          |         |     |         | 192.168.0.2 |         |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+----------+--------------+--------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+----------+--------------+--------+
             '
           end
           expect(command).to receive(:say).with('Instances total: 2')
@@ -498,16 +500,54 @@ describe Bosh::Cli::Command::Instances do
 
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output '
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
-              | job2/0   | failing | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
-              |          |         |     |         | 192.168.0.4 |         |           |          |              |
-              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job2/0   | failing | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
             '
           end
 
           expect(command).to receive(:say).with('Instances total: 1')
+          perform
+        end
+
+        it 'shows true when the instance is ignored' do
+          vm1_state['ignore'] = true
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output '
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       | true   |
+              |          |         |     |         | 192.168.0.2 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+            '
+          end
+          expect(command).to receive(:say).with('Instances total: 2')
+          perform
+        end
+
+        it 'shows n/a when the director does not return ignored' do
+          vm1_state.delete('ignore')
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output '
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignore |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       | n/a    |
+              |          |         |     |         | 192.168.0.2 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false  |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |        |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+--------+
+            '
+          end
+          expect(command).to receive(:say).with('Instances total: 2')
           perform
         end
       end

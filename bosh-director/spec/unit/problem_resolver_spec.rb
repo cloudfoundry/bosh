@@ -46,6 +46,7 @@ module Bosh::Director
 
           resolver = make_resolver(@deployment)
 
+          expect(resolver).to receive(:track_and_log).with(/Disk 'disk-cid-\d+' \(0M\) for instance 'job-\d+\/uuid-\d+ \(\d+\)' is inactive \(.*\): .*/).twice.and_call_original
           expect(resolver.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq([2, nil])
 
           expect(Models::PersistentDisk.find(id: disks[0].id)).to be_nil
@@ -74,7 +75,7 @@ module Bosh::Director
                                           problems[0].id.to_s => 'ignore',
                                           problems[1].id.to_s => 'ignore',
                                           problems[2].id.to_s => 'ignore',
-                                          'foobar' => 'ignore',
+                                          '9999999' => 'ignore',
                                           '318' => 'do_stuff'
                                       })
 

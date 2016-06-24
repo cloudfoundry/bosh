@@ -15,6 +15,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 
@@ -61,8 +62,8 @@ module Bosh::Director
         let(:cloud_config) { Models::CloudConfig.make }
 
         context 'when job representing an errand exists' do
-          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name', needed_instance_plans: []) }
-          before { allow(planner).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
+          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
+          before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_job) }
 
           context 'when job can run as an errand (usually means lifecycle: errand)' do
             before { allow(deployment_job).to receive(:is_errand?).and_return(true) }
@@ -276,7 +277,7 @@ module Bosh::Director
         end
 
         context 'when job representing an errand does not exist' do
-          before { allow(planner).to receive(:job).with('fake-errand-name').and_return(nil) }
+          before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(nil) }
 
           it 'raises an error because user asked to run an unknown errand' do
             allow(subject).to receive(:with_deployment_lock).and_yield

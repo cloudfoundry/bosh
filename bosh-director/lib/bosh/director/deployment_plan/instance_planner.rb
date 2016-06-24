@@ -8,6 +8,10 @@ module Bosh
         end
 
         def plan_job_instances(job, desired_instances, existing_instance_models)
+          if existing_instance_models.count(&:ignore) > 0
+            fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
+          end
+
           network_planner = NetworkPlanner::Planner.new(@logger)
           placement_plan = PlacementPlanner::Plan.new(@instance_plan_factory, network_planner, @logger)
           vip_networks, non_vip_networks = job.networks.to_a.partition(&:vip?)
@@ -32,6 +36,14 @@ module Bosh
             desired_job_names.include?(existing_instance_model.job) ||
               migrating_job_names.include?(existing_instance_model.job)
           end
+
+          obsolete_existing_instances.each do |instance_model|
+            if instance_model.ignore
+              raise DeploymentIgnoredInstancesDeletion, "You are trying to delete instance group '#{instance_model.job}', which " +
+                  'contains ignored instance(s). Operation not allowed.'
+            end
+          end
+
           obsolete_existing_instances.map do |obsolete_existing_instance|
             @instance_plan_factory.obsolete_instance_plan(obsolete_existing_instance)
           end
@@ -77,6 +89,16 @@ module Bosh
             network_plans = NetworkPlanner::ReservationReconciler.new(instance_plan, @logger)
                               .reconcile(instance_plan.instance.existing_network_reservations)
             instance_plan.network_plans = network_plans
+          end
+        end
+
+        def fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
+          ignored_models = existing_instance_models.select(&:ignore)
+          ignored_models.each do |model|
+            unless job.instance_states["#{model.index}"].nil?
+              raise JobInstanceIgnored, "You are trying to change the state of the ignored instance '#{model.job}/#{model.uuid}'. " +
+                  'This operation is not allowed. You need to unignore it first.'
+            end
           end
         end
 

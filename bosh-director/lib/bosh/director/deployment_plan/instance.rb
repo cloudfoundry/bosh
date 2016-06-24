@@ -207,11 +207,11 @@ module Bosh::Director
       end
 
       def current_job_spec
-        @model.spec['job']
+        @model.spec_p('job')
       end
 
       def current_packages
-        @model.spec['packages']
+        @model.spec_p('packages')
       end
 
       def current_job_state

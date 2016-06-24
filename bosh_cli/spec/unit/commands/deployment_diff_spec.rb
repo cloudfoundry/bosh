@@ -101,6 +101,7 @@ No changes
             ['  cloud_properties:', nil],
             ['    name: new_property', 'added'],
             ['    size: large', 'added'],
+            ['', nil],
             ['jobs:', nil],
             ['- name: new_job', 'added'],
             ['  templates: xyz', 'added'],
@@ -131,7 +132,7 @@ No changes
           deployment_diff.print(options)
 
           expect(output.split("\n")).to eq([
-             '',
+              '',
              'Detecting deployment changes',
              '----------------------------',
              'resource_pools:',
@@ -139,6 +140,7 @@ No changes
              '  cloud_properties:',
              '    name: new_property'.make_green,
              '    size: large'.make_green,
+             '',
              'jobs:',
              '- name: new_job'.make_green,
              '  templates: xyz'.make_green,
@@ -164,6 +166,9 @@ No changes
 
           deployment_diff.print(options)
 
+          # some IDEs strip out excess whitespace on empty lines; workaround
+          output.gsub!(/^\s+$/,'')
+
           expect(output).to eq(<<-DIFF
 
 Detecting deployment changes
@@ -173,6 +178,7 @@ Detecting deployment changes
     cloud_properties:
 +     name: new_property
 +     size: large
+
   jobs:
 + - name: new_job
 +   templates: xyz

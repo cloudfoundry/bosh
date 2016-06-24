@@ -1,17 +1,26 @@
 require 'bosh/director'
 
-module Bosh::Director::Test
-  module TaskHelpers
-    def expect_redirect_to_queued_task(response)
-      expect(response).to be_redirect
+module Bosh::Director
+  module Test
+    module TaskHelpers
+      def expect_redirect_to_queued_task(response)
+        expect(response).to be_redirect
 
-      match = response.location.match(%r{/tasks/(\d+)})
-      expect(match).to_not be_nil
+        match = response.location.match(%r{/tasks/(\d+)})
+        expect(match).to_not be_nil
 
-      task_id = match[1]
-      task = Bosh::Director::Models::Task[task_id]
-      expect(task.state).to eq('queued')
-      task
+        task_id = match[1]
+        task = Bosh::Director::Models::Task[task_id]
+        expect(task.state).to eq('queued')
+        task
+      end
+
+      def make_task_with_team(attributes)
+        teams = attributes.delete(:teams)
+        task = Models::Task.make(attributes)
+        task.teams = teams
+        task
+      end
     end
   end
 end

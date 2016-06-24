@@ -27,7 +27,7 @@ module Bosh::Director
     end
     let(:deployment) { instance_double(DeploymentPlan::Planner) }
     let(:job) do
-      job = DeploymentPlan::Job.new(logger)
+      job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'fake-job'
       job
     end

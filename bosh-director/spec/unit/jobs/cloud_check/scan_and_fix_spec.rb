@@ -17,6 +17,9 @@ module Bosh::Director
       instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
       Models::PersistentDisk.make(instance: instance)
+
+      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
+      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
     end
 
     let(:deployment) { Models::Deployment[1] }
@@ -27,6 +30,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :cck_scan_and_fix }
+      let(:queue) { :normal }
       it_behaves_like 'a DJ job'
     end
 
@@ -165,6 +169,22 @@ module Bosh::Director
       missing_vm_instance.save
 
       expect(scan_and_fix.resolutions(jobs)).to be_empty
+    end
+
+    describe '#resolutions' do
+      it 'only lists resolutions for jobs whose state is either "unresponsive_agent" or "missing_vm"' do
+        res = scan_and_fix.resolutions(jobs)
+        expect(res).to eq({'1' => :recreate_vm, '2' => :recreate_vm})
+      end
+
+      context 'when a VM is ignored' do
+        let(:jobs) { [['job1', 'job1index0'], ['job2', 'job2index2']] }
+
+        it 'should not list it as a resolution' do
+          res = scan_and_fix.resolutions(jobs)
+          expect(res).to eq({"1"=>:recreate_vm})
+        end
+      end
     end
   end
 end

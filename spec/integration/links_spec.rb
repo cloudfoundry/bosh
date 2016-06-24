@@ -186,6 +186,30 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when link is not defined in provides spec but specified in manifest' do
+      let(:consume_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'consume_job',
+          templates: [
+            {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
+          ],
+          instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [consume_job]
+        manifest
+      end
+
+      it 'should raise an error' do
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(/Job 'consume_job' does not provide link 'consumer_resource' in the release spec/)
+      end
+    end
+
     context 'when link is provided' do
       let(:links) do
         {
@@ -439,9 +463,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to process links for deployment. Errors are:
-   - "Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-     simple.mysql.database.db
-     simple.postgres.backup_database.backup_db"
+   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+        simple.mysql.database.db
+        simple.postgres.backup_database.backup_db
           EOF
         end
       end
@@ -1481,9 +1505,9 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error 100: Unable to process links for deployment. Errors are:")
-      expect(out).to include("- \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
-      expect(out).to include("- \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
-      expect(out).to include("- \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
 end

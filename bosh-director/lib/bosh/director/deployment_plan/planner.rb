@@ -35,8 +35,8 @@ module Bosh::Director
       attr_accessor :update
 
       # @return [Array<Bosh::Director::DeploymentPlan::Job>]
-      #   All jobs in the deployment
-      attr_reader :jobs
+      #   All instance_groups in the deployment
+      attr_reader :instance_groups
 
       # Stemcells in deployment by alias
       attr_reader :stemcells
@@ -52,6 +52,8 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
+      attr_reader :manifest_text
+
       def initialize(attrs, manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -63,9 +65,9 @@ module Bosh::Director
         @model = deployment_model
 
         @stemcells = {}
-        @jobs = []
-        @jobs_name_index = {}
-        @jobs_canonical_name_index = Set.new
+        @instance_groups = []
+        @instance_groups_name_index = {}
+        @instance_groups_canonical_name_index = Set.new
 
         @unneeded_vms = []
         @unneeded_instances = []
@@ -118,7 +120,7 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        vm_deleter = VmDeleter.new(cloud, @logger)
+        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         arp_flusher = ArpFlusher.new
@@ -133,7 +135,7 @@ module Bosh::Director
           instance_deleter,
           compilation.workers)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-          jobs,
+          instance_groups,
           compilation,
           compilation_instance_pool,
           @logger,
@@ -153,8 +155,8 @@ module Bosh::Director
       end
 
       def candidate_existing_instances
-        desired_job_names = jobs.map(&:name)
-        migrating_job_names = jobs.map(&:migrated_from).flatten.map(&:name)
+        desired_job_names = instance_groups.map(&:name)
+        migrating_job_names = instance_groups.map(&:migrated_from).flatten.map(&:name)
 
         existing_instances.select do |instance|
           desired_job_names.include?(instance.job) ||
@@ -207,39 +209,39 @@ module Bosh::Director
       end
 
       # Adds a job by name
-      # @param [Bosh::Director::DeploymentPlan::Job] job
-      def add_job(job)
-        if @jobs_canonical_name_index.include?(job.canonical_name)
+      # @param [Bosh::Director::DeploymentPlan::InstanceGroup] instance_group
+      def add_instance_group(instance_group)
+        if @instance_groups_canonical_name_index.include?(instance_group.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
-            "Invalid instance group name '#{job.name}', canonical name already taken"
+            "Invalid instance group name '#{instance_group.name}', canonical name already taken"
         end
 
-        @jobs << job
-        @jobs_name_index[job.name] = job
-        @jobs_canonical_name_index << job.canonical_name
+        @instance_groups << instance_group
+        @instance_groups_name_index[instance_group.name] = instance_group
+        @instance_groups_canonical_name_index << instance_group.canonical_name
       end
 
-      # Returns a named job
-      # @param [String] name Job name
-      # @return [Bosh::Director::DeploymentPlan::Job] Job
-      def job(name)
-        @jobs_name_index[name]
+      # Returns a named instance_group
+      # @param [String] name Instance group name
+      # @return [Bosh::Director::DeploymentPlan::InstanceGroup] Instance group
+      def instance_group(name)
+        @instance_groups_name_index[name]
       end
 
       def jobs_starting_on_deploy
-        jobs = []
+        instance_groups = []
 
-        @jobs.each do |job|
-          if job.is_service?
-            jobs << job
-          elsif job.is_errand?
-            if job.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
-              jobs << job
+        @instance_groups.each do |instance_group|
+          if instance_group.is_service?
+            instance_groups << instance_group
+          elsif instance_group.is_errand?
+            if instance_group.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
+              instance_groups << instance_group
             end
           end
         end
 
-        jobs
+        instance_groups
       end
 
       def persist_updates!
@@ -279,7 +281,7 @@ module Bosh::Director
       def validate_packages
         release_manager = Bosh::Director::Api::ReleaseManager.new
         validator = DeploymentPlan::PackageValidator.new(@logger)
-        jobs.each do |job|
+        instance_groups.each do |job|
           job.templates.each do |template|
             release_model = release_manager.find_by_name(template.release.name)
             release_version_model = release_manager.find_version(release_model, template.release.version)
@@ -353,6 +355,10 @@ module Bosh::Director
       end
 
       def vm_extension(name)
+        unless @vm_extensions.has_key?(name)
+          raise "The vm_extension '#{name}' has not been configured in cloud-config."
+        end
+
         @vm_extensions[name]
       end
 

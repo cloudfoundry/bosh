@@ -12,7 +12,7 @@ module Bosh
         end
 
         # User management is supported for backwards compatibility
-        def_delegators :@user_manager, :supports_api_update?, :create_user, :update_user, :delete_user, :get_user_from_request
+        def_delegators :@user_manager, :supports_api_update?, :create_user, :update_user, :delete_user, :get_user_from_json
 
         def client_info
           {'type' => 'basic', 'options' => {}}

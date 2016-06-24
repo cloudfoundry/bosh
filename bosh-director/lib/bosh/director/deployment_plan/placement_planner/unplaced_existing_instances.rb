@@ -14,6 +14,10 @@ module Bosh
             end
           end
 
+          def ignored_instances
+            @instances.select(&:ignore)
+          end
+
           def azs_sorted_by_existing_instance_count_descending(azs)
             return nil if azs.nil?
             azs.sort_by { |az| - @az_name_to_existing_instances.fetch(az.name, []).size }

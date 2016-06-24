@@ -18,8 +18,8 @@ module Bosh::Director
         context 'no instance exists for id' do
           it 'raises' do
             expect {
-              instance_lookup.by_id('badId')
-            }.to raise_error(InstanceNotFound, "Instance badId doesn't exist")
+              instance_lookup.by_id(999999)
+            }.to raise_error(InstanceNotFound, "Instance 999999 doesn't exist")
           end
         end
       end

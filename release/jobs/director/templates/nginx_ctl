@@ -6,13 +6,20 @@ JOB_DIR=/var/vcap/jobs/director
 PIDFILE=$RUN_DIR/nginx.pid
 STORE_DIR=/var/vcap/store/director/nginx
 SSL_DIR=/var/vcap/jobs/director/config/ssl
+TMP_DIR=/var/vcap/data/director/tmp
+RUNAS=vcap
 
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR
+    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
     echo $$ > $PIDFILE
+
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+
+    # workaround. nginx upload module ignores the proxy_temp_path directive
+    ln -s $TMP_DIR/proxy /var/vcap/packages/nginx/proxy_temp
 
     # if the properties contain director.ssl.key & director.ssl.cert
     # the two files below will contain key & cert, then copy them to
@@ -28,7 +35,7 @@ case $1 in
         -signkey $STORE_DIR/director.key -out $STORE_DIR/director.pem
     fi
 
-    exec /var/vcap/packages/nginx/sbin/nginx -c $JOB_DIR/config/nginx.conf \
+    exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/nginx/sbin/nginx -c $JOB_DIR/config/nginx.conf \
       >>$LOG_DIR/nginx.stdout.log 2>>$LOG_DIR/nginx.stderr.log
     ;;
 

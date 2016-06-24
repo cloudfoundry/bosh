@@ -7,27 +7,11 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-
-      let(:temp_dir) { Dir.mktmpdir}
-      let(:base_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-      let(:test_config) { base_config }
       let(:config) { Config.load_hash(test_config) }
+      let(:base_config) { SpecHelper.spec_get_director_config }
+      let(:test_config) { base_config }
 
       before { App.new(config) }
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       it 'sets the date header' do
         get '/'
@@ -44,7 +28,7 @@ module Bosh::Director
           basic_authorize 'admin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
-          info_response = Yajl::Parser.parse(last_response.body)
+          info_response = JSON.parse(last_response.body)
           expect(info_response['user']).to eq('admin')
         end
 
@@ -52,7 +36,7 @@ module Bosh::Director
           basic_authorize 'notadmin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
-          info_response = Yajl::Parser.parse(last_response.body)
+          info_response = JSON.parse(last_response.body)
           expect(info_response['user']).to eq(nil)
         end
       end
@@ -89,12 +73,12 @@ module Bosh::Director
               'extras' => {'provider' => 'local'}
             },
             'snapshots' => {
-              'status' => true
+              'status' => false
             }
           }
         }
 
-        expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
+        expect(JSON.parse(last_response.body)).to eq(expected)
       end
 
       context 'when configured with an external CPI' do
@@ -110,25 +94,49 @@ module Bosh::Director
 
         it 'reports the cpi to be the external cpi executable path' do
           get '/'
-          expect(Yajl::Parser.parse(last_response.body)['cpi']).to eq('test-cpi')
+          expect(JSON.parse(last_response.body)['cpi']).to eq('test-cpi')
         end
       end
 
       context 'when configured to use UAA for user management' do
         let(:test_config) { base_config.merge(
           'user_management' => {'provider' => 'uaa', 'uaa' => {
-            'url' => 'http://localhost:8080/uaa',
+            'urls' => ['http://localhost:8080/uaa'],
             'key' => 'super secret!',
           }}
         ) }
 
         it 'reports that uaa is the authentication method and excludes the secret key' do
           get '/'
-          response_hash = Yajl::Parser.parse(last_response.body)
+          response_hash = JSON.parse(last_response.body)
           expect(response_hash['user_authentication']).to eq(
               'type' => 'uaa',
-              'options' => {'url' => 'http://localhost:8080/uaa'}
+              'options' => {
+                'url' => 'http://localhost:8080/uaa',
+                'urls' => ['http://localhost:8080/uaa']
+              }
             )
+        end
+
+        context 'if multiple urls are provided' do
+          let(:test_config) { base_config.merge(
+            'user_management' => {'provider' => 'uaa', 'uaa' => {
+              'urls' => ['http://localhost:8080/uaa','http://localhost:8081/uaa'],
+              'key' => 'super secret!',
+            }}
+          )}
+
+          it 'returns both and url is equals to the first element of urls' do
+            get '/'
+            response_hash = JSON.parse(last_response.body)
+            expect(response_hash['user_authentication']).to eq(
+              'type' => 'uaa',
+              'options' => {
+                'url' => 'http://localhost:8080/uaa',
+                'urls' => ['http://localhost:8080/uaa', 'http://localhost:8081/uaa']
+              }
+            )
+          end
         end
       end
     end

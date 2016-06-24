@@ -2,6 +2,41 @@ require 'spec_helper'
 
 module Bosh::Director
   module DeploymentPlan
+    describe CloudPlanner do
+      subject { described_class.new({
+        :networks => {},
+        :global_network_resolver => [],
+        :resource_pools => [],
+        :disk_types => [],
+        :availability_zones_list => [],
+        :compilation => {},
+        :vm_extensions => vm_extensions,
+        :ip_provider_factory => nil,
+        :logger => nil,
+      }) }
+
+      context '#vm_extension' do
+        let(:vm_extensions) do
+          [
+            VmExtension.new({
+              'name' => 'test1',
+              'cloud_properties' => {
+                'fake-property' => 'fake-value',
+              }
+            })
+          ]
+        end
+
+        it 'returns a defined vm_extension' do
+          expect(subject.vm_extension('test1').cloud_properties['fake-property']).to eq('fake-value')
+        end
+
+        it 'raises for an undefined vm_extension' do
+          expect{ subject.vm_extension('non-existant') }.to raise_error("The vm_extension 'non-existant' has not been configured in cloud-config.")
+        end
+      end
+    end
+
     describe Planner do
       subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config, deployment_model) }
 
@@ -79,7 +114,7 @@ module Bosh::Director
           deployment_model.add_stemcell(stemcell_model)
           cloud_planner = CloudPlanner.new({
               networks: [Network.new('default', logger)],
-              global_network_resolver: GlobalNetworkResolver.new(planner),
+              global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
               ip_provider_factory: IpProviderFactory.new(true, logger),
               disk_types: [],
               availability_zones_list: [],
@@ -100,9 +135,9 @@ module Bosh::Director
         end
 
         describe '#jobs_starting_on_deploy' do
-          before { subject.add_job(job1) }
+          before { subject.add_instance_group(job1) }
           let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job1-name',
                 canonical_name: 'fake-job1-cname',
                 is_service?: true,
@@ -110,9 +145,9 @@ module Bosh::Director
               })
           end
 
-          before { subject.add_job(job2) }
+          before { subject.add_instance_group(job2) }
           let(:job2) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'fake-job2-name',
                 canonical_name: 'fake-job2-cname',
                 lifecycle: 'errand',
@@ -154,7 +189,8 @@ module Bosh::Director
           end
         end
 
-        describe '#persist_updates!' do
+        # '@todo mysql2 seems to have issues with transactions and threads (i.e. example is wrapped in transaction, but locks are threaded in the test)'
+        describe '#persist_updates!', :if => ENV['DB'] != "mysql" do
           before do
             setup_global_config_and_stubbing
           end
@@ -269,7 +305,7 @@ module Bosh::Director
         end
 
         def setup_global_config_and_stubbing
-          Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml')))
+          Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
           allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
         end
       end

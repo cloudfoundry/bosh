@@ -10,7 +10,7 @@ module Bosh::Director
       def self.parse(network_name, subnet_spec, availability_zones, legacy_reserved_ranges)
         @logger = Config.logger
 
-        @logger.debug("reserved ranges #{legacy_reserved_ranges.inspect}")
+        @logger.debug("reserved ranges #{legacy_reserved_ranges.map {|r| r.first == r.last ? "#{r.first}" : "#{r.first}-#{r.last}"}.join(', ')}")
         range_property = safe_property(subnet_spec, "range", :class => String)
         range = NetAddr::CIDR.create(range_property)
 

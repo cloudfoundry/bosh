@@ -3,9 +3,14 @@ require 'set'
 module Bosh::Director
   class Manifest
     def self.load_from_text(manifest_text, cloud_config, runtime_config)
+      manifest_text ||= '{}'
+      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config)
+    end
+
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config)
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
-      manifest_hash = manifest_text.nil? ? {} : Psych.load(manifest_text)
+      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
       new(manifest_hash, cloud_config_hash, runtime_config_hash)
     end
 
@@ -60,11 +65,13 @@ module Bosh::Director
         raise 'Invalid stemcell spec in the deployment manifest'
       end
 
-      if stemcell['version'] == 'latest'
+      resolvable_version = match_resolvable_version(stemcell['version'])
+
+      if resolvable_version
         if stemcell['os']
-          latest_stemcell = stemcell_manager.latest_by_os(stemcell['os'])
+          latest_stemcell = stemcell_manager.latest_by_os(stemcell['os'], resolvable_version[:prefix])
         elsif stemcell['name']
-          latest_stemcell = stemcell_manager.latest_by_name(stemcell['name'])
+          latest_stemcell = stemcell_manager.latest_by_name(stemcell['name'], resolvable_version[:prefix])
         else
           raise 'Stemcell definition must contain either name or os'
         end
@@ -76,12 +83,17 @@ module Bosh::Director
 
     def resolve_release_version(release_def)
       release_manager = Api::ReleaseManager.new
-      if release_def['version'] == 'latest'
+      resolvable_version = match_resolvable_version(release_def['version'])
+      if resolvable_version
         release = release_manager.find_by_name(release_def['name'])
-        return release_manager.sorted_release_versions(release).last['version']
+        return release_manager.sorted_release_versions(release, resolvable_version[:prefix]).last['version']
       end
 
       release_def['version'].to_s
+    end
+
+    def match_resolvable_version(version)
+      /(^|(?<prefix>.+)\.)latest$/.match(version.to_s)
     end
   end
 end

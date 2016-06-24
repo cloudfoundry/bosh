@@ -32,6 +32,7 @@ module Bosh::Director
 
     describe 'DJ job class expectations' do
       let(:job_type) { :vms }
+      let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
 
@@ -143,6 +144,32 @@ module Bosh::Director
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['resurrection_paused']).to be(true)
+        end
+
+        job.perform
+      end
+
+      it 'should get the default ignore status of a vm' do
+        instance
+        stub_agent_get_state_to_return_state_with_vitals
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ignore']).to be(false)
+        end
+
+        job.perform
+      end
+
+      it 'should get the ignore status of a vm when updated' do
+        instance.update(ignore: true)
+        stub_agent_get_state_to_return_state_with_vitals
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ignore']).to be(true)
         end
 
         job.perform

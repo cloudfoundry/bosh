@@ -73,7 +73,7 @@ module Bosh::Director
         end
 
         describe 'when the version is supplied' do
-          let(:version) { 1 }
+          let(:version) { '1' }
 
           it 'deletes only the release version' do
             expect(errors).to be_empty

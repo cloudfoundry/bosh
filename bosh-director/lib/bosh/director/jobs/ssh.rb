@@ -3,7 +3,8 @@ module Bosh::Director
     class Ssh < BaseJob
       DEFAULT_SSH_DATA_LIFETIME = 300
       SSH_TAG = "ssh"
-      @queue = :normal
+
+      @queue = :urgent
 
       def self.job_type
         :ssh
@@ -53,7 +54,7 @@ module Bosh::Director
           end
         end
 
-        result_file.write(Yajl::Encoder.encode(ssh_info))
+        result_file.write(JSON.generate(ssh_info))
         result_file.write("\n")
 
         # task result

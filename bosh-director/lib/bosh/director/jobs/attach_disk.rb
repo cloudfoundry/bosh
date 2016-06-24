@@ -8,8 +8,8 @@ module Bosh::Director
         :attach_disk
       end
 
-      def self.enqueue(username, deployment_name, job_name, instance_id, disk_cid, job_queue)
-        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment_name, job_name, instance_id, disk_cid], deployment_name)
+      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, job_queue)
+        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid], deployment)
       end
 
       def initialize(deployment_name, job_name, instance_id, disk_cid)
@@ -42,6 +42,11 @@ module Bosh::Director
       def validate_instance(instance)
         if instance.nil? || instance.deployment.name != @deployment_name
           raise AttachDiskErrorUnknownInstance, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' was not found"
+        end
+
+        if instance.ignore
+          raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' is in 'ignore' state. " +
+              'Attaching disks to ignored instances is not allowed.'
         end
 
         if instance.state != 'detached' && instance.state != 'stopped'
