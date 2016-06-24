@@ -62,17 +62,23 @@ module Bosh::Director
     def wait_until_desired_state(min_watch_time, max_watch_time)
       current_state = {}
       watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
-        sleep_time = watch_time.to_f / 1000
-        @logger.info("Waiting for #{sleep_time} seconds to check #{@instance} status")
-        sleep(sleep_time)
-        @logger.info("Checking if #{@instance} has been updated after #{sleep_time} seconds")
+        begin
+          sleep_time = watch_time.to_f / 1000
+          Config.job_cancelled?
+          @logger.info("Waiting for #{sleep_time} seconds to check #{@instance} status")
+          sleep(sleep_time)
+          @logger.info("Checking if #{@instance} has been updated after #{sleep_time} seconds")
 
-        current_state = @agent_client.get_state
+          current_state = @agent_client.get_state
 
-        if @instance.state == 'started'
-          break if current_state['job_state'] == 'running'
-        elsif @instance.state == 'stopped'
-          break if current_state['job_state'] != 'running'
+          if @instance.state == 'started'
+            break if current_state['job_state'] == 'running'
+          elsif @instance.state == 'stopped'
+            break if current_state['job_state'] != 'running'
+          end
+        rescue Bosh::Director::TaskCancelled
+          @logger.debug("Task was cancelled. Stop waiting for the desired state")
+          raise
         end
       end
 
