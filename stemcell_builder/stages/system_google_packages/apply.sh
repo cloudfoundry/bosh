@@ -17,7 +17,7 @@ then
   cp $assets_dir/etc/init/google-accounts-manager-{task,service}.conf $chroot/etc/init/
   cp $assets_dir/google-address-manager.conf $chroot/etc/init/
   cp $assets_dir/google-clock-sync-manager.conf $chroot/etc/init/
-  chmod -x $chroot/etc/init/google*
+  chmod 0644 $chroot/etc/init/google*
 elif [ "${os_type}" == "rhel" -o "${os_type}" == "centos" ]
 then
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
