@@ -57,8 +57,10 @@ module Bosh::Director
         unless instance_plan.already_detached?
           Preparer.new(instance_plan, agent(instance), @logger).prepare
 
-          stop(instance_plan)
-          take_snapshot(instance)
+          unless instance.model.state == 'stopped'
+            stop(instance_plan)
+            take_snapshot(instance)
+          end
 
           if instance.state == 'stopped'
             instance.update_state

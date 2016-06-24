@@ -6,19 +6,21 @@ module Bosh::Director
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
     let(:agent_client) { instance_double(AgentClient) }
-    let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: 'started', job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
+    let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
+    let(:instance_model_state) { 'started' }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
       vm_type = DeploymentPlan::VmType.new({'name' => 'small_vm'})
       stemcell = DeploymentPlan::Stemcell.new('ubuntu_stemcell', 'ubuntu_1', 'ubuntu', '8')
-      instance = DeploymentPlan::Instance.new('job-1', 0, 'stopped', vm_type, [], stemcell, {}, false, deployment_model, {}, az, logger)
+      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, vm_type, [], stemcell, {}, false, deployment_model, {}, az, logger)
       instance.bind_existing_instance_model(instance_model)
 
       instance
     end
+    let(:instance_desired_state) { 'stopped' }
+    let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}) }
     let(:instance_plan) do
-      job = instance_double(DeploymentPlan::InstanceGroup, default_network: {})
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
       instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance)
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
@@ -40,19 +42,73 @@ module Bosh::Director
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
-      it 'should exit early without updating spec of instance' do
-        expect(instance_model.state).to eq('started')
-        expect(Models::Event.count).to eq 0
+      context 'when instance is currently started' do
+        let(:instance_model_state) { 'started' }
 
-        expect(agent_client).to receive(:stop)
-        expect(agent_client).to receive(:drain).and_return(0.1)
-        expect(agent_client).not_to receive(:apply)
+        it 'drains, stops, snapshots' do
+          expect(Api::SnapshotManager).to receive(:take_snapshot)
+          expect(agent_client).not_to receive(:apply)
+          expect(agent_client).to receive(:stop)
+          expect(agent_client).to receive(:drain).and_return(0.1)
 
-        updater.update(instance_plan)
+          updater.update(instance_plan)
+          expect(instance_model.state).to eq('stopped')
+          expect(instance_model.update_completed).to eq true
+          expect(Models::Event.count).to eq 2
+        end
+      end
 
-        expect(instance_model.state).to eq('stopped')
-        expect(instance_model.update_completed).to eq true
-        expect(Models::Event.count).to eq 2
+      context 'when instance is currently stopped' do
+        let(:instance_model_state) { 'stopped' }
+
+        it 'does not try to stop, drain, or snapshot' do
+          expect(Api::SnapshotManager).not_to receive(:take_snapshot)
+          expect(agent_client).not_to receive(:apply)
+          expect(agent_client).not_to receive(:stop)
+          expect(agent_client).not_to receive(:drain)
+
+          updater.update(instance_plan)
+          expect(instance_model.state).to eq('stopped')
+          expect(instance_model.update_completed).to eq true
+          expect(Models::Event.count).to eq 2
+        end
+      end
+    end
+
+    context 'when starting instances' do
+      let(:instance_desired_state) { 'started' }
+
+      before do
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(instance_plan).to receive(:changes).and_return([:state])
+      end
+
+      context 'when instance is currently stopped' do
+        let(:instance_model_state) { 'stopped' }
+
+        let(:disk_manager) { instance_double(DiskManager) }
+        before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
+
+        let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+        before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
+
+        it 'drains, stops, snapshots' do
+          # https://www.pivotaltracker.com/story/show/121721619
+          expect(Api::SnapshotManager).to_not receive(:take_snapshot)
+          expect(agent_client).to_not receive(:stop)
+          expect(agent_client).to_not receive(:drain)
+
+          allow(updater).to receive(:needs_recreate?).and_return(false)
+          allow(disk_manager).to receive(:update_persistent_disk)
+          allow(job).to receive(:update)
+          expect(state_applier).to receive(:apply)
+
+          updater.update(instance_plan)
+
+          expect(instance_model.update_completed).to eq true
+          expect(Models::Event.count).to eq 2
+          expect(Models::Event.all[1].error).to be_nil
+        end
       end
     end
 
