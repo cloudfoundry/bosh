@@ -108,6 +108,20 @@ module Bosh::Director
       state_applier.apply(update_config)
     end
 
+    it 'should stop execution if task was canceled' do
+      task = Bosh::Director::Models::Task.make(:id => 42, :state => 'cancelling')
+      base_job = Jobs::BaseJob.new
+      allow(base_job).to receive(:task_id).and_return(task.id)
+      allow(Config).to receive(:current_job).and_return(base_job)
+      Config.instance_variable_set(:@current_job, base_job)
+      expect(logger).to receive(:info).with('Applying VM state').ordered
+      expect(logger).to receive(:info).with('Running pre-start for fake-job/0 (uuid-1)').ordered
+      expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered
+      expect(logger).to receive(:debug).with('Task was cancelled. Stop waiting for the desired state').ordered
+
+      expect { state_applier.apply(update_config) }.to raise_error Bosh::Director::TaskCancelled, "Task 42 cancelled"
+    end
+
     context 'when instance state is stopped' do
       let(:instance_state) { 'stopped' }
       let(:job_state) { 'stopped' }
