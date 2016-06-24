@@ -110,4 +110,4 @@ jobs:
 commit_hash: b2908a4b
 uncommitted_changes: true
 name: bosh
-version: '256.11'
+version: '257'
