@@ -13,6 +13,7 @@ module Bosh
         let(:runtime_config_model) { Models::RuntimeConfig.make(manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
+        let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
         let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
@@ -49,8 +50,9 @@ module Bosh
           end
 
           it 'migrates the deployment manifest to handle legacy structure' do
-            allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
-              [hash.merge({'name' => 'migrated_name'}), cloud_config]
+            allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
+              manifest.manifest_hash.merge!({'name' => 'migrated_name'})
+              [manifest, cloud_config]
             end
 
             expect(planner.name).to eq('migrated_name')
@@ -63,8 +65,9 @@ module Bosh
           end
 
           it 'logs the migrated manifests' do
-            allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
-              [hash.merge({'name' => 'migrated_name'}), cloud_config]
+            allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
+              manifest.raw_manifest_hash.merge!({'name' => 'migrated_name'})
+              [manifest, cloud_config]
             end
 
             planner

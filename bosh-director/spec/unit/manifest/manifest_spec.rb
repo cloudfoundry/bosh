@@ -208,6 +208,84 @@ module Bosh::Director
       end
     end
 
+    context 'when config server is used' do
+
+      class MockSuccessResponse < Net::HTTPSuccess
+        attr_accessor :body
+
+        def initialize
+          super(nil, Net::HTTPOK, nil)
+        end
+      end
+
+      class MockFailedResponse < Net::HTTPClientError
+        def initialize
+          super(nil, Net::HTTPNotFound, nil)
+        end
+      end
+
+      let(:mock_config_store) do
+        {
+          'value' => {value: 123}
+        }
+      end
+
+      let(:mock_replacement_map) { [{'key' => 'value', 'path' => ['properties', 0, 'key'] }] }
+
+      before do
+        allow(Net::HTTP).to receive(:get_response) do |args|
+          key = args.to_s.split('/').last
+          value = mock_config_store[key]
+
+          if value.nil?
+            MockFailedResponse.new
+          else
+            response = MockSuccessResponse.new
+            response.body = value.to_json
+            response
+          end
+        end
+
+        allow(Bosh::Director::Config).to receive(:config_server_url).and_return("http://127.0.0.1:8080")
+
+        manifest_hash['properties'] = [ { 'key' => '((value))' } ]
+      end
+
+      describe '#raw_manifest_hash' do
+
+        it 'returns the original manifest' do
+          manifest.fetch_config_values
+          expect(manifest.raw_manifest_hash).to eq(manifest_hash)
+        end
+      end
+
+      describe '#manifest_hash' do
+        it 'returns manifest with replaced config keys' do
+          expected_manifest = {
+            'properties' => [{'key' => 123}]
+          }
+
+          manifest.fetch_config_values
+          expect(manifest.manifest_hash).to eq(expected_manifest)
+        end
+      end
+
+      describe '#fetch_config_values' do
+        it 'throws an error when some values are not set for keys in the manifest' do
+          manifest_hash['properties'] = [ {'a' => '((b))'} ]
+          expect { manifest.fetch_config_values }.to raise_error(/Failed to find keys in the config server: b/)
+        end
+      end
+    end
+
+    context 'when config server is not used' do
+      describe '#raw_manifest_hash' do
+        it 'returns the manifest hash' do
+          expect(manifest.manifest_hash).to eq(manifest_hash)
+        end
+      end
+    end
+
     describe '#diff' do
       subject(:new_manifest) { described_class.new(new_manifest_hash, new_cloud_config_hash, new_runtime_config_hash) }
       let(:new_manifest_hash) do

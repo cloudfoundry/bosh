@@ -2,14 +2,15 @@ module Bosh
   module Director
     module DeploymentPlan
       class ManifestMigrator
-        def migrate(manifest_hash, cloud_config)
-          migrate_releases(manifest_hash)
+        def migrate(manifest, cloud_config)
+          migrate_releases(manifest.raw_manifest_hash)
+          migrate_releases(manifest.manifest_hash)
 
           if cloud_config.nil?
-            cloud_config = cloud_manifest_from_deployment_manifest(manifest_hash)
+            cloud_config = cloud_manifest_from_deployment_manifest(manifest.manifest_hash)
           end
 
-          [manifest_hash, cloud_config]
+          [manifest, cloud_config]
         end
 
         private

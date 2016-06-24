@@ -49,6 +49,10 @@ module Bosh::Director::Jobs
           instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
         end
 
+        let(:mock_manifest) do
+          Bosh::Director::Manifest.new(YAML.load(manifest_content), nil, nil)
+        end
+
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
@@ -62,17 +66,21 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_groups).and_return([deployment_job])
         end
 
-        it 'replaces all config placeholders in manifest when parse_config_values flag is enabled' do
+        it 'fetches config values when parse_config_values flag is enabled' do
           allow(subject).to receive(:ignore_cloud_config?).and_return(false)
           allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(true)
-          expect(Bosh::Director::Jobs::Helpers::ConfigParser).to receive(:parse).with(YAML.load(manifest_content))
+          allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
+
+          expect(mock_manifest).to receive(:fetch_config_values)
 
           job.perform
         end
 
-        it 'does not parse config values when parse_config_values flag is disabled' do
+        it 'does not fetch config values when parse_config_values flag is disabled' do
           allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(false)
-          expect(Bosh::Director::Jobs::Helpers::ConfigParser).to_not receive(:parse).with(manifest_content)
+          allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
+
+          expect(mock_manifest).to_not receive(:fetch_config_values)
 
           job.perform
         end
