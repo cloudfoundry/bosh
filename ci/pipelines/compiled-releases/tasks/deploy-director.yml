@@ -26,3 +26,4 @@ params:
   BOSH_USERNAME: admin
   BOSH_PASSWORD: admin
   BOSH_RESERVED_RANGES: required
+  BOSH_REDIS: false

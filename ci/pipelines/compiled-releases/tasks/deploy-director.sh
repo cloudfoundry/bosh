@@ -15,6 +15,10 @@ sed \
   bosh-src/ci/pipelines/compiled-releases/tasks/bosh-init-template.yml \
   > bosh-init.yml
 
+if [ "$BOSH_REDIS" = "false" ]; then
+  sed -i '/name: redis/d' bosh-init.yml
+fi
+
 echo "$BOSH_SSH_TUNNEL_KEY" > ssh_tunnel_key
 chmod 600 ssh_tunnel_key
 
