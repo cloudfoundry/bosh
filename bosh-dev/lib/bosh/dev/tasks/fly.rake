@@ -5,7 +5,7 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
-    execute('test-unit')
+    execute('test-unit', '-p')
   end
 
   # bundle exec rake fly:integration
