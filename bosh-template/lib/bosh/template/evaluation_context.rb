@@ -141,14 +141,30 @@ module Bosh
       #   into OpenStruct objects. This exists mostly for backward
       #   compatibility, as it doesn't provide good error reporting.
       def openstruct(object)
+        typed_openstruct(object, OpenStruct)
+      end
+
+      def typed_openstruct(object, open_struct_klass)
         case object
           when Hash
-            mapped = object.inject({}) { |h, (k, v)| h[k] = openstruct(v); h }
-            OpenStruct.new(mapped)
+            mapped = object.inject({}) do |h, (k, v)|
+              h[k] = typed_openstruct(v, (k == 'networks') ? NetworkOpenStruct : OpenStruct ); h
+            end
+            open_struct_klass.new(mapped)
           when Array
-            object.map { |item| openstruct(item) }
+            object.map { |item| typed_openstruct(item, OpenStruct) }
           else
             object
+        end
+      end
+
+      class NetworkOpenStruct < OpenStruct
+        def methods(regular=true)
+          if regular
+            super(regular)
+          else
+            to_h.keys.map(&:to_sym)
+          end
         end
       end
 
