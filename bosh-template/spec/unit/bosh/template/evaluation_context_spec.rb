@@ -25,6 +25,16 @@ module Bosh
             'fake-link-1' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
             'fake-link-2' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
           },
+          'networks' => {
+            'network1' => {
+              'foo' => 'bar',
+              'ip' => '192.168.0.1'
+            },
+            'network2' => {
+              'baz' => 'bang',
+              'ip' => '10.10.10.10'
+            },
+          },
           'index' => 0,
           'id' => 'deadbeef',
           'bootstrap' => true,
@@ -37,6 +47,10 @@ module Bosh
 
       it 'unrolls properties into OpenStruct' do
         expect(eval_template('<%= properties.foo %>', @context)).to eq('bar')
+      end
+
+      it 'should support the ip address snippet widely used by release authors' do
+        expect(eval_template('<%= spec.networks.send(spec.networks.methods(false).first).ip %>', @context)).to eq('192.168.0.1')
       end
 
       it 'retains raw_properties' do
