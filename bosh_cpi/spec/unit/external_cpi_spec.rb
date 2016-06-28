@@ -11,6 +11,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
+    let (:method) {method}
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
 
     before { stub_const('Bosh::Clouds::Config', config) }
@@ -111,7 +112,7 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         it 'raises an error constructed from error response' do
-          expect { call_cpi_method }.to raise_error(error_class, 'fake-error-message')
+          expect { call_cpi_method }.to raise_error(error_class, "CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
         end
       end
 
@@ -133,7 +134,7 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq('fake-error-message')
+            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
             expect(error.ok_to_retry).to eq(true)
           end
         end
@@ -193,7 +194,7 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error(
             Bosh::Clouds::ExternalCpi::UnknownError,
-            "Unknown CPI error 'FakeUnrecognizableError' with message 'Something went 'wrong''",
+            "Unknown CPI error 'FakeUnrecognizableError' with message 'Something went 'wrong'' in '#{method}' CPI method",
           )
         end
       end
