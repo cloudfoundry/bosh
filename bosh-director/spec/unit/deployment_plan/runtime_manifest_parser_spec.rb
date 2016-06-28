@@ -95,15 +95,15 @@ module Bosh::Director
           it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
             expect(DeploymentPlan::RuntimeInclude).to receive(:new).with({})
 
-            subject.parse(runtime_manifest)
+            result = subject.parse(runtime_manifest)
 
             expected_addons = [{
                                    'name' => 'addon1',
                                    'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
                                               {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}],
                                    'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}}]
-            expect(subject.release_specs).to eq(runtime_manifest['releases'])
-            expect(subject.addons).to eq(expected_addons)
+            expect(result.releases).to eq(runtime_manifest['releases'])
+            expect(result.addons).to eq(expected_addons)
           end
         end
 

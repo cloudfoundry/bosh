@@ -1,0 +1,1 @@
+require 'bosh/director/runtime_config/parsed_runtime_config'

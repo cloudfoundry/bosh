@@ -31,7 +31,7 @@ module Bosh::Director
           deployment_release_names = @deployment.releases.map(&:name)
           deployment_release_ids = Models::Release.where(:name => deployment_release_names).map(&:id)
           saved_jobs = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
-          if saved_jobs == nil
+          if saved_jobs.empty?
             raise "Job '#{addon_job['name']}' not found in Template table"
           end
 
@@ -79,20 +79,14 @@ module Bosh::Director
       private
 
       def merge_addon_jobs(instance_group, addon_jobs, properties)
-        # iterate through deployment plan instance group jobs and see if any of them are the
-        # same name as the addon_job, if they are throw an error, otherwise add to instance group
-        if instance_group.jobs
-          instance_group.jobs.each do |job|
-            addon_jobs.each do |addon_job|
-              if addon_job.name == job.name
-                raise "Colocated job '#{addon_job.name}' is already added to the instance group '#{instance_group.name}'."
-              end
+        instance_group.jobs.each do |job|
+          addon_jobs.each do |addon_job|
+            if addon_job.name == job.name
+              raise "Colocated job '#{addon_job.name}' is already added to the instance group '#{instance_group.name}'."
             end
           end
-          instance_group.jobs.concat(addon_jobs)
-        else
-          instance_group.jobs = addon_jobs
         end
+        instance_group.jobs.concat(addon_jobs)
 
         if properties
           if instance_group.all_properties

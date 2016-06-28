@@ -13,7 +13,7 @@ describe Bosh::Director::DeploymentPlan::Template do
         template.add_link_from_manifest('job_name', 'provides', 'link_name', {'properties'=>['plant'], 'from'=>'link_name'})
       }
       it 'should populate link_infos' do
-        expect(template.link_infos).to eq({"job_name"=>{"provides"=>{"link_name"=>{"properties"=>["plant"], "from"=>"link_name"}}}})
+        expect(template.link_infos).to eq({'job_name' =>{'provides' =>{'link_name' =>{'properties' =>['plant'], 'from' => 'link_name'}}}})
       end
     end
 

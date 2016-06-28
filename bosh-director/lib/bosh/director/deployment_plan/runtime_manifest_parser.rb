@@ -3,10 +3,6 @@ module Bosh::Director
     class RuntimeManifestParser
       include ValidationHelper
 
-      attr_reader :release_specs
-      attr_reader :addons
-      attr_reader :include_spec
-
       def initialize
         @release_specs = []
         @addons = []
@@ -18,6 +14,7 @@ module Bosh::Director
         addons = safe_property(runtime_manifest, 'addons', :class => Array, :default => [])
         parse_addons(addons)
         parse_addons_include_section(addons)
+        ParsedRuntimeConfig.new(@release_specs, @addons, @include_spec)
       end
 
       private
@@ -40,7 +37,7 @@ module Bosh::Director
           if release_spec['version'] =~ /(^|[\._])latest$/
             raise RuntimeInvalidReleaseVersion,
                   "Runtime manifest contains the release '#{release_spec['name']}' with version as '#{release_spec['version']}'. " +
-                      "Please specify the actual version string."
+                      'Please specify the actual version string.'
           end
         end
       end
@@ -48,27 +45,34 @@ module Bosh::Director
       def parse_addons(addons)
         addons.each do |addon|
           parsed_addon = { 'name' => safe_property(addon, 'name', :class => String) }
-
           addon_jobs = safe_property(addon, 'jobs', :class => Array, :default => [])
           parsed_jobs = []
           addon_jobs.each do |addon_job|
-            parsed_job = { 'name' => safe_property(addon_job, 'name', :class => String),
-                           'release' => safe_property(addon_job, 'release', :class => String) }
-
-            if !@release_specs.find { |release_spec| release_spec['name'] == parsed_job['release'] }
-              raise RuntimeReleaseNotListedInReleases,
-                    "Runtime manifest specifies job '#{parsed_job['name']}' which is defined in '#{parsed_job['release']}', but '#{parsed_job['release']}' is not listed in the releases section."
-            end
-
-            parsed_job['provides_links'] = safe_property(addon_job, 'provides', class: Hash, default: {}).to_a
-            parsed_job['consumes_links'] = safe_property(addon_job, 'consumes', class: Hash, default: {}).to_a
-            parsed_job['properties'] = safe_property(addon_job, 'properties', class: Hash, default: nil)
-            parsed_jobs.push(parsed_job)
+            parsed_jobs << parse_job(addon_job)
           end
           parsed_addon['jobs'] = parsed_jobs
           parsed_addon['properties'] = safe_property(addon, 'properties', class: Hash, default: nil)
           @addons.push(parsed_addon)
         end
+      end
+
+      def parse_job(addon_job)
+        parsed_job = { 'name' => safe_property(addon_job, 'name', :class => String),
+                       'release' => safe_property(addon_job, 'release', :class => String) }
+
+        if release_not_listed_in_release_spec(parsed_job)
+          raise RuntimeReleaseNotListedInReleases,
+                "Runtime manifest specifies job '#{parsed_job['name']}' which is defined in '#{parsed_job['release']}', but '#{parsed_job['release']}' is not listed in the releases section."
+        end
+
+        parsed_job['provides_links'] = safe_property(addon_job, 'provides', class: Hash, default: {}).to_a
+        parsed_job['consumes_links'] = safe_property(addon_job, 'consumes', class: Hash, default: {}).to_a
+        parsed_job['properties'] = safe_property(addon_job, 'properties', class: Hash, default: nil)
+        parsed_job
+      end
+
+      def release_not_listed_in_release_spec(parsed_job)
+        @release_specs.find { |release_spec| release_spec['name'] == parsed_job['release'] }.nil?
       end
 
       def parse_addons_include_section(addons)
