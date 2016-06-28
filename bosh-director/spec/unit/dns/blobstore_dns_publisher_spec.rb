@@ -40,6 +40,30 @@ module Bosh::Director
         end
       end
 
+      describe '#broadcast' do
+        context 'when LocalDnsBlob has records' do
+            before {
+              Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id0', sha1: 'fake-sha0', :created_at => Time.new)
+              Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id1', sha1: 'fake-sha1', :created_at => Time.new)
+            }
+
+            let(:broadcaster) { double(AgentBroadcaster) }
+
+            it 'retrieves the last blob' do
+              expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
+              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fake-sha1')
+              dns.broadcast
+            end
+          end
+
+          context 'when LocalDnsBlob is empty' do
+            it 'does nothing' do
+              expect(AgentBroadcaster).to_not receive(:broadcast)
+              dns.broadcast
+            end
+          end
+        end
+
       context 'when blobstore publication fails' do
         it 'fails uploading records' do
           expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)

@@ -5,6 +5,11 @@ module Bosh::Director
       @domain_name = domain_name
     end
 
+    def broadcast
+      blob = Models::LocalDnsBlob.order(Sequel.desc(:id)).limit(1).first
+      AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1) unless blob.nil?
+    end
+
     def publish(dns_records)
       json_records = {:records => dns_records}.to_json
       blobstore_id = @blobstore.create(json_records)

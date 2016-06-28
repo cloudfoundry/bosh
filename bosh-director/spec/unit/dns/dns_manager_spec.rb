@@ -114,6 +114,7 @@ module Bosh::Director
         it 'calls export_dns_records and publish on the dns_publisher' do
           expect(dns_publisher).to receive(:export_dns_records).and_return([])
           expect(dns_publisher).to receive(:publish).with([])
+          expect(dns_publisher).to receive(:broadcast)
           dns_manager.flush_dns_cache
         end
       end

@@ -143,6 +143,7 @@ module Bosh::Director
       if publisher_enabled?
         dns_records = @dns_publisher.export_dns_records
         @dns_publisher.publish(dns_records)
+        @dns_publisher.broadcast
       end
     end
 
