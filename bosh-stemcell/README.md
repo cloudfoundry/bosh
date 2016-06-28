@@ -262,3 +262,18 @@ Then run the following:
     cd bosh-stemcell/
     bundle exec rspec -fd --tag ~exclude_on_aws spec/os_image/centos_7_spec.rb
     
+#### How to run tests for Stemcell
+When you run the `stemcell:build_with_local_os_image` or `stemcell:build` rake task, it will create a stemcell that it runs the stemcell specific tests against. You will need to run the rake task the first time you create your docker container, but everytime after, as long as you do not destroy the container, you should be able to just run the specific tests. 
+
+##### Docker
+
+To run the stemcell tests when building against local OS image you will need to: 
+
+* `bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,$PWD/tmp/ubuntu_base_image.tgz]`
+* -make test changes-
+
+Then run the following:
+
+    cd /opt/bosh/bosh-stemcell; STEMCELL_IMAGE=/mnt/stemcells/aws/xen/ubuntu/work/work/aws-xen-ubuntu.raw  STEMCELL_WORKDIR=/mnt/stemcells/aws/xen/ubuntu/work/work/chroot OS_NAME=ubuntu bundle exec rspec -fd --tag ~exclude_on_aws spec/os_image/ubuntu_trusty_spec.rb spec/stemcells/ubuntu_trusty_spec.rb spec/stemcells/go_agent_spec.rb spec/stemcells/aws_spec.rb spec/stemcells/stig_spec.rb spec/stemcells/cis_spec.rb
+    
+    
