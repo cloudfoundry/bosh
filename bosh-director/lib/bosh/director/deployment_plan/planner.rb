@@ -1,6 +1,8 @@
 require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
 require 'bosh/director/deployment_plan/runtime_manifest_parser'
+require 'bosh/director/deployment_plan/runtime_config_merger'
+require 'bosh/director/deployment_plan/runtime_include'
 require 'bosh/director/deployment_plan/disk_type'
 require 'forwardable'
 require 'common/deep_copy'
@@ -208,7 +210,7 @@ module Bosh::Director
         @unneeded_instances << instance
       end
 
-      # Adds a job by name
+      # Adds a instance_group by name
       # @param [Bosh::Director::DeploymentPlan::InstanceGroup] instance_group
       def add_instance_group(instance_group)
         if @instance_groups_canonical_name_index.include?(instance_group.canonical_name)

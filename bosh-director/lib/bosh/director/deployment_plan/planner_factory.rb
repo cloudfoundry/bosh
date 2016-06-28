@@ -79,7 +79,22 @@ module Bosh
           DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
 
           if runtime_config
-            RuntimeManifestParser.new(@logger, deployment_planner).parse(runtime_config.manifest)
+            parser = RuntimeManifestParser.new()
+            # TODO: release_specs, addons, include_specs = parser.parse(runtime_config.manifest)
+            parser.parse(runtime_config.manifest)
+
+            merger = RuntimeConfigMerger.new(deployment_planner)
+
+            merger.add_releases(parser.release_specs)
+
+            parser.addons.each do |addon|
+              instance_groups_to_add_to = parser.include_spec
+                                              .find_matching_instance_group(addon['name'], deployment_planner.instance_groups, deployment_planner.name)
+
+              next if instance_groups_to_add_to.empty?
+
+              merger.merge_addon(addon, instance_groups_to_add_to)
+            end
           end
 
           process_links(deployment_planner)

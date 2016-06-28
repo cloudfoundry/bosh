@@ -26,38 +26,55 @@ module Bosh::Spec
 
     def self.simple_runtime_config
       {
-        'releases' => [{"name" => 'test_release_2', "version" => "2"}]
+        'releases' => [{'name' => 'test_release_2', 'version' => '2'}]
       }
     end
 
     def self.runtime_config_latest_release
       {
-        'releases' => [{"name" => 'test_release_2', "version" => "latest"}]
+        'releases' => [{'name' => 'test_release_2', 'version' => 'latest'}]
       }
     end
 
     def self.runtime_config_release_missing
       {
-        'releases' => [{"name" => 'test_release_2', "version" => "2"}],
-        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "job_using_pkg_2", "release" => "release2"}]}]
+        'releases' => [{'name' => 'test_release_2', 'version' => '2'}],
+        'addons' => [{'name' => 'addon1', 'jobs' => [{'name' => 'job_using_pkg_2', 'release' => 'release2'}]}]
       }
     end
 
     def self.runtime_config_with_addon
       {
-        'releases' => [{"name" => 'dummy2', "version" => "0.2-dev"}],
+        'releases' => [{'name' => 'dummy2', 'version' => '0.2-dev'}],
         'addons' => [
         {
-          "name" => 'addon1',
-          "jobs" => [{"name" => "dummy_with_properties", "release" => "dummy2"}],
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
           'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}
         }]
       }
     end
 
+    def self.runtime_config_with_addon_includes
+      runtime_config_with_addon.merge({
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
+            'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+            'include' => {
+              'deployments' => ['dep1'],
+              'jobs' => [
+                {'name'=> 'foobar', 'release' => 'bosh-release'}
+              ]
+            }
+          }]
+      })
+    end
+
     def self.runtime_config_with_links
       {
-        'releases' => [{"name" => 'bosh-release', "version" => "0+dev.1"}],
+        'releases' => [{'name' => 'bosh-release', 'version' => '0+dev.1'}],
         'addons' => [
             {
                 'name' => 'addon_job',
@@ -468,7 +485,7 @@ module Bosh::Spec
     def self.simple_job(opts = {})
       job_hash = {
         'name' => opts.fetch(:name, 'foobar'),
-        'templates' => opts.fetch(:templates, ['name' => 'foobar']),
+        'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
         'resource_pool' => 'a',
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => 'a' }],
@@ -493,6 +510,8 @@ module Bosh::Spec
 
       job_hash
     end
+    # Aliasing class method simple_job to simple_instance_group
+    singleton_class.send(:alias_method, :simple_instance_group, :simple_job)
 
     def self.job_with_many_templates(options={})
       {

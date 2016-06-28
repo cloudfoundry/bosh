@@ -47,6 +47,8 @@ module Bosh::Director
 
       # @return [Array<DeploymentPlan::Template] Templates included into the job
       attr_accessor :templates
+      # `jobs` is the correct name, keep `templates` around for backward compatibility
+      alias :jobs :templates
 
       # @return [Hash] Job properties
       attr_accessor :properties

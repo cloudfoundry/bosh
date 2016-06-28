@@ -305,8 +305,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
       config_hash['releases'][0]['name'] = 'bosh-release'
       config_hash['releases'][0]['version'] = '0.1-dev'
-      config_hash['addons'][0]['jobs'][0]['release'] = 'bosh-release'
-      config_hash['addons'][0]['jobs'][0]['name'] = 'has_drain_script'
+      config_hash['addons'][0]['jobs'] = [{'name' => 'has_drain_script', 'release' => 'bosh-release'}]
       config_hash
     }
 

@@ -3,21 +3,26 @@ module Bosh::Director
     class RuntimeManifestParser
       include ValidationHelper
 
-      def initialize(logger, deployment=nil)
-        @deployment = deployment
-        @logger = logger
+      attr_reader :release_specs
+      attr_reader :addons
+      attr_reader :include_spec
+
+      def initialize
+        @release_specs = []
+        @addons = []
+        @include_spec = nil
       end
 
       def parse(runtime_manifest)
         parse_releases(runtime_manifest)
-        parse_addons(runtime_manifest)
+        addons = safe_property(runtime_manifest, 'addons', :class => Array, :default => [])
+        parse_addons(addons)
+        parse_addons_include_section(addons)
       end
 
       private
 
       def parse_releases(runtime_manifest)
-        @release_specs = []
-
         if runtime_manifest['release']
           if runtime_manifest['releases']
             raise RuntimeAmbiguousReleaseSpec,
@@ -37,116 +42,59 @@ module Bosh::Director
                   "Runtime manifest contains the release '#{release_spec['name']}' with version as '#{release_spec['version']}'. " +
                       "Please specify the actual version string."
           end
-
-          if @deployment
-            deployment_release = @deployment.release(release_spec["name"])
-            if deployment_release
-              if deployment_release.version != release_spec["version"].to_s
-                raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release '#{release_spec["name"]}' with version as '#{release_spec["version"]}'. " +
-                      "This conflicts with version '#{deployment_release.version}' specified in the deployment manifest."
-              else
-                next
-              end
-            end
-
-            release_version = DeploymentPlan::ReleaseVersion.new(@deployment.model, release_spec)
-            release_version.bind_model
-
-            @deployment.add_release(release_version)
-          end
         end
       end
 
-      def parse_addons(runtime_manifest)
-        addons = safe_property(runtime_manifest, 'addons', :class => Array, :default => [])
-        addons.each do |addon_spec|
-          deployment_plan_templates = []
+      def parse_addons(addons)
+        addons.each do |addon|
+          parsed_addon = { 'name' => safe_property(addon, 'name', :class => String) }
 
-          addon_jobs = safe_property(addon_spec, 'jobs', :class => Array, :default => [])
-
+          addon_jobs = safe_property(addon, 'jobs', :class => Array, :default => [])
+          parsed_jobs = []
           addon_jobs.each do |addon_job|
-            if !@release_specs.find { |release_spec| release_spec['name'] == addon_job['release'] }
+            parsed_job = { 'name' => safe_property(addon_job, 'name', :class => String),
+                           'release' => safe_property(addon_job, 'release', :class => String) }
+
+            if !@release_specs.find { |release_spec| release_spec['name'] == parsed_job['release'] }
               raise RuntimeReleaseNotListedInReleases,
-                    "Runtime manifest specifies job '#{addon_job['name']}' which is defined in '#{addon_job['release']}', but '#{addon_job['release']}' is not listed in the releases section."
+                    "Runtime manifest specifies job '#{parsed_job['name']}' which is defined in '#{parsed_job['release']}', but '#{parsed_job['release']}' is not listed in the releases section."
             end
 
-            if @deployment
-              valid_release_versions = @deployment.releases.map {|r| r.name }
-              deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
-              deployment_jobs = @deployment.instance_groups
-
-              templates_from_model = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
-              if templates_from_model == nil
-                raise "Job '#{addon_job['name']}' not found in Template table"
-              end
-
-              release = @deployment.release(addon_job['release'])
-              release.bind_model
-
-              template = DeploymentPlan::Template.new(release, addon_job['name'])
-
-              deployment_jobs.each do |j|
-                templates_from_model.each do |template_from_model|
-                  if template_from_model.consumes != nil
-                    template_from_model.consumes.each do |consumes|
-                      template.add_link_from_release(j.name, 'consumes', consumes["name"], consumes)
-                    end
-                  end
-                  if template_from_model.provides != nil
-                    template_from_model.provides.each do |provides|
-                      template.add_link_from_release(j.name, 'provides', provides["name"], provides)
-                    end
-                  end
-                end
-
-                provides_links = safe_property(addon_job, 'provides', class: Hash, optional: true)
-                provides_links.to_a.each do |link_name, source|
-                  template.add_link_from_manifest(j.name, "provides", link_name, source)
-                end
-
-                consumes_links = safe_property(addon_job, 'consumes', class: Hash, optional: true)
-                consumes_links.to_a.each do |link_name, source|
-                  template.add_link_from_manifest(j.name, 'consumes', link_name, source)
-                end
-
-                if addon_job.has_key?('properties')
-                  template.add_template_scoped_properties(addon_job['properties'], j.name)
-                end
-              end
-
-              template.bind_models
-              deployment_plan_templates.push(template)
-
-              deployment_jobs.each do |job|
-                merge_addon(job, deployment_plan_templates, addon_spec['properties'])
-              end
-
-            end
+            parsed_job['provides_links'] = safe_property(addon_job, 'provides', class: Hash, default: {}).to_a
+            parsed_job['consumes_links'] = safe_property(addon_job, 'consumes', class: Hash, default: {}).to_a
+            parsed_job['properties'] = safe_property(addon_job, 'properties', class: Hash, default: nil)
+            parsed_jobs.push(parsed_job)
           end
+          parsed_addon['jobs'] = parsed_jobs
+          parsed_addon['properties'] = safe_property(addon, 'properties', class: Hash, default: nil)
+          @addons.push(parsed_addon)
         end
       end
 
-      def merge_addon(job, addon_jobs, properties)
-        # iterate through deployment plan instance group jobs and see if any of them are the
-        # same name as the addon_job, if they are throw an error, otherwise add to instance group
-        if job.templates
-          job.templates.each do |job_template|
-            addon_jobs.each do |addon_job_template|
-              if addon_job_template.name == job_template.name
-                raise "Colocated job '#{addon_job_template.name}' is already added to the instance group '#{job.name}'."
-              end
-            end
-          end
-          job.templates.concat(addon_jobs)
-        else
-          job.templates = addon_jobs
-        end
+      def parse_addons_include_section(addons)
+        include_map = {}
+        addons.each do |addon|
+          if (addon_include = safe_property(addon, 'include', :class => Hash, :optional => true))
+            addon_include_in_deployments = safe_property(addon_include, 'deployments', :class => Array, :default => [])
+            addon_include_in_jobs = safe_property(addon_include, 'jobs', :class => Array, :default => [])
 
-        if properties
-          if job.all_properties
-            job.all_properties.merge!(properties)
-          else
-            job.all_properties = properties
+            #TODO throw an exception with all wrong jobs
+            verify_jobs_section(addon_include_in_jobs)
+
+            include_map[addon['name']] = { 'jobs' => addon_include_in_jobs,
+                                            'deployments' => addon_include_in_deployments }
+          end
+        end
+        @include_spec = RuntimeInclude.new(include_map)
+      end
+
+      def verify_jobs_section(addon_include_in_jobs)
+        addon_include_in_jobs.each do |job|
+          name = safe_property(job, 'name', :class => String, :default => '')
+          release = safe_property(job, 'release', :class => String, :default => '')
+          if name.empty? || release.empty?
+            raise RuntimeIncompleteIncludeJobSection.new("Job #{job} in runtime config's include section must" +
+                                                             "have both name and release.")
           end
         end
       end
