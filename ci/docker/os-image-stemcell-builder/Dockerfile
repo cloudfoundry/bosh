@@ -14,6 +14,6 @@ RUN /tmp/install-ovf.sh && rm /tmp/install-ovf.sh
 # this is unshare from ubuntu 15.10 so we can use the newer -fp flags
 ADD scripts/unshare /usr/bin/unshare
 
-ENV PATH /opt/rubies/ruby-2.1.7/bin:$PATH
+ADD scripts/ubuntu_bashrc /home/ubuntu/.bashrc
 
 RUN for GO_EXECUTABLE in $GOROOT/bin/*; do ln -s $GO_EXECUTABLE /usr/bin/; done
