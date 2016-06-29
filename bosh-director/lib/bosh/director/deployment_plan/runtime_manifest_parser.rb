@@ -20,17 +20,8 @@ module Bosh::Director
       private
 
       def parse_releases(runtime_manifest)
-        if runtime_manifest['release']
-          if runtime_manifest['releases']
-            raise RuntimeAmbiguousReleaseSpec,
-                  "Runtime manifest contains both 'release' and 'releases' " +
-                      'sections, please use one of the two.'
-          end
-          @release_specs << runtime_manifest['release']
-        else
-          safe_property(runtime_manifest, 'releases', :class => Array).each do |release|
-            @release_specs << release
-          end
+        safe_property(runtime_manifest, 'releases', :class => Array).each do |release|
+          @release_specs << release
         end
 
         @release_specs.each do |release_spec|
@@ -44,7 +35,7 @@ module Bosh::Director
 
       def parse_addons(addons)
         addons.each do |addon|
-          parsed_addon = { 'name' => safe_property(addon, 'name', :class => String) }
+          parsed_addon = {'name' => safe_property(addon, 'name', :class => String)}
           addon_jobs = safe_property(addon, 'jobs', :class => Array, :default => [])
           parsed_jobs = []
           addon_jobs.each do |addon_job|
@@ -57,8 +48,8 @@ module Bosh::Director
       end
 
       def parse_job(addon_job)
-        parsed_job = { 'name' => safe_property(addon_job, 'name', :class => String),
-                       'release' => safe_property(addon_job, 'release', :class => String) }
+        parsed_job = {'name' => safe_property(addon_job, 'name', :class => String),
+                      'release' => safe_property(addon_job, 'release', :class => String)}
 
         if release_not_listed_in_release_spec(parsed_job)
           raise RuntimeReleaseNotListedInReleases,
@@ -85,8 +76,8 @@ module Bosh::Director
             #TODO throw an exception with all wrong jobs
             verify_jobs_section(addon_include_in_jobs)
 
-            include_map[addon['name']] = { 'jobs' => addon_include_in_jobs,
-                                            'deployments' => addon_include_in_deployments }
+            include_map[addon['name']] = {'jobs' => addon_include_in_jobs,
+                                          'deployments' => addon_include_in_deployments}
           end
         end
         @include_spec = RuntimeInclude.new(include_map)
@@ -98,7 +89,7 @@ module Bosh::Director
           release = safe_property(job, 'release', :class => String, :default => '')
           if name.empty? || release.empty?
             raise RuntimeIncompleteIncludeJobSection.new("Job #{job} in runtime config's include section must" +
-                                                             "have both name and release.")
+                                                             'have both name and release.')
           end
         end
       end

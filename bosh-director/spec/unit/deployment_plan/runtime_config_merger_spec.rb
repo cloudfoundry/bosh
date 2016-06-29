@@ -167,6 +167,18 @@ module Bosh::Director
             end
 
             context 'when there are links on the the addon job' do
+              context 'when consumes_json and provides_json are "null"' do
+                it 'does not throw an error' do
+                  release_version_model.add_template(
+                      Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, provides_json: 'null', consumes_json: 'null'))
+
+                  expect {
+                    subject.add_releases(parsed_runtime_config.releases)
+                    subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)
+                  }.not_to raise_error
+                end
+              end
+
               before do
                 bosh_release_model = Bosh::Director::Models::Release.make(name: 'bosh-release')
                 bosh_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '0+dev.1', release: bosh_release_model)
