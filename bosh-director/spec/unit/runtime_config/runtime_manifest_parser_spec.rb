@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DeploymentPlan::RuntimeManifestParser do
+  describe RuntimeConfig::RuntimeManifestParser do
     subject(:parser) { described_class.new() }
     let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
@@ -29,7 +29,7 @@ module Bosh::Director
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(DeploymentPlan::RuntimeInclude).to receive(:new).with({})
+          expect(RuntimeConfig::RuntimeInclude).to receive(:new).with({})
 
           result = subject.parse(runtime_manifest)
 
@@ -59,7 +59,7 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(DeploymentPlan::RuntimeInclude).to receive(:new).with({'addon1' => {'jobs' => [], 'deployments' => ['dep1']}})
+            expect(RuntimeConfig::RuntimeInclude).to receive(:new).with({'addon1' => {'jobs' => [], 'deployments' => ['dep1']}})
 
             subject.parse(runtime_manifest)
           end

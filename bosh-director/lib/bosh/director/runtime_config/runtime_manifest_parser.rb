@@ -1,5 +1,5 @@
 module Bosh::Director
-  module DeploymentPlan
+  module RuntimeConfig
     class RuntimeManifestParser
       include ValidationHelper
 

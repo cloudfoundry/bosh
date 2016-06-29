@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DeploymentPlan::RuntimeConfigMerger do
+  describe RuntimeConfig::RuntimeConfigMerger do
     subject(:merger) { described_class.new(deployment) }
 
     describe '#RuntimeConfigMerger' do
@@ -78,7 +78,7 @@ module Bosh::Director
             let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
             let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
             let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon }
-            let(:parsed_runtime_config) { DeploymentPlan::RuntimeManifestParser.new.parse(runtime_config) }
+            let(:parsed_runtime_config) { RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config) }
 
             before do
               release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
@@ -193,7 +193,7 @@ module Bosh::Director
               let(:parsed_runtime_config) do
                 runtime_config = Bosh::Spec::Deployments.runtime_config_with_links
                 runtime_config['addons'].first['jobs'].first.merge!({'provides' => {'api' => {'from' => 'api'}}})
-                DeploymentPlan::RuntimeManifestParser.new.parse(runtime_config)
+                RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config)
               end
 
               it 'should resolve links and colocate addon jobs on instance groups' do

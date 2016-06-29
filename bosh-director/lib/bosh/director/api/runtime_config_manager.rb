@@ -26,7 +26,7 @@ module Bosh
 
         def validate_manifest!(runtime_config)
           runtime_manifest = runtime_config.manifest
-          Bosh::Director::DeploymentPlan::RuntimeManifestParser.new.parse(runtime_manifest)
+          Bosh::Director::RuntimeConfig::RuntimeManifestParser.new.parse(runtime_manifest)
         end
       end
     end

@@ -1,5 +1,5 @@
 module Bosh::Director
-  module DeploymentPlan
+  module RuntimeConfig
     class ParsedRuntimeConfig
       attr_reader :releases
       attr_reader :addons

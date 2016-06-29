@@ -79,10 +79,10 @@ module Bosh
           DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
 
           if runtime_config
-            parser = RuntimeManifestParser.new
+            parser = RuntimeConfig::RuntimeManifestParser.new
             parsed_runtime_config = parser.parse(runtime_config.manifest)
 
-            merger = RuntimeConfigMerger.new(deployment_planner)
+            merger = RuntimeConfig::RuntimeConfigMerger.new(deployment_planner)
 
             merger.add_releases(parsed_runtime_config.releases)
 

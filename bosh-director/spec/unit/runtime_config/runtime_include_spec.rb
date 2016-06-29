@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DeploymentPlan::RuntimeInclude do
+  describe RuntimeConfig::RuntimeInclude do
 
     subject(:runtime_include) { described_class.new(include_spec) }
     let(:deployment_name) { 'dep1' }

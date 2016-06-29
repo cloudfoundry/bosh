@@ -1,5 +1,5 @@
 module Bosh::Director
-  module DeploymentPlan
+  module RuntimeConfig
     #TODO rename this guy
     class RuntimeInclude
 
