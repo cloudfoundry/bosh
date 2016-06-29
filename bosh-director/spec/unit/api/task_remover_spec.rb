@@ -4,39 +4,30 @@ require 'bosh/director/api/task_remover'
 
 module Bosh::Director::Api
   describe TaskRemover do
-    describe '#remove' do
-      include FakeFS::SpecHelpers
+    include FakeFS::SpecHelpers
 
-      def make_n_tasks(num_tasks, type = default_type)
-        num_tasks.times do |i|
-          task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{type}_#{i}", type: type)
-          FileUtils.mkpath(task.output)
-        end
+    def make_n_tasks(num_tasks, type = default_type)
+      num_tasks.times do |i|
+        task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{type}_#{i}", type: type)
+        FileUtils.mkpath(task.output)
       end
+    end
 
-      subject(:remover) { described_class.new(3) }
-      let(:default_type) { 'type' }
-      let(:second_type) { 'type1' }
+    subject(:remover) { described_class.new(3) }
+    let(:default_type) { 'type' }
+    let(:second_type) { 'type1' }
+
+    describe '#remove' do
       context 'when there are fewer than max_tasks task of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(2)
         }
 
-        it 'keeps all tasks files' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-            Dir['/director/tasks/**/*']
-          }
-        end
+        it 'it does not remove anything' do
+          expect(remover).to_not receive(:remove_task)
 
-        it 'keeps all tasks in the database' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-            Bosh::Director::Models::Task.count
-          }
+          remover.remove(default_type)
         end
       end
 
@@ -46,20 +37,10 @@ module Bosh::Director::Api
           make_n_tasks(3)
         }
 
-        it 'keeps all tasks files' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-            Dir['/director/tasks/**/*']
-          }
-        end
+        it 'it does not remove anything' do
+          expect(remover).to_not receive(:remove_task)
 
-        it 'keeps all tasks in the database' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-            Bosh::Director::Models::Task.count
-          }
+          remover.remove(default_type)
         end
       end
 
@@ -69,26 +50,10 @@ module Bosh::Director::Api
           make_n_tasks(4)
         }
 
-        it 'keeps the latest max_tasks tasks files' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Dir["/director/tasks/#{default_type}_*"]
-          }.from(
-            (0...4).map {|i| "/director/tasks/#{default_type}_#{i}"}
-          ).to(
-            (1...4).map { |i| "/director/tasks/#{default_type}_#{i}" }
-          )
-          expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
-        end
+        it 'removes the first created one of the given type' do
+          expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[2])
 
-        it 'keeps the latest max_tasks tasks in the database' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).count
-          }.from(4).to(3)
-          expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
+          remover.remove(default_type)
         end
       end
 
@@ -98,26 +63,11 @@ module Bosh::Director::Api
           make_n_tasks(5)
         }
 
-        it 'removes the oldest 2 tasks files because it eventually converges to max_tasks' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Dir["/director/tasks/#{default_type}_*"]
-          }.from(
-                 (0...5).map {|i| "/director/tasks/#{default_type}_#{i}"}
-               ).to(
-                 (2...5).map { |i| "/director/tasks/#{default_type}_#{i}" }
-               )
-          expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
-        end
+        it 'removes the first two created tasks of the given type' do
+          expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[2])
+          expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[3])
 
-        it 'removes the oldest 2 database entries because it eventually converges to max_tasks' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).count
-          }.from(5).to(3)
-          expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
+          remover.remove(default_type)
         end
       end
 
@@ -127,27 +77,11 @@ module Bosh::Director::Api
           make_n_tasks(13)
         }
 
-        it 'removes 2 files older than the latest max_tasks because it eventually converges to max_tasks' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
+        it 'removes 2 tasks older than the latest max_tasks of the given type' do
+          expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[11])
+          expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[10])
 
-            Dir["/director/tasks/#{default_type}_*"].sort
-          }.from(
-            (0...13).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-          ).to(
-            ((0...8).to_a + (10...13).to_a).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-          )
-          expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
-        end
-
-        it 'removes the 2 database entries older than the latest max_tasks because it eventually converges to max_tasks' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).map(:id)
-          }.from((2..14).to_a).to((2..14).to_a - [10,11])
-          expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
+          remover.remove(default_type)
         end
       end
 
@@ -157,81 +91,41 @@ module Bosh::Director::Api
           make_n_tasks(4)
         }
 
-        it 'keeps the task files which have different type' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-            Dir["/director/tasks/#{second_type}_*"]
-          }
-        end
+        it 'keeps the tasks which have a different type' do
+          (1..4).each do |id|
+            expect(remover).to_not receive(:remove_task).with(Bosh::Director::Models::Task[id])
+          end
 
-        it 'keeps the database entries for tasks which have different type' do
-          expect {
-            remover.remove(default_type)
-          }.not_to change {
-           Bosh::Director::Models::Task.filter(:type => second_type).count}
+          remover.remove(default_type)
         end
       end
 
-      context 'when a processing task is too old' do
+      context 'when specific states should be ignored from removal' do
         before do
           make_n_tasks(1, second_type)
           make_n_tasks(5)
           running_task = Bosh::Director::Models::Task[2]
-          running_task.update({:state => :processing})
+          running_task.update({:state => state})
         end
 
-        it 'removes file older than the latest max_tasks that do not correspond to a task that is in a processing state' do
-          expect {
+        context 'state is processing' do
+          let(:state) { :processing }
+
+          it 'removes task older than the latest max_tasks that do not correspond to a task that is in a processing state' do
+            expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[3])
+
             remover.remove(default_type)
-          }.to change {
-            Dir["/director/tasks/#{default_type}_*"].sort
-          }.from(
-            (0...5).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-          ).to(
-            ([0] + (2...5).to_a).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-          )
-          expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
+          end
         end
 
-        it 'removes the database entry for a task of the given type older than the latest max_tasks that is not in a processing state' do
-          expect {
+        context 'state is queued' do
+          let (:state) { :queued }
+
+          it 'removes task older than the latest max_tasks that do not correspond to a task that is in a queued state' do
+            expect(remover).to receive(:remove_task).with(Bosh::Director::Models::Task[3])
+
             remover.remove(default_type)
-          }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).map(:id).sort
-          }.from((2..6).to_a).to((2..6).to_a - [3])
-          expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
-        end
-      end
-
-      context 'when a queued task is too old' do
-        before do
-          make_n_tasks(1, second_type)
-          make_n_tasks(5)
-          running_task = Bosh::Director::Models::Task[2]
-          running_task.update({:state => :queued})
-        end
-
-        it 'removes file older than the latest max_tasks that do not correspond to a task that is in a queued state' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Dir["/director/tasks/#{default_type}_*"].sort
-          }.from(
-                 (0...5).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-               ).to(
-                 ([0] + (2...5).to_a).map { |i| "/director/tasks/#{default_type}_#{i}" }.sort
-               )
-          expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
-        end
-
-        it 'removes the database entry for a task of the given type older than the latest max_tasks that is not in a queued state' do
-          expect {
-            remover.remove(default_type)
-          }.to change {
-            Bosh::Director::Models::Task.filter(:type => default_type).map(:id).sort
-          }.from((2..6).to_a).to((2..6).to_a - [3])
-          expect(Bosh::Director::Models::Task.filter(:type => second_type).count).to eq(1)
+          end
         end
       end
 
@@ -250,6 +144,58 @@ module Bosh::Director::Api
             remover.remove(default_type)
           }.to_not raise_error
         end
+      end
+
+      context 'when a task has teams' do
+        before do
+          make_n_tasks(4)
+          team = Bosh::Director::Models::Team.make(name: 'ateam')
+          task = Bosh::Director::Models::Task[1]
+          task.add_team(team)
+        end
+
+        it 'is removed' do
+          expect(Bosh::Director::Models::Task[1].teams.first.name).to eq('ateam')
+          expect {
+            remover.remove(default_type)
+          }.to change {
+            Bosh::Director::Models::Task.count
+          }.from(4).to(3)
+        end
+      end
+    end
+
+    describe '#remove_task' do
+      before do
+        make_n_tasks(2)
+      end
+
+      it 'removes task from data base' do
+        expect {
+          remover.remove_task(Bosh::Director::Models::Task[1])
+        }.to change {
+          Bosh::Director::Models::Task[1]
+        }.from(Bosh::Director::Models::Task[1]).to(nil)
+
+        expect(Bosh::Director::Models::Task[2]).to_not be_nil
+      end
+
+      it 'removes files belonging to task' do
+        expect {
+          remover.remove_task(Bosh::Director::Models::Task[1])
+        }.to change {
+          Dir["/director/tasks/#{default_type}_*"].count
+        }.from(2).to(1)
+
+        expect(Dir['/director/tasks/type_1']).to_not be_nil
+      end
+
+      it 'does not fail when called multiple times on the same task' do
+        expect {
+          task = Bosh::Director::Models::Task[1]
+          remover.remove_task(task)
+          remover.remove_task(task)
+        }.to_not raise_error
       end
     end
   end
