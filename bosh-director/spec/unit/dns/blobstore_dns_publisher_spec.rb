@@ -76,20 +76,66 @@ module Bosh::Director
     end
 
     describe '#export_dns_records' do
-      context 'when local store has DNS records' do
+      context 'when local store has no DNS records' do
+        it 'exports empty records' do
+          expect(dns.export_dns_records).to eq([])
+        end
+      end
+
+      context 'when there exist some DNS records' do
         before {
           Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'job' => { 'name' => 'instance1' }, 'id' => 'uuid1', 'networks' => { 'net-name1' => { 'ip' => '192.0.2.101' }, 'net-name3' => { 'ip' => '192.0.3.101' } }})
           Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'job' => { 'name' => 'instance2' }, 'id' => 'uuid2', 'networks' => { 'net-name2' => { 'ip' => '192.0.2.102' } }})
         }
 
-        it 'exports the records' do
-          expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"], ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
-        end
-      end
+        context 'when local store has DNS records' do
 
-      context 'when local store has no DNS records' do
-        it 'exports empty records' do
-          expect(dns.export_dns_records).to eq([])
+          it 'exports the records' do
+            expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"], ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"],
+                                                  ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+          end
+        end
+
+        context 'when instance.spec is nil' do
+          before {
+            Bosh::Director::Models::Instance.make(:spec => nil )
+          }
+
+          it 'skips the instance' do
+            expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"],
+                                                  ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+          end
+        end
+
+        context 'when instance.spec is not nil' do
+          context 'when spec[networks] is nil' do
+            before {
+              Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 3, 'job' => { 'name' => 'instance3' }, 'id' => 'uuid3', 'networks' => nil })
+            }
+
+            it 'skips the instance' do
+              expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"],
+                                                    ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+            end
+          end
+
+          context 'when spec[networks] is not nil' do
+            context 'when network[ip] is nil' do
+              it 'skips the instance' do
+                Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 3, 'job' => { 'name' => 'instance3' }, 'id' => 'uuid3', 'networks' => { 'net-name3' => { 'ip' => nil } } })
+                expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"],
+                                                      ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+              end
+            end
+          end
+
+          context 'when spec[job] is nil' do
+            it 'skips the instance' do
+              Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 3, 'job' => nil, 'id' => 'uuid3', 'networks' => { 'net-name3' => { 'ip' => '192.0.2.103' } }})
+              expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"],
+                                                    ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+            end
+          end
         end
       end
     end

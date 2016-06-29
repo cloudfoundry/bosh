@@ -21,8 +21,12 @@ module Bosh::Director
       hosts = []
       Models::Instance.all.map do |instance|
         spec = instance.spec
-        spec['networks'].each do |network_name, network|
-          hosts << [ network['ip'], spec['id'] + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + @domain_name ]
+        unless spec.nil? || spec['networks'].nil?
+          spec['networks'].each do |network_name, network|
+            unless network['ip'].nil? or spec['job'].nil?
+              hosts << [ network['ip'], spec['id'] + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + @domain_name ]
+            end
+          end
         end
       end
       hosts
