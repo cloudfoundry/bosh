@@ -187,8 +187,8 @@ module Bosh::Director
         return @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
       end
 
-      def add_template_scoped_properties(template_scoped_properties, deployment_job_name)
-        @template_scoped_properties[deployment_job_name] = template_scoped_properties
+      def add_template_scoped_properties(template_scoped_properties, deployment_instance_group_name)
+        @template_scoped_properties[deployment_instance_group_name] = template_scoped_properties
       end
 
       def has_template_scoped_properties(deployment_job_name)

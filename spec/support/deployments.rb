@@ -50,7 +50,7 @@ module Bosh::Spec
         {
           'name' => 'addon1',
           'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
-          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}
+          'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}}
         }]
       }
     end

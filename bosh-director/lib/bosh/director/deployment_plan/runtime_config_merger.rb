@@ -28,12 +28,7 @@ module Bosh::Director
         addon_jobs_to_add = []
 
         addon['jobs'].each do |addon_job|
-          deployment_release_names = @deployment.releases.map(&:name)
-          deployment_release_ids = Models::Release.where(:name => deployment_release_names).map(&:id)
-          saved_jobs = Models::Template.where(:name => addon_job['name'], :release_id => deployment_release_ids)
-          if saved_jobs.empty?
-            raise "Job '#{addon_job['name']}' not found in Template table"
-          end
+          saved_jobs = fetch_existing_jobs(addon_job['name'])
 
           release = @deployment.release(addon_job['release'])
           release.bind_model
@@ -78,7 +73,7 @@ module Bosh::Director
 
       private
 
-      def merge_addon_jobs(instance_group, addon_jobs, properties)
+      def merge_addon_jobs(instance_group, addon_jobs, addon_properties)
         instance_group.jobs.each do |job|
           addon_jobs.each do |addon_job|
             if addon_job.name == job.name
@@ -88,13 +83,17 @@ module Bosh::Director
         end
         instance_group.jobs.concat(addon_jobs)
 
-        if properties
-          if instance_group.all_properties
-            instance_group.all_properties.merge!(properties)
-          else
-            instance_group.all_properties = properties
-          end
+        instance_group.all_properties.merge!(addon_properties) if addon_properties
+      end
+
+      def fetch_existing_jobs(job_name)
+        deployment_release_names = @deployment.releases.map(&:name)
+        deployment_release_ids = Models::Release.where(:name => deployment_release_names).map(&:id)
+        saved_jobs = Models::Template.where(:name => job_name, :release_id => deployment_release_ids)
+        if saved_jobs.empty?
+          raise "Job '#{job_name}' not found in Template table"
         end
+        saved_jobs
       end
     end
   end

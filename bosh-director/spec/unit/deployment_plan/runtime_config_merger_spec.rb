@@ -4,7 +4,7 @@ module Bosh::Director
   describe DeploymentPlan::RuntimeConfigMerger do
     subject(:merger) { described_class.new(deployment) }
 
-    describe '#parse' do
+    describe '#RuntimeConfigMerger' do
       describe 'with deployment' do
         let(:cloud_config) { Models::CloudConfig.make }
 
@@ -30,8 +30,8 @@ module Bosh::Director
         end
 
         before do
-          allow_any_instance_of(DeploymentPlan::Template).to receive(:bind_models).and_return(nil)
-          allow_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).and_return(nil)
+          allow_any_instance_of(DeploymentPlan::Template).to receive(:bind_models)
+          allow_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model)
         end
 
         describe '#add_releases' do
@@ -101,6 +101,7 @@ module Bosh::Director
 
             it 'should colocate addon jobs on instance groups' do
               expect_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).exactly(3).times
+
               subject.add_releases(parsed_runtime_config.releases)
               subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)
 
@@ -110,20 +111,39 @@ module Bosh::Director
 
             context 'when addon job has the same name as an instance group job' do
               let(:instance_groups_to_add_to) do
-                release_3_model = Bosh::Director::Models::Release.make(name: 'dummy3')
-                release_version_3_model = Bosh::Director::Models::ReleaseVersion.make(version: '0.5-dev', release: release_3_model)
-                release_version_3_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_3_model))
-                release_3 = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy3', 'version' => '0.5-dev'})
-                deployment.add_release(release_3)
-
                 instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
-                [instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: ['name' => 'dummy_with_properties', 'release' => 'dummy3']))]
+                [instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: ['name' => 'dummy_with_properties', 'release' => 'dummy']))]
               end
 
               it 'should raise an error' do
                 subject.add_releases(parsed_runtime_config.releases)
-                expect {subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)}.to raise_error
-                                                                        "Colocated job 'dummy_with_properties' is already added to the instance group 'dummy'."
+                expect { subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to) }.to raise_error
+                "Colocated job 'dummy_with_properties' is already added to the instance group 'dummy'."
+              end
+            end
+
+            context 'when addons have properties' do
+              let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon }
+              let(:instance_groups_to_add_to) do
+                instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+                instance_group_without_properties = instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
+                jobs = [{'name' => 'dummy', 'release' => 'dummy'}]
+                properties = {'instance_group_property' => 'value'}
+                instance_group_with_properties = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: jobs, properties: properties))
+                [instance_group_without_properties, instance_group_with_properties]
+              end
+
+              it 'should resolve job-scoped properties of addon jobs' do
+                expect_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).exactly(3).times
+
+                subject.add_releases(parsed_runtime_config.releases)
+                subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)
+
+                dummy_job_properties = deployment.instance_group('dummy').all_properties
+                foobar_job_properties = deployment.instance_group('foobar').all_properties
+
+                expect(foobar_job_properties).to eq({'instance_group_property' => 'value', 'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
+                expect(dummy_job_properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
               end
             end
 
@@ -136,6 +156,7 @@ module Bosh::Director
 
               it 'should resolve job-scoped properties of addon jobs' do
                 expect_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).exactly(3).times
+
                 subject.add_releases(parsed_runtime_config.releases)
                 subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)
 
@@ -165,6 +186,8 @@ module Bosh::Director
 
               it 'should resolve links and colocate addon jobs on instance groups' do
                 expect_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).exactly(2).times
+                expect_any_instance_of(DeploymentPlan::Template).to receive(:bind_models)
+
                 subject.add_releases(parsed_runtime_config.releases)
                 subject.merge_addon(parsed_runtime_config.addons.first, instance_groups_to_add_to)
 

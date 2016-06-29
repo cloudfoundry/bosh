@@ -101,7 +101,7 @@ module Bosh::Director
                                    'name' => 'addon1',
                                    'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
                                               {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}],
-                                   'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}}]
+                                   'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}}}]
             expect(result.releases).to eq(runtime_manifest['releases'])
             expect(result.addons).to eq(expected_addons)
           end

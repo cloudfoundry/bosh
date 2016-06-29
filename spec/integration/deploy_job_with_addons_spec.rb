@@ -66,7 +66,7 @@ describe 'deploy job with addons', type: :integration do
     expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
 
     template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
-    expect(template).to include("echo 'prop_value'")
+    expect(template).to include("echo 'addon_prop_value'")
   end
 
   it 'raises an error if the addon job has the same name as an existing job in an instance group' do
