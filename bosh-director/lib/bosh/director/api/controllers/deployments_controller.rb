@@ -81,9 +81,10 @@ module Bosh::Director
         options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
-          manifest_file_path, _ = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
         else
           manifest_file_path, _ = prepare_yml_file(request.body, 'deployment')
+          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
@@ -110,10 +111,11 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
-        if (request.content_length.nil?  || request.content_length.to_i == 0)
-          manifest_file_path, _ = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+        if request.content_length.nil? || request.content_length.to_i == 0
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
         else
-          manifest_file_path, _ = prepare_yml_file(request.body, 'deployment')
+          manifest_file_path = prepare_yml_file(request.body, 'deployment')
+          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
@@ -328,7 +330,8 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
-        manifest_file_path, deployment = prepare_yml_file(request.body, 'deployment')
+        manifest_file_path = prepare_yml_file(request.body, 'deployment')
+        deployment = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
 
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
@@ -359,7 +362,7 @@ module Bosh::Director
       end
 
       post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
-        manifest_hash = validate_manifest_yml(request.body.read)
+        manifest_hash = validate_manifest_yml(request.body.read, nil)
 
         ignore_cc = ignore_cloud_config?(manifest_hash)
 

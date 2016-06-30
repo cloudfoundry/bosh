@@ -6,7 +6,7 @@ module Bosh::Director
       post '/', :consumes => :yaml do
         manifest_text = request.body.read
         begin
-          validate_manifest_yml(manifest_text)
+          validate_manifest_yml(manifest_text, nil)
           Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
           create_event
         rescue => e

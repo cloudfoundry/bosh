@@ -77,7 +77,7 @@ module Bosh::Director
         raise SystemError, e.message
       end
 
-      def prepare_yml_file(yml_stream, manifest_type, skip_validation = false)
+      def prepare_yml_file(yml_stream, manifest_type)
         random_file_name = "#{manifest_type}-#{SecureRandom.uuid}"
         tmp_manifest_dir = Dir::tmpdir
 
@@ -89,12 +89,10 @@ module Bosh::Director
 
         write_file(manifest_file_path, yml_stream)
 
-        manifest_hash = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path) unless skip_validation
-
-        return manifest_file_path, manifest_hash
+        manifest_file_path
       end
 
-      def validate_manifest_yml(yml_string, context = nil)
+      def validate_manifest_yml(yml_string, context)
         raise BadManifest, 'Manifest should not be empty' unless yml_string.to_s != ''
 
         begin

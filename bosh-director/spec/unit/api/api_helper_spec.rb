@@ -51,32 +51,10 @@ describe Bosh::Director::Api::ApiHelper do
     end
   end
 
-  describe :prepare_yml_file do
-    context 'yml with errors' do
-      let(:yml_stream) {
-        yml = <<-FOO
-foo
-  k: v
-FOO
-        StringIO.new(yml)
-      }
-      let(:manifest_filename) { '123' }
-      let(:manifest_type) { 'atype' }
-
-      it 'includes filename in error message' do
-        allow(SecureRandom).to receive(:uuid).and_return(manifest_filename)
-
-        expect {
-          prepare_yml_file(yml_stream, manifest_type)
-        }.to raise_exception(Bosh::Director::BadManifest, /#{manifest_type}-#{manifest_filename}/)
-      end
-    end
-  end
-
   describe :validate_manifest_yml do
     it 'should handle empty manifest' do
       expect {
-        validate_manifest_yml('')
+        validate_manifest_yml('', 'context')
       }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should not be empty')
     end
 
@@ -86,7 +64,7 @@ foo
   k: v
 FOO
       expect {
-        validate_manifest_yml(yml)
+        validate_manifest_yml(yml, 'context')
       }.to raise_exception(Bosh::Director::BadManifest, /Incorrect YAML structure of the uploaded manifest: /)
     end
 
@@ -106,7 +84,7 @@ foo:
   k: *v
 FOO
       expect {
-        validate_manifest_yml(yml)
+        validate_manifest_yml(yml, 'context')
       }.to raise_exception(Bosh::Director::BadManifest, /Incorrect YAML structure of the uploaded manifest: /)
     end
 
@@ -117,7 +95,7 @@ foo:
   k: v
 FOO
 
-        expect(validate_manifest_yml(yml)).to eq({'foo' => {'k' => 'v'}})
+        expect(validate_manifest_yml(yml, 'context')).to eq({'foo' => {'k' => 'v'}})
       end
     end
   end
