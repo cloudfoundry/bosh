@@ -34,6 +34,25 @@ shared_examples_for 'every OS image' do
       it { should return_exit_status(0) }
     end
 
+    describe file('/root/.bashrc') do
+      it { should be_file }
+      it { should contain 'source /etc/profile.d/00-bosh-ps1' }
+    end
+
+    describe file('/home/vcap/.bashrc') do
+      it { should be_file }
+      it { should contain 'source /etc/profile.d/00-bosh-ps1' }
+    end
+
+    describe file('/etc/skel/.bashrc') do
+      it { should be_file }
+      it { should contain 'source /etc/profile.d/00-bosh-ps1' }
+    end
+
+    describe file('/etc/profile.d/00-bosh-ps1') do
+      it { should be_file }
+    end
+
     describe command("grep -q .bashrc /root/.profile") do
       it { should return_exit_status(0) }
     end
