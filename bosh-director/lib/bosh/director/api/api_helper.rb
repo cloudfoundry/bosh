@@ -89,16 +89,16 @@ module Bosh::Director
 
         write_file(manifest_file_path, yml_stream)
 
-        validate_manifest_yml(File.read(manifest_file_path)) unless skip_validation
+        manifest_hash = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path) unless skip_validation
 
-        manifest_file_path
+        return manifest_file_path, manifest_hash
       end
 
-      def validate_manifest_yml(yml_string)
+      def validate_manifest_yml(yml_string, context = nil)
         raise BadManifest, 'Manifest should not be empty' unless yml_string.to_s != ''
 
         begin
-          Psych.parse(yml_string)
+          Psych.load(yml_string, context)
         rescue Exception => e
           raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
         end
