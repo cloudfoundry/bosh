@@ -78,20 +78,27 @@ describe 'Agent', type: :integration do
           expect(agent1.length).to eq(2)
 
           expect(agent2[0]['method']).to eq('ping')
-          expect(agent2[1]['method']).to eq('update_settings')
-          expect(agent2[2]['method']).to eq('apply')
-          expect(agent2[3]['method']).to eq('get_state')
-          expect(agent2[4]['method']).to eq('prepare')
-          expect(agent2[5]['method']).to eq('drain')
-          expect(agent2[6]['method']).to eq('stop')
-          expect(agent2[7]['method']).to eq('apply')
-          expect(agent2[8]['method']).to eq('run_script')
-          expect(agent2[8]['arguments'][0]).to eq('pre-start')
-          expect(agent2[9]['method']).to eq('start')
-          expect(agent2[10]['method']).to eq('get_state')
-          expect(agent2[11]['method']).to eq('run_script')
-          expect(agent2[11]['arguments'][0]).to eq('post-start')
-          expect(agent2.length).to eq(12)
+          agent2.shift
+
+          # director may make multiple ping calls when agent is slow to start
+          while agent2[0]['method'] == 'ping'
+            agent2.shift
+          end
+
+          expect(agent2[0]['method']).to eq('update_settings')
+          expect(agent2[1]['method']).to eq('apply')
+          expect(agent2[2]['method']).to eq('get_state')
+          expect(agent2[3]['method']).to eq('prepare')
+          expect(agent2[4]['method']).to eq('drain')
+          expect(agent2[5]['method']).to eq('stop')
+          expect(agent2[6]['method']).to eq('apply')
+          expect(agent2[7]['method']).to eq('run_script')
+          expect(agent2[7]['arguments'][0]).to eq('pre-start')
+          expect(agent2[8]['method']).to eq('start')
+          expect(agent2[9]['method']).to eq('get_state')
+          expect(agent2[10]['method']).to eq('run_script')
+          expect(agent2[10]['arguments'][0]).to eq('post-start')
+          expect(agent2.length).to eq(11)
         end
       end
 
