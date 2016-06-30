@@ -106,6 +106,11 @@ require 'bosh/director/sequel'
 require 'bosh/director/agent_broadcaster'
 require 'common/thread_pool'
 
+require 'bosh/director/config_parser/deep_hash_replacement'
+require 'bosh/director/config_parser/config_path_validator'
+require 'bosh/director/config_parser/config_parser'
+
+
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/diff_lines'

@@ -71,7 +71,7 @@ module Bosh::Director::Jobs
           allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(true)
           allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
 
-          expect(mock_manifest).to receive(:fetch_config_values)
+          expect(mock_manifest).to receive(:setup_config_values)
 
           job.perform
         end
@@ -80,7 +80,7 @@ module Bosh::Director::Jobs
           allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(false)
           allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
 
-          expect(mock_manifest).to_not receive(:fetch_config_values)
+          expect(mock_manifest).to_not receive(:setup_config_values)
 
           job.perform
         end
