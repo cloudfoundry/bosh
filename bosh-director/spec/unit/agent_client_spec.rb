@@ -77,6 +77,13 @@ module Bosh::Director
       end
     end
 
+    def self.it_acts_as_message_with_timeout(message_name)
+      it 'waits for results with timeout' do
+        expect(client).to receive(:send_message_with_timeout).exactly(1).times
+        client.public_send(message_name, 'fake', 'args')
+      end
+    end
+
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
         subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
@@ -184,7 +191,11 @@ module Bosh::Director
           end
         end
 
+        context 'task can time out' do
+          it_acts_as_message_with_timeout :stop
+        end
       end
+
     end
 
     context 'task is fired and forgotten' do
@@ -687,6 +698,73 @@ module Bosh::Director
 
           client.wait_for_task('fake-task-id')
         end
+      end
+
+      context 'when timeout is passed' do
+        let(:fake_timeout_ticks) { 3 }
+
+        it 'uses the timeout if one is passed' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          timeout = Timeout.new(fake_timeout_ticks)
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'running',
+              'value' => 'fake-return-value',
+            }
+          }
+
+          allow(nats_rpc).to receive(:send_request).with(
+              'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
+                               .and_yield(nats_rpc_response)
+
+          expect(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL).exactly(fake_timeout_ticks).times
+          expect(timeout).to receive(:timed_out?).exactly(fake_timeout_ticks).times.and_return(false)
+          expect(timeout).to receive(:timed_out?).and_return(true)
+          expect(client.wait_for_task('fake-task-id', timeout)).to eq('fake-return-value')
+        end
+      end
+    end
+
+    describe '#stop' do
+      let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
+      let(:fake_timeout_ticks) { 3 }
+
+      before { allow(Config).to receive(:nats_rpc).and_return(nats_rpc) }
+
+      it 'should timeout and continue on after 5 minutes' do
+        handle_method_response = {
+          'agent_task_id' => 'fake-task-id',
+          'value' => 'fake-return-value',
+          'state' => 'running',
+        }
+
+        timeout = Timeout.new(fake_timeout_ticks)
+
+        allow(Timeout).to receive(:new).and_return(timeout)
+        client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+        expect(client).to receive(:handle_method).with(:stop, []).once.and_return(handle_method_response)
+        expect(client).to receive(:handle_method).with(:get_task, ['fake-task-id']).exactly(fake_timeout_ticks + 1).times.and_return(handle_method_response)
+
+        expect(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL).exactly(fake_timeout_ticks).times
+        expect(timeout).to receive(:timed_out?).exactly(fake_timeout_ticks).times.and_return(false)
+        expect(timeout).to receive(:timed_out?).and_return(true)
+
+        client.stop
+      end
+
+      it 'should suppress timeout errors received from the agent' do
+        allow(Timeout).to receive(:new).and_return(Timeout.new(fake_timeout_ticks))
+
+        client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+        expect(Config.logger).to receive(:warn).with("Ignoring stop timeout error from the agent: #<Bosh::Director::RpcRemoteException: Timed out waiting for service 'foo'.>")
+
+        expect(client).to receive(:handle_method).with(:stop, []).once.and_return({ 'agent_task_id' => 'fake-task-id' })
+        expect(client).to receive(:handle_method).and_raise(RpcRemoteException, "Timed out waiting for service 'foo'.")
+
+        client.stop
       end
     end
   end

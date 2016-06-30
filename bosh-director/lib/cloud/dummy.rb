@@ -77,7 +77,7 @@ module Bosh
         cmd = commands.next_create_vm_cmd
 
         if cmd.failed?
-          raise Bosh::Clouds::CloudError.new("Creating vm failed")
+          raise Bosh::Clouds::CloudError.new('Creating vm failed')
         end
 
         networks.each do |network_name, network|
@@ -482,20 +482,20 @@ module Bosh
         end
 
         def pause_delete_vms
-          @logger.info("Pausing delete_vms")
+          @logger.info('Pausing delete_vms')
           path = File.join(@cpi_commands, 'pause_delete_vms')
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, 'marker')
         end
 
         def unpause_delete_vms
-          @logger.info("Unpausing delete_vms")
+          @logger.info('Unpausing delete_vms')
           FileUtils.rm_rf File.join(@cpi_commands, 'pause_delete_vms')
           FileUtils.rm_rf File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
         end
 
         def wait_for_delete_vms
-          @logger.info("Wait for delete_vms")
+          @logger.info('Wait for delete_vms')
           path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
           sleep(0.1) until File.exists?(path)
         end
@@ -507,7 +507,7 @@ module Bosh
 
           path = File.join(@cpi_commands, 'pause_delete_vms')
           if File.exists?(path)
-            @logger.info("Wait for unpausing delete_vms")
+            @logger.info('Wait for unpausing delete_vms')
           end
           sleep(0.1) while File.exists?(path)
         end
@@ -525,13 +525,13 @@ module Bosh
         end
 
         def make_create_vm_always_fail
-          @logger.info("Making create_vm method always fail")
+          @logger.info('Making create_vm method always fail')
           FileUtils.mkdir_p(File.dirname(failed_path))
-          File.write(failed_path, "")
+          File.write(failed_path, '')
         end
 
         def allow_create_vm_to_succeed
-          @logger.info("Allowing create_vm method to succeed (removing any mandatory failures)")
+          @logger.info('Allowing create_vm method to succeed (removing any mandatory failures)')
           FileUtils.rm(failed_path)
         end
 
