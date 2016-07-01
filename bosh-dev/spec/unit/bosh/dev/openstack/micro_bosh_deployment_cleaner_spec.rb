@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'fog'
+require 'fog/openstack'
 require 'fog/openstack/models/compute/images'
 require 'fog/openstack/models/compute/servers'
 require 'fog/openstack/models/compute/volumes'
