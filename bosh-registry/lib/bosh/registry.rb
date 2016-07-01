@@ -7,7 +7,7 @@ module Bosh
 end
 
 require "aws-sdk"
-require "fog"
+require "fog/openstack"
 require "logger"
 require "sequel"
 require "sinatra/base"
