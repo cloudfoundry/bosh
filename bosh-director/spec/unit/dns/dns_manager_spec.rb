@@ -318,7 +318,7 @@ module Bosh::Director
         end
       end
 
-      context 'when LocalDNS is enabled' do
+      context 'when blobstore DNS publisher is enabled' do
         let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
@@ -329,7 +329,7 @@ module Bosh::Director
         end
       end
 
-      context 'when LocalDNS is disabled' do
+      context 'when blobstore DNS publisher is disabled' do
         let(:dns_publisher) { nil }
 
         describe '#publisher_enabled?' do
@@ -380,7 +380,22 @@ module Bosh::Director
         end
       end
 
-      context 'when LocalDNS is enabled' do
+      describe '#update_dns_record_for_instance' do
+        before do
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
+        end
+
+        context 'when IPs/hosts change' do
+          it 'updates dns records for instance in local repo' do
+            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
+            dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '11.22.33.44', 'new-fake-dns-name' => '99.88.77.66'})
+            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2', 'new-fake-dns-name'])
+            expect(Models::Dns::Record.all.count).to eq(0)
+          end
+        end
+      end
+
+      context 'when blobstore DNS publisher is enabled' do
         let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
@@ -391,7 +406,7 @@ module Bosh::Director
         end
       end
 
-      context 'when LocalDNS is disabled' do
+      context 'when blobstore DNS publisher is disabled' do
         let(:dns_publisher) { nil }
 
         describe '#publisher_enabled?' do
