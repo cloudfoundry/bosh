@@ -1,5 +1,3 @@
-require 'psych'
-
 module Bosh::Director
   class Jobs::RunErrand < Jobs::BaseJob
     include LockHelper

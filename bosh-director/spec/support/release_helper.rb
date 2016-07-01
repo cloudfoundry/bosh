@@ -1,4 +1,3 @@
-require 'psych'
 require 'tmpdir'
 require 'fileutils'
 require 'digest/sha1'
