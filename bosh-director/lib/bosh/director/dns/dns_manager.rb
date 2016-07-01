@@ -51,8 +51,10 @@ module Bosh::Director
       new_dns_records = []
       dns_names_to_ip.each do |record_name, ip_address|
         new_dns_records << record_name
-        @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        @dns_provider.create_or_update_dns_records(record_name, ip_address)
+        if dns_enabled?
+          @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
+          @dns_provider.create_or_update_dns_records(record_name, ip_address)
+        end
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       @local_dns_repo.create_or_update(instance_model, dns_records)
