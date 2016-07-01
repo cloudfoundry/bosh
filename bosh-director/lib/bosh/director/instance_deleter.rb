@@ -36,14 +36,6 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.publish_dns_records
-          end
-
-          error_ignorer.with_force_check do
-            @dns_manager.cleanup_dns_records
-          end
-
-          error_ignorer.with_force_check do
             RenderedJobTemplatesCleaner.new(instance_model, @blobstore, @logger).clean_all
           end
         end
