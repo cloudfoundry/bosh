@@ -61,7 +61,7 @@ module Bosh::Director
         rv1 = Models::ReleaseVersion.make(release: release, version: '1')
         rv2 = Models::ReleaseVersion.make(release: release, version: '2')
 
-        manifest = Psych.dump('release' => {'name' => 'test_release', 'version' => '2'})
+        manifest = YAML.dump('release' => {'name' => 'test_release', 'version' => '2'})
 
         deployment = Models::Deployment.make(name: 'test_deployment', manifest: manifest)
         deployment.add_release_version(rv2)

@@ -48,7 +48,7 @@ module Bosh::Director
       let(:deployment_model) { Models::Deployment.make }
 
       def generate_manifest_text
-        Psych.dump minimal_manifest
+        YAML.dump minimal_manifest
       end
 
       let(:minimal_manifest) do

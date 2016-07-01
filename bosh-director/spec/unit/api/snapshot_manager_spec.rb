@@ -118,7 +118,7 @@ module Bosh::Director
     end
 
     describe 'class methods' do
-      let(:config) { Psych.load_file(asset('test-director-config.yml')) }
+      let(:config) { YAML.load_file(asset('test-director-config.yml')) }
 
       before do
         Config.configure(config)

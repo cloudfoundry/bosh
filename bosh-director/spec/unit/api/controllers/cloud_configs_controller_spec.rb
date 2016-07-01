@@ -19,7 +19,7 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         it 'creates a new cloud config' do
-          properties = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
+          properties = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Models::CloudConfig, :count).from(0).to(1)
@@ -71,7 +71,7 @@ module Bosh::Director
       it 'creates a new event' do
         authorize('admin', 'admin')
 
-        properties = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
+        properties = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
         expect {
           post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)

@@ -60,7 +60,7 @@ module Bosh::Director
       end
 
       def add_networks_from_deployment(deployment, ranges)
-        networks = safe_property(Psych.load(deployment.manifest), 'networks', :class => Array, :default => [])
+        networks = safe_property(YAML.load(deployment.manifest), 'networks', :class => Array, :default => [])
         networks.each do |network_spec|
           add_network(network_spec, ranges)
         end

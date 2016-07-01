@@ -63,7 +63,7 @@ module SpecHelper
     end
 
     def spec_get_director_config
-      config = Psych.load_file(File.expand_path('assets/test-director-config.yml', __dir__))
+      config = YAML.load_file(File.expand_path('assets/test-director-config.yml', __dir__))
 
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = '127.0.0.1'

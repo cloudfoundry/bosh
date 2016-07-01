@@ -20,7 +20,7 @@ if config_file.nil?
   exit 1
 end
 
-config = Psych.load_file(config_file)
+config = YAML.load_file(config_file)
 unless config['db'] && config['db']['database']
   abort ('Director database config missing from config file')
 end

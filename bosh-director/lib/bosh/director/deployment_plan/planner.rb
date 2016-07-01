@@ -254,7 +254,7 @@ module Bosh::Director
           end
         end
 
-        model.manifest = Psych.dump(@manifest_text)
+        model.manifest = YAML.dump(@manifest_text)
         model.cloud_config = @cloud_config
         model.runtime_config = @runtime_config
         model.link_spec = @link_spec

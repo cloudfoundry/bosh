@@ -26,7 +26,7 @@ module Bosh::Director
           'instances' => 1,
           'networks' => [{'name' => 'a'}]
         }
-        Psych.dump(manifest_hash)
+        YAML.dump(manifest_hash)
       end
 
       let(:cloud_config) { Models::CloudConfig.make }
@@ -75,7 +75,7 @@ module Bosh::Director
         end
 
         describe 'updating a deployment' do
-          let!(:deployment) { Models::Deployment.create(:name => 'my-test-deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+          let!(:deployment) { Models::Deployment.create(:name => 'my-test-deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
           context 'without the "skip_drain" param' do
             it 'does not skip draining' do
@@ -144,7 +144,7 @@ module Bosh::Director
 
         describe 'deleting deployment' do
           it 'deletes the deployment' do
-            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
 
             delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
@@ -154,7 +154,7 @@ module Bosh::Director
         describe 'job management' do
           shared_examples 'change state' do
             it 'allows to change state' do
-              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
@@ -170,7 +170,7 @@ module Bosh::Director
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
                   with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
-              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
@@ -202,7 +202,7 @@ module Bosh::Director
           end
 
           let(:deployment) do
-            Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+            Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
           end
 
           it 'allows putting the job instance into different resurrection_paused values' do
@@ -307,7 +307,7 @@ module Bosh::Director
           end
 
           describe 'draining' do
-            let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+            let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
             let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started') }
             before do
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
@@ -365,7 +365,7 @@ module Bosh::Director
 
         describe 'log management' do
           it 'allows fetching logs from a particular instance' do
-            deployment = Models::Deployment.create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
             Models::Instance.create(
               :deployment => deployment,
               :job => 'nats',
@@ -383,7 +383,7 @@ module Bosh::Director
 
           it '404 if no deployment' do
             deployment = Models::Deployment.
-              create(:name => 'bar', :manifest => Psych.dump({'foo' => 'bar'}))
+              create(:name => 'bar', :manifest => YAML.dump({'foo' => 'bar'}))
             get '/bar/jobs/nats/0/logs', {}
             expect(last_response.status).to eq(404)
           end
@@ -475,12 +475,12 @@ module Bosh::Director
           it 'returns manifest' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
-                       :manifest => Psych.dump({'foo' => 'bar'}))
+                       :manifest => YAML.dump({'foo' => 'bar'}))
             get '/test_deployment'
 
             expect(last_response.status).to eq(200)
             body = JSON.parse(last_response.body)
-            expect(Psych.load(body['manifest'])).to eq('foo' => 'bar')
+            expect(YAML.load(body['manifest'])).to eq('foo' => 'bar')
           end
         end
 
@@ -490,7 +490,7 @@ module Bosh::Director
           it 'returns a list of instances with vms (vm_cid != nil)' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
-                       :manifest => Psych.dump({'foo' => 'bar'}))
+                       :manifest => YAML.dump({'foo' => 'bar'}))
 
             15.times do |i|
               instance_params = {
@@ -530,7 +530,7 @@ module Bosh::Director
           it 'returns a list of all instances' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
-                       :manifest => Psych.dump({'foo' => 'bar'}))
+                       :manifest => YAML.dump({'foo' => 'bar'}))
 
 
             15.times do |i|
@@ -892,7 +892,7 @@ module Bosh::Director
           before do
             Models::Deployment.create(
               :name => 'fake-dep-name',
-              :manifest => Psych.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
+              :manifest => YAML.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
               cloud_config: cloud_config,
               runtime_config: runtime_config
             )
@@ -941,7 +941,7 @@ module Bosh::Director
               it 'ignores cloud config if network section exists' do
                 Models::Deployment.create(
                   :name => 'fake-dep-name-no-cloud-conf',
-                  :manifest => Psych.dump(manifest_hash),
+                  :manifest => YAML.dump(manifest_hash),
                   cloud_config: nil,
                   runtime_config: runtime_config
                 )
@@ -949,7 +949,7 @@ module Bosh::Director
                 Models::CloudConfig.make(manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
 
                 manifest_hash['networks'] = [{'name'=> 'network2'}]
-                diff = post '/fake-dep-name-no-cloud-conf/diff', Psych.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
+                diff = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
 
                 expect(diff).not_to match /very-cloudy-network/
                 expect(diff).to match /non-cloudy-network/

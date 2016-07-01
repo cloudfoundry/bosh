@@ -10,7 +10,7 @@ Sequel.migration do
     end
 
     self[:deployments].each do |deployment|
-      manifest = Psych.load(deployment[:manifest])
+      manifest = YAML.load(deployment[:manifest])
 
       unless manifest.is_a?(Hash) && manifest["release"] && manifest["release"]["version"]
         raise "Invalid manifest for '#{deployment[:name]}', no version data"

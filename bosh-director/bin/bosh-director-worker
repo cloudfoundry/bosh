@@ -43,7 +43,7 @@ begin
 
     template = ERB.new(File.read(config_file), 0, '%<>-')
     contents = template.result(ConfigBindingHelper.new(index).get_binding)
-    config_hash = Psych.load(contents)
+    config_hash = YAML.load(contents)
     config = Bosh::Director::Config.load_hash(config_hash)
   else
     config = Bosh::Director::Config.load_file(config_file)

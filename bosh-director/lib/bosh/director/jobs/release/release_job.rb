@@ -83,7 +83,7 @@ module Bosh::Director
           "Missing job manifest for '#{@name}'"
       end
 
-      Psych.load_file(manifest_file)
+      YAML.load_file(manifest_file)
     end
 
     def validate_templates(job_manifest)

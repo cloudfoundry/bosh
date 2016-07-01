@@ -7,11 +7,11 @@ module Bosh
         end
 
         def manifest=(cloud_config_hash)
-          self.properties = Psych.dump(cloud_config_hash)
+          self.properties = YAML.dump(cloud_config_hash)
         end
 
         def manifest
-          Psych.load properties
+          YAML.load properties
         end
       end
     end

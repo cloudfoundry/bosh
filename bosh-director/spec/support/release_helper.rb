@@ -30,7 +30,7 @@ module Bosh::Director::Test
           packages_dir_name => job[packages_dir_name]
         }
         File.open(File.join(job_dir, "job.MF"), "w") do |f|
-          Psych.dump(spec, f)
+          YAML.dump(spec, f)
         end
 
         templates_dir = File.join(job_dir, "templates")
@@ -79,7 +79,7 @@ module Bosh::Director::Test
       end
 
       File.open(File.join(tmp_dir, "release.MF"), "w") do |f|
-        Psych.dump(manifest, f)
+        YAML.dump(manifest, f)
       end
 
       Dir.chdir(release_dir) do

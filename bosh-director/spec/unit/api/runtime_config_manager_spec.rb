@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::RuntimeConfigManager do
   subject(:manager) { Bosh::Director::Api::RuntimeConfigManager.new }
-  let(:valid_runtime_manifest) { Psych.dump(Bosh::Spec::Deployments.simple_runtime_config) }
+  let(:valid_runtime_manifest) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
 
   describe '#update' do
     it 'saves the runtime config' do
@@ -16,7 +16,7 @@ describe Bosh::Director::Api::RuntimeConfigManager do
     end
 
     it "throws an error if the version of a release is 'latest'" do
-      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release)
+      invalid_manifest = YAML.dump(Bosh::Spec::Deployments.runtime_config_latest_release)
       expect {
         manager.update(invalid_manifest)
       }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
@@ -25,7 +25,7 @@ describe Bosh::Director::Api::RuntimeConfigManager do
     end
 
     it "throws an error if the a release used by an addon is not listed in the releases section" do
-      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing)
+      invalid_manifest = YAML.dump(Bosh::Spec::Deployments.runtime_config_release_missing)
       expect {
         manager.update(invalid_manifest)
       }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,

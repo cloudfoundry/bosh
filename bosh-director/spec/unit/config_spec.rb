@@ -6,7 +6,7 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { Psych.load(spec_asset("test-director-config.yml")) }
+  let(:test_config) { YAML.load(spec_asset("test-director-config.yml")) }
 
   describe 'initialization' do
     it 'loads config from a yaml file' do
@@ -171,7 +171,7 @@ describe Bosh::Director::Config do
       blobstore_dir = File.join(temp_dir, 'blobstore')
       FileUtils.mkdir_p(blobstore_dir)
 
-      config = Psych.load(spec_asset('test-director-config.yml'))
+      config = YAML.load(spec_asset('test-director-config.yml'))
       config['dir'] = temp_dir
       config['blobstore'] = {
         'provider' => 'local',

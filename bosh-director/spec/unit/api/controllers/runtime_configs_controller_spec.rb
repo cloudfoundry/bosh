@@ -19,7 +19,7 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'creates a new runtime config' do
-          properties = Psych.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
@@ -46,7 +46,7 @@ module Bosh::Director
         end
 
         it 'creates a new event' do
-          properties = Psych.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
@@ -73,7 +73,7 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/', Psych.dump(Bosh::Spec::Deployments.simple_runtime_config), {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+          expect(post('/', YAML.dump(Bosh::Spec::Deployments.simple_runtime_config), {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
         end
       end
     end

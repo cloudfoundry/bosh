@@ -25,7 +25,7 @@ module Bosh::Director
         logger.info('Reading deployment manifest')
 
         manifest_text = File.read(@manifest_file_path)
-        manifest_hash = Psych.load(manifest_text)
+        manifest_hash = YAML.load(manifest_text)
         logger.debug("Manifest:\n#{manifest_text}")
 
         if ignore_cloud_config?(manifest_hash)

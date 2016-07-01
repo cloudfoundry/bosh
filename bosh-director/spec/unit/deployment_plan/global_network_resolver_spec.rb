@@ -79,7 +79,7 @@ module Bosh::Director
             Models::Deployment.make(
               name: 'dummy1',
               cloud_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'defaultA',
                   'type' => 'manual',
@@ -94,7 +94,7 @@ module Bosh::Director
             Models::Deployment.make(
               name: 'dummy2',
               cloud_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'defaultB',
                   'type' => 'manual',
@@ -118,7 +118,7 @@ module Bosh::Director
             Models::Deployment.make(
                 name: 'dummy1',
                 cloud_config: nil,
-                manifest: Psych.dump({
+                manifest: YAML.dump({
                    'networks' => [{
                         'name' => 'defaultA',
                         'type' => 'manual',
@@ -147,7 +147,7 @@ module Bosh::Director
             name: 'other-deployment-1',
             cloud_config: cloud_config,
             runtime_config: runtime_config,
-            manifest: Psych.dump({
+            manifest: YAML.dump({
                 'networks' => [{
                     'name' => 'network-a',
                     'type' => 'manual',
@@ -166,7 +166,7 @@ module Bosh::Director
               name: 'other-deployment-1',
               cloud_config: nil,
               runtime_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [
                   {
                     'name' => 'network-a',
@@ -195,7 +195,7 @@ module Bosh::Director
               name: 'other-deployment-2',
               cloud_config: nil,
               runtime_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
                   'type' => 'manual',
@@ -210,7 +210,7 @@ module Bosh::Director
               name: 'other-deployment-3',
               cloud_config: nil,
               runtime_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
                   'type' => 'dynamic',
@@ -222,7 +222,7 @@ module Bosh::Director
               name: 'other-deployment-4',
               cloud_config: cloud_config,
               runtime_config: nil,
-              manifest: Psych.dump({
+              manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
                   'type' => 'manual',
@@ -274,7 +274,7 @@ module Bosh::Director
             name: 'other-deployment',
             cloud_config: nil,
             runtime_config: nil,
-            manifest: Psych.dump({
+            manifest: YAML.dump({
                 'networks' => [{
                     'name' => 'network-a',
                     'type' => 'manual',

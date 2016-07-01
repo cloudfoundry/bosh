@@ -24,7 +24,7 @@ module Bosh::Director
         let!(:deployment_model) do
           Models::Deployment.make(
             name: 'fake-dep-name',
-            manifest: Psych.dump(manifest_hash),
+            manifest: YAML.dump(manifest_hash),
             cloud_config: cloud_config
           )
         end

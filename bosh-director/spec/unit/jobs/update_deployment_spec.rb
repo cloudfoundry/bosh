@@ -7,7 +7,7 @@ module Bosh::Director::Jobs
     let(:config) { Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config)}
     let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
     let(:manifest_path) { directory.add_file('deployment.yml', manifest_content) }
-    let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }
+    let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
     let(:cloud_config_id) { nil }
     let(:runtime_config_id) { nil }
     let(:options) { {} }

@@ -75,7 +75,7 @@ module Bosh::Director
       private
 
       def deployment_manifest_has_release?(manifest)
-        deployment_manifest = Psych.load(manifest)
+        deployment_manifest = YAML.load(manifest)
         deployment_manifest['releases'].each do |release|
           if (release['name'] == @release_name) && (release['version'].to_s == @release_version.to_s)
             return true

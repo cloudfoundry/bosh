@@ -6,7 +6,7 @@ module Bosh::Director
 
     let(:config) { Config.load_hash(test_config) }
     let(:test_config) do
-      config = Psych.load(spec_asset('test-director-config.yml'))
+      config = YAML.load(spec_asset('test-director-config.yml'))
       config['db'].merge!({
         'user' => 'fake-user',
         'password' => 'fake-password',
