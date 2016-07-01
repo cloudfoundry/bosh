@@ -2,8 +2,13 @@
 
 if ENV['COVERAGE'] == 'true'
   require 'simplecov'
+
+  SimpleCov.configure do
+    add_filter '/spec/'
+  end
+
   SimpleCov.start do
-    root          File.expand_path('../..', __FILE__)
+    root          File.expand_path('../../..', __FILE__)
     merge_timeout 3600
     # command name is injected by the spec.rake runner
     if ENV['BOSH_BUILD_NAME']
