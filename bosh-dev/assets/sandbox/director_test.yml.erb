@@ -33,8 +33,10 @@ db: &bosh_db
     pool_timeout: 10
     reconnect: <%= database.adapter == 'mysql2' ? true : false %>
 
+<% if dns_enabled %>
 dns:
   db: *bosh_db
+<% end %>
 
 trusted_certs: <%= trusted_certs %>
 

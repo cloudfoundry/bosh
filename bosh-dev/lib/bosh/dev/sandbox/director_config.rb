@@ -8,6 +8,7 @@ module Bosh::Dev::Sandbox
       :external_cpi_config,
       :database,
       :director_fix_stateful_nodes,
+      :dns_enabled,
       :cloud_storage_dir,
       :user_authentication,
       :uaa_url,
@@ -29,6 +30,8 @@ module Bosh::Dev::Sandbox
       @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
 
       @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
+
+      @dns_enabled = attrs.fetch(:dns_enabled, true)
 
       @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
       @external_cpi_config = attrs.fetch(:external_cpi_config)
