@@ -26,8 +26,14 @@ module Bosh::Director::ConfigServer
       config_values = {}
 
       keys.each do |k|
-        config_server_url = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'config/', k)
-        response = Net::HTTP.get_response(config_server_url)
+        config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'config/', k)
+
+        http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        http.ca_file = Bosh::Director::Config.config_server_cert_path
+
+        response = http.get(config_server_uri.path)
 
         if response.kind_of? Net::HTTPSuccess
           config_values[k] = JSON.parse(response.body)['value']

@@ -17,6 +17,7 @@ templates:
   nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
   scheduler_ctl.erb: bin/scheduler_ctl
+  config_server.cert.erb: config/config_server.cert
 packages:
 - director
 - nginx
@@ -111,6 +112,8 @@ properties:
   director.config_server_url:
     description: URL for the config server
     default: http://127.0.0.1:8080
+  director.config_server_cert:
+    description: Certificate for config server
   director.generate_vm_passwords:
     description: When true, a random unique password will be used for each vm if user has not specified a password
     default: false

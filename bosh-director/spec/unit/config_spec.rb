@@ -162,6 +162,36 @@ describe Bosh::Director::Config do
         described_class.configure(test_config)
       end
     end
+
+    context "config server" do
+      context "when enabled" do
+        before {
+          test_config["parse_config_values"] = true
+          test_config["config_server_url"] = "https://127.0.0.1:8080"
+          test_config["config_server_cert_path"] = "/var/vcap/jobs/director/config/config_server.cert"
+        }
+
+        it "should have parsed out config server values" do
+          described_class.configure(test_config)
+
+          expect(described_class.config_server_url).to eq("https://127.0.0.1:8080")
+          expect(described_class.config_server_cert_path).to eq("/var/vcap/jobs/director/config/config_server.cert")
+        end
+      end
+
+      context "when disabled" do
+        before {
+          test_config["parse_config_values"] = false
+        }
+
+        it "should not have parsed out the values" do
+          described_class.configure(test_config)
+
+          expect(described_class.config_server_url).to be(nil)
+          expect(described_class.config_server_cert_path).to be(nil)
+        end
+      end
+    end
   end
 
   describe '#identity_provider' do

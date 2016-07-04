@@ -34,7 +34,10 @@ params = {
 
 if_p('director.parse_config_values') do |parse_config_values|
   params['parse_config_values'] = parse_config_values
-  params['config_server_url'] = p('director.config_server_url')
+  if parse_config_values
+    params['config_server_url'] = p('director.config_server_url')
+    params['config_server_cert_path'] = '/var/vcap/jobs/director/config/config_server.cert'
+  end
 end
 
 params['scheduled_jobs'] = []

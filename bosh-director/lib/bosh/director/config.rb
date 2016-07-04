@@ -48,9 +48,9 @@ module Bosh::Director
         :ignore_missing_gateway,
         :record_events,
         :director_ips,
-        :config_server_url,
         :parse_config_values,
         :config_server_url,
+        :config_server_cert_path
       )
 
       def clear
@@ -171,10 +171,10 @@ module Bosh::Director
 
         @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
-
         @parse_config_values = config.fetch('parse_config_values', false)
         if @parse_config_values
           @config_server_url = config['config_server_url']
+          @config_server_cert_path = config['config_server_cert_path']
         end
 
         Bosh::Clouds::Config.configure(self)

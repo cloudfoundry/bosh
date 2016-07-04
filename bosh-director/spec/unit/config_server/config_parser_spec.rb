@@ -34,7 +34,13 @@ module Bosh::Director::ConfigServer
       end
 
       before do
-        allow(Net::HTTP).to receive(:get_response) do |args|
+        @mock_http = double("Net::HTTP")
+
+        allow(Net::HTTP).to receive(:new) do |_|
+          @mock_http
+        end
+
+        allow(@mock_http).to receive(:get) do |args|
           key = args.to_s.split('/').last
           value = mock_config_store[key]
 
@@ -48,108 +54,125 @@ module Bosh::Director::ConfigServer
         end
 
         allow(Bosh::Director::Config).to receive(:config_server_url).and_return("http://127.0.0.1:8080")
+        allow(Bosh::Director::Config).to receive(:config_server_cert_path).and_return("/root/cert.crt")
       end
 
-      it 'should replace the global property keys in the passed hash' do
+      it 'should use https when trying to fetch values' do
         manifest_hash['properties'] = { 'key' => '((value))' }
-
-        expected_manifest = {
-          'properties' => { 'key' => 123 }
-        }
-
-        expect(config_parser.parsed).to eq(expected_manifest)
+        expect(@mock_http).to receive(:use_ssl=).with(true)
+        expect(@mock_http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+        expect(@mock_http).to receive(:ca_file=).with('/root/cert.crt')
+        config_parser.parsed
       end
 
-      it 'should replace the instance group property keys in the passed hash' do
-        manifest_hash['instance_groups'] = [
-          {
-            'name' => 'bla',
-            'properties' => { 'instance_prop' => '((instance_val))' }
-          }
-        ]
+      context 'with https setup correctly' do
+        before do
+          allow(@mock_http).to receive(:use_ssl=).with(true)
+          allow(@mock_http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+          allow(@mock_http).to receive(:ca_file=).with(any_args)
+        end
 
-        expected_manifest = {
-          'instance_groups' => [
+        it 'should replace the global property keys in the passed hash' do
+          manifest_hash['properties'] = { 'key' => '((value))' }
+
+          expected_manifest = {
+            'properties' => { 'key' => 123 }
+          }
+
+          expect(config_parser.parsed).to eq(expected_manifest)
+        end
+
+        it 'should replace the instance group property keys in the passed hash' do
+          manifest_hash['instance_groups'] = [
             {
               'name' => 'bla',
-              'properties' => { 'instance_prop' => 'test1' }
+              'properties' => { 'instance_prop' => '((instance_val))' }
             }
           ]
-        }
 
-        expect(config_parser.parsed).to eq(expected_manifest)
-      end
-
-      it 'should replace the env keys in the passed hash' do
-        manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_val))'} } ]
-
-        expected_manifest = {
-          'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
-        }
-
-        expect(config_parser.parsed).to eq(expected_manifest)
-      end
-
-      it 'should replace the job properties in the passed hash' do
-        manifest_hash['instance_groups'] = [
-          {
-            'name' => 'bla',
-            'jobs' => [
+          expected_manifest = {
+            'instance_groups' => [
               {
-                'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_val))' }
+                'name' => 'bla',
+                'properties' => { 'instance_prop' => 'test1' }
               }
             ]
           }
-        ]
 
-        expected_manifest = {
-          'instance_groups' => [
+          expect(config_parser.parsed).to eq(expected_manifest)
+        end
+
+        it 'should replace the env keys in the passed hash' do
+          manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_val))'} } ]
+
+          expected_manifest = {
+            'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
+          }
+
+          expect(config_parser.parsed).to eq(expected_manifest)
+        end
+
+        it 'should replace the job properties in the passed hash' do
+          manifest_hash['instance_groups'] = [
             {
               'name' => 'bla',
               'jobs' => [
                 {
                   'name' => 'test_job',
-                  'properties' => { 'job_prop' => 'test2' }
+                  'properties' => { 'job_prop' => '((job_val))' }
                 }
               ]
             }
           ]
-        }
 
-        expect(config_parser.parsed).to eq(expected_manifest)
-      end
-
-      it 'should not replace any other paths in the manifest' do
-        manifest_hash['instance_groups'] = [
-          {
-            'name' => '((name_val))',
-            'properties' => { 'instance_prop' => '((instance_val))' },
-            'jobs' => [
+          expected_manifest = {
+            'instance_groups' => [
               {
-                'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_val))' }
+                'name' => 'bla',
+                'jobs' => [
+                  {
+                    'name' => 'test_job',
+                    'properties' => { 'job_prop' => 'test2' }
+                  }
+                ]
               }
             ]
           }
-        ]
 
-        expected_manifest = {
-          'instance_groups' => [
+          expect(config_parser.parsed).to eq(expected_manifest)
+        end
+
+        it 'should not replace any other paths in the manifest' do
+          manifest_hash['instance_groups'] = [
             {
               'name' => '((name_val))',
-              'properties' => { 'instance_prop' => 'test1' },
+              'properties' => { 'instance_prop' => '((instance_val))' },
               'jobs' => [
                 {
                   'name' => 'test_job',
-                  'properties' => { 'job_prop' => 'test2' }
+                  'properties' => { 'job_prop' => '((job_val))' }
                 }
               ]
             }
           ]
-        }
 
-        expect(config_parser.parsed).to eq(expected_manifest)
+          expected_manifest = {
+            'instance_groups' => [
+              {
+                'name' => '((name_val))',
+                'properties' => { 'instance_prop' => 'test1' },
+                'jobs' => [
+                  {
+                    'name' => 'test_job',
+                    'properties' => { 'job_prop' => 'test2' }
+                  }
+                ]
+              }
+            ]
+          }
+
+          expect(config_parser.parsed).to eq(expected_manifest)
+        end
       end
     end
   end
