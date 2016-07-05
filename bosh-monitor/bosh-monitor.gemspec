@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'aws-sdk',   '1.60.2'
   spec.add_dependency 'dogapi',    '~> 1.21.0'
+  spec.add_dependency 'riemann-client', '~>0.2.6'
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'httpclient',  '=2.7.1'
 

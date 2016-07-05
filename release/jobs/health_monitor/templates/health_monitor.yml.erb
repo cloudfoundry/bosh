@@ -151,6 +151,22 @@ if p('hm.pagerduty_enabled')
   params['plugins'] << pagerduty_plugin
 end
 
+if p('hm.riemann_enabled')
+  riemann_plugin = {
+    'name' => 'riemann',
+    'events' => [
+      'alert',
+      'heartbeat',
+    ],
+    'options' => {
+      'host' => p('hm.riemann.host'),
+      'port' => p('hm.riemann.port'),
+    },
+  }
+
+  params['plugins'] << riemann_plugin
+end
+
 if p('hm.datadog_enabled')
   datadog_plugin = {
     'name' => 'data_dog',
