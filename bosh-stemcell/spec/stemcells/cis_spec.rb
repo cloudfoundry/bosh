@@ -10,7 +10,6 @@ describe 'CIS test case verification', {stemcell_image: true, cis_check: true} d
       CIS-2.21
       CIS-2.22
       CIS-2.23
-      CIS-2.24
       CIS-4.1
       CIS-7.2.5
       CIS-7.2.6
