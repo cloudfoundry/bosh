@@ -24,6 +24,7 @@ module Bosh::Monitor
 
         c << {
           :id           => event.id,
+	  :service      => "bosh.hm",
           :description  => event.short_description,
           :details      => event.to_hash
         }
