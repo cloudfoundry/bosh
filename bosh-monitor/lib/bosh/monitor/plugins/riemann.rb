@@ -20,7 +20,7 @@ module Bosh::Monitor
 
       def process(event)
         started = Time.now
-	c = Riemann:Client.new host: options["host"], port: options["port"]
+	c = Riemann::Client.new host: options["host"], port: options["port"]
 
         c << {
           :id           => event.id,
