@@ -148,38 +148,6 @@ module Bosh::Director::ConfigServer
           expect(config_parser.parsed).to eq(expected_manifest)
         end
 
-        it 'should not replace any other paths in the manifest' do
-          manifest_hash['instance_groups'] = [
-            {
-              'name' => '((name_val))',
-              'properties' => { 'instance_prop' => '((instance_val))' },
-              'jobs' => [
-                {
-                  'name' => 'test_job',
-                  'properties' => { 'job_prop' => '((job_val))' }
-                }
-              ]
-            }
-          ]
-
-          expected_manifest = {
-            'instance_groups' => [
-              {
-                'name' => '((name_val))',
-                'properties' => { 'instance_prop' => 'test1' },
-                'jobs' => [
-                  {
-                    'name' => 'test_job',
-                    'properties' => { 'job_prop' => 'test2' }
-                  }
-                ]
-              }
-            ]
-          }
-
-          expect(config_parser.parsed).to eq(expected_manifest)
-        end
-
         it 'should raise an error message when the certificate is invalid' do
           allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
           manifest_hash['properties'] = { 'key' => '((value))' }

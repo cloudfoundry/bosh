@@ -42,7 +42,8 @@ module Bosh::Director::ConfigServer
           {
             'name' => 'db',
             'jobs' => [
-              {'name' => 'mysql', 'template' => 'template1', 'properties' => job_props}
+              {'name' => 'mysql', 'template' => 'template1', 'properties' => job_props},
+              {'name' => '((job_name))', 'template' => 'template1'}
             ],
             'properties' => {'a' => ['123', 45, '((secret_key))']}
           }
@@ -86,9 +87,12 @@ module Bosh::Director::ConfigServer
         expect(replacements).to eq(expected)
       end
 
-      it 'should not create a map for any placeholders under other sections' do
-        test_obj['name'] = "((not_a_key))"
-        expect(replacement_list.select { |r| r['key'] == "not_a_key"}).to eq([])
+      it 'should create a map for any placeholders under other sections' do
+        replacements = replacement_list.select { |r| r['key'] == 'job_name' }
+        expected = [
+          {'key' => 'job_name', 'path' => ['instance_groups', 0, 'jobs', 1, 'name']}
+        ]
+        expect(replacements).to eq(expected)
       end
     end
   end

@@ -108,7 +108,6 @@ require 'bosh/director/timeout'
 require 'common/thread_pool'
 
 require 'bosh/director/config_parser/deep_hash_replacement'
-require 'bosh/director/config_parser/config_path_validator'
 require 'bosh/director/config_parser/config_parser'
 
 

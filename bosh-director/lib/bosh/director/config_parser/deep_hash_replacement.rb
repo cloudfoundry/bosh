@@ -3,12 +3,8 @@ require 'net/http'
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
     def self.replacement_map(obj)
-      map = []
-      create_replacement_map(map, obj)
-
-      result = map.select do |elem|
-        Bosh::Director::ConfigServer::ConfigPathValidator.validate(elem['path'])
-      end
+      result = []
+      create_replacement_map(result, obj)
 
       result
     end
