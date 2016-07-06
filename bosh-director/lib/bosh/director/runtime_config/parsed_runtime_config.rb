@@ -1,14 +1,11 @@
 module Bosh::Director
   module RuntimeConfig
     class ParsedRuntimeConfig
-      attr_reader :releases
-      attr_reader :addons
-      attr_reader :includes
+      attr_reader :releases, :addons
 
-      def initialize(releases, addons, includes)
+      def initialize(releases, addons)
         @releases = releases
         @addons = addons
-        @includes = includes
       end
     end
   end

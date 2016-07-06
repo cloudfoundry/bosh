@@ -71,35 +71,30 @@ module Bosh
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment_planner = Planner.new(attrs, migrated_manifest.raw_manifest_hash, cloud_config, runtime_config, deployment_model, plan_options)
-          global_network_resolver = GlobalNetworkResolver.new(deployment_planner, Config.director_ips, @logger)
+          deployment = Planner.new(attrs, migrated_manifest.raw_manifest_hash, cloud_config, runtime_config, deployment_model, plan_options)
+          global_network_resolver = GlobalNetworkResolver.new(deployment, Config.director_ips, @logger)
+          ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
+          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
 
-          ip_provider_factory = IpProviderFactory.new(deployment_planner.using_global_networking?, @logger)
-          deployment_planner.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
-          DeploymentSpecParser.new(deployment_planner, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
+          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
 
           if runtime_config
-            parser = RuntimeConfig::RuntimeManifestParser.new
-            parsed_runtime_config = parser.parse(runtime_config.manifest)
+            parsed_runtime_config =  RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.manifest)
 
-            merger = RuntimeConfig::RuntimeConfigMerger.new(deployment_planner)
-
-            merger.add_releases(parsed_runtime_config.releases)
-
+            #TODO: only add releases for runtime jobs that will be added.
+            parsed_runtime_config.releases.each do |release|
+              release.add_to_deployment(deployment)
+            end
             parsed_runtime_config.addons.each do |addon|
-              instance_groups_to_add_to = parsed_runtime_config.includes
-                    .find_matching_instance_group(addon['name'], deployment_planner.instance_groups, deployment_planner.name)
-
-              next if instance_groups_to_add_to.empty?
-
-              merger.merge_addon(addon, instance_groups_to_add_to)
+              addon.add_to_deployment(deployment)
             end
           end
 
-          process_links(deployment_planner)
+          process_links(deployment)
 
-          DeploymentValidator.new.validate(deployment_planner)
-          deployment_planner
+          DeploymentValidator.new.validate(deployment)
+
+          deployment
         end
 
         def process_links(deployment)

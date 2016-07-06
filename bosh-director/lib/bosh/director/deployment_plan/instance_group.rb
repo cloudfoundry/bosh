@@ -97,8 +97,8 @@ module Bosh::Director
 
         @release = nil
         @templates = []
-        @all_properties = nil # All properties available to job
-        @properties = nil # Actual job properties
+        @all_properties = nil # All properties available to instance group
+        @properties = nil # Actual instance group properties
 
         @instances = []
         @desired_instances = []
@@ -128,6 +128,15 @@ module Bosh::Director
       def sorted_instance_plans
         @sorted_instance_plans ||= InstancePlanSorter.new(@logger)
                                    .sort(@instance_plans.reject(&:obsolete?))
+      end
+
+      def add_job(job_to_add)
+        jobs.each do |job|
+          if job_to_add.name == job.name
+            raise "Colocated job '#{job_to_add.name}' is already added to the instance group '#{name}'."
+          end
+        end
+        jobs << job_to_add
       end
 
       # Takes in a job spec and returns a job spec in the new format, if it
@@ -338,6 +347,10 @@ module Bosh::Director
 
       def compilation?
         false
+      end
+
+      def has_job?(name, release)
+        @templates.any? { |job| job.name == name && job.release.name == release }
       end
 
       private

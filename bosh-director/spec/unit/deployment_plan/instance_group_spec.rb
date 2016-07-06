@@ -599,4 +599,29 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
+  describe '#add_job' do
+    subject { described_class.new(logger) }
+
+    let(:job_to_add) do
+      release = Bosh::Director::Models::Release.make(name: 'release1')
+      Bosh::Director::Models::Template.make(name: 'foo', release: release)
+    end
+
+    context 'when job does not exist in instance group' do
+      it 'adds job' do
+        subject.add_job(job_to_add)
+        expect(subject.templates.count).to eq(1)
+
+        expect(subject.templates.first.name).to eq('foo')
+        expect(subject.templates.first.release.name).to eq('release1')
+      end
+    end
+
+    context 'when job does exists in instance group' do
+      it 'throws an exception' do
+        subject.add_job(job_to_add)
+        expect { subject.add_job(job_to_add) }.to raise_error "Colocated job '#{job_to_add.name}' is already added to the instance group '#{subject.name}'."
+      end
+    end
+  end
 end

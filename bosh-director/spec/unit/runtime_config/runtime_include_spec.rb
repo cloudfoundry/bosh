@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe RuntimeConfig::RuntimeInclude do
+  describe RuntimeConfig::AddonInclude do
 
-    subject(:runtime_include) { described_class.new(include_spec) }
+    subject(:addon_include) { RuntimeConfig::AddonInclude.parse(include_spec) }
     let(:deployment_name) { 'dep1' }
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
@@ -22,83 +22,96 @@ module Bosh::Director
       planner.add_release(DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => '2', 'version' => 'v2'}))
 
       planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(cloud_config,
-                                                                                    DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),
-                                                                                    DeploymentPlan::IpProviderFactory.new(true, logger))
+        DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),
+        DeploymentPlan::IpProviderFactory.new(true, logger))
       planner.update = DeploymentPlan::UpdateConfig.new(manifest['update'])
 
       planner
     end
 
-    let(:instance_groups) do
+    let(:instance_group1) do
       group1_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group1', jobs: [{'name' => 'job1', 'release' => '1'}])
-      group2_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group2', jobs: [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}])
-      [DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger),
-       DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)]
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger)
     end
 
-    describe '#find_matching_instance_group' do
+    let(:instance_group2) do
+      group2_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group2', jobs: [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}])
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
+    end
+
+    describe '#applies?' do
       context 'when RuntimeManifest does not have an include section' do
         let(:include_spec) { nil }
 
-        it 'should return all instance groups' do
-          expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq(['group1', 'group2'])
+        it 'should return true' do
+          expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
         end
       end
 
       context 'when ONLY deployments key is present in the include spec' do
-        let(:include_spec) { {'addon1' => {'jobs' => [], 'deployments' => deployments},
-                              'addon2' => {'jobs' => [], 'deployments' => []}} }
+        let(:include_spec) { {'jobs' => [], 'deployments' => deployments} }
 
         context 'if deployment name is in include section' do
           let(:deployments) { ['dep1'] }
 
-          it 'should return all instance groups in the deployment' do
-            expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq(['group1', 'group2'])
+          it 'should return true' do
+            expect(subject.applies?('dep1', instance_group1)).to eq(true)
           end
         end
+
         context 'if deployment name is NOT in include section' do
           let(:deployments) { ['dep42'] }
 
-          it 'should return empty array' do
-            expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq([])
+          it 'should return false' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
           end
         end
       end
 
       context 'when ONLY jobs key is present in the include spec' do
-        let(:include_spec) { {'addon1' => {'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}], 'deployments' => []},
-                              'addon2' => {'jobs' => [{'name' => 'job2', 'release' => '2'}], 'deployments' => []}} }
-
-        it 'should return all instance groups that contain corresponding job and release' do
-          expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq(['group1', 'group2'])
-          expect(subject.find_matching_instance_group('addon2', instance_groups, deployment_name).map(&:name)).to eq(['group2'])
+        let(:include_spec) do
+          {
+            'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
+            'deployments' => []
+          }
         end
 
-        it 'does not return instance groups that contain corresponding job on a different release' do
-          include_spec['addon2']['jobs'] = [{'name' => 'job1', 'release' => '2'}]
-          expect(subject.find_matching_instance_group('addon2', instance_groups, deployment_name).map(&:name)).to eq([])
+        context 'when instance groups contains corresponding job and release' do
+          it 'should return true' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+          end
+        end
+
+        context 'when no instance groups contains corresponding job and release' do
+          it 'returns false' do
+            include_spec['jobs'] = [{'name' => 'job1', 'release' => '2'}]
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+          end
         end
       end
 
       context 'when BOTH deployments key and jobs key are present in the include spec' do
-        let(:include_spec) { {'addon1' => {'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}], 'deployments' => ['dep1']},
-                              'addon2' => {'jobs' => [{'name' => 'job2', 'release' => '2'}], 'deployments' => ['dep1']}} }
+        let(:include_spec) do
+          {
+            'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
+            'deployments' => ['dep1']
+          }
+        end
 
-        it 'should return instance groups that contain corresponding job and are in the corresponding deployments' do
-          expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq(['group1', 'group2'])
-          expect(subject.find_matching_instance_group('addon2', instance_groups, deployment_name).map(&:name)).to eq(['group2'])
+        context 'when deployment name and job/releases corresponds to include spec' do
+          it 'should return instance groups that contain corresponding job and are in the corresponding deployments' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+          end
         end
       end
 
       context 'when NEITHER deployments key nor jobs key are present' do
-        let(:include_spec) { {'addon1' => {'jobs' => [], 'deployments' => []}} }
+        let(:include_spec) { {'jobs' => [], 'deployments' => []} }
 
-        it 'returns all instance_groups' do
-          expect(subject.find_matching_instance_group('addon1', instance_groups, deployment_name).map(&:name)).to eq(['group1', 'group2'])
+        it 'returns true' do
+          expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
         end
       end
     end
   end
 end
-
-
