@@ -105,6 +105,12 @@ user_management:
 
 enable_post_deploy: <%= enable_post_deploy %>
 
+<% if parse_config_values %>
+parse_config_values: <%= parse_config_values %>
+config_server_url: <%= config_server_url %>
+config_server_cert_path: <%= config_server_cert_path %>
+<% end %>
+
 generate_vm_passwords: <%= generate_vm_passwords %>
 
 remove_dev_tools: <%= remove_dev_tools %>

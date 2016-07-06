@@ -7,6 +7,7 @@ require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
+require 'bosh/dev/sandbox/services/config_server_service'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -38,6 +39,10 @@ namespace :spec do
 
         unless ENV['SKIP_UAA'] == 'true'
           Bosh::Dev::Sandbox::UaaService.install
+        end
+
+        unless ENV['SKIP_CONFIG_SERVER'] == 'true'
+          Bosh::Dev::Sandbox::ConfigServerService.install
         end
       end
     end

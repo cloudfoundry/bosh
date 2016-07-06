@@ -10,6 +10,9 @@ module Bosh::Dev::Sandbox
       :director_fix_stateful_nodes,
       :dns_enabled,
       :cloud_storage_dir,
+      :parse_config_values,
+      :config_server_url,
+      :config_server_cert_path,
       :user_authentication,
       :uaa_url,
       :trusted_certs,
@@ -37,6 +40,10 @@ module Bosh::Dev::Sandbox
       @external_cpi_config = attrs.fetch(:external_cpi_config)
 
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
+
+      @parse_config_values = attrs.fetch(:parse_config_values)
+      @config_server_url = "https://127.0.0.1:#{port_provider.get_port(:config_server_port)}"
+      @config_server_cert_path = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
       @user_authentication = attrs.fetch(:user_authentication)
       @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
