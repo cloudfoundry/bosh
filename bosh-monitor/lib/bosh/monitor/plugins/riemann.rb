@@ -3,8 +3,6 @@ require 'riemann/client'
 module Bosh::Monitor
   module Plugins
     class Riemann < Base
-      include Bosh::Monitor::Plugins::HttpRequestHelper
-
       def run
         unless EM.reactor_running?
           logger.error("Riemann plugin can only be started when event loop is running")
@@ -12,19 +10,22 @@ module Bosh::Monitor
         end
 
         logger.info("Riemann delivery agent is running...")
+        return true
       end
 
       def validate_options
        !!(options.kind_of?(Hash) && options["host"] && options["port"])
       end
 
-      def process(event)
-        started = Time.now
-	c = Riemann::Client.new host: options["host"], port: options["port"]
+      def client
+        @client |= Riemann::Client.new host: options["host"], port: options["port"]
+        return @client
+      end
 
-        c << {
+      def process(event)
+        client << {
           :id           => event.id,
-	  :service      => "bosh.hm",
+          :service      => "bosh.hm",
           :description  => event.short_description,
           :details      => event.to_hash
         }
