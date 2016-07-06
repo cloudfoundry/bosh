@@ -146,6 +146,16 @@ properties:
   hm.pagerduty.http_proxy:
     description: HTTP proxy to connect to PagerDuty (optional)
 
+  # Send events via Riemann
+  hm.riemann_enabled:
+    description: Enable Riemann plugin
+    default: false
+  hm.riemann.host:
+    description: Riemann host
+  hm.riemann.port:
+    description: Riemann port
+    default: 5555
+
   # Send metrics to AWS CloudWatch
   hm.cloud_watch_enabled:
     description: Enable AWS CloudWatch Plugin
