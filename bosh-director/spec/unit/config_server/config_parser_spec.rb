@@ -72,6 +72,12 @@ module Bosh::Director::ConfigServer
           allow(@mock_http).to receive(:ca_file=).with(any_args)
         end
 
+        it 'should request keys from the proper url' do
+          manifest_hash['properties'] = { 'key' => '((value))' }
+          expect(@mock_http).to receive(:get).with("/v1/data/value")
+          config_parser.parsed
+        end
+
         it 'should replace the global property keys in the passed hash' do
           manifest_hash['properties'] = { 'key' => '((value))' }
 

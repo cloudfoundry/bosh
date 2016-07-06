@@ -26,7 +26,7 @@ module Bosh::Director::ConfigServer
       config_values = {}
 
       keys.each do |k|
-        config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'config/', k)
+        config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'data/', k)
 
         http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
         http.use_ssl = true
