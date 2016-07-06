@@ -37,8 +37,9 @@ module Bosh::Dev::Sandbox
     end
 
     def self.install
-      config_server_version_url = "#{S3_BUCKET_BASE_URL}/current-version"
+      FileUtils.mkdir_p(INSTALL_DIR)
 
+      config_server_version_url = "#{S3_BUCKET_BASE_URL}/current-version"
       retryable.retryer do
         `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
         $? == 0
