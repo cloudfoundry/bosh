@@ -173,6 +173,12 @@ module Bosh::Director::ConfigServer
 
           expect(config_parser.parsed).to eq(expected_manifest)
         end
+
+        it 'should raise an error message when the certificate is invalid' do
+          allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
+          manifest_hash['properties'] = { 'key' => '((value))' }
+          expect{ config_parser.parsed }.to raise_error("SSL certificate verification failed")
+        end
       end
     end
   end

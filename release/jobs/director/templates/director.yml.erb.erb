@@ -35,7 +35,17 @@ params = {
 if_p('director.parse_config_values') do |parse_config_values|
   params['parse_config_values'] = parse_config_values
   if parse_config_values
-    params['config_server_url'] = p('director.config_server_url')
+    config_server_url = p('director.config_server_url', nil)
+    if config_server_url.nil?
+      raise "Config Server URL needs to be specified"
+    elsif !config_server_url.start_with?('https://')
+      raise "Config Server URL needs to be SSL secured"
+    end
+    params['config_server_url'] = config_server_url
+
+    if p('director.config_server_cert', nil).nil?
+      raise "Config Server certificate is required"
+    end
     params['config_server_cert_path'] = '/var/vcap/jobs/director/config/config_server.cert'
   end
 end

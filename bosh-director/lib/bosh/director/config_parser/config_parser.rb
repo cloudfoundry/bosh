@@ -33,7 +33,11 @@ module Bosh::Director::ConfigServer
         http.verify_mode = OpenSSL::SSL::VERIFY_PEER
         http.ca_file = Bosh::Director::Config.config_server_cert_path
 
-        response = http.get(config_server_uri.path)
+        begin
+          response = http.get(config_server_uri.path)
+        rescue OpenSSL::SSL::SSLError
+          raise "SSL certificate verification failed"
+        end
 
         if response.kind_of? Net::HTTPSuccess
           config_values[k] = JSON.parse(response.body)['value']
