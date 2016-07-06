@@ -18,7 +18,7 @@ module Bosh::Monitor
       end
 
       def client
-        @client |= Riemann::Client.new host: options["host"], port: options["port"]
+        @client ||= ::Riemann::Client.new host: options["host"], port: options["port"]
         return @client
       end
 
@@ -29,7 +29,6 @@ module Bosh::Monitor
           :description  => event.short_description,
           :details      => event.to_hash
         }
-
       rescue => e
         logger.error("Error sending riemann event: #{e}")
       end
