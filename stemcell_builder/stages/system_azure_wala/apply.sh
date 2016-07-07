@@ -51,3 +51,6 @@ cat > $chroot/etc/logrotate.d/waagent <<EOS
     missingok
 }
 EOS
+
+# WALA requires udf for DVD reading
+sed "/install udf/d" -i $chroot/etc/modprobe.d/blacklist.conf
