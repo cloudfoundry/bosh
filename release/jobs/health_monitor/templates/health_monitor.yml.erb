@@ -156,6 +156,7 @@ if p('hm.riemann_enabled')
     'name' => 'riemann',
     'events' => [
       'alert',
+      'heartbeat',
     ],
     'options' => {
       'host' => p('hm.riemann.host'),
