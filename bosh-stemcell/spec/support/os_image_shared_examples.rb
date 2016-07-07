@@ -274,6 +274,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'gdisk' do
+    it 'should be installed' do
+      expect(package('gdisk')).to be_installed
+    end
+  end
+
   context 'tftp is not installed (stig: V-38701, V-38609, V-38606)' do
     it "shouldn't be installed" do
       expect(package('tftp')).to_not be_installed
