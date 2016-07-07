@@ -14,7 +14,7 @@ libaio1 gdb libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted \
 cloud-guest-utils anacron software-properties-common \
-xfsprogs"
+xfsprogs gdisk"
 
 if is_ppc64le; then
   debs="$debs \
