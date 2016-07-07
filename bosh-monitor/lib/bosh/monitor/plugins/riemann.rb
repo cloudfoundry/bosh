@@ -22,13 +22,21 @@ module Bosh::Monitor
         return @client
       end
 
+      def state(event)
+        case event.to_hash[:severity]
+          when 1
+            "critical"
+          when nil
+            "ok"
+          else "warn"
+        end
+      end
+
       def process(event)
-        client << {
-          :id           => event.id,
-          :service      => "bosh.hm",
-          :description  => event.short_description,
-          :details      => event.to_hash
-        }
+        client << event.to_hash.merge({
+          service: "bosh.hm",
+          state: state(event),
+        })
       rescue => e
         logger.error("Error sending riemann event: #{e}")
       end
