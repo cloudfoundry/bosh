@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'using director with config server', type: :integration do
 
   context 'when config server cretificates are not trusted' do
-    with_reset_sandbox_before_each(parse_config_values: true, with_config_server_trusted_certs: false)
+    with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false)
 
     before do
       target_and_login
@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'when config server cretificates are trusted' do
-    with_reset_sandbox_before_each(parse_config_values: true)
+    with_reset_sandbox_before_each(config_server_enabled: true)
 
     before do
       target_and_login

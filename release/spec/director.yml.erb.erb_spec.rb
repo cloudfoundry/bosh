@@ -61,6 +61,9 @@ describe 'director.yml.erb.erb' do
             'database' => 'bosh',
             'connection_options' => {},
           },
+          'config_server' => {
+            'enabled' => false
+          },
           'auto_fix_stateful_nodes' => true,
           'max_vm_create_tries' => 5,
           'user_management' => { 'provider' => 'local' },
@@ -176,6 +179,33 @@ describe 'director.yml.erb.erb' do
 
         it 'is a scheduled task' do
           expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
+        end
+      end
+    end
+
+    context 'config server' do
+      context 'when turned on' do
+        before do
+          deployment_manifest_fragment['properties']['director']['config_server']['enabled'] = true
+          deployment_manifest_fragment['properties']['director']['config_server']['url'] = 'https://config-server-host'
+        end
+
+        it 'configures the cpi correctly' do
+          expect(parsed_yaml['config_server']['enabled']).to eq(true)
+          expect(parsed_yaml['config_server']['url']).to eq('https://config-server-host')
+          expect(parsed_yaml['config_server']['cert_path']).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
+        end
+      end
+
+      context 'when turned off' do
+        before do
+          deployment_manifest_fragment['properties']['director']['config_server']['enabled'] = false
+        end
+
+        it 'configures the cpi correctly' do
+          expect(parsed_yaml['config_server']['enabled']).to eq(false)
+          expect(parsed_yaml['config_server']['url']).to eq(nil)
+          expect(parsed_yaml['config_server']['cert_path']).to eq(nil)
         end
       end
     end

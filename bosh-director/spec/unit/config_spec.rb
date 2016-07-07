@@ -166,9 +166,9 @@ describe Bosh::Director::Config do
     context "config server" do
       context "when enabled" do
         before {
-          test_config["parse_config_values"] = true
-          test_config["config_server_url"] = "https://127.0.0.1:8080"
-          test_config["config_server_cert_path"] = "/var/vcap/jobs/director/config/config_server.cert"
+          test_config["config_server"]["enabled"] = true
+          test_config["config_server"]["url"] = "https://127.0.0.1:8080"
+          test_config["config_server"]["ca_cert_path"] = "/var/vcap/jobs/director/config/config_server.cert"
         }
 
         it "should have parsed out config server values" do
@@ -177,11 +177,21 @@ describe Bosh::Director::Config do
           expect(described_class.config_server_url).to eq("https://127.0.0.1:8080")
           expect(described_class.config_server_cert_path).to eq("/var/vcap/jobs/director/config/config_server.cert")
         end
+
+        context 'when url is not https' do
+          before {
+            test_config["config_server"]["url"] = "http://127.0.0.1:8080"
+          }
+
+          it 'errors' do
+            expect {  described_class.configure(test_config) }.to raise_error(ArgumentError, 'Config Server URL should always be https. Currently it is http://127.0.0.1:8080')
+          end
+        end
       end
 
       context "when disabled" do
         before {
-          test_config["parse_config_values"] = false
+          test_config["config_server_enabled"] = false
         }
 
         it "should not have parsed out the values" do

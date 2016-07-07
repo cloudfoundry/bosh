@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'logging'
 require 'socket'
+require 'uri'
 
 module Bosh::Director
 
@@ -48,7 +49,7 @@ module Bosh::Director
         :ignore_missing_gateway,
         :record_events,
         :director_ips,
-        :parse_config_values,
+        :config_server_enabled,
         :config_server_url,
         :config_server_cert_path
       )
@@ -171,10 +172,17 @@ module Bosh::Director
 
         @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
-        @parse_config_values = config.fetch('parse_config_values', false)
-        if @parse_config_values
-          @config_server_url = config['config_server_url']
-          @config_server_cert_path = config['config_server_cert_path']
+        config_server = config['config_server']
+        @config_server_enabled = config_server['enabled']
+        if @config_server_enabled
+          @config_server_url = config_server['url']
+          @config_server_cert_path = config_server['ca_cert_path']
+
+          unless URI.parse(@config_server_url).scheme == 'https'
+            raise ArgumentError,
+                  'Config Server URL should always be https. Currently ' +
+                    "it is #{@config_server_url}"
+          end
         end
 
         Bosh::Clouds::Config.configure(self)

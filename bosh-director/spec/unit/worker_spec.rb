@@ -11,6 +11,9 @@ describe 'worker' do
       'blobstore' => {
         'provider' => 'simple',
         'options' => {}
+      },
+      'config_server' => {
+        'enabled' => false
       }
     }
   end

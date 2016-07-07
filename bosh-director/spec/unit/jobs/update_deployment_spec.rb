@@ -68,7 +68,7 @@ module Bosh::Director::Jobs
 
         it 'fetches config values when parse_config_values flag is enabled' do
           allow(subject).to receive(:ignore_cloud_config?).and_return(false)
-          allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(true)
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
           allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
 
           expect(mock_manifest).to receive(:setup_config_values)

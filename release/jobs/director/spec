@@ -17,7 +17,7 @@ templates:
   nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
   scheduler_ctl.erb: bin/scheduler_ctl
-  config_server.cert.erb: config/config_server.cert
+  config_server_ca.cert.erb: config/config_server_ca.cert
 packages:
 - director
 - nginx
@@ -106,14 +106,13 @@ properties:
   director.enable_post_deploy:
     description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
-  director.parse_config_values:
+  director.config_server.enabled:
     description: When true, replace substitution values in manifest with values from config server
     default: false
-  director.config_server_url:
+  director.config_server.url:
     description: URL for the config server
-    default: https://127.0.0.1:8080
-  director.config_server_cert:
-    description: Certificate for config server
+  director.config_server.ca_cert:
+    description: CA cert to trust when communicating with server
   director.generate_vm_passwords:
     description: When true, a random unique password will be used for each vm if user has not specified a password
     default: false

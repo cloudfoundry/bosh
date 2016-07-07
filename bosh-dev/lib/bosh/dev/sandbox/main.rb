@@ -147,7 +147,7 @@ module Bosh::Dev::Sandbox
       @database_created = true
 
       @uaa_service.start if @user_authentication == 'uaa'
-      @config_server_service.start(@with_config_server_trusted_certs) if @parse_config_values
+      @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
       @director_service.start(director_config)
     end
@@ -162,7 +162,7 @@ module Bosh::Dev::Sandbox
         external_cpi_enabled: @external_cpi_enabled,
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
-        parse_config_values: @parse_config_values,
+        config_server_enabled: @config_server_enabled,
         user_authentication: @user_authentication,
         trusted_certs: @trusted_certs,
         users_in_manifest: @users_in_manifest,
@@ -265,7 +265,7 @@ module Bosh::Dev::Sandbox
 
     def reconfigure(options)
       @user_authentication = options.fetch(:user_authentication, 'local')
-      @parse_config_values = options.fetch(:parse_config_values, false)
+      @config_server_enabled = options.fetch(:config_server_enabled, false)
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
@@ -313,7 +313,7 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(blobstore_storage_dir)
 
       @uaa_service.start if @user_authentication == 'uaa'
-      @config_server_service.restart(@with_config_server_trusted_certs) if @parse_config_values
+      @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
       @director_service.start(director_config)
 
       @nginx_service.restart_if_needed
