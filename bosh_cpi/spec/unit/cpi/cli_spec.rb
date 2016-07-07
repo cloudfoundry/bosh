@@ -448,6 +448,37 @@ describe Bosh::Cpi::Cli do
       end
     end
 
+    context 'when logger has invalid utf-8 characters in the message string' do
+      class ErrorClass4 < Exception; end
+
+      it 'writes the result response to the provided logger' do
+        expect(cpi).to receive(:has_disk?).with('fake-disk-cid') do
+          bad_encoding = "\255"
+          expect(bad_encoding.valid_encoding?).to be(false)
+          logs_io.print(bad_encoding)
+
+          true
+        end
+
+        subject.run('{"method":"has_disk","arguments":["fake-disk-cid"],"context":{"director_uuid":"abc"}}')
+        expect(result_io.string).to include('�')
+      end
+
+      it 'writes the error response to the provided logger' do
+        expect(cpi).to receive(:has_disk?).with('fake-disk-cid') do
+          bad_encoding = "\255"
+          expect(bad_encoding.valid_encoding?).to be(false)
+          logs_io.print(bad_encoding)
+
+          raise ErrorClass4.new('fäke-error')
+        end
+
+        subject.run('{"method":"has_disk","arguments":["fake-disk-cid"],"context":{"director_uuid":"abc"}}')
+        expect(result_io.string).to include('�', 'fäke-error')
+        expect(result_io.string).to include_the_backtrace
+      end
+    end
+
     context 'when error class name contains sequential uppercase letters' do
       class ERRClass5 < Bosh::Clouds::CpiError; end
 
