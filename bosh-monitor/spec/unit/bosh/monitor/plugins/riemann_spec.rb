@@ -24,22 +24,25 @@ describe Bhm::Plugins::Riemann do
   end
 
   it "sends events to Riemann" do
-    alert = Bhm::Events::Base.create!(:alert, alert_payload)
-    heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
+    alert = make_alert
+    heartbeat = make_heartbeat
 
     alert_request = alert.to_hash.merge({
       service: "bosh.hm",
-      state: "warn",
+      state: "critical",
     })
 
     heartbeat_request = heartbeat.to_hash.merge({
       service: "bosh.hm",
-      state: "ok",
+      name: "system.load.1m",
+      metric: 0.2,
     })
+    heartbeat_request.delete :vitals
 
     EM.run do
       expect(@plugin.run).to be(true)
 
+      allow(@client).to receive(:<<)
       expect(@client).to receive(:<<).with(alert_request)
       expect(@client).to receive(:<<).with(heartbeat_request)
 
