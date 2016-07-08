@@ -134,24 +134,25 @@ The following instructures are for developing/testing your new plugin into a new
     ```
 
 5. Allow configuration to be passed into the `health_monitor` job template to activate and configure your plugin https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/spec and https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/templates/health_monitor.yml.erb
-6. Run the rake task to create a bosh release of your modified `bosh`
+6. Write / update tests in https://github.com/cloudfoundry/bosh/blob/master/release/spec/health_monitor.yml.erb_spec.rb and make them pass.
+7. Run the rake task to create a bosh release of your modified `bosh`
 
     ```
     rake release:create_dev_release
     ```
 
-7. Upload to your microbosh
+8. Upload to your microbosh
 
     ```
     rake release:upload_dev_release
     ```
 
-8. Construct a deployment manifest to deploy a new bosh https://github.com/cloudfoundry/bosh/blob/master/release/examples/bosh-openstack-solo.yml
-9. Deploy
+9. Construct a deployment manifest to deploy a new bosh https://github.com/cloudfoundry/bosh/blob/master/release/examples/bosh-openstack-solo.yml
+10. Deploy
 
     ```
     bosh deployment path/to/manifest.yml
     bosh deploy
     ```
 
-10. Externally test your plugin -> external thing
+11. Externally test your plugin -> external thing
