@@ -11,7 +11,13 @@ module Bosh
         end
 
         def manifest
-          YAML.load properties
+          manifest_hash = YAML.load(properties)
+
+          if Bosh::Director::Config.config_server_enabled
+            Bosh::Director::ConfigServer::ConfigParser.new(manifest_hash).parsed
+          else
+            manifest_hash
+          end
         end
       end
     end

@@ -275,5 +275,33 @@ module Bosh::Director
         end
       end
     end
+
+    describe '#setup_config_values' do
+      let(:mock_parsed_manifest) do
+        { name: "parsed_manifest" }
+      end
+
+      let(:mock_config_parser) do
+        instance_double("Bosh::Director::ConfigServer::ConfigParser", parsed: mock_parsed_manifest)
+      end
+
+      before do
+        allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:new).and_return(mock_config_parser)
+      end
+
+      it 'should store raw manifest and parsed manifest separately' do
+        manifest.setup_config_values
+        expect(manifest.manifest_hash).to eq(mock_parsed_manifest)
+        expect(manifest.raw_manifest_hash).to eq(manifest_hash)
+      end
+
+      it 'should not overwrite raw manifest with parsed if called multiple times' do
+        manifest.setup_config_values
+        manifest.setup_config_values
+
+        expect(manifest.manifest_hash).to eq(mock_parsed_manifest)
+        expect(manifest.raw_manifest_hash).to eq(manifest_hash)
+      end
+    end
   end
 end

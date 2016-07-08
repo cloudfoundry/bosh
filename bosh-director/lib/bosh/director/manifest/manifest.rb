@@ -59,9 +59,9 @@ module Bosh::Director
     end
 
     def setup_config_values
-      manifest_copy = Bosh::Common::DeepCopy.copy(@manifest_hash)
-      manifest_parser = Bosh::Director::ConfigServer::ConfigParser.new(manifest_copy)
+      return if !@raw_manifest_hash.nil?
 
+      manifest_parser = Bosh::Director::ConfigServer::ConfigParser.new(@manifest_hash)
       @raw_manifest_hash = @manifest_hash
       @manifest_hash = manifest_parser.parsed
     end

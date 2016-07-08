@@ -72,6 +72,17 @@ module Bosh::Spec
       })
     end
 
+    def self.runtime_config_with_addon_placeholders
+      runtime_config_with_addon.merge({
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [{'name' => 'dummy_with_properties', 'release' => '((release_name))'}],
+            'properties' => {'dummy_with_properties' => {'echo_value' => '((addon_prop))'}}
+          }]
+      })
+    end
+
     def self.runtime_config_with_links
       {
         'releases' => [{'name' => 'bosh-release', 'version' => '0+dev.1'}],

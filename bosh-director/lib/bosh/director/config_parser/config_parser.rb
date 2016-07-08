@@ -3,7 +3,7 @@ module Bosh::Director::ConfigServer
   class ConfigParser
 
     def initialize(obj)
-      @obj = obj
+      @obj = Bosh::Common::DeepCopy.copy(obj)
     end
 
     def parsed

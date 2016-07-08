@@ -66,7 +66,7 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_groups).and_return([deployment_job])
         end
 
-        it 'fetches config values when parse_config_values flag is enabled' do
+        it 'fetches config values when config server is enabled' do
           allow(subject).to receive(:ignore_cloud_config?).and_return(false)
           allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
           allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
@@ -76,8 +76,8 @@ module Bosh::Director::Jobs
           job.perform
         end
 
-        it 'does not fetch config values when parse_config_values flag is disabled' do
-          allow(Bosh::Director::Config).to receive(:parse_config_values).and_return(false)
+        it 'does not fetch config values when config server is disabled' do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
           allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
 
           expect(mock_manifest).to_not receive(:setup_config_values)

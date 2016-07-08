@@ -8,7 +8,6 @@ module Bosh::Director::ConfigServer
     let(:manifest_hash) { {} }
 
     context '#parsed' do
-
       class MockSuccessResponse < Net::HTTPSuccess
         attr_accessor :body
 
@@ -55,6 +54,10 @@ module Bosh::Director::ConfigServer
 
         allow(Bosh::Director::Config).to receive(:config_server_url).and_return("http://127.0.0.1:8080")
         allow(Bosh::Director::Config).to receive(:config_server_cert_path).and_return("/root/cert.crt")
+      end
+
+      it 'should return a new copy of the original manifest' do
+        expect(config_parser.parsed).to_not equal(manifest_hash)
       end
 
       it 'should use https when trying to fetch values' do
