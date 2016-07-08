@@ -22,20 +22,36 @@ module Bosh::Monitor
         return @client
       end
 
-      def state(event)
-        case event.to_hash[:severity]
-          when 1
-            "critical"
-          when nil
-            "ok"
-          else "warn"
+      def process(event)
+        case event
+        when Bosh::Monitor::Events::Heartbeat
+          if event.node_id
+            process_heartbeat(event)
+          end
+        when Bosh::Monitor::Events::Alert
+          process_alert(event)
         end
       end
 
-      def process(event)
+      def process_heartbeat(event)
+        payload = event.to_hash.merge({service: "bosh.hm"})
+        payload.delete :vitals
+        event.metrics.each do |metric|
+          begin
+            client << payload.merge({
+              name: metric.name,
+              metric: metric.value,
+            })
+          rescue => e
+            logger.error("Error sending riemann event: #{e}")
+          end
+        end
+      end
+
+      def process_alert(event)
         client << event.to_hash.merge({
           service: "bosh.hm",
-          state: state(event),
+          state: event.severity.to_s,
         })
       rescue => e
         logger.error("Error sending riemann event: #{e}")
