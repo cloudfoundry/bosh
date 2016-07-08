@@ -253,8 +253,8 @@ module Bosh::Director
                 :version => '2',
                 :blobstore_id => '123',
                 :sha1 => '12a',
-                :consumes => {"link-consumed": "consumed"},
-                :provides => {"link-provided": "provided"},
+                :consumes => {'link-consumed' => 'consumed'},
+                :provides => {'link-provided' => 'provided'},
             )
 
             release_version.add_template(dummy_template)
