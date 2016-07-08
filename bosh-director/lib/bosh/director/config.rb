@@ -172,7 +172,7 @@ module Bosh::Director
 
         @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
-        config_server = config['config_server']
+        config_server = config['config_server'] || {}
         @config_server_enabled = config_server['enabled']
         if @config_server_enabled
           @config_server_url = config_server['url']
