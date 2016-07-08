@@ -166,16 +166,16 @@ describe Bosh::Director::Config do
     context "config server" do
       context "when enabled" do
         before {
-          test_config["config_server"]["enabled"] = true
-          test_config["config_server"]["url"] = "https://127.0.0.1:8080"
-          test_config["config_server"]["ca_cert_path"] = "/var/vcap/jobs/director/config/config_server.cert"
+          test_config['config_server']['enabled'] = true
+          test_config['config_server']['url'] = 'https://127.0.0.1:8080'
+          test_config['config_server']['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
         }
 
         it "should have parsed out config server values" do
           described_class.configure(test_config)
 
-          expect(described_class.config_server_url).to eq("https://127.0.0.1:8080")
-          expect(described_class.config_server_cert_path).to eq("/var/vcap/jobs/director/config/config_server.cert")
+          expect(described_class.config_server_url).to eq('https://127.0.0.1:8080')
+          expect(described_class.config_server_cert_path).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
         end
 
         context 'when url is not https' do

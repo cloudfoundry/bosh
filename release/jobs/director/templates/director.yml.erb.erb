@@ -37,7 +37,7 @@ config_server = {
 }
 if config_server['enabled']
  config_server['url'] = p('director.config_server.url')
- config_server['cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
+ config_server['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
 end
 params['config_server'] = config_server
 

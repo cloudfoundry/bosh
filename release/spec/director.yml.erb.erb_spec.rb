@@ -193,7 +193,7 @@ describe 'director.yml.erb.erb' do
         it 'configures the cpi correctly' do
           expect(parsed_yaml['config_server']['enabled']).to eq(true)
           expect(parsed_yaml['config_server']['url']).to eq('https://config-server-host')
-          expect(parsed_yaml['config_server']['cert_path']).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
+          expect(parsed_yaml['config_server']['ca_cert_path']).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
         end
       end
 
