@@ -56,7 +56,6 @@ module Bosh::Director::Jobs
           end
         end
 
-
         stage = @event_log.begin_stage('Deleting packages', packages_to_delete.count)
         packages_to_delete.each do |package|
           track_and_log(stage, "#{package.name}/#{package.version}") do
