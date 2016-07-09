@@ -71,4 +71,10 @@ shared_examples_for 'All Stemcells' do
       its (:stdout) { should eq('') }
     end
   end
+
+  describe 'logrotate should rotate every 15 minutes' do
+    describe file('/etc/cron.d/logrotate') do
+      it { should contain '0,15,30,45 * * * * root /usr/bin/logrotate-cron' }
+    end
+  end
 end
