@@ -195,7 +195,6 @@ module Bosh::Director
           it_acts_as_message_with_timeout :stop
         end
       end
-
     end
 
     context 'task is fired and forgotten' do
@@ -229,17 +228,10 @@ module Bosh::Director
           expect { client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2']) }.to_not raise_error
         end
       end
+    end
 
-      describe 'sync_dns' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
-        let(:task) do
-          {
-            'agent_task_id' => 'fake-agent_task_id',
-            'state' => 'running',
-            'value' => 'task value'
-          }
-        end
-
+    describe '#sync_dns' do
+      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
         before do
           allow(Config).to receive(:nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
@@ -260,14 +252,6 @@ module Bosh::Director
           end
           client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1', version: 1)
         end
-
-        it 'does not raise an exception for failures' do
-          allow(client).to receive(:send_nats_request).and_raise(RpcRemoteException, 'random failure!')
-
-          expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: sync_dns on client: 'fake-agent-id'")
-          expect { client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1') }.to_not raise_error
-        end
-      end
     end
 
     context 'task is synchronous' do
