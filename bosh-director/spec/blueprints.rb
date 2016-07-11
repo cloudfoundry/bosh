@@ -15,6 +15,7 @@ Sham.define do
   stemcell_cid     { |index| "stemcell-cid-#{index}" }
   stemcell_os      { |index| "stemcell-os-#{index}" }
   stemcell_version { |index| "stemcell-version-#{index}" }
+  instance_id      { |index| "instance-id-#{index}" }
   blobstore_id     { |index| "blobstore-id-#{index}" }
   agent_id         { |index| "agent-id-#{index}" }
   uuid             { |index| "uuid-#{index}" }
@@ -203,6 +204,12 @@ module Bosh::Director::Models
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
     created_at   { Time.new }
+  end
+
+  LocalDnsRecord.blueprint do
+    name        { Sham.name }
+    ip          { Sham.ip }
+    instance_id { Sham.instance_id }
   end
 
   module Dns

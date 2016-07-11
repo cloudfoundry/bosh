@@ -9,6 +9,7 @@ module Bosh::Dev::Sandbox
       :database,
       :director_fix_stateful_nodes,
       :dns_enabled,
+      :local_dns,
       :cloud_storage_dir,
       :config_server_enabled,
       :config_server_url,
@@ -35,6 +36,7 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
 
       @dns_enabled = attrs.fetch(:dns_enabled, true)
+      @local_dns = attrs.fetch(:local_dns, false)
 
       @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
       @external_cpi_config = attrs.fetch(:external_cpi_config)

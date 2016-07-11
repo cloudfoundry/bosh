@@ -181,6 +181,7 @@ module Bosh::Director
     def update_dns(instance_plan)
       instance = instance_plan.instance
 
+      @dns_manager.publish_dns_records
       return unless instance_plan.dns_changed?
 
       @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)

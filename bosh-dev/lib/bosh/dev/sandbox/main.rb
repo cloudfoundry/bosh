@@ -159,6 +159,7 @@ module Bosh::Dev::Sandbox
         blobstore_storage_dir: blobstore_storage_dir,
         director_fix_stateful_nodes: @director_fix_stateful_nodes,
         dns_enabled: @dns_enabled,
+        local_dns: @local_dns,
         external_cpi_enabled: @external_cpi_enabled,
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
@@ -270,6 +271,7 @@ module Bosh::Dev::Sandbox
       @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
+      @local_dns = options.fetch(:local_dns, false)
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)

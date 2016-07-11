@@ -24,17 +24,15 @@ module Bosh::Director
       ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
         instance_plans.each do |instance_plan|
           instance = instance_plan.instance
-
           pool.process do
             with_thread_name("create_missing_vm(#{instance.model}/#{total})") do
               event_log_stage.advance_and_track(instance.model.to_s) do
                 @logger.info('Creating missing VM')
                 disks = [instance.model.persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks)
-
                 instance_plan.network_plans
-                  .select(&:obsolete?)
-                  .each do |network_plan|
+                    .select(&:obsolete?)
+                    .each do |network_plan|
                   reservation = network_plan.reservation
                   ip_provider.release(reservation)
                 end
@@ -66,7 +64,7 @@ module Bosh::Director
         agent_client.wait_until_ready
 
         if Config.flush_arp
-          ip_addresses = instance_plan.network_settings_hash.map do |index,network|
+          ip_addresses = instance_plan.network_settings_hash.map do |index, network|
             network['ip']
           end.compact
 
@@ -90,6 +88,7 @@ module Bosh::Director
       apply_initial_vm_state(instance_plan)
 
       instance_plan.mark_desired_network_plans_as_existing
+      create_local_dns_record(instance.model)
     end
 
     private
@@ -150,7 +149,6 @@ module Bosh::Director
       end
 
       options[:vm_cid] = vm_cid
-
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")
@@ -166,6 +164,26 @@ module Bosh::Director
 
     def self.generate_agent_id
       SecureRandom.uuid
+    end
+
+    private
+
+    def create_local_dns_record(instance_model)
+      spec = instance_model.spec
+      @logger.debug('Creating local dns records')
+      unless spec.nil? || spec['networks'].nil?
+        @logger.debug("Found #{spec['networks'].length} networks")
+        spec['networks'].each do |network_name, network|
+          unless network['ip'].nil? or spec['job'].nil?
+            ip = network['ip']
+            name = instance_model.uuid + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
+            @logger.debug("Adding local dns record with name #{name} and ip #{ip}")
+            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
+              Bosh::Director::Models::LocalDnsRecord.create(:name => name, :ip => ip, :instance_id => instance_model.id )
+            end
+          end
+        end
+      end
     end
   end
 end

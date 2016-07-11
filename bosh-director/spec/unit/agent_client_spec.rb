@@ -231,6 +231,11 @@ module Bosh::Director
     end
 
     describe '#sync_dns' do
+      before do
+        allow(Config).to receive(:nats_rpc)
+        allow(Api::ResourceManager).to receive(:new)
+      end
+
       subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
         before do
           allow(Config).to receive(:nats_rpc)

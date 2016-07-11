@@ -17,11 +17,11 @@ module Bosh::Director
       broadcast(instances, :delete_arp_entries, ips: ip_addresses)
     end
 
-    def sync_dns(blobstore_id, sha1)
+    def sync_dns(blobstore_id, sha1, version)
       instances = filter_instances(nil)
       timeout = Timeout.new(@sync_dns_timeout)
       @logger.info("Syncing dns for instances #{instances.map(&:agent_id)}")
-      broadcast_with_retry(instances, timeout, :sync_dns, blobstore_id, sha1)
+      broadcast_with_retry(instances, timeout, :sync_dns, blobstore_id, sha1, version)
     end
 
     def filter_instances(vm_cid_to_exclude)
@@ -41,7 +41,7 @@ module Bosh::Director
           end
         end
       end
-    end
+    end 
 
     def broadcast_with_retry(instances, timeout, method, *args)
       lock = Mutex.new

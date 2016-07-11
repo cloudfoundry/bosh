@@ -8,6 +8,7 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
     let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
     let(:instance_model_state) { 'started' }
+    let(:dns_manager) { DnsManagerProvider.create }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
@@ -115,6 +116,7 @@ module Bosh::Director
     context 'when changing DNS' do
       before do
         allow(instance_plan).to receive(:changes).and_return([:dns])
+        allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
       end
 
       it 'should exit early without interacting at all with the agent' do
@@ -123,6 +125,8 @@ module Bosh::Director
         expect(Models::Event.count).to eq 0
 
         expect(AgentClient).not_to receive(:with_vm_credentials_and_agent_id)
+
+        expect(dns_manager).to receive(:publish_dns_records).twice
 
         subnet_spec = {
           'range' => '10.10.10.0/24',

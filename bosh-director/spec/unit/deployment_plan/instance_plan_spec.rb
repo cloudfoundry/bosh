@@ -7,7 +7,6 @@ module Bosh::Director::DeploymentPlan
       instance_model = BD::Models::Instance.make(
         bootstrap: true,
         deployment: deployment_model,
-        uuid: 'uuid-1',
         spec: spec
       )
       instance_model
@@ -562,6 +561,7 @@ module Bosh::Director::DeploymentPlan
         let(:spec) do
           {'configuration_hash' => {'old' => 'config'}}
         end
+        let(:uuid) { BD::Models::Instance.all.last.uuid }
 
         it 'should return true' do
           instance.configuration_hash = {'changed' => 'config'}
@@ -571,7 +571,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = {'changed' => 'config'}
 
-          expect(logger).to receive(:debug).with('configuration_changed? changed FROM: {"old"=>"config"} TO: {"changed"=>"config"} on instance foobar/1 (uuid-1)')
+          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{uuid})")
           instance_plan.configuration_changed?
         end
       end
@@ -629,7 +629,8 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the index dns record for the instance is not found' do
           before do
-            BD::Models::Dns::Record.create(:name => 'uuid-1.foobar.a.simple.fake-dns', :type => 'A', :content => '192.168.1.3')
+            instance = BD::Models::Instance.all.last
+            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.fake-dns", :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return true' do
@@ -643,8 +644,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe 'when the id dns record for the instance is not found' do
+          let(:uuid) { BD::Models::Instance.all.last }
+
           before do
-            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
+            BD::Models::Dns::Record.create(:name => "#{uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return true' do
@@ -652,7 +655,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
+            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
             instance_plan.dns_changed?
           end
         end

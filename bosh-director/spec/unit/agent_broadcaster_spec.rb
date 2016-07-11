@@ -84,11 +84,11 @@ module Bosh::Director
         it 'successfully broadcast :sync_dns call' do
           expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
               with(instance.credentials, instance.agent_id).and_return(agent)
-          expect(agent).to receive(:send).with(:sync_dns, 'fake-blob-id', 'fake-sha1') do |args, &blk|
+          expect(agent).to receive(:send).with(:sync_dns, 'fake-blob-id', 'fake-sha1', 1) do |args, &blk|
             blk.call({'value' => 'synced'})
           end
 
-          agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1')
+          agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
         end
       end
 
@@ -109,7 +109,7 @@ module Bosh::Director
               expect(agent).to receive(:sync_dns)
               agent
             end.twice
-            agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1')
+            agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
           end
         end
       end

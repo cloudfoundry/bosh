@@ -15,8 +15,6 @@ module Bosh::Director
         :db,
         :dns,
         :dns_db,
-        # @todo @for-a-refactorer according to grep of "Config.dns_domain_name" I'm pretty sure this can be removed
-        :dns_domain_name,
         :event_log,
         :logger,
         :max_tasks,
@@ -148,7 +146,6 @@ module Bosh::Director
             Bosh::Director::Models::Dns::Domain.class
           end
         end
-
         @dns_manager = DnsManagerProvider.create
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
@@ -188,6 +185,11 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+      end
+
+      def canonized_dns_domain_name
+        dns_config = Config.dns || {}
+        Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
       end
 
       def log_dir
@@ -351,9 +353,7 @@ module Bosh::Director
 
         new_uuid
       end
-    end
 
-    class << self
       def load_file(path)
         Config.new(YAML.load_file(path))
       end

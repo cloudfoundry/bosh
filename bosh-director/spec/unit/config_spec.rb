@@ -6,11 +6,25 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { YAML.load(spec_asset("test-director-config.yml")) }
+  let(:test_config) { YAML.load(spec_asset('test-director-config.yml')) }
+  let(:temp_dir) { Dir.mktmpdir }
+  let(:base_config) do
+    blobstore_dir = File.join(temp_dir, 'blobstore')
+    FileUtils.mkdir_p(blobstore_dir)
+
+    config = YAML.load(spec_asset('test-director-config.yml'))
+    config['dir'] = temp_dir
+    config['blobstore'] = {
+        'provider' => 'local',
+        'options' => {'blobstore_path' => blobstore_dir}
+    }
+    config['snapshots']['enabled'] = true
+    config
+  end
 
   describe 'initialization' do
     it 'loads config from a yaml file' do
-      config = described_class.load_file(asset("test-director-config.yml"))
+      config = described_class.load_file(asset('test-director-config.yml'))
       expect(config.name).to eq('Test Director')
     end
 
@@ -149,12 +163,12 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe "#configure" do
-    context "when the config specifies a file logger" do
-      before { test_config["logging"]["file"] = "fake-file" }
+  describe '#configure' do
+    context 'when the config specifies a file logger' do
+      before { test_config['logging']['file'] = 'fake-file' }
 
-      it "configures the logger with a file appender" do
-        appender = Logging::Appender.new("file")
+      it 'configures the logger with a file appender' do
+        appender = Logging::Appender.new('file')
         expect(Logging.appenders).to receive(:file).with(
           'DirectorLogFile',
           hash_including(filename: 'fake-file')
@@ -163,15 +177,15 @@ describe Bosh::Director::Config do
       end
     end
 
-    context "config server" do
-      context "when enabled" do
+    context 'config server' do
+      context 'when enabled' do
         before {
           test_config['config_server']['enabled'] = true
           test_config['config_server']['url'] = 'https://127.0.0.1:8080'
           test_config['config_server']['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
         }
 
-        it "should have parsed out config server values" do
+        it 'should have parsed out config server values' do
           described_class.configure(test_config)
 
           expect(described_class.config_server_url).to eq('https://127.0.0.1:8080')
@@ -189,12 +203,12 @@ describe Bosh::Director::Config do
         end
       end
 
-      context "when disabled" do
+      context 'when disabled' do
         before {
           test_config["config_server_enabled"] = false
         }
 
-        it "should not have parsed out the values" do
+        it 'should not have parsed out the values' do
           described_class.configure(test_config)
 
           expect(described_class.config_server_url).to be(nil)
@@ -206,20 +220,6 @@ describe Bosh::Director::Config do
 
   describe '#identity_provider' do
     subject(:config) { Bosh::Director::Config.new(test_config) }
-    let(:temp_dir) { Dir.mktmpdir }
-    let(:base_config) do
-      blobstore_dir = File.join(temp_dir, 'blobstore')
-      FileUtils.mkdir_p(blobstore_dir)
-
-      config = YAML.load(spec_asset('test-director-config.yml'))
-      config['dir'] = temp_dir
-      config['blobstore'] = {
-        'provider' => 'local',
-        'options' => {'blobstore_path' => blobstore_dir}
-      }
-      config['snapshots']['enabled'] = true
-      config
-    end
     let(:provider_options) { {'blobstore_path' => blobstore_dir} }
 
     after { FileUtils.rm_rf(temp_dir) }
@@ -292,6 +292,24 @@ describe Bosh::Director::Config do
     context 'when state.json does not exist' do
       it 'returns nil' do
         expect(described_class.override_uuid).to eq(nil)
+      end
+    end
+  end
+
+  describe '#canonized_dns_domain_name' do
+    context 'when no dns_domain is set in config' do
+      let(:test_config) { base_config.merge({'dns' => {}}) }
+      it 'returns formatted DNS domain' do
+        config = described_class.configure(test_config)
+        expect(described_class.canonized_dns_domain_name).to eq('bosh')
+      end
+    end
+
+    context 'when dns_domain is set in config' do
+      let(:test_config) { base_config.merge({'dns' => {'domain_name' => 'test-domain-name'}}) }
+      it 'returns formatted DNS domain' do
+        config = described_class.configure(test_config)
+        expect(described_class.canonized_dns_domain_name).to eq('test-domain-name')
       end
     end
   end

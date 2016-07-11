@@ -7,29 +7,27 @@ module Bosh::Director
 
     def broadcast
       blob = Models::LocalDnsBlob.order(Sequel.desc(:id)).limit(1).first
-      AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1) unless blob.nil?
+      AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
     end
 
     def publish(dns_records)
-      json_records = {:records => dns_records}.to_json
+      blobstore_id = nil
+      json_records = dns_records.to_json
       blobstore_id = @blobstore.create(json_records)
-      Models::LocalDnsBlob.create(:blobstore_id => blobstore_id, :sha1 => Digest::SHA1.hexdigest(json_records), :created_at => Time.new)
+      Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
+                                  :sha1 => Digest::SHA1.hexdigest(json_records),
+                                  :version => dns_records.version,
+                                  :created_at => Time.new)
       blobstore_id
     end
 
     def export_dns_records
-      hosts = []
-      Models::Instance.all.map do |instance|
-        spec = instance.spec
-        unless spec.nil? || spec['networks'].nil?
-          spec['networks'].each do |network_name, network|
-            unless network['ip'].nil? or spec['job'].nil?
-              hosts << [ network['ip'], spec['id'] + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + @domain_name ]
-            end
-          end
-        end
+      hosts, version = [], nil
+      version = Models::LocalDnsRecord.max(:id) || 0
+      Models::LocalDnsRecord.all{|r| r.id <= version}.map do |dns_record|
+          hosts << [dns_record.ip, dns_record.name]
       end
-      hosts
+      DnsRecords.new(hosts, version)
     end
 
     def cleanup_blobs
