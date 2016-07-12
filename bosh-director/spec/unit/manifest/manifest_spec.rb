@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Manifest do
-    subject(:manifest) { described_class.new(manifest_hash, cloud_config_hash, runtime_config_hash) }
+    subject(:manifest) { described_class.new(manifest_hash, cloud_config_hash, runtime_config_hash, false) }
+    subject(:manifest_with_config_server) { described_class.new(manifest_hash, cloud_config_hash, runtime_config_hash, true) }
     let(:manifest_hash) { {} }
     let(:cloud_config_hash) { {} }
     let(:runtime_config_hash) { {} }
@@ -45,7 +46,7 @@ module Bosh::Director
       end
 
       it 'parses empty manifests correctly' do
-        expect(Manifest.load_from_text(nil, cloud_config, runtime_config).to_yaml).to eq Manifest.new({}, cloud_config_hash, runtime_config_hash).to_yaml
+        expect(Manifest.load_from_text(nil, cloud_config, runtime_config).to_yaml).to eq Manifest.new({}, cloud_config_hash, runtime_config_hash, false).to_yaml
       end
     end
 
@@ -276,7 +277,7 @@ module Bosh::Director
       end
     end
 
-    describe '#setup_config_values' do
+    context 'when config server is enabled' do
       let(:mock_parsed_manifest) do
         { name: "parsed_manifest" }
       end
@@ -286,21 +287,18 @@ module Bosh::Director
       end
 
       before do
+        allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
         allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:new).and_return(mock_config_parser)
       end
 
       it 'should store raw manifest and parsed manifest separately' do
-        manifest.setup_config_values
-        expect(manifest.manifest_hash).to eq(mock_parsed_manifest)
-        expect(manifest.raw_manifest_hash).to eq(manifest_hash)
+        expect(manifest_with_config_server.manifest_hash).to eq(mock_parsed_manifest)
+        expect(manifest_with_config_server.raw_manifest_hash).to eq(manifest_hash)
       end
 
       it 'should not overwrite raw manifest with parsed if called multiple times' do
-        manifest.setup_config_values
-        manifest.setup_config_values
-
-        expect(manifest.manifest_hash).to eq(mock_parsed_manifest)
-        expect(manifest.raw_manifest_hash).to eq(manifest_hash)
+        expect(manifest_with_config_server.manifest_hash).to eq(mock_parsed_manifest)
+        expect(manifest_with_config_server.raw_manifest_hash).to eq(manifest_hash)
       end
     end
   end

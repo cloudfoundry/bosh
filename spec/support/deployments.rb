@@ -565,5 +565,11 @@ module Bosh::Spec
         },
       }
     end
+
+    def self.manifest_errand_with_placeholders
+      manifest = manifest_with_errand
+      manifest['jobs'][1]['properties']['errand1']['stdout'] = "((placeholder))"
+      manifest
+    end
   end
 end

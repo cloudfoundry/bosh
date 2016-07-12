@@ -50,7 +50,6 @@ module Bosh::Director
         end
 
         deployment_manifest = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
-        deployment_manifest.setup_config_values if Config.config_server_enabled
 
         @deployment_name = deployment_manifest.to_hash['name']
 

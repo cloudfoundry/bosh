@@ -3,25 +3,27 @@ require 'set'
 module Bosh::Director
   class Manifest
 
-    def self.load_from_text(manifest_text, cloud_config, runtime_config)
+    def self.load_from_text(manifest_text, cloud_config, runtime_config, use_config_server=false)
       manifest_text ||= '{}'
-      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config)
+      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config, use_config_server)
     end
 
-    def self.load_from_hash(manifest_hash, cloud_config, runtime_config)
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, use_config_server=false)
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-      new(manifest_hash, cloud_config_hash, runtime_config_hash)
+      new(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server)
     end
 
     attr_reader :manifest_hash, :cloud_config_hash, :runtime_config_hash
 
-    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash)
+    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server=false)
       @manifest_hash = manifest_hash
       @cloud_config_hash = cloud_config_hash
       @runtime_config_hash = runtime_config_hash
+      @use_config_server = use_config_server
 
+      setup_config_values if can_use_config_server?
     end
 
     def resolve_aliases
@@ -71,6 +73,10 @@ module Bosh::Director
     end
 
     private
+
+    def can_use_config_server?
+      @use_config_server && Bosh::Director::Config.config_server_enabled
+    end
 
     def resolve_stemcell_version(stemcell)
       stemcell_manager = Api::StemcellManager.new

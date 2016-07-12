@@ -74,5 +74,17 @@ describe 'using director with config server', type: :integration do
         expect(template).to include("echo 'i am Groot'")
       end
     end
+
+    context 'when running an errand that has placeholders' do
+      let(:errand_manifest){ Bosh::Spec::Deployments.manifest_errand_with_placeholders }
+
+      it 'replaces placeholder in properties' do
+        config_server_helper.put_value('placeholder', 'test value')
+        deploy_from_scratch(manifest_hash: errand_manifest, cloud_config_hash: cloud_config)
+        errand_result = bosh_runner.run('run errand fake-errand-name --keep-alive')
+
+        expect(errand_result).to include('test value')
+      end
+    end
   end
 end

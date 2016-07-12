@@ -66,25 +66,6 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_groups).and_return([deployment_job])
         end
 
-        it 'fetches config values when config server is enabled' do
-          allow(subject).to receive(:ignore_cloud_config?).and_return(false)
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
-
-          expect(mock_manifest).to receive(:setup_config_values)
-
-          job.perform
-        end
-
-        it 'does not fetch config values when config server is disabled' do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(mock_manifest)
-
-          expect(mock_manifest).to_not receive(:setup_config_values)
-
-          job.perform
-        end
-
         it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
           expect(planner).to receive(:bind_models)
           expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
