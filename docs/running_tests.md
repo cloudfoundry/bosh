@@ -67,10 +67,6 @@ BATs currently supports the following tags which are enabled by default (use `--
   - `changing_static_ip`: `configure_networks` CPI method support [deprecated]
   - `network_reconfiguration`: `configure_networks` CPI method support [deprecated]
 
-The following tags also exist but are disabled by default (use `--tag ~system_services_running:false` to include them):
-
-  - `system_services_running`: checking if auditd, rsyslogd, cron and sshd are running
-
 Here is an example of running BATs on vSphere, skipping tests that are not applicable:
 
 ```
