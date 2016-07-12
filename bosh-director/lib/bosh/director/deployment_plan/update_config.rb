@@ -5,9 +5,6 @@ module Bosh::Director
     class UpdateConfig
       include ValidationHelper
 
-      attr_accessor :canaries
-      attr_accessor :max_in_flight
-
       attr_accessor :min_canary_watch_time
       attr_accessor :max_canary_watch_time
 
@@ -20,11 +17,10 @@ module Bosh::Director
         optional = !default_update_config.nil?
 
         @canaries = safe_property(update_config, "canaries",
-                                  :class => Integer, :optional => optional)
+                                  :class => String, :optional => optional)
 
         @max_in_flight = safe_property(update_config, "max_in_flight",
-                                       :class => Integer, :optional => optional,
-                                       :min => 1)
+                                       :class => String, :optional => optional)
 
         canary_watch_times = safe_property(update_config, "canary_watch_time",
                                            :class => String,
@@ -72,6 +68,15 @@ module Bosh::Director
         }
       end
 
+      def canaries(size = nil)
+        parse_arguments(@canaries, size)
+      end
+
+      def max_in_flight(size = nil)
+        value = parse_arguments(@max_in_flight, size)
+        ((value.is_a? Integer) && (value < 1))? 1: value
+      end
+
       def parse_watch_times(value)
         value = value.to_s
 
@@ -94,6 +99,19 @@ module Bosh::Director
 
       def serial?
         !!@serial
+      end
+
+      private
+      def parse_arguments(value, size)
+        return value if size.nil?
+        case value
+          when /^\d+%$/
+            [((/\d+/.match(value)[0].to_i * size) / 100).round, size].min
+          when /\A[-+]?[0-9]+\z/
+            value.to_i
+          else
+            raise 'cannot be converted'
+        end
       end
     end
   end
