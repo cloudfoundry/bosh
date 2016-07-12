@@ -19,6 +19,7 @@ class Bosh::Cpi::Cli
     delete_snapshot
     get_disks
     ping
+    calculate_vm_cloud_properties
   ).freeze
 
   RPC_METHOD_TO_RUBY_METHOD = {

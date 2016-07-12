@@ -210,6 +210,14 @@ module Bosh
       not_implemented(:get_disks)
     end
 
+    # Specify VM's hardware resources
+    # @param [Hash] vm_properties (typically cpu, ram, ephemeral_disk_size)
+    # @return [Hash] opaque description of the VM's configuration that
+    # can be used with {#create_vm}
+    def calculate_vm_cloud_properties(vm_properties)
+      not_implemented(:calculate_vm_cloud_properties)
+    end
+
     private
 
     def not_implemented(method)
