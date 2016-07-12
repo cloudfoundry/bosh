@@ -305,7 +305,7 @@ module Bosh::Dev
                              .and_return(["#{sha1} bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz", nil, instance_double('Process::Status', success?: true)])
 
           expect(Open3).to receive(:capture3)
-            .with("curl -X POST 'https://bosh.io/checksums/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{bearer_token}'", anything)
+            .with("curl -X POST --fail 'https://bosh.io/checksums/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{bearer_token}'", anything)
             .and_return([nil, nil, instance_double('Process::Status', success?: true)])
 
           build.upload_stemcell(stemcell_archive)
