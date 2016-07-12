@@ -91,7 +91,7 @@ module Bosh::Dev
         raise "Failed to calculate sha1 of #{archive.path}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
         sha1 = stdout.split(/\s/)[0]
 
-        stdout, stderr, status = exec_cmd("curl -X POST 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
+        stdout, stderr, status = exec_cmd("curl -X POST --fail 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
         raise "Failed to notify bosh.io with checksum '#{sha1}' for '#{normal_filename}': stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
       end
     end
