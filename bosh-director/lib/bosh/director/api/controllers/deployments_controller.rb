@@ -333,6 +333,14 @@ module Bosh::Director
         manifest_file_path = prepare_yml_file(request.body, 'deployment')
         deployment = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
 
+        unless deployment.kind_of?(Hash)
+          raise ValidationInvalidType, 'Deployment manifest must be a hash'
+        end
+
+        unless deployment['name']
+          raise ValidationMissingField, "Deployment manifest must have a 'name' key"
+        end
+
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
@@ -348,13 +356,9 @@ module Bosh::Director
           runtime_config = Api::RuntimeConfigManager.new.latest
         end
 
-        if deployment
-          deployment_name = deployment['name']
-          if deployment_name
-            options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
-            deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
-          end
-        end
+        deployment_name = deployment['name']
+        options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
+        deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
         task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_model, options)
 

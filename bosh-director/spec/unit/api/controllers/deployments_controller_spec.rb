@@ -45,32 +45,84 @@ module Bosh::Director
 
       describe 'API calls' do
         describe 'creating a deployment' do
-          it 'expects compressed deployment file' do
-            post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-            expect_redirect_to_queued_task(last_response)
-          end
+          context 'authenticated access' do
+            it 'expects compressed deployment file' do
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect_redirect_to_queued_task(last_response)
+            end
 
-          it 'only consumes text/yaml' do
-            post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
-            expect(last_response.status).to eq(404)
-          end
+            it 'only consumes text/yaml' do
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/plain'}
+              expect(last_response.status).to eq(404)
+            end
 
-          it 'gives a nice error when request body is not a valid yml' do
-            post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+            it 'gives a nice error when request body is not a valid yml' do
+              post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
-            expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440001)
-            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
-          end
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+            end
 
-          it 'gives a nice error when request body is empty' do
-            post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
+            it 'gives a nice error when request body is empty' do
+              post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
 
-            expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)).to eq(
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
                 'code' => 440001,
                 'description' => 'Manifest should not be empty',
-            )
+              )
+            end
+
+            it 'gives a nice error when deployment manifest file does not have a name' do
+              post '/', YAML.dump({}), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 40001,
+                'description' => "Deployment manifest must have a 'name' key",
+              )
+              end
+
+            it 'gives a nice error when deployment manifest file is not a Hash' do
+              post '/', YAML.dump(true), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 40000,
+                'description' => 'Deployment manifest must be a hash',
+              )
+            end
+
+            context 'when provided a cloud config and runtime config context to work within' do
+              it 'should use the provided context instead of using the latest runtime and cloud config' do
+                cloud_config = Models::CloudConfig.make
+                runtime_config = Models::RuntimeConfig.make
+
+                Models::CloudConfig.make
+                Models::RuntimeConfig.make
+
+                deployment_context = [['context', JSON.dump({'cloud_config_id' => 1, 'runtime_config_id' => 1})]]
+
+                allow_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                  .with(anything, anything, cloud_config, runtime_config, anything, anything)
+                  .and_return(Models::Task.make)
+
+                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                expect_redirect_to_queued_task(last_response)
+              end
+            end
+          end
+
+          context 'accessing with invalid credentials' do
+            before { authorize 'invalid-user', 'invalid-password' }
+
+            it 'returns 401' do
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response.status).to eq(401)
+            end
           end
         end
 
@@ -919,8 +971,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
-                  'code' => 440001,
-                  'description' => 'Manifest should not be empty',
+                'code' => 440001,
+                'description' => 'Manifest should not be empty',
               )
             end
 
