@@ -323,6 +323,24 @@ describe Bosh::Cpi::Cli do
       end
     end
 
+    describe 'calculate_vm_cloud_properties' do
+      it 'takes json and calls specified method on the cpi' do
+        expect(cpi).to(receive(:calculate_vm_cloud_properties).
+          with({ 'ram' => 1024, 'cpu' => 2, 'ephemeral_disk_size' => 2048 })) { logs_io.write('fake-log') }.
+          and_return('fake-vm-type')
+
+        subject.run <<-JSON
+          {
+            "method": "calculate_vm_cloud_properties",
+            "arguments": [{ "ram": 1024, "cpu": 2, "ephemeral_disk_size": 2048 }],
+            "context" : { "director_uuid" : "abc" }
+          }
+        JSON
+
+        expect(result_io.string).to eq('{"result":"fake-vm-type","error":null,"log":"fake-log"}')
+      end
+    end
+
     describe 'configure cloud' do
       it 'configures cloud with the director uuid' do
         allow(cpi).to receive(:get_disks)
