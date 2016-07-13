@@ -412,10 +412,6 @@ module Bosh::Director
       logger
     end
 
-    def db
-      Config.configure_db(hash['db'])
-    end
-
     def blobstore_config
       hash.fetch('blobstore')
     end

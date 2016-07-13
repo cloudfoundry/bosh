@@ -48,7 +48,8 @@ begin
   else
     config = Bosh::Director::Config.load_file(config_file)
   end
-  config.db
+
+  config.configure_evil_config_singleton!
 
   worker = Bosh::Director::Worker.new(config, index)
   worker.prep
