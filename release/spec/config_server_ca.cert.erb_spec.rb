@@ -21,8 +21,8 @@ describe 'director.yml.erb.erb' do
     ERB.new(erb_yaml).result(binding)
   end
 
-  it 'raises an error when config server is enabled but no certificate is defined' do
-    expect { parsed_erb }.to raise_error(Bosh::Template::UnknownProperty)
+  it 'should not raise an error when config server is enabled but no ca_cert is defined' do
+    expect { parsed_erb }.to_not raise_error()
   end
 
   context 'when all needed properties exist and it is enabled' do

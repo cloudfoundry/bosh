@@ -25,13 +25,10 @@ module Bosh::Director::ConfigServer
       invalid_keys = []
       config_values = {}
 
+      http = setup_http
+
       keys.each do |k|
         config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'data/', k)
-
-        http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-        http.ca_file = Bosh::Director::Config.config_server_cert_path
 
         begin
           response = http.get(config_server_uri.path)
@@ -58,6 +55,23 @@ module Bosh::Director::ConfigServer
         end
         ret[config_path.last] = @config_values[config_loc['key']]
       end
+    end
+
+    def setup_http
+      config_server_uri = URI(Bosh::Director::Config.config_server_url)
+      http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+      ca_cert_file_path = Bosh::Director::Config.config_server_cert_path
+      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
+        http.ca_file = ca_cert_file_path
+      else
+        cert_store = OpenSSL::X509::Store.new
+        cert_store.set_default_paths
+        http.cert_store = cert_store
+      end
+      http
     end
 
   end
