@@ -350,7 +350,7 @@ jobs:
   - name: fuzz-tests
     public: true
     serial: true
-    build_logs_to_retain: 500
+    build_logs_to_retain: 2500
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true, passed: [start-job] }
