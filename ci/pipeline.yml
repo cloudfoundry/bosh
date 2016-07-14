@@ -69,6 +69,7 @@ jobs:
   - name: unit-1.9
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
@@ -81,6 +82,7 @@ jobs:
   - name: unit-1.9-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
@@ -94,6 +96,7 @@ jobs:
   - name: unit-2.3
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
@@ -106,6 +109,7 @@ jobs:
   - name: unit-2.3-mysql
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
@@ -119,6 +123,7 @@ jobs:
   - name: unit-2.3-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
@@ -132,6 +137,7 @@ jobs:
   - name: blobstore-client-integration
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
       - task: test
@@ -146,6 +152,7 @@ jobs:
   - name: integration-1.9-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
       - aggregate:
@@ -180,6 +187,7 @@ jobs:
   - name: integration-2.3-mysql
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
       - aggregate:
@@ -214,6 +222,7 @@ jobs:
   - name: integration-2.3-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
       - aggregate:
@@ -248,6 +257,7 @@ jobs:
   - name: load-tests-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - { get: bosh-load-tests-workspace }
@@ -270,6 +280,7 @@ jobs:
   - name: legacy-load-tests-postgres
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - { get: bosh-load-tests-workspace }
@@ -292,6 +303,7 @@ jobs:
   - name: load-tests-mysql
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - { get: bosh-load-tests-workspace }
@@ -314,6 +326,7 @@ jobs:
   - name: legacy-load-tests-mysql
     public: true
     serial: true
+    build_logs_to_retain: 250
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true, passed: [start-job] }
@@ -337,6 +350,7 @@ jobs:
   - name: fuzz-tests
     public: true
     serial: true
+    build_logs_to_retain: 500
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true, passed: [start-job] }
@@ -358,6 +372,7 @@ jobs:
   - name: publish-coverage
     public: true
     serial: true
+    build_logs_to_retain: 10
     plan:
       - trigger: true
         passed:
@@ -376,6 +391,7 @@ jobs:
   - name: promote-candidate
     public: true
     serial: true
+    build_logs_to_retain: 1000
     plan:
       - trigger: true
         passed:
