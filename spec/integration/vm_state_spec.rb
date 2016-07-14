@@ -158,13 +158,13 @@ describe 'vm state', type: :integration do
 
       bosh_runner.run('restart foobar 1')
       event_log = bosh_runner.run('task last --event --raw')
-      expect(event_log).to match(/foobar\/1 \(.*\)/)
-      expect(event_log).to_not match(/foobar\/2 \(.*\)/)
+      expect(event_log).to match(/foobar\/[a-z0-9\-]+ \(1\)/)
+      expect(event_log).to_not match(/foobar\/[a-z0-9\-]+ \(2\)/)
 
       bosh_runner.run('restart foobar 2')
       event_log = bosh_runner.run('task last --event --raw')
-      expect(event_log).to_not match(/foobar\/1 \(.*\)/)
-      expect(event_log).to match(/foobar\/2 \(.*\)/)
+      expect(event_log).to_not match(/foobar\/[a-z0-9\-]+ \(1\)/)
+      expect(event_log).to match(/foobar\/[a-z0-9\-]+ \(2\)/)
     end
   end
 

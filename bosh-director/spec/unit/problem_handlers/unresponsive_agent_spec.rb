@@ -47,7 +47,7 @@ module Bosh::Director
     end
 
     it 'has well-formed description' do
-      expect(handler.description).to eq('mysql_node/0 (uuid-1) (vm-cid) is not responding')
+      expect(handler.description).to eq('mysql_node/uuid-1 (0) (vm-cid) is not responding')
     end
 
     describe 'reboot_vm resolution' do

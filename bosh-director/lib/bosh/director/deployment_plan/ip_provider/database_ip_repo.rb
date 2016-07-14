@@ -112,7 +112,7 @@ module Bosh::Director::DeploymentPlan
       else
         raise Bosh::Director::NetworkReservationAlreadyInUse,
           "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " +
-            "already reserved by instance '#{reserved_instance.job}/#{reserved_instance.index}' " +
+            "already reserved by instance '#{reserved_instance.name}' " +
             "from deployment '#{reserved_instance.deployment.name}'"
       end
     end

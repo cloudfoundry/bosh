@@ -69,9 +69,9 @@ describe 'cli: vms', type: :integration do
 +-------------------------------------------------+---------+--------+---------+-------------+
 | VM                                              | State   | AZ     | VM Type | IPs         |
 +-------------------------------------------------+---------+--------+---------+-------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-1 | a       | 192.168.1.2 |
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-2 | a       | 192.168.2.2 |
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-3 | a       | 192.168.3.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a       | 192.168.1.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a       | 192.168.2.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a       | 192.168.3.2 |
 +-------------------------------------------------+---------+--------+---------+-------------+
 VMS
     output = bosh_runner.run('vms --details')
@@ -87,9 +87,9 @@ VMS
     expect(output).to include('Resurrection')
     expect(output).to include('Ignore')
 
-    expect(output).to include('foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
-    expect(output).to include('foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
-    expect(output).to include('foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')
@@ -99,11 +99,11 @@ VMS
 +-------------------------------------------------+---------+--------+---------+-------------+-----------------------------------------------------------+
 | VM                                              | State   | AZ     | VM Type | IPs         | DNS A records                                             |
 +-------------------------------------------------+---------+--------+---------+-------------+-----------------------------------------------------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-1 | a       | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a       | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                 |         |        |         |             | 0.foobar.a.simple.bosh                                    |
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-2 | a       | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a       | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                 |         |        |         |             | 1.foobar.a.simple.bosh                                    |
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | zone-3 | a       | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a       | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                 |         |        |         |             | 2.foobar.a.simple.bosh                                    |
 +-------------------------------------------------+---------+--------+---------+-------------+-----------------------------------------------------------+
 VMS
@@ -127,9 +127,9 @@ VMS
     expect(output).to include('Ephemeral')
     expect(output).to include('Persistent')
 
-    expect(output).to include('foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
-    expect(output).to include('foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
-    expect(output).to include('foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')

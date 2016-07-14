@@ -25,8 +25,8 @@ describe 'cli: cloudcheck', type: :integration do
         expect(cloudcheck_response).to match(regexp('3 unresponsive'))
         expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' without waiting for processes to start
-  4. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' and wait for processes to start
+  3. Recreate VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' without waiting for processes to start
+  4. Recreate VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' and wait for processes to start
   5. Delete VM
   6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
       end
@@ -68,9 +68,9 @@ describe 'cli: cloudcheck', type: :integration do
           expect(report_output).to match(regexp('Found 2 problems'))
 
           auto_output = runner.run('cloudcheck --auto')
-          expect(auto_output).to_not match(regexp('Started applying problem resolutions > foobar/1'))
-          expect(auto_output).to match(regexp('Started applying problem resolutions > foobar/0'))
-          expect(auto_output).to match(regexp('Started applying problem resolutions > foobar/2'))
+          expect(auto_output).to_not match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(1\)/)
+          expect(auto_output).to match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(0\)/)
+          expect(auto_output).to match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(2\)/)
         end
       end
     end
@@ -85,8 +85,8 @@ describe 'cli: cloudcheck', type: :integration do
         expect(cloudcheck_response).to_not match(regexp('No problems found'))
         expect(cloudcheck_response).to match(regexp('1 missing'))
         expect(cloudcheck_response).to match(%r(1\. Skip for now
-  2\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)' without waiting for processes to start
-  3\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)' and wait for processes to start
+  2\. Recreate VM for 'foobar\/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \(\d\)' without waiting for processes to start
+  3\. Recreate VM for 'foobar\/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \(\d\)' and wait for processes to start
   4\. Delete VM reference))
       end
 

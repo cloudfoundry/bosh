@@ -223,7 +223,7 @@ module Bosh::Director
           before { instance1_model.update(vm_cid: nil) }
 
           it 'raises an error' do
-            expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance1_model.index} (#{instance1_model.uuid})' doesn't reference a VM")
+            expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance1_model.uuid} (#{instance1_model.index})' doesn't reference a VM")
           end
         end
       end

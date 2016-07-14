@@ -1278,15 +1278,15 @@ Error 100: Unable to process links for deployment. Errors are:
 
         output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_1).to eq(0)
-        expect(output_1).to include("Started creating missing vms > deployment-job/0")
-        expect(output_1).to include("Started creating missing vms > mysql/0")
-        expect(output_1).to include("Started creating missing vms > mysql/1")
-        expect(output_1).to include("Started creating missing vms > postgres/0")
+        expect(output_1).to match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_1).to match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_1).to include("Started updating job deployment-job > deployment-job/0")
-        expect(output_1).to include("Started updating job mysql > mysql/0")
-        expect(output_1).to include("Started updating job mysql > mysql/1")
-        expect(output_1).to include("Started updating job postgres > postgres/0")
+        expect(output_1).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_1).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
 
 
         # ####################################################################
@@ -1303,15 +1303,15 @@ Error 100: Unable to process links for deployment. Errors are:
 
         output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_2).to eq(0)
-        expect(output_2).to_not include("Started creating missing vms > deployment-job/0")
-        expect(output_2).to_not include("Started creating missing vms > mysql/0")
-        expect(output_2).to_not include("Started creating missing vms > mysql/1")
-        expect(output_2).to_not include("Started creating missing vms > postgres/0")
+        expect(output_2).to_not match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_2).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_2).to include("Started updating job deployment-job > deployment-job/0")
-        expect(output_2).to include("Started updating job mysql > mysql/0")
-        expect(output_2).to include("Started updating job mysql > mysql/1")
-        expect(output_2).to include("Started updating job postgres > postgres/0")
+        expect(output_2).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_2).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
 
         current_deployments = bosh_runner.run("deployments")
         expect(current_deployments).to match_output %(
@@ -1334,15 +1334,15 @@ Error 100: Unable to process links for deployment. Errors are:
 
         output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_3).to eq(0)
-        expect(output_3).to_not include("Started creating missing vms > deployment-job/0")
-        expect(output_3).to_not include("Started creating missing vms > mysql/0")
-        expect(output_3).to_not include("Started creating missing vms > mysql/1")
-        expect(output_3).to_not include("Started creating missing vms > postgres/0")
+        expect(output_3).to_not match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_3).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_3).to include("Started updating job deployment-job > deployment-job/0")
-        expect(output_3).to include("Started updating job mysql > mysql/0")
-        expect(output_3).to include("Started updating job mysql > mysql/1")
-        expect(output_3).to include("Started updating job postgres > postgres/0")
+        expect(output_3).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_3).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
       end
 
       it 'allows only the specified properties' do

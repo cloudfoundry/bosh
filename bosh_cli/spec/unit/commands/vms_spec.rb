@@ -194,7 +194,7 @@ describe Bosh::Cli::Command::Vms do
 
       it 'shows instance id' do
         expect(command).to receive(:say) do |output_display|
-          expect(output_display.to_s).to include 'job1/0 (my_instance_id)'
+          expect(output_display.to_s).to include 'job1/my_instance_id (0)'
         end
         perform
       end

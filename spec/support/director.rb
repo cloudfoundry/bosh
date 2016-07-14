@@ -217,12 +217,12 @@ module Bosh::Spec
       vms = parse_table(output)
 
       job_name_match_index = 1
-      index_match_index = 2
-      instance_id_match_index = 3
+      instance_id_match_index = 2
+      index_match_index = 3
       bootstrap_match_index = 4
 
       vms.each do |vm|
-        match_data = /(.*)\/(\d+)\s\(([0-9a-f]{8}-[0-9a-f-]{27})\)(\*?)/.match(vm[table_type])
+        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})\s\((\d+)\)(\*?)/.match(vm[table_type])
         if row_is_ip_address_for_previous_row(match_data)
           vm[:is_ip_address_for_previous_row] = true
         else

@@ -38,7 +38,7 @@ describe 'deleting deployment', type: :integration do
 
     # Delete Deployment
     deployment_deletion_output = scrub_random_ids(bosh_runner.run('delete deployment simple'))
-    expect(deployment_deletion_output).to include('Started deleting instances > foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
+    expect(deployment_deletion_output).to include('Started deleting instances > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
     expect(deployment_deletion_output).to include('Deleted deployment')
 
     # Stemcells and releases remain after deletion of deployment

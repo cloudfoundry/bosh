@@ -243,7 +243,9 @@ describe 'global networking', type: :integration do
       ]
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
       expect(exit_code).to_not eq(0)
-      expect(output).to include("Failed to reserve IP '192.168.1.11' for instance 'first-job/0 (#{director.vms.first.instance_uuid})': already reserved by instance 'second-job/0' from deployment 'my-deploy'")
+
+      vms = director.vms
+      expect(output).to include("Failed to reserve IP '192.168.1.11' for instance 'first-job/#{vms[0].instance_uuid} (0)': already reserved by instance 'second-job/#{vms[1].instance_uuid}' from deployment 'my-deploy'")
     end
 
     it 'keeps static IPs reserved when a job fails to deploy its VMs' do
@@ -266,7 +268,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to match(/Failed to reserve IP '192.168.1.10' for instance 'first-job\/0 \([a-z0-9\-]+\)': already reserved by instance 'first-job\/0' from deployment 'my-deploy'/)
+      expect(output).to match(/Failed to reserve IP '192.168.1.10' for instance 'first-job\/[a-z0-9\-]+ \(0\)': already reserved by instance 'first-job\/[a-z0-9\-]+' from deployment 'my-deploy'/)
     end
 
     def deploy_with_static_ip(deployment_name, ip, range)
@@ -437,7 +439,7 @@ describe 'global networking', type: :integration do
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(output).to match(/Failed to reserve IP for 'foobar\/1 \(.+\)' for manual network 'a': no more available/)
+      expect(output).to match(/Failed to reserve IP for 'foobar\/[a-z0-9\-]+ \(1\)' for manual network 'a': no more available/)
     end
 
     it 'does not reuse IP if one job is deleted and another created within a single deployment' do
@@ -477,7 +479,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to match(/Failed to reserve IP for 'foobar\/0 \(.+\)' for manual network 'a': no more available/)
+      expect(output).to match(/Failed to reserve IP for 'foobar\/[a-z0-9\-]+ \(0\)' for manual network 'a': no more available/)
     end
 
     it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do

@@ -262,9 +262,9 @@ describe Bosh::Cli::Command::Instances do
           +-----------------------------------------------+---------+-----+---------+-------------+
           | Instance                                      | State   | AZ  | VM Type | IPs         |
           +-----------------------------------------------+---------+-----+---------+-------------+
-          | job1/0 (abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | az1 | rp1     | 192.168.0.1 |
+          | job1/abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | az1 | rp1     | 192.168.0.1 |
           |                                               |         |     |         | 192.168.0.2 |
-          | job1/1 (stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | running | az1 | rp1     | 192.168.0.1 |
+          | job1/stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | az1 | rp1     | 192.168.0.1 |
           |                                               |         |     |         | 192.168.0.2 |
           +-----------------------------------------------+---------+-----+---------+-------------+
           '

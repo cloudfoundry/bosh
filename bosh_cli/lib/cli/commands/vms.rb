@@ -63,7 +63,7 @@ module Bosh::Cli::Command
         sorted.each do |vm|
           job_name = vm['job_name'] || 'unknown'
           job_index = vm['index'] || 'unknown'
-          job = vm.has_key?('id') ? "#{job_name}/#{job_index} (#{vm['id']})" : "#{job_name}/#{job_index}"
+          job = vm.has_key?('id') ? "#{job_name}/#{vm['id']} (#{job_index})" : "#{job_name}/#{job_index}"
           ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']

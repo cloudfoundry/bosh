@@ -42,7 +42,7 @@ describe 'failing deploy', type: :integration do
 
     second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages', static_ips: ['192.168.1.10'])
     second_deploy_output = deploy_simple_manifest(manifest_hash: second_manifest_hash, failure_expected: true)
-    expect(second_deploy_output).to match(/Failed to reserve IP '192.168.1.10' for instance 'foobar\/0 \(.+\)': already reserved by instance 'foobar\/0' from deployment 'first'/)
+    expect(second_deploy_output).to match(/Failed to reserve IP '192.168.1.10' for instance 'foobar\/[a-z0-9\-]+ \(0\)': already reserved by instance 'foobar\/[a-z0-9\-]+' from deployment 'first'/)
 
     deploy_simple_manifest(manifest_hash: first_manifest_hash)
     expect(director.vms('first').map(&:ips)).to eq(['192.168.1.10'])
