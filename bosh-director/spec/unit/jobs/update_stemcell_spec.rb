@@ -13,9 +13,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
     after { FileUtils.rm_rf(tmp_dir) }
 
-    let(:cloud) { instance_double('Bosh::Cloud') }
-    before { allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud) }
-    # Bosh::Director::Config.stub(:base_dir).and_return(tmp_dir)
+    let(:cloud) { Bosh::Director::Config.cloud }
 
     context 'when the stemcell tarball is valid' do
       before do

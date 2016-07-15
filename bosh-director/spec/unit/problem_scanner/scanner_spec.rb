@@ -19,8 +19,7 @@ module Bosh::Director
         and_return(event_logger)
     end
 
-    let(:cloud) { instance_double('Bosh::Cloud') }
-    before { allow(Config).to receive(:cloud).and_return(cloud) }
+    let(:cloud) { Config.cloud }
 
     describe 'reset' do
       it 'should mark all open problems as closed' do

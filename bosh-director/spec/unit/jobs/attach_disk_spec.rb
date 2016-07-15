@@ -30,7 +30,6 @@ module Bosh::Director
       let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, vm_cid: vm_cid, state: instance_state) }
 
       before {
-        allow(Config).to receive(:cloud)
         allow(Config).to receive(:current_job).and_return(update_job)
         deployment.add_instance(instance_model)
       }

@@ -30,7 +30,6 @@ module Bosh::Director
     end
 
     before do
-      allow(Config).to receive(:cloud).and_return(instance_double(Bosh::Cloud))
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))

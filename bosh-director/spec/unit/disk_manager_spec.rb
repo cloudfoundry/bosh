@@ -4,7 +4,7 @@ module Bosh::Director
   describe Bosh::Director::DiskManager do
     subject(:disk_manager) { DiskManager.new(cloud, logger) }
 
-    let(:cloud) { instance_double(Bosh::Cloud) }
+    let(:cloud) { Config.cloud }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
@@ -44,7 +44,6 @@ module Bosh::Director
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
       allow(cloud).to receive(:detach_disk)
-      allow(Config).to receive(:cloud).and_return(cloud)
       allow(Config).to receive(:current_job).and_return(update_job)
     end
 

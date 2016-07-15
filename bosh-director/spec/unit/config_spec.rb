@@ -135,23 +135,6 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe '#cloud' do
-    before { described_class.configure(test_config) }
-
-    it 'creates the cloud from the provider' do
-      cloud = double('cloud')
-      expect(Bosh::Clouds::Provider).to receive(:create).with(test_config['cloud'], described_class.uuid).and_return(cloud)
-      expect(described_class.cloud).to equal(cloud)
-    end
-
-    it 'caches the cloud instance' do
-      cloud = double('cloud')
-      expect(Bosh::Clouds::Provider).to receive(:create).once.and_return(cloud)
-      expect(described_class.cloud).to equal(cloud)
-      expect(described_class.cloud).to equal(cloud)
-    end
-  end
-
   describe '#cpi_task_log' do
     before do
       described_class.configure(test_config)

@@ -5,7 +5,7 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     let(:job) { double('job').as_null_object }
-    let(:cloud) { double(:cpi) }
+    let(:cloud) { Config.cloud }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
@@ -57,8 +57,6 @@ module Bosh::Director
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
-
-      allow(Config).to receive(:cloud).and_return(cloud)
 
       @blobstore = double(:blobstore)
       allow(Config).to receive(:blobstore).and_return(@blobstore)
@@ -386,15 +384,10 @@ module Bosh::Director
 
         allow(@director_job).to receive(:task_checkpoint)
         allow(compiler).to receive(:with_compile_lock).and_yield
-        allow(cloud).to receive(:delete_vm)
         allow(vm_creator).to receive(:create_for_instance_plan)
       end
 
       it 'sends information about immediate dependencies of the package being compiled' do
-        allow(cloud).to receive(:create_vm).
-                              with(instance_of(String), @stemcell_b.model.cid, {}, net, [], {}).
-                              and_return(vm_cid)
-
         expect(agent).to receive(:compile_package).with(
                              anything(), # source package blobstore id
                              anything(), # source package sha1

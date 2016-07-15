@@ -23,7 +23,6 @@ module Bosh::Director
 
     describe '#perform' do
       let(:event_log){ EventLog::Log.new }
-      let(:cloud){ instance_double(Bosh::Cloud) }
       let(:event_log_stage){instance_double(Bosh::Director::EventLog::Stage)}
 
       before do
@@ -33,8 +32,6 @@ module Bosh::Director
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
         allow(event_log_stage).to receive(:advance_and_track).and_yield
-
-        allow(Config).to receive(:cloud).and_return(cloud)
       end
 
       context 'when deleting a disk' do
@@ -44,7 +41,7 @@ module Bosh::Director
           allow(pool).to receive(:wrap).and_yield(pool)
 
           expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 2).and_return(event_log_stage)
-          allow(cloud).to receive(:delete_disk)
+          allow(Config.cloud).to receive(:delete_disk)
 
           delete_orphan_disks = Jobs::DeleteOrphanDisks.new(['fake-cid-1', 'fake-cid-2'])
           allow(pool).to receive(:process).twice.and_yield
@@ -57,7 +54,7 @@ module Bosh::Director
 
       context 'when director was unable to delete a disk' do
         it 're-raises the error' do
-          allow(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
+          expect(Config.cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
 
           delete_orphan_disks = Jobs::DeleteOrphanDisks.new(['fake-cid-1', 'fake-cid-2'])
           expect {

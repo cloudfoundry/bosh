@@ -115,7 +115,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version')
 
-    allow(Bosh::Director::Config).to receive(:cloud).and_return(nil)
     Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
 
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')

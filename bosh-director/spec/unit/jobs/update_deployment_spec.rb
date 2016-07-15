@@ -15,7 +15,6 @@ module Bosh::Director::Jobs
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
     before do
-      allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
       Bosh::Director::App.new(config)
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))

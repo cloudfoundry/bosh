@@ -4,10 +4,8 @@ module Bosh::Director
   describe DeploymentDeleter do
     subject(:deleter) { described_class.new(Config.event_log, logger, dns_manager, 3) }
     before do
-      allow(Config).to receive(:cloud).and_return(cloud)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
-    let(:cloud) { instance_double(Bosh::Cloud) }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:instance_deleter) { instance_double(InstanceDeleter) }
     let(:vm_deleter) { instance_double(VmDeleter) }

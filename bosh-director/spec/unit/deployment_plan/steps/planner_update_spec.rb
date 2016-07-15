@@ -2,11 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
-
-    before do
-      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
-    end
-
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       before do
         release = Bosh::Director::Models::Release.make(name: 'fake-release')
@@ -140,7 +135,7 @@ module Bosh::Director::DeploymentPlan
             }
           end
 
-          let(:cloud) { instance_double('Bosh::Cloud') }
+          let(:cloud) { Bosh::Director::Config.cloud }
 
           let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
           before do

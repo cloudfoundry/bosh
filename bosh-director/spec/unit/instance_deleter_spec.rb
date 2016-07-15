@@ -5,12 +5,11 @@ module Bosh::Director
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
-    let(:cloud) { instance_double('Bosh::Cloud') }
+    let(:cloud) { Config.cloud }
     let(:delete_job) {Jobs::DeleteDeployment.new('test_deployment', {})}
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
     before do
-      allow(Config).to receive(:cloud).and_return(cloud)
       allow(delete_job).to receive(:task_id).and_return(task.id)
       allow(Config).to receive(:current_job).and_return(delete_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)

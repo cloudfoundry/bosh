@@ -4,7 +4,6 @@ module Bosh::Director
   describe Jobs::DeleteVm do
     subject(:job) { described_class.new(vm_cid) }
     before do
-      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(delete_vm_job)
@@ -14,7 +13,7 @@ module Bosh::Director
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:delete_vm_job) { instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager) }
-    let(:cloud) { instance_double('Bosh::Cloud') }
+    let(:cloud) { Config.cloud }
 
     shared_examples_for 'vm delete' do
       it 'should delete vm' do
@@ -23,12 +22,12 @@ module Bosh::Director
       end
 
       it 'should not raise error' do
-        allow(cloud).to receive(:delete_vm).with(vm_cid).and_raise(Bosh::Clouds::VMNotFound)
+        expect(cloud).to receive(:delete_vm).with(vm_cid).and_raise(Bosh::Clouds::VMNotFound)
         expect(job.perform).to eq 'vm vm_cid deleted'
       end
 
       it 'should raise error' do
-        allow(cloud).to receive(:delete_vm).with(vm_cid).and_raise(Exception)
+        expect(cloud).to receive(:delete_vm).with(vm_cid).and_raise(Exception)
         expect { job.perform }.to raise_error(Exception)
       end
     end
@@ -49,7 +48,7 @@ module Bosh::Director
         it_behaves_like 'vm delete'
 
         it 'should store event' do
-          allow(cloud).to receive(:delete_vm).with(vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
           event_1 = Bosh::Director::Models::Event.first
           expect(event_1.user).to eq(task.username)
@@ -72,7 +71,7 @@ module Bosh::Director
         end
 
         it 'should update instance' do
-          allow(cloud).to receive(:delete_vm).with(vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
           expect(BD::Models::Instance.all.first.vm_cid).to be_nil
         end
@@ -82,7 +81,7 @@ module Bosh::Director
         it_behaves_like 'vm delete'
 
         it 'should store event' do
-          allow(cloud).to receive(:delete_vm).with(vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
           event_1 = Bosh::Director::Models::Event.first
           expect(event_1.user).to eq(task.username)

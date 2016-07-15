@@ -9,7 +9,6 @@ module Support
         version: cloud_config_manifest['resource_pools'].first['stemcell']['version']
       )
 
-      allow(Bosh::Director::Config).to receive(:cloud).and_return(nil)
       Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
 
       release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])

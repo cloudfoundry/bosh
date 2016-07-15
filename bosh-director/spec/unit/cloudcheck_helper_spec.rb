@@ -31,9 +31,8 @@ module Bosh::Director
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
-    let(:fake_cloud) { instance_double('Bosh::Cloud') }
-    let(:vm_deleter) { Bosh::Director::VmDeleter.new(fake_cloud, logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(fake_cloud, logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
+    let(:vm_deleter) { Bosh::Director::VmDeleter.new(Config.cloud, logger, false, false) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(Config.cloud, logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:job_renderer) { instance_double(JobRenderer) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -45,15 +44,12 @@ module Bosh::Director
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
-      allow(fake_cloud).to receive(:create_vm)
-      allow(fake_cloud).to receive(:delete_vm)
       allow(Config).to receive(:current_job).and_return(update_job)
       fake_app
     end
 
     def fake_job_context
       test_problem_handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
-      allow(Config).to receive(:cloud).and_return(fake_cloud)
     end
 
     describe '#delete_vm' do

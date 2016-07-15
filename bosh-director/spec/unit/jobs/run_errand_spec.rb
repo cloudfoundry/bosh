@@ -29,13 +29,6 @@ module Bosh::Director
           )
         end
 
-        let(:cloud) {double('cloud')}
-
-        before do
-          allow(Config).to receive(:logger).with(no_args).and_return(logger)
-          allow(Config).to receive(:cloud) { cloud }
-        end
-
         before do
           allow(DeploymentPlan::PlannerFactory).to receive(:new).
               and_return(planner_factory)
@@ -102,7 +95,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(planner, deployment_job, cloud, logger).
+                  with(planner, deployment_job, Config.cloud, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do

@@ -11,7 +11,6 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(job).to receive(:task_cancelled?) { false }
-      allow(Config).to receive(:cloud)
       blobstore = double(:blobstore)
       blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
       app = instance_double(App, blobstores: blobstores)

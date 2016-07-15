@@ -26,21 +26,16 @@ module Bosh::Director
     describe '#perform' do
       let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
       let(:event_log) { EventLog::Log.new }
-      let(:cloud) { instance_double(Bosh::Cloud) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:release_1) { Models::Release.make(name: 'release-1') }
       let(:release_2) { Models::Release.make(name: 'release-2') }
-      let(:thread_pool) { instance_double(ThreadPool) }
+      let(:thread_pool) { ThreadPool.new }
       let(:config) { {'remove_all' => remove_all} }
-      before do
-        allow(ThreadPool).to receive(:new).and_return(thread_pool)
-        allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
-        allow(thread_pool).to receive(:process).and_yield
-      end
 
       before do
         fake_locks
-        allow(cloud).to receive(:delete_stemcell)
+        allow(Config.cloud).to receive(:delete_stemcell)
+        allow(Config.cloud).to receive(:delete_disk)
 
         stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
         Models::Stemcell.make(name: 'stemcell-b', version: '2')
@@ -57,7 +52,6 @@ module Bosh::Director
         allow(event_log).to receive(:begin_stage).and_return(stage)
         allow(stage).to receive(:advance_and_track).and_yield
 
-        allow(Config).to receive(:cloud).and_return(cloud)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
 
         allow(blobstore).to receive(:delete).with('blobstore-id-1')
@@ -105,8 +99,6 @@ module Bosh::Director
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 2).and_return(stage)
             expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 2).and_return(stage)
 
-            allow(cloud).to receive(:delete_disk)
-
             delete_artifacts = Jobs::CleanupArtifacts.new(config)
             result = delete_artifacts.perform
 
@@ -130,7 +122,6 @@ module Bosh::Director
               expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 4)
               expect(event_log).to receive(:begin_stage).with('Deleting releases', 4)
 
-              allow(cloud).to receive(:delete_disk)
               allow(blobstore).to receive(:delete).with('package_blob_id_1')
               delete_artifacts = Jobs::CleanupArtifacts.new(config)
               result = delete_artifacts.perform
@@ -149,8 +140,6 @@ module Bosh::Director
         it 'logs and returns the result' do
           expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
           expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
-
-          allow(cloud).to receive(:delete_disk)
 
           delete_artifacts = Jobs::CleanupArtifacts.new({})
           expect(thread_pool).not_to receive(:process)
@@ -174,8 +163,6 @@ module Bosh::Director
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
 
-            allow(cloud).to receive(:delete_disk)
-
             delete_artifacts = Jobs::CleanupArtifacts.new({})
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = delete_artifacts.perform
@@ -197,8 +184,6 @@ module Bosh::Director
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 2)
-
-            allow(cloud).to receive(:delete_disk)
 
             delete_artifacts = Jobs::CleanupArtifacts.new({})
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
@@ -235,8 +220,6 @@ module Bosh::Director
           it 'does not delete any stemcells and releases currently in use' do
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
-
-            allow(cloud).to receive(:delete_disk)
 
             delete_artifacts = Jobs::CleanupArtifacts.new({})
             expect(thread_pool).not_to receive(:process)
@@ -277,7 +260,7 @@ module Bosh::Director
           expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
         it 're-raises the error' do
-          allow(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
+          expect(Config.cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
 
           config = {'remove_all' => true}
           delete_artifacts = Jobs::CleanupArtifacts.new(config)

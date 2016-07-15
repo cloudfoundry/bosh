@@ -5,8 +5,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   before { allow(handler).to receive(:cloud).and_return(cloud) }
   before { allow(handler).to receive(:agent_client).with(instance.credentials, instance.agent_id).and_return(agent_client) }
 
-  let(:cloud) { instance_double('Bosh::Cloud', detach_disk: nil) }
-  before { allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud) }
+  let(:cloud) { Bosh::Director::Config.cloud }
 
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 

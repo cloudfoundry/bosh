@@ -306,7 +306,6 @@ module Bosh::Director
 
         def setup_global_config_and_stubbing
           Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
-          allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
         end
       end
     end

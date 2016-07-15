@@ -9,14 +9,11 @@ module Bosh::Director
     let(:job_options) { {} }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     before do
-      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40+00:00'))
     end
-
-    let(:cloud) { instance_double('Bosh::Cloud') }
 
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 

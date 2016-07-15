@@ -13,9 +13,8 @@ module Bosh::Director
     end
 
     before(:each) do
-      @cloud = instance_double('Bosh::Cloud')
+      @cloud = Config.cloud
       @agent = double(Bosh::Director::AgentClient)
-      allow(Config).to receive(:cloud).and_return(@cloud)
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
 
