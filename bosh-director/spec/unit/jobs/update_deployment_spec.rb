@@ -26,33 +26,29 @@ module Bosh::Director::Jobs
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
       let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
+      let(:planner_factory) do
+        instance_double(
+          'Bosh::Director::DeploymentPlan::PlannerFactory',
+          create_from_manifest: planner,
+        )
+      end
+      let(:planner) do
+        instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
+      end
+
+      let(:mock_manifest) do
+        Bosh::Director::Manifest.new(YAML.load(manifest_content), nil, nil)
+      end
 
       before do
         allow(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(compile_step)
         allow(Bosh::Director::DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
+        allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
       end
 
       context 'when all steps complete' do
-        before do
-          allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).
-              and_return(planner_factory)
-        end
-        let(:planner_factory) do
-          instance_double(
-            'Bosh::Director::DeploymentPlan::PlannerFactory',
-            create_from_manifest: planner,
-          )
-        end
-        let(:planner) do
-          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
-        end
-
-        let(:mock_manifest) do
-          Bosh::Director::Manifest.new(YAML.load(manifest_content), nil, nil)
-        end
-
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
@@ -78,19 +74,19 @@ module Bosh::Director::Jobs
         context 'when a cloud_config is passed in' do
           let(:cloud_config_id) { Bosh::Director::Models::CloudConfig.make.id }
           it 'uses the cloud config' do
-            expect(job.perform).to eq("/deployments/deployment-name")
+            expect(job.perform).to eq('/deployments/deployment-name')
           end
         end
 
         context 'when a runtime_config is passed in' do
           let(:runtime_config_id) { Bosh::Director::Models::RuntimeConfig.make.id }
           it 'uses the runtime config' do
-            expect(job.perform).to eq("/deployments/deployment-name")
+            expect(job.perform).to eq('/deployments/deployment-name')
           end
         end
 
         it 'performs an update' do
-          expect(job.perform).to eq("/deployments/deployment-name")
+          expect(job.perform).to eq('/deployments/deployment-name')
         end
 
         it 'cleans up the temporary manifest' do
@@ -98,7 +94,7 @@ module Bosh::Director::Jobs
           expect(File.exist? manifest_path).to be_falsey
         end
 
-        context "when the deployment makes no changes to existing vms" do
+        context 'when the deployment makes no changes to existing vms' do
           it 'will not run post-deploy scripts' do
             expect(job).to_not receive(:run_post_deploys)
 
@@ -106,7 +102,7 @@ module Bosh::Director::Jobs
           end
         end
 
-        context "when the deployment makes changes to existing vms" do
+        context 'when the deployment makes changes to existing vms' do
           let (:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
 
           it 'will run post-deploy scripts' do
@@ -160,7 +156,7 @@ module Bosh::Director::Jobs
               job.perform
             }.to change {
               Bosh::Director::Models::Event.count }.from(0).to(2)
-            expect(Bosh::Director::Models::Event.order(:id).last.context).to eq({"before" => {}, "after" => {"releases" => ["release/version-1"], "stemcells" => ["stemcell/version-1"]}})
+            expect(Bosh::Director::Models::Event.order(:id).last.context).to eq({'before' => {}, 'after' => {'releases' => ['release/version-1'], 'stemcells' => ['stemcell/version-1']}})
           end
         end
 
@@ -190,10 +186,43 @@ module Bosh::Director::Jobs
         end
       end
 
+      context 'when job is being dry-run' do
+        before do
+          expect(job).to receive(:with_deployment_lock).and_yield.ordered
+          allow(job_renderer).to receive(:render_job_instances)
+          allow(planner).to receive(:bind_models)
+          allow(planner).to receive(:instance_models).and_return([])
+          allow(planner).to receive(:validate_packages)
+          allow(planner).to receive(:instance_groups).and_return([deployment_job])
+        end
+
+        let(:options) { { 'dry_run' => true } }
+
+        it 'should exit before trying to create vms' do
+          expect(planner).not_to receive(:compile_packages)
+          expect(update_step).not_to receive(:perform)
+          expect(Bosh::Director::PostDeploymentScriptRunner).not_to receive(:run_post_deploys_after_deployment)
+          expect(notifier).not_to receive(:send_start_event)
+          expect(notifier).not_to receive(:send_end_event)
+
+          expect(job.perform).to eq('/deployments/deployment-name')
+        end
+
+        context 'when it fails the dry-run' do
+          it 'should not send an error event to the health monitor' do
+            expect(planner).to receive(:bind_models).and_raise
+            expect(notifier).not_to receive(:send_error_event)
+
+            expect{ job.perform }.to raise_error
+          end
+        end
+      end
+
       context 'when the first step fails' do
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
+          expect(notifier).to receive(:send_error_event).ordered
         end
 
         it 'does not compile or update' do
@@ -207,6 +236,22 @@ module Bosh::Director::Jobs
             job.perform
           }.to raise_error(Exception)
           expect(File.exist? manifest_path).to be_falsey
+        end
+      end
+    end
+
+    describe '#dry_run?' do
+      context 'when job is being dry run' do
+        let(:options) { {'dry_run' => true} }
+
+        it 'should return true ' do
+          expect(job.dry_run?).to be_truthy
+        end
+      end
+
+      context 'when job is NOT being dry run' do
+        it 'should return false' do
+          expect(job.dry_run?).to be_falsey
         end
       end
     end

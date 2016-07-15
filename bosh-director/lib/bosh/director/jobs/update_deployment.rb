@@ -21,6 +21,10 @@ module Bosh::Director
         @event_log = Config.event_log
       end
 
+      def dry_run?
+        true if @options['dry_run']
+      end
+
       def perform
         logger.info('Reading deployment manifest')
 
@@ -59,7 +63,7 @@ module Bosh::Director
 
         with_deployment_lock(@deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
-          @notifier.send_start_event
+          @notifier.send_start_event unless dry_run?
 
           deployment_plan = nil
 
@@ -78,23 +82,28 @@ module Bosh::Director
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
           render_job_templates(deployment_plan.jobs_starting_on_deploy)
-          deployment_plan.compile_packages
 
-          update_step(deployment_plan).perform
+          if dry_run?
+            return "/deployments/#{deployment_plan.name}"
+          else
+            deployment_plan.compile_packages
 
-          if check_for_changes(deployment_plan)
-            PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+            update_step(deployment_plan).perform
+
+            if check_for_changes(deployment_plan)
+              PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+            end
+
+            @notifier.send_end_event
+            logger.info('Finished updating deployment')
+            add_event(context, parent_id)
+
+            "/deployments/#{deployment_plan.name}"
           end
-
-          @notifier.send_end_event
-          logger.info('Finished updating deployment')
-          add_event(context, parent_id)
-
-          "/deployments/#{deployment_plan.name}"
         end
       rescue Exception => e
         begin
-          @notifier.send_error_event e
+          @notifier.send_error_event e unless dry_run?
         rescue Exception => e2
           # log the second error
         ensure

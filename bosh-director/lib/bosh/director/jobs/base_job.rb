@@ -28,6 +28,10 @@ module Bosh::Director
         @dns_manager ||= DnsManagerProvider.create
       end
 
+      def dry_run?
+        false
+      end
+
       # @return [Boolean] Has task been cancelled?
       def task_cancelled?
         return false if task_id.nil?

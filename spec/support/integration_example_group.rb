@@ -105,6 +105,7 @@ module IntegrationExampleGroup
     cmd += 'deploy'
     cmd += options.fetch(:no_redact, false) ? ' --no-redact' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''
+    cmd += options.fetch(:dry_run, false) ? ' --dry-run' : ''
 
     if options[:skip_drain]
       if options[:skip_drain].is_a?(Array)

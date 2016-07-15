@@ -114,6 +114,19 @@ module Bosh::Director
                 expect_redirect_to_queued_task(last_response)
               end
             end
+
+            context 'when doing a deploy with dry-run' do
+              it 'should queue a dry run task' do
+                expect(Models::Task.all).to be_empty
+
+                post '/?dry_run=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                expect_redirect_to_queued_task(last_response)
+
+                expect(Models::Task.count).to eq(1)
+                expect(Models::Task.first.description).to eq('create deployment (dry run)')
+              end
+            end
           end
 
           context 'accessing with invalid credentials' do
@@ -285,7 +298,7 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
 
-            put "/foo/jobs/dea", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+            put '/foo/jobs/dea', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -297,7 +310,7 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
 
-            put "/foo/jobs/dea/0?state=started", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+            put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
 
             expect(last_response.status).to eq(302)
           end
@@ -393,23 +406,23 @@ module Bosh::Director
             end
 
             context 'when there is a job instance' do
-              let(:path) { "/test_deployment/jobs/job_name/0" }
-              let(:drain_option) { "?skip_drain=true" }
-              let(:drain_target) { "job_name" }
+              let(:path) { '/test_deployment/jobs/job_name/0' }
+              let(:drain_option) { '?skip_drain=true' }
+              let(:drain_target) { 'job_name' }
               it_behaves_like 'skip_drain'
             end
 
             context 'when there is a  job' do
-              let(:path) { "/test_deployment/jobs/job_name?state=stop" }
-              let(:drain_option) { "&skip_drain=true" }
-              let(:drain_target) { "job_name" }
+              let(:path) { '/test_deployment/jobs/job_name?state=stop' }
+              let(:drain_option) { '&skip_drain=true' }
+              let(:drain_target) { 'job_name' }
               it_behaves_like 'skip_drain'
             end
 
             context 'when  deployment' do
-              let(:path) { "/test_deployment/jobs/*?state=stop" }
-              let(:drain_option) { "&skip_drain=true" }
-              let(:drain_target) { "*" }
+              let(:path) { '/test_deployment/jobs/*?state=stop' }
+              let(:drain_option) { '&skip_drain=true' }
+              let(:drain_target) { '*' }
               it_behaves_like 'skip_drain'
             end
           end
@@ -978,7 +991,7 @@ module Bosh::Director
 
             it 'returns 200 with an empty diff and an error message if the diffing fails' do
               allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :resolve_aliases)
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :diff).and_raise("Oooooh crap")
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :diff).and_raise('Oooooh crap')
 
               post '/fake-dep-name/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 

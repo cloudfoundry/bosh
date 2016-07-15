@@ -342,6 +342,7 @@ module Bosh::Director
         end
 
         options = {}
+        options['dry_run'] = true if params['dry_run'] == 'true'
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         options.merge!('scopes' => token_scopes)

@@ -2,6 +2,49 @@ require 'spec_helper'
 require 'fileutils'
 
 describe 'deploy', type: :integration do
+  context 'with dry run flag' do
+    with_reset_sandbox_before_each
+
+    context 'when there are template errors' do
+      it 'prints all template evaluation errors and does not register an event' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'] = [
+          {
+            'name' => 'foobar',
+            'templates' => ['name' => 'foobar_with_bad_properties'],
+            'resource_pool' => 'a',
+            'instances' => 1,
+            'networks' => [{
+              'name' => 'a',
+            }],
+            'properties' => {},
+          }
+        ]
+
+        output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true, dry_run: true)
+
+        expect(output).to include <<-EOF
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'foobar'. Errors are:
+     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+        EOF
+
+        expect(bosh_runner.run('events')).not_to include 'create'
+      end
+    end
+
+    context 'when there are no errors' do
+      it 'returns some encouraging message but does not alter deployment' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+        deploy_from_scratch(manifest_hash: manifest_hash, dry_run: true)
+
+        expect(director.vms).to eq ([])
+      end
+    end
+  end
 
   context 'when dns is enabled' do
     with_reset_sandbox_before_each

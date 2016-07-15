@@ -18,7 +18,11 @@ module Bosh::Director
       def create_deployment(username, deployment_manifest_file_path, cloud_config, runtime_config, deployment, options = {})
         cloud_config_id = cloud_config.nil? ? nil : cloud_config.id
         runtime_config_id = runtime_config.nil? ? nil : runtime_config.id
-        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, 'create deployment', [deployment_manifest_file_path, cloud_config_id, runtime_config_id, options], deployment)
+
+        description = 'create deployment'
+        description += ' (dry run)' if options['dry_run']
+
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [deployment_manifest_file_path, cloud_config_id, runtime_config_id, options], deployment)
       end
 
       def delete_deployment(username, deployment, options = {})

@@ -468,14 +468,6 @@ describe Bosh::Cli::Client::Director do
       @director.delete_release('zb', :force => true)
     end
 
-    it 'deploys' do
-      expect(@director).to receive(:request_and_track).
-        with(:post, '/deployments',
-             { :content_type => 'text/yaml', :payload => 'manifest' }).
-        and_return(true)
-      @director.deploy('manifest')
-    end
-
     it 'changes job state' do
       expect(@director).to receive(:request_and_track).
         with(:put, '/deployments/foo/jobs/dea?state=stopped',
@@ -506,6 +498,26 @@ describe Bosh::Cli::Client::Director do
             { :content_type => 'text/yaml', :payload => 'manifest' }).
           and_return(true)
         @director.change_job_state('foo', 'manifest', 'dea', 0, 'detached', max_in_flight: 77)
+      end
+    end
+
+    describe '#deploy' do
+      it "hits director's 'deployment' endpoint"  do
+        expect(@director).to receive(:request_and_track).
+          with(:post, '/deployments',
+            { :content_type => 'text/yaml', :payload => 'manifest' }).
+          and_return(true)
+        @director.deploy('manifest')
+      end
+
+      context 'with dry-run' do
+        it 'passes in a query param to the deployments API' do
+          expect(@director).to receive(:request_and_track).
+            with(:post, '/deployments?dry_run=true',
+              { :content_type => 'text/yaml', :payload => 'manifest' }).
+            and_return(true)
+          @director.deploy('manifest', {:dry_run => true})
+        end
       end
     end
 

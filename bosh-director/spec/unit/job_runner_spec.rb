@@ -101,6 +101,62 @@ module Bosh::Director
       expect(task.state).to eq('error')
       expect(task.result).to eq('Oops')
     end
+
+    context 'when a job is being dry-run' do
+      let(:sample_job_class) do
+        Class.new(Jobs::BaseJob) do
+          def dry_run?; true; end
+
+          def perform
+            Bosh::Director::Models::Dns::Domain.make
+            Bosh::Director::Models::Instance.find(job: 'test').update(index: 2)
+            'foo'
+          end
+        end
+      end
+
+      it 'should not alter the state of the database' do
+        expect(Bosh::Director::Models::Dns::Domain.all).to be_empty
+        Bosh::Director::Models::Instance.make(job: 'test', index: 1)
+
+        runner = JobRunner.new(sample_job_class, 42)
+        runner.run
+
+        expect(Bosh::Director::Models::Dns::Domain.all).to be_empty
+        expect(Bosh::Director::Models::Instance.find(job: 'test').index).to eq 1
+
+        task.reload
+        expect(task.state).to eq('done')
+        expect(task.result).to eq('foo')
+      end
+
+      context 'when there is no dns' do
+        let(:sample_job_class) do
+          Class.new(Jobs::BaseJob) do
+            def dry_run?; true; end
+
+            def perform
+              Bosh::Director::Models::Instance.find(job: 'test').update(index: 2)
+              'foo'
+            end
+          end
+        end
+
+        it 'should not alter the state of the database' do
+          Bosh::Director::Config.dns_db = nil
+          Bosh::Director::Models::Instance.make(job: 'test', index: 1)
+
+          runner = JobRunner.new(sample_job_class, 42)
+          runner.run
+
+          expect(Bosh::Director::Models::Instance.find(job: 'test').index).to eq 1
+
+          task.reload
+          expect(task.state).to eq('done')
+          expect(task.result).to eq('foo')
+        end
+      end
+    end
   end
 
   describe TaskCheckPointer do

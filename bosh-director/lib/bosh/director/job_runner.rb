@@ -91,7 +91,21 @@ module Bosh::Director
       @task.checkpoint_time = Time.now
       @task.save
 
-      result = job.perform
+      result = nil
+      if job.dry_run?
+        Bosh::Director::Config.db.transaction(:rollback => :always) do
+          if Bosh::Director::Config.dns_db
+            Bosh::Director::Config.dns_db.transaction(:rollback => :always) do
+              result = job.perform
+            end
+          else
+            result = job.perform
+          end
+        end
+      else
+        result = job.perform
+      end
+
 
       @task_logger.info('Done')
       finish_task(:done, result)
