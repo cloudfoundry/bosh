@@ -2,7 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::SnapshotManager do
-    let(:cloud) { instance_double('Bosh::Cloud') }
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
 
@@ -11,8 +10,6 @@ module Bosh::Director
     let(:options) { { foo: 'bar' } }
 
     before do
-      allow(Config).to receive_messages(cloud: cloud)
-
       # instance 1: one disk with two snapshots
       @instance = Models::Instance.make(vm_cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment, job: 'job', index: 0, uuid: '12abdc456')
 
@@ -118,15 +115,9 @@ module Bosh::Director
     end
 
     describe 'class methods' do
-      let(:config) { YAML.load_file(asset('test-director-config.yml')) }
-
-      before do
-        Config.configure(config)
-        allow(Config).to receive(:enable_snapshots).and_return(true)
-      end
-
       describe '#delete_snapshots' do
         it 'deletes the snapshots' do
+          Config.enable_snapshots = true
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
 
@@ -169,6 +160,7 @@ module Bosh::Director
         end
 
         it 'takes the snapshot' do
+          Config.enable_snapshots = true
           expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
 
           expect {
@@ -178,6 +170,7 @@ module Bosh::Director
 
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
+            Config.enable_snapshots = true
             expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
@@ -188,7 +181,7 @@ module Bosh::Director
 
         context 'when snapshotting is disabled' do
           it 'does nothing' do
-            allow(Config).to receive(:enable_snapshots).and_return(false)
+            Config.enable_snapshots = false
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end

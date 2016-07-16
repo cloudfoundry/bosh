@@ -84,10 +84,8 @@ module Bosh::Director
         end
       end
 
-      before {allow(Config).to receive(:director_pool).and_return('local.hostname') }
-
       it 'set specific queue for the job' do
-        expect(db_job.queue_name).to eq('local.hostname')
+        expect(db_job.queue_name).to eq(Socket.gethostname)
       end
     end
   end

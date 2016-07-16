@@ -14,13 +14,11 @@ module Bosh::Director
     let(:task) { Models::Task.make(id: 42) }
 
     let(:tasks_dir) { Dir.mktmpdir }
-    before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
+    before { Config.base_dir = tasks_dir }
     after { FileUtils.rm_rf(tasks_dir) }
 
     let(:task_dir) { File.join(tasks_dir, 'tasks', task.id.to_s) }
     before { FileUtils.mkdir_p(task_dir) }
-
-    before { allow(Config).to receive(:cloud_options).and_return({}) }
 
     def make_runner(job_class, task_id)
       JobRunner.new(job_class, task_id)

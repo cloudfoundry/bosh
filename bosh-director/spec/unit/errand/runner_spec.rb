@@ -36,7 +36,7 @@ module Bosh::Director
         before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
 
         context 'when agent is able to run errands' do
-          before { allow(Config).to receive(:result).and_return(result_file) }
+          before { Config.result = result_file }
           let(:result_file) { instance_double('File', write: nil) }
 
           let(:agent_task_result) do

@@ -9,8 +9,6 @@ module Bosh::Director
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
-      @cloud = instance_double('Bosh::Cloud')
-      allow(Config).to receive(:cloud).and_return(@cloud)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
     end
 
@@ -34,7 +32,7 @@ module Bosh::Director
           agent = double('agent')
           expect(agent).to receive(:list_disk).and_return([])
 
-          expect(@cloud).to receive(:detach_disk).exactly(1).times
+          expect(Config.cloud).to receive(:detach_disk).exactly(1).times
 
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 

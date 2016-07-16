@@ -87,7 +87,7 @@ module Bosh::Director
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
 
-          expect(Bosh::Director::Config.logger).to receive(:error) do |message|
+          expect(logger).to receive(:error) do |message|
             expect(message).to include("#{instance1.job}/#{instance1.index}")
             expect(message).to include(instance1.vm_cid)
             expect(message).to include('a helpful message')

@@ -5,7 +5,7 @@ module Bosh::Director
     let(:task_id) { 1 }
     let(:tasks_dir) { Dir.mktmpdir }
     let(:task_dir) { File.join(tasks_dir, 'tasks', task_id.to_s) }
-    before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
+    before { Config.base_dir = tasks_dir }
 
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log', log_error: nil) }
     before { allow(EventLog::Log).to receive(:new).with("#{task_dir}/event").
@@ -14,8 +14,6 @@ module Bosh::Director
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
     before { allow(TaskResultFile).to receive(:new).with("#{task_dir}/result").
         and_return(result_file) }
-
-    before { allow(Config).to receive(:cloud_options).and_return({}) }
 
     describe 'described_class.job_type' do
       it 'should complain that the method is not implemented' do
