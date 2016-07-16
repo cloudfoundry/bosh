@@ -4,8 +4,9 @@ require 'bosh/director/models/director_attribute'
 
 module Bosh::Director::Models
   describe DirectorAttribute do
-    describe '.find_or_create_uuid' do
+    before { described_class.dataset.delete }
 
+    describe '.find_or_create_uuid' do
       context 'when uuid is found' do
         it 'returns uuid value' do
           described_class.create(name: 'uuid', value: 'fake-uuid')

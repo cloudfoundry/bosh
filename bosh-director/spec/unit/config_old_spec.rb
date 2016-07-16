@@ -6,8 +6,16 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { SpecHelper.spec_get_director_config }
-
+  let(:test_config) do
+    config = SpecHelper.spec_get_director_config
+    config.merge!(
+        {'compiled_package_cache' =>
+             {'provider' => 'local',
+              'options' => {'blobstore_path' => '/path/to/some/bucket'}
+             }
+        })
+    config
+  end
 
   context 'max_tasks' do
     it 'can set max_tasks in config' do

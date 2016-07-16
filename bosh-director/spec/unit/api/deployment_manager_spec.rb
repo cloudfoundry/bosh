@@ -8,7 +8,6 @@ module Bosh::Director
     let(:options) { {foo: 'bar'} }
 
     before do
-      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
       allow(Config).to receive(:base_dir).and_return('/tmp')
     end
 

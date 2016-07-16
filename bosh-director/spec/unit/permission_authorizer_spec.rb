@@ -2,9 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe PermissionAuthorizer do
-    before do
-      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
-    end
     let(:config) { double(:config, :uuid => 'fake-director-uuid') }
     subject(:app) { Bosh::Director::PermissionAuthorizer.new(Api::DirectorUUIDProvider.new(config)) }
 
