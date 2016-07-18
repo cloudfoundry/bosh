@@ -29,7 +29,7 @@ module Bosh
           end
 
           @director_uri        = URI.parse(director_uri)
-          @director_ip         = Resolv.getaddresses(@director_uri.host).last
+          @director_ip         = @director_uri.host
           @scheme              = @director_uri.scheme
           @port                = @director_uri.port
           @credentials         = credentials
