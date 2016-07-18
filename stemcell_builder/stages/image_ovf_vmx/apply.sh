@@ -48,7 +48,7 @@ vm_guestos=ubuntu-64
 cat > $ovf/$vm_hostname.vmx <<EOS
 config.version = "8"
 virtualHW.version = 8
-floppy0.present = "true"
+floppy0.present = "FALSE"
 nvram = "nvram"
 deploymentPlatform = "windows"
 virtualHW.productCompatibility = "hosted"
@@ -74,8 +74,6 @@ ide0:0.present = "true"
 ide0:0.clientDevice = "TRUE"
 ide0:0.deviceType = "cdrom-raw"
 ide0:0.startConnected = "FALSE"
-floppy0.startConnected = "false"
-floppy0.clientDevice = "true"
 
 guestOSAltName = "$vm_guestos ($vm_arch)"
 guestOS = "$vm_guestos"
