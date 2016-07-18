@@ -385,7 +385,7 @@ module Bosh
 
       context 'adding local DNS records' do
         it 'should call create_local_dns_record to add UUID based DNS record' do
-          expect(cloud).to receive(:create_vm).with(
+          expect(Config.cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
           ).and_return('new-vm-cid')
 
@@ -408,7 +408,7 @@ module Bosh
 
         context 'validating instance.spec' do
           before do
-            expect(cloud).to receive(:create_vm).with(
+            expect(Config.cloud).to receive(:create_vm).with(
                 kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
             ).and_return('new-vm-cid')
 
