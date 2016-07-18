@@ -7,7 +7,7 @@ check_param RUBY_VERSION
 
 echo "Starting $DB..."
 case "$DB" in
-  mysql)
+  mysql2)
     mv /var/lib/mysql /var/lib/mysql-src
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=256M tmpfs /var/lib/mysql

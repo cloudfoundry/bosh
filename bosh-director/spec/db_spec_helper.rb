@@ -25,7 +25,7 @@ module DBSpecHelper
         when 'postgresql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432)
-        when 'mysql'
+        when 'mysql2'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger)
         when 'sqlite'
