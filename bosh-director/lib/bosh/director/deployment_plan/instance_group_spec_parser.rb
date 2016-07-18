@@ -16,8 +16,9 @@ module Bosh::Director
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [DeploymentPlan::Job] Job as build from job_spec
-      def parse(job_spec, options = {})
+      def parse(job_spec, uninterpolated_job_spec, options = {})
         @job_spec = job_spec
+        @uninterpolated_job_spec = uninterpolated_job_spec
         @job = InstanceGroup.new(@logger)
 
         parse_name
@@ -187,6 +188,8 @@ module Bosh::Director
               template.add_link_from_manifest(@job.name, 'consumes', link_name, source)
             end
 
+            # TODO: here we need to do the same operation on the uninterpolated
+
             if template_spec.has_key?("properties")
               template.add_template_scoped_properties(
                   safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
@@ -257,8 +260,10 @@ module Bosh::Director
       def parse_properties
         # Manifest can contain global and per-job properties section
         job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true, :default => {})
+        uninterpolated_job_properties = safe_property(@uninterpolated_job_spec, "properties", :class => Hash, :optional => true, :default => {})
 
         @job.all_properties = @deployment.properties.recursive_merge(job_properties)
+        @job.all_uninterpolated_properties = @deployment.uninterpolated_properties.recursive_merge(uninterpolated_job_properties)
 
         mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
 

@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
-  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
+  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, uninterpolated_instance_group_spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
+  let(:uninterpolated_instance_group_spec) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
@@ -99,6 +100,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
@@ -153,6 +155,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
@@ -242,6 +245,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
       job.bind_properties
@@ -260,7 +264,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#validate_package_names_do_not_collide!' do
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
-    before { allow(plan).to receive(:properties).and_return({}) }
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
+    end
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
     let(:foo_template_model) { instance_double('Bosh::Director::Models::Template') }
@@ -400,6 +407,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)
       allow(plan).to receive(:properties).with(no_args).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
     end
 
     context "when a template has 'logs'" do
@@ -573,6 +581,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'should sort instance plans on adding them' do
       allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 

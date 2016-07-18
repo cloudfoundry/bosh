@@ -154,6 +154,33 @@ module Bosh::Director
           manifest_hash.delete('properties')
           expect(parsed_deployment.properties).to eq({})
         end
+
+        context 'when config server is enabled' do
+          let(:uninterpolated_manifest_hash) do
+            {
+              'name' => 'deployment-name',
+              'releases' => [],
+              'networks' => [{ 'name' => 'network-name' }],
+              'compilation' => {},
+              'update' => {},
+              'resource_pools' => [],
+              'properties' => {
+                'foo' => '((foo_placeholder))',
+                'bar' => '((bar_placeholder))',
+              }
+            }
+          end
+
+          before do
+            allow(deployment).to receive(:uninterpolated_manifest_text).and_return(uninterpolated_manifest_hash)
+            manifest_hash.merge!('properties' => { 'foo' => 'foo_value', 'bar' => 'bar_value' })
+          end
+
+          it 'parses uninterpolated properties' do
+            expect(parsed_deployment.properties).to eq({'foo' => 'foo_value', 'bar' => 'bar_value'})
+            expect(parsed_deployment.uninterpolated_properties).to eq({'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))'})
+          end
+        end
       end
 
       describe 'releases/release key' do
@@ -344,11 +371,11 @@ module Bosh::Director
 
             it 'delegates to Job to parse job specs' do
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect(parsed_deployment.instance_groups).to eq([job1, job2])
@@ -358,11 +385,11 @@ module Bosh::Director
               let(:options) { { 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, options)
                   .and_return(job1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
                 parsed_deployment.instance_groups
@@ -373,11 +400,11 @@ module Bosh::Director
               let(:options) { { 'max_in_flight'=> '42' } }
               it "replaces max_in_flight value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
+                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, options)
                    .and_return(job1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
                 parsed_deployment.instance_groups
@@ -386,11 +413,11 @@ module Bosh::Director
 
             it 'allows to look up job by name' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
 
@@ -423,11 +450,11 @@ module Bosh::Director
 
             it 'raises an error' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect {
