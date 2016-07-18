@@ -37,7 +37,7 @@ case "$DB" in
     echo "Using sqlite"
     ;;
   *)
-    echo "Usage: DB={mysql|postgresql|sqlite} $0 {commands}"
+    echo "Usage: DB={mysql2|postgresql|sqlite} $0 {commands}"
     exit 1
 esac
 
