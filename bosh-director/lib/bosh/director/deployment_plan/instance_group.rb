@@ -76,7 +76,6 @@ module Bosh::Director
       attr_accessor :availability_zones
 
       attr_accessor :all_properties
-      attr_accessor :all_uninterpolated_properties
 
       attr_accessor :networks
 
@@ -88,9 +87,9 @@ module Bosh::Director
 
       attr_accessor :did_change
 
-      def self.parse(plan, job_spec, uninterpolated_instance_group_spec, event_log, logger, parse_options = {})
+      def self.parse(plan, job_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
-        parser.parse(job_spec, uninterpolated_instance_group_spec, parse_options)
+        parser.parse(job_spec, parse_options)
       end
 
       def initialize(logger)
@@ -99,7 +98,6 @@ module Bosh::Director
         @release = nil
         @templates = []
         @all_properties = nil # All properties available to instance group
-        @all_uninterpolated_properties = nil # All uninterpolated properties available to instance group
         @properties = nil # Actual instance group properties
 
         @instances = []
@@ -260,8 +258,6 @@ module Bosh::Director
       # property definitions in DB).
       def bind_properties
         @properties = extract_template_properties(@all_properties)
-      # TODO:  revisit
-      # @uninterpolated_properties = extract_template_properties(@all_uniterpolated_properties)
       end
 
       def validate_package_names_do_not_collide!

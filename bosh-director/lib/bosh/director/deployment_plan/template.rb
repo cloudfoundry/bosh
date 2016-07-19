@@ -14,7 +14,6 @@ module Bosh::Director
 
       attr_reader :link_infos
       attr_reader :template_scoped_properties
-      attr_reader :template_scoped_uninterpolated_properties
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
@@ -33,7 +32,6 @@ module Bosh::Director
         # in multiple deployment jobs, the properties will not be shared across
         # jobs
         @template_scoped_properties = {}
-        @template_scoped_uninterpolated_properties = {}
       end
 
       # Looks up template model and its package models in DB

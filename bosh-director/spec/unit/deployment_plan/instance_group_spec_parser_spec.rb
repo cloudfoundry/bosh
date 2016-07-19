@@ -10,7 +10,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       'Bosh::Director::DeploymentPlan::Planner',
       model: Bosh::Director::Models::Deployment.make,
       properties: {},
-      uninterpolated_properties: {},
       update: nil,
       name: 'fake-deployment',
       networks: [network],
@@ -30,15 +29,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
               'version' => 1
             })
         )
-      allow(deployment_plan).to receive(:disk_type).and_return(disk_type)
-      allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
-      allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
     end
     let(:resource_pool_env) { {'key' => 'value'} }
     let(:resource_pool) do
       instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: resource_pool_env)
     end
     let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType') }
+    before { allow(deployment_plan).to receive(:disk_type).and_return(disk_type) }
+
+    before { allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new) }
+    before { allow(deployment_plan).to receive(:release).and_return(job_rel_ver) }
     let(:job_rel_ver) do
       instance_double(
         'Bosh::Director::DeploymentPlan::ReleaseVersion',
@@ -57,20 +57,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       }
     end
 
-    let(:uninterpolated_job_spec) do
-      {
-        'name'      => 'fake-job-name',
-        'jobs' => [],
-        'release'   => 'fake-release-name',
-        'resource_pool' => 'fake-resource-pool-name',
-        'instances' => 1,
-        'networks'  => [{'name' => 'fake-network-name'}],
-      }
-    end
-
     describe 'name key' do
       it 'parses name' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.name).to eq('fake-job-name')
       end
     end
@@ -79,14 +68,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       Bosh::Director::DeploymentPlan::InstanceGroup::VALID_LIFECYCLE_PROFILES.each do |profile|
         it "is able to parse '#{profile}' as lifecycle profile" do
           job_spec.merge!('lifecycle' => profile)
-          job = parser.parse(job_spec, uninterpolated_job_spec)
+          job = parser.parse(job_spec)
           expect(job.lifecycle).to eq(profile)
         end
       end
 
       it "defaults lifecycle profile to 'service'" do
         job_spec.delete('lifecycle')
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.lifecycle).to eq('service')
       end
 
@@ -94,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         job_spec['lifecycle'] = 'unknown'
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobInvalidLifecycle,
           "Invalid lifecycle 'unknown' for 'fake-job-name', valid lifecycle profiles are: service, errand",
@@ -104,7 +93,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
     describe 'release key' do
       it 'parses release' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.release).to eq(job_rel_ver)
       end
 
@@ -115,7 +104,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .and_return(nil)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownRelease,
           "Instance group 'fake-job-name' references an unknown release 'unknown-release-name'",
@@ -132,7 +121,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "")
             allow(deployment_plan).to receive(:releases).and_return([deployment_release])
 
-            job = parser.parse(job_spec, uninterpolated_job_spec)
+            job = parser.parse(job_spec)
             expect(job.release).to eq(deployment_release)
           end
         end
@@ -143,7 +132,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
             allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: ""), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name:"")])
 
-            job = parser.parse(job_spec, uninterpolated_job_spec)
+            job = parser.parse(job_spec)
             expect(job.release).to be_nil
           end
         end
@@ -166,7 +155,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .with('fake-template-name')
           .and_return(template)
 
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.templates).to eq([template])
       end
 
@@ -183,7 +172,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                               .and_return(template1)
 
         expect(event_log).not_to receive(:warn_deprecated)
-        parser.parse(job_spec, uninterpolated_job_spec)
+        parser.parse(job_spec)
       end
 
       it 'parses multiple templates' do
@@ -206,7 +195,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .with('fake-template2-name')
           .and_return(template2)
 
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.templates).to eq([template1, template2])
       end
 
@@ -230,7 +219,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                                .with('fake-template2-name')
                                .and_return(template2)
 
-        parser.parse(job_spec, uninterpolated_job_spec)
+        parser.parse(job_spec)
         expect(event_log).to have_received(:warn_deprecated).with(
           "Please use 'templates' when specifying multiple templates for a job. "\
           "'template' for multiple templates will soon be unsupported."
@@ -250,7 +239,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect(deployment_plan).to receive(:releases).and_return(fake_releases)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobMissingRelease,
           "Cannot tell what release job 'fake-job-name' is supposed to use, please explicitly specify one",
@@ -303,7 +292,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             end
 
             it 'sets job template from release specified in a hash' do
-              job = parser.parse(job_spec, uninterpolated_job_spec)
+              job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
             end
           end
@@ -337,7 +326,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             end
 
             it 'sets job template from release specified in a hash' do
-              job = parser.parse(job_spec, uninterpolated_job_spec)
+              job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
             end
           end
@@ -375,7 +364,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                 .with('fake-template-name')
                 .and_return(template)
 
-              job = parser.parse(job_spec, uninterpolated_job_spec)
+              job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
             end
           end
@@ -389,7 +378,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
               it 'raises an error because there is not default release specified' do
                 expect {
-                  parser.parse(job_spec, uninterpolated_job_spec)
+                  parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
                   "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
@@ -410,7 +399,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                   .with('fake-template-name')
                   .and_return(template)
 
-                job = parser.parse(job_spec, uninterpolated_job_spec)
+                job = parser.parse(job_spec)
                 expect(job.templates).to eq([template])
               end
             end
@@ -420,7 +409,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
               it 'raises an error because there is not default release specified' do
                 expect {
-                  parser.parse(job_spec, uninterpolated_job_spec)
+                  parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
                   "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
@@ -446,7 +435,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
               .and_return(nil)
 
             expect {
-              parser.parse(job_spec, uninterpolated_job_spec)
+              parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobUnknownRelease,
               "Job 'fake-template-name' (instance group 'fake-job-name') references an unknown release 'fake-template-release'",
@@ -487,7 +476,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           it 'raises an error because job dirs on a VM will become ambiguous' do
             job_spec['name'] = 'fake-job-name'
             expect {
-              parser.parse(job_spec, uninterpolated_job_spec)
+              parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobInvalidTemplates,
               "Colocated job 'fake-template-name1' is already added to the instance group 'fake-job-name'",
@@ -539,7 +528,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                                .and_return(template2)
 
             job_spec['name'] = 'fake-job-name'
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           end
         end
 
@@ -547,7 +536,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           it 'raises an error because that is how template will be found' do
             job_spec[keyword] = [{}]
             expect {
-              parser.parse(job_spec, uninterpolated_job_spec)
+              parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::ValidationMissingField,
               "Required property 'name' was not specified in object ({})",
@@ -559,7 +548,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           it 'raises an error' do
             job_spec[keyword] = ['not-a-hash']
             expect {
-              parser.parse(job_spec, uninterpolated_job_spec)
+              parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::ValidationInvalidType,
               %{Object ("not-a-hash") did not match the required type 'Hash'},
@@ -608,7 +597,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             expect(template).to receive(:add_template_scoped_properties)
                                     .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
 
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           end
         end
 
@@ -653,7 +642,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             allow(template).to receive(:add_template_scoped_properties)
                                     .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
 
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           end
         end
       end
@@ -662,7 +651,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'raises an error' do
           job_spec[keyword] = 'not-an-array'
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::ValidationInvalidType,
             %{Property '#{keyword}' value ("not-an-array") did not match the required type 'Array'},
@@ -690,7 +679,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         before { allow(event_log).to receive(:warn_deprecated) }
 
         it 'raises' do
-          expect { parser.parse(job_spec, uninterpolated_job_spec) }.to raise_error(
+          expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::JobInvalidTemplates,
             "Instance group 'fake-job-name' specifies both template and templates keys, only one is allowed"
           )
@@ -705,7 +694,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         before { allow(event_log).to receive(:warn_deprecated) }
 
         it 'raises' do
-          expect { parser.parse(job_spec, uninterpolated_job_spec) }.to raise_error(
+          expect { parser.parse(job_spec) }.to raise_error(
                                                    Bosh::Director::JobInvalidTemplates,
                                                    "Instance group 'fake-job-name' specifies both templates and jobs keys, only one is allowed"
                                                )
@@ -720,7 +709,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         end
 
         it 'raises' do
-          expect { parser.parse(job_spec, uninterpolated_job_spec) }.to raise_error(
+          expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::ValidationMissingField,
              "Instance group 'fake-job-name' does not specify template, templates, or jobs keys, one is required"
           )
@@ -731,20 +720,20 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     describe 'persistent_disk key' do
       it 'parses persistent disk if present' do
         job_spec['persistent_disk'] = 300
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.persistent_disk_type.disk_size).to eq(300)
       end
 
       it 'allows persistent disk to be nil' do
         job_spec.delete('persistent_disk')
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.persistent_disk_type).to eq(nil)
       end
 
       it 'raises an error if the disk size is less than zero' do
         job_spec['persistent_disk'] = -300
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobInvalidPersistentDisk,
           "Instance group 'fake-job-name' references an invalid persistent disk size '-300'"
@@ -759,7 +748,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .with('fake-disk-pool-name')
           .and_return(disk_type)
 
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.persistent_disk_type).to eq(disk_type)
       end
 
@@ -770,7 +759,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .and_return(nil)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownDiskType,
           "Instance group 'fake-job-name' references an unknown disk type 'unknown-disk-pool'"
@@ -785,7 +774,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                                      .with('fake-disk-pool-name')
                                      .and_return(disk_type)
 
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.persistent_disk_type).to eq(disk_type)
       end
 
@@ -796,7 +785,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                                      .and_return(nil)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobUnknownDiskType,
             "Instance group 'fake-job-name' references an unknown disk pool 'unknown-disk-pool'"
@@ -810,7 +799,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
             "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk pool 'fake-disk-pool-name'"
@@ -821,7 +810,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         job_spec['persistent_disk_type'] = 'fake-disk-pool-name'
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
             "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk type 'fake-disk-pool-name'"
@@ -832,7 +821,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
             "Instance group 'fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
@@ -847,7 +836,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .with('fake-resource-pool-name')
           .and_return(resource_pool)
 
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.vm_type.name).to eq('fake-vm-type')
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.name).to eq('fake-stemcell-name')
@@ -865,7 +854,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
         it 'complains' do
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobAmbiguousEnv,
               "Instance group 'fake-job-name' and resource pool: 'fake-resource-pool-name' both declare env properties"
@@ -883,7 +872,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         end
 
         it 'should assign the job env to the job' do
-          job = parser.parse(job_spec, uninterpolated_job_spec)
+          job = parser.parse(job_spec)
           expect(job.env.spec).to eq({'job' => 'env'})
         end
       end
@@ -895,7 +884,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           .and_return(nil)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownResourcePool,
           "Instance group 'fake-job-name' references an unknown resource pool 'unknown-resource-pool'"
@@ -934,7 +923,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       end
 
       it 'parses vm type and stemcell' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.vm_type.name).to eq('fake-vm-type')
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.alias).to eq('fake-stemcell')
@@ -948,7 +937,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         end
 
         it 'errors out' do
-          expect{parser.parse(job_spec, uninterpolated_job_spec)}.to raise_error(
+          expect{parser.parse(job_spec)}.to raise_error(
               Bosh::Director::JobUnknownVmType,
               "Instance group 'fake-job-name' references an unknown vm type 'fake-vm-type'"
             )
@@ -961,7 +950,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         end
 
         it 'errors out' do
-          expect{parser.parse(job_spec, uninterpolated_job_spec)}.to raise_error(
+          expect{parser.parse(job_spec)}.to raise_error(
               Bosh::Director::JobUnknownStemcell,
               "Instance group 'fake-job-name' references an unknown stemcell 'fake-stemcell'"
             )
@@ -1025,7 +1014,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'parses the vm_extension' do
           job_spec['vm_extensions'] = ['vm_extension_1']
 
-          job = parser.parse(job_spec, uninterpolated_job_spec)
+          job = parser.parse(job_spec)
           expect(job.vm_extensions.size).to eq(1)
           expect(job.vm_extensions.first.name).to eq('vm_extension_1')
           expect(job.vm_extensions.first.cloud_properties).to eq({'property' => 'value'})
@@ -1044,46 +1033,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         allow(deployment_plan).to receive(:properties).and_return(props)
 
         expect {
-          parser.parse(job_spec, uninterpolated_job_spec)
+          parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobInvalidPropertyMapping,
         )
-      end
-
-      context 'when uninterpolated values are around' do
-        before do
-          props = { 'foo' => 'foo_value', 'bar' => 'bar_value', 'length' => 5 }
-          job_spec['properties'] = props
-
-          uninterpolated_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))', 'length' => '((length_placeholder))' }
-          uninterpolated_job_spec['properties'] = uninterpolated_props
-        end
-
-        it 'sets the instance goups uninterpolated properties' do
-          intsance_group = parser.parse(job_spec, uninterpolated_job_spec)
-          expect(intsance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_placeholder))"})
-        end
-
-        context 'when global properties exist' do
-          before do
-            uninterpolated_global_props = { 'foo' => '((foo_global_placeholder))', 'bar' => '((bar_global_placeholder))', 'length' => '((length_global_placeholder))' }
-            allow(deployment_plan).to receive(:uninterpolated_properties).and_return(uninterpolated_global_props)
-
-            uninterpolated_instance_group_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' }
-            uninterpolated_job_spec['properties'] = uninterpolated_instance_group_props
-          end
-
-          it 'merges instance group uninterpolated properties with global uninterpolated properties correctly' do
-            intsance_group = parser.parse(job_spec, uninterpolated_job_spec)
-            expect(intsance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_global_placeholder))"})
-          end
-        end
       end
     end
 
     describe 'instances key' do
       it 'parses out desired instances' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
 
         expect(job.desired_instances).to eq([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(job, deployment_plan),
@@ -1098,7 +1057,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'raises an exception because if a job uses static ips all instances must have a static ip' do
           job_spec['instances'] = 4
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::JobNetworkInstanceIpMismatch,
             "Instance group 'fake-job-name' has 4 instances but was allocated 3 static IPs",
@@ -1110,7 +1069,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'raises an exception because the extra ip is wasted' do
           job_spec['instances'] = 2
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::JobNetworkInstanceIpMismatch,
             "Instance group 'fake-job-name' has 2 instances but was allocated 3 static IPs",
@@ -1121,7 +1080,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       context 'when number of static ips matches the number of instances' do
         it 'does not raise an exception' do
           job_spec['instances'] = 3
-          expect { parser.parse(job_spec, uninterpolated_job_spec) }.to_not raise_error
+          expect { parser.parse(job_spec) }.to_not raise_error
         end
       end
 
@@ -1134,7 +1093,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           allow(deployment_plan).to receive(:networks).and_return([duped_network, network])
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobNetworkMultipleDefaults,
               "Instance group 'fake-job-name' specified more than one network to contain default. " +
@@ -1149,7 +1108,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           it 'picks the only network as default' do
             job_spec['instances'] = 3
             allow(deployment_plan).to receive(:networks).and_return([network])
-            parsed_job = parser.parse(job_spec, uninterpolated_job_spec)
+            parsed_job = parser.parse(job_spec)
 
             expect(parsed_job.default_network['dns']).to eq('fake-network-name')
             expect(parsed_job.default_network['gateway']).to eq('fake-network-name')
@@ -1164,7 +1123,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             job_spec['networks'] << { 'name' => 'fake-network-name-2', 'default' => [ 'gateway' ] }
             job_spec['instances'] = 3
             allow(deployment_plan).to receive(:networks).and_return([network, network2])
-            parsed_job = parser.parse(job_spec, uninterpolated_job_spec)
+            parsed_job = parser.parse(job_spec)
 
             expect(parsed_job.default_network['dns']).to eq('fake-network-name')
             expect(parsed_job.default_network['gateway']).to eq('fake-network-name-2')
@@ -1180,7 +1139,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           job_spec['azs'] = []
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobMissingAvailabilityZones, "Instance group 'fake-job-name' has empty availability zones"
             )
@@ -1191,7 +1150,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'parses each value into the AZ on the deployment' do
           zone1, zone2 = set_up_azs!(["zone1", "zone2"], job_spec, deployment_plan)
           allow(network).to receive(:has_azs?).and_return(true)
-          expect(parser.parse(job_spec, uninterpolated_job_spec).availability_zones).to eq([zone1, zone2])
+          expect(parser.parse(job_spec).availability_zones).to eq([zone1, zone2])
         end
 
         it 'raises an exception if the value are not strings' do
@@ -1200,7 +1159,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           allow(deployment_plan).to receive(:availability_zone).with("valid_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobInvalidAvailabilityZone, "Instance group 'fake-job-name' has invalid availability zone '3', string expected"
             )
@@ -1213,7 +1172,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           allow(deployment_plan).to receive(:availability_zone).with("nonexistent_zone") { nil }
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobUnknownAvailabilityZone, "Instance group 'fake-job-name' references unknown availability zone 'nonexistent_zone'"
             )
@@ -1223,7 +1182,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           allow(network).to receive(:has_azs?).and_return(false)
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
                 "Instance group 'fake-job-name' must specify availability zone that matches availability zones of network 'fake-network-name'"
@@ -1252,7 +1211,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             )
             allow(deployment_plan).to receive(:networks).and_return([first_network, second_network])
 
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
 
             expect(first_network).to have_received(:has_azs?).with(['zone1', 'zone2'])
             expect(second_network).to have_received(:has_azs?).with(['zone1', 'zone2'])
@@ -1265,7 +1224,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           job_spec['azs'] = 3
 
           expect {
-            parser.parse(job_spec, uninterpolated_job_spec)
+            parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::ValidationInvalidType, "Property 'azs' value (3) did not match the required type 'Array'"
             )
@@ -1293,7 +1252,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       end
 
       it 'sets migrated_from on a job' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.migrated_from[0].name).to eq('job-1')
         expect(job.migrated_from[0].availability_zone).to eq('z1')
         expect(job.migrated_from[1].name).to eq('job-2')
@@ -1306,7 +1265,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             job_spec['migrated_from'] = [{'name' => 'job-1', 'az' => 'unknown_az'}]
 
             expect {
-              parser.parse(job_spec, uninterpolated_job_spec)
+              parser.parse(job_spec)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidMigratedFromJob,
                 "Instance group 'job-1' specified for migration to instance group 'fake-job-name' refers to availability zone 'unknown_az'. " +
@@ -1322,13 +1281,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(false) }
 
       it 'does not add remove_dev_tools by default' do
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.env.spec['bosh']).to eq(nil)
       end
 
       it 'does what the job env says' do
         job_spec['env'] = {'bosh' => {'remove_dev_tools' => 'custom'}}
-        job = parser.parse(job_spec, uninterpolated_job_spec)
+        job = parser.parse(job_spec)
         expect(job.env.spec['bosh']['remove_dev_tools']).to eq('custom')
       end
 
@@ -1336,7 +1295,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(true) }
 
         it 'should do what director wants' do
-          job = parser.parse(job_spec, uninterpolated_job_spec)
+          job = parser.parse(job_spec)
           expect(job.env.spec['bosh']['remove_dev_tools']).to eq(true)
         end
       end
@@ -1348,7 +1307,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         end
 
         it 'defers to the job' do
-          job = parser.parse(job_spec, uninterpolated_job_spec)
+          job = parser.parse(job_spec)
           expect(job.env.spec['bosh']['remove_dev_tools']).to eq(false)
         end
       end

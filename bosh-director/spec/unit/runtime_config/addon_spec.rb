@@ -49,7 +49,7 @@ module Bosh::Director
         let(:instance_group) do
           instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
           jobs = [{'name' => 'dummy', 'release' => 'dummy'}]
-          instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: jobs), {})
+          instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: jobs))
         end
         let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
         let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }

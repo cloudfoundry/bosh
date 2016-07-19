@@ -67,8 +67,7 @@ module Bosh::Director
     def current_states_by_instance(existing_instances)
       lock = Mutex.new
       current_states_by_existing_instance = {}
-      # TODO: try to no use this manifest, use something else to get rid of the manifest reader
-      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_text)
+      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.manifest_text)
 
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         existing_instances.each do |existing_instance|

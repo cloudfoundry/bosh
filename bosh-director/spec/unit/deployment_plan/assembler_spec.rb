@@ -28,7 +28,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
-        allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
+        allow(deployment_plan).to receive(:manifest_text).and_return({})
       end
 
       it 'should bind releases and their templates' do
