@@ -171,6 +171,7 @@ module Bosh::Director
     def create_local_dns_record(instance_model)
       spec = instance_model.spec
       @logger.debug('Creating local dns records')
+
       unless spec.nil? || spec['networks'].nil?
         @logger.debug("Found #{spec['networks'].length} networks")
         spec['networks'].each do |network_name, network|
@@ -179,13 +180,19 @@ module Bosh::Director
             name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              @logger.debug("Adding local dns record with UUID-based name #{name_uuid} and ip #{ip}")
-              Bosh::Director::Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
+            
+            if Config.local_dns_enabled?
+              Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
+                @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
+                Bosh::Director::Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
 
-              @logger.debug("Adding local dns record with index-based name #{name_index} and ip #{ip}")
-              Bosh::Director::Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
+                if Config.local_dns_include_index?
+                  @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
+                  Bosh::Director::Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
+                end
+              end
             end
+
           end
         end
       end

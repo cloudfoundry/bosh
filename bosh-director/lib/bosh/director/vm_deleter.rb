@@ -52,9 +52,11 @@ module Bosh::Director
     def delete_local_dns_record(instance_model)
       spec = instance_model.spec
       @logger.debug('Deleting local dns records')
+
       unless spec.nil? || spec['networks'].nil?
         @logger.debug("Found #{spec['networks'].length} networks")
         spec['networks'].each do |network_name, network|
+
           unless network['ip'].nil? or spec['job'].nil?
             ip = network['ip']
             name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
@@ -68,8 +70,10 @@ module Bosh::Director
               Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
             end
           end
+
         end
       end
+
     end
   end
 end

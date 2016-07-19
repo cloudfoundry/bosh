@@ -36,7 +36,7 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
 
       @dns_enabled = attrs.fetch(:dns_enabled, true)
-      @local_dns = attrs.fetch(:local_dns, false)
+      @local_dns = attrs.fetch(:local_dns, {'enabled' => false, 'include_index' => false})
 
       @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
       @external_cpi_config = attrs.fetch(:external_cpi_config)

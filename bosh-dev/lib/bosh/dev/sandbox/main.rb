@@ -271,7 +271,7 @@ module Bosh::Dev::Sandbox
       @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
-      @local_dns = options.fetch(:local_dns, false)
+      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false})
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
