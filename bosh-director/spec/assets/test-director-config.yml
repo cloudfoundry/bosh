@@ -2,9 +2,6 @@
 name: Test Director
 port: 8081
 
-director:
-  max_threads: 1
-
 logging:
   level: ERROR
 
@@ -21,6 +18,10 @@ blobstore:
     endpoint: http://127.0.0.1
     user: admin
     password:
+compiled_package_cache:
+  provider: local
+  options:
+    blobstore_path: /path/to/some/bucket
 snapshots:
   enabled: false
 scan_and_fix:

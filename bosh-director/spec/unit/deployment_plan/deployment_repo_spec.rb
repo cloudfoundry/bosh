@@ -5,6 +5,10 @@ module Bosh
     describe DeploymentPlan::DeploymentRepo do
       subject { DeploymentPlan::DeploymentRepo.new }
 
+      before do
+        Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+      end
+
       describe '.find_or_create_by_name' do
         it 'all happens in a transaction' do
           skip 'probably a better solution is to put canonical_name in the db and enforce this there'

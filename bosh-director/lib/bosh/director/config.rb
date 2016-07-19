@@ -127,10 +127,10 @@ module Bosh::Director
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db ||= configure_db(config['db'])
+        @db = configure_db(config['db'])
         @dns = config['dns']
         if @dns && @dns['db']
-          @dns_db ||= configure_db(@dns['db'])
+          @dns_db = configure_db(@dns['db'])
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed

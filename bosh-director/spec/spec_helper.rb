@@ -64,9 +64,13 @@ module SpecHelper
 
     def spec_get_director_config
       config = YAML.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
-      config['db']['adapter'] = ENV.fetch('DB', 'sqlite')
+
+      config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = '127.0.0.1'
-      config['db']['database'] = @db_name
+      config['db']['database'] = @director_db_helper.db_name
+      config['db']['user'] = @director_db_helper.username
+      config['db']['password'] = @director_db_helper.password
+      config['db']['port'] = @director_db_helper.port
 
       config
     end
@@ -99,6 +103,7 @@ module SpecHelper
       Sequel.extension :migration
 
       connect_database
+      Delayed::Worker.backend = :sequel
 
       run_migrations
     end
@@ -135,16 +140,32 @@ module SpecHelper
     end
 
     def run_migrations
-      Sequel::Migrator.apply(Bosh::Director::Config.dns_db, @dns_migrations, nil)
-      Sequel::Migrator.apply(Bosh::Director::Config.db, @director_migrations, nil)
+      Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
+      Sequel::Migrator.apply(@director_db, @director_migrations, nil)
     end
 
     def reset(logger)
       Bosh::Director::Config.clear
-      Bosh::Director::Config.configure(spec_get_director_config)
-
       Bosh::Director::Config.db = @director_db
       Bosh::Director::Config.dns_db = @dns_db
+      Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.trusted_certs = ''
+      Bosh::Director::Config.max_threads = 1
+
+      Bosh::Director::Models.constants.each do |e|
+        c = Bosh::Director::Models.const_get(e)
+        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Delayed::Backend::Sequel.constants.each do |e|
+        c = Delayed::Backend::Sequel.const_get(e)
+        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Bosh::Director::Models::Dns.constants.each do |e|
+        c = Bosh::Director::Models::Dns.const_get(e)
+        c.db = @dns_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
     end
 
     def reset_database(example)
@@ -176,7 +197,6 @@ RSpec.configure do |rspec|
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
-    Bosh::Director::Config.logger = logger
 
     allow(Bosh::Director::Config).to receive(:cloud).and_return(instance_double(Bosh::Cloud))
 
