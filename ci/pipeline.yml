@@ -118,7 +118,7 @@ jobs:
         privileged: true
         params:
           RUBY_VERSION: 2.3.1
-          DB: mysql2
+          DB: mysql
 
   - name: unit-2.3-postgres
     public: true

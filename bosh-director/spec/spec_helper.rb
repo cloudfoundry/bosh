@@ -83,7 +83,7 @@ module SpecHelper
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, 5432)
           @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", @init_logger, 5432)
-        when 'mysql2'
+        when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger)
           @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", @init_logger)
