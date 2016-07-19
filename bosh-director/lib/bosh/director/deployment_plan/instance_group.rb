@@ -52,6 +52,7 @@ module Bosh::Director
 
       # @return [Hash] Job properties
       attr_accessor :properties
+      attr_accessor :uninterpolated_properties
 
       # @return [Hash<String, DeploymentPlan::Package] Packages included into
       #   this job
@@ -76,6 +77,7 @@ module Bosh::Director
       attr_accessor :availability_zones
 
       attr_accessor :all_properties
+      attr_accessor :all_uninterpolated_properties
 
       attr_accessor :networks
 
@@ -87,9 +89,9 @@ module Bosh::Director
 
       attr_accessor :did_change
 
-      def self.parse(plan, job_spec, event_log, logger, parse_options = {})
+      def self.parse(plan, job_spec, uninterpolated_instance_group_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
-        parser.parse(job_spec, parse_options)
+        parser.parse(job_spec, uninterpolated_instance_group_spec, parse_options)
       end
 
       def initialize(logger)
@@ -98,7 +100,9 @@ module Bosh::Director
         @release = nil
         @templates = []
         @all_properties = nil # All properties available to instance group
+        @all_uninterpolated_properties = nil # All uninterpolated properties available to instance group
         @properties = nil # Actual instance group properties
+        @uninterpolated_properties = nil # Actual instance group uninterpolated properties
 
         @instances = []
         @desired_instances = []
@@ -258,6 +262,7 @@ module Bosh::Director
       # property definitions in DB).
       def bind_properties
         @properties = extract_template_properties(@all_properties)
+        @uninterpolated_properties = extract_template_uninterpolated_properties(@all_uninterpolated_properties)
       end
 
       def validate_package_names_do_not_collide!
@@ -368,6 +373,28 @@ module Bosh::Director
           if template.has_template_scoped_properties(@name)
             template.bind_template_scoped_properties(@name)
             result[template.name] = template.template_scoped_properties[@name]
+          else
+            template.properties.each_pair do |name, definition|
+              copy_property(result[template.name], collection, name, definition["default"])
+            end
+          end
+        end
+
+        result
+      end
+
+      def extract_template_uninterpolated_properties(collection)
+        result = {}
+        @templates.each do |template|
+          # If a template has properties that were defined in the deployment manifest
+          # for that template only, then we need to bind only these properties, and not
+          # make them available to other templates in the same deployment job. That can
+          # be done by checking @template_scoped_properties variable of each
+          # template
+          result[template.name] ||= {}
+          if template.has_template_scoped_properties(@name)
+            template.bind_template_scoped_uninterpolated_properties(@name)
+            result[template.name] = template.template_scoped_uninterpolated_properties[@name]
           else
             template.properties.each_pair do |name, definition|
               copy_property(result[template.name], collection, name, definition["default"])

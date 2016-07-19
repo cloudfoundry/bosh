@@ -16,8 +16,9 @@ module Bosh::Director
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [DeploymentPlan::Job] Job as build from job_spec
-      def parse(job_spec, options = {})
+      def parse(job_spec, uninterpolated_job_spec, options = {})
         @job_spec = job_spec
+        @uninterpolated_job_spec = uninterpolated_job_spec
         @job = InstanceGroup.new(@logger)
 
         parse_name
@@ -123,8 +124,12 @@ module Bosh::Director
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
         jobs = safe_property(@job_spec, 'jobs', class: Array, optional: true)
 
+        uninterpolated_templates = safe_property(@uninterpolated_job_spec, 'templates', class: Array, optional: true)
+        uninterpolated_jobs = safe_property(@uninterpolated_job_spec, 'jobs', class: Array, optional: true)
+
         if jobs && !jobs.empty?
           templates = jobs
+          uninterpolated_templates = uninterpolated_jobs
         end
 
         if templates
@@ -192,6 +197,11 @@ module Bosh::Director
                   safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
                   @job.name
               )
+
+              template.add_template_scoped_uninterpolated_properties(
+                retrieve_uninterpolated_template_properties(template_name, uninterpolated_templates),
+                @job.name
+              )
             end
 
             @job.templates << template
@@ -257,8 +267,10 @@ module Bosh::Director
       def parse_properties
         # Manifest can contain global and per-job properties section
         job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true, :default => {})
+        uninterpolated_job_properties = safe_property(@uninterpolated_job_spec, "properties", :class => Hash, :optional => true, :default => {})
 
         @job.all_properties = @deployment.properties.recursive_merge(job_properties)
+        @job.all_uninterpolated_properties = @deployment.uninterpolated_properties.recursive_merge(uninterpolated_job_properties)
 
         mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
 
@@ -415,6 +427,13 @@ module Bosh::Director
             @job.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
           end
         end
+      end
+
+      def retrieve_uninterpolated_template_properties(template_name, uninterpolated_templates)
+        uninterpolated_template_spec = uninterpolated_templates.find do |template_spec|
+          safe_property(template_spec, 'name', class: String) == template_name
+        end
+        safe_property(uninterpolated_template_spec, 'properties', class: Hash, optional: true, default: nil)
       end
     end
   end

@@ -52,6 +52,8 @@ module Bosh::Director
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})
+        @deployment.uninterpolated_properties = safe_property(@deployment.uninterpolated_manifest_text, 'properties',
+          :class => Hash, :default => {})
       end
 
       def parse_releases
@@ -87,16 +89,20 @@ module Bosh::Director
 
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
+        uninterpolated_instance_groups = safe_property(@deployment.uninterpolated_manifest_text, 'jobs', :class => Array, :default => [])
 
         if !instance_groups.empty?
           jobs = instance_groups
+          uninterpolated_instance_groups = safe_property(@deployment.uninterpolated_manifest_text, 'instance_groups', :class => Array, :default => [])
         end
 
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
-          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
+          uninterpolated_job_spec = uninterpolated_instance_groups.find { |instance_group| instance_group['name'] == job_spec['name'] }
+
+          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, uninterpolated_job_spec, @event_log, @logger, parse_options))
         end
       end
     end

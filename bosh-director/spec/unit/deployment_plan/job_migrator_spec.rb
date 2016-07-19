@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:job_migrator) { described_class.new(deployment_plan, logger) }
 
     let(:etcd_job) do
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, job_spec, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, job_spec, uninterpolated_instance_group_spec, Config.event_log, logger)
     end
 
     let(:etcd_job_spec) do
@@ -23,6 +23,8 @@ module Bosh::Director
     let(:job_spec) do
       deployment_manifest['jobs'].first
     end
+
+    let(:uninterpolated_instance_group_spec) {{}}
 
     let(:cloud_config_manifest) do
       manifest = Bosh::Spec::Deployments.simple_cloud_config
