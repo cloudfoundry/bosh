@@ -48,7 +48,7 @@ module Bosh::Director
         Models::CompiledPackage.make(package: package, stemcell_os: stemcell_1.operating_system,
                                      stemcell_version: stemcell_1.version, blobstore_id: 'compiled-package-1')
 
-        Config.event_log = event_log
+        allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(stage)
         allow(stage).to receive(:advance_and_track).and_yield
 

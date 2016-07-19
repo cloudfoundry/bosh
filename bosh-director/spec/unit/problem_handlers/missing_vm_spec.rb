@@ -51,11 +51,13 @@ module Bosh::Director
     end
 
     describe 'Resolutions:' do
+      let(:fake_cloud) { instance_double('Bosh::Cloud') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
         Bosh::Director::Config.current_job.task_id = 42
+        allow(Config).to receive_messages(cloud: fake_cloud)
       end
 
       def expect_vm_to_be_created
@@ -73,8 +75,8 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
         expect(fake_new_agent).to receive(:start).ordered
 
-        expect(Config.cloud).to receive(:delete_vm).with(instance.vm_cid)
-        expect(Config.cloud).
+        expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
+        expect(fake_cloud).
           to receive(:create_vm).
             with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1'}).
             and_return('new-vm-cid')

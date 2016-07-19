@@ -5,11 +5,12 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-          Config.cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
+          cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
       ) }
 
-      let(:disk_manager) { DiskManager.new(Config.cloud, logger) }
-      let(:vm_deleter) { VmDeleter.new(Config.cloud, logger, false, false) }
+      let(:disk_manager) { DiskManager.new(cloud, logger) }
+      let(:cloud) { instance_double('Bosh::Cloud') }
+      let(:vm_deleter) { VmDeleter.new(cloud, logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:agent_client) do
@@ -149,6 +150,7 @@ module Bosh
       let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, logger) }
 
       before do
+        allow(Config).to receive(:cloud).and_return(cloud)
         Config.max_vm_create_tries = 2
         Config.flush_arp = true
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
@@ -156,11 +158,10 @@ module Bosh
         allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
-        allow(Config.cloud).to receive(:delete_vm)
       end
 
       it 'should create a vm' do
-        expect(Config.cloud).to receive(:create_vm).with(
+        expect(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
         ).and_return('new-vm-cid')
 
@@ -174,7 +175,7 @@ module Bosh
       end
 
       it 'should create vm for the instance plans' do
-        expect(Config.cloud).to receive(:create_vm).with(
+        expect(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, [], {}
         ).and_return('new-vm-cid')
 
@@ -191,7 +192,7 @@ module Bosh
       end
 
       it 'should record events' do
-        expect(Config.cloud).to receive(:create_vm).with(
+        expect(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
         ).and_return('new-vm-cid')
         expect {
@@ -219,7 +220,7 @@ module Bosh
       end
 
       it 'should record events about error' do
-        expect(Config.cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
         }.to raise_error Bosh::Clouds::VMCreationFailed
@@ -229,7 +230,7 @@ module Bosh
       end
 
       it 'flushes the ARP cache' do
-        allow(Config.cloud).to receive(:create_vm).with(
+        allow(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {}
         ).and_return('new-vm-cid')
 
@@ -244,7 +245,7 @@ module Bosh
       it 'does not flush the arp cache when arp_flush set to false' do
         Config.flush_arp = false
 
-        allow(Config.cloud).to receive(:create_vm).with(
+        allow(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {}
         ).and_return('new-vm-cid')
 
@@ -258,19 +259,20 @@ module Bosh
       end
 
       it 'sets vm metadata' do
-        expect(Config.cloud).to receive(:create_vm).with(
+        expect(cloud).to receive(:create_vm).with(
             kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
         ).and_return('new-vm-cid')
 
+        allow(Config).to receive(:name).and_return('fake-director-name')
         Timecop.freeze do
-          expect(Config.cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
+          expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
             expect(vm_cid).to eq('new-vm-cid')
             expect(metadata).to match({
                                           deployment: 'deployment_name',
                                           created_at: Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
                                           job: 'fake-job',
                                           index: '5',
-                                          director: 'Test Director',
+                                          director: 'fake-director-name',
                                           id: instance_model.uuid,
                                           name: "fake-job/#{instance_model.uuid}",
                                       })
@@ -281,7 +283,7 @@ module Bosh
       end
 
       it 'updates instance job templates with new IP' do
-        allow(Config.cloud).to receive(:create_vm)
+        allow(cloud).to receive(:create_vm)
         expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
         expect(instance).to receive(:apply_initial_vm_state)
 
@@ -290,7 +292,7 @@ module Bosh
 
       it 'should create credentials when encryption is enabled' do
         Config.encryption = true
-        expect(Config.cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
+        expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
                                                   kind_of(Hash), network_settings, ['fake-disk-cid'],
                                                   {'bosh' =>
                                                        { 'credentials' =>
@@ -316,8 +318,8 @@ module Bosh
       end
 
       it 'should retry creating a VM if it is told it is a retryable error' do
-        expect(Config.cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
-        expect(Config.cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
+        expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+        expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
@@ -325,7 +327,7 @@ module Bosh
       end
 
       it 'should not retry creating a VM if it is told it is not a retryable error' do
-        expect(Config.cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
@@ -335,7 +337,7 @@ module Bosh
       it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
         Config.max_vm_create_tries = 3
 
-        expect(Config.cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+        expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
@@ -344,8 +346,8 @@ module Bosh
 
       it 'should not destroy the VM if the Config.keep_unreachable_vms flag is true' do
         Config.keep_unreachable_vms = true
-        expect(Config.cloud).to receive(:create_vm).and_return('new-vm-cid')
-        expect(Config.cloud).to_not receive(:delete_vm)
+        expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
+        expect(cloud).to_not receive(:delete_vm)
 
         expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
@@ -358,13 +360,13 @@ module Bosh
         Config.encryption = true
         env_id = nil
 
-        expect(Config.cloud).to receive(:create_vm) do |*args|
+        expect(cloud).to receive(:create_vm) do |*args|
           env_id = args[5].object_id
         end
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
 
-        expect(Config.cloud).to receive(:create_vm) do |*args|
+        expect(cloud).to receive(:create_vm) do |*args|
           expect(args[5].object_id).not_to eq(env_id)
         end
 
@@ -373,8 +375,8 @@ module Bosh
 
       it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
         Config.keep_unreachable_vms = false
-        expect(Config.cloud).to receive(:create_vm).and_return('new-vm-cid')
-        expect(Config.cloud).to receive(:delete_vm)
+        expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
+        expect(cloud).to receive(:delete_vm)
 
         expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
@@ -478,7 +480,7 @@ module Bosh
 
         context 'no password is specified' do
           it 'should generate a random VM password' do
-            expect(Config.cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+            expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']['password'].length).to_not eq(0)
             end.and_return('new-vm-cid')
 
@@ -489,7 +491,7 @@ module Bosh
         context 'password is specified' do
           let(:env) { DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
           it 'should generate a random VM password' do
-            expect(Config.cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+            expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']['password']).to eq('custom-password')
             end.and_return('new-vm-cid')
 
@@ -505,7 +507,7 @@ module Bosh
 
         context 'no password is specified' do
           it 'should generate a random VM password' do
-            expect(Config.cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+            expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']).to be_nil
             end.and_return('new-vm-cid')
 
@@ -516,7 +518,7 @@ module Bosh
         context 'password is specified' do
           let(:env) { DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
           it 'should generate a random VM password' do
-            expect(Config.cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+            expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']['password']).to eq('custom-password')
             end.and_return('new-vm-cid')
 

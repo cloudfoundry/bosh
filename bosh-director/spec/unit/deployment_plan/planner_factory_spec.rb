@@ -364,6 +364,7 @@ LOGMESSAGE
         end
 
         def configure_config
+          allow(Config).to receive(:dns).and_return({'address' => 'foo'})
           Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
           Bosh::Director::Config.current_job.task_id = 'fake-task-id'
         end

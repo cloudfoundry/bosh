@@ -7,6 +7,10 @@ module Bosh::Director
     let(:username) { 'FAKE_USER' }
     let(:options) { {foo: 'bar'} }
 
+    before do
+      allow(Config).to receive(:base_dir).and_return('/tmp')
+    end
+
     describe '#create_deployment' do
       before do
         allow(subject).to receive(:write_file)

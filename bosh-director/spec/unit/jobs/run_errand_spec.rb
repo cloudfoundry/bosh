@@ -66,7 +66,7 @@ module Bosh::Director
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-              before { Config.result = result_file }
+              before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
               let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
               before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }

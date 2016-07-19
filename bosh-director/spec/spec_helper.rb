@@ -185,7 +185,6 @@ RSpec.configure do |rspec|
     allow(threadpool).to receive(:wrap).and_yield(threadpool)
     allow(threadpool).to receive(:process).and_yield
     allow(threadpool).to receive(:wait)
-    allow(threadpool).to receive(:working?)
   end
 
   rspec.after(:suite) do

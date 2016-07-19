@@ -41,21 +41,33 @@ module Bosh::Director
     let(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, 4)
     end
+    let(:thread_pool) do
+      thread_pool = instance_double('Bosh::Director::ThreadPool')
+      allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
+      allow(thread_pool).to receive(:process).and_yield
+      allow(thread_pool).to receive(:working?).and_return(false)
+      thread_pool
+    end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
     let(:event_manager) {Api::EventManager.new(true)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     before do
-      # allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
+      allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
+      @blobstore = double(:blobstore)
+      allow(Config).to receive(:blobstore).and_return(@blobstore)
 
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
+      allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
       allow(plan).to receive(:network).with('default').and_return(network)
+
+      allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
 
       allow(Config).to receive(:current_job).and_return(update_job)
       @all_packages = []
