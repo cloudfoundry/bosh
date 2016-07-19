@@ -423,55 +423,41 @@ module Bosh
 
           context 'when instance.spec is nil' do
             it 'skips the instance' do
-              expect(instance_model).to receive(:spec_json).and_return(nil)
-
-              expect {
-                subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-              }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                             Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                          from([0, 0]).to([1, 0])
+              test_validate_spec('{}')
             end
           end
 
           context 'when instance.spec is not nil' do
             context 'when spec[networks] is nil' do
               it 'skips the instance' do
-                expect(instance_model).to receive(:spec_json).and_return('{"networks": nil}').twice
-
-                expect {
-                  subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                               Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                            from([0, 0]).to([1, 0])
+                test_validate_spec('{"networks": nil}')
               end
             end
 
             context 'when spec[networks] is not nil' do
               context 'when network[ip] is nil' do
                 it 'skips the instance' do
-                  expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-                  expect {
-                    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                  }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                                 Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                              from([0, 0]).to([1, 0])
+                  test_validate_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
                 end
               end
             end
 
             context 'when spec[job] is nil' do
               it 'skips the instance' do
-                expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}').twice
-
-                expect {
-                  subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                               Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                    from([0, 0]).to([1, 0])
+                test_validate_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
               end
             end
           end
+        end
+
+        def test_validate_spec(spec_json)
+          expect(instance_model).to receive(:spec_json).and_return(spec_json).twice
+
+          expect {
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
+                         Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
+              from([0, 0]).to([1, 0])
         end
       end
 

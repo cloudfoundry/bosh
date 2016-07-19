@@ -34,10 +34,6 @@ describe 'local DNS', type: :integration do
         manifest_deployment['jobs'][0]['instances'] = 10
         deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-        10.times do |i|
-          check_agent_log(i)
-        end
-
         check_agent_etc_hosts(10, 10)
       end
     end
@@ -49,9 +45,6 @@ describe 'local DNS', type: :integration do
         manifest_deployment['jobs'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-        5.times do |i|
-          check_agent_log(i)
-        end
       end
 
       it 'sends sync_dns action to all agents and updates all /etc/hosts' do
@@ -61,10 +54,6 @@ describe 'local DNS', type: :integration do
       it 'updates the removed vms on next scale up' do
         manifest_deployment['jobs'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-
-        5.times do |i|
-          check_agent_log(i)
-        end
 
         check_agent_etc_hosts(6, 6)
       end
@@ -78,9 +67,6 @@ describe 'local DNS', type: :integration do
           manifest_deployment = initial_deployment(5)
 
           deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
-          5.times do |i|
-            check_agent_log(i)
-          end
           check_agent_etc_hosts(5, 5)
         end
       end
@@ -105,9 +91,6 @@ describe 'local DNS', type: :integration do
             expect(old_ips).to_not include(new_ip)
           end
 
-          5.times do |i|
-            check_agent_log(i)
-          end
           check_agent_etc_hosts(5, 5)
         end
       end
@@ -136,9 +119,6 @@ describe 'local DNS', type: :integration do
 
         expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
 
-        5.times do |i|
-          check_agent_log(i)
-        end
         check_agent_etc_hosts(5, 5)
       end
     end
@@ -163,15 +143,8 @@ describe 'local DNS', type: :integration do
     manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
     deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-    number_of_instances.times { |i| check_agent_log(i) }
     check_agent_etc_hosts(number_of_instances, number_of_instances)
     manifest_deployment
-  end
-
-  def check_agent_log(index)
-    agent_id = director.vm('job_to_test_local_dns', "#{index}").agent_id
-    agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-    expect(agent_log).to include('"method":"sync_dns","arguments":')
   end
 
   def check_agent_etc_hosts(number_instance, expected_lines)
@@ -179,7 +152,7 @@ describe 'local DNS', type: :integration do
       agent_id = director.vm('job_to_test_local_dns', "#{i}").agent_id
       etc_hosts = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/bosh/etc_hosts")
 
-      expect(etc_hosts.lines.count).to eq(expected_lines)
+      expect(etc_hosts.lines.count >= expected_lines).to be(true)
 
       etc_hosts.lines.each do |line|
         words = line.strip.split(' ')
