@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://127.0.0.1:8081/info
+    uri: https://localhost:8081/info
     body:
       encoding: UTF-8
       string: ''
@@ -34,11 +34,11 @@ http_interactions:
       encoding: US-ASCII
       string: ! '{"name":"Local Director","uuid":"24a64a39-6e68-42bc-8c9b-53fdd6cd6d16","version":"1.3074.0
         (00000000)","user":null,"cpi":"vsphere","user_authentication":{"type":"basic","options":{}},"features":{"dns":{"status":false,"extras":{"domain_name":"bosh"}},"compiled_package_cache":{"status":false,"extras":{"provider":null}},"snapshots":{"status":false}}}'
-    http_version: 
+    http_version:
   recorded_at: Tue, 22 Sep 2015 18:40:09 GMT
 - request:
     method: get
-    uri: http://127.0.0.1:8080/info
+    uri: http://localhost:8080/info
     body:
       encoding: UTF-8
       string: ''
