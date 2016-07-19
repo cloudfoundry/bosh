@@ -7,12 +7,15 @@ module Bosh::Director::Models
     end
 
     def context
-      return {} if context_json.nil?
-      JSON.parse(context_json)
+      if context_json == 'null' || context_json == nil
+        {}
+      else
+        JSON.parse(context_json)
+      end
     end
 
     def context=(data)
-      self.context_json = JSON.generate(data)
+      self.context_json = data.nil? ? 'null' : JSON.generate(data)
     end
   end
 end

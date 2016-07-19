@@ -142,5 +142,29 @@ describe Bosh::Cli::Command::Events do
       command.options = {before_id: 2, target: target}
       command.list
     end
+
+    it 'handles nil context without exception' do
+      event_with_nil_context =  {
+        'id' => '4',
+        'timestamp' => 1455635708,
+        'user' => 'admin',
+        'action' => 'create',
+        'object_type' => 'deployment',
+        'object_name' => 'depl1',
+        'task' => '1',
+        'context' => nil
+      }
+      expect(director).to receive(:list_events) { [event_with_nil_context] }
+      expect(command).to receive(:say) do |display_output|
+        expect(display_output.to_s).to match_output '
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+| ID | Time                         | User  | Action | Object type | Object ID | Task | Dep | Inst | Context |
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+| 4  | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 1    | -   | -    | -       |
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+        '
+      end
+      command.list
+    end
   end
 end
