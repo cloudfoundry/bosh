@@ -86,11 +86,12 @@ module Bosh::Dev
       upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(archive.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
 
-      if @bearer_token
-        stdout, stderr, status = exec_cmd("sha1sum #{archive.path}")
-        raise "Failed to calculate sha1 of #{archive.path}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
-        sha1 = stdout.split(/\s/)[0]
+      stdout, stderr, status = exec_cmd("sha1sum #{archive.path}")
+      raise "Failed to calculate sha1 of #{archive.path}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+      sha1 = stdout.split(/\s/)[0]
+      logger.info("sha1 #{normal_filename} = #{sha1}")
 
+      if @bearer_token
         stdout, stderr, status = exec_cmd("curl -X POST --fail 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
         raise "Failed to notify bosh.io with checksum '#{sha1}' for '#{normal_filename}': stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
       end
