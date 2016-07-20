@@ -32,6 +32,7 @@ module Bosh::Dev
           CANDIDATE_BUILD_NUMBER
           BOSH_AWS_ACCESS_KEY_ID
           BOSH_AWS_SECRET_ACCESS_KEY
+          BOSHIO_BEARER_TOKEN
         ].map do |env_var|
           "export #{env_var}='#{env.fetch(env_var)}'"
         end
