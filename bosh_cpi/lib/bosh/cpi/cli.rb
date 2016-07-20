@@ -100,7 +100,7 @@ class Bosh::Cpi::Cli
         message: message,
         ok_to_retry: ok_to_retry,
       },
-      log: @logs_string_io.string.encode(Encoding::UTF_8, undef: :replace, invalid: :replace),
+      log: @logs_string_io.string.force_encoding(Encoding::UTF_8),
     }
     @result_io.print(JSON.dump(hash)); nil
   end
@@ -109,7 +109,7 @@ class Bosh::Cpi::Cli
     hash = {
       result: result,
       error: nil,
-      log: @logs_string_io.string.encode(Encoding::UTF_8, undef: :replace, invalid: :replace),
+      log: @logs_string_io.string.force_encoding(Encoding::UTF_8),
     }
     @result_io.print(JSON.dump(hash)); nil
   end
