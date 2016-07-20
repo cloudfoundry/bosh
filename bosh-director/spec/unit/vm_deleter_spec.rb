@@ -3,8 +3,9 @@ require 'spec_helper'
 module Bosh
   module Director
     describe VmDeleter do
-      subject { VmDeleter.new(cloud, logger) }
+      subject { VmDeleter.new(cloud, logger, dns_manager) }
 
+      let(:dns_manager) { instance_double(DnsManager) }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:event_manager) { Api::EventManager.new(true)}
       let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
@@ -65,68 +66,47 @@ module Bosh
                                                                       ip: '1.2.3.4',
                                                                       instance_id: instance.id) }
 
-        before {
-          expect(instance).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
-          expect(subject).to receive(:delete_vm).with('vm-cid')
-        }
+        before do
+          expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
+          expect(subject).to receive(:delete_vm).with(instance_model.vm_cid)
+          allow(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
+          allow(Config).to receive(:local_dns_enabled?).and_return(true)
+        end
 
         it 'deletes the instance and stores an event' do
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
           expect(Models::LocalDnsRecord.all).to eq([uuid_local_dns_record, index_local_dns_record])
 
           expect {
-            subject.delete_for_instance(instance)
-          }.to change { [Models::Event.count,
-                         Models::LocalDnsRecord.count]}.from([0,2]).to([2, 0])
+            subject.delete_for_instance(instance_model)
+          }.to change { Models::Event.count }.from(0).to(2)
         end
 
-        context 'validating instance.spec' do
-          context 'when instance.spec is nil' do
-            it 'skips the instance' do
-              test_validate_instance_spec('{}')
-            end
-          end
-
-          context 'when instance.spec is not nil' do
-            context 'when spec[networks] is nil' do
-              it 'skips the instance' do
-                test_validate_instance_spec('{"networks": null}')
-              end
-            end
-
-            context 'when spec[networks] is not nil' do
-              context 'when network[ip] is nil' do
-                it 'skips the instance' do
-                  test_validate_instance_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
-                end
-              end
-            end
-
-            context 'when spec[job] is nil' do
-              it 'skips the instance' do
-                test_validate_instance_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
-              end
-            end
-          end
-        end
-
-        def test_validate_instance_spec(spec_json)
-          expect(instance).to receive(:spec).and_return(JSON.parse(spec_json))
+        it 'calls DnsManager to delete the local dns records' do
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-          expect(Models::LocalDnsRecord.all).to eq([uuid_local_dns_record, index_local_dns_record])
+          expect(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
 
-          expect {
-            subject.delete_for_instance(instance)
-          }.to change { [Models::Event.count,
-                         Models::LocalDnsRecord.count]}.from([0,2]).to([2, 2])
+          subject.delete_for_instance(instance_model)
+        end
+
+        context 'when local_dns is disabled' do
+          before do
+            allow(Config).to receive(:local_dns_enabled?).and_return(false)
+          end
+          it 'does not call DnsManager to delete the local dns records' do
+            expect(Config).to receive(:current_job).and_return(job).exactly(6).times
+            expect(dns_manager).to_not receive(:delete_local_dns_record)
+
+            subject.delete_for_instance(instance_model)
+          end
         end
 
         context 'when store_event is false' do
           it 'deletes the instance and does not store an event' do
-            expect(subject).to receive(:delete_local_dns_record).with(instance)
+            expect(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
 
             expect {
-              subject.delete_for_instance(instance, false)
+              subject.delete_for_instance(instance_model, false)
             }.not_to change { Models::Event.count }
           end
         end
@@ -140,7 +120,7 @@ module Bosh
         end
 
         context 'when virtual delete is enabled' do
-          subject { VmDeleter.new(cloud, logger, false, true) }
+          subject { VmDeleter.new(cloud, logger, dns_manager, false, true) }
 
           it 'skips calling delete_vm on the cloud' do
             expect(logger).to receive(:info).with('Deleting VM')

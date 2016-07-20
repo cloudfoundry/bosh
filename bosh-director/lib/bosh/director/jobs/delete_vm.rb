@@ -11,7 +11,8 @@ module Bosh::Director
       def initialize(vm_cid)
         @vm_cid = vm_cid
         @cloud = Config.cloud
-        @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, false, false)
+        dns_manager = DnsManagerProvider.create
+        @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, dns_manager, false, false)
         @deployment_name = nil
         @instance_name = nil
       end

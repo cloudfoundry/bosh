@@ -8,12 +8,12 @@ module Bosh::Director
           @cloud = cloud
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger, false, Config.enable_virtual_delete_vms)
           @disk_manager = DiskManager.new(@cloud, @logger)
           @dns_manager = DnsManagerProvider.create
           job_renderer = JobRenderer.create
           agent_broadcaster = AgentBroadcaster.new
           @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster, @dns_manager)
+          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger, @dns_manager, false, Config.enable_virtual_delete_vms)
         end
 
         def perform

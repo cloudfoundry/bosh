@@ -7,11 +7,11 @@ module Bosh::Director
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      vm_deleter = VmDeleter.new(cloud, logger, false, Config.enable_virtual_delete_vms)
       disk_manager = DiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       dns_manager = DnsManagerProvider.create
+      vm_deleter = VmDeleter.new(cloud, logger, dns_manager, false, Config.enable_virtual_delete_vms)
       vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster, dns_manager)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       new(

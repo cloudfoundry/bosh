@@ -31,7 +31,7 @@ module Bosh::Director
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
-    let(:vm_deleter) { Bosh::Director::VmDeleter.new(Config.cloud, logger, false, false) }
+    let(:vm_deleter) { Bosh::Director::VmDeleter.new(Config.cloud, logger, dns_manager, false, false) }
     let(:vm_creator) { Bosh::Director::VmCreator.new(Config.cloud, logger, vm_deleter, nil, job_renderer, agent_broadcaster, dns_manager) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:job_renderer) { instance_double(JobRenderer) }

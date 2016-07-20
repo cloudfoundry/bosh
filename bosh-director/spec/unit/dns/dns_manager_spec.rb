@@ -399,78 +399,171 @@ module Bosh::Director
     end
 
     describe '#create_local_dns_record' do
-      context 'when local_dns is enabled' do
+      context 'when include_index enabled' do
         before do
-          allow(Config).to receive(:local_dns_enabled?).and_return(true)
-        end
-        context 'when include_index enabled' do
-          before do
-            allow(Config).to receive(:local_dns_include_index?).and_return(true)
-          end
-
-          it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-            subject.create_local_dns_record(instance_model)
-
-            local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-            local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
-
-            expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
-            expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job_name.*"))
-          end
+          allow(Config).to receive(:local_dns_include_index?).and_return(true)
         end
 
-        context 'when include_index disabled' do
-          before do
-            allow(Config).to receive(:local_dns_include_index?).and_return(false)
-          end
+        it 'should call create_local_dns_record to add UUID and Index based DNS record' do
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
-          it 'should call create_local_dns_record to add only UUID based DNS record' do
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+          subject.create_local_dns_record(instance_model)
 
-            subject.create_local_dns_record(instance_model)
+          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
 
-            local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-            expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
+          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
+          expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job_name.*"))
+        end
+      end
+
+      context 'when include_index disabled' do
+        before do
+          allow(Config).to receive(:local_dns_include_index?).and_return(false)
+        end
+
+        it 'should call create_local_dns_record to add only UUID based DNS record' do
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+
+          subject.create_local_dns_record(instance_model)
+
+          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
+        end
+      end
+
+      context 'when instance spec is invalid' do
+        context 'when instance.spec is nil' do
+          it 'skips the instance' do
+            test_validate_spec('{}')
           end
         end
 
-        context 'validating instance.spec' do
-          context 'when instance.spec is nil' do
+        context 'when instance.spec is not nil' do
+          context 'when spec[networks] is nil' do
             it 'skips the instance' do
-              test_validate_spec('{}')
+              test_validate_spec('{"networks": nil}')
             end
           end
 
-          context 'when instance.spec is not nil' do
-            context 'when spec[networks] is nil' do
+          context 'when spec[networks] is not nil' do
+            context 'when network[ip] is nil' do
               it 'skips the instance' do
-                test_validate_spec('{"networks": nil}')
+                test_validate_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
               end
             end
+          end
 
-            context 'when spec[networks] is not nil' do
-              context 'when network[ip] is nil' do
-                it 'skips the instance' do
-                  test_validate_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
-                end
-              end
+          context 'when spec[job] is nil' do
+            it 'skips the instance' do
+              test_validate_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
             end
+          end
+        end
 
-            context 'when spec[job] is nil' do
+        def test_validate_spec(spec_json)
+          expect(instance_model).to receive(:spec_json).and_return(spec_json).twice
+          expect(Bosh::Director::Models::LocalDnsRecord).to_not receive(:create)
+
+          subject.create_local_dns_record(instance_model)
+        end
+      end
+    end
+
+    describe '#delete_local_dns_record' do
+      let(:record) { instance_double(Models::LocalDnsRecord) }
+      let(:expected_uuid_model) do
+        {
+          name: "fake-uuid.job_name.name.bosh.bosh",
+          ip: '1234',
+          instance_id: instance_model.id
+        }
+      end
+      let(:expected_index_model) do
+        {
+          name: "0.job_name.name.bosh.bosh",
+          ip: '1234',
+          instance_id: instance_model.id
+        }
+      end
+
+      before do
+        allow(record).to receive(:delete)
+      end
+
+      context 'when include_index enabled' do
+        before do
+          allow(Config).to receive(:local_dns_include_index?).and_return(true)
+        end
+
+        it 'should call create_local_dns_record to add UUID and Index based DNS record' do
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+
+          expect(Models::LocalDnsRecord).to receive(:where).
+            with(expected_uuid_model).
+            and_return(record)
+
+          expect(Models::LocalDnsRecord).to receive(:where).
+            with(expected_index_model).
+            and_return(record)
+
+          subject.delete_local_dns_record(instance_model)
+        end
+      end
+
+      context 'when include_index disabled' do
+        before do
+          allow(Config).to receive(:local_dns_include_index?).and_return(false)
+        end
+
+        it 'should call create_local_dns_record to add only UUID based DNS record' do
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+
+          expect(Models::LocalDnsRecord).to_not receive(:where).
+            with(expected_index_model)
+
+          expect(Models::LocalDnsRecord).to receive(:where).
+            with(expected_uuid_model).
+            and_return(record)
+
+          subject.delete_local_dns_record(instance_model)
+        end
+      end
+
+      context 'when instance spec is invalid' do
+        context 'when instance.spec is nil' do
+          it 'skips the instance' do
+            test_validate_instance_spec('{}')
+          end
+        end
+
+        context 'when instance.spec is not nil' do
+          context 'when spec[networks] is nil' do
+            it 'skips the instance' do
+              test_validate_instance_spec('{"networks": null}')
+            end
+          end
+
+          context 'when spec[networks] is not nil' do
+            context 'when network[ip] is nil' do
               it 'skips the instance' do
-                test_validate_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
+                test_validate_instance_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
               end
             end
           end
 
-          def test_validate_spec(spec_json)
-            expect(instance_model).to receive(:spec_json).and_return(spec_json).twice
-            expect(Bosh::Director::Models::LocalDnsRecord).to_not receive(:create)
-
-            subject.create_local_dns_record(instance_model)
+          context 'when spec[job] is nil' do
+            it 'skips the instance' do
+              test_validate_instance_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
+            end
           end
+        end
+
+        def test_validate_instance_spec(spec_json)
+          expect(instance_model).to receive(:spec).and_return(JSON.parse(spec_json))
+
+          expect(Models::LocalDnsRecord).to_not receive(:where)
+          subject.delete_local_dns_record(instance_model)
         end
       end
     end

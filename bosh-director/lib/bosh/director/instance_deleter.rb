@@ -101,7 +101,7 @@ module Bosh::Director
 
     # FIXME: why do we hate dependency injection?
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(@cloud, @logger, @force, @virtual_delete_vm)
+      @vm_deleter ||= VmDeleter.new(@cloud, @logger, @dns_manager, @force, @virtual_delete_vm)
     end
   end
 end
