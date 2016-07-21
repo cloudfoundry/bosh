@@ -86,23 +86,6 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe '#local_dns' do
-    context 'when hash has value set' do
-      it 'returns the configuration value' do
-        test_config['local_dns'] = true
-        described_class.configure(test_config)
-        expect(described_class.local_dns).to eq(true)
-      end
-    end
-
-    context 'when hash does not have value set' do
-      it 'returns default value of false' do
-        described_class.configure(test_config)
-        expect(described_class.local_dns).to eq(false)
-      end
-    end
-  end
-
   describe '#keep_unreachable_vms' do
     context 'when hash has value set' do
       it 'returns the configuration value' do

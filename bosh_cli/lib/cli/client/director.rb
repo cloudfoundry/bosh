@@ -29,7 +29,7 @@ module Bosh
           end
 
           @director_uri        = URI.parse(director_uri)
-          @director_ip         = Resolv.getaddresses(@director_uri.host).last
+          @director_host       = @director_uri.host
           @scheme              = @director_uri.scheme
           @port                = @director_uri.port
           @credentials         = credentials
@@ -776,7 +776,7 @@ module Bosh
 
           response = try_to_perform_http_request(
             method,
-            "#{@scheme}://#{@director_ip}:#{@port}#{uri}",
+            "#{@scheme}://#{@director_host}:#{@port}#{uri}",
             payload,
             headers,
             num_retries,

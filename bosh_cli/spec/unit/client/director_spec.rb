@@ -4,7 +4,6 @@ describe Bosh::Cli::Client::Director do
   DUMMY_TARGET = 'https://target.example.com:8080'
 
   before do
-    allow(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
     @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, credentials)
     allow(@director).to receive(:retry_wait_interval).and_return(0)
   end
@@ -120,7 +119,7 @@ describe Bosh::Cli::Client::Director do
       let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
 
       it 'adds authorization header with basic auth' do
-        stub_request(:get, 'https://127.0.0.1:8080/info').
+        stub_request(:get, 'https://target.example.com:8080/info').
           with(headers: request_headers).to_return(body: '{}', status: 200)
 
         @director.get_status
@@ -133,7 +132,7 @@ describe Bosh::Cli::Client::Director do
       let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' } }
 
       it 'adds authorization header with UAA token' do
-        stub_request(:get, 'https://127.0.0.1:8080/info').
+        stub_request(:get, 'https://target.example.com:8080/info').
           with(headers: request_headers).to_return(body: '{}', status: 200)
 
         @director.get_status
@@ -145,7 +144,7 @@ describe Bosh::Cli::Client::Director do
       let(:request_headers) { { 'Content-Type' => 'application/json' } }
 
       it 'adds authorization header with UAA token' do
-        stub_request(:get, 'https://127.0.0.1:8080/info').
+        stub_request(:get, 'https://target.example.com:8080/info').
           with(headers: request_headers).to_return(body: '{}', status: 200)
 
         @director.get_status
@@ -189,7 +188,7 @@ describe Bosh::Cli::Client::Director do
       let(:response_body) { JSON.generate(vms) }
 
       before do
-        stub_request(:get, 'https://127.0.0.1:8080/deployments/foo/vms').
+        stub_request(:get, 'https://target.example.com:8080/deployments/foo/vms').
           with(headers: request_headers).to_return(body: response_body, status: 200)
       end
 
@@ -667,7 +666,7 @@ jobs:
 
       context 'redacting' do
         it 'does not pass redact=false parameter' do
-          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff').
+          stub_request(:post, 'https://target.example.com:8080/deployments/foo/diff').
             with(headers: request_headers).
             to_return(status: 200, body: '{}')
           expect(@director).to receive(:post).with('/deployments/foo/diff', 'text/yaml', manifest)
@@ -678,7 +677,7 @@ jobs:
 
       context 'not redacting' do
         it 'passes redact=false parameter' do
-          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff?redact=false').
+          stub_request(:post, 'https://target.example.com:8080/deployments/foo/diff?redact=false').
             with(headers: request_headers).
             to_return(status: 200, body: '{}')
           expect(@director).to receive(:post).with('/deployments/foo/diff?redact=false', 'text/yaml', manifest)
@@ -738,13 +737,13 @@ jobs:
     context 'when director returns 404' do
       let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
       before do
-        stub_request(:get, 'https://127.0.0.1:8080/bad_endpoint').
+        stub_request(:get, 'https://target.example.com:8080/bad_endpoint').
           with(headers: request_headers).to_return(body: 'Not Found', status: 404)
       end
       let(:target_name) { 'FAKE-DIRECTOR' }
       before do
         status_response = { name: target_name }
-        stub_request(:get, 'https://127.0.0.1:8080/info').
+        stub_request(:get, 'https://target.example.com:8080/info').
           with(headers: request_headers).
           to_return(body: JSON.generate(status_response), status: 200)
       end
@@ -918,7 +917,6 @@ jobs:
         options = { :arg1 => 1, :arg2 => 2 }
 
         expect(URI).to receive(:parse).with(DUMMY_TARGET).and_call_original
-        expect(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
         @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, credentials, :no_track => true)
 
         expect(@director).to receive(:request).
@@ -1001,10 +999,10 @@ jobs:
       allow(HTTPClient).to receive(:new).and_return(client)
 
       expect(client).to receive(:request).
-        with(:get, 'http:///127.0.0.1:8080/stuff', :body => 'payload',
+        with(:get, 'http:///target.example.com:8080/stuff', :body => 'payload',
              :header                                     => headers.merge('Authorization' => auth))
       @director.send(:perform_http_request, :get,
-                     'http:///127.0.0.1:8080/stuff', 'payload', headers)
+                     'http:///target.example.com:8080/stuff', 'payload', headers)
     end
   end
 
@@ -1014,7 +1012,7 @@ jobs:
                              :body             => 'test', :headers => {})
 
       expect(@director).to receive(:perform_http_request).
-        with(:get, 'https://127.0.0.1:8080/stuff', 'payload', 'h1' => 'a',
+        with(:get, 'https://target.example.com:8080/stuff', 'payload', 'h1' => 'a',
              'h2'                                                  => 'b',
              'Content-Type' => 'app/zb', 'Host'=>'target.example.com').
         and_return(mock_response)

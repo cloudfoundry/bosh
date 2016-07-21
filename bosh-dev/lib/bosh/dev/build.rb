@@ -13,16 +13,19 @@ require 'logging'
 
 module Bosh::Dev
   class Build
+    include CommandHelper
+
     attr_reader :number
 
     def self.candidate(bucket_name='bosh-ci-pipeline')
       logger = Logging.logger(STDERR)
       number = ENV['CANDIDATE_BUILD_NUMBER']
       skip_promote_artifacts = ENV.fetch('SKIP_PROMOTE_ARTIFACTS', '').split(',')
+      bearer_token = ENV.fetch('BOSHIO_BEARER_TOKEN', nil)
 
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
-        Candidate.new(number, bucket_name, DownloadAdapter.new(logger), logger, skip_promote_artifacts)
+        Candidate.new(number, bucket_name, DownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
 
@@ -34,17 +37,18 @@ module Bosh::Dev
           subnum = '0000'
         end
 
-        Local.new(subnum, bucket_name, LocalDownloadAdapter.new(logger), logger, skip_promote_artifacts)
+        Local.new(subnum, bucket_name, LocalDownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
       end
     end
 
-    def initialize(number, bucket_name, download_adapter, logger, skip_promote_artifacts)
+    def initialize(number, bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token)
       @number = number
       @logger = logger
       @promotable_artifacts = PromotableArtifacts.new(self, logger, {:skip_artifacts => skip_promote_artifacts} )
       @bucket = bucket_name
       @upload_adapter = UploadAdapter.new
       @download_adapter = download_adapter
+      @bearer_token = bearer_token
     end
 
     def upload_gems(source_dir, dest_dir)
@@ -81,6 +85,16 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
       upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(archive.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
+
+      stdout, stderr, status = exec_cmd("sha1sum #{archive.path}")
+      raise "Failed to calculate sha1 of #{archive.path}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+      sha1 = stdout.split(/\s/)[0]
+      logger.info("sha1 #{normal_filename} = #{sha1}")
+
+      if @bearer_token
+        stdout, stderr, status = exec_cmd("curl -X POST --fail 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
+        raise "Failed to notify bosh.io with checksum '#{sha1}' for '#{normal_filename}': stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+      end
     end
 
     def download_stemcell(stemcell, output_directory)

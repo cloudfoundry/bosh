@@ -40,7 +40,6 @@ module Bosh::Director
         :generate_vm_passwords,
         :remove_dev_tools,
         :enable_virtual_delete_vms,
-        :local_dns,
       )
 
       attr_reader(
@@ -165,7 +164,6 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
-        @local_dns = config.fetch('local_dns', false)
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 

@@ -16,3 +16,13 @@ describe 'vSphere Stemcell', stemcell_image: true do
     end
   end
 end
+
+describe 'vSphere stemcell tarball', stemcell_tarball: true do
+  context 'disables the floppy drive' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/ovf/*.vmx") do
+      its(:content) { should include('floppy0.present = "FALSE"') }
+      its(:content) { should_not include('floppy0.clientDevice') }
+      its(:content) { should_not include('floppy0.startConnected') }
+    end
+  end
+end
