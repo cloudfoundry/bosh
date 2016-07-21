@@ -3,9 +3,8 @@ require 'spec_helper'
 module Bosh
   module Director
     describe VmDeleter do
-      subject { VmDeleter.new(cloud, logger, dns_manager) }
+      subject { VmDeleter.new(cloud, logger) }
 
-      let(:dns_manager) { instance_double(DnsManager) }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:event_manager) { Api::EventManager.new(true)}
       let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
@@ -69,7 +68,6 @@ module Bosh
         before do
           expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
           expect(subject).to receive(:delete_vm).with(instance_model.vm_cid)
-          allow(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end
 
@@ -99,7 +97,7 @@ module Bosh
         end
 
         context 'when virtual delete is enabled' do
-          subject { VmDeleter.new(cloud, logger, dns_manager, false, true) }
+          subject { VmDeleter.new(cloud, logger, false, true) }
 
           it 'skips calling delete_vm on the cloud' do
             expect(logger).to receive(:info).with('Deleting VM')

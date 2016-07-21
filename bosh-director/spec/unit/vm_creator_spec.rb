@@ -5,12 +5,13 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-          cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster, dns_manager
+          cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
       ) }
 
       let(:disk_manager) { DiskManager.new(cloud, logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
-      let(:vm_deleter) { VmDeleter.new(cloud, logger, dns_manager, false, false) }
+      let(:disk_manager) { DiskManager.new(cloud, logger) }
+      let(:vm_deleter) { VmDeleter.new(cloud, logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:agent_client) do
@@ -24,7 +25,6 @@ module Bosh
       end
       let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager ).to_hash }
       let(:dns_manager) { DnsManager.new("bosh", {}, nil, nil, nil, nil) }
-      before { allow(DnsManagerProvider).to receive(:create).and_return(dns_manager) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -161,7 +161,6 @@ module Bosh
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
-        allow(dns_manager).to receive(:create_local_dns_record)
       end
 
       it 'should create a vm' do

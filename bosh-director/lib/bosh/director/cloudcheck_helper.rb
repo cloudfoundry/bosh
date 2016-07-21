@@ -162,16 +162,14 @@ module Bosh::Director
     end
 
     def vm_deleter
-      dns_manager = DnsManagerProvider.create
-      @vm_deleter ||= VmDeleter.new(cloud, @logger, dns_manager, false, Config.enable_virtual_delete_vms)
+      @vm_deleter ||= VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
     end
 
     def vm_creator
       disk_manager = DiskManager.new(cloud, @logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
-      dns_manager = DnsManagerProvider.create
-      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster, dns_manager)
+      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
     end
 
     def validate_spec(spec)

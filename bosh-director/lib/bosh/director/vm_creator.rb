@@ -7,14 +7,13 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
-    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster, dns_manager)
+    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
       @cloud = cloud
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
       @job_renderer = job_renderer
       @agent_broadcaster = agent_broadcaster
-      @dns_manager = dns_manager
     end
 
     def create_for_instance_plans(instance_plans, ip_provider)

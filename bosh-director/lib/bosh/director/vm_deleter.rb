@@ -1,9 +1,8 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(cloud, logger, dns_manager, force=false, enable_virtual_delete_vm=false)
+    def initialize(cloud, logger, force=false, enable_virtual_delete_vm=false)
       @cloud = cloud
       @logger = logger
-      @dns_manager = dns_manager
       @error_ignorer = ErrorIgnorer.new(force, @logger)
       @enable_virtual_delete_vm = enable_virtual_delete_vm
     end
