@@ -2,9 +2,10 @@ module Bosh::Director::ConfigServer
 
   class ConfigParser
 
-    def self.parse(obj_to_be_parsed)
+    def self.parse(obj_to_be_parsed, subtrees_to_ignore = [])
       result = Bosh::Common::DeepCopy.copy(obj_to_be_parsed)
-      config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(obj_to_be_parsed)
+      config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(obj_to_be_parsed, subtrees_to_ignore)
+
       config_keys = config_map.map { |c| c["key"] }.uniq
 
       config_values, invalid_keys = fetch_config_values(config_keys)

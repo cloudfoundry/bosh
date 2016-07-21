@@ -3,11 +3,12 @@ require 'spec_helper'
 module Bosh::Director::ConfigServer
   describe ConfigParser do
 
-    subject(:parsed_manifest) { ConfigParser.parse(manifest_hash) }
+    subject(:parsed_manifest) { ConfigParser.parse(manifest_hash, ignored_subtrees) }
 
     let(:manifest_hash) { {} }
+    let(:ignored_subtrees) {[]}
 
-    context '#parsed' do
+    context '#parse' do
       class MockSuccessResponse < Net::HTTPSuccess
         attr_accessor :body
 
@@ -158,6 +159,40 @@ module Bosh::Director::ConfigServer
           allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
           manifest_hash['properties'] = { 'key' => '((value))' }
           expect{ parsed_manifest }.to raise_error('SSL certificate verification failed')
+        end
+
+        it 'should not replace values in ignored subtrees' do
+          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
+
+          manifest_hash['instance_groups'] = [
+            {
+              'name' => 'bla',
+              'jobs' => [
+                {
+                  'name' => 'test_job',
+                  'properties' => { 'job_prop' => '((job_val))' },
+                  'uninterpolated_properties' => { 'job_prop' => '((job_val))' }
+                }
+              ]
+            }
+          ]
+
+          expected_manifest = {
+            'instance_groups' => [
+              {
+                'name' => 'bla',
+                'jobs' => [
+                  {
+                    'name' => 'test_job',
+                    'properties' => { 'job_prop' => 'test2' },
+                    'uninterpolated_properties' => { 'job_prop' => '((job_val))' },
+                  }
+                ]
+              }
+            ]
+          }
+
+          expect(parsed_manifest).to eq(expected_manifest)
         end
       end
 
