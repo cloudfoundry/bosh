@@ -282,13 +282,9 @@ module Bosh::Director
         { name: "parsed_manifest" }
       end
 
-      let(:mock_config_parser) do
-        instance_double("Bosh::Director::ConfigServer::ConfigParser", parsed: mock_parsed_manifest)
-      end
-
       before do
         allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:new).and_return(mock_config_parser)
+        allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(manifest_hash).and_return(mock_parsed_manifest)
       end
 
       it 'should store raw manifest and parsed manifest separately' do

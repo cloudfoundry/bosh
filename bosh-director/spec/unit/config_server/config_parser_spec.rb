@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::ConfigServer
   describe ConfigParser do
 
-    subject(:config_parser) { ConfigParser.new(manifest_hash) }
+    subject(:parsed_manifest) { ConfigParser.parse(manifest_hash) }
 
     let(:manifest_hash) { {} }
 
@@ -71,93 +71,93 @@ module Bosh::Director::ConfigServer
           expect(@mock_http).to receive(:use_ssl=).with(true)
           expect(@mock_http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
           expect(@mock_http).to receive(:ca_file=).with('/root/cert.crt')
-          config_parser.parsed
+          parsed_manifest
         end
 
         it 'should return a new copy of the original manifest' do
-          expect(config_parser.parsed).to_not equal(manifest_hash)
+          expect(parsed_manifest).to_not equal(manifest_hash)
         end
 
         it 'should request keys from the proper url' do
           manifest_hash['properties'] = { 'key' => '((value))' }
           expect(@mock_http).to receive(:get).with("/v1/data/value")
-          config_parser.parsed
+          parsed_manifest
         end
 
         it 'should replace the global property keys in the passed hash' do
           manifest_hash['properties'] = { 'key' => '((value))' }
 
           expected_manifest = {
-              'properties' => { 'key' => 123 }
+            'properties' => { 'key' => 123 }
           }
 
-          expect(config_parser.parsed).to eq(expected_manifest)
+          expect(parsed_manifest).to eq(expected_manifest)
         end
 
         it 'should replace the instance group property keys in the passed hash' do
           manifest_hash['instance_groups'] = [
-              {
-                  'name' => 'bla',
-                  'properties' => { 'instance_prop' => '((instance_val))' }
-              }
+            {
+              'name' => 'bla',
+              'properties' => { 'instance_prop' => '((instance_val))' }
+            }
           ]
 
           expected_manifest = {
-              'instance_groups' => [
-                  {
-                      'name' => 'bla',
-                      'properties' => { 'instance_prop' => 'test1' }
-                  }
-              ]
+            'instance_groups' => [
+              {
+                'name' => 'bla',
+                'properties' => { 'instance_prop' => 'test1' }
+              }
+            ]
           }
 
-          expect(config_parser.parsed).to eq(expected_manifest)
+          expect(parsed_manifest).to eq(expected_manifest)
         end
 
         it 'should replace the env keys in the passed hash' do
           manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_val))'} } ]
 
           expected_manifest = {
-              'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
+            'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
           }
 
-          expect(config_parser.parsed).to eq(expected_manifest)
+          expect(parsed_manifest).to eq(expected_manifest)
         end
 
         it 'should replace the job properties in the passed hash' do
           manifest_hash['instance_groups'] = [
-              {
-                  'name' => 'bla',
-                  'jobs' => [
-                      {
-                          'name' => 'test_job',
-                          'properties' => { 'job_prop' => '((job_val))' }
-                      }
-                  ]
-              }
+            {
+              'name' => 'bla',
+              'jobs' => [
+                {
+                  'name' => 'test_job',
+                  'properties' => { 'job_prop' => '((job_val))' }
+                }
+              ]
+            }
           ]
 
           expected_manifest = {
-              'instance_groups' => [
+            'instance_groups' => [
+              {
+                'name' => 'bla',
+                'jobs' => [
                   {
-                      'name' => 'bla',
-                      'jobs' => [
-                          {
-                              'name' => 'test_job',
-                              'properties' => { 'job_prop' => 'test2' }
-                          }
-                      ]
+                    'name' => 'test_job',
+                    'properties' => { 'job_prop' => 'test2' }
                   }
-              ]
+                ]
+              }
+            ]
           }
 
-          expect(config_parser.parsed).to eq(expected_manifest)
+          expect(parsed_manifest).to eq(expected_manifest)
         end
 
         it 'should raise an error message when the certificate is invalid' do
           allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
           manifest_hash['properties'] = { 'key' => '((value))' }
-          expect{ config_parser.parsed }.to raise_error('SSL certificate verification failed')
+          expect{ parsed_manifest }.to raise_error('SSL certificate verification failed')
         end
       end
 
@@ -173,7 +173,7 @@ module Bosh::Director::ConfigServer
 
         it 'uses default cert_store' do
           manifest_hash['properties'] = { 'key' => '((value))' }
-          config_parser.parsed
+          parsed_manifest
 
           expect(@mock_http).to have_received(:cert_store=)
           expect(store_double).to have_received(:set_default_paths)

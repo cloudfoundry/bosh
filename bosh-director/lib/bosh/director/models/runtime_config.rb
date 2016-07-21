@@ -14,7 +14,7 @@ module Bosh
           manifest_hash = YAML.load(properties)
 
           if Bosh::Director::Config.config_server_enabled
-            Bosh::Director::ConfigServer::ConfigParser.new(manifest_hash).parsed
+            Bosh::Director::ConfigServer::ConfigParser.parse(manifest_hash)
           else
             manifest_hash
           end

@@ -63,9 +63,8 @@ module Bosh::Director
     def setup_config_values
       return if !@raw_manifest_hash.nil?
 
-      manifest_parser = Bosh::Director::ConfigServer::ConfigParser.new(@manifest_hash)
       @raw_manifest_hash = @manifest_hash
-      @manifest_hash = manifest_parser.parsed
+      @manifest_hash = Bosh::Director::ConfigServer::ConfigParser.parse(@manifest_hash)
     end
 
     def raw_manifest_hash

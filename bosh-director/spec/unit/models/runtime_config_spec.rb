@@ -9,8 +9,7 @@ module Bosh::Director::Models
     describe "#manifest" do
 
       before do
-        dbl = instance_double("Bosh::Director::ConfigServer::ConfigParser", parsed: new_runtime_config)
-        allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:new).and_return(dbl)
+        allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(mock_manifest).and_return(new_runtime_config)
       end
 
       context "when config server is used" do
