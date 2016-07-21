@@ -82,29 +82,8 @@ module Bosh
           }.to change { Models::Event.count }.from(0).to(2)
         end
 
-        it 'calls DnsManager to delete the local dns records' do
-          expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-          expect(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
-
-          subject.delete_for_instance(instance_model)
-        end
-
-        context 'when local_dns is disabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(false)
-          end
-          it 'does not call DnsManager to delete the local dns records' do
-            expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-            expect(dns_manager).to_not receive(:delete_local_dns_record)
-
-            subject.delete_for_instance(instance_model)
-          end
-        end
-
         context 'when store_event is false' do
           it 'deletes the instance and does not store an event' do
-            expect(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
-
             expect {
               subject.delete_for_instance(instance_model, false)
             }.not_to change { Models::Event.count }

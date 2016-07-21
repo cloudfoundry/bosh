@@ -201,6 +201,21 @@ module Bosh::Director
             expect(dns_provider.find_dns_record('0.job-a.network-a.dep.bosh', '1.2.3.4')).to be_nil
           end
         end
+
+        it 'does not update local dns' do
+          expect(dns_manager).to_not receive(:delete_local_dns_record)
+          dns_manager.delete_dns_for_instance(instance_model)
+        end
+
+        context 'when local dns is enabled' do
+          before do
+            allow(Config).to receive(:local_dns_enabled?).and_return(true)
+          end
+          it 'calls the local dns methods' do
+            expect(dns_manager).to receive(:delete_local_dns_record)
+            dns_manager.delete_dns_for_instance(instance_model)
+          end
+        end
       end
 
       describe '#configure_nameserver' do
@@ -264,6 +279,24 @@ module Bosh::Director
 
             dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
             expect(dns_record.content).to eq('5.6.7.8')
+          end
+        end
+
+        it 'does not update local dns' do
+          expect(dns_manager).to_not receive(:delete_local_dns_record)
+          expect(dns_manager).to_not receive(:create_local_dns_record)
+          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
+        end
+
+        context 'local dns is enabled' do
+          before do
+            allow(Config).to receive(:local_dns_enabled?).and_return(true)
+          end
+
+          it 'deletes old records and creates a new dns record' do
+            expect(dns_manager).to receive(:delete_local_dns_record)
+            expect(dns_manager).to receive(:create_local_dns_record)
+            dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
           end
         end
       end

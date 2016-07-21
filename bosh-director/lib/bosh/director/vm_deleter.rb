@@ -15,7 +15,6 @@ module Bosh::Director
           instance_name = "#{instance_model.job}/#{instance_model.uuid}"
           parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance_model.vm_cid)
-          @dns_manager.delete_local_dns_record(instance_model) if Config.local_dns_enabled?
           instance_model.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
         rescue Exception => e
           raise e

@@ -89,7 +89,6 @@ module Bosh::Director
       apply_initial_vm_state(instance_plan)
 
       instance_plan.mark_desired_network_plans_as_existing
-      @dns_manager.create_local_dns_record(instance.model) if Config.local_dns_enabled?
     end
 
     private

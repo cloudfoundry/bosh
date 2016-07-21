@@ -388,36 +388,6 @@ module Bosh
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
-      context 'adding local DNS records' do
-        before do
-          allow(Config).to receive(:local_dns_enabled?).and_return(true)
-        end
-
-        it 'should call dns_manager method to create local dns record' do
-          expect(Config.cloud).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-          ).and_return('new-vm-cid')
-          expect(dns_manager).to receive(:create_local_dns_record)
-          expect {
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-          }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }. from(0).to(1)
-        end
-      end
-
-      context 'when local_dns is disabled' do
-        before do
-          allow(Config).to receive(:local_dns_enabled?).and_return(false)
-        end
-
-        it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-          expect(Config.cloud).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-          ).and_return('new-vm-cid')
-          expect(dns_manager).to_not receive(:create_local_dns_record)
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-        end
-      end
-
       context 'Config.generate_vm_passwords flag is true' do
         before {
           Config.generate_vm_passwords = true

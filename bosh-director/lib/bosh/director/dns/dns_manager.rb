@@ -58,6 +58,10 @@ module Bosh::Director
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       @local_dns_repo.create_or_update(instance_model, dns_records)
+      if Config.local_dns_enabled?
+        delete_local_dns_record(instance_model)
+        create_local_dns_record(instance_model)
+      end
     end
 
     def migrate_legacy_records(instance_model)
@@ -105,6 +109,7 @@ module Bosh::Director
       end
 
       @local_dns_repo.delete(instance_model)
+      delete_local_dns_record(instance_model) if Config.local_dns_enabled?
     end
 
     # build a list of dns servers to use
