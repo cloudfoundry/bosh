@@ -128,13 +128,21 @@ module Bosh
         end
 
         def dns_changed?
-          return false unless @dns_manager.dns_enabled?
-
-          network_settings.dns_record_info.any? do |name, ip|
-            not_found = @dns_manager.find_dns_record(name, ip).nil?
-            @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
-            not_found
+          if @dns_manager.dns_enabled?
+            return network_settings.dns_record_info.any? do |name, ip|
+              not_found = @dns_manager.find_dns_record(name, ip).nil?
+              @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+              not_found
+            end
           end
+
+          if Config.local_dns_enabled?
+            not_found = @dns_manager.find_local_dns_record(instance_model).empty?
+            # @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+            return not_found
+          end
+
+          false
         end
 
         def configuration_changed?

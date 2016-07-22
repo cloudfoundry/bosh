@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'fileutils'
 
 describe 'local DNS', type: :integration do
-  with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false})
+  with_reset_sandbox_before_each(dns_enabled: false, local_dns: {'enabled' => true, 'include_index' => false})
 
   let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
   let(:network_name) { 'local_dns' }

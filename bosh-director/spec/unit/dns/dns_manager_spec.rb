@@ -600,5 +600,26 @@ module Bosh::Director
         end
       end
     end
+
+    describe 'find_local_dns_record' do
+      context 'when include_index enabled' do
+        before do
+          allow(Config).to receive(:local_dns_include_index?).and_return(true)
+          allow(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+
+          subject.create_local_dns_record(instance_model)
+        end
+
+        it 'should call create_local_dns_record to add UUID and Index based DNS record' do
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+
+          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
+
+          expect(subject.find_local_dns_record(instance_model)).
+            to include(local_dns_record_first, local_dns_record_second)
+        end
+      end
+    end
   end
 end
