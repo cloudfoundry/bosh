@@ -6,23 +6,31 @@ module Bosh::Director
     end
 
     def broadcast
-      blob = Models::LocalDnsBlob.order(Sequel.desc(:id)).limit(1).first
+      blob = nil
+      Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
+        blob = Models::LocalDnsBlob.order(Sequel.desc(:id)).limit(1).first
+      end
       AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
     end
 
     def publish(dns_records)
       json_records = dns_records.to_json
       blobstore_id = @blobstore.create(json_records)
-      Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
-                                  :sha1 => Digest::SHA1.hexdigest(json_records),
-                                  :version => dns_records.version,
-                                  :created_at => Time.new)
+      Config.db.transaction(:isolation => :uncommitted, :retry_on => [Sequel::SerializationFailure]) do
+        Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
+                                    :sha1 => Digest::SHA1.hexdigest(json_records),
+                                    :version => dns_records.version,
+                                    :created_at => Time.new)
+      end
       blobstore_id
     end
 
     def export_dns_records
       hosts = []
-      records = Models::LocalDnsRecord.all
+      records = nil
+      Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
+        records = Models::LocalDnsRecord.all
+      end
       version = records.max_by{|r| r.id }
       version = version.nil? ? 0 : version.id
       records.each do |dns_record|
