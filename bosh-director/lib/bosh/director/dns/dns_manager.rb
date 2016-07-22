@@ -180,65 +180,52 @@ module Bosh::Director
     end
 
     def find_local_dns_record(instance_model)
-      spec = instance_model.spec
-      @logger.debug('Deleting local dns records')
+      @logger.debug('Find local dns records')
       result = []
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Finding local dns record with UUID name #{name_uuid} and ip #{ip}")
+        result = Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).all
 
-      unless spec.nil? || spec['networks'].nil?
-        @logger.debug("Found #{spec['networks'].length} networks")
-        spec['networks'].each do |network_name, network|
-
-          unless network['ip'].nil? or spec['job'].nil?
-            ip = network['ip']
-            name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
-            name_uuid = instance_model.uuid + name_rest
-            name_index = instance_model.index.to_s + name_rest
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
-              result = Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).all
-
-              if Config.local_dns_include_index?
-                @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
-                result += Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).all
-              end
-            end
-          end
+        if Config.local_dns_include_index?
+          @logger.debug("Finding local dns record with index name #{name_index} and ip #{ip}")
+          result += Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).all
         end
       end
       result
     end
 
     def delete_local_dns_record(instance_model)
-      spec = instance_model.spec
       @logger.debug('Deleting local dns records')
 
-      unless spec.nil? || spec['networks'].nil?
-        @logger.debug("Found #{spec['networks'].length} networks")
-        spec['networks'].each do |network_name, network|
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
+        Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).delete
 
-          unless network['ip'].nil? or spec['job'].nil?
-            ip = network['ip']
-            name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
-            name_uuid = instance_model.uuid + name_rest
-            name_index = instance_model.index.to_s + name_rest
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
-              Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).delete
-
-              if Config.local_dns_include_index?
-                @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
-                Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
-              end
-            end
-          end
+        if Config.local_dns_include_index?
+          @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
+          Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
         end
       end
     end
 
     def create_local_dns_record(instance_model)
-      spec = instance_model.spec
       @logger.debug('Creating local dns records')
 
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
+        Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
+
+        if Config.local_dns_include_index?
+          @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
+          Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
+        end
+      end
+    end
+
+    private
+
+    def with_valid_instance_spec_in_transaction(instance_model, &block)
+      spec = instance_model.spec
       unless spec.nil? || spec['networks'].nil?
         @logger.debug("Found #{spec['networks'].length} networks")
         spec['networks'].each do |network_name, network|
@@ -247,21 +234,13 @@ module Bosh::Director
             name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
-              Bosh::Director::Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
-
-              if Config.local_dns_include_index?
-                @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-                Bosh::Director::Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
-              end
+            Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
+              block.call(name_uuid, name_index, ip)
             end
           end
         end
       end
     end
-
-    private
 
     # add default dns server to an array of dns servers
     def add_default_dns_server(servers)
