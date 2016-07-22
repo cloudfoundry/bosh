@@ -3,6 +3,11 @@ require 'set'
 module Bosh::Director
   class Manifest
 
+    def self.load_from_model(deployment_model)
+      manifest_text = deployment_model.manifest || '{}'
+      self.load_from_hash(YAML.load(manifest_text), deployment_model.cloud_config, deployment_model.runtime_config)
+    end
+
     def self.load_from_text(manifest_text, cloud_config, runtime_config, use_config_server=false)
       manifest_text ||= '{}'
       self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config, use_config_server)

@@ -24,6 +24,41 @@ module Bosh::Director
       Models::Stemcell.make(name: 'hard', version: '3146.1')
     end
 
+    describe '.load_from_model' do
+      let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
+      let(:cloud_config) { Models::CloudConfig.make(manifest: {'name-2'=>'my-name-2'}) }
+      let(:runtime_config) { Models::RuntimeConfig.make(manifest: {'name-3'=>'my-name-3'}) }
+
+      before do
+        allow(deployment_model).to receive(:manifest).and_return("{'name-1':'my-name-1'}")
+        allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
+        allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
+      end
+
+      it 'creates a manifest object from a manifest, a cloud config, and a runtime config' do
+        result =  Manifest.load_from_model(deployment_model)
+        expect(result.manifest_hash).to eq({'name-1' => 'my-name-1'})
+        expect(result.cloud_config_hash).to eq({'name-2' =>'my-name-2'})
+        expect(result.runtime_config_hash).to eq({'name-3' =>'my-name-3'})
+      end
+
+      context 'when empty manifests exist' do
+        let(:cloud_config) { Models::CloudConfig.make(manifest: nil) }
+        let(:runtime_config) { Models::RuntimeConfig.make(manifest: nil) }
+
+        before do
+          allow(deployment_model).to receive(:manifest).and_return(nil)
+        end
+
+        it 'creates a manifest object from a manifest, a cloud config, and a runtime config' do
+          result =  Manifest.load_from_model(deployment_model)
+          expect(result.manifest_hash).to eq({})
+          expect(result.cloud_config_hash).to eq(nil)
+          expect(result.runtime_config_hash).to eq(nil)
+        end
+      end
+    end
+
     describe '.load_from_hash' do
       let(:cloud_config) { Models::CloudConfig.make(manifest: {}) }
       let(:runtime_config) { Models::RuntimeConfig.make(manifest: {}) }
