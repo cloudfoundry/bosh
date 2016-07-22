@@ -3,32 +3,26 @@ require 'set'
 module Bosh::Director
   class Manifest
 
-    def self.load_from_model(deployment_model)
+    def self.load_from_model(deployment_model, options = {})
       manifest_text = deployment_model.manifest || '{}'
-      self.load_from_hash(YAML.load(manifest_text), deployment_model.cloud_config, deployment_model.runtime_config)
+      self.load_manifest(YAML.load(manifest_text), deployment_model.cloud_config, deployment_model.runtime_config, options)
     end
 
-    def self.load_from_text(manifest_text, cloud_config, runtime_config, use_config_server=false)
-      manifest_text ||= '{}'
-      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config, use_config_server)
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, options = {})
+      self.load_manifest(manifest_hash, cloud_config, runtime_config, options)
     end
 
-    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, use_config_server=false)
-      cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
-      runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
-      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-      new(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server)
+    def self.generate_empty_manifest
+      self.load_manifest({}, nil, nil, {:resolve_interpolation => false})
     end
 
-    attr_reader :manifest_hash, :cloud_config_hash, :runtime_config_hash
+    attr_reader :interpolated_manifest_hash, :raw_manifest_hash, :cloud_config_hash, :runtime_config_hash
 
-    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server=false)
-      @manifest_hash = manifest_hash
+    def initialize(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)
+      @interpolated_manifest_hash = interpolated_manifest_hash
+      @raw_manifest_hash = raw_manifest_hash
       @cloud_config_hash = cloud_config_hash
       @runtime_config_hash = runtime_config_hash
-      @use_config_server = use_config_server
-
-      setup_config_values if can_use_config_server?
     end
 
     def resolve_aliases
@@ -51,7 +45,7 @@ module Bosh::Director
     end
 
     def to_hash
-      hash = @manifest_hash.merge(@cloud_config_hash || {})
+      hash = @interpolated_manifest_hash.merge(@cloud_config_hash || {})
       hash.merge(@runtime_config_hash || {}) do |key, old, new|
         if key == 'releases'
           if old && new
@@ -65,21 +59,26 @@ module Bosh::Director
       end
     end
 
-    def setup_config_values
-      return if !@raw_manifest_hash.nil?
-
-      @raw_manifest_hash = @manifest_hash
-      @manifest_hash = Bosh::Director::ConfigServer::ConfigParser.parse(@manifest_hash)
-    end
-
-    def raw_manifest_hash
-      @raw_manifest_hash || @manifest_hash
-    end
-
     private
 
-    def can_use_config_server?
-      @use_config_server && Bosh::Director::Config.config_server_enabled
+    def self.load_manifest(manifest_hash, cloud_config, runtime_config, options = {})
+      resolve_interpolation = options.fetch(:resolve_interpolation, true)
+      ignore_cloud_config = options.fetch(:ignore_cloud_config, false)
+
+      cloud_config = nil if ignore_cloud_config
+
+      cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
+      runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
+      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
+      raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+
+      # inject uninterpolated properties
+
+      if resolve_interpolation && Bosh::Director::Config.config_server_enabled
+        manifest_hash = Bosh::Director::ConfigServer::ConfigParser.parse(manifest_hash)
+      end
+
+      new(manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)
     end
 
     def resolve_stemcell_version(stemcell)

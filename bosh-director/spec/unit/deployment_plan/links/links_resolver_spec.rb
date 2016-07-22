@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-    manifest = Bosh::Director::Manifest.new(deployment_manifest, nil, nil)
+    manifest = Bosh::Director::Manifest.new(deployment_manifest, deployment_manifest, nil, nil)
     planner = planner_factory.create_from_manifest(manifest, nil, nil, {})
     planner.bind_models
     planner
@@ -191,7 +191,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])
 
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-          manifest = Bosh::Director::Manifest.new(other_deployment_manifest, nil, nil)
+          manifest = Bosh::Director::Manifest.new(other_deployment_manifest, other_deployment_manifest, nil, nil)
           deployment_plan = planner_factory.create_from_manifest(manifest, nil, nil, {})
           deployment_plan.bind_models
 
@@ -350,7 +350,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when there is a cloud config' do
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-        manifest = Bosh::Director::Manifest.new(deployment_manifest, cloud_config.manifest, nil)
+        manifest = Bosh::Director::Manifest.new(deployment_manifest, deployment_manifest, cloud_config.manifest, nil)
         planner = planner_factory.create_from_manifest(manifest, cloud_config, nil, {})
         planner.bind_models
         planner

@@ -33,7 +33,7 @@ module Bosh
         end
 
         def create_from_model(deployment_model, options={})
-          manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config, deployment_model.runtime_config, true)
+          manifest = Manifest.load_from_model(deployment_model)
           create_from_manifest(manifest, deployment_model.cloud_config, deployment_model.runtime_config, options)
         end
 
@@ -44,11 +44,11 @@ module Bosh
         private
 
         def parse_from_manifest(manifest, cloud_config, runtime_config, options)
-          @manifest_validator.validate(manifest.manifest_hash, manifest.cloud_config_hash)
+          @manifest_validator.validate(manifest.interpolated_manifest_hash, manifest.cloud_config_hash)
 
           migrated_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
           manifest.resolve_aliases
-          migrated_manifest_hash = migrated_manifest.manifest_hash
+          migrated_manifest_hash = migrated_manifest.interpolated_manifest_hash
           @logger.debug("Migrated deployment manifest:\n#{migrated_manifest.raw_manifest_hash}")
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
           name = migrated_manifest_hash['name']

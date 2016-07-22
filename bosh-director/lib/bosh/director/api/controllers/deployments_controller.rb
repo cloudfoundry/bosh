@@ -372,16 +372,16 @@ module Bosh::Director
         ignore_cc = ignore_cloud_config?(manifest_hash)
 
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, ignore_cc ? nil : deployment.cloud_config, deployment.runtime_config)
+          before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
           before_manifest.resolve_aliases
         else
-          before_manifest = Manifest.load_from_text(nil, nil, nil)
+          before_manifest = Manifest.generate_empty_manifest
         end
 
         after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
-        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config)
+        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config, {:resolve_interpolation => false})
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'

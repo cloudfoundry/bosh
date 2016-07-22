@@ -990,8 +990,8 @@ module Bosh::Director
             end
 
             it 'returns 200 with an empty diff and an error message if the diffing fails' do
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :resolve_aliases)
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :diff).and_raise('Oooooh crap')
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :resolve_aliases)
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :diff).and_raise('Oooooh crap')
 
               post '/fake-dep-name/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 
