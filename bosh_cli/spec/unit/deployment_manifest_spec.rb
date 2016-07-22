@@ -4,6 +4,12 @@ require 'cli/deployment_manifest'
 describe Bosh::Cli::DeploymentManifest do
   let(:manifest_hash) do
     {
+      'stemcells' => [
+        {
+          'name' => 'fake-stemcell-v2-manifest',
+          'version' => 12321
+        }
+      ],
       'releases' => [
         {
           'name' => 'fake-release',
@@ -24,7 +30,7 @@ describe Bosh::Cli::DeploymentManifest do
         {
           'name' => 'fake-resource-pool',
           'stemcell' => {
-            'name' => 'fake-stemcell',
+            'name' => 'fake-stemcell-v1-manifest',
             'version' => 12321
           }
         }
@@ -42,7 +48,14 @@ describe Bosh::Cli::DeploymentManifest do
     }.not_to change { manifest_hash['networks'].first['subnets'] }
   end
 
-  context 'when stemcell version is an integer' do
+  context 'when stemcell version is an integer in a v2 manifest' do
+    it 'converts it to string' do
+      normalized = subject.normalize
+      expect(normalized['stemcells'].first['version']).to eq('12321')
+    end
+  end
+
+  context 'when stemcell version is an integer in a v1 manifest' do
     it 'converts it to string' do
       normalized = subject.normalize
       expect(normalized['resource_pools']['fake-resource-pool']['stemcell']['version']).to eq('12321')
