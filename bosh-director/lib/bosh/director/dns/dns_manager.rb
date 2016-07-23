@@ -156,9 +156,7 @@ module Bosh::Director
 
     def cleanup_dns_records
       if publisher_enabled?
-        Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-          @dns_publisher.cleanup_blobs
-        end
+        @dns_publisher.cleanup_blobs
       end
     end
 
@@ -232,9 +230,7 @@ module Bosh::Director
             name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
-            Config.db.transaction(:isolation => :uncommitted, :retry_on=>[Sequel::SerializationFailure]) do
-              block.call(name_uuid, name_index, ip)
-            end
+            block.call(name_uuid, name_index, ip)
           end
         end
       end

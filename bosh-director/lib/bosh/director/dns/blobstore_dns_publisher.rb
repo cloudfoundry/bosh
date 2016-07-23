@@ -16,12 +16,10 @@ module Bosh::Director
     def publish(dns_records)
       json_records = dns_records.to_json
       blobstore_id = @blobstore.create(json_records)
-      Config.db.transaction(:isolation => :uncommitted, :retry_on => [Sequel::SerializationFailure]) do
         Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
                                     :sha1 => Digest::SHA1.hexdigest(json_records),
                                     :version => dns_records.version,
                                     :created_at => Time.new)
-      end
       blobstore_id
     end
 
@@ -46,7 +44,12 @@ module Bosh::Director
       return if dns_blobs.empty?
 
       dns_blobs.each do |blob|
-        Models::EphemeralBlob.create(:blobstore_id => blob.blobstore_id, :sha1 => blob.sha1, :created_at => blob.created_at)
+        begin
+          Models::EphemeralBlob.create(:blobstore_id => blob.blobstore_id, :sha1 => blob.sha1, :created_at => blob.created_at)
+        rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
+          error_message = e.message.downcase
+          raise e unless (error_message.include?('unique') || error_message.include?('duplicate'))
+        end
       end
       Models::LocalDnsBlob.where('id != ?', last_record.id).delete
     end
