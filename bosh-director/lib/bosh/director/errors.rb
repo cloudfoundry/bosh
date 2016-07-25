@@ -287,6 +287,9 @@ module Bosh::Director
   # Config server errors
   ConfigServerMissingKeys = err(540000)
 
+  # CPI config
+  CpiDuplicateName = err(550000)
+
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 end

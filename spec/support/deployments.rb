@@ -100,6 +100,27 @@ module Bosh::Spec
       }
     end
 
+    def self.simple_cpi_config
+      {
+          'cpis' => [
+              {
+                  'name' => 'cpi-name',
+                  'type' => 'cpi-type',
+                  'properties' => {
+                      'somekey' => 'someval'
+                  }
+              },
+              {
+                  'name' => 'cpi-name2',
+                  'type' => 'cpi-type2',
+                  'properties' => {
+                      'somekey2' => 'someval2'
+                  }
+              }
+          ]
+      }
+    end
+
     def self.network(options = {})
       {
         'name' => 'a',

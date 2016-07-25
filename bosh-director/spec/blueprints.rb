@@ -171,6 +171,10 @@ module Bosh::Director::Models
     manifest { Bosh::Spec::Deployments.simple_runtime_config }
   end
 
+  CpiConfig.blueprint do
+    manifest { Bosh::Spec::Deployments.simple_cpi_config }
+  end
+
   DeploymentProperty.blueprint do
     deployment { Deployment.make }
     name { Sham.name }

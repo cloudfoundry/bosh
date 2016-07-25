@@ -329,6 +329,19 @@ describe Bosh::Cli::Client::Director do
       @director.update_runtime_config('runtime config manifest')
     end
 
+    it 'retrieves latest cpi config' do
+      expect(@director).to receive(:get).with('/cpi_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_cpi_config
+    end
+
+    it 'updates cpi config' do
+      expect(@director).to receive(:post).
+          with('/cpi_configs', 'text/yaml', 'cpi config manifest').
+          and_return(true)
+      @director.update_cpi_config('cpi config manifest')
+    end
+
     it 'lists releases' do
       expect(@director).to receive(:get).with('/releases', 'application/json').
         and_return([200, JSON.generate([]), {}])
