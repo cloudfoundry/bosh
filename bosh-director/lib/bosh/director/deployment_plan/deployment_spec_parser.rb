@@ -11,8 +11,8 @@ module Bosh::Director
 
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
-      def parse(deployment_manifest, options = {})
-        @deployment_manifest = deployment_manifest
+      def parse(deployment_interpolated_manifest, options = {})
+        @deployment_manifest = deployment_interpolated_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
         parse_options = {}
