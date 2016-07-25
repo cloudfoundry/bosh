@@ -438,7 +438,7 @@ module Bosh::Director
         end
 
         it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
           subject.create_local_dns_record(instance_model)
 
@@ -611,7 +611,7 @@ module Bosh::Director
         end
 
         it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
           local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
           local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
