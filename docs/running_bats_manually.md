@@ -10,6 +10,12 @@ Before you can run BAT, you need to set the following environment variables:
 # DNS name or IP address of the bosh director used for testing (without the scheme)
 export BAT_DIRECTOR=
 
+# Username of bosh director used for testing (optional, only needed if you do not use the defaults)
+#export BAT_DIRECTOR_USER=
+
+# User's password of bosh director used for testing (optional, only needed if you do not use the defaults)
+#export BAT_DIRECTOR_PASSWORD=
+
 # path to the stemcell you want to use for testing
 export BAT_STEMCELL=
 
@@ -192,5 +198,4 @@ Add TCP ports `22` and `4567` to the **default** security group.
 
 ## Running BAT
 
-When all of the above is ready, running `bundle exec rake bat:env` will verify environment variables are set correctly.
-To run the whole test suite, run `bundle exec rake bat`.
+When all of the above is ready, to run the whole test suite, go inside the "bat" directory with `cd <<bosh base dir>>/bat` and run `bundle exec rspec`.

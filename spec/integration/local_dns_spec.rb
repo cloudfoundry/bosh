@@ -27,87 +27,120 @@ describe 'local DNS', type: :integration do
     end
   end
 
-  context 'upgrade deployment from 1 to 10 instances' do
-    it 'sends sync_dns action to all agents and updates all /etc/hosts' do
-      manifest_deployment = initial_deployment(1, 5)
-      manifest_deployment['jobs'][0]['instances'] = 10
-      deploy_simple_manifest(manifest_hash: manifest_deployment)
+  context 'upgrade and downgrade increasing concurrency' do
+    context 'upgrade deployment from 1 to 10 instances' do
+      it 'sends sync_dns action to all agents and updates all /etc/hosts' do
+        manifest_deployment = initial_deployment(1, 5)
+        manifest_deployment['jobs'][0]['instances'] = 10
+        deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-      10.times do |i|
-        check_agent_log(i)
+        10.times do |i|
+          check_agent_log(i)
+        end
+
+        check_agent_etc_hosts(10, 10)
+      end
+    end
+
+    context 'downgrade deployment from 10 to 5 instances' do
+      let(:manifest_deployment) { initial_deployment(10, 5) }
+
+      before do
+        manifest_deployment['jobs'][0]['instances'] = 5
+        deploy_simple_manifest(manifest_hash: manifest_deployment)
+
+        5.times do |i|
+          check_agent_log(i)
+        end
       end
 
-      check_agent_etc_hosts(10, 10)
+      it 'sends sync_dns action to all agents and updates all /etc/hosts' do
+        check_agent_etc_hosts(5, 10)
+      end
+
+      it 'updates the removed vms on next scale up' do
+        manifest_deployment['jobs'][0]['instances'] = 6
+        deploy_simple_manifest(manifest_hash: manifest_deployment)
+
+        5.times do |i|
+          check_agent_log(i)
+        end
+
+        check_agent_etc_hosts(6, 6)
+      end
     end
   end
 
-  context 'downgrade deployment from 10 to 5 instances' do
-    let(:manifest_deployment) { initial_deployment(10, 5) }
+  context 'recreate' do
+    context 'recreates VMs and updates all agents /etc/hosts' do
+      context 'manual networking' do
+        it 'updates /etc/hosts with the new info for an instance hostname' do
+          manifest_deployment = initial_deployment(5)
 
-    before do
-      manifest_deployment['jobs'][0]['instances'] = 5
-      deploy_simple_manifest(manifest_hash: manifest_deployment)
+          deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
+          5.times do |i|
+            check_agent_log(i)
+          end
+          check_agent_etc_hosts(5, 5)
+        end
+      end
 
-      5.times do |i|
-        check_agent_log(i)
+      context 'dynamic networking' do
+        before do
+          cloud_config['networks'][0]['type'] = 'dynamic'
+          cloud_config['networks'][0]['subnets'][0]['range'] = ''
+          cloud_config['networks'][0]['subnets'][0]['dns'] = []
+          cloud_config['networks'][0]['subnets'][0]['static'] = []
+
+          upload_cloud_config({:cloud_config_hash => cloud_config})
+        end
+
+        it 'updates /etc/hosts with the new info for an instance hostname' do
+          manifest_deployment = initial_deployment(5)
+          old_ips = current_sandbox.cpi.all_ips
+
+          deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
+
+          current_sandbox.cpi.all_ips.each do |new_ip|
+            expect(old_ips).to_not include(new_ip)
+          end
+
+          5.times do |i|
+            check_agent_log(i)
+          end
+          check_agent_etc_hosts(5, 5)
+        end
       end
     end
 
-    it 'sends sync_dns action to all agents and updates all /etc/hosts' do
-      check_agent_etc_hosts(5, 10)
-    end
+    context 'recreates missing VMs with cck' do
+      let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
-    it 'updates the removed vms on next scale up' do
-      manifest_deployment['jobs'][0]['instances'] = 6
-      deploy_simple_manifest(manifest_hash: manifest_deployment)
+      it 'automatically recreates missing VMs when cck --auto is used' do
+        manifest_deployment = initial_deployment(5)
 
-      5.times do |i|
-        check_agent_log(i)
-      end
+        current_sandbox.cpi.vm_cids.each do |vm_cid|
+          current_sandbox.cpi.delete_vm(vm_cid)
+        end
 
-      check_agent_etc_hosts(6, 6)
-    end
-  end
-
-  context 'recreates VMs and updates all agents /etc/hosts' do
-    it 'updates /etc/hosts with the new info for an instance hostname' do
-      manifest_deployment = initial_deployment(5)
-
-      deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
-      5.times do |i|
-        check_agent_log(i)
-      end
-      check_agent_etc_hosts(5, 5)
-    end
-  end
-
-  context 'recreates missing VMs with cck' do
-    let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
-
-    it 'automatically recreates missing VMs when cck --auto is used' do
-      manifest_deployment = initial_deployment(5)
-
-      current_sandbox.cpi.vm_cids.each do |vm_cid|
-        current_sandbox.cpi.delete_vm(vm_cid)
-      end
-
-      cloudcheck_response = bosh_run_cck_with_auto
-      expect(cloudcheck_response).to match(regexp('missing.'))
-      expect(cloudcheck_response).to match(regexp('Applying resolutions...'))
-      expect(cloudcheck_response).to match(regexp('Cloudcheck is finished'))
-      expect(cloudcheck_response).to_not match(regexp('No problems found'))
-      expect(cloudcheck_response).to_not match(regexp('1. Skip for now
+        cloudcheck_response = bosh_run_cck_with_auto
+        expect(cloudcheck_response).to match(regexp('missing.'))
+        expect(cloudcheck_response).to match(regexp('Applying resolutions...'))
+        expect(cloudcheck_response).to match(regexp('Cloudcheck is finished'))
+        expect(cloudcheck_response).to_not match(regexp('No problems found'))
+        expect(cloudcheck_response).to_not match(regexp('1. Skip for now
   2. Reboot VM
   3. Recreate VM using last known apply spec
   4. Delete VM
   5. Delete VM reference (DANGEROUS!)'))
 
-      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
 
-      5.times do |i|
-        check_agent_log(i)
+        5.times do |i|
+          check_agent_log(i)
+        end
+        check_agent_etc_hosts(5, 5)
       end
-      check_agent_etc_hosts(5, 5)
     end
   end
 
