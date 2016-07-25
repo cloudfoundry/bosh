@@ -70,15 +70,11 @@ module Bosh::Director
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
+
       raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+      hybrid_manifest_hash = Bosh::Director::DeploymentManifestResolver.resolve_manifest(manifest_hash, resolve_interpolation)
 
-      # inject uninterpolated properties
-
-      if resolve_interpolation && Bosh::Director::Config.config_server_enabled
-        manifest_hash = Bosh::Director::ConfigServer::ConfigParser.parse(manifest_hash)
-      end
-
-      new(manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)
+      new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)
     end
 
     def resolve_stemcell_version(stemcell)

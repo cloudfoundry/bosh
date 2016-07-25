@@ -68,7 +68,7 @@ module Bosh::Director
         end
       end
 
-      context 'when config server is around' do
+      context 'when resolving manifest' do
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
 
@@ -80,44 +80,27 @@ module Bosh::Director
           allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
         end
 
+        it 'calls the manifest resolver with correct values' do
+          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          manifest_object_result = Manifest.load_from_model(deployment_model)
+          expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
+          expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.cloud_config_hash).to eq({})
+          expect(manifest_object_result.runtime_config_hash).to eq({})
 
-        context 'when it is disbaled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          end
-
-          it 'load_from_model creates a manifest object from a cloud config, a manifest text, and a runtime config and does not resolve values' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
-            manifest_object_result = Manifest.load_from_model(deployment_model)
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
         end
 
-        context 'when it is enabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          end
+        it 'respects resolve_interpolation flag when calling the manifest resolver' do
+          expect(Bosh::Director::DeploymentManifestResolver).
+            to receive(:resolve_manifest).
+              with({'smurf' => '((smurf_placeholder))'}, false).
+              and_return({'smurf' => '((smurf_placeholder))'})
 
-          it 'load_from_model creates a manifest object from a cloud config, a manifest text, and a runtime config and resolved values' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
-            manifest_object_result = Manifest.load_from_model(deployment_model)
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
-
-          it 'load_from_model does not resolve config server values if resolve_interpolation flag is false' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
-            manifest_object_result = Manifest.load_from_model(deployment_model, {:resolve_interpolation => false})
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
+          manifest_object_result = Manifest.load_from_model(deployment_model, {:resolve_interpolation => false})
+          expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.cloud_config_hash).to eq({})
+          expect(manifest_object_result.runtime_config_hash).to eq({})
         end
       end
     end
@@ -140,7 +123,7 @@ module Bosh::Director
         expect(result.runtime_config_hash).to eq({})
       end
 
-      context 'when config server is around' do
+      context 'when resolving manifest' do
         let(:passed_in_manifest_hash) { {'smurf' => '((smurf_placeholder))'} }
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
@@ -150,43 +133,27 @@ module Bosh::Director
           allow(runtime_config).to receive(:manifest).and_return({})
         end
 
-        context 'when it is disbaled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          end
+        it 'calls the manifest resolver with correct values' do
+          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
+          expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
+          expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.cloud_config_hash).to eq({})
+          expect(manifest_object_result.runtime_config_hash).to eq({})
 
-          it 'load_from_hash creates a manifest object from a cloud config, a manifest text, and a runtime config and does not resolve values' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
-            manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
         end
 
-        context 'when it is enabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          end
+        it 'respects resolve_interpolation flag when calling the manifest resolver' do
+          expect(Bosh::Director::DeploymentManifestResolver).
+            to receive(:resolve_manifest).
+            with({'smurf' => '((smurf_placeholder))'}, false).
+            and_return({'smurf' => '((smurf_placeholder))'})
 
-          it 'load_from_hash creates a manifest object from a cloud config, a manifest text, and a runtime config and resolved values' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
-            manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
-
-          it 'load_from_hash does not resolve config server values if resolve_interpolation flag is false' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
-            manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config, {:resolve_interpolation => false})
-            expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-            expect(manifest_object_result.cloud_config_hash).to eq({})
-            expect(manifest_object_result.runtime_config_hash).to eq({})
-          end
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config, {:resolve_interpolation => false})
+          expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
+          expect(manifest_object_result.cloud_config_hash).to eq({})
+          expect(manifest_object_result.runtime_config_hash).to eq({})
         end
       end
     end
