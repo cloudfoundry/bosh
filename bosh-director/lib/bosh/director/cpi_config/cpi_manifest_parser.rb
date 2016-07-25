@@ -2,6 +2,7 @@ module Bosh::Director
   module CpiConfig
     class CpiManifestParser
       include ValidationHelper
+      include DuplicateDetector
 
       def parse(cpi_manifest)
         ParsedCpiConfig.new(parse_cpis(cpi_manifest))
@@ -20,23 +21,6 @@ module Bosh::Director
         end
 
         parsed_cpis
-      end
-
-      # TODO: DRY up (exists also in cloud manifest parser)
-      def detect_duplicates(collection, &iteratee)
-        transformed_elements = Set.new
-        duplicated_elements = Set.new
-        collection.each do |element|
-          transformed = iteratee.call(element)
-
-          if transformed_elements.include?(transformed)
-            duplicated_elements << element
-          else
-            transformed_elements << transformed
-          end
-        end
-
-        duplicated_elements
       end
     end
   end
