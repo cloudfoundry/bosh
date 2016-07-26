@@ -9,11 +9,12 @@ module Bosh
           @network_plans = attrs.fetch(:network_plans, [])
           @skip_drain = attrs.fetch(:skip_drain, false)
           @recreate_deployment = attrs.fetch(:recreate_deployment, false)
+          @need_to_fix = attrs.fetch(:need_to_fix, false)
           @logger = attrs.fetch(:logger, Config.logger)
           @dns_manager = DnsManagerProvider.create
         end
 
-        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment
+        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :need_to_fix
 
         attr_accessor :network_plans
 
@@ -79,6 +80,9 @@ module Bosh
         def needs_recreate?
           if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
+            true
+          elsif @need_to_fix
+            @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
             true
           else
             @instance.virtual_state == 'recreate'

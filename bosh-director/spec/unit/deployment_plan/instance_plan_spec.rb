@@ -34,7 +34,8 @@ module Bosh::Director::DeploymentPlan
       reservation
     }
     let(:network_plans) { [] }
-    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
+    let(:need_to_fix) { false }
+    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, need_to_fix: need_to_fix) }
     let(:existing_instance) { instance_model }
 
     let(:job_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
@@ -357,6 +358,14 @@ module Bosh::Director::DeploymentPlan
 
         it 'should return false when desired instance is in any another state' do
           expect(instance_plan.needs_recreate?).to be_falsey
+        end
+      end
+
+      context 'when instance has unresponsive agent' do
+        let(:need_to_fix) { true }
+
+        it 'should return true' do
+          expect(instance_plan.needs_recreate?).to be_truthy
         end
       end
     end

@@ -281,6 +281,7 @@ module Bosh
           skip_drain             = options.delete(:skip_drain)
           context                = options.delete(:context)
           dry_run                = options.delete(:dry_run)
+          fix                    = options.delete(:fix)
           options[:content_type] = 'text/yaml'
           options[:payload]      = manifest_yaml
 
@@ -291,6 +292,7 @@ module Bosh
           extras << ['context', JSON.dump(context)] if context
           extras << ['skip_drain', skip_drain] if skip_drain
           extras << ['dry_run', dry_run] if dry_run
+          extras << ['fix', fix] if fix
 
           request_and_track(:post, add_query_string(url, extras), options)
         end
@@ -361,6 +363,7 @@ module Bosh
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
+          fix = !!options.delete(:fix)
           canaries = options.delete(:canaries)
           max_in_flight = options.delete(:max_in_flight)
 
@@ -368,6 +371,7 @@ module Bosh
           url += "/#{index_or_id}" if index_or_id
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
+          url += "&fix=true" if fix
           url += "&max_in_flight=#{max_in_flight}" if max_in_flight
           url += "&canaries=#{canaries}" if canaries
 

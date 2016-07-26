@@ -72,6 +72,7 @@ module Bosh::Director
         @unneeded_instances = []
 
         @recreate = !!options['recreate']
+        @fix = !!options['fix']
 
         @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
         @skip_drain = SkipDrain.new(options['skip_drain'])
@@ -112,7 +113,7 @@ module Bosh::Director
           @logger
         )
 
-        assembler.bind_models(skip_links_binding)
+        assembler.bind_models(skip_links_binding, @fix)
       end
 
       def compile_packages

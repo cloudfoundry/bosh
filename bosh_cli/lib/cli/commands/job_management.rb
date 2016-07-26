@@ -8,7 +8,7 @@ module Bosh::Cli
       SKIP_DRAIN = 'Skip running drain script'
       MAX_IN_FLIGHT = 'Overwrites max_in_flight value in the manifest'
       CANARIES = 'Overwrites canaries value in the manifest'
-
+      FIX = 'Fix unresponsive vms'
 
       # bosh start
       usage 'start'
@@ -55,6 +55,8 @@ module Bosh::Cli
       option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
       option '--canaries CANARIES', CANARIES
       option '--skip-drain', SKIP_DRAIN
+      option '--fix', FIX
+
       def recreate_job(job = '*', index_or_id = nil)
         change_job_state(:recreate, job, index_or_id)
       end
@@ -64,7 +66,7 @@ module Bosh::Cli
       def change_job_state(state, job, index_or_id = nil)
         auth_required
         manifest = parse_manifest(state)
-        options = {skip_drain: skip_drain?}
+        options = {skip_drain: skip_drain?, fix: fix?}
         options[:canaries] = canaries if canaries
         options[:max_in_flight] = max_in_flight if max_in_flight
 
@@ -93,6 +95,10 @@ module Bosh::Cli
         options[:canaries]
       end
 
+      def fix?
+        !!options[:fix]
+      end
+
       def max_in_flight
         options[:max_in_flight]
       end
@@ -104,6 +110,10 @@ module Bosh::Cli
           err('Cannot handle both --hard and --soft options, please choose one')
         end
 
+        if !fix_option_allowed?(operation) && fix?
+          err("--fix option only makes sense for 'recreate' operation")
+        end
+
         if !hard_and_soft_options_allowed?(operation) && (hard? || soft?)
           err("--hard and --soft options only make sense for 'stop' operation")
         end
@@ -113,6 +123,10 @@ module Bosh::Cli
 
       def hard_and_soft_options_allowed?(operation)
         operation == :stop || operation == :detach
+      end
+
+      def fix_option_allowed?(operation)
+        operation == :recreate
       end
     end
   end

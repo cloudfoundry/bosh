@@ -175,6 +175,17 @@ module Bosh::Director
             end
           end
 
+          context 'with the "fix" param' do
+            it 'passes the parameter' do
+              allow_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .and_return(OpenStruct.new(:id => 1))
+              post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+          end
+
           context 'updates using a manifest with deployment name' do
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
@@ -367,6 +378,19 @@ module Bosh::Director
                       .and_return(OpenStruct.new(:id => 1))
 
               put '/foo/jobs/dea?max_in_flight=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with a "fix" param' do
+            it 'passes the parameter' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?fix=true', JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
           end

@@ -66,7 +66,7 @@ module Bosh::Director
       end
 
       # PUT /deployments/foo/jobs/dea?new_name=dea_new or
-      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true
+      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true&fix=true
       put '/:deployment/jobs/:job', :consumes => :yaml do
         options = {
           'job_states' => {
@@ -79,6 +79,7 @@ module Bosh::Director
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
         options['canaries'] = params[:canaries] if !!params['canaries']
         options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
+        options['fix'] = true if params['fix'] == 'true'
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
@@ -93,7 +94,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true
+      # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true&fix=true
       put '/:deployment/jobs/:job/:index_or_id', :consumes => :yaml do
         validate_instance_index_or_id(params[:index_or_id])
 
@@ -110,6 +111,7 @@ module Bosh::Director
           },
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
+        options['fix'] = true if params['fix'] == 'true'
 
         if request.content_length.nil? || request.content_length.to_i == 0
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
@@ -345,6 +347,7 @@ module Bosh::Director
         options['dry_run'] = true if params['dry_run'] == 'true'
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
+        options['fix'] = true if params['fix'] == 'true'
         options.merge!('scopes' => token_scopes)
 
         if params['context']
