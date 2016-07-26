@@ -30,7 +30,7 @@ module Bosh::Director
         parse_properties
         parse_releases
         parse_update(parse_options)
-        parse_jobs(parse_options)
+        parse_instance_groups(parse_options)
 
         @deployment
       end
@@ -52,7 +52,7 @@ module Bosh::Director
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})
-        @deployment.uninterpolated_properties = safe_property(@deployment.uninterpolated_manifest_text, 'properties',
+        @deployment.uninterpolated_properties = safe_property(@deployment_manifest, 'uninterpolated_properties',
           :class => Hash, :default => {})
       end
 
@@ -82,27 +82,24 @@ module Bosh::Director
         @deployment.update = UpdateConfig.new(update_spec.merge(parse_options))
       end
 
-      def parse_jobs(parse_options)
+      def parse_instance_groups(parse_options)
         if @deployment_manifest.has_key?('jobs') && @deployment_manifest.has_key?('instance_groups')
           raise JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed"
         end
 
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
-        uninterpolated_instance_groups = safe_property(@deployment.uninterpolated_manifest_text, 'jobs', :class => Array, :default => [])
 
+        # FIX this, instance groups can be empty
         if !instance_groups.empty?
           jobs = instance_groups
-          uninterpolated_instance_groups = safe_property(@deployment.uninterpolated_manifest_text, 'instance_groups', :class => Array, :default => [])
         end
 
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
-          uninterpolated_job_spec = uninterpolated_instance_groups.find { |instance_group| instance_group['name'] == job_spec['name'] }
-
-          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, uninterpolated_job_spec, @event_log, @logger, parse_options))
+          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
         end
       end
     end

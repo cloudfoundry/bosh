@@ -89,9 +89,9 @@ module Bosh::Director
 
       attr_accessor :did_change
 
-      def self.parse(plan, job_spec, uninterpolated_instance_group_spec, event_log, logger, parse_options = {})
+      def self.parse(plan, job_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
-        parser.parse(job_spec, uninterpolated_instance_group_spec, parse_options)
+        parser.parse(job_spec, parse_options)
       end
 
       def initialize(logger)
@@ -360,7 +360,7 @@ module Bosh::Director
 
       private
 
-      def extract_template_properties(collection)
+      def extract_template_properties(all_properties)
         result = {}
 
         @templates.each do |template|
@@ -375,7 +375,7 @@ module Bosh::Director
             result[template.name] = template.template_scoped_properties[@name]
           else
             template.properties.each_pair do |name, definition|
-              copy_property(result[template.name], collection, name, definition["default"])
+              copy_property(result[template.name], all_properties, name, definition["default"])
             end
           end
         end
@@ -383,7 +383,7 @@ module Bosh::Director
         result
       end
 
-      def extract_template_uninterpolated_properties(collection)
+      def extract_template_uninterpolated_properties(all_uninterpolated_properties)
         result = {}
         @templates.each do |template|
           # If a template has properties that were defined in the deployment manifest
@@ -397,7 +397,7 @@ module Bosh::Director
             result[template.name] = template.template_scoped_uninterpolated_properties[@name]
           else
             template.properties.each_pair do |name, definition|
-              copy_property(result[template.name], collection, name, definition["default"])
+              copy_property(result[template.name], all_uninterpolated_properties, name, definition["default"])
             end
           end
         end

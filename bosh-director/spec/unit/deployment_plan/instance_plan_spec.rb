@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    let(:job) { InstanceGroup.parse(deployment_plan, job_spec, uninterpolated_instance_group_spec, BD::Config.event_log, logger) }
+    let(:job) { InstanceGroup.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         bootstrap: true,
@@ -38,7 +38,6 @@ module Bosh::Director::DeploymentPlan
     let(:existing_instance) { instance_model }
 
     let(:job_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
-    let(:uninterpolated_instance_group_spec) { {} }
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
     let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }

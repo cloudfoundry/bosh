@@ -1,9 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
-  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, uninterpolated_instance_group_spec, event_log, logger, parse_options) }
+  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
-  let(:uninterpolated_instance_group_spec) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
@@ -100,7 +99,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:uninterpolated_properties).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({}) # change
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 

@@ -12,5 +12,11 @@ module Bosh::Director::Models
         expect(runtime_config_model.manifest).to eq(new_runtime_config)
       end
     end
+
+    describe "#raw_manifest" do
+      it 'returns raw result' do
+        expect(runtime_config_model.raw_manifest).to eq(mock_manifest)
+      end
+    end
   end
 end

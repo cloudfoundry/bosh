@@ -156,24 +156,9 @@ module Bosh::Director
         end
 
         describe 'uninterpolated global properties' do
-          let(:uninterpolated_manifest_hash) do
-            {
-              'name' => 'deployment-name',
-              'releases' => [],
-              'networks' => [{ 'name' => 'network-name' }],
-              'compilation' => {},
-              'update' => {},
-              'resource_pools' => [],
-              'properties' => {
-                'foo' => '((foo_placeholder))',
-                'bar' => '((bar_placeholder))',
-              }
-            }
-          end
-
           before do
-            allow(deployment).to receive(:uninterpolated_manifest_text).and_return(uninterpolated_manifest_hash)
             manifest_hash.merge!('properties' => { 'foo' => 'foo_value', 'bar' => 'bar_value' })
+            manifest_hash.merge!('uninterpolated_properties' => { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' })
           end
 
           it 'parses them correctly' do
@@ -371,11 +356,11 @@ module Bosh::Director
 
             it 'delegates to Job to parse job specs' do
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect(parsed_deployment.instance_groups).to eq([job1, job2])
@@ -385,11 +370,11 @@ module Bosh::Director
               let(:options) { { 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
                   .and_return(job1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, options).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
                 parsed_deployment.instance_groups
@@ -400,11 +385,11 @@ module Bosh::Director
               let(:options) { { 'max_in_flight'=> '42' } }
               it "replaces max_in_flight value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, options)
+                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
                    .and_return(job1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, options).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
                   and_return(job2)
 
                 parsed_deployment.instance_groups
@@ -413,11 +398,11 @@ module Bosh::Director
 
             it 'allows to look up job by name' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
 
@@ -450,11 +435,11 @@ module Bosh::Director
 
             it 'raises an error' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, {'name' => 'job1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, {'name' => 'job2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect {
@@ -484,62 +469,14 @@ module Bosh::Director
         end
       end
 
-      shared_examples_for 'uniterpolated jobs/instance_groups values' do
-        describe 'uninterpolated values' do
-          let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-          let(:uninterpolated_manifest_hash) do
-            {
-              'name' => 'deployment-name',
-              'releases' => [],
-              'networks' => [{ 'name' => 'network-name' }],
-              'compilation' => {},
-              'update' => {},
-              'resource_pools' => [],
-              keyword => [
-                {
-                  'name' => 'job1',
-                  'properties' => {'foo' => '((foo_placeholder))'}
-                }
-              ]
-            }
-          end
-
-          let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-              name: 'job1',
-              canonical_name: 'dummy-canonical-name',
-            })
-          end
-
-          before do
-            allow(deployment).to receive(:uninterpolated_manifest_text).and_return(uninterpolated_manifest_hash)
-            manifest_hash[keyword] = [
-              {
-                'name' => 'job1',
-                'properties' => {'foo' => 'foo_value'}
-              }
-            ]
-          end
-
-          it 'parses them correctly' do
-            expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                                                       .with(be_a(DeploymentPlan::Planner), {'name' => 'job1', 'properties' => {'foo' => 'foo_value'}}, {'name' => 'job1', 'properties' => {'foo' => '((foo_placeholder))'}}, event_log, logger, options)
-                                                       .and_return(job1)
-            parsed_deployment
-          end
-        end
-      end
-
       describe 'jobs key' do
         let(:keyword) { "jobs" }
         it_behaves_like "jobs/instance_groups key"
-        it_behaves_like "uniterpolated jobs/instance_groups values"
       end
 
       describe 'instance_group key' do
         let(:keyword) { "instance_groups" }
         it_behaves_like "jobs/instance_groups key"
-        it_behaves_like "uniterpolated jobs/instance_groups values"
 
         context 'when there are both jobs and instance_groups' do
           before do

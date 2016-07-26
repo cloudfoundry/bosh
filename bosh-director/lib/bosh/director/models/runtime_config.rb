@@ -14,6 +14,10 @@ module Bosh
           manifest_hash = YAML.load(properties)
           Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest(manifest_hash)
         end
+
+        def raw_manifest
+          YAML.load(properties)
+        end
       end
     end
   end

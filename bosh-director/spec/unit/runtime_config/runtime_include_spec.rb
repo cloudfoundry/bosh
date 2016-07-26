@@ -31,12 +31,12 @@ module Bosh::Director
 
     let(:instance_group1) do
       group1_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group1', jobs: [{'name' => 'job1', 'release' => '1'}])
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, {}, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger)
     end
 
     let(:instance_group2) do
       group2_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group2', jobs: [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}])
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, {}, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
     end
 
     describe '#applies?' do

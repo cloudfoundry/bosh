@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
       allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
     end
-    let(:parsed_job) { parser.parse(job_spec, uninterpolated_job_spec) }
+    let(:parsed_job) { parser.parse(job_spec) }
     let(:resource_pool_env) { {'key' => 'value'} }
     let(:resource_pool) do
       instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: resource_pool_env)
@@ -48,17 +48,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     end
 
     let(:job_spec) do
-      {
-        'name'      => 'fake-job-name',
-        'jobs' => [],
-        'release'   => 'fake-release-name',
-        'resource_pool' => 'fake-resource-pool-name',
-        'instances' => 1,
-        'networks'  => [{'name' => 'fake-network-name'}],
-      }
-    end
-
-    let(:uninterpolated_job_spec) do
       {
         'name'      => 'fake-job-name',
         'jobs' => [],
@@ -587,23 +576,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                      'property_2' => {
                          'life' => 'life_value'
                      }
+                 },
+                 'uninterpolated_properties' => {
+                   'property_1' => '((property_1_placeholder))',
+                   'property_2' => {
+                     'life' => '((life_placeholder))'
+                   }
                  }
                 }
             ]
             job_spec['release'] = 'fake-job-release'
-
-            uninterpolated_job_spec['templates'] = [
-              {'name' => 'fake-template-name',
-               'links' => {'db' => 'a.b.c'},
-               'properties' => {
-                 'property_1' => '((property_1_placeholder))',
-                 'property_2' => {
-                   'life' => '((life_placeholder))'
-                 }
-               }
-              }
-            ]
-            uninterpolated_job_spec['release'] = 'fake-job-release'
 
             fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
             fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
@@ -647,23 +629,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                      'property_2' => {
                          'life' => 'life_value'
                      }
+                 },
+                 'uninterpolated_properties' => {
+                   'property_1' => '((property_1_placeholder))',
+                   'property_2' => {
+                     'life' => '((life_placeholder))'
+                   }
                  }
                 }
             ]
             job_spec['release'] = 'fake-job-release'
-
-            uninterpolated_job_spec['templates'] = [
-              {'name' => 'fake-template-name',
-               'links' => {'db' => 'a.b.c'},
-               'properties' => {
-                 'property_1' => '((property_1_placeholder))',
-                 'property_2' => {
-                   'life' => '((life_placeholder))'
-                 }
-               }
-              }
-            ]
-            uninterpolated_job_spec['release'] = 'fake-job-release'
 
             fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
             fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
@@ -1087,12 +1062,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           job_spec['properties'] = props
 
           uninterpolated_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))', 'length' => '((length_placeholder))' }
-          uninterpolated_job_spec['properties'] = uninterpolated_props
+          job_spec['uninterpolated_properties'] = uninterpolated_props
         end
 
         it 'sets the instance goups uninterpolated properties' do
-          intsance_group = parsed_job
-          expect(intsance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_placeholder))"})
+          instance_group = parsed_job
+          expect(instance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_placeholder))"})
         end
 
         context 'when global properties exist' do
@@ -1101,12 +1076,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             allow(deployment_plan).to receive(:uninterpolated_properties).and_return(uninterpolated_global_props)
 
             uninterpolated_instance_group_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' }
-            uninterpolated_job_spec['properties'] = uninterpolated_instance_group_props
+            job_spec['uninterpolated_properties'] = uninterpolated_instance_group_props
           end
 
           it 'merges instance group uninterpolated properties with global uninterpolated properties correctly' do
-            intsance_group = parsed_job
-            expect(intsance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_global_placeholder))"})
+            instance_group = parsed_job
+            expect(instance_group.all_uninterpolated_properties).to eq({"foo"=>"((foo_placeholder))", "bar"=>"((bar_placeholder))", "length"=>"((length_global_placeholder))"})
           end
         end
       end
