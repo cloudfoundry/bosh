@@ -177,7 +177,7 @@ module Bosh::Director
     describe 'resolve_aliases' do
       context 'releases' do
         context 'when manifest has releases with version latest' do
-          let(:interpolated_manifest_hash) do
+          let(:provided_hash) do
             {
               'releases' => [
                 {'name' => 'simple', 'version' => 'latest'},
@@ -186,9 +186,16 @@ module Bosh::Director
             }
           end
 
+          let(:interpolated_manifest_hash) {provided_hash}
+          let(:raw_manifest_hash) {provided_hash}
+
           it 'replaces latest with the latest version number' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq([
+              {'name' => 'simple', 'version' => '9'},
+              {'name' => 'hard', 'version' => '1+dev.7'}
+            ])
+            expect(manifest_object.raw_manifest_hash['releases']).to eq([
               {'name' => 'simple', 'version' => '9'},
               {'name' => 'hard', 'version' => '1+dev.7'}
             ])
@@ -196,7 +203,7 @@ module Bosh::Director
         end
 
         context "when manifest has releases with version using '.latest' suffix" do
-          let(:interpolated_manifest_hash) do
+          let(:provided_hash) do
             {
               'releases' => [
                 {'name' => 'simple', 'version' => '9.latest'},
@@ -204,9 +211,17 @@ module Bosh::Director
               ]
             }
           end
+
+          let(:interpolated_manifest_hash) {provided_hash}
+          let(:raw_manifest_hash) {provided_hash}
+
           it 'should replace version with the relative latest' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq([
+              {'name' => 'simple', 'version' => '9'},
+              {'name' => 'hard', 'version' => '1+dev.7'}
+            ])
+            expect(manifest_object.raw_manifest_hash['releases']).to eq([
               {'name' => 'simple', 'version' => '9'},
               {'name' => 'hard', 'version' => '1+dev.7'}
             ])
@@ -214,7 +229,7 @@ module Bosh::Director
         end
 
         context 'when manifest has no alias' do
-          let(:interpolated_manifest_hash) do
+          let(:provided_hash) do
             {
               'releases' => [
                 {'name' => 'simple', 'version' => 9},
@@ -223,9 +238,16 @@ module Bosh::Director
             }
           end
 
+          let(:interpolated_manifest_hash) {provided_hash}
+          let(:raw_manifest_hash) {provided_hash}
+
           it 'leaves it as it is and converts to string' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq([
+             {'name' => 'simple', 'version' => '9'},
+             {'name' => 'hard', 'version' => '42'}
+            ])
+            expect(manifest_object.raw_manifest_hash['releases']).to eq([
              {'name' => 'simple', 'version' => '9'},
              {'name' => 'hard', 'version' => '42'}
             ])

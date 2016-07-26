@@ -26,18 +26,13 @@ module Bosh::Director
     end
 
     def resolve_aliases
-      hashed = to_hash
-      hashed['resource_pools'].to_a.each do |rp|
-        rp['stemcell']['version'] = resolve_stemcell_version(rp['stemcell'])
-      end
-
-      hashed['stemcells'].to_a.each do |stemcell|
-        stemcell['version'] = resolve_stemcell_version(stemcell)
-      end
-
-      hashed['releases'].to_a.each do |release|
-        release['version'] = resolve_release_version(release)
-      end
+      resolve_aliases_for_generic_hash(to_hash)
+      resolve_aliases_for_generic_hash(
+        merge_manifests(
+          @raw_manifest_hash,
+          @cloud_config_hash,
+          @runtime_config_hash)
+      )
     end
 
     def diff(other_manifest, redact)
@@ -45,18 +40,7 @@ module Bosh::Director
     end
 
     def to_hash
-      hash = @interpolated_manifest_hash.merge(@cloud_config_hash || {})
-      hash.merge(@runtime_config_hash || {}) do |key, old, new|
-        if key == 'releases'
-          if old && new
-            old.to_set.merge(new.to_set).to_a
-          else
-            old.nil? ? new : old
-          end
-        else
-          new
-        end
-      end
+      merge_manifests(@interpolated_manifest_hash, @cloud_config_hash, @runtime_config_hash)
     end
 
     private
@@ -75,6 +59,35 @@ module Bosh::Director
       hybrid_manifest_hash = Bosh::Director::DeploymentManifestResolver.resolve_manifest(manifest_hash, resolve_interpolation)
 
       new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)
+    end
+
+    def resolve_aliases_for_generic_hash(generic_hash)
+      generic_hash['resource_pools'].to_a.each do |rp|
+        rp['stemcell']['version'] = resolve_stemcell_version(rp['stemcell'])
+      end
+
+      generic_hash['stemcells'].to_a.each do |stemcell|
+        stemcell['version'] = resolve_stemcell_version(stemcell)
+      end
+
+      generic_hash['releases'].to_a.each do |release|
+        release['version'] = resolve_release_version(release)
+      end
+    end
+
+    def merge_manifests(deployment_manifest, cloud_manifest, runtime_config_manifest)
+      hash = deployment_manifest.merge(cloud_manifest || {})
+      hash.merge(runtime_config_manifest || {}) do |key, old, new|
+        if key == 'releases'
+          if old && new
+            old.to_set.merge(new.to_set).to_a
+          else
+            old.nil? ? new : old
+          end
+        else
+          new
+        end
+      end
     end
 
     def resolve_stemcell_version(stemcell)
