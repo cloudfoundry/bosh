@@ -3,7 +3,6 @@ jobs:
 - name: new-version
   plan:
   - get: published-stemcell
-    trigger: true
   - get: bosh-src
   - task: make-version
     file: bosh-src/ci/pipelines/stemcells/tasks/make-stemcell-version.yml
@@ -31,6 +30,7 @@ jobs:
         HYPERVISOR: hyperv
         OS_NAME: ubuntu
         OS_VERSION: trusty
+        BOSHIO_BEARER_TOKEN: {{boshio_bearer_token}}
   - put: candidate-stemcell-ubuntu-trusty
     params: {from: build/out/.+\.tgz}
 
@@ -55,6 +55,7 @@ jobs:
         HYPERVISOR: hyperv
         OS_NAME: centos
         OS_VERSION: "7"
+        BOSHIO_BEARER_TOKEN: {{boshio_bearer_token}}
   - put: candidate-stemcell-centos-7
     params: {from: build/out/.+\.tgz}
 
@@ -62,7 +63,6 @@ jobs:
   plan:
   - get: stemcell-version
     passed: [build-ubuntu-trusty, build-centos-7]
-    trigger: true
   - get: candidate-stemcell-ubuntu-trusty
     passed: [build-ubuntu-trusty]
   - get: candidate-stemcell-centos-7
@@ -77,7 +77,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh.git
-    branch: master
+    branch: 257.x-azure
 
 - name: published-stemcell
   type: bosh-io-stemcell

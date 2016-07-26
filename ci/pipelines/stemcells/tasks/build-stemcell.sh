@@ -50,5 +50,11 @@ vagrant ssh -c "
 builder_ip=$(get_ip_from_vagrant_ssh_config)
 
 mkdir ../../out
-
 scp ubuntu@${builder_ip}:/mnt/stemcells/$IAAS/$HYPERVISOR/$OS_NAME/work/work/*.tgz ../../out/
+
+# Dont output bosh.io bearer token
+set +x
+sha=$(sha1sum ../../out/*.tgz)
+file_name="bosh-stemcell-$build_num-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent.tgz"
+echo "Uploading SHA1 '$sha' for file '$file_name'"
+curl -X POST --fail "https://bosh.io/checksums/$file_name" -d "sha1=$sha" -H "Authorization: bearer $BOSHIO_BEARER_TOKEN"
