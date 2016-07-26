@@ -40,7 +40,9 @@ dns:
 
 trusted_certs: <%= trusted_certs %>
 
-local_dns: <%= local_dns %>
+local_dns:
+  enabled: <%= local_dns['enabled'] %>
+  include_index: <%= local_dns['include_index'] %>
 
 blobstore: &director_blobstore
   provider: local

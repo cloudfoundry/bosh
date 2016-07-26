@@ -123,12 +123,12 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
-        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
         dns_manager = DnsManagerProvider.create
+        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
+        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
           InstanceReuser.new,

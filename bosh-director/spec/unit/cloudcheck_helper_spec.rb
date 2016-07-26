@@ -38,7 +38,7 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
-
+    let(:dns_manager) { instance_double(DnsManager) }
 
     before do
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
@@ -121,7 +121,6 @@ module Bosh::Director
           }
         end
         let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
-        let(:dns_manager) { instance_double(DnsManager) }
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)

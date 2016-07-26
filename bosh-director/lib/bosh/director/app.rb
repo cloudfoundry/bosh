@@ -22,7 +22,6 @@ module Bosh::Director
       # You should only create one of these at a time, but when you create one
       # it becomes the authoritative official version across the whole app.
       @@instance = self
-
       config.configure_evil_config_singleton!
 
       @blobstores = Blobstores.new(config)

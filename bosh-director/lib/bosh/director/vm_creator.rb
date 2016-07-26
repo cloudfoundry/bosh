@@ -88,7 +88,6 @@ module Bosh::Director
       apply_initial_vm_state(instance_plan)
 
       instance_plan.mark_desired_network_plans_as_existing
-      create_local_dns_record(instance.model)
     end
 
     private
@@ -167,23 +166,5 @@ module Bosh::Director
     end
 
     private
-
-    def create_local_dns_record(instance_model)
-      spec = instance_model.spec
-      @logger.debug('Creating local dns records')
-      unless spec.nil? || spec['networks'].nil?
-        @logger.debug("Found #{spec['networks'].length} networks")
-        spec['networks'].each do |network_name, network|
-          unless network['ip'].nil? or spec['job'].nil?
-            ip = network['ip']
-            name = instance_model.uuid + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
-            @logger.debug("Adding local dns record with name #{name} and ip #{ip}")
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              Bosh::Director::Models::LocalDnsRecord.create(:name => name, :ip => ip, :instance_id => instance_model.id )
-            end
-          end
-        end
-      end
-    end
   end
 end

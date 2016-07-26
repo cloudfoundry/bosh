@@ -10,6 +10,7 @@ module Bosh
 
       let(:disk_manager) { DiskManager.new(cloud, logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
+      let(:disk_manager) { DiskManager.new(cloud, logger) }
       let(:vm_deleter) { VmDeleter.new(cloud, logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -22,7 +23,8 @@ module Bosh
             get_state: nil
         )
       end
-      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManagerProvider.create).to_hash }
+      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager ).to_hash }
+      let(:dns_manager) { DnsManager.new("bosh", {}, nil, nil, nil, nil) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -158,6 +160,7 @@ module Bosh
         allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
+        allow(Config.cloud).to receive(:delete_vm)
       end
 
       it 'should create a vm' do
@@ -183,12 +186,11 @@ module Bosh
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
         expect(instance).to receive(:update_trusted_certs)
         expect(instance).to receive(:update_cloud_properties!)
-        expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
         expect {
           subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider)
-        }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                                    Models::LocalDnsRecord.count] }.from([0,0]).to([1,1])
+        }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }.
+                                   from(0).to(1)
       end
 
       it 'should record events' do
@@ -383,94 +385,6 @@ module Bosh
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
-      end
-
-      context 'adding local DNS records' do
-        it 'should call create_local_dns_record to add UUID based DNS record' do
-          expect(Config.cloud).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-          ).and_return('new-vm-cid')
-
-          expect(agent_client).to receive(:wait_until_ready)
-          expect(instance).to receive(:update_trusted_certs)
-          expect(instance).to receive(:update_cloud_properties!)
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-          expect {
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-          }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                         Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                      from([0,0]).to([1,1])
-
-          instance = Models::Instance.where(vm_cid: 'new-vm-cid').first
-          local_dns_record =  Models::LocalDnsRecord.where(instance_id: instance_model.id).first
-
-          expect(local_dns_record.name).to match(Regexp.compile("#{instance.uuid}.*"))
-        end
-
-        context 'validating instance.spec' do
-          before do
-            expect(Config.cloud).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-            ).and_return('new-vm-cid')
-
-            expect(agent_client).to receive(:wait_until_ready)
-            expect(instance).to receive(:update_trusted_certs)
-            expect(instance).to receive(:update_cloud_properties!)
-          end
-
-          context 'when instance.spec is nil' do
-            it 'skips the instance' do
-              expect(instance_model).to receive(:spec_json).and_return(nil)
-
-              expect {
-                subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-              }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                             Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                          from([0, 0]).to([1, 0])
-            end
-          end
-
-          context 'when instance.spec is not nil' do
-            context 'when spec[networks] is nil' do
-              it 'skips the instance' do
-                expect(instance_model).to receive(:spec_json).and_return('{"networks": nil}').twice
-
-                expect {
-                  subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                               Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                            from([0, 0]).to([1, 0])
-              end
-            end
-
-            context 'when spec[networks] is not nil' do
-              context 'when network[ip] is nil' do
-                it 'skips the instance' do
-                  expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-                  expect {
-                    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                  }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                                 Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                              from([0, 0]).to([1, 0])
-                end
-              end
-            end
-
-            context 'when spec[job] is nil' do
-              it 'skips the instance' do
-                expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}').twice
-
-                expect {
-                  subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-                }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                               Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                    from([0, 0]).to([1, 0])
-              end
-            end
-          end
-        end
       end
 
       context 'Config.generate_vm_passwords flag is true' do
