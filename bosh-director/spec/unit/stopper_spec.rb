@@ -26,8 +26,9 @@ module Bosh::Director
       template_hashes: []
     ) }
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
+    let(:need_to_fix) { false }
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain)
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain, need_to_fix: need_to_fix)
     end
     let(:spec) do
       {
@@ -68,8 +69,19 @@ module Bosh::Director
         end
       end
 
-      context 'when it is compilation instance' do
+      context 'when it is instance with unresponsive agent' do
         before { instance_model.compilation = true }
+
+        it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to_not receive(:stop)
+          stopper.stop
+        end
+      end
+
+      context 'when it is compilation instance' do
+        let(:need_to_fix) { true }
 
         it 'does not drain and stop' do
           expect(agent_client).to_not receive(:drain)

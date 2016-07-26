@@ -14,20 +14,20 @@ module Bosh::Director
       @dns_manager = dns_manager
     end
 
-    def bind_models(skip_links_binding = false)
+    def bind_models(skip_links_binding = false, fix = false)
       @logger.info('Binding models')
       bind_releases
 
       migrate_legacy_dns_records
 
       network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
-      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
+      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances, fix)
 
       migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
 
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
-      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate, 'fix' => fix})
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_jobs = @deployment_plan.instance_groups
 
@@ -68,7 +68,7 @@ module Bosh::Director
       end
     end
 
-    def current_states_by_instance(existing_instances)
+    def current_states_by_instance(existing_instances, fix = false)
       lock = Mutex.new
       current_states_by_existing_instance = {}
       is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_text)
@@ -79,7 +79,15 @@ module Bosh::Director
             pool.process do
               with_thread_name("binding agent state for (#{existing_instance}") do
                 # getting current state to obtain IP of dynamic networks
-                state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                begin
+                  state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                rescue Bosh::Director::RpcTimeout => e
+                  if fix
+                    state = {'current_state' => 'unresponsive'}
+                  else
+                    raise e
+                  end
+                end
                 lock.synchronize do
                   current_states_by_existing_instance.merge!(existing_instance => state)
                 end
