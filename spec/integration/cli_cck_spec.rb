@@ -46,13 +46,25 @@ describe 'cli: cloudcheck', type: :integration do
       it 'deletes unresponsive VMs' do
         delete_vm = 5
         bosh_run_cck_with_resolution(3, delete_vm)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 3 problems
+
+          Problem 1 of 3: VM with cloud ID '' missing.
+          Problem 2 of 3: VM with cloud ID '' missing.
+          Problem 3 of 3: VM with cloud ID '' missing.
+        )
       end
 
       it 'deletes VM reference' do
         delete_vm_reference = 6
         bosh_run_cck_with_resolution(3, delete_vm_reference)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 3 problems
+
+          Problem 1 of 3: VM with cloud ID '' missing.
+          Problem 2 of 3: VM with cloud ID '' missing.
+          Problem 3 of 3: VM with cloud ID '' missing.
+        )
       end
 
       context 'when there is an ignored vm' do
@@ -105,7 +117,11 @@ describe 'cli: cloudcheck', type: :integration do
       it 'deletes missing VM reference' do
         delete_vm_reference = 4
         bosh_run_cck_with_resolution(1, delete_vm_reference)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 1 problem
+
+          Problem 1 of 1: VM with cloud ID '' missing.
+        )
       end
     end
 
