@@ -37,8 +37,11 @@ describe 'using director with config server', type: :integration do
     end
 
     context 'when deployment manifest has placeholders' do
-      it 'raises an error when config server does not have values for placeholders' do
+      before do
         manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+      end
+
+      it 'raises an error when config server does not have values for placeholders' do
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
@@ -48,12 +51,35 @@ describe 'using director with config server', type: :integration do
       it 'replaces placeholders in the manifest when config server has value for placeholders' do
         config_server_helper.put_value('test_property', 'cats are happy')
 
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         vm = director.vm('foobar', '0')
 
         template = vm.read_job_template('foobar', 'bin/foobar_ctl')
         expect(template).to include('test_property=cats are happy')
+      end
+
+      context 'when health monitor is around and resurrector is enabled' do
+        before { current_sandbox.health_monitor_process.start }
+        after { current_sandbox.health_monitor_process.stop }
+
+        it 'interpolates values correctly when resurrector kicks in' do
+          config_server_helper.put_value('test_property', 'cats are happy')
+
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          vm = director.vm('foobar', '0')
+
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=cats are happy')
+
+          config_server_helper.put_value('test_property', 'smurfs are happy')
+
+          vm.kill_agent
+          director.wait_for_vm('foobar', '0', 300)
+
+          new_vm = director.vm('foobar', '0')
+          template = new_vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=smurfs are happy')
+        end
       end
 
       context 'when config server values changes post deployment' do
@@ -82,7 +108,7 @@ describe 'using director with config server', type: :integration do
     context 'when runtime manifest has placeholders' do
       let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
-      it 'replaces placeholders in the addons' do
+      it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
         bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
 
         config_server_helper.put_value('release_name', 'dummy2')
@@ -90,14 +116,25 @@ describe 'using director with config server', type: :integration do
 
         expect(upload_runtime_config(runtime_config_hash: runtime_config)).to include("Successfully updated runtime config")
 
-        config_server_helper.put_value('test_property', 'cats are happy')
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
-
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         vm = director.vm('foobar', '0')
         template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
         expect(template).to include("echo 'i am Groot'")
+
+        # change value in config server and redeploy
+        config_server_helper.put_value('addon_prop', 'smurfs are blue')
+
+        redeploy_output = bosh_runner.run('deploy')
+
+        scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
+
+        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+
+        template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+        expect(template).to include('smurfs are blue')
       end
     end
 

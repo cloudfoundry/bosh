@@ -168,6 +168,43 @@ describe 'cli: cloudcheck', type: :integration do
     end
   end
 
+  context 'with config server enabled' do
+    with_reset_sandbox_before_each(config_server_enabled: true)
+
+    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox.port_provider.get_port(:config_server_port)) }
+
+    before do
+      config_server_helper.put_value('test_property', 'cats are happy')
+
+      manifest = Bosh::Spec::Deployments.simple_manifest
+      manifest['jobs'][0]['persistent_disk'] = 100
+      manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+      deploy_from_scratch(manifest_hash: manifest)
+
+      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+    end
+
+    it 'resolves issues correctly and gets values from config server' do
+      vm = director.vm('foobar', '0')
+
+      template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('test_property=cats are happy')
+
+      current_sandbox.cpi.kill_agents
+
+      config_server_helper.put_value('test_property', 'smurfs are happy')
+
+      recreate_vm_without_waiting_for_process = 3
+      bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process)
+      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+
+      vm = director.vm('foobar', '0')
+
+      template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('test_property=smurfs are happy')
+    end
+  end
+
   def bosh_run_cck_with_resolution(num_errors, option=1)
     resolution_selections = "#{option}\n"*num_errors + "yes"
     output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
