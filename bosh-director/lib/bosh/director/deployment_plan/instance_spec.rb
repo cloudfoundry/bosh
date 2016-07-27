@@ -12,38 +12,39 @@ module Bosh::Director
       def self.create_from_instance_plan(instance_plan)
         instance = instance_plan.instance
         deployment_name = instance.deployment_model.name
-        job = instance_plan.desired_instance.job
+        instance_group = instance_plan.desired_instance.job
         instance_plan = instance_plan
         dns_manager = DnsManagerProvider.create
 
         spec = {
           'deployment' => deployment_name,
-          'job' => job.spec,
+          'job' => instance_group.spec,
           'index' => instance.index,
           'bootstrap' => instance.bootstrap?,
           'name' => instance.job_name,
           'id' => instance.uuid,
           'az' => instance.availability_zone_name,
           'networks' => instance_plan.network_settings_hash,
-          'vm_type' => job.vm_type.spec,
-          'stemcell' => job.stemcell.spec,
-          'env' => job.env.spec,
-          'packages' => job.package_spec,
-          'properties' => job.properties,
+          'vm_type' => instance_group.vm_type.spec,
+          'stemcell' => instance_group.stemcell.spec,
+          'env' => instance_group.env.spec,
+          'packages' => instance_group.package_spec,
+          'properties' => instance_group.properties,
+          'uninterpolated_properties' => instance_group.uninterpolated_properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
-          'links' => job.link_spec,
+          'links' => instance_group.link_spec,
           'address' => instance_plan.network_settings.network_address,
-          'update' => job.update_spec
+          'update' => instance_group.update_spec
         }
 
-        if job.persistent_disk_type
+        if instance_group.persistent_disk_type
           # supply both for reverse compatibility with old agent
-          spec['persistent_disk'] = job.persistent_disk_type.disk_size
+          spec['persistent_disk'] = instance_group.persistent_disk_type.disk_size
           # old agents will ignore this pool
           # keep disk pool for backwards compatibility
-          spec['persistent_disk_pool'] = job.persistent_disk_type.spec
-          spec['persistent_disk_type'] = job.persistent_disk_type.spec
+          spec['persistent_disk_pool'] = instance_group.persistent_disk_type.spec
+          spec['persistent_disk_type'] = instance_group.persistent_disk_type.spec
         else
           spec['persistent_disk'] = 0
         end

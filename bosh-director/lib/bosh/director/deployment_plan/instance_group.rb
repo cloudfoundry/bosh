@@ -261,8 +261,8 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist job template
       # property definitions in DB).
       def bind_properties
-        @properties = extract_template_properties(@all_properties)
-        @uninterpolated_properties = extract_template_uninterpolated_properties(@all_uninterpolated_properties)
+        @properties = extract_jobs_properties(@all_properties)
+        @uninterpolated_properties = extract_jobs_uninterpolated_properties(@all_uninterpolated_properties)
       end
 
       def validate_package_names_do_not_collide!
@@ -360,7 +360,7 @@ module Bosh::Director
 
       private
 
-      def extract_template_properties(all_properties)
+      def extract_jobs_properties(all_properties)
         result = {}
 
         @templates.each do |template|
@@ -383,7 +383,7 @@ module Bosh::Director
         result
       end
 
-      def extract_template_uninterpolated_properties(all_uninterpolated_properties)
+      def extract_jobs_uninterpolated_properties(all_uninterpolated_properties)
         result = {}
         @templates.each do |template|
           # If a template has properties that were defined in the deployment manifest

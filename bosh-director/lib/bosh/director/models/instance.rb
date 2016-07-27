@@ -78,6 +78,12 @@ module Bosh::Director::Models
       rescue JSON::ParserError
         return 'error'
       end
+
+      result['uninterpolated_properties'] = Bosh::Common::DeepCopy.copy(result['properties'])
+      if Bosh::Director::Config.config_server_enabled
+        result['properties'] = Bosh::Director::ConfigServer::ConfigParser.parse(result['properties'])
+      end
+
       if result['resource_pool'].nil?
         result
       else
@@ -101,7 +107,16 @@ module Bosh::Director::Models
 
     def spec=(spec)
       begin
-        self.spec_json = spec.nil? ? nil : JSON.generate(spec)
+        if spec.nil?
+          self.spec_json = nil
+        else
+          local_spec = Bosh::Common::DeepCopy.copy(spec)
+          if Bosh::Director::Config.config_server_enabled
+            local_spec['properties'] = local_spec['uninterpolated_properties']
+          end
+          local_spec.delete('uninterpolated_properties')
+          self.spec_json = JSON.generate(local_spec)
+        end
       rescue JSON::GeneratorError
         self.spec_json = 'error'
       end

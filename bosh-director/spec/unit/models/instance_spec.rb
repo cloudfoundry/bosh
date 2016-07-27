@@ -202,7 +202,8 @@ module Bosh::Director::Models
             'stemcell' => 'stuff'
           })
 
-          expect(subject.spec).to eq({'vm_type' => 'stuff', 'stemcell' => 'stuff'})
+          expect(subject.spec['vm_type']).to eq('stuff')
+          expect(subject.spec['stemcell']).to eq('stuff')
         end
       end
 
@@ -219,18 +220,19 @@ module Bosh::Director::Models
                   }
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    },
-                  'stemcell' =>
-                    {'name' => 'ubuntu-stemcell',
-                      'version' => '1',
-                      'alias' => 'a'
-                    }
-                })
+
+            expect(subject.spec['vm_type']).to eq(
+                {'name' => 'a',
+                 'cloud_properties' => {}
+                }
+            )
+
+            expect(subject.spec['stemcell']).to eq(
+              {'name' => 'ubuntu-stemcell',
+               'version' => '1',
+               'alias' => 'a'
+              }
+             )
           end
         end
 
@@ -242,15 +244,83 @@ module Bosh::Director::Models
                   'cloud_properties' => {},
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    }
-                }
-              )
+            expect(subject.spec['vm_type']).to eq(
+              {'name' => 'a',
+                'cloud_properties' => {}
+              }
+            )
           end
+        end
+      end
+
+      context 'when config server is enabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'name' => '((name_placeholder))'}).and_return({'name' => 'Big papa smurf'})
+
+          spec_to_save = {
+            'properties' => {'name' => '((name_placeholder))'}
+          }
+
+          subject.spec_json = JSON.generate(spec_to_save)
+        end
+
+        it 'resolves properties and populates uninterpolated props' do
+          result = subject.spec
+          expect(result['properties']).to eq({'name'=>'Big papa smurf'})
+          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
+        end
+      end
+
+      context 'when config server is disabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+
+          spec_to_save = {
+            'properties' => {'name' => '((name_placeholder))'}
+          }
+
+          subject.spec_json = JSON.generate(spec_to_save)
+        end
+
+        it 'does not resolve properties and populates uninterpolated props with properties' do
+          result = subject.spec
+          expect(result['properties']).to eq({'name'=>'((name_placeholder))'})
+          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
+        end
+      end
+    end
+
+    context 'spec=' do
+      context 'when config server is enabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          subject.spec=({
+            'properties' => {'name' => 'a'},
+            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
+          })
+        end
+
+        it 'only saves uninterpolated properties' do
+          saved_json = JSON.parse(subject.spec_json)
+          expect(saved_json).to eq({'properties'=>{'name'=>'((name_placeholder))'}})
+          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
+        end
+      end
+
+      context 'when config server is disabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+          subject.spec=({
+            'properties' => {'name' => 'a'},
+            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
+          })
+        end
+
+        it 'only saves properties' do
+          saved_json = JSON.parse(subject.spec_json)
+          expect(saved_json).to eq({'properties'=>{'name'=>'a'}})
+          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
         end
       end
     end

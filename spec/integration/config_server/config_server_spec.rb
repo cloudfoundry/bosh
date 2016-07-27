@@ -55,6 +55,28 @@ describe 'using director with config server', type: :integration do
         template = vm.read_job_template('foobar', 'bin/foobar_ctl')
         expect(template).to include('test_property=cats are happy')
       end
+
+      context 'when config server values changes post deployment' do
+        it 'updates the job on bosh redeploy' do
+          config_server_helper.put_value('test_property', 'cats are happy')
+
+          manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+          manifest_hash['jobs'].first['instances'] = 1
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          vm = director.vm('foobar', '0')
+
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=cats are happy')
+
+          config_server_helper.put_value('test_property', 'dogs are happy')
+
+          output = bosh_runner.run('deploy')
+          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=dogs are happy')
+        end
+      end
     end
 
     context 'when runtime manifest has placeholders' do
