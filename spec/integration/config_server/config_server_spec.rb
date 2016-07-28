@@ -48,6 +48,13 @@ describe 'using director with config server', type: :integration do
         expect(output).to include('Failed to find keys in the config server: test_property')
       end
 
+      it 'does not include uninterpolated properties in the cli output on deploy failure' do
+        output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
+
+        expect(exit_code).to_not eq(0)
+        expect(output).to_not include('uninterpolated_properties')
+      end
+
       it 'replaces placeholders in the manifest when config server has value for placeholders' do
         config_server_helper.put_value('test_property', 'cats are happy')
 

@@ -397,6 +397,57 @@ module Bosh::Director
     end
 
     describe 'to_hash' do
+
+      let(:raw_manifest_hash) do
+        {
+          'releases' => [
+            {'name' => 'simple', 'version' => '2'}
+          ],
+          'properties' => {
+            'test' => '((test_placeholder))'
+          }
+        }
+      end
+
+      let(:interpolated_manifest_hash) do
+        {
+          'releases' => [
+            {'name' => 'simple', 'version' => '2'}
+          ],
+          'properties' => {
+            'test' => 'helo'
+          },
+          'unterinterpolated_properties' => {
+            'test' => '((test_placeholder))'
+          }
+        }
+      end
+
+      it 'returns interpolated hash by default' do
+        expect(manifest_object.to_hash).to eq({
+          'releases' => [
+            {'name' => 'simple', 'version' => '2'}
+          ],
+          'properties' => {
+            'test' => 'helo'
+          },
+          'unterinterpolated_properties' => {
+            'test' => '((test_placeholder))'
+          }
+        })
+      end
+
+      it 'returns raw hash output when raw=true flag is passed in' do
+        expect(manifest_object.to_hash({:raw => true})).to eq({
+          'releases' => [
+            {'name' => 'simple', 'version' => '2'}
+          ],
+          'properties' => {
+            'test' => '((test_placeholder))'
+          }
+        })
+      end
+      
       context 'when runtime config contains same release/version as deployment manifest' do
         let(:interpolated_manifest_hash) do
           {

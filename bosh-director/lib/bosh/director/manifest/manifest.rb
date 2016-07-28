@@ -36,11 +36,13 @@ module Bosh::Director
     end
 
     def diff(other_manifest, redact)
-      Changeset.new(to_hash, other_manifest.to_hash).diff(redact).order
+      options = { :raw => true }
+      Changeset.new(to_hash(options), other_manifest.to_hash(options)).diff(redact).order
     end
 
-    def to_hash
-      merge_manifests(@interpolated_manifest_hash, @cloud_config_hash, @runtime_config_hash)
+    def to_hash(options={})
+      raw = options.fetch(:raw, false)
+      merge_manifests(raw ? @raw_manifest_hash : @interpolated_manifest_hash, @cloud_config_hash, @runtime_config_hash)
     end
 
     private
