@@ -41,10 +41,10 @@ module Bosh::Cli
         let(:package_name) { 'non-existent-package' }
         let(:package_dir) { "packages/#{package_name}" }
 
-        it 'generates packaging, pre_packaging, and spec files' do
+        it 'generates packaging and spec files' do
           command.generate(package_name)
 
-          expect(Dir.entries(package_dir)).to match_array(['.','..','packaging','pre_packaging','spec'])
+          expect(Dir.entries(package_dir)).to match_array(['.','..','packaging','spec'])
         end
 
         it 'echoes success message' do

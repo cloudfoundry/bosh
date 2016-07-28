@@ -26,11 +26,6 @@ module Bosh::Cli::Command
         "with a non zero value\nset -e\n"
       end
 
-      generate_file(package_dir, "pre_packaging") do
-        "# abort script on any command that exits " +
-        "with a non zero value\nset -e\n"
-      end
-
       generate_file(package_dir, "spec") do
         "---\nname: #{name}\n\ndependencies:\n\nfiles:\n"
       end
