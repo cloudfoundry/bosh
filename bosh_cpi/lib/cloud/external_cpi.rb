@@ -39,10 +39,11 @@ module Bosh::Clouds
       }
     end
 
-    def initialize(cpi_path, director_uuid)
+    def initialize(cpi_path, director_uuid, properties_from_cpi_config = nil)
       @cpi_path = cpi_path
       @director_uuid = director_uuid
       @logger = Config.logger
+      @properties_from_cpi_config = properties_from_cpi_config
     end
 
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -66,12 +67,15 @@ module Bosh::Clouds
     private
 
     def invoke_cpi_method(method_name, *arguments)
+      context = {
+          'director_uuid' => @director_uuid
+      }
+      context['cpi_properties'] = @properties_from_cpi_config unless @properties_from_cpi_config.nil?
+
       request = JSON.dump({
           'method' => method_name.gsub(/\?$/,''),
           'arguments' => arguments,
-          'context' => {
-            'director_uuid' => @director_uuid
-          }
+          'context' => context
         })
 
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}

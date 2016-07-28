@@ -147,7 +147,7 @@ module Bosh::Director
           self,
           deployment_plan,
           multi_job_updater,
-          Config.cloud
+          CloudFactory.create_from_cpi_config
         )
       end
 

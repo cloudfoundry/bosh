@@ -2,18 +2,18 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class UpdateStep
-        def initialize(base_job, deployment_plan, multi_job_updater, cloud)
+        def initialize(base_job, deployment_plan, multi_job_updater, cloud_factory)
           @base_job = base_job
           @logger = base_job.logger
-          @cloud = cloud
+          @cloud_factory = cloud_factory
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @disk_manager = DiskManager.new(@cloud, @logger)
+          @disk_manager = DiskManager.new(@cloud_factory, @logger)
           @dns_manager = DnsManagerProvider.create
           job_renderer = JobRenderer.create
           agent_broadcaster = AgentBroadcaster.new
-          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger, false, Config.enable_virtual_delete_vms)
-          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster)
+          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud_factory, @logger, false, Config.enable_virtual_delete_vms)
+          @vm_creator = Bosh::Director::VmCreator.new(@cloud_factory, @logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster)
         end
 
         def perform

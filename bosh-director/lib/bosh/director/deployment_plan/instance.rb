@@ -136,6 +136,10 @@ module Bosh::Director
         @stemcell
       end
 
+      def stemcell_cid
+        # TODO
+      end
+
       def env
         @env.spec
       end

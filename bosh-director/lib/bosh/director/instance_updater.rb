@@ -6,16 +6,16 @@ module Bosh::Director
 
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
-      cloud = Config.cloud
-      disk_manager = DiskManager.new(cloud, logger)
+      cloud_factory = CloudFactory.create_from_cpi_config
+      disk_manager = DiskManager.new(cloud_factory, logger)
       job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       dns_manager = DnsManagerProvider.create
-      vm_deleter = VmDeleter.new(cloud, logger, false, Config.enable_virtual_delete_vms)
-      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      vm_deleter = VmDeleter.new(cloud_factory, logger, false, Config.enable_virtual_delete_vms)
+      vm_creator = VmCreator.new(cloud_factory, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       new(
-        cloud,
+        cloud_factory,
         logger,
         ip_provider,
         App.instance.blobstores.blobstore,
@@ -28,6 +28,7 @@ module Bosh::Director
     end
 
     def initialize(cloud, logger, ip_provider, blobstore, vm_deleter, vm_creator, dns_manager, disk_manager, vm_recreator)
+      # FIXME is @cloud used anywhere?
       @cloud = cloud
       @logger = logger
       @blobstore = blobstore

@@ -19,6 +19,10 @@ module Bosh::Director
         new(name, version, properties)
       end
 
+      def job_path
+        "/var/vcap/jobs/#{type}_cpi/bin/cpi"
+      end
+
       private
 
       def validate

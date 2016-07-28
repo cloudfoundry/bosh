@@ -8,6 +8,7 @@ module Bosh::Director
 
     def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger)
       @deployment_plan = deployment_plan
+      # FIXME: is @cloud used?
       @cloud = cloud
       @logger = logger
       @stemcell_manager = stemcell_manager

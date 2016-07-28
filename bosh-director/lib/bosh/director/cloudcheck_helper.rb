@@ -14,6 +14,7 @@ module Bosh::Director
     DEFAULT_AGENT_TIMEOUT = 10
 
     def reboot_vm(instance)
+      cloud = cloud_factory.from_cpi_config_or_default(instance.cpi)
       cloud.reboot_vm(instance.vm_cid)
       begin
         agent_client(instance.credentials, instance.agent_id).wait_until_ready
@@ -143,8 +144,8 @@ module Bosh::Director
       )
     end
 
-    def cloud
-      Bosh::Director::Config.cloud
+    def cloud_factory
+      CloudFactory.create_from_cpi_config
     end
 
     def handler_error(message)
@@ -167,14 +168,14 @@ module Bosh::Director
     end
 
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
+      @vm_deleter ||= VmDeleter.new(cloud_factory, @logger, false, Config.enable_virtual_delete_vms)
     end
 
     def vm_creator
-      disk_manager = DiskManager.new(cloud, @logger)
+      disk_manager = DiskManager.new(cloud_factory, @logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
-      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(cloud_factory, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
     end
 
     def validate_spec(spec)

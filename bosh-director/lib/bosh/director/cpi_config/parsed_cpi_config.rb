@@ -6,6 +6,10 @@ module Bosh::Director
       def initialize(cpis)
         @cpis = cpis
       end
+
+      def find_cpi_by_name(name)
+        @cpis.select{|cpi|cpi.name == name}.first
+      end
     end
   end
 end

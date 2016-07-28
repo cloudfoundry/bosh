@@ -7,8 +7,8 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
-    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
-      @cloud = cloud
+    def initialize(cloud_factory, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      @cloud_factory = cloud_factory
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
@@ -144,7 +144,8 @@ module Bosh::Director
 
       count = 0
       begin
-        vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
+        cloud = @cloud_factory.from_cpi_config_or_default(instance_model.cpi)
+        vm_cid = cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1
         @logger.error("failed to create VM, retrying (#{count})")
