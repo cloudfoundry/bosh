@@ -33,7 +33,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Candidate)
               .to receive(:new)
-                    .with('candidate', 'fake-bucket', download_adapter, logger, ['gems', 'release'])
+                    .with('candidate', 'fake-bucket', download_adapter, logger, ['gems', 'release'], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -53,7 +53,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Candidate)
               .to receive(:new)
-                    .with('candidate', 'fake-bucket', download_adapter, logger, [])
+                    .with('candidate', 'fake-bucket', download_adapter, logger, [], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -79,7 +79,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Local)
               .to receive(:new)
-                    .with('0000', 'fake-bucket', download_adapter, logger, ['gems', 'stemcells'])
+                    .with('0000', 'fake-bucket', download_adapter, logger, ['gems', 'stemcells'], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -97,7 +97,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Local)
               .to receive(:new)
-                    .with('0000', 'fake-bucket', download_adapter, logger, [])
+                    .with('0000', 'fake-bucket', download_adapter, logger, [], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -109,7 +109,8 @@ module Bosh::Dev
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
     let(:skip_promote_artifacts) { [] }
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, skip_promote_artifacts) }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token) }
+    let(:bearer_token) { nil }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -282,10 +283,12 @@ module Bosh::Dev
           )
         end
         let(:stemcell_contents) { 'contents of the stemcells' }
+        let(:bearer_token) { 'dummy-token' }
 
         it 'uses the upload adapter to upload the numbered and latest stemcell to s3' do
           key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
+          sha1 = 'a1b2c3d4'
 
           expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
                                                           key: key,
@@ -296,6 +299,14 @@ module Bosh::Dev
                                                           key: latest_key,
                                                           body: anything,
                                                           public: true)
+
+          expect(Open3).to receive(:capture3)
+                             .with("sha1sum #{stemcell_archive.path}", anything)
+                             .and_return(["#{sha1} bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz", nil, instance_double('Process::Status', success?: true)])
+
+          expect(Open3).to receive(:capture3)
+            .with("curl -X POST --fail 'https://bosh.io/checksums/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{bearer_token}'", anything)
+            .and_return([nil, nil, instance_double('Process::Status', success?: true)])
 
           build.upload_stemcell(stemcell_archive)
 
@@ -329,6 +340,10 @@ module Bosh::Dev
                                                           key: latest_key,
                                                           body: anything,
                                                           public: true)
+
+          expect(Open3).to receive(:capture3)
+                             .with("sha1sum #{stemcell_archive.path}", anything)
+                             .and_return(["a1b2c3d4 light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz", nil, instance_double('Process::Status', success?: true)])
 
           build.upload_stemcell(stemcell_archive)
 
@@ -367,16 +382,17 @@ module Bosh::Dev
   describe Build do
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
+    let(:bearer_token) { 'dummy-token' }
 
     it 'constructs the appropriate PromotableArtifacts' do
       expect(PromotableArtifacts).to receive(:new)
                                        .with(anything, logger, {skip_artifacts: ['gems']}) # TODO: anything no
-      build = Build.new('123', bucket_name, download_adapter, logger, ['gems'])
+      build = Build.new('123', bucket_name, download_adapter, logger, ['gems'], bearer_token)
     end
   end
 
   describe Build::Candidate do
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, []) }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, [], nil) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -404,7 +420,7 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    subject { described_class.new('build-number', bucket_name, download_adapter, logger, []) }
+    subject { described_class.new('build-number', bucket_name, download_adapter, logger, [], nil) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 

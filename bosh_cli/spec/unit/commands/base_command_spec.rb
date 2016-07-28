@@ -20,7 +20,7 @@ describe Bosh::Cli::Command::Base do
 
   before { stub_request(:get, "#{target}/info").to_return(body: '{}') }
 
-  let(:target) { 'https://127.0.0.1:8080' }
+  let(:target) { 'https://localhost:8080' }
 
   it 'can access configuration and respects options' do
     add_config('target' => 'localhost:8080', 'target_name' => 'microbosh', 'deployment' => 'test')
@@ -124,9 +124,9 @@ describe Bosh::Cli::Command::Base do
       before do
         director_status = {'user_authentication' => {
           'type' => 'uaa',
-          'options' => {'url' => 'https://127.0.0.1:8080/uaa'}
+          'options' => {'url' => 'https://localhost:8080/uaa'}
         }}
-        stub_request(:get, 'https://127.0.0.1:8080/info').to_return(body: JSON.dump(director_status))
+        stub_request(:get, 'https://localhost:8080/info').to_return(body: JSON.dump(director_status))
       end
 
       context 'when client credentials are provided in environment' do
