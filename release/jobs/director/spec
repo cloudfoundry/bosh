@@ -130,7 +130,7 @@ properties:
     default: false
   director.local_dns:
     description: Enables local DNS, i.e., sending sync_dns messages with all names/IPs to all agents managed by this director
-    default: false
+    default: {}
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:
