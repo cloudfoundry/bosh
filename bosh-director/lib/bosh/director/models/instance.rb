@@ -106,19 +106,19 @@ module Bosh::Director::Models
     end
 
     def spec=(spec)
-      begin
-        if spec.nil?
-          self.spec_json = nil
-        else
-          local_spec = Bosh::Common::DeepCopy.copy(spec)
-          if Bosh::Director::Config.config_server_enabled
-            local_spec['properties'] = local_spec['uninterpolated_properties']
-          end
-          local_spec.delete('uninterpolated_properties')
-          self.spec_json = JSON.generate(local_spec)
+      if spec.nil?
+        self.spec_json = nil
+      else
+        local_spec = Bosh::Common::DeepCopy.copy(spec)
+        if Bosh::Director::Config.config_server_enabled
+          local_spec['properties'] = local_spec['uninterpolated_properties']
         end
-      rescue JSON::GeneratorError
-        self.spec_json = 'error'
+        local_spec.delete('uninterpolated_properties')
+        begin
+          self.spec_json = JSON.generate(local_spec)
+        rescue JSON::GeneratorError
+          self.spec_json = 'error'
+        end
       end
     end
 

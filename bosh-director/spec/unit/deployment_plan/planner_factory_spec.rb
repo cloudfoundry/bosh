@@ -15,7 +15,7 @@ module Bosh
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
-        let(:manifest) { Manifest.new(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash)}
+        let(:manifest) { Manifest.new(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }

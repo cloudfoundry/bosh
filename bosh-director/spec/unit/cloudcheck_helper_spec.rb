@@ -85,7 +85,7 @@ module Bosh::Director
         end
 
         it 'whines on invalid spec format' do
-          instance.update(spec: :foo)
+          instance.update(spec: 'error')
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)

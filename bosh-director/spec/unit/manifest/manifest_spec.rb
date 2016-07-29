@@ -2,11 +2,14 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Manifest do
-    subject(:manifest_object) { described_class.new(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash) }
+    subject(:manifest_object) do
+      described_class.new(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, interpolated_runtime_config_hash, raw_runtime_config_hash)
+    end
     let(:interpolated_manifest_hash) { {} }
     let(:raw_manifest_hash) { {} }
     let(:cloud_config_hash) { {} }
-    let(:runtime_config_hash) { {} }
+    let(:interpolated_runtime_config_hash) { {} }
+    let(:raw_runtime_config_hash) { {} }
 
     before do
       release_1 = Models::Release.make(name: 'simple')
@@ -40,7 +43,7 @@ module Bosh::Director
         expect(result.interpolated_manifest_hash).to eq({'name-1' => 'my-name-1'})
         expect(result.raw_manifest_hash).to eq({'name-1' => 'my-name-1'})
         expect(result.cloud_config_hash).to eq({'name-2' =>'my-name-2'})
-        expect(result.runtime_config_hash).to eq({'name-3' =>'my-name-3'})
+        expect(result.interpolated_runtime_config_hash).to eq({'name-3' =>'my-name-3'})
       end
 
       it 'ignores cloud config when ignore_cloud_config is true' do
@@ -48,7 +51,7 @@ module Bosh::Director
         expect(result.interpolated_manifest_hash).to eq({'name-1' => 'my-name-1'})
         expect(result.raw_manifest_hash).to eq({'name-1' => 'my-name-1'})
         expect(result.cloud_config_hash).to eq(nil)
-        expect(result.runtime_config_hash).to eq({'name-3' =>'my-name-3'})
+        expect(result.interpolated_runtime_config_hash).to eq({'name-3' =>'my-name-3'})
       end
 
       context 'when empty manifests exist' do
@@ -64,7 +67,7 @@ module Bosh::Director
           expect(result.interpolated_manifest_hash).to eq({})
           expect(result.raw_manifest_hash).to eq({})
           expect(result.cloud_config_hash).to eq(nil)
-          expect(result.runtime_config_hash).to eq(nil)
+          expect(result.interpolated_runtime_config_hash).to eq(nil)
         end
       end
 
@@ -75,6 +78,7 @@ module Bosh::Director
         before do
           allow(cloud_config).to receive(:manifest).and_return({})
           allow(runtime_config).to receive(:manifest).and_return({})
+          allow(runtime_config).to receive(:raw_manifest).and_return({})
           allow(deployment_model).to receive(:manifest).and_return("{'smurf': '((smurf_placeholder))'}")
           allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
           allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
@@ -86,7 +90,7 @@ module Bosh::Director
           expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.runtime_config_hash).to eq({})
+          expect(manifest_object_result.interpolated_runtime_config_hash).to eq({})
 
         end
 
@@ -100,7 +104,7 @@ module Bosh::Director
           expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.runtime_config_hash).to eq({})
+          expect(manifest_object_result.interpolated_runtime_config_hash).to eq({})
         end
       end
     end
@@ -120,7 +124,7 @@ module Bosh::Director
         expect(result.interpolated_manifest_hash).to eq({})
         expect(result.raw_manifest_hash).to eq({})
         expect(result.cloud_config_hash).to eq(nil)
-        expect(result.runtime_config_hash).to eq({})
+        expect(result.interpolated_runtime_config_hash).to eq({})
       end
 
       context 'when resolving manifest' do
@@ -131,6 +135,7 @@ module Bosh::Director
         before do
           allow(cloud_config).to receive(:manifest).and_return({})
           allow(runtime_config).to receive(:manifest).and_return({})
+          allow(runtime_config).to receive(:raw_manifest).and_return({})
         end
 
         it 'calls the manifest resolver with correct values' do
@@ -139,7 +144,7 @@ module Bosh::Director
           expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.runtime_config_hash).to eq({})
+          expect(manifest_object_result.interpolated_runtime_config_hash).to eq({})
 
         end
 
@@ -153,7 +158,7 @@ module Bosh::Director
           expect(manifest_object_result.interpolated_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.runtime_config_hash).to eq({})
+          expect(manifest_object_result.interpolated_runtime_config_hash).to eq({})
         end
       end
     end
@@ -164,7 +169,7 @@ module Bosh::Director
         expect(result_manifest.interpolated_manifest_hash).to eq({})
         expect(result_manifest.raw_manifest_hash).to eq({})
         expect(result_manifest.cloud_config_hash).to eq(nil)
-        expect(result_manifest.runtime_config_hash).to eq(nil)
+        expect(result_manifest.interpolated_runtime_config_hash).to eq(nil)
       end
 
       it 'does not call config server parser even if config server is enabled' do
@@ -356,11 +361,20 @@ module Bosh::Director
     end
 
     describe '#diff' do
-      subject(:new_manifest_object) { described_class.new(new_interpolated_manifest_hash, new_raw_manifest_hash, new_cloud_config_hash, new_runtime_config_hash) }
-      let(:new_interpolated_manifest_hash) do
+      subject(:new_manifest_object) do
+        described_class.new(
+          new_interpolated_manifest_hash,
+          new_raw_manifest_hash,
+          new_cloud_config_hash,
+          new_interpolated_runtime_config_hash,
+          new_raw_runtime_config_hash
+        )
+      end
+
+      let(:new_raw_manifest_hash) do
         {
           'properties' => {
-              'something' => 'worth-redacting',
+            'something' => 'worth-redacting',
           },
           'jobs' => [
             {
@@ -372,11 +386,44 @@ module Bosh::Director
           ],
         }
       end
-      let(:new_raw_manifest_hash) { raw_manifest_hash }
+
+      let(:new_raw_manifest_hash) do
+        {
+          'properties' => {
+            'something' => 'worth-redacting',
+          },
+          'jobs' => [
+            {
+              'name' => 'useful',
+              'properties' => {
+                'inner' => 'secrets',
+              },
+            },
+          ],
+        }
+      end
+
+      let(:new_interpolated_manifest_hash) { interpolated_manifest_hash }
       let(:new_cloud_config_hash) { cloud_config_hash }
-      let(:new_runtime_config_hash) { runtime_config_hash }
+      let(:new_interpolated_runtime_config_hash) { interpolated_runtime_config_hash }
+      let(:new_raw_runtime_config_hash) { raw_runtime_config_hash }
       let(:diff) do
         manifest_object.diff(new_manifest_object, redact).map(&:text).join("\n")
+      end
+
+      context 'when called' do
+        let(:redact) { true }
+        let(:mock_changeset) {instance_double(Bosh::Director::Changeset)}
+        let(:diff_return) { double( order: '') }
+
+        it 'calls changeset with correct parameters' do
+          expect(Bosh::Director::Changeset).to receive(:new).and_return(mock_changeset)
+          expect(mock_changeset).to receive(:diff).with(true).and_return(diff_return)
+          expect(diff_return).to receive(:order)
+          expect(manifest_object).to receive(:to_hash).with({:raw => true}).and_return({})
+          expect(new_manifest_object).to receive(:to_hash).with({:raw => true}).and_return({})
+          manifest_object.diff(new_manifest_object, redact)
+        end
       end
 
       context 'when redact is true' do
@@ -423,10 +470,57 @@ module Bosh::Director
         }
       end
 
+      let(:raw_runtime_config_hash) do
+        {
+          'releases' => [
+            {'name' => 'runtime_release', 'version' => '2'}
+          ],
+          'addons' => [
+            {
+              'name' => 'test',
+              'properties' => {
+                'test2' => '((test2_placeholder))'
+              }
+            }
+          ]
+        }
+      end
+
+      let(:interpolated_runtime_config_hash) do
+        {
+          'releases' => [
+            {'name' => 'runtime_release', 'version' => '2'}
+          ],
+          'addons' => [
+            {
+              'name' => 'test',
+              'properties' => {
+                'test2' => 'smurfy'
+              },
+              'uninterpolated_properties' => {
+                'test2' => '((test2_placeholder))'
+              }
+            }
+          ]
+        }
+      end
+
       it 'returns interpolated hash by default' do
         expect(manifest_object.to_hash).to eq({
           'releases' => [
-            {'name' => 'simple', 'version' => '2'}
+            {'name' => 'simple', 'version' => '2'},
+            {'name' => 'runtime_release', 'version' => '2'}
+          ],
+          'addons' => [
+            {
+              'name' => 'test',
+              'properties' => {
+                'test2' => 'smurfy',
+              },
+              'uninterpolated_properties' => {
+                'test2' => '((test2_placeholder))'
+              }
+            }
           ],
           'properties' => {
             'test' => 'helo'
@@ -440,7 +534,16 @@ module Bosh::Director
       it 'returns raw hash output when raw=true flag is passed in' do
         expect(manifest_object.to_hash({:raw => true})).to eq({
           'releases' => [
-            {'name' => 'simple', 'version' => '2'}
+            {'name' => 'simple', 'version' => '2'},
+            {'name' => 'runtime_release', 'version' => '2'}
+          ],
+          'addons' => [
+            {
+              'name' => 'test',
+              'properties' => {
+                'test2' => '((test2_placeholder))',
+              }
+            }
           ],
           'properties' => {
             'test' => '((test_placeholder))'
@@ -458,7 +561,7 @@ module Bosh::Director
           }
         end
 
-        let(:runtime_config_hash) do
+        let(:interpolated_runtime_config_hash) do
           {
               'releases' => [
                   {'name' => 'simple', 'version' => '2'}

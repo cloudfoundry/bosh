@@ -89,7 +89,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'apply_vm_state' do
-        let(:state) do
+        let(:full_spec) do
           {
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
@@ -99,15 +99,30 @@ module Bosh::Director::DeploymentPlan
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test-domain',
-            'persistent_disk' => 0
+            'persistent_disk' => 0,
+            'properties' => {},
+            'uninterpolated_properties' => {}
           }
         end
-        let(:instance_spec) { InstanceSpec.new(state, instance) }
+        let(:apply_spec) do
+          {
+            'deployment' => 'fake-deployment',
+            'job' => 'fake-job-spec',
+            'index' => 0,
+            'id' => 'uuid-1',
+            'networks' => {'fake-network' => {'fake-network-settings' => {}}},
+            'packages' => {},
+            'configuration_hash' => 'fake-desired-configuration-hash',
+            'dns_domain_name' => 'test-domain',
+            'persistent_disk' => 0,
+          }
+        end
+        let(:instance_spec) { InstanceSpec.new(full_spec, instance) }
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          expect(agent_client).to receive(:apply).with(state).ordered
+          expect(agent_client).to receive(:apply).with(apply_spec).ordered
           instance.apply_vm_state(instance_spec)
-          expect(instance_model.spec).to eq(state)
+          expect(instance_model.spec).to eq(full_spec)
         end
       end
 
