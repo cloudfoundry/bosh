@@ -22,7 +22,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:desired_instance) { DesiredInstance.new(job, deployment_plan, availability_zone) }
-    let(:current_state) { {'current' => 'state', 'job' => job_spec } }
+    let(:current_state) { {'current' => 'state', 'job' => job_spec, 'job_state' => job_state } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:instance) { Instance.create_from_job(job, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
@@ -34,8 +34,8 @@ module Bosh::Director::DeploymentPlan
       reservation
     }
     let(:network_plans) { [] }
-    let(:need_to_fix) { false }
-    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, need_to_fix: need_to_fix) }
+    let(:job_state) { 'running' }
+    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
     let(:existing_instance) { instance_model }
 
     let(:job_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
@@ -362,10 +362,36 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance has unresponsive agent' do
-        let(:need_to_fix) { true }
+        let(:job_state) { 'unresponsive' }
 
         it 'should return true' do
           expect(instance_plan.needs_recreate?).to be_truthy
+        end
+      end
+    end
+
+    describe '#needs_to_fix?' do
+      context 'when instance has unresponsive agent' do
+        let(:job_state) { 'unresponsive' }
+
+        it 'should return true' do
+          expect(instance_plan.needs_to_fix?).to be_truthy
+        end
+      end
+
+      context 'when instance is ok' do
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
+
+        it 'should return false' do
+          expect(instance_plan.needs_to_fix?).to be_falsey
+        end
+      end
+
+      context 'when instance is nill' do
+        let(:job_state) { 'running' }
+
+        it 'should return false' do
+          expect(instance_plan.needs_to_fix?).to be_falsey
         end
       end
     end

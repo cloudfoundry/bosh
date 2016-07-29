@@ -23,7 +23,7 @@ module Bosh::Director
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
       states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances, fix)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
-      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate, 'fix' => fix})
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_jobs = @deployment_plan.instance_groups
 
@@ -37,7 +37,7 @@ module Bosh::Director
       end
 
       instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-      instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
+      @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_jobs)
 
       bind_stemcells
       bind_templates
@@ -79,7 +79,7 @@ module Bosh::Director
                   state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
                 rescue Bosh::Director::RpcTimeout => e
                   if fix
-                    state = {'current_state' => 'unresponsive'}
+                    state = {'job_state' => 'unresponsive'}
                   else
                     raise e
                   end

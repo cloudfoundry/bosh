@@ -5,11 +5,38 @@ module Bosh::Director
     describe InstancePlanFactory do
       include Bosh::Director::IpUtil
 
-      let(:instance_repo) { nil }
+      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
       let(:skip_drain) { SkipDrain.new(true) }
-      let(:index_assigner) { instance_double(PlacementPlanner::IndexAssigner) }
+      let(:index_assigner) { nil }
       let(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
-      let(:existing_instance_model) { Models::Instance.make }
+      let(:existing_instance_model) do
+        Models::Instance.make(
+          deployment: deployment_model,
+          job: 'foobar',
+          index: 0,
+          vm_cid: 'vm-cid',
+          spec: spec
+        )
+      end
+      let(:spec) do
+        {
+          'vm_type' => {
+            'name' => 'vm-type',
+            'cloud_properties' => {'foo' => 'bar'},
+          },
+          'stemcell' => {
+            'name' => 'stemcell-name',
+            'version' => '3.0.2'
+          },
+          'env' => {
+            'key1' => 'value1'
+          },
+          'networks' => {
+            'ip' => '192.168.1.1',
+          }
+        }
+      end
+      let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest), :name => 'name-7') }
       let(:range) { NetAddr::CIDR.create('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
       let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
@@ -17,14 +44,9 @@ module Bosh::Director
       let(:deployment_plan) do
         instance_double(Planner,
           network: network,
-          ip_provider: BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
+          ip_provider: BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger),
+          model: deployment_model
         )
-      end
-      let(:existing_instance_model_unresponsive) { Models::Instance.make(job: job) }
-      let(:job) do
-        job = DeploymentPlan::InstanceGroup.new(logger)
-        job.name = 'job-name'
-        job
       end
 
       let(:states_by_existing_instance) do
@@ -38,10 +60,6 @@ module Bosh::Director
                     'type' => 'dynamic'
                   }
                 }
-            },
-          existing_instance_model_unresponsive =>
-            {
-              'current_state' => 'unresponsive'
             }
         }
       end
@@ -57,8 +75,10 @@ module Bosh::Director
           options)
       end
 
+      before { BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+
       context 'obsolete_instance_plan' do
-        it 'returns an instance plan with a nil desired instnace' do
+        it 'returns an instance plan with a nil desired instance' do
           instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(instance_plan.desired_instance).to be_nil
         end
@@ -71,76 +91,6 @@ module Bosh::Director
         it 'fetches network reservations' do
           instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(ip_repo.contains_ip?(ip_to_i('192.168.1.1'), 'name-7')).to eq(true)
-        end
-
-        context 'need_to_fix' do
-          context 'when fix parameter is true' do
-            let(:options) {
-              {'fix' => true}
-            }
-            it 'will set parameter to recreate instance with unresponsive agent' do
-              instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model_unresponsive)
-              expect(instance_plan.need_to_fix).to be_truthy
-            end
-
-            it 'will not set parameter to recreate running instance' do
-              instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-              expect(instance_plan.need_to_fix).to be_falsey
-            end
-          end
-
-          context 'when fix parameter is false' do
-            let(:options) {
-              {'fix' => false}
-            }
-            it 'will not set parameter to recreate instance with unresponsive agent' do
-              instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model_unresponsive)
-              expect(instance_plan.need_to_fix).to be_falsey
-            end
-          end
-        end
-      end
-
-      context 'desired_existing_instance_plan' do
-        let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
-
-        let(:instance_repo) do
-          instance_double(InstanceRepository,
-                          fetch_existing: instance_double(Instance, update_description: nil, model: existing_instance_model_unresponsive))
-        end
-
-        context 'need_to_fix' do
-          before {
-            allow(index_assigner).to receive(:assign_index).with(desired_instance.job.name, existing_instance_model_unresponsive).and_return(0)
-          }
-
-          context 'when fix parameter is true' do
-            let(:options) {
-              {'fix' => true}
-            }
-
-            it 'will set parameter to recreate instance with unresponsive agent' do
-              instance_plan = instance_plan_factory.desired_existing_instance_plan(existing_instance_model_unresponsive, desired_instance)
-              expect(instance_plan.need_to_fix).to be_truthy
-            end
-
-            it 'will not set parameter to recreate running instance' do
-              allow(index_assigner).to receive(:assign_index).with(desired_instance.job.name, existing_instance_model).and_return(0)
-              instance_plan = instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
-              expect(instance_plan.need_to_fix).to be_falsey
-            end
-          end
-
-          context 'when fix parameter is false' do
-            let(:options) {
-              {'fix' => false}
-            }
-
-            it 'will not set parameter to recreate instance with unresponsive agent' do
-              instance_plan = instance_plan_factory.desired_existing_instance_plan(existing_instance_model_unresponsive, desired_instance)
-              expect(instance_plan.need_to_fix).to be_falsey
-            end
-          end
         end
       end
     end

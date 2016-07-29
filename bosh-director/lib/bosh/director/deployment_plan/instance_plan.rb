@@ -9,12 +9,11 @@ module Bosh
           @network_plans = attrs.fetch(:network_plans, [])
           @skip_drain = attrs.fetch(:skip_drain, false)
           @recreate_deployment = attrs.fetch(:recreate_deployment, false)
-          @need_to_fix = attrs.fetch(:need_to_fix, false)
           @logger = attrs.fetch(:logger, Config.logger)
           @dns_manager = DnsManagerProvider.create
         end
 
-        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :need_to_fix
+        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment
 
         attr_accessor :network_plans
 
@@ -23,6 +22,11 @@ module Bosh
         #   differ from the ones provided by the VM
         def changed?
           !changes.empty?
+        end
+
+        def needs_to_fix?
+          return false if @instance.nil?
+          @instance.current_job_state == 'unresponsive'
         end
 
         ##
@@ -81,7 +85,7 @@ module Bosh
           if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             true
-          elsif @need_to_fix
+          elsif needs_to_fix?
             @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
             true
           else
@@ -121,6 +125,8 @@ module Bosh
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
+
+          return true if needs_to_fix?
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
             instance.state == 'started' && instance.current_job_state != 'running'

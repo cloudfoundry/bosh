@@ -192,25 +192,16 @@ describe Bosh::Cli::Command::JobManagement do
     before { command.options[:fix] = true }
 
     context 'when fix is specified' do
-      if method_name == :recreate_job
-        it 'passes it to director request' do
-          expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', anything, {skip_drain: false, fix: true})
-          command.public_send(method_name, 'dea', '0')
-        end
-      else
-        it 'raise an error' do
-          expect {
-            command.public_send(method_name, 'dea', '0')
-          }.to raise_error(Bosh::Cli::CliError, "--fix option only makes sense for 'recreate' operation")
-        end
+      it 'passes it to director request' do
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', anything, {skip_drain: false, fix: true})
+        command.public_send(method_name, 'dea', '0')
       end
     end
   end
 
-  describe 'starting a job' do
+describe 'starting a job' do
     it_behaves_like 'a command which modifies the vm state', with: :start_job,
                     verb: 'start', past_verb: 'started', extra_task_report_info: ''
-    it_behaves_like :fix, with: :start_job
   end
 
   describe 'detaching a job' do
@@ -231,13 +222,11 @@ describe Bosh::Cli::Command::JobManagement do
 
     it_behaves_like 'a command which modifies the vm state', with: :stop_job,
                     verb: 'stop', past_verb: 'stopped', extra_task_report_info: ', VM(s) still running'
-    it_behaves_like :fix, with: :stop_job
   end
 
   describe 'restart a job' do
     it_behaves_like 'a command which modifies the vm state', with: :restart_job,
                     verb: 'restart', past_verb: 'restarted', extra_task_report_info: '', new_state: 'restart'
-    it_behaves_like :fix, with: :restart_job
   end
 
   describe 'recreate a job' do
@@ -246,5 +235,4 @@ describe Bosh::Cli::Command::JobManagement do
 
     it_behaves_like :fix, with: :recreate_job
   end
-
 end
