@@ -41,7 +41,7 @@ module Bosh::Director
       attr_reader :stemcells
 
       # Job instances from the old manifest that are not in the new manifest
-      attr_reader :unneeded_instances
+      attr_reader :unneeded_instance_plans
 
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
@@ -69,7 +69,7 @@ module Bosh::Director
         @instance_groups_canonical_name_index = Set.new
 
         @unneeded_vms = []
-        @unneeded_instances = []
+        @unneeded_instance_plans = []
 
         @recreate = !!options['recreate']
         @fix = !!options['fix']
@@ -204,8 +204,12 @@ module Bosh::Director
         end
       end
 
-      def mark_instance_for_deletion(instance)
-        @unneeded_instances << instance
+      def mark_instance_plans_for_deletion(instance_plans)
+        @unneeded_instance_plans = instance_plans
+      end
+
+      def unneeded_instances
+        @unneeded_instance_plans.map(&:existing_instance)
       end
 
       # Adds a instance_group by name

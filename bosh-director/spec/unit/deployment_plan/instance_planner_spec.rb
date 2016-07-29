@@ -221,7 +221,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(obsolete_instance_plan.obsolete?).to eq(true)
       expect(obsolete_instance_plan.desired_instance).to be_nil
       expect(obsolete_instance_plan.existing_instance).to eq(undesired_existing_instance_model)
-      expect(obsolete_instance_plan.instance).to be_nil
+      expect(obsolete_instance_plan.instance).not_to be_nil
 
       existing_instance_plan = instance_plans.find(&:existing?)
       expect(existing_instance_plan.new?).to eq(false)
@@ -413,7 +413,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(instance_plans.count).to eq(1)
 
       obsolete_instance_plan = instance_plans.first
-      expect(obsolete_instance_plan.instance).to be_nil
+      expect(obsolete_instance_plan.instance).not_to be_nil
       expect(obsolete_instance_plan.desired_instance).to be_nil
       expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
       expect(obsolete_instance_plan).to be_obsolete
@@ -432,6 +432,5 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
          "You are trying to delete instance group 'bar-job', which contains ignored instance(s). Operation not allowed."
       )
     end
-
   end
 end

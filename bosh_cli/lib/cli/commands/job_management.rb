@@ -110,10 +110,6 @@ module Bosh::Cli
           err('Cannot handle both --hard and --soft options, please choose one')
         end
 
-        if !fix_option_allowed?(operation) && fix?
-          err("--fix option only makes sense for 'recreate' operation")
-        end
-
         if !hard_and_soft_options_allowed?(operation) && (hard? || soft?)
           err("--hard and --soft options only make sense for 'stop' operation")
         end
@@ -123,10 +119,6 @@ module Bosh::Cli
 
       def hard_and_soft_options_allowed?(operation)
         operation == :stop || operation == :detach
-      end
-
-      def fix_option_allowed?(operation)
-        operation == :recreate
       end
     end
   end
