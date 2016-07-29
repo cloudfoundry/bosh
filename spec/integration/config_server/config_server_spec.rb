@@ -48,7 +48,7 @@ describe 'using director with config server', type: :integration do
         expect(output).to include('Failed to find keys in the config server: test_property')
       end
 
-      it 'does not include uninterpolated properties in the cli output on deploy failure' do
+      it 'does not include uninterpolated_properties key in the cli output on deploy failure' do
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
@@ -114,15 +114,16 @@ describe 'using director with config server', type: :integration do
 
     context 'when runtime manifest has placeholders' do
       let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
-
-      it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
+      before do
         bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
 
         config_server_helper.put_value('release_name', 'dummy2')
         config_server_helper.put_value('addon_prop', 'i am Groot')
 
         expect(upload_runtime_config(runtime_config_hash: runtime_config)).to include("Successfully updated runtime config")
+      end
 
+      it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         vm = director.vm('foobar', '0')
@@ -142,6 +143,11 @@ describe 'using director with config server', type: :integration do
 
         template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
         expect(template).to include('smurfs are blue')
+      end
+
+      it 'does not include uninterpolated_properties key in the cli output' do
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        expect(output).to_not include('uninterpolated_properties')
       end
     end
 
