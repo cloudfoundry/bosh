@@ -41,7 +41,7 @@ module Bosh::Cli::Command
           row << event.fetch('task', '-')
           row << event.fetch('deployment', '-')
           row << event.fetch('instance', '-')
-          if !event.key?('context') || event['context'] == 'null' || event['context'] == nil
+          if !event.key?('context') || event['context'] == nil
             event['context'] = {}
           end
           context = event['error'] ? {'error' => event['error'].to_s.truncate(80)}.merge(event['context']) : event['context']

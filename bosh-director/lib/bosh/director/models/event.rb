@@ -7,11 +7,8 @@ module Bosh::Director::Models
     end
 
     def context
-      if context_json == 'null' || context_json == nil
-        {}
-      else
-        JSON.parse(context_json)
-      end
+      return {} if context_json.nil?
+      JSON.parse(context_json)
     end
 
     def context=(data)
