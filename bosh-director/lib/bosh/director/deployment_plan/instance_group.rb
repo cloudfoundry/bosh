@@ -358,6 +358,10 @@ module Bosh::Director
         @templates.any? { |job| job.name == name && job.release.name == release }
       end
 
+      def has_os?(os)
+        @stemcell.os == os
+      end
+
       private
 
       def extract_jobs_properties(all_properties)

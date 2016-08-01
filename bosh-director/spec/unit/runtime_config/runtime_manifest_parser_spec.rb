@@ -29,7 +29,7 @@ module Bosh::Director
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(RuntimeConfig::AddonInclude).to receive(:new).with([], [])
+          expect(RuntimeConfig::AddonInclude).to receive(:new).with([], [], [])
 
           result = subject.parse(runtime_manifest)
 
@@ -63,7 +63,7 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(RuntimeConfig::AddonInclude).to receive(:new).with([], ['dep1'])
+            expect(RuntimeConfig::AddonInclude).to receive(:new).with([], ['dep1'], [])
 
             subject.parse(runtime_manifest)
           end

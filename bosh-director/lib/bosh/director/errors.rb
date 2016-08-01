@@ -283,6 +283,7 @@ module Bosh::Director
   RuntimeReleaseNotListedInReleases = err(530002)
   RuntimeInvalidDeploymentRelease = err(530003)
   RuntimeIncompleteIncludeJobSection = err(530004)
+  RuntimeIncompleteIncludeStemcellSection = err(530005)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
