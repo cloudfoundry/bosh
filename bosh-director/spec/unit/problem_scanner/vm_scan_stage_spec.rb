@@ -13,10 +13,11 @@ module Bosh::Director
       )
     end
 
-    def create_vm(i, state: 'started', lifecycle: 'service', ignore: false, vm_cid: "vm-cid-#{i}")
+    def create_vm(i, options = {})
+      options = {state: 'started', lifecycle: 'service', ignore: false, vm_cid: "vm-cid-#{i}"}.merge(options)
       job_name = "job-#{i}"
-      instance = Models::Instance.make(vm_cid: vm_cid, agent_id: "agent-#{i}", deployment: deployment, job: job_name, index: i, state: state, ignore: ignore)
-      instance_groups[job_name] = double(name: job_name, lifecycle: lifecycle)
+      instance = Models::Instance.make(vm_cid: options[:vm_cid], agent_id: "agent-#{i}", deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore])
+      instance_groups[job_name] = double(name: job_name, lifecycle: options[:lifecycle])
       instance
     end
 
