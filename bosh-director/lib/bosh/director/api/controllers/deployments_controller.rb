@@ -246,7 +246,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @instance_manager.find_instances_by_deployment(deployment)
-          JSON.generate(create_instances_response(instances))
+          JSON.generate(create_instances_response_with_vm_expected(instances))
         end
       end
 
@@ -466,14 +466,24 @@ module Bosh::Director
 
       def create_instances_response(instances)
         instances.map do |instance|
-          {
-              'agent_id' => instance.agent_id,
-              'cid' => instance.vm_cid,
-              'job' => instance.job,
-              'index' => instance.index,
-              'id' => instance.uuid
-          }
+          create_instance_response(instance)
         end
+      end
+
+      def create_instances_response_with_vm_expected(instances)
+        instances.map do |instance|
+          create_instance_response(instance).merge('expects_vm' => instance.expects_vm?)
+        end
+      end
+
+      def create_instance_response(instance)
+        {
+            'agent_id' => instance.agent_id,
+            'cid' => instance.vm_cid,
+            'job' => instance.job,
+            'index' => instance.index,
+            'id' => instance.uuid
+        }
       end
     end
   end

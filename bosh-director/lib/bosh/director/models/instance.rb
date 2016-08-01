@@ -144,7 +144,28 @@ module Bosh::Director::Models
       self.credentials_json = json_encode(spec)
     end
 
+    def lifecycle
+      return nil if self.deployment.manifest == nil
+
+      deployment_plan = create_deployment_plan_from_manifest(deployment)
+      instance_group = deployment_plan.instance_group(self.job)
+      if instance_group
+        instance_group.lifecycle
+      else
+        nil
+      end
+    end
+
+    def expects_vm?
+      lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
+    end
+
     private
+
+    def create_deployment_plan_from_manifest(deployment)
+      planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
+      planner_factory.create_from_model(deployment)
+    end
 
     def object_or_nil(value)
       if value == 'null' || value.nil?
