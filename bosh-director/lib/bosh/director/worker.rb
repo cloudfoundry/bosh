@@ -1,6 +1,5 @@
 module Bosh::Director
   class Worker
-
     def initialize(config, index=0)
       @config = config
       @index = index
@@ -14,7 +13,7 @@ module Bosh::Director
       Delayed::Worker.backend = :sequel
       Delayed::Worker.destroy_failed_jobs = true
       Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 1
-      Delayed::Worker.max_attempts = 0
+      Delayed::Worker.max_attempts = 5
       Delayed::Worker.max_run_time = 31536000
 
       @delayed_job_worker = nil
