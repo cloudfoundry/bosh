@@ -137,6 +137,11 @@ module Bosh::Director
         env['bosh']['password'] = sha512_hashed_password
       end
 
+      if instance_model.job
+        env['bosh'] ||= {}
+        env['bosh']['group_name'] = instance_model.job
+      end
+
       count = 0
       begin
         vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)

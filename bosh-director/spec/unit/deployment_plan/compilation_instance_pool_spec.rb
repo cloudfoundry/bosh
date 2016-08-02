@@ -58,7 +58,7 @@ module Bosh::Director
     end
     let(:n_workers) { 3 }
     let(:cloud_properties) { { 'cloud' => 'properties'} }
-    let(:compilation_env) { { 'compilation' => 'environment'} }
+    let(:compilation_env) { { 'compilation' => 'environment', 'bosh' => { 'group_name' => 'compilation-deadbeef' } } }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { {'a' => {'property' => 'settings'}} }
