@@ -11,9 +11,6 @@ check_param OPERATING_SYSTEM_VERSION
 check_param OS_IMAGE_S3_BUCKET_NAME
 check_param OS_IMAGE_S3_KEY
 
-source /etc/profile.d/chruby.sh
-chruby 1.9.3
-
 sudo chown -R ubuntu .
 sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
     bundle install --local

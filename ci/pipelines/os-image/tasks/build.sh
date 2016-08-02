@@ -14,6 +14,9 @@ check_param OS_IMAGE_S3_KEY
 
 set_up_vagrant_private_key
 
+source /etc/profile.d/chruby.sh
+chruby 1.9.3
+
 cd bosh-src
 print_git_state
 
