@@ -45,7 +45,7 @@ describe 'using director with config server', type: :integration do
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to find keys in the config server: test_property')
+        expect(output).to include('Error 540000: Failed to find keys in the config server: test_property')
       end
 
       it 'does not include uninterpolated_properties key in the cli output on deploy failure' do
@@ -114,40 +114,51 @@ describe 'using director with config server', type: :integration do
 
     context 'when runtime manifest has placeholders' do
       let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
-      before do
-        bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
 
-        config_server_helper.put_value('release_name', 'dummy2')
-        config_server_helper.put_value('addon_prop', 'i am Groot')
-
-        expect(upload_runtime_config(runtime_config_hash: runtime_config)).to include("Successfully updated runtime config")
+      context 'when config server does not have all keys' do
+        it 'will throw a valid error when uploading runtime config' do
+          output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to_not eq(0)
+          expect(output).to include('Error 540000: Failed to find keys in the config server: release_name, addon_prop')
+        end
       end
 
-      it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+      context 'when config server has all keys' do
+        before do
+          bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
 
-        vm = director.vm('foobar', '0')
-        template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
-        expect(template).to include("echo 'i am Groot'")
+          config_server_helper.put_value('release_name', 'dummy2')
+          config_server_helper.put_value('addon_prop', 'i am Groot')
 
-        # change value in config server and redeploy
-        config_server_helper.put_value('addon_prop', 'smurfs are blue')
+          expect(upload_runtime_config(runtime_config_hash: runtime_config)).to include("Successfully updated runtime config")
+        end
 
-        redeploy_output = bosh_runner.run('deploy')
+        it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-        scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
+          vm = director.vm('foobar', '0')
+          template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+          expect(template).to include("echo 'i am Groot'")
 
-        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-        expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+          # change value in config server and redeploy
+          config_server_helper.put_value('addon_prop', 'smurfs are blue')
 
-        template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
-        expect(template).to include('smurfs are blue')
-      end
+          redeploy_output = bosh_runner.run('deploy')
 
-      it 'does not include uninterpolated_properties key in the cli output' do
-        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        expect(output).to_not include('uninterpolated_properties')
+          scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
+
+          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+
+          template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+          expect(template).to include('smurfs are blue')
+        end
+
+        it 'does not include uninterpolated_properties key in the cli output' do
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          expect(output).to_not include('uninterpolated_properties')
+        end
       end
     end
 

@@ -10,7 +10,7 @@ module Bosh::Director::ConfigServer
 
       config_values, invalid_keys = fetch_config_values(config_keys)
       if invalid_keys.length > 0
-        raise "Failed to find keys in the config server: " + invalid_keys.join(", ")
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: " + invalid_keys.join(", ")
       end
 
       replace_config_values!(config_map, config_values, result)
