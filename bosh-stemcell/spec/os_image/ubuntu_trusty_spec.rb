@@ -16,7 +16,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_kernel' do
-    describe package('linux-generic-lts-vivid') do
+    describe package('linux-generic-lts-xenial') do
       it { should be_installed }
     end
   end
