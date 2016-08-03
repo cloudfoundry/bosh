@@ -1,8 +1,8 @@
 module Bosh::Director
   class DiskManager
+    include CloudFactoryHelper
 
-    def initialize(cloud_factory, logger)
-      @cloud_factory = cloud_factory
+    def initialize(logger)
       @logger = logger
       @transactor = Transactor.new
     end
@@ -128,7 +128,7 @@ module Bosh::Director
           delete_orphan_snapshot(orphan_snapshot)
         end
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
-        cloud = @cloud_factory.from_cpi_config_or_default(orphan_disk.cpi)
+        cloud = cloud_factory_for_latest_cloud_config.for_availability_zone(orphan_disk.availability_zone)
         cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
       rescue Bosh::Clouds::DiskNotFound
@@ -142,7 +142,7 @@ module Bosh::Director
       return @logger.info('Skipping disk attaching') if disk_cid.nil?
 
       begin
-        cloud = @cloud_factory.from_cpi_config_or_default(instance_model.cpi)
+        cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
         cloud.attach_disk(instance_model.vm_cid, disk_cid)
         agent_client(instance_model).mount_disk(disk_cid)
       rescue => e
@@ -154,7 +154,7 @@ module Bosh::Director
     def detach_disk(instance_model, disk)
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = @cloud_factory.from_cpi_config_or_default(instance_model.cpi)
+        cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
         cloud.detach_disk(instance_model.vm_cid, disk.disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
@@ -215,7 +215,7 @@ module Bosh::Director
       begin
         snapshot_cid = orphan_snapshot.snapshot_cid
         @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
-        cloud = @cloud_factory.from_cpi_config_or_default(orphan_snapshot.orphan_disk.cpi)
+        cloud = cloud_factory_for_latest_cloud_config.for_availability_zone(orphan_snapshot.orphan_disk.availability_zone)
         cloud.delete_snapshot(snapshot_cid)
         orphan_snapshot.destroy
       rescue Bosh::Clouds::DiskNotFound
@@ -272,7 +272,7 @@ module Bosh::Director
     def create_and_attach_disk(instance_plan)
       instance = instance_plan.instance
       disk = create_disk(instance_plan)
-      cloud = @cloud_factory.from_cpi_config_or_default(instance.model.cpi)
+      cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance.model.availability_zone)
       cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
       disk
     end
@@ -295,7 +295,7 @@ module Bosh::Director
       parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
       disk_size = job.persistent_disk_type.disk_size
       cloud_properties = job.persistent_disk_type.cloud_properties
-      cloud = @cloud_factory.from_cpi_config_or_default(instance_model.cpi)
+      cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
       disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
       Models::PersistentDisk.create(

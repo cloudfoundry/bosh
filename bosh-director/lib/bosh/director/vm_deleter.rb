@@ -1,7 +1,8 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(cloud_factory, logger, force=false, enable_virtual_delete_vm=false)
-      @cloud_factory = cloud_factory
+    include CloudFactoryHelper
+
+    def initialize(logger, force=false, enable_virtual_delete_vm=false)
       @logger = logger
       @error_ignorer = ErrorIgnorer.new(force, @logger)
       @enable_virtual_delete_vm = enable_virtual_delete_vm
@@ -13,7 +14,7 @@ module Bosh::Director
           vm_cid = instance_model.vm_cid
           instance_name = "#{instance_model.job}/#{instance_model.uuid}"
           parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
-          delete_vm(instance_model.vm_cid, instance_model.cpi)
+          delete_vm(instance_model)
           instance_model.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
         rescue Exception => e
           raise e
@@ -23,11 +24,11 @@ module Bosh::Director
       end
     end
 
-    def delete_vm(vm_cid, cpi=nil)
+    def delete_vm(instance_model)
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
-        cloud = @cloud_factory.from_cpi_config_or_default(cpi)
-        cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
+        cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
+        cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
       end
     end
 

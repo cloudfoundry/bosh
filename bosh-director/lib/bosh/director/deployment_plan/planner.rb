@@ -122,13 +122,12 @@ module Bosh::Director
       def compile_packages
         validate_packages
 
-        cloud_factory = Bosh::Director::CloudFactory.create_from_cpi_config
-        disk_manager = DiskManager.new(cloud_factory, @logger)
+        disk_manager = DiskManager.new(@logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create
-        vm_deleter = VmDeleter.new(cloud_factory, @logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(cloud_factory, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+        vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
+        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
           InstanceReuser.new,

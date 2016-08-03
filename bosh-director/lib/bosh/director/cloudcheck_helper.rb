@@ -2,6 +2,7 @@
 
 module Bosh::Director
   module CloudcheckHelper
+    include CloudFactoryHelper
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
@@ -14,7 +15,7 @@ module Bosh::Director
     DEFAULT_AGENT_TIMEOUT = 10
 
     def reboot_vm(instance)
-      cloud = cloud_factory.from_cpi_config_or_default(instance.cpi)
+      cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
       cloud.reboot_vm(instance.vm_cid)
       begin
         agent_client(instance.credentials, instance.agent_id).wait_until_ready
@@ -144,10 +145,6 @@ module Bosh::Director
       )
     end
 
-    def cloud_factory
-      CloudFactory.create_from_cpi_config
-    end
-
     def handler_error(message)
       raise Bosh::Director::ProblemHandlerError, message
     end
@@ -168,14 +165,14 @@ module Bosh::Director
     end
 
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(cloud_factory, @logger, false, Config.enable_virtual_delete_vms)
+      @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
     def vm_creator
-      disk_manager = DiskManager.new(cloud_factory, @logger)
+      disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
-      @vm_creator ||= VmCreator.new(cloud_factory, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
     end
 
     def validate_spec(spec)

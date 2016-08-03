@@ -6,7 +6,6 @@ module Bosh::Director
       @ip_provider = ip_provider
       @dns_manager = dns_manager
       @disk_manager = disk_manager
-      @cloud_factory = CloudFactory.create_from_cpi_config
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
@@ -101,7 +100,7 @@ module Bosh::Director
 
     # FIXME: why do we hate dependency injection?
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(@cloud_factory, @logger, @force, @virtual_delete_vm)
+      @vm_deleter ||= VmDeleter.new(@logger, @force, @virtual_delete_vm)
     end
   end
 end
