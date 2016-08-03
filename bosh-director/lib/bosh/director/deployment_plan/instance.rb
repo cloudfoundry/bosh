@@ -112,7 +112,9 @@ module Bosh::Director
 
       def bind_new_instance_model
         @model = Models::Instance.create({
-            deployment_id: @deployment_model.id,
+            # intentionally setting deployment (object) and not deployment_id (fk),
+            # so that deployment's associations are preserved even before persisting
+            deployment: @deployment_model,
             job: @job_name,
             index: index,
             state: state,
