@@ -1,5 +1,0 @@
-# For a local concourse:
-# `cd /path/to/bosh/ci ; vagrant up`
-Vagrant.configure(2) do |config|
-  config.vm.box = "concourse/lite"
-end
