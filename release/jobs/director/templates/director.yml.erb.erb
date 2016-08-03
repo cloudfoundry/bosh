@@ -175,6 +175,12 @@ if p('blobstore.provider') == "s3"
    params['blobstore']['options']['s3cli_path'] = "/var/vcap/packages/s3cli/bin/s3cli"
 end
 
+if p('blobstore.provider') == "dav"
+   params['blobstore']['provider'] = "davcli"
+   params['blobstore']['options']['davcli_config_path'] = "/var/vcap/data/tmp/director"
+   params['blobstore']['options']['davcli_path'] = "/var/vcap/packages/davcli/bin/davcli"
+end
+
 user_management = {
     'provider' => p('director.user_management.provider')
 }

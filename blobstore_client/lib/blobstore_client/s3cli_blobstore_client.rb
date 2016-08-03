@@ -54,6 +54,8 @@ module Bosh
         @config_file = write_config_file(@options.fetch(:s3cli_config_path, nil))
       end
 
+      protected
+
       # @param [File] file file to store in S3
       def create_file(object_id, file)
         object_id ||= generate_object_id
@@ -100,8 +102,6 @@ module Bosh
         end
         raise BlobstoreError, "Failed to check existence of S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'" unless status.success?
       end
-
-      protected
 
       # @param [String] path path to file which will be stored in S3
       # @param [String] oid object id

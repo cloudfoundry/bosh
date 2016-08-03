@@ -107,6 +107,18 @@ describe 'director.yml.erb.erb' do
       }
     end
 
+    context 'when using web dav blobstore' do
+      before do
+        expect(deployment_manifest_fragment['properties']['blobstore']['provider']).to eq('dav')
+      end
+
+      it 'should configure the paths' do
+          expect(parsed_yaml['blobstore']['provider']).to eq('davcli')
+          expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
+          expect(parsed_yaml['blobstore']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
+      end
+    end
+
     it 'should contain the trusted_certs field' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
@@ -127,7 +139,7 @@ describe 'director.yml.erb.erb' do
       end
     end
 
-    context 'and when configured with a blobstore_path' do
+    context 'and when configured with a compiled_package_cache blobstore_path' do
       before do
         deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = {
           'blobstore_path' => '/some/path'
