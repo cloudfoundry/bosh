@@ -7,6 +7,11 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `bdLvwz7.6amrKKAPZYj_Tdd2dK8tXjea`
+  - update vivid -> xenial
+  - periodic bump
+  - built from develop (e75a2e1e0b2904281fc334969fa68da22748cd67)
+
 * `x2_FVfGn0gf54_BX79gD7B4zJ2ENMXYy`
   - USN-3020-1: Linux kernel (Vivid HWE) vulnerabilities
   - built from develop (383e11d66bb5326eaa342ca695e1b416b50b5c56)
