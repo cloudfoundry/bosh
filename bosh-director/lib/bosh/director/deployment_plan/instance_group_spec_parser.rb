@@ -14,20 +14,20 @@ module Bosh::Director
         @logger = logger
       end
 
-      # @param [Hash] job_spec Raw job spec from the deployment manifest
-      # @return [DeploymentPlan::Job] Job as build from job_spec
-      def parse(job_spec, options = {})
-        @job_spec = job_spec
+      # @param [Hash] instance_group_spec Raw instance_group spec from the deployment manifest
+      # @return [DeploymentPlan::InstanceGroup] Job as build from instance_group_spec
+      def parse(instance_group_spec, options = {})
+        @instance_group_spec = instance_group_spec
         @job = InstanceGroup.new(@logger)
 
         parse_name
         parse_lifecycle
 
         parse_release
-        validate_templates
+        validate_jobs
 
         parse_template
-        parse_templates
+        parse_jobs
 
         check_template_uniqueness
         parse_disk
@@ -40,11 +40,11 @@ module Bosh::Director
         parse_options['max_in_flight'] = options['max_in_flight'] if options['max_in_flight']
         parse_update_config(parse_options)
 
-        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
+        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@instance_group_spec, @job.name, @deployment.networks)
         @job.networks = networks
         assign_default_networks(networks)
 
-        availability_zones = JobAvailabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        availability_zones = JobAvailabilityZoneParser.new.parse(@instance_group_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
 
         parse_migrated_from
@@ -58,12 +58,12 @@ module Bosh::Director
       private
 
       def parse_name
-        @job.name = safe_property(@job_spec, "name", :class => String)
+        @job.name = safe_property(@instance_group_spec, "name", :class => String)
         @job.canonical_name = Canonicalizer.canonicalize(@job.name)
       end
 
       def parse_lifecycle
-        lifecycle = safe_property(@job_spec, "lifecycle",
+        lifecycle = safe_property(@instance_group_spec, "lifecycle",
           :class => String,
           :optional => true,
           :default => InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
@@ -79,7 +79,7 @@ module Bosh::Director
       end
 
       def parse_release
-        release_name = safe_property(@job_spec, "release", :class => String, :optional => true)
+        release_name = safe_property(@instance_group_spec, "release", :class => String, :optional => true)
 
         if release_name.nil?
           if @deployment.releases.size == 1
@@ -95,8 +95,9 @@ module Bosh::Director
         end
       end
 
+      # legacy template parsing
       def parse_template
-        template_names = safe_property(@job_spec, "template", optional: true)
+        template_names = safe_property(@instance_group_spec, "template", optional: true)
         if template_names
           if template_names.is_a?(Array)
             @event_log.warn_deprecated(
@@ -119,24 +120,24 @@ module Bosh::Director
         end
       end
 
-      def parse_templates
-        templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
-        jobs = safe_property(@job_spec, 'jobs', class: Array, optional: true)
+      def parse_jobs
+        legacy_jobs = safe_property(@instance_group_spec, 'templates', class: Array, optional: true)
+        jobs = safe_property(@instance_group_spec, 'jobs', class: Array, optional: true)
 
-        if jobs && !jobs.empty?
-          templates = jobs
+        if jobs.nil?
+          jobs = legacy_jobs
         end
 
-        if templates
+        if jobs
           release_manager = Api::ReleaseManager.new
 
           # Key: release name.
           # Value: list of templates models of release version.
           release_versions_templates_models_hash = {}
 
-          templates.each do |template_spec|
-            template_name = safe_property(template_spec, 'name', class: String)
-            release_name = safe_property(template_spec, 'release', class: String, optional: true)
+          jobs.each do |job_spec|
+            template_name = safe_property(job_spec, 'name', class: String)
+            release_name = safe_property(job_spec, 'release', class: String, optional: true)
 
             if release_name
               release = @deployment.release(release_name)
@@ -177,19 +178,24 @@ module Bosh::Director
               end
             end
 
-            provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
+            provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true)
             provides_links.to_a.each do |link_name, source|
               template.add_link_from_manifest(@job.name, "provides", link_name, source)
             end
 
-            consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
+            consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true)
             consumes_links.to_a.each do |link_name, source|
               template.add_link_from_manifest(@job.name, 'consumes', link_name, source)
             end
 
-            if template_spec.has_key?("properties")
+            if job_spec.has_key?("properties")
               template.add_template_scoped_properties(
-                  safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
+                  safe_property(job_spec, 'properties', class: Hash, optional: true, default: nil),
+                  @job.name
+              )
+
+              template.add_template_scoped_uninterpolated_properties(
+                  safe_property(job_spec, 'uninterpolated_properties', class: Hash, optional: true, default: nil),
                   @job.name
               )
             end
@@ -210,9 +216,9 @@ module Bosh::Director
       end
 
       def parse_disk
-        disk_size = safe_property(@job_spec, 'persistent_disk', :class => Integer, :optional => true)
-        disk_type_name = safe_property(@job_spec, 'persistent_disk_type', :class => String, :optional => true)
-        disk_pool_name = safe_property(@job_spec, 'persistent_disk_pool', :class => String, :optional => true)
+        disk_size = safe_property(@instance_group_spec, 'persistent_disk', :class => Integer, :optional => true)
+        disk_type_name = safe_property(@instance_group_spec, 'persistent_disk_type', :class => String, :optional => true)
+        disk_pool_name = safe_property(@instance_group_spec, 'persistent_disk_pool', :class => String, :optional => true)
 
         if disk_type_name && disk_pool_name
           raise JobInvalidPersistentDisk,
@@ -256,11 +262,13 @@ module Bosh::Director
 
       def parse_properties
         # Manifest can contain global and per-job properties section
-        job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true, :default => {})
+        job_properties = safe_property(@instance_group_spec, "properties", :class => Hash, :optional => true, :default => {})
+        uninterpolated_job_properties = safe_property(@instance_group_spec, "uninterpolated_properties", :class => Hash, :optional => true, :default => {})
 
         @job.all_properties = @deployment.properties.recursive_merge(job_properties)
+        @job.all_uninterpolated_properties = @deployment.uninterpolated_properties.recursive_merge(uninterpolated_job_properties)
 
-        mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
+        mappings = safe_property(@instance_group_spec, "property_mappings", :class => Hash, :default => {})
 
         mappings.each_pair do |to, from|
           resolved = lookup_property(@job.all_properties, from)
@@ -275,8 +283,8 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
-        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
+        env_hash = safe_property(@instance_group_spec, 'env', class: Hash, :default => {})
+        resource_pool_name = safe_property(@instance_group_spec, "resource_pool", class: String, optional: true)
 
         if resource_pool_name
           resource_pool = @deployment.resource_pool(resource_pool_name)
@@ -303,17 +311,17 @@ module Bosh::Director
             env_hash = resource_pool.env
           end
         else
-          vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
+          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String)
           vm_type = @deployment.vm_type(vm_type_name)
           if vm_type.nil?
             raise JobUnknownVmType,
               "Instance group '#{@job.name}' references an unknown vm type '#{vm_type_name}'"
           end
 
-          vm_extension_names = Array(safe_property(@job_spec, 'vm_extensions', class: Array, optional: true))
+          vm_extension_names = Array(safe_property(@instance_group_spec, 'vm_extensions', class: Array, optional: true))
           vm_extensions = Array(vm_extension_names).map {|vm_extension_name| @deployment.vm_extension(vm_extension_name)}
 
-          stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
+          stemcell_name = safe_property(@instance_group_spec, 'stemcell', class: String)
           stemcell = @deployment.stemcell(stemcell_name)
           if stemcell.nil?
             raise JobUnknownStemcell,
@@ -328,14 +336,14 @@ module Bosh::Director
       end
 
       def parse_update_config(parse_options)
-        update_spec = safe_property(@job_spec, "update", class: Hash, optional: true)
+        update_spec = safe_property(@instance_group_spec, "update", class: Hash, optional: true)
         @job.update = UpdateConfig.new((update_spec || {}).merge(parse_options), @deployment.update)
       end
 
       def parse_desired_instances(availability_zones, networks)
-        @job.state = safe_property(@job_spec, "state", class: String, optional: true)
-        job_size = safe_property(@job_spec, "instances", class: Integer)
-        instance_states = safe_property(@job_spec, "instance_states", class: Hash, default: {})
+        @job.state = safe_property(@instance_group_spec, "state", class: String, optional: true)
+        job_size = safe_property(@instance_group_spec, "instances", class: Integer)
+        instance_states = safe_property(@instance_group_spec, "instance_states", class: Hash, default: {})
 
         networks.each do |network|
           static_ips = network.static_ips
@@ -363,7 +371,7 @@ module Bosh::Director
       end
 
       def parse_migrated_from
-        migrated_from = safe_property(@job_spec, 'migrated_from', class: Array, optional: true, :default => [])
+        migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, optional: true, :default => [])
         migrated_from.each do |migrated_from_job_spec|
           name = safe_property(migrated_from_job_spec, 'name', class: String)
           az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
@@ -378,10 +386,10 @@ module Bosh::Director
         end
       end
 
-      def validate_templates
-        template_property = safe_property(@job_spec, 'template', optional: true)
-        templates_property = safe_property(@job_spec, 'templates', optional: true)
-        jobs_property = safe_property(@job_spec, 'jobs', optional: true)
+      def validate_jobs
+        template_property = safe_property(@instance_group_spec, 'template', optional: true)
+        templates_property = safe_property(@instance_group_spec, 'templates', optional: true)
+        jobs_property = safe_property(@instance_group_spec, 'jobs', optional: true)
 
         if template_property && templates_property
           raise JobInvalidTemplates, "Instance group '#{@job.name}' specifies both template and templates keys, only one is allowed"

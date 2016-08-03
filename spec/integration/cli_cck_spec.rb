@@ -46,13 +46,25 @@ describe 'cli: cloudcheck', type: :integration do
       it 'deletes unresponsive VMs' do
         delete_vm = 5
         bosh_run_cck_with_resolution(3, delete_vm)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 3 problems
+
+          Problem 1 of 3: VM with cloud ID '' missing.
+          Problem 2 of 3: VM with cloud ID '' missing.
+          Problem 3 of 3: VM with cloud ID '' missing.
+        )
       end
 
       it 'deletes VM reference' do
         delete_vm_reference = 6
         bosh_run_cck_with_resolution(3, delete_vm_reference)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 3 problems
+
+          Problem 1 of 3: VM with cloud ID '' missing.
+          Problem 2 of 3: VM with cloud ID '' missing.
+          Problem 3 of 3: VM with cloud ID '' missing.
+        )
       end
 
       context 'when there is an ignored vm' do
@@ -105,7 +117,11 @@ describe 'cli: cloudcheck', type: :integration do
       it 'deletes missing VM reference' do
         delete_vm_reference = 4
         bosh_run_cck_with_resolution(1, delete_vm_reference)
-        expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+          Found 1 problem
+
+          Problem 1 of 1: VM with cloud ID '' missing.
+        )
       end
     end
 
@@ -165,6 +181,43 @@ describe 'cli: cloudcheck', type: :integration do
         bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process)
         expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
       end
+    end
+  end
+
+  context 'with config server enabled' do
+    with_reset_sandbox_before_each(config_server_enabled: true)
+
+    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox.port_provider.get_port(:config_server_port)) }
+
+    before do
+      config_server_helper.put_value('test_property', 'cats are happy')
+
+      manifest = Bosh::Spec::Deployments.simple_manifest
+      manifest['jobs'][0]['persistent_disk'] = 100
+      manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+      deploy_from_scratch(manifest_hash: manifest)
+
+      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+    end
+
+    it 'resolves issues correctly and gets values from config server' do
+      vm = director.vm('foobar', '0')
+
+      template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('test_property=cats are happy')
+
+      current_sandbox.cpi.kill_agents
+
+      config_server_helper.put_value('test_property', 'smurfs are happy')
+
+      recreate_vm_without_waiting_for_process = 3
+      bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process)
+      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+
+      vm = director.vm('foobar', '0')
+
+      template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('test_property=smurfs are happy')
     end
   end
 

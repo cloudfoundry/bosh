@@ -124,6 +124,7 @@ module Bosh::Director
               logger: logger,
             })
           planner.cloud_planner = cloud_planner
+          allow(Config).to receive(:dns_enabled?).and_return(false)
         end
 
         it 'should parse recreate' do

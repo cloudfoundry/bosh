@@ -248,7 +248,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @instance_manager.find_instances_by_deployment(deployment)
-          JSON.generate(create_instances_response(instances))
+          JSON.generate(create_instances_response_with_vm_expected(instances))
         end
       end
 
@@ -375,16 +375,16 @@ module Bosh::Director
         ignore_cc = ignore_cloud_config?(manifest_hash)
 
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, ignore_cc ? nil : deployment.cloud_config, deployment.runtime_config)
+          before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
           before_manifest.resolve_aliases
         else
-          before_manifest = Manifest.load_from_text(nil, nil, nil)
+          before_manifest = Manifest.generate_empty_manifest
         end
 
         after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
-        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config)
+        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config, {:resolve_interpolation => false})
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'
@@ -469,14 +469,24 @@ module Bosh::Director
 
       def create_instances_response(instances)
         instances.map do |instance|
-          {
-              'agent_id' => instance.agent_id,
-              'cid' => instance.vm_cid,
-              'job' => instance.job,
-              'index' => instance.index,
-              'id' => instance.uuid
-          }
+          create_instance_response(instance)
         end
+      end
+
+      def create_instances_response_with_vm_expected(instances)
+        instances.map do |instance|
+          create_instance_response(instance).merge('expects_vm' => instance.expects_vm?)
+        end
+      end
+
+      def create_instance_response(instance)
+        {
+            'agent_id' => instance.agent_id,
+            'cid' => instance.vm_cid,
+            'job' => instance.job,
+            'index' => instance.index,
+            'id' => instance.uuid
+        }
       end
     end
   end

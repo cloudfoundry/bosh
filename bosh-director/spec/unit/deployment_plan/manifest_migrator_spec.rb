@@ -5,10 +5,10 @@ module Bosh
     describe DeploymentPlan::ManifestMigrator do
       subject { DeploymentPlan::ManifestMigrator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-      let(:manifest) { Manifest.new(manifest_hash, nil, nil)}
+      let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil)}
       let(:cloud_config) { nil }
       let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
-      let(:migrated_manifest_hash) { migrated_manifest.manifest_hash }
+      let(:migrated_manifest_hash) { migrated_manifest.interpolated_manifest_hash }
       let(:migrated_cloud_config) { subject.migrate(manifest, cloud_config)[1] }
 
       describe '#migrate' do

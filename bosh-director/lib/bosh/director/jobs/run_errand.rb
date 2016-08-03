@@ -21,7 +21,7 @@ module Bosh::Director
 
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
-      deployment_manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config, deployment_model.runtime_config, true)
+      deployment_manifest = Manifest.load_from_model(deployment_model)
       deployment_name = deployment_manifest.to_hash['name']
       with_deployment_lock(deployment_name) do
         deployment = nil

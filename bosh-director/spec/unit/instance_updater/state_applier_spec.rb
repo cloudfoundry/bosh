@@ -38,7 +38,8 @@ module Bosh::Director
         compilation?: false,
         templates: [],
         update_spec: update_config.to_hash,
-        properties: {}
+        properties: {},
+        uninterpolated_properties: {}
       )
     end
     let(:update_config) do
@@ -112,7 +113,8 @@ module Bosh::Director
       task = Bosh::Director::Models::Task.make(:id => 42, :state => 'cancelling')
       base_job = Jobs::BaseJob.new
       allow(base_job).to receive(:task_id).and_return(task.id)
-      Config.current_job = base_job
+      allow(Config).to receive(:current_job).and_return(base_job)
+      Config.instance_variable_set(:@current_job, base_job)
       expect(logger).to receive(:info).with('Applying VM state').ordered
       expect(logger).to receive(:info).with('Running pre-start for fake-job/0 (uuid-1)').ordered
       expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered

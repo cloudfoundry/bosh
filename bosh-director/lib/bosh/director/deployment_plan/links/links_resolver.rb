@@ -6,45 +6,45 @@ module Bosh::Director
         @logger = logger
       end
 
-      def resolve(job)
-        @logger.debug("Resolving links for instance group '#{job.name}'")
+      def resolve(instance_group)
+        @logger.debug("Resolving links for instance group '#{instance_group.name}'")
 
-        job.templates.each do |template|
-          resolve_consumed_links(job, template)
-          ensure_all_links_in_consumes_block_are_mentioned_in_spec(job, template)
-          save_provided_links(job, template)
+        instance_group.templates.each do |job|
+          resolve_consumed_links(instance_group, job)
+          ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
+          save_provided_links(instance_group, job)
         end
       end
 
       private
 
-      def resolve_consumed_links(job, template)
-        template.model_consumed_links.each do |consumed_link|
+      def resolve_consumed_links(instance_group, job)
+        job.model_consumed_links.each do |consumed_link|
           link_name = consumed_link.name
 
-          link_path = job.link_path(template.name, link_name)
+          link_path = instance_group.link_path(job.name, link_name)
 
           if link_path.nil?
             # Only raise an exception when the link_path is nil, and it is not optional
             if !consumed_link.optional
-              raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in instance group '#{job.name}'"
+              raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in instance group '#{instance_group.name}'"
             end
           elsif !link_path.manual_spec.nil?
-            job.add_resolved_link(link_name, link_path.manual_spec)
+            instance_group.add_resolved_link(link_name, link_path.manual_spec)
           else
-            link_network = template.consumes_link_info(job.name, link_name)['network']
+            link_network = job.consumes_link_info(instance_group.name, link_name)['network']
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network)
             link_spec = link_lookup.find_link_spec
 
             unless link_spec
-              raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{job.name}' on job '#{template.name}'"
+              raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
             end
 
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
             end
 
-            job.add_resolved_link(link_name, link_spec)
+            instance_group.add_resolved_link(link_name, link_spec)
           end
         end
       end
@@ -59,12 +59,12 @@ module Bosh::Director
         end
       end
 
-      def ensure_all_links_in_consumes_block_are_mentioned_in_spec(job, template)
-        return if job.link_paths.empty?
-        job.link_paths[template.name].to_a.each do |link_name, _|
-          unless template.model_consumed_links.map(&:name).include?(link_name)
+      def ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
+        return if instance_group.link_paths.empty?
+        instance_group.link_paths[job.name].to_a.each do |link_name, _|
+          unless job.model_consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
-              "Job '#{template.name}' in instance group '#{job.name}' specifies link '#{link_name}', " +
+              "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
                 "but the release job does not consume it."
           end
         end

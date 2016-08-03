@@ -202,7 +202,8 @@ module Bosh::Director::Models
             'stemcell' => 'stuff'
           })
 
-          expect(subject.spec).to eq({'vm_type' => 'stuff', 'stemcell' => 'stuff'})
+          expect(subject.spec['vm_type']).to eq('stuff')
+          expect(subject.spec['stemcell']).to eq('stuff')
         end
       end
 
@@ -219,18 +220,19 @@ module Bosh::Director::Models
                   }
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    },
-                  'stemcell' =>
-                    {'name' => 'ubuntu-stemcell',
-                      'version' => '1',
-                      'alias' => 'a'
-                    }
-                })
+
+            expect(subject.spec['vm_type']).to eq(
+                {'name' => 'a',
+                 'cloud_properties' => {}
+                }
+            )
+
+            expect(subject.spec['stemcell']).to eq(
+              {'name' => 'ubuntu-stemcell',
+               'version' => '1',
+               'alias' => 'a'
+              }
+             )
           end
         end
 
@@ -242,15 +244,196 @@ module Bosh::Director::Models
                   'cloud_properties' => {},
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    }
-                }
-              )
+            expect(subject.spec['vm_type']).to eq(
+              {'name' => 'a',
+                'cloud_properties' => {}
+              }
+            )
           end
+        end
+      end
+
+      context 'when config server is enabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'name' => '((name_placeholder))'}).and_return({'name' => 'Big papa smurf'})
+
+          spec_to_save = {
+            'properties' => {'name' => '((name_placeholder))'}
+          }
+
+          subject.spec_json = JSON.generate(spec_to_save)
+        end
+
+        it 'resolves properties and populates uninterpolated props' do
+          result = subject.spec
+          expect(result['properties']).to eq({'name'=>'Big papa smurf'})
+          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
+        end
+      end
+
+      context 'when config server is disabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+
+          spec_to_save = {
+            'properties' => {'name' => '((name_placeholder))'}
+          }
+
+          subject.spec_json = JSON.generate(spec_to_save)
+        end
+
+        it 'does not resolve properties and populates uninterpolated props with properties' do
+          result = subject.spec
+          expect(result['properties']).to eq({'name'=>'((name_placeholder))'})
+          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
+        end
+      end
+    end
+
+    context 'spec=' do
+      context 'when config server is enabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          subject.spec=({
+            'properties' => {'name' => 'a'},
+            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
+          })
+        end
+
+        it 'only saves uninterpolated properties' do
+          saved_json = JSON.parse(subject.spec_json)
+          expect(saved_json).to eq({'properties'=>{'name'=>'((name_placeholder))'}})
+          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
+        end
+      end
+
+      context 'when config server is disabled' do
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+          subject.spec=({
+            'properties' => {'name' => 'a'},
+            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
+          })
+        end
+
+        it 'only saves properties' do
+          saved_json = JSON.parse(subject.spec_json)
+          expect(saved_json).to eq({'properties'=>{'name'=>'a'}})
+          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
+        end
+      end
+    end
+
+
+    context 'with deployment_plan' do
+      subject { described_class.make(deployment: deployment, job: 'job-1') }
+
+      let(:instance_groups) {
+        [{
+             'name' => 'job-1',
+             'lifecycle' => lifecycle,
+             'instances' => 1,
+             'jobs' => [],
+             'vm_type' => 'm1.small',
+             'stemcell' => 'stemcell',
+             'networks' => [{'name' => 'network'}]
+         }]
+      }
+
+      let(:manifest) {
+        {
+            'name' => 'something',
+            'releases' => [],'instance_groups' => instance_groups,
+            'update' => {
+                'canaries' => 1,
+                'max_in_flight' => 1,
+                'canary_watch_time' => 20,
+                'update_watch_time' => 20
+            },
+            'stemcells' => [{
+                                'name' => 'stemcell',
+                                'alias' => 'stemcell'
+                            }]
+        }
+      }
+
+      let(:cloud_config_hash) {
+        {
+            'compilation' => {
+                'network' => 'network',
+                'workers' => 1
+            },
+            'networks' => [{
+                               'name' => 'network',
+                               'subnets' => []
+
+                           }],
+            'vm_types' => [{
+                               'name' => 'm1.small'
+                           }]
+
+        }
+      }
+      let(:manifest_text) { manifest.to_yaml }
+      let(:cloud_config) { CloudConfig.make(manifest: cloud_config_hash) }
+      let(:deployment) { Deployment.make(name: 'deployment', manifest: manifest_text, cloud_config: cloud_config) }
+
+      describe '#lifecycle' do
+        context "when lifecycle is 'service'" do
+          let(:lifecycle) { 'service' }
+          it "returns 'service'" do
+            expect(subject.lifecycle).to eq('service')
+          end
+        end
+
+        context "when lifecycle is 'errand'" do
+          let(:lifecycle) { 'errand' }
+          it "returns 'errand'" do
+            expect(subject.lifecycle).to eq('errand')
+          end
+        end
+
+        context 'when no manifest is stored in the database' do
+          let(:manifest_text) { nil }
+          it "returns 'nil'" do
+            expect(subject.lifecycle).to be_nil
+          end
+        end
+      end
+
+      describe '#expects_vm?' do
+
+        context "when lifecycle is 'errand'" do
+          let(:lifecycle) { 'errand' }
+
+          it "doesn't expect vm" do
+            expect(subject.expects_vm?).to eq(false)
+          end
+        end
+
+        context "when lifecycle is 'service'" do
+          let(:lifecycle) { 'service' }
+
+          ['started', 'stopped'].each do |state|
+
+            context "when state is '#{state}'" do
+              subject { described_class.make(deployment: deployment, job: 'job-1', state: "#{state}") }
+
+              it 'expects a vm' do
+                expect(subject.expects_vm?).to eq(true)
+              end
+            end
+          end
+
+          context "when state is 'detached'" do
+            subject { described_class.make(deployment: deployment, job: 'job-1', state: 'detached') }
+
+            it "doesn't expect vm" do
+              expect(subject.expects_vm?).to eq(false)
+            end
+          end
+
         end
       end
     end

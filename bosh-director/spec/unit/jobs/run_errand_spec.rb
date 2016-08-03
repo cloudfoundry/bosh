@@ -40,8 +40,8 @@ module Bosh::Director
           )
         end
         let(:planner) do
-          ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(Config.logger)
-          ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {}, Config.logger)
+          ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
+          ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
@@ -66,7 +66,7 @@ module Bosh::Director
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-              before { Config.result = result_file }
+              before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
               let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
               before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
@@ -76,7 +76,7 @@ module Bosh::Director
 
               before do
                 allow(LogBundlesCleaner).to receive(:new).
-                  with(blobstore, 86400 * 10, Config.logger).
+                  with(blobstore, 86400 * 10, logger).
                   and_return(log_bundles_cleaner)
               end
               let(:log_bundles_cleaner) do
@@ -88,14 +88,14 @@ module Bosh::Director
 
               before do
                 allow(LogsFetcher).to receive(:new).
-                  with(be_a(Api::InstanceManager), log_bundles_cleaner, Config.logger).
+                  with(be_a(Api::InstanceManager), log_bundles_cleaner, logger).
                   and_return(logs_fetcher)
               end
               let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(planner, deployment_job, Config.cloud, Config.logger).
+                  with(planner, deployment_job, Config.cloud, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do

@@ -24,6 +24,9 @@ module Bosh::Director
 
       attr_accessor :properties
 
+      # uninterpolated global properties hash
+      attr_accessor :uninterpolated_properties
+
       # Hash of resolved links spec provided by deployment
       # in format job_name > template_name > link_name > link_type
       # used by LinksResolver
@@ -51,14 +54,15 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      attr_reader :manifest_text
+      attr_reader :uninterpolated_manifest_text
 
-      def initialize(attrs, manifest_text, cloud_config, runtime_config, deployment_model, options = {})
+      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
+        @uninterpolated_properties = {}
         @releases = {}
 
-        @manifest_text = Bosh::Common::DeepCopy.copy(manifest_text)
+        @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
         @cloud_config = cloud_config
         @runtime_config = runtime_config
         @model = deployment_model
@@ -120,12 +124,12 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
-        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
         dns_manager = DnsManagerProvider.create
+        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
+        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
           InstanceReuser.new,
@@ -255,7 +259,7 @@ module Bosh::Director
           end
         end
 
-        model.manifest = YAML.dump(@manifest_text)
+        model.manifest = YAML.dump(@uninterpolated_manifest_text)
         model.cloud_config = @cloud_config
         model.runtime_config = @runtime_config
         model.link_spec = @link_spec

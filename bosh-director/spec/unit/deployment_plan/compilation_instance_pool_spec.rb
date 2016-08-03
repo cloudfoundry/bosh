@@ -58,11 +58,18 @@ module Bosh::Director
     end
     let(:n_workers) { 3 }
     let(:cloud_properties) { { 'cloud' => 'properties'} }
-    let(:compilation_env) { { 'compilation' => 'environment'} }
+    let(:compilation_env) { { 'compilation' => 'environment', 'bosh' => { 'group_name' => 'compilation-deadbeef' } } }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { {'a' => {'property' => 'settings'}} }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
+    let(:thread_pool) do
+      thread_pool = instance_double('Bosh::Director::ThreadPool')
+      allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
+      allow(thread_pool).to receive(:process).and_yield
+      allow(thread_pool).to receive(:working?).and_return(false)
+      thread_pool
+    end
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
     let(:ip_provider) {instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
     let(:max_instance_count) { 1 }
@@ -78,9 +85,9 @@ module Bosh::Director
     let(:task_id) {42}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
     before do
-      Config.trusted_certs = trusted_certs
       allow(cloud).to receive(:create_vm)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
+      allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
@@ -90,6 +97,7 @@ module Bosh::Director
       allow(another_agent_client).to receive(:update_settings)
       allow(another_agent_client).to receive(:get_state)
       allow(another_agent_client).to receive(:apply)
+      allow(ThreadPool).to receive_messages(new: thread_pool)
       allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)

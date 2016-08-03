@@ -127,10 +127,10 @@ module Bosh::Director
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db ||= configure_db(config['db'])
+        @db = configure_db(config['db'])
         @dns = config['dns']
         if @dns && @dns['db']
-          @dns_db ||= configure_db(@dns['db'])
+          @dns_db = configure_db(@dns['db'])
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
@@ -146,7 +146,10 @@ module Bosh::Director
             Bosh::Director::Models::Dns::Domain.class
           end
         end
-        @dns_manager = DnsManagerProvider.create
+
+        @local_dns_enabled = config.fetch('local_dns', {}).fetch('enabled', false)
+        @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
+
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
@@ -163,7 +166,6 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
-        @local_dns = config.fetch('local_dns', false)
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
@@ -198,6 +200,14 @@ module Bosh::Director
 
       def use_compiled_package_cache?
         !@compiled_package_cache_options.nil?
+      end
+
+      def local_dns_enabled?
+        !!@local_dns_enabled
+      end
+
+      def local_dns_include_index?
+        !!@local_dns_include_index
       end
 
       def get_revision

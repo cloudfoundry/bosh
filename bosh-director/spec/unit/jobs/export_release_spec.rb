@@ -8,6 +8,7 @@ module Bosh::Director
     before do
       fake_locks
       Bosh::Director::Config.current_job = job
+      allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(job).to receive(:task_cancelled?) { false }
       blobstore = double(:blobstore)
@@ -287,6 +288,7 @@ module Bosh::Director
           result_file = double('result file')
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
+          allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
           allow(planner).to receive(:instance_groups) { ['fake-job'] }
           allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)

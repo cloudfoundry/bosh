@@ -21,7 +21,7 @@ module Bosh::Director
           @instance_manager.find_by_name(@deployment, job, index)
         end
       else
-        instances = Models::Instance.filter(deployment: @deployment).exclude(vm_cid: nil).all
+        instances = Models::Instance.filter(deployment: @deployment).all.select{|instance| instance.expects_vm?}
       end
 
       @event_logger.begin_stage("Scanning #{instances.size} VMs", 2)
@@ -79,7 +79,7 @@ module Bosh::Director
         add_disk_owner(mounted_disk_cid, instance.vm_cid) if mounted_disk_cid
 
         begin
-          if instance.vm_cid && !@cloud.has_vm?(instance.vm_cid)
+          if !has_vm?(instance)
             @logger.info("Missing VM #{instance.vm_cid}")
             @problem_register.problem_found(:missing_vm, instance)
             return :missing
@@ -91,6 +91,10 @@ module Bosh::Director
         @problem_register.problem_found(:unresponsive_agent, instance)
         :unresponsive
       end
+    end
+
+    def has_vm?(instance)
+      instance.vm_cid && @cloud.has_vm?(instance.vm_cid)
     end
 
     def add_disk_owner(disk_cid, vm_cid)

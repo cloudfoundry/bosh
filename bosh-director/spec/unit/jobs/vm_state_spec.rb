@@ -25,7 +25,9 @@ module Bosh::Director
 
     before do
       @deployment = Models::Deployment.make
-      Config.result = TaskResultFile.new('filepath')
+      @result_file = double('result_file')
+      allow(Config).to receive(:result).and_return(@result_file)
+      allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
     end
 
     describe 'DJ job class expectations' do
@@ -50,7 +52,7 @@ module Bosh::Director
           'resource_pool' => {}
         )
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['dns']).to be_empty
@@ -69,7 +71,7 @@ module Bosh::Director
         instance  #trigger the let
         stub_agent_get_state_to_return_state_with_vitals
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['dns']).to be_empty
@@ -93,7 +95,7 @@ module Bosh::Director
 
         stub_agent_get_state_to_return_state_with_vitals
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['dns']).to eq(['index.job.network.deployment.microbosh'])
         end
@@ -106,7 +108,7 @@ module Bosh::Director
         instance.update(dns_record_names: ['0.job.network.deployment.microbosh', 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh'])
         stub_agent_get_state_to_return_state_with_vitals
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['dns']).to eq(['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'])
         end
@@ -120,7 +122,7 @@ module Bosh::Director
 
         expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['agent_id']).to eq('fake-agent-id')
@@ -139,7 +141,7 @@ module Bosh::Director
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['resurrection_paused']).to be(true)
         end
@@ -152,7 +154,7 @@ module Bosh::Director
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['ignore']).to be(false)
         end
@@ -165,7 +167,7 @@ module Bosh::Director
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['ignore']).to be(true)
         end
@@ -182,7 +184,7 @@ module Bosh::Director
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['disk_cid']).to eq('fake-disk-cid')
@@ -201,7 +203,7 @@ module Bosh::Director
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['disk_cid']).to be_nil
@@ -217,7 +219,7 @@ module Bosh::Director
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['id']).to eq('blarg')
         end
@@ -232,7 +234,7 @@ module Bosh::Director
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['vm_type']).to eq('fake-vm-type')
         end
@@ -246,7 +248,7 @@ module Bosh::Director
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
                 {'name' => 'fake-process-2', 'state' => 'failing' }])
@@ -259,7 +261,7 @@ module Bosh::Director
         it 'does not try to contact the agent' do
           instance.update(vm_cid: nil)
 
-          expect(Config.result).to receive(:write) do |agent_status|
+          expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
             expect(status['job_state']).to eq(nil)
           end
@@ -276,7 +278,7 @@ module Bosh::Director
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
-          expect(Config.result).to receive(:write) do |agent_status|
+          expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
             expect(status['bootstrap']).to be_truthy
           end
@@ -291,7 +293,7 @@ module Bosh::Director
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
-          expect(Config.result).to receive(:write) do |agent_status|
+          expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
             expect(status['bootstrap']).to be_falsey
           end
@@ -319,7 +321,7 @@ module Bosh::Director
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
-        expect(Config.result).to receive(:write) do |agent_status|
+        expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['vm_cid']).to eq('fake-vm-cid')
@@ -346,7 +348,7 @@ module Bosh::Director
           })
           job = Jobs::VmState.new(@deployment.id, 'full')
 
-          expect(Config.result).to receive(:write).once
+          expect(@result_file).to receive(:write).once
 
           job.perform
         end

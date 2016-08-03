@@ -12,10 +12,10 @@ module Bosh::Director::DeploymentPlan
       instance_model
     end
     let(:spec) do
-      { 'vm_type' => {
-        'name' => 'original_vm_type_name',
-        'cloud_properties' => {'old' => 'value'}
-      },
+      { 'vm_type' =>
+          { 'name' => 'original_vm_type_name',
+            'cloud_properties' => {'old' => 'value'}
+          },
         'networks' => network_settings,
         'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}
       }

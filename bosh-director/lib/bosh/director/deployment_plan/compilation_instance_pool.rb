@@ -243,6 +243,10 @@ module Bosh::Director
         {}
       end
 
+      def uninterpolated_properties
+        {}
+      end
+
       def link_spec
         {}
       end

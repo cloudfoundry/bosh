@@ -94,6 +94,29 @@ module Bosh::Director::ConfigServer
         ]
         expect(replacements).to eq(expected)
       end
+
+      context 'when to_be_ignored subtrees exist' do
+        let(:ignored_subtrees) {[]}
+        let(:replacement_list) do
+          DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
+        end
+        it 'should should not include ignored paths in the result' do
+          ignored_subtrees = []
+          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'properties']
+          ignored_subtrees << ['instance_groups', Numeric.new, 'properties']
+          ignored_subtrees << ['properties']
+
+          replacements = DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
+
+          expected = [
+            {'key'=>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+            {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+            {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']}
+          ]
+
+          expect(replacements).to eq(expected)
+        end
+      end
     end
   end
 end

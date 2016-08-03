@@ -455,16 +455,7 @@ module Bosh::Spec
     end
 
     def self.remote_release_manifest(remote_release_url, sha1, version='latest')
-      minimal_manifest.merge({
-          'jobs' => [
-            {
-              'name' => 'job',
-              'templates' => [{ 'name' => 'job_using_pkg_1' }],
-              'instances' => 1,
-              'resource_pool' => 'a',
-              'networks' => [{'name' => 'a'}]
-            }
-          ],
+      minimal_manifest.merge(test_release_job).merge({
           'releases' => [{
               'name'    => 'test_release',
               'version' => version,
@@ -475,22 +466,25 @@ module Bosh::Spec
     end
 
     def self.local_release_manifest(local_release_path, version = 'latest')
-      minimal_manifest.merge({
-          'jobs' => [
-            {
-              'name' => 'job',
-              'templates' => [{ 'name' => 'job_using_pkg_1' }],
-              'instances' => 1,
-              'resource_pool' => 'a',
-              'networks' => [{'name' => 'a'}]
-            }
-          ],
+      minimal_manifest.merge(test_release_job).merge({
           'releases' => [{
               'name'    => 'test_release',
               'version' => version,
               'url' => local_release_path,
             }]
         })
+    end
+
+    def self.test_release_job
+      {
+          'jobs' => [{
+                         'name' => 'job',
+                         'templates' => [{ 'name' => 'job_using_pkg_1' }],
+                         'instances' => 1,
+                         'resource_pool' => 'a',
+                         'networks' => [{ 'name' => 'a' }]
+                     }]
+      }
     end
 
     def self.simple_job(opts = {})

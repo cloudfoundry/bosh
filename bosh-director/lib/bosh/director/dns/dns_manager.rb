@@ -4,10 +4,10 @@ module Bosh::Director
       dns_config = Config.dns || {}
 
       logger = Config.logger
-      canonized_dns_domain_name = Config.canonized_dns_domain_name
       local_dns_repo = LocalDnsRepo.new(logger)
+      canonized_dns_domain_name = Config.canonized_dns_domain_name
 
-      dns_publisher = BlobstoreDnsPublisher.new(App.instance.blobstores.blobstore, canonized_dns_domain_name) if Config.local_dns
+      dns_publisher = BlobstoreDnsPublisher.new(App.instance.blobstores.blobstore, canonized_dns_domain_name) if Config.local_dns_enabled?
       dns_provider = PowerDns.new(canonized_dns_domain_name, logger) if !!Config.dns_db
 
       DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
@@ -58,6 +58,10 @@ module Bosh::Director
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       @local_dns_repo.create_or_update(instance_model, dns_records)
+      if Config.local_dns_enabled?
+        delete_local_dns_record(instance_model)
+        create_local_dns_record(instance_model)
+      end
     end
 
     def migrate_legacy_records(instance_model)
@@ -105,6 +109,7 @@ module Bosh::Director
       end
 
       @local_dns_repo.delete(instance_model)
+      delete_local_dns_record(instance_model) if Config.local_dns_enabled?
     end
 
     # build a list of dns servers to use
@@ -143,19 +148,15 @@ module Bosh::Director
 
     def publish_dns_records
       if publisher_enabled?
-        Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-          dns_records = @dns_publisher.export_dns_records
-          @dns_publisher.publish(dns_records)
-        end
+        dns_records = @dns_publisher.export_dns_records
+        @dns_publisher.publish(dns_records)
         @dns_publisher.broadcast
       end
     end
 
     def cleanup_dns_records
       if publisher_enabled?
-        Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-          @dns_publisher.cleanup_blobs
-        end
+        @dns_publisher.cleanup_blobs
       end
     end
 
@@ -174,7 +175,66 @@ module Bosh::Director
       ].join('.')
     end
 
+    def find_local_dns_record(instance_model)
+      @logger.debug('Find local dns records')
+      result = []
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Finding local dns record with UUID name #{name_uuid} and ip #{ip}")
+        result = Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).all
+
+        if Config.local_dns_include_index?
+          @logger.debug("Finding local dns record with index name #{name_index} and ip #{ip}")
+          result += Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).all
+        end
+      end
+      result
+    end
+
+    def delete_local_dns_record(instance_model)
+      @logger.debug('Deleting local dns records')
+
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
+        Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).delete
+
+        if Config.local_dns_include_index?
+          @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
+          Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
+        end
+      end
+    end
+
+    def create_local_dns_record(instance_model)
+      @logger.debug('Creating local dns records')
+
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+        @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
+        Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
+
+        if Config.local_dns_include_index?
+          @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
+          Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
+        end
+      end
+    end
+
     private
+
+    def with_valid_instance_spec_in_transaction(instance_model, &block)
+      spec = instance_model.spec
+      unless spec.nil? || spec['networks'].nil?
+        @logger.debug("Found #{spec['networks'].length} networks")
+        spec['networks'].each do |network_name, network|
+          unless network['ip'].nil? or spec['job'].nil?
+            ip = network['ip']
+            name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
+            name_uuid = instance_model.uuid + name_rest
+            name_index = instance_model.index.to_s + name_rest
+            block.call(name_uuid, name_index, ip)
+          end
+        end
+      end
+    end
 
     # add default dns server to an array of dns servers
     def add_default_dns_server(servers)

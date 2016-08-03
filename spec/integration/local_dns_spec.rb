@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'fileutils'
 
 describe 'local DNS', type: :integration do
-  with_reset_sandbox_before_each(local_dns: true)
+  with_reset_sandbox_before_each(dns_enabled: false, local_dns: {'enabled' => true, 'include_index' => false})
 
   let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
   let(:network_name) { 'local_dns' }
@@ -19,7 +19,8 @@ describe 'local DNS', type: :integration do
   let(:ip_regexp) { /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ }
   let(:job_name) { 'job_to_test_local_dns' }
   let(:deployment_name) { 'simple_local_dns' }
-  let(:hostname_regexp) { /.*\.#{job_name}\.#{network_name}\.#{deployment_name}\.bosh/ }
+  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{job_name}\.#{network_name}\.#{deployment_name}\.bosh/ }
+  let(:index_hostname_regexp) { /\d+\.#{job_name}\.#{network_name}\.#{deployment_name}\.bosh/ }
 
   context 'small 1 instance deployment' do
     it 'sends sync_dns action agent and updates /etc/hosts' do
@@ -34,38 +35,20 @@ describe 'local DNS', type: :integration do
         manifest_deployment['jobs'][0]['instances'] = 10
         deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-        10.times do |i|
-          check_agent_log(i)
-        end
-
         check_agent_etc_hosts(10, 10)
       end
     end
 
-    context 'downgrade deployment from 10 to 5 instances' do
+    context 'concurrency tests' do
       let(:manifest_deployment) { initial_deployment(10, 5) }
 
-      before do
+      it 'deploys and downgrades with max_in_flight' do
         manifest_deployment['jobs'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-
-        5.times do |i|
-          check_agent_log(i)
-        end
-      end
-
-      it 'sends sync_dns action to all agents and updates all /etc/hosts' do
         check_agent_etc_hosts(5, 10)
-      end
 
-      it 'updates the removed vms on next scale up' do
         manifest_deployment['jobs'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-
-        5.times do |i|
-          check_agent_log(i)
-        end
-
         check_agent_etc_hosts(6, 6)
       end
     end
@@ -78,9 +61,6 @@ describe 'local DNS', type: :integration do
           manifest_deployment = initial_deployment(5)
 
           deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
-          5.times do |i|
-            check_agent_log(i)
-          end
           check_agent_etc_hosts(5, 5)
         end
       end
@@ -105,9 +85,6 @@ describe 'local DNS', type: :integration do
             expect(old_ips).to_not include(new_ip)
           end
 
-          5.times do |i|
-            check_agent_log(i)
-          end
           check_agent_etc_hosts(5, 5)
         end
       end
@@ -136,9 +113,6 @@ describe 'local DNS', type: :integration do
 
         expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
 
-        5.times do |i|
-          check_agent_log(i)
-        end
         check_agent_etc_hosts(5, 5)
       end
     end
@@ -163,29 +137,36 @@ describe 'local DNS', type: :integration do
     manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
     deploy_simple_manifest(manifest_hash: manifest_deployment)
 
-    number_of_instances.times { |i| check_agent_log(i) }
     check_agent_etc_hosts(number_of_instances, number_of_instances)
     manifest_deployment
   end
 
-  def check_agent_log(index)
-    agent_id = director.vm('job_to_test_local_dns', "#{index}").agent_id
-    agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-    expect(agent_log).to include('"method":"sync_dns","arguments":')
-  end
-
   def check_agent_etc_hosts(number_instance, expected_lines)
     number_instance.times do |i|
-      agent_id = director.vm('job_to_test_local_dns', "#{i}").agent_id
-      etc_hosts = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/bosh/etc_hosts")
+      vm = director.vm('job_to_test_local_dns', i.to_s)
+      etc_hosts = vm.read_etc_hosts
+      expect(etc_hosts.lines.count >= expected_lines).to be(true)
 
-      expect(etc_hosts.lines.count).to eq(expected_lines)
-
+      ips = vm.ips
+      ip_present, hostname_present = false, false
       etc_hosts.lines.each do |line|
         words = line.strip.split(' ')
-        expect(words[0]).to match(ip_regexp)
-        expect(words[1]).to match(hostname_regexp)
+        ip_present = true if check_ip(words[0], ips)
+        hostname_present = true if uuid_hostname_regexp.match(words[1]) or index_hostname_regexp.match(words[1])
       end
+      expect(ip_present).to be(true)
+      expect(hostname_present).to be(true)
+    end
+  end
+
+  def check_ip(ip, ips)
+    case ips
+    when String
+      return true if ip == ips
+    when Array
+      return ips.include?(ip)
+    else
+      return false
     end
   end
 

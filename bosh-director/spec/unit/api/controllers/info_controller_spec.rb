@@ -8,16 +8,7 @@ module Bosh::Director
 
       subject(:app) { described_class.new(config) }
       let(:config) { Config.load_hash(test_config) }
-      let(:base_config) do
-        config = SpecHelper.spec_get_director_config
-        config.merge!(
-            {'compiled_package_cache' =>
-                 {'provider' => 'local',
-                  'options' => {'blobstore_path' => '/path/to/some/bucket'}
-                 }
-            })
-        config
-      end
+      let(:base_config) { SpecHelper.spec_get_director_config }
       let(:test_config) { base_config }
 
       before { App.new(config) }

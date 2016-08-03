@@ -614,41 +614,144 @@ module Bosh::Director
         end
 
         describe 'getting deployment instances' do
-          before { basic_authorize 'reader', 'reader' }
+          before do
+            basic_authorize 'reader', 'reader'
+            release = Models::Release.create(:name => 'test_release')
+            version = Models::ReleaseVersion.create(:release => release, :version => 1)
+            version.add_template(Models::Template.make(name: 'job_using_pkg_1', release: release))
+          end
+          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => manifest) }
+          let(:default_manifest) { Bosh::Spec::Deployments.remote_stemcell_manifest('stemcell_url', 'stemcell_sha1') }
 
-          it 'returns a list of all instances' do
-            deployment = Models::Deployment.
-                create(:name => 'test_deployment',
-                       :manifest => YAML.dump({'foo' => 'bar'}))
+          context 'multiple instances' do
+            let(:manifest) {
+              jobs = []
+              15.times do |i|
+                jobs << {
+                    'name' => "job-#{i}",
+                    'templates' => [{ 'name' => 'job_using_pkg_1' }],
+                    'instances' => 1,
+                    'resource_pool' => 'a',
+                    'networks' => [{ 'name' => 'a' }]
+                }
+              end
+              YAML.dump(default_manifest.merge({'jobs' => jobs}))
+            }
 
+            it 'returns all' do
+              15.times do |i|
+                instance_params = {
+                    'deployment_id' => deployment.id,
+                    'job' => "job-#{i}",
+                    'index' => i,
+                    'state' => 'started',
+                    'uuid' => "instance-#{i}",
+                    'agent_id' => "agent-#{i}",
+                }
 
-            15.times do |i|
-              instance_params = {
-                'deployment_id' => deployment.id,
-                'job' => "job-#{i}",
-                'index' => i,
-                'state' => 'started',
-                'uuid' => "instance-#{i}",
-                'agent_id' => "agent-#{i}",
-              }
+                Models::Instance.create(instance_params)
+              end
 
-              Models::Instance.create(instance_params)
+              get '/test_deployment/instances'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(15)
+
+              body.each_with_index do |instance, i|
+                expect(instance).to eq(
+                                        'agent_id' => "agent-#{i}",
+                                        'cid' => nil,
+                                        'job' => "job-#{i}",
+                                        'index' => i,
+                                        'id' => "instance-#{i}",
+                                        'expects_vm' => true
+                                    )
+              end
+            end
+          end
+
+          context 'instance lifecycle' do
+            let(:job_state) { 'started' }
+            before do
+              Models::Instance.create({
+                                          'deployment_id' => deployment.id,
+                                          'job' => 'job',
+                                          'index' => 1,
+                                          'state' => job_state,
+                                          'uuid' => 'instance-1',
+                                          'agent_id' => 'agent-1',
+                                      })
             end
 
-            get '/test_deployment/instances'
+            context 'is "service"' do
+              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.test_release_job)) }
+              context 'and state is either "started" or "stopped"' do
 
-            expect(last_response.status).to eq(200)
-            body = JSON.parse(last_response.body)
-            expect(body.size).to eq(15)
+                it 'sets "expects_vm" to "true"' do
 
-            body.each_with_index do |instance, i|
-              expect(instance).to eq(
-                  'agent_id' => "agent-#{i}",
-                  'job' => "job-#{i}",
-                  'index' => i,
-                  'cid' => nil,
-                  'id' => "instance-#{i}"
-              )
+                  get '/test_deployment/instances'
+
+                  expect(last_response.status).to eq(200)
+                  body = JSON.parse(last_response.body)
+                  expect(body.size).to eq(1)
+
+                  expect(body[0]).to eq(
+                                         'agent_id' => 'agent-1',
+                                         'cid' => nil,
+                                         'job' => 'job',
+                                         'index' => 1,
+                                         'id' => 'instance-1',
+                                         'expects_vm' => true
+                                     )
+                end
+              end
+
+              context 'and state is "detached"' do
+                let(:job_state) { 'detached'}
+                it 'sets "expects_vm" to "false"' do
+
+                  get '/test_deployment/instances'
+
+                  expect(last_response.status).to eq(200)
+                  body = JSON.parse(last_response.body)
+                  expect(body.size).to eq(1)
+
+                  expect(body[0]).to eq(
+                                         'agent_id' => 'agent-1',
+                                         'cid' => nil,
+                                         'job' => 'job',
+                                         'index' => 1,
+                                         'id' => 'instance-1',
+                                         'expects_vm' => false
+                                     )
+                end
+              end
+            end
+
+            context 'is "errand"' do
+              let(:manifest) {
+                manifest = default_manifest.merge(Bosh::Spec::Deployments.test_release_job)
+                manifest['jobs'][0]['lifecycle'] = 'errand'
+                YAML.dump(manifest)
+              }
+
+              it 'sets "expects_vm" to "false"' do
+                get '/test_deployment/instances'
+
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+                expect(body.size).to eq(1)
+
+                expect(body[0]).to eq(
+                                       'agent_id' => 'agent-1',
+                                       'cid' => nil,
+                                       'job' => 'job',
+                                       'index' => 1,
+                                       'id' => 'instance-1',
+                                       'expects_vm' => false
+                                   )
+              end
             end
           end
         end
@@ -1014,8 +1117,8 @@ module Bosh::Director
             end
 
             it 'returns 200 with an empty diff and an error message if the diffing fails' do
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :resolve_aliases)
-              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_text, :diff).and_raise('Oooooh crap')
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :resolve_aliases)
+              allow(Bosh::Director::Manifest).to receive_message_chain(:load_from_model, :diff).and_raise('Oooooh crap')
 
               post '/fake-dep-name/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 

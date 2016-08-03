@@ -11,8 +11,8 @@ module Bosh::Director
 
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
-      def parse(deployment_manifest, options = {})
-        @deployment_manifest = deployment_manifest
+      def parse(deployment_interpolated_manifest, options = {})
+        @deployment_manifest = deployment_interpolated_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
         parse_options = {}
@@ -30,7 +30,7 @@ module Bosh::Director
         parse_properties
         parse_releases
         parse_update(parse_options)
-        parse_jobs(parse_options)
+        parse_instance_groups(parse_options)
 
         @deployment
       end
@@ -51,6 +51,8 @@ module Bosh::Director
 
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
+          :class => Hash, :default => {})
+        @deployment.uninterpolated_properties = safe_property(@deployment_manifest, 'uninterpolated_properties',
           :class => Hash, :default => {})
       end
 
@@ -80,7 +82,7 @@ module Bosh::Director
         @deployment.update = UpdateConfig.new(update_spec.merge(parse_options))
       end
 
-      def parse_jobs(parse_options)
+      def parse_instance_groups(parse_options)
         if @deployment_manifest.has_key?('jobs') && @deployment_manifest.has_key?('instance_groups')
           raise JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed"
         end
@@ -88,6 +90,7 @@ module Bosh::Director
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
 
+        # FIX this, instance groups can be empty
         if !instance_groups.empty?
           jobs = instance_groups
         end

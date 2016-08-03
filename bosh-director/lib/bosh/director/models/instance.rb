@@ -78,6 +78,12 @@ module Bosh::Director::Models
       rescue JSON::ParserError
         return 'error'
       end
+
+      result['uninterpolated_properties'] = Bosh::Common::DeepCopy.copy(result['properties'])
+      if Bosh::Director::Config.config_server_enabled
+        result['properties'] = Bosh::Director::ConfigServer::ConfigParser.parse(result['properties'])
+      end
+
       if result['resource_pool'].nil?
         result
       else
@@ -100,10 +106,19 @@ module Bosh::Director::Models
     end
 
     def spec=(spec)
-      begin
-        self.spec_json = spec.nil? ? nil : JSON.generate(spec)
-      rescue JSON::GeneratorError
-        self.spec_json = 'error'
+      if spec.nil?
+        self.spec_json = nil
+      else
+        local_spec = Bosh::Common::DeepCopy.copy(spec)
+        if Bosh::Director::Config.config_server_enabled
+          local_spec['properties'] = local_spec['uninterpolated_properties']
+        end
+        local_spec.delete('uninterpolated_properties')
+        begin
+          self.spec_json = JSON.generate(local_spec)
+        rescue JSON::GeneratorError
+          self.spec_json = 'error'
+        end
       end
     end
 
@@ -129,7 +144,28 @@ module Bosh::Director::Models
       self.credentials_json = json_encode(spec)
     end
 
+    def lifecycle
+      return nil if self.deployment.manifest == nil
+
+      deployment_plan = create_deployment_plan_from_manifest(deployment)
+      instance_group = deployment_plan.instance_group(self.job)
+      if instance_group
+        instance_group.lifecycle
+      else
+        nil
+      end
+    end
+
+    def expects_vm?
+      lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
+    end
+
     private
+
+    def create_deployment_plan_from_manifest(deployment)
+      planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
+      planner_factory.create_from_model(deployment)
+    end
 
     def object_or_nil(value)
       if value == 'null' || value.nil?

@@ -29,7 +29,7 @@ module Bosh::Director
         Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
         Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
 
-        Config.event_log = event_log
+        allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
         allow(event_log_stage).to receive(:advance_and_track).and_yield
       end

@@ -284,6 +284,9 @@ module Bosh::Director
   RuntimeInvalidDeploymentRelease = err(530003)
   RuntimeIncompleteIncludeJobSection = err(530004)
 
+  # Config server errors
+  ConfigServerMissingKeys = err(540000)
+
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 end
