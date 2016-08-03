@@ -201,22 +201,6 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'PAM configuration' do
-    describe file('/etc/pam.d/system-auth') do
-      it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
-        should contain /password.*pam_unix\.so.*remember=24/
-      end
-
-      it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
-        should contain /password.*pam_unix\.so.*minlen=14/
-      end
-
-      it 'must use the cracklib library to set correct password requirements (CIS-9.2.1)' do
-        should contain /password.*pam_cracklib\.so.*retry=3.*minlen=14.*dcredit=-1.*ucredit=-1.*ocredit=-1.*lcredit=-1/
-      end
-    end
-  end
-
   context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
     describe file('/etc/pam.d/system-auth') do
       its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
