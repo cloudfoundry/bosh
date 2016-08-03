@@ -18,6 +18,7 @@ describe 'CIS test case verification', {stemcell_image: true, security_spec: tru
       CIS-7.3.1
       CIS-7.5.3
       CIS-11.1
+      CIS-8.1.3
       CIS-8.1.4
       CIS-8.1.5
       CIS-8.1.6
@@ -25,6 +26,7 @@ describe 'CIS test case verification', {stemcell_image: true, security_spec: tru
       CIS-8.1.8
       CIS-8.1.9
       CIS-8.1.10
+      CIS-8.1.11
       CIS-8.1.12
       CIS-8.1.13
       CIS-8.1.14
