@@ -10,7 +10,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 * `bdLvwz7.6amrKKAPZYj_Tdd2dK8tXjea`
   - update vivid -> xenial
   - periodic bump
-  - built from develop (e75a2e1e0b2904281fc334969fa68da22748cd67)
+  - built from 257.x (e75a2e1e0b2904281fc334969fa68da22748cd67)
 
 * `x2_FVfGn0gf54_BX79gD7B4zJ2ENMXYy`
   - USN-3020-1: Linux kernel (Vivid HWE) vulnerabilities
