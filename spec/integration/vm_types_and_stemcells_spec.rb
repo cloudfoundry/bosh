@@ -170,7 +170,10 @@ stemcells:
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       env_hash = {
         'env1' => 'env_value1',
-        'env2' => 'env_value2'
+        'env2' => 'env_value2',
+        'bosh' => {
+          'group_name' => 'foobar'
+        },
       }
       cloud_config_hash['resource_pools'].first['env'] = env_hash
 
