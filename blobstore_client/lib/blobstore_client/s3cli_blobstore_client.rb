@@ -126,7 +126,7 @@ module Bosh
         config_file = File.join(config_file_dir, random_name)
         config_data = JSON.dump(@s3cli_options)
 
-        File.write(config_file, config_data)
+        File.open(config_file, 'w', 0600) { |file| file.write(config_data) }
         config_file
       end
 

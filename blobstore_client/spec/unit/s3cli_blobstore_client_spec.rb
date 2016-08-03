@@ -61,6 +61,10 @@ module Bosh::Blobstore
           expect(JSON.parse(stored_config_file[0], {:symbolize_names => true})).to eq(expected_options)
         end
 
+        it 'should write the config file with reduced group and world permissions' do
+          expect(File.stat(expected_config_file).mode).to eq(0100600)
+        end
+
         it 'should set `none` as credentials_source' do
           expect(JSON.parse(stored_config_file[0])["credentials_source"]).to eq("none")
         end

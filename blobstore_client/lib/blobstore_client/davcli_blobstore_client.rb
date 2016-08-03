@@ -17,8 +17,8 @@ module Bosh
           password: @options[:password],
           endpoint: @options[:endpoint]
         }
-        @config_file_dir = @options.fetch(:config_file_dir, nil)
-        @config_file_path = write_config_file(@config_file_dir)
+        @davcli_config_path = @options.fetch(:davcli_config_path, nil)
+        @config_file_path = write_config_file(@davcli_config_path)
       end
 
       protected
@@ -80,13 +80,12 @@ module Bosh
       end
 
       def write_config_file(config_file_dir = nil)
-        config_file_dir = Dir::tmpdir unless config_file_dir
+        config_file_dir = Dir.tmpdir unless config_file_dir
         Dir.mkdir(config_file_dir) unless File.exists?(config_file_dir)
         random_name = "davcli-blobstore-config-#{SecureRandom.uuid}"
         config_file = File.join(config_file_dir, random_name)
         config_data = JSON.dump(@davcli_options)
-
-        File.write(config_file, config_data)
+        File.open(config_file, 'w', 0600) { |file| file.write(config_data) }
         config_file
       end
     end
