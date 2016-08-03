@@ -310,6 +310,10 @@ EOF
       it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
         should contain /password.*pam_unix\.so.*minlen=14/
       end
+
+      it 'must use the cracklib library to set correct password requirements (CIS-9.2.1)' do
+        should contain /password.*pam_cracklib\.so.*retry=3.*minlen=14.*dcredit=-1.*ucredit=-1.*ocredit=-1.*lcredit=-1/
+      end
     end
 
     describe file('/etc/pam.d/common-account') do
