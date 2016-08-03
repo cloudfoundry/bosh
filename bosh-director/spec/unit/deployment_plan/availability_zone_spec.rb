@@ -13,6 +13,13 @@ module Bosh::Director::DeploymentPlan
           expect(availability_zone.name).to eq('z1')
           expect(availability_zone.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
         end
+
+        it 'has name, cloud properties and cpi' do
+          availability_zone_spec['cpi'] = 'cpi1'
+          expect(availability_zone.name).to eq('z1')
+          expect(availability_zone.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+          expect(availability_zone.cpi).to eq('cpi1')
+        end
       end
 
       describe 'name' do
@@ -45,6 +52,16 @@ module Bosh::Director::DeploymentPlan
 
         context 'is not a hash' do
           let(:availability_zone_spec) { {'name' => {}, 'cloud_properties' => 'myproperty'} }
+
+          it 'raises error' do
+            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+          end
+        end
+      end
+
+      describe 'cpi' do
+        context 'is not a string' do
+          let(:availability_zone_spec) { {'name' => 'z1', 'cpi' => [1,2]} }
 
           it 'raises error' do
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)

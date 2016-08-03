@@ -9,15 +9,18 @@ module Bosh::Director
         cloud_properties =
           safe_property(availability_zone_spec, "cloud_properties", class: Hash, default: {})
 
-        new(name, cloud_properties)
+        cpi = safe_property(availability_zone_spec, "cpi", class: String, optional: true)
+
+        new(name, cloud_properties, cpi)
       end
 
-      def initialize(name, cloud_properties)
+      def initialize(name, cloud_properties, cpi=nil)
         @name = name
         @cloud_properties = cloud_properties
+        @cpi = cpi
       end
 
-      attr_reader :name, :cloud_properties
+      attr_reader :name, :cloud_properties, :cpi
 
       def inspect
         "az: #{name}"

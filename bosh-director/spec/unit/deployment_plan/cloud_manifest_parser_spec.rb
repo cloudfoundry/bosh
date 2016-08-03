@@ -22,16 +22,17 @@ module Bosh::Director
           let(:availability_zones) {
             {'azs' => [
               {'name' => 'z1',
-                'cloud_properties' =>
+               'cloud_properties' =>
                   {'availability_zone' =>
                     'us-east-1a'
                   }
               },
               {'name' => 'z2',
-                'cloud_properties' =>
+               'cloud_properties' =>
                   {'availability_zone' =>
                     'us-east-2a'
-                  }
+                  },
+               'cpi' => 'cpi1'
               }
             ]
             }
@@ -56,8 +57,10 @@ module Bosh::Director
           it 'creates AvailabilityZone for each entry' do
             expect(parsed_cloud_planner.availability_zone('z1').name).to eq('z1')
             expect(parsed_cloud_planner.availability_zone('z1').cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+            expect(parsed_cloud_planner.availability_zone('z1').cpi).to eq(nil)
             expect(parsed_cloud_planner.availability_zone('z2').name).to eq('z2')
             expect(parsed_cloud_planner.availability_zone('z2').cloud_properties).to eq({'availability_zone' => 'us-east-2a'})
+            expect(parsed_cloud_planner.availability_zone('z2').cpi).to eq('cpi1')
           end
         end
       end
