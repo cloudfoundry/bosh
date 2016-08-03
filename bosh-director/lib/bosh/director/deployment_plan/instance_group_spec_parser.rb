@@ -26,7 +26,7 @@ module Bosh::Director
         parse_release
         validate_jobs
 
-        parse_template
+        parse_legacy_template
         parse_jobs
 
         check_template_uniqueness
@@ -96,7 +96,7 @@ module Bosh::Director
       end
 
       # legacy template parsing
-      def parse_template
+      def parse_legacy_template
         template_names = safe_property(@instance_group_spec, "template", optional: true)
         if template_names
           if template_names.is_a?(Array)

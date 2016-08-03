@@ -34,7 +34,7 @@ module Bosh::Director
         package_spec: {},
         persistent_disk_type: nil,
         is_errand?: false,
-        link_spec: 'fake-link',
+        link_spec: {},
         compilation?: false,
         templates: [],
         update_spec: update_config.to_hash,

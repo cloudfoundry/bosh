@@ -162,6 +162,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect(api_server_job.link_spec).to eq(
             {"db" => {"networks" => ["fake-manual-network", "fake-dynamic-network"],
                       "properties" => {"mysql" => nil},
+                      "uninterpolated_properties" => {"mysql" => nil},
                       "instances" => [
                           {"name" => "mysql",
                            "index" => 0,
@@ -211,6 +212,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'db' => {
                   'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                   "properties"=>{"mysql"=>nil},
+                  "uninterpolated_properties"=>{"mysql"=>nil},
                   'instances' => [
                     {
                       'name' => 'mysql',
@@ -276,6 +278,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'backup_db' => {
                 'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                 "properties"=>{"mysql"=>nil},
+                "uninterpolated_properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',
@@ -483,6 +486,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'db' => {
                 'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                 "properties"=>{"mysql"=>nil},
+                "uninterpolated_properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',
