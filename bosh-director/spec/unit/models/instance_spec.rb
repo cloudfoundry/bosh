@@ -195,6 +195,12 @@ module Bosh::Director::Models
     end
 
     context 'spec' do
+      it 'calls prepare_instance_spec_for_saving helper method before saving' do
+        subject.spec=({'stuff' => 'stuff'})
+        expect(Bosh::Director::InstanceModelHelper).to receive(:adjust_instance_spec_after_retrieval!).with({'stuff' => 'stuff'}).and_return({})
+        subject.spec
+      end
+
       context 'when spec_json persisted in database has no resource pool' do
         it 'returns spec_json as is' do
           subject.spec=({
@@ -252,76 +258,19 @@ module Bosh::Director::Models
           end
         end
       end
-
-      context 'when config server is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'name' => '((name_placeholder))'}).and_return({'name' => 'Big papa smurf'})
-
-          spec_to_save = {
-            'properties' => {'name' => '((name_placeholder))'}
-          }
-
-          subject.spec_json = JSON.generate(spec_to_save)
-        end
-
-        it 'resolves properties and populates uninterpolated props' do
-          result = subject.spec
-          expect(result['properties']).to eq({'name'=>'Big papa smurf'})
-          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
-        end
-      end
-
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-
-          spec_to_save = {
-            'properties' => {'name' => '((name_placeholder))'}
-          }
-
-          subject.spec_json = JSON.generate(spec_to_save)
-        end
-
-        it 'does not resolve properties and populates uninterpolated props with properties' do
-          result = subject.spec
-          expect(result['properties']).to eq({'name'=>'((name_placeholder))'})
-          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
-        end
-      end
     end
 
     context 'spec=' do
-      context 'when config server is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          subject.spec=({
-            'properties' => {'name' => 'a'},
-            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
-          })
-        end
-
-        it 'only saves uninterpolated properties' do
-          saved_json = JSON.parse(subject.spec_json)
-          expect(saved_json).to eq({'properties'=>{'name'=>'((name_placeholder))'}})
-          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
-        end
+      let(:instance_spec) do
+        {
+          'properties' => {'name' => 'a'},
+          'uninterpolated_properties' => {'name' => '((name_placeholder))'}
+        }
       end
 
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          subject.spec=({
-            'properties' => {'name' => 'a'},
-            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
-          })
-        end
-
-        it 'only saves properties' do
-          saved_json = JSON.parse(subject.spec_json)
-          expect(saved_json).to eq({'properties'=>{'name'=>'a'}})
-          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
-        end
+      it 'calls prepare_instance_spec_for_saving helper method before saving' do
+        expect(Bosh::Director::InstanceModelHelper).to receive(:prepare_instance_spec_for_saving!).with(instance_spec).and_return({})
+        subject.spec=(instance_spec)
       end
     end
 
