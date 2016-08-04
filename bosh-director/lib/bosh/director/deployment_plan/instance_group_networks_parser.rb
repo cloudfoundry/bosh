@@ -2,7 +2,7 @@ require 'bosh/director/deployment_plan/job_network'
 
 module Bosh::Director
   module DeploymentPlan
-    class JobNetworksParser
+    class InstanceGroupNetworksParser
       include ValidationHelper
       include IpUtil
 

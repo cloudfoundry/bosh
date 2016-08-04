@@ -107,7 +107,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobUnknownRelease,
+          Bosh::Director::InstanceGroupUnknownRelease,
           "Instance group 'fake-job-name' references an unknown release 'unknown-release-name'",
         )
       end
@@ -242,7 +242,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobMissingRelease,
+          Bosh::Director::InstanceGroupMissingRelease,
           "Cannot tell what release job 'fake-job-name' is supposed to use, please explicitly specify one",
         )
       end
@@ -381,7 +381,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                 expect {
                   parsed_job
                 }.to raise_error(
-                  Bosh::Director::JobMissingRelease,
+                  Bosh::Director::InstanceGroupMissingRelease,
                   "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
@@ -412,7 +412,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
                 expect {
                   parsed_job
                 }.to raise_error(
-                  Bosh::Director::JobMissingRelease,
+                  Bosh::Director::InstanceGroupMissingRelease,
                   "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
@@ -438,7 +438,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             expect {
               parsed_job
             }.to raise_error(
-              Bosh::Director::JobUnknownRelease,
+              Bosh::Director::InstanceGroupUnknownRelease,
               "Job 'fake-template-name' (instance group 'fake-job-name') references an unknown release 'fake-template-release'",
             )
           end
@@ -479,7 +479,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
             expect {
               parsed_job
             }.to raise_error(
-              Bosh::Director::JobInvalidTemplates,
+              Bosh::Director::InstanceGroupInvalidTemplates,
               "Colocated job 'fake-template-name1' is already added to the instance group 'fake-job-name'",
             )
           end
@@ -697,7 +697,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
         it 'raises' do
           expect { parsed_job }.to raise_error(
-             Bosh::Director::JobInvalidTemplates,
+             Bosh::Director::InstanceGroupInvalidTemplates,
             "Instance group 'fake-job-name' specifies both template and templates keys, only one is allowed"
           )
         end
@@ -712,7 +712,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
         it 'raises' do
           expect { parsed_job }.to raise_error(
-                                                   Bosh::Director::JobInvalidTemplates,
+                                                   Bosh::Director::InstanceGroupInvalidTemplates,
                                                    "Instance group 'fake-job-name' specifies both templates and jobs keys, only one is allowed"
                                                )
         end
@@ -752,7 +752,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobInvalidPersistentDisk,
+          Bosh::Director::InstanceGroupInvalidPersistentDisk,
           "Instance group 'fake-job-name' references an invalid persistent disk size '-300'"
         )
       end
@@ -778,7 +778,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobUnknownDiskType,
+          Bosh::Director::InstanceGroupUnknownDiskType,
           "Instance group 'fake-job-name' references an unknown disk type 'unknown-disk-pool'"
         )
       end
@@ -804,7 +804,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-            Bosh::Director::JobUnknownDiskType,
+            Bosh::Director::InstanceGroupUnknownDiskType,
             "Instance group 'fake-job-name' references an unknown disk pool 'unknown-disk-pool'"
           )
       end
@@ -818,7 +818,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-            Bosh::Director::JobInvalidPersistentDisk,
+            Bosh::Director::InstanceGroupInvalidPersistentDisk,
             "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk pool 'fake-disk-pool-name'"
           )
       end
@@ -829,7 +829,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-            Bosh::Director::JobInvalidPersistentDisk,
+            Bosh::Director::InstanceGroupInvalidPersistentDisk,
             "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk type 'fake-disk-pool-name'"
           )
       end
@@ -840,7 +840,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-            Bosh::Director::JobInvalidPersistentDisk,
+            Bosh::Director::InstanceGroupInvalidPersistentDisk,
             "Instance group 'fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
               "'disk_pools' key will be DEPRECATED in the future."
           )
@@ -873,7 +873,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           expect {
             parsed_job
           }.to raise_error(
-              Bosh::Director::JobAmbiguousEnv,
+              Bosh::Director::InstanceGroupAmbiguousEnv,
               "Instance group 'fake-job-name' and resource pool: 'fake-resource-pool-name' both declare env properties"
             )
         end
@@ -903,7 +903,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobUnknownResourcePool,
+          Bosh::Director::InstanceGroupUnknownResourcePool,
           "Instance group 'fake-job-name' references an unknown resource pool 'unknown-resource-pool'"
         )
       end
@@ -955,7 +955,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
         it 'errors out' do
           expect{parsed_job}.to raise_error(
-              Bosh::Director::JobUnknownVmType,
+              Bosh::Director::InstanceGroupUnknownVmType,
               "Instance group 'fake-job-name' references an unknown vm type 'fake-vm-type'"
             )
         end
@@ -968,7 +968,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
         it 'errors out' do
           expect{parsed_job}.to raise_error(
-              Bosh::Director::JobUnknownStemcell,
+              Bosh::Director::InstanceGroupUnknownStemcell,
               "Instance group 'fake-job-name' references an unknown stemcell 'fake-stemcell'"
             )
         end
@@ -1052,7 +1052,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect {
           parsed_job
         }.to raise_error(
-          Bosh::Director::JobInvalidPropertyMapping,
+          Bosh::Director::InstanceGroupInvalidPropertyMapping,
         )
       end
 
@@ -1106,8 +1106,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           expect {
             parsed_job
           }.to raise_error(
-            Bosh::Director::JobNetworkInstanceIpMismatch,
-            "Instance group 'fake-job-name' has 4 instances but was allocated 3 static IPs",
+            Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
+            "Instance group 'fake-job-name' has 4 instances but was allocated 3 static IPs in network 'fake-network-name'",
           )
         end
       end
@@ -1118,8 +1118,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           expect {
             parsed_job
           }.to raise_error(
-            Bosh::Director::JobNetworkInstanceIpMismatch,
-            "Instance group 'fake-job-name' has 2 instances but was allocated 3 static IPs",
+            Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
+            "Instance group 'fake-job-name' has 2 instances but was allocated 3 static IPs in network 'fake-network-name'",
           )
         end
       end
