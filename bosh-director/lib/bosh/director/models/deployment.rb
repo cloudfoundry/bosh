@@ -18,11 +18,14 @@ module Bosh::Director::Models
 
     def link_spec
       result = self.link_spec_json
-      result ? JSON.parse(result) : {}
+      parsed_result = result ? JSON.parse(result) : {}
+      adjusted_spec = Bosh::Director::DeploymentModelHelper.adjust_deployment_links_spec_after_retrieval(parsed_result)
+      adjusted_spec
     end
 
     def link_spec=(data)
-      self.link_spec_json = JSON.generate(data)
+      prepared_spec = Bosh::Director::DeploymentModelHelper.prepare_deployment_links_spec_for_saving(data)
+      self.link_spec_json = JSON.generate(prepared_spec)
     end
 
     def self.create_with_teams(attributes)
