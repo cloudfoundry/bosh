@@ -54,7 +54,7 @@ module Bosh::Director
 
       it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
+          username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options], deployment).and_return(task)
 
         expect(subject.ssh(username, deployment, options)).to eq(task)
       end

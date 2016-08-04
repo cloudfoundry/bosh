@@ -343,6 +343,7 @@ module Bosh::Director
               it 'returns 401' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(401)
+                expect(last_response.body).to include('bosh.teams.team-rocket.admin')
               end
             end
 

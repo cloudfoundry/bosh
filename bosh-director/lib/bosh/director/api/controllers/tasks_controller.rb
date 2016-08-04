@@ -97,7 +97,7 @@ module Bosh::Director
         if !@permission_authorizer.is_granted?(task, :read, token_scopes)
           raise UnauthorizedToAccessDeployment,
             'One of the following scopes is required to access this task: ' +
-              @permission_authorizer.list_expected_scope(:director, :read, token_scopes).join(', ')
+              @permission_authorizer.list_expected_scope(task, :read, token_scopes).join(', ')
         end
 
         if task_timeout?(task)
