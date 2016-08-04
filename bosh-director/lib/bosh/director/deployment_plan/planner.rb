@@ -77,7 +77,7 @@ module Bosh::Director
 
         @recreate = !!options['recreate']
 
-        @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+        @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @logger = Config.logger
@@ -277,6 +277,14 @@ module Bosh::Director
 
       def using_global_networking?
         !@cloud_config.nil?
+      end
+
+      # If we don't want to do what we are doing in this method, then link_spec should be an object
+      def add_deployment_link_spec(instance_group_name, job_name, provided_link_name, provided_link_type, link_spec)
+        @link_spec[instance_group_name] ||= {}
+        @link_spec[instance_group_name][job_name] ||= {}
+        @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
+        @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
       end
 
       private

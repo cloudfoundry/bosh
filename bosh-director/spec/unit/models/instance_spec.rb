@@ -195,7 +195,7 @@ module Bosh::Director::Models
     end
 
     context 'spec' do
-      it 'calls prepare_instance_spec_for_saving helper method before saving' do
+      it 'calls adjust_instance_spec_after_retrieval helper method after reading from DB' do
         subject.spec=({'stuff' => 'stuff'})
         expect(Bosh::Director::InstanceModelHelper).to receive(:adjust_instance_spec_after_retrieval!).with({'stuff' => 'stuff'}).and_return({})
         subject.spec
