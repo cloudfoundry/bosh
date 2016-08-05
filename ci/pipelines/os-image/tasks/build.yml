@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///bosh/init
+image: docker:///bosh/vagrant-os-image-builder#256-x
 
 inputs:
 - name: bosh-src
