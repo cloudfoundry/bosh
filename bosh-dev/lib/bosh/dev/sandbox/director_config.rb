@@ -14,6 +14,10 @@ module Bosh::Dev::Sandbox
       :config_server_enabled,
       :config_server_url,
       :config_server_cert_path,
+      :config_server_uaa_url,
+      :config_server_uaa_client_id,
+      :config_server_uaa_client_secret,
+      :config_server_uaa_ca_cert_path,
       :user_authentication,
       :uaa_url,
       :trusted_certs,
@@ -43,12 +47,17 @@ module Bosh::Dev::Sandbox
 
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
 
+      @user_authentication = attrs.fetch(:user_authentication)
+      @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
+
       @config_server_enabled = attrs.fetch(:config_server_enabled)
       @config_server_url = "https://127.0.0.1:#{port_provider.get_port(:config_server_port)}"
       @config_server_cert_path = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
-      @user_authentication = attrs.fetch(:user_authentication)
-      @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
+      @config_server_uaa_url = @uaa_url
+      @config_server_uaa_client_id = 'test'
+      @config_server_uaa_client_secret = 'secret'
+      @config_server_uaa_ca_cert_path = '/Users/pivotal/workspace/bosh/bosh-dev/assets/sandbox/ca/certs/rootCA.pem'
 
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
