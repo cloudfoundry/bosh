@@ -25,6 +25,7 @@ describe 'health_monitor.yml.erb' do
             'analyze_agents' => 64,
             'agent_timeout' => 65,
             'rogue_agent_alert' => 66,
+            'analyze_instances' => 64,
           },
           'loglevel' => 'INFO',
           'em_threadpool_size' => 20,
@@ -81,6 +82,7 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['intervals']['analyze_agents']).to eq(64)
       expect(parsed_yaml['intervals']['agent_timeout']).to eq(65)
       expect(parsed_yaml['intervals']['rogue_agent_alert']).to eq(66)
+      expect(parsed_yaml['intervals']['analyze_instances']).to eq(64)
       expect(parsed_yaml['logfile']).to be_a(String)
       expect(parsed_yaml['loglevel']).to eq('INFO')
       expect(parsed_yaml['em_threadpool_size']).to eq(20)

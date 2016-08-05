@@ -40,6 +40,9 @@ properties:
   hm.intervals.rogue_agent_alert:
     description: Interval (in seconds) to consider an agent as rogue (an agent that is no part of any deployment)
     default: 120
+  hm.intervals.analyze_instances:
+    description: Interval (in seconds) to analyze the status of instances for missing VMs
+    default: 60
 
   hm.loglevel:
     description: Level of log messages (fatal, error, warn, info, debug)

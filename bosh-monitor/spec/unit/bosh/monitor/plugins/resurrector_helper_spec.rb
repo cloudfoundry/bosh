@@ -17,9 +17,9 @@ describe Bhm::Plugins::ResurrectorHelper::AlertTracker do
     }
 
     before do
-      mock_agent_manager = double(Bhm::AgentManager)
-      allow(mock_agent_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
-      allow(Bhm).to receive_messages(agent_manager: mock_agent_manager)
+      mock_instance_manager = double(Bhm::InstanceManager)
+      allow(mock_instance_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
+      allow(Bhm).to receive_messages(instance_manager: mock_instance_manager)
     end
 
     it 'is melting down if more than 30% of agents are down' do

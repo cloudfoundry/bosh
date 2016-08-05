@@ -33,8 +33,8 @@ module Bosh::Monitor
         job = alert.attributes['job']
         id = alert.attributes['instance_id']
 
-        # only when the agent times out do we add deployment, job & id to the alert
-        # attributes, so this won't trigger a recreate for other types of alerts
+        # deployment, job, and id are only present for 'agent timed out' and 'vm missing for instance'
+        # on the alert so this won't trigger a recreate for other types of alerts
         if deployment && job && id
           agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
           @alert_tracker.record(agent_key, alert.created_at)
