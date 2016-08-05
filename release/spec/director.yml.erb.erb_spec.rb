@@ -189,14 +189,28 @@ describe 'director.yml.erb.erb' do
     context 'config server' do
       context 'when turned on' do
         before do
-          deployment_manifest_fragment['properties']['director']['config_server']['enabled'] = true
-          deployment_manifest_fragment['properties']['director']['config_server']['url'] = 'https://config-server-host'
+          deployment_manifest_fragment['properties']['director']['config_server'] = {
+              'enabled' => true,
+              'url' => 'https://config-server-host',
+              'uaa' => {
+                  'url' => 'fake-uaa-url',
+                  'client_id' => 'fake-client-id',
+                  'client_secret' => 'fake-client-secret',
+                  'ca_cert' => 'fake-ca-cert'
+              },
+          }
         end
 
         it 'configures the cpi correctly' do
           expect(parsed_yaml['config_server']['enabled']).to eq(true)
+
           expect(parsed_yaml['config_server']['url']).to eq('https://config-server-host')
           expect(parsed_yaml['config_server']['ca_cert_path']).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
+
+          expect(parsed_yaml['config_server']['uaa']['url']).to eq('fake-uaa-url')
+          expect(parsed_yaml['config_server']['uaa']['client_id']).to eq('fake-client-id')
+          expect(parsed_yaml['config_server']['uaa']['client_secret']).to eq('fake-client-secret')
+          expect(parsed_yaml['config_server']['uaa']['ca_cert_path']).to eq('/var/vcap/jobs/director/config/uaa_server_ca.cert')
         end
       end
 
@@ -206,9 +220,7 @@ describe 'director.yml.erb.erb' do
         end
 
         it 'configures the cpi correctly' do
-          expect(parsed_yaml['config_server']['enabled']).to eq(false)
-          expect(parsed_yaml['config_server']['url']).to eq(nil)
-          expect(parsed_yaml['config_server']['cert_path']).to eq(nil)
+          expect(parsed_yaml['config_server']).to eq({"enabled"=>false})
         end
       end
     end

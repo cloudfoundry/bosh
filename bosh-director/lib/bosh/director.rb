@@ -110,7 +110,7 @@ require 'common/thread_pool'
 
 require 'bosh/director/config_parser/deep_hash_replacement'
 require 'bosh/director/config_parser/config_parser'
-
+require 'bosh/director/config_parser/uaa_auth_provider'
 
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
