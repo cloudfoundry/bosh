@@ -44,20 +44,20 @@ module Bosh
         private
 
         def parse_from_manifest(manifest, cloud_config, runtime_config, options)
-          @manifest_validator.validate(manifest.interpolated_manifest_hash, manifest.cloud_config_hash)
+          @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.cloud_config_hash)
 
           migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
           manifest.resolve_aliases
-          migrated_interpolated_manifest_hash = migrated_manifest_object.interpolated_manifest_hash
+          migrated_hybrid_manifest_hash = migrated_manifest_object.hybrid_manifest_hash
           @logger.debug("Migrated deployment manifest:\n#{migrated_manifest_object.raw_manifest_hash}")
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
-          name = migrated_interpolated_manifest_hash['name']
+          name = migrated_hybrid_manifest_hash['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
 
           attrs = {
             name: name,
-            properties: migrated_interpolated_manifest_hash.fetch('properties', {}),
+            properties: migrated_hybrid_manifest_hash.fetch('properties', {}),
           }
 
           plan_options = {
@@ -76,7 +76,7 @@ module Bosh
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
 
-          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_interpolated_manifest_hash, plan_options)
+          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_hybrid_manifest_hash, plan_options)
 
           if runtime_config
             parsed_runtime_config =  RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.manifest)

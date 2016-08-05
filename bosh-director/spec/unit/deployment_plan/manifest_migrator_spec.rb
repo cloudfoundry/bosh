@@ -8,7 +8,7 @@ module Bosh
       let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil)}
       let(:cloud_config) { nil }
       let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
-      let(:migrated_manifest_hash) { migrated_manifest.interpolated_manifest_hash }
+      let(:migrated_manifest_hash) { migrated_manifest.hybrid_manifest_hash }
       let(:migrated_cloud_config) { subject.migrate(manifest, cloud_config)[1] }
 
       describe '#migrate' do

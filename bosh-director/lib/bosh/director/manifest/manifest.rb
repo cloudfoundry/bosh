@@ -16,13 +16,25 @@ module Bosh::Director
       self.load_manifest({}, nil, nil, {:resolve_interpolation => false})
     end
 
-    attr_reader :interpolated_manifest_hash, :raw_manifest_hash, :cloud_config_hash, :interpolated_runtime_config_hash, :raw_runtime_config_hash
+    # Check 'Bosh::Director::DeploymentManifestResolver.resolve_manifest' for the
+    # details about the structure of hybrid_manifest_hash
+    attr_reader :hybrid_manifest_hash
+    attr_reader :raw_manifest_hash
 
-    def initialize(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, interpolated_runtime_config_hash, raw_runtime_config_hash)
-      @interpolated_manifest_hash = interpolated_manifest_hash
+    # Check 'Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest' for
+    # details about the structure of hybrid_runtime_config_hash
+    attr_reader :hybrid_runtime_config_hash
+    attr_reader :raw_runtime_config_hash
+
+    attr_reader :cloud_config_hash
+
+    def initialize(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+      @hybrid_manifest_hash = hybrid_manifest_hash
       @raw_manifest_hash = raw_manifest_hash
+
       @cloud_config_hash = cloud_config_hash
-      @interpolated_runtime_config_hash = interpolated_runtime_config_hash
+
+      @hybrid_runtime_config_hash = hybrid_runtime_config_hash
       @raw_runtime_config_hash = raw_runtime_config_hash
     end
 
@@ -39,9 +51,9 @@ module Bosh::Director
     def to_hash(options={})
       raw = options.fetch(:raw, false)
       merge_manifests(
-        raw ? @raw_manifest_hash : @interpolated_manifest_hash,
+        raw ? @raw_manifest_hash : @hybrid_manifest_hash,
         @cloud_config_hash,
-        raw ? @raw_runtime_config_hash : @interpolated_runtime_config_hash
+        raw ? @raw_runtime_config_hash : @hybrid_runtime_config_hash
       )
     end
 
@@ -55,7 +67,7 @@ module Bosh::Director
 
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
 
-      interpolated_runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
+      hybrid_runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
       raw_runtime_config_hash = runtime_config.nil? ? nil : runtime_config.raw_manifest
 
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
@@ -63,7 +75,7 @@ module Bosh::Director
       raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
       hybrid_manifest_hash = Bosh::Director::DeploymentManifestResolver.resolve_manifest(manifest_hash, resolve_interpolation)
 
-      new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, interpolated_runtime_config_hash, raw_runtime_config_hash)
+      new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
     end
 
     def resolve_aliases_for_generic_hash(generic_hash)

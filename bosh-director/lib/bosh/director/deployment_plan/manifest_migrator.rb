@@ -4,10 +4,10 @@ module Bosh
       class ManifestMigrator
         def migrate(manifest, cloud_config)
           migrate_releases(manifest.raw_manifest_hash)
-          migrate_releases(manifest.interpolated_manifest_hash)
+          migrate_releases(manifest.hybrid_manifest_hash)
 
           if cloud_config.nil?
-            cloud_config = cloud_manifest_from_deployment_manifest(manifest.interpolated_manifest_hash)
+            cloud_config = cloud_manifest_from_deployment_manifest(manifest.hybrid_manifest_hash)
           end
 
           [manifest, cloud_config]

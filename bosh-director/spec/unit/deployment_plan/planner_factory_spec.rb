@@ -6,7 +6,7 @@ module Bosh
       describe PlannerFactory do
         subject { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
-        let(:interpolated_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
+        let(:hybrid_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:raw_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
@@ -15,7 +15,7 @@ module Bosh
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
-        let(:manifest) { Manifest.new(interpolated_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
+        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -52,7 +52,7 @@ module Bosh
 
           it 'migrates the deployment manifest to handle legacy structure' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
-              manifest.interpolated_manifest_hash.merge!({'name' => 'migrated_name'})
+              manifest.hybrid_manifest_hash.merge!({'name' => 'migrated_name'})
               [manifest, cloud_config]
             end
 
@@ -60,15 +60,15 @@ module Bosh
           end
 
           it 'resolves aliases in manifest' do
-            interpolated_manifest_hash['releases'].first['version'] = 'latest'
+            hybrid_manifest_hash['releases'].first['version'] = 'latest'
             planner
-            expect(interpolated_manifest_hash['releases'].first['version']).to eq('0.1-dev')
+            expect(hybrid_manifest_hash['releases'].first['version']).to eq('0.1-dev')
           end
 
           it 'logs the migrated manifests' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
               manifest.raw_manifest_hash.merge!({'name' => 'migrated_name'})
-              manifest.interpolated_manifest_hash.merge!({'name' => 'migrated_name'})
+              manifest.hybrid_manifest_hash.merge!({'name' => 'migrated_name'})
               [manifest, cloud_config]
             end
 
@@ -88,7 +88,7 @@ LOGMESSAGE
           end
 
           it 'raises error when manifest has cloud_config properties' do
-            interpolated_manifest_hash['vm_types'] = 'foo'
+            hybrid_manifest_hash['vm_types'] = 'foo'
             expect{
               subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
@@ -105,27 +105,27 @@ LOGMESSAGE
                   'foo' => 1,
                   'bar' => { 'baz' => 2 }
                 }
-                interpolated_manifest_hash['properties'] = expected
+                hybrid_manifest_hash['properties'] = expected
                 expect(planner.properties).to eq(expected)
               end
 
               it 'has a sensible default' do
-                interpolated_manifest_hash.delete('properties')
+                hybrid_manifest_hash.delete('properties')
                 expect(planner.properties).to eq({})
               end
             end
 
             describe 'releases' do
-              let(:interpolated_manifest_hash) do
-                interpolated_manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(
+              let(:hybrid_manifest_hash) do
+                hybrid_manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(
                   'releases' => [
                     {'name' => 'bosh-release', 'version' => 1},
                     {'name' => 'bar-release', 'version' => 2},
                   ],
                 )
 
-                interpolated_manifest_hash['jobs'].first['release'] = 'bosh-release'
-                interpolated_manifest_hash
+                hybrid_manifest_hash['jobs'].first['release'] = 'bosh-release'
+                hybrid_manifest_hash
               end
 
               it 'has the releases from the deployment manifest and the addon' do
@@ -180,7 +180,7 @@ LOGMESSAGE
                 hash['networks'].first['subnets'][1]['az'] = 'zone2'
                 hash
               end
-              let(:interpolated_manifest_hash) do
+              let(:hybrid_manifest_hash) do
                 Bosh::Spec::Deployments.simple_manifest.merge(
                   'jobs' => [
                     Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1', 'zone2'])
@@ -197,7 +197,7 @@ LOGMESSAGE
               end
 
               context 'when there are two jobs with two availability zones' do
-                let(:interpolated_manifest_hash) do
+                let(:hybrid_manifest_hash) do
                   Bosh::Spec::Deployments.simple_manifest.merge(
                     'jobs' => [
                       Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1']),
@@ -221,7 +221,7 @@ LOGMESSAGE
           describe 'links' do
               context 'when a job consumes a link' do
                 before do
-                  interpolated_manifest_hash.merge!('jobs' => [
+                  hybrid_manifest_hash.merge!('jobs' => [
                      { 'name' => 'job1-name',
                        'templates' => [{
                            'name' => 'provides_template',
@@ -376,8 +376,8 @@ LOGMESSAGE
         end
 
         def upload_releases
-          interpolated_manifest_hash['releases'].each do |release_entry|
-            job = interpolated_manifest_hash['jobs'].first
+          hybrid_manifest_hash['releases'].each do |release_entry|
+            job = hybrid_manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
             template2 = Models::Template.make(name: 'provides_template', release: release, properties: {"a" => {default: "b"}})
