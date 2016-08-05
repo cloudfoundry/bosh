@@ -109,6 +109,49 @@ describe 'using director with config server', type: :integration do
           template = vm.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('test_property=dogs are happy')
         end
+
+        it 'updates the job on start/restart/recreate' do
+          config_server_helper.put_value('test_property', 'cats are happy')
+
+          manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+          manifest_hash['jobs'].first['instances'] = 1
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          vm = director.vm('foobar', '0')
+
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=cats are happy')
+
+          # ============================================
+          # Restart
+          config_server_helper.put_value('test_property', 'dogs are happy')
+          output = bosh_runner.run('restart')
+          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('foobar', '0')
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=dogs are happy')
+
+          # ============================================
+          # Recreate
+          config_server_helper.put_value('test_property', 'smurfs are happy')
+          output = bosh_runner.run('recreate')
+          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('foobar', '0')
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=smurfs are happy')
+
+          # ============================================
+          # start
+          config_server_helper.put_value('test_property', 'kittens are happy')
+          bosh_runner.run('stop')
+          output = bosh_runner.run('start')
+          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('foobar', '0')
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('test_property=kittens are happy')
+        end
       end
     end
 
@@ -273,6 +316,83 @@ describe 'using director with config server', type: :integration do
         expect(template['a']).to eq('a_value')
         expect(template['b']).to eq('b_value')
         expect(template['c']).to eq('c_value')
+      end
+    end
+
+    context 'when having cross deployment links' do
+      let(:first_manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['name'] = 'first'
+        manifest['jobs'] = [first_deployment_job_spec]
+        manifest
+      end
+
+      let(:first_deployment_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'first_deployment_node',
+          templates: [
+            {
+              'name' => 'http_server_with_provides',
+              'properties' => {
+                'listen_port' => 15672,
+                'name_space' => {
+                  'fibonacci' => '((fibonacci_placeholder))'
+                }
+              },
+              'provides' => {
+                'http_endpoint' => {
+                  'as' => 'vroom',
+                  'shared' => true
+                }
+              }
+            }
+          ],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:second_manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['name'] = 'second'
+        manifest['jobs'] = [second_deployment_job_spec]
+        manifest
+      end
+
+      let(:second_deployment_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'second_deployment_node',
+          templates: [
+            {
+              'name' => 'http_proxy_with_requires',
+              'consumes' => {
+                'proxied_http_endpoint' => {
+                  'from' => 'vroom',
+                  'deployment' => 'first'
+                }
+              }
+            }
+          ],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      it 'should successfully use the shared link, where its properties are not stored in DB' do
+        config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+        deploy_simple_manifest(manifest_hash: first_manifest)
+
+        expect {
+          deploy_simple_manifest(manifest_hash: second_manifest)
+        }.to_not raise_error
+
+        link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second'})
+        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
       end
     end
   end
