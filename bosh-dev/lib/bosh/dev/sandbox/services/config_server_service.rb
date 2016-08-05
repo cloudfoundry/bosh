@@ -19,8 +19,6 @@ module Bosh::Dev::Sandbox
     NON_CA_SIGNED_CERT = File.join(CERTS_DIR, 'serverWithWrongCA.crt')
     NON_CA_SIGNED_CERT_KEY = File.join(CERTS_DIR, 'serverWithWrongCA.key')
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
-    JWT_VERIFICATION_KEY = File.join(CERTS_DIR, 'jwtVerification.key')
-    UAA_CA_CERT = File.join(CERTS_DIR, 'server.crt')
     CONFIG_SERVER_CONFIG_FILE = File.join(INSTALL_DIR, 'config-server-config.json')
 
     def initialize(port_provider, base_log_path, logger)
@@ -118,8 +116,7 @@ module Bosh::Dev::Sandbox
         port: @port,
         store: 'memory',
         private_key_file_path: SERVER_KEY,
-        certificate_file_path: SERVER_CERT,
-        jwt_verification_key_path: JWT_VERIFICATION_KEY
+        certificate_file_path: SERVER_CERT
       }
       JSON.dump(config)
     end
@@ -129,8 +126,7 @@ module Bosh::Dev::Sandbox
         port: @port,
         store: 'memory',
         private_key_file_path: NON_CA_SIGNED_CERT_KEY,
-        certificate_file_path: NON_CA_SIGNED_CERT,
-        jwt_verification_key_path: JWT_VERIFICATION_KEY
+        certificate_file_path: NON_CA_SIGNED_CERT
       }
       JSON.dump(config)
     end

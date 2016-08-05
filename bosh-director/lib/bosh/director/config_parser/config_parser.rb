@@ -10,7 +10,7 @@ module Bosh::Director::ConfigServer
 
       config_values, invalid_keys = fetch_config_values(config_keys)
       if invalid_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{invalid_keys.join(", ")}"
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: " + invalid_keys.join(", ")
       end
 
       replace_config_values!(config_map, config_values, result)
@@ -23,18 +23,15 @@ module Bosh::Director::ConfigServer
       invalid_keys = []
       config_values = {}
 
-      config_server_hash = Bosh::Director::Config.config_server
-
-      http = self.setup_http(config_server_hash)
-      auth_provider = Bosh::Director::UAAAuthProvider.new(config_server_hash['uaa'], Bosh::Director::Config.logger)
+      http = setup_http
 
       keys.each do |k|
-        config_server_uri = URI.join(config_server_hash['url'], 'v1/', 'data/', k)
+        config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'data/', k)
 
         begin
-          response = http.get(config_server_uri.path, {'Authorization' => auth_provider.auth_header})
+          response = http.get(config_server_uri.path)
         rescue OpenSSL::SSL::SSLError
-          raise 'SSL certificate verification failed'
+          raise "SSL certificate verification failed"
         end
 
         if response.kind_of? Net::HTTPSuccess
@@ -58,15 +55,15 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def self.setup_http(config_server_hash)
-      config_server_uri = URI(config_server_hash['url'])
+    def self.setup_http
+      config_server_uri = URI(Bosh::Director::Config.config_server_url)
       http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
-      ca_cert_path = config_server_hash['ca_cert_path']
-      if File.exist?(ca_cert_path) && !File.read(ca_cert_path).strip.empty?
-        http.ca_file = ca_cert_path
+      ca_cert_file_path = Bosh::Director::Config.config_server_cert_path
+      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
+        http.ca_file = ca_cert_file_path
       else
         cert_store = OpenSSL::X509::Store.new
         cert_store.set_default_paths
@@ -74,5 +71,6 @@ module Bosh::Director::ConfigServer
       end
       http
     end
+
   end
 end

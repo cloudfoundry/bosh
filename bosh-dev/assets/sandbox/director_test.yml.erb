@@ -132,13 +132,6 @@ config_server:
     jN+3WBwg0RucmyXbMrStizDrwWPccw==
     -----END CERTIFICATE-----
   ca_cert_path: <%= config_server_cert_path %>
-
-  uaa:
-    url: <%= config_server_uaa_url %>
-    client_id: <%= config_server_uaa_client_id %>
-    client_secret: <%= config_server_uaa_client_secret %>
-    ca_cert_path: <%= config_server_uaa_ca_cert_path %>
-
 <% else %>
 config_server:
   enabled: false

@@ -18,7 +18,6 @@ templates:
   mime.types: config/mime.types
   scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
-  uaa_server_ca.cert.erb: config/uaa_server_ca.cert
 packages:
 - director
 - nginx
@@ -107,6 +106,13 @@ properties:
   director.enable_post_deploy:
     description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
+  director.config_server.enabled:
+    description: When true, replace substitution values in manifest with values from config server
+    default: false
+  director.config_server.url:
+    description: URL for the config server
+  director.config_server.ca_cert:
+    description: CA cert to trust when communicating with server
   director.generate_vm_passwords:
     description: When true, a random unique password will be used for each vm if user has not specified a password
     default: false
@@ -133,23 +139,6 @@ properties:
   director.disks.cleanup_schedule:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
     default: '0 0,30 * * * * UTC' #every 30min
-
-  # Config Server
-  director.config_server.enabled:
-    description: 'When true, replace substitution values in manifest with values from Config Server'
-    default: false
-  director.config_server.url:
-    description: 'URL for the Config Server'
-  director.config_server.ca_cert:
-    description: 'CA cert to trust when communicating with Config Server'
-  director.config_server.uaa.url:
-    description: 'URL for the UAA server used for authenticating access to Config Server'
-  director.config_server.uaa.client_id:
-    description: 'UAA client id to access Config Server'
-  director.config_server.uaa.client_secret:
-    description: 'UAA client secret to access Config Server'
-  director.config_server.uaa.ca_cert:
-    description: 'CA cert to trust when communicating with UAA'
 
   # Director User Management
   director.user_management.provider:

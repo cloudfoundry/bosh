@@ -71,7 +71,7 @@ module Bosh::Dev::Sandbox
     end
 
     def uaa_process
-      @service.stop if @service
+      return @uaa_process if @uaa_process
 
       opts = {
           'uaa.http_port' => @port,
