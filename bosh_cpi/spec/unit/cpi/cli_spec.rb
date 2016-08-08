@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cpi::Cli do
   describe '#run' do
-    subject { described_class.new(lambda { cpi }, logs_io, result_io) }
+    subject { described_class.new(lambda { |context| cpi }, logs_io, result_io) }
     let(:cpi) { instance_double('Bosh::Cloud') }
     let(:logs_io) { StringIO.new }
     let(:result_io) { StringIO.new }
@@ -474,6 +474,18 @@ describe Bosh::Cpi::Cli do
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to include('{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false},"log":')
         expect(result_io.string).to include_the_backtrace
+      end
+    end
+
+    describe 'when cpi is invoked' do
+      it 'it is called with context as argument' do
+        obj = double
+        expect(obj).to receive(:check_context).with({"director_uuid" => "abc"})
+        cli = described_class.new(lambda { |context|
+          obj.check_context(context)
+          cpi
+        }, logs_io, result_io)
+        cli.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
       end
     end
   end

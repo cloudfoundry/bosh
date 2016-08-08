@@ -67,7 +67,7 @@ class Bosh::Cpi::Cli
     ruby_method = RPC_METHOD_TO_RUBY_METHOD[method] || method
 
     begin
-      cpi = @cpi.call
+      cpi = @cpi.call(context)
       result = cpi.public_send(ruby_method, *arguments)
     rescue Bosh::Clouds::RetriableCloudError => e
       return error_response(error_name(e), e.message, e.ok_to_retry, e.backtrace)
