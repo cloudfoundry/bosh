@@ -104,8 +104,8 @@ module Bosh
 
         def log_outcome(instance_plans)
           instance_plans.select(&:new?).each do |instance_plan|
-            instance = instance_plan.desired_instance
-            @logger.info("New desired instance '#{instance.job.name}/#{instance.index}' in az '#{instance.availability_zone}'")
+            desired_instance = instance_plan.desired_instance
+            @logger.info("New desired instance '#{desired_instance.instance_group.name}/#{desired_instance.index}' in az '#{desired_instance.availability_zone}'")
           end
 
           instance_plans.select(&:existing?).each do |instance_plan|

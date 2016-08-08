@@ -285,7 +285,7 @@ module Bosh::Director
     end
 
     def create_disk(instance_plan)
-      job = instance_plan.desired_instance.job
+      job = instance_plan.desired_instance.instance_group
       instance_model = instance_plan.instance.model
       parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
       disk_size = job.persistent_disk_type.disk_size

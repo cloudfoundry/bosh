@@ -12,7 +12,7 @@ module Bosh::Director
       def self.create_from_instance_plan(instance_plan)
         instance = instance_plan.instance
         deployment_name = instance.deployment_model.name
-        instance_group = instance_plan.desired_instance.job
+        instance_group = instance_plan.desired_instance.instance_group
         instance_plan = instance_plan
         dns_manager = DnsManagerProvider.create
 
