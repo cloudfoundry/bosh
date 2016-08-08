@@ -2,11 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director::Jobs
   describe UpdateDeployment do
-    subject(:job) { UpdateDeployment.new(manifest_path, cloud_config_id, runtime_config_id, options) }
+    subject(:job) { UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_id, options) }
 
     let(:config) { Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config)}
     let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
-    let(:manifest_path) { directory.add_file('deployment.yml', manifest_content) }
     let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
     let(:cloud_config_id) { nil }
     let(:runtime_config_id) { nil }
@@ -86,11 +85,6 @@ module Bosh::Director::Jobs
 
         it 'performs an update' do
           expect(job.perform).to eq('/deployments/deployment-name')
-        end
-
-        it 'cleans up the temporary manifest' do
-          job.perform
-          expect(File.exist? manifest_path).to be_falsey
         end
 
         context 'when the deployment makes no changes to existing vms' do
@@ -228,13 +222,6 @@ module Bosh::Director::Jobs
           expect {
             job.perform
           }.to raise_error(Exception)
-        end
-
-        it 'cleans up the temporary manifest' do
-          expect {
-            job.perform
-          }.to raise_error(Exception)
-          expect(File.exist? manifest_path).to be_falsey
         end
       end
     end

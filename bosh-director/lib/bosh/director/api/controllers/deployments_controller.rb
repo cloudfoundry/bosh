@@ -81,15 +81,15 @@ module Bosh::Director
         options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
-          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
+          manifest = deployment.manifest
         else
-          manifest_file_path, _ = prepare_yml_file(request.body, 'deployment')
-          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
+          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest =  YAML.dump(manifest_hash)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -112,15 +112,15 @@ module Bosh::Director
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         if request.content_length.nil? || request.content_length.to_i == 0
-          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
+          manifest = deployment.manifest
         else
-          manifest_file_path = prepare_yml_file(request.body, 'deployment')
-          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
+          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest =  YAML.dump(manifest_hash)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -330,9 +330,7 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
-        manifest_file_path = prepare_yml_file(request.body, 'deployment')
-        deployment = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
-
+        deployment = validate_manifest_yml(request.body.read, nil)
         unless deployment.kind_of?(Hash)
           raise ValidationInvalidType, 'Deployment manifest must be a hash'
         end
@@ -361,7 +359,7 @@ module Bosh::Director
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_model, options)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options)
 
         redirect "/tasks/#{task.id}"
       end

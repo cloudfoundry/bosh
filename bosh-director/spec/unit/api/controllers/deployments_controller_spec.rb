@@ -74,7 +74,7 @@ module Bosh::Director
               )
             end
 
-            it 'gives a nice error when deployment manifest file does not have a name' do
+            it 'gives a nice error when deployment manifest does not have a name' do
               post '/', YAML.dump({}), {'CONTENT_TYPE' => 'text/yaml'}
 
               expect(last_response.status).to eq(400)
@@ -84,7 +84,7 @@ module Bosh::Director
               )
               end
 
-            it 'gives a nice error when deployment manifest file is not a Hash' do
+            it 'gives a nice error when deployment manifest is not a Hash' do
               post '/', YAML.dump(true), {'CONTENT_TYPE' => 'text/yaml'}
 
               expect(last_response.status).to eq(400)
@@ -231,9 +231,8 @@ module Bosh::Director
                 match { |actual| actual != unexpected }
               end
               manifest = spec_asset('test_conf.yaml')
-              manifest_path = asset('test_conf.yaml')
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                  with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything(), anything()).
+                  with(anything(), not_to_have_body(manifest), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
