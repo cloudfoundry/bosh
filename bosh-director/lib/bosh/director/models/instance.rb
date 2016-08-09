@@ -129,6 +129,11 @@ module Bosh::Director::Models
       spec['env'] || {}
     end
 
+    def vm_uninterpolated_env
+      return {} if spec.nil?
+      spec['uninterpolated_env'] || {}
+    end
+
     def credentials
       object_or_nil(credentials_json)
     end

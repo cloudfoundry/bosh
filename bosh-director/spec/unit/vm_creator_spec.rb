@@ -40,7 +40,7 @@ module Bosh
         stemcell.add_stemcell_model
         stemcell
       end
-      let(:env) { DeploymentPlan::Env.new({}) }
+      let(:env) { DeploymentPlan::Env.new({}, {}) }
 
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
@@ -405,7 +405,12 @@ module Bosh
         end
 
         context 'password is specified' do
-          let(:env) { DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
+          let(:env) do
+            DeploymentPlan::Env.new(
+              {'bosh' => {'password' => 'custom-password'}},
+              {'bosh' => {'password' => '((password_placeholder))'}}
+            )
+          end
           it 'should generate a random VM password' do
             expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']['password']).to eq('custom-password')
@@ -432,7 +437,12 @@ module Bosh
         end
 
         context 'password is specified' do
-          let(:env) { DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
+          let(:env) do
+            DeploymentPlan::Env.new(
+              {'bosh' => {'password' => 'custom-password'}},
+              {'bosh' => {'password' => '((password_placeholder))'}}
+            )
+          end
           it 'should generate a random VM password' do
             expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
               expect(env['bosh']['password']).to eq('custom-password')

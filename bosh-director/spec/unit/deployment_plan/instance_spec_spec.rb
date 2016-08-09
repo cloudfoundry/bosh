@@ -39,7 +39,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
-    let(:env) { Env.new({'key' => 'value'}) }
+    let(:env) { Env.new({'key' => 'value'}, {'key' => '((value_place_holder))'}) }
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner', {
           name: 'fake-deployment',
@@ -63,6 +63,10 @@ module Bosh::Director::DeploymentPlan
     describe '#full_spec' do
       it 'returns the spec including uninterpolated properties' do
         expect(instance_spec.full_spec['uninterpolated_properties']).to eq({'key' => '((key_placeholder))'})
+      end
+
+      it 'returns the spec including uninterpolated env' do
+        expect(instance_spec.full_spec['uninterpolated_env']).to eq({'key' => '((value_place_holder))'})
       end
     end
 

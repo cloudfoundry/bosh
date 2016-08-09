@@ -117,7 +117,9 @@ module Bosh::Director
 
         vm_extensions = @deployment_plan.compilation.vm_extensions
 
-        env = Env.new(@deployment_plan.compilation.env)
+        # we don't care about the uninterpolated env here. The instance spec of the compilation job
+        # wil not contain any envs.
+        env = Env.new(@deployment_plan.compilation.env, @deployment_plan.compilation.env)
 
         compile_job = CompilationJob.new(vm_type, vm_extensions, stemcell, env, @deployment_plan.compilation.network_name)
         availability_zone = @deployment_plan.compilation.availability_zone

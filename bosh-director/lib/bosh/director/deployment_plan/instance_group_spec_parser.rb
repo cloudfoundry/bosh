@@ -284,6 +284,8 @@ module Bosh::Director
 
       def parse_resource_pool
         env_hash = safe_property(@instance_group_spec, 'env', class: Hash, :default => {})
+        uninterpolated_env_hash = safe_property(@instance_group_spec, 'uninterpolated_env', class: Hash, :default => {})
+
         resource_pool_name = safe_property(@instance_group_spec, "resource_pool", class: String, optional: true)
 
         if resource_pool_name
@@ -332,7 +334,7 @@ module Bosh::Director
         @instance_group.vm_type = vm_type
         @instance_group.vm_extensions = vm_extensions
         @instance_group.stemcell = stemcell
-        @instance_group.env = Env.new(env_hash)
+        @instance_group.env = Env.new(env_hash, uninterpolated_env_hash)
       end
 
       def parse_update_config(parse_options)
