@@ -23,7 +23,15 @@ module Bosh::Director
         ],
         'properties' => {
           'global_property' => '((something))'
-        }
+        },
+        'resource_pools' => [
+          {
+            'name' => 'resource_pool_name',
+            'env' => {
+              'f' => '((f_placeholder))'
+            }
+          }
+        ]
       }
     end
 
@@ -66,7 +74,18 @@ module Bosh::Director
              },
              'uninterpolated_properties' => {
                'global_property' => '((something))'
-             }
+             },
+             'resource_pools' => [
+               {
+                 'name' => 'resource_pool_name',
+                 'env' => {
+                   'f' => '((f_placeholder))'
+                 },
+                 'uninterpolated_env' => {
+                   'f' => '((f_placeholder))'
+                 }
+               }
+             ]
            }
          )
         end
@@ -110,7 +129,18 @@ module Bosh::Director
                },
                'uninterpolated_properties' => {
                  'global_property' => '((something))'
-               }
+               },
+               'resource_pools' => [
+                 {
+                   'name' => 'resource_pool_name',
+                   'env' => {
+                     'f' => '((f_placeholder))'
+                   },
+                   'uninterpolated_env' => {
+                     'f' => '((f_placeholder))'
+                   }
+                 }
+               ]
              }
            )
         end
@@ -147,7 +177,18 @@ module Bosh::Director
             },
             'uninterpolated_properties' => {
               'global_property' => '((something))'
-            }
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => '((f_placeholder))'
+                },
+                'uninterpolated_env' => {
+                  'f' => '((f_placeholder))'
+                }
+              }
+            ]
           }
         end
 
@@ -181,7 +222,18 @@ module Bosh::Director
             },
             'uninterpolated_properties' => {
               'global_property' => '((something))'
-            }
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => 'f_value'
+                },
+                'uninterpolated_env' => {
+                  'f' => '((f_placeholder))'
+                }
+              }
+            ]
           }
         end
 
@@ -195,6 +247,7 @@ module Bosh::Director
           ignored_subtrees << ['jobs', Numeric.new, 'templates', Numeric.new, 'uninterpolated_properties']
           ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_env']
           ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_env']
+          ignored_subtrees << ['resource_pools', Numeric.new, 'uninterpolated_env']
           ignored_subtrees
         end
 
@@ -241,7 +294,18 @@ module Bosh::Director
                },
                'uninterpolated_properties' => {
                  'global_property' => '((something))'
-               }
+               },
+               'resource_pools' => [
+                 {
+                   'name' => 'resource_pool_name',
+                   'env' => {
+                     'f' => '((f_placeholder))'
+                   },
+                   'uninterpolated_env' => {
+                     'f' => '((f_placeholder))'
+                   }
+                 }
+               ]
               }
             )
           end

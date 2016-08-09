@@ -311,6 +311,7 @@ module Bosh::Director
 
           if env_hash.empty?
             env_hash = resource_pool.env
+            uninterpolated_env_hash = resource_pool.uninterpolated_env
           end
         else
           vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String)

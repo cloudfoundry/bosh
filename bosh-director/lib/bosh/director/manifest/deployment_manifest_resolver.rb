@@ -10,6 +10,7 @@ module Bosh::Director
 
       self.inject_uninterpolated_global_properties!(result_deployment_manifest)
       self.inject_instance_group_and_job_uninterpolated_properties_and_env!(result_deployment_manifest)
+      self.inject_resource_pool_uninterpolated_env!(result_deployment_manifest)
 
       if Bosh::Director::Config.config_server_enabled && resolve_interpolation
         ignored_subtrees = []
@@ -21,6 +22,9 @@ module Bosh::Director
 
         ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_env']
         ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_env']
+
+        ignored_subtrees << ['resource_pools', Numeric.new, 'uninterpolated_env']
+
         result_deployment_manifest = Bosh::Director::ConfigServer::ConfigParser.parse(result_deployment_manifest, ignored_subtrees)
       end
       result_deployment_manifest
@@ -51,6 +55,14 @@ module Bosh::Director
         jobs_list.each do |job_hash|
           self.copy_properties_to_uninterpolated_properties!(job_hash)
         end
+      end
+    end
+
+    def self.inject_resource_pool_uninterpolated_env!(deployment_manifest)
+      resource_pool_list = safe_property(deployment_manifest, 'resource_pools', :class => Array, :default => [], optional: true)
+
+      resource_pool_list.each do |resource_pool_hash|
+        self.copy_env_to_uninterpolated_env!(resource_pool_hash)
       end
     end
 

@@ -36,8 +36,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     end
     let(:parsed_job) { parser.parse(job_spec) }
     let(:resource_pool_env) { {'key' => 'value'} }
+    let(:uninterpolated_resource_pool_env) { {'key' => '((value_placeholder))'} }
     let(:resource_pool) do
-      instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: resource_pool_env)
+      instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: resource_pool_env, uninterpolated_env: uninterpolated_resource_pool_env)
     end
     let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType') }
     let(:job_rel_ver) do
@@ -859,6 +860,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         expect(job.stemcell.name).to eq('fake-stemcell-name')
         expect(job.stemcell.version).to eq('1')
         expect(job.env.spec).to eq({'key' => 'value'})
+        expect(job.env.uninterpolated_spec).to eq({'key' => '((value_placeholder))'})
       end
 
       context 'when env is also declared in the job spec' do
@@ -881,8 +883,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
 
       context 'when the job declares env, and the resource pool does not' do
         let(:resource_pool_env) { {} }
+        let(:uninterpolated_resource_pool_env) { {} }
         before do
           job_spec['env'] = {'job' => 'env'}
+          job_spec['uninterpolated_env'] = {'job' => '((job_placeholder))'}
           expect(deployment_plan).to receive(:resource_pool)
                                        .with('fake-resource-pool-name')
                                        .and_return(resource_pool)
@@ -891,6 +895,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
         it 'should assign the job env to the job' do
           job = parsed_job
           expect(job.env.spec).to eq({'job' => 'env'})
+          expect(job.env.uninterpolated_spec).to eq({'job' => '((job_placeholder))'})
         end
       end
 
