@@ -10,7 +10,7 @@ describe 'using director with config server', type: :integration do
   let (:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
   let (:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
   let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+  let (:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
 
   context 'when config server certificates are not trusted' do
     with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
@@ -113,6 +113,7 @@ describe 'using director with config server', type: :integration do
           output = bosh_runner.run('deploy', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
+          vm = director.vm('foobar', '0', env: client_env)
           template = vm.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('test_property=dogs are happy')
         end
@@ -201,6 +202,7 @@ describe 'using director with config server', type: :integration do
           expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
           expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
 
+          vm = director.vm('foobar', '0', env: client_env)
           template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
           expect(template).to include('smurfs are blue')
         end
