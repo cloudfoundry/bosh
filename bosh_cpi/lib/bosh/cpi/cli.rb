@@ -100,7 +100,7 @@ class Bosh::Cpi::Cli
         message: message,
         ok_to_retry: ok_to_retry,
       },
-      log: @logs_string_io.string.force_encoding(Encoding::UTF_8),
+      log: encode_string_as_utf8(@logs_string_io.string)
     }
     @result_io.print(JSON.dump(hash)); nil
   end
@@ -109,12 +109,21 @@ class Bosh::Cpi::Cli
     hash = {
       result: result,
       error: nil,
-      log: @logs_string_io.string.force_encoding(Encoding::UTF_8),
+      log: encode_string_as_utf8(@logs_string_io.string)
     }
     @result_io.print(JSON.dump(hash)); nil
   end
 
   def error_name(error)
     error.class.name
+  end
+
+  def encode_string_as_utf8(src)
+    log = @logs_string_io.string.force_encoding(Encoding::UTF_8)
+    unless log.valid_encoding?
+      # the src encoding hint of Encoding::BINARY is only required for ruby 1.9.3
+      log = @logs_string_io.string.encode(Encoding::UTF_8, Encoding::BINARY, undef: :replace, invalid: :replace)
+    end
+    log
   end
 end
