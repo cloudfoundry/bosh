@@ -72,6 +72,19 @@ describe 'using director with config server', type: :integration do
         expect(template).to include('test_property=cats are happy')
       end
 
+      it 'returns original raw manifest when downloaded through cli' do
+        config_server_helper.put_value('test_property', 'cats are happy')
+        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+        downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
+
+        expect(downloaded_manifest).to include 'test_property: "((test_property))"'
+        expect(downloaded_manifest).to_not include 'cats are happy'
+        expect(downloaded_manifest).to_not include 'uninterpolated_properties'
+      end
+
       context 'when health monitor is around and resurrector is enabled' do
         before { current_sandbox.health_monitor_process.start }
         after { current_sandbox.health_monitor_process.stop }
@@ -159,6 +172,76 @@ describe 'using director with config server', type: :integration do
           vm = director.vm('foobar', '0', env: client_env)
           template = vm.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('test_property=kittens are happy')
+        end
+      end
+
+      context 'when instance groups env is using placeholders' do
+        let(:cloud_config_hash) do
+          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_hash.delete('resource_pools')
+
+          cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+          cloud_config_hash
+        end
+
+        let(:env_hash) do
+          {
+            'env1' => '((env1_placeholder))',
+            'env2' => 'env_value2',
+            'env3' => {
+              'color' => '((color_placeholder))'
+            },
+            'bosh' => {
+              'group_name' => 'foobar'
+            },
+          }
+        end
+
+        let(:resolved_env_hash) do
+          {
+            'env1' => 'lazy smurf',
+            'env2' => 'env_value2',
+            'env3' => {
+              'color' => 'blue'
+            },
+            'bosh' => {
+              'group_name' => 'foobar'
+            },
+          }
+        end
+
+        let(:manifest_hash) do
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest
+          manifest_hash.delete('resource_pools')
+          manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+          manifest_hash['jobs'] = [{
+                                     'name' => 'foobar',
+                                     'templates' => ['name' => 'foobar'],
+                                     'vm_type' => 'vm-type-name',
+                                     'stemcell' => 'default',
+                                     'instances' => 1,
+                                     'networks' => [{ 'name' => 'a' }],
+                                     'properties' => {},
+                                     'env' => env_hash
+                                   }]
+          manifest_hash
+        end
+
+        it 'should interpolate them correctly' do
+          manifest_hash['jobs'].first.delete('properties')
+          config_server_helper.put_value('env1_placeholder', 'lazy smurf')
+          config_server_helper.put_value('color_placeholder', 'blue')
+          deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
+
+          create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+          expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+          expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
++--------+----------------------+-------------------+--------------+
+| Name   | Release(s)           | Stemcell(s)       | Cloud Config |
++--------+----------------------+-------------------+--------------+
+| simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | latest       |
++--------+----------------------+-------------------+--------------+
+    )
         end
       end
     end
