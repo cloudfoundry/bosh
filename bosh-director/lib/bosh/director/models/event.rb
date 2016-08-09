@@ -12,7 +12,7 @@ module Bosh::Director::Models
     end
 
     def context=(data)
-      self.context_json = JSON.generate(data)
+      self.context_json = JSON.generate(data.nil? ? {} : data)
     end
   end
 end
