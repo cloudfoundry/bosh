@@ -80,7 +80,7 @@ describe 'using director with config server', type: :integration do
 
         downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
 
-        expect(downloaded_manifest).to include 'test_property: "((test_property))"'
+        expect(downloaded_manifest).to include '((test_property))'
         expect(downloaded_manifest).to_not include 'cats are happy'
         expect(downloaded_manifest).to_not include 'uninterpolated_properties'
       end
