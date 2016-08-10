@@ -96,6 +96,16 @@ module Bosh::Director::ConfigServer
           parsed_manifest
         end
 
+        it 'should replace any top level property key in the passed hash' do
+          manifest_hash['name'] = '((name_val))'
+
+          expected_manifest = {
+            'name' => 'test4'
+          }
+
+          expect(parsed_manifest).to eq(expected_manifest)
+        end
+
         it 'should replace the global property keys in the passed hash' do
           manifest_hash['properties'] = { 'key' => '((value))' }
 

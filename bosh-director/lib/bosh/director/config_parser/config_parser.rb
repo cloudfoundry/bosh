@@ -50,9 +50,12 @@ module Bosh::Director::ConfigServer
     def self.replace_config_values!(config_map, config_values, obj_to_be_resolved)
       config_map.each do |config_loc|
         config_path = config_loc['path']
+        ret = obj_to_be_resolved
 
-        ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
-          obj[el]
+        if config_path.length > 1
+          ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
+            obj[el]
+          end
         end
         ret[config_path.last] = config_values[config_loc['key']]
       end
