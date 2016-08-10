@@ -357,6 +357,9 @@ module Bosh::Director
           runtime_config = Api::RuntimeConfigManager.new.latest
         end
 
+        options['cloud_config'] = cloud_config
+        options['runtime_config'] = runtime_config
+
         deployment_name = deployment['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)

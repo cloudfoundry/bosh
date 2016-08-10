@@ -54,9 +54,6 @@ module Bosh
           name = migrated_hybrid_manifest_hash['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
-          # associate cloud_config and runtime_config with model so that these two assocs can be retrieved from model even before persisting
-          deployment_model.cloud_config = cloud_config
-          deployment_model.runtime_config = runtime_config
 
           attrs = {
             name: name,

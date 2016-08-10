@@ -114,6 +114,17 @@ module Bosh
             end
           end
         end
+
+        context 'when cloud config and runtime config are given' do
+          it 'should persist these associations' do
+            cloud_config = Models::CloudConfig.make
+            runtime_config = Models::RuntimeConfig.make
+            deployment = subject.find_or_create_by_name('foo', { 'cloud_config' => cloud_config,
+                                                                 'runtime_config' => runtime_config })
+            expect(deployment.cloud_config).to eq(cloud_config)
+            expect(deployment.runtime_config).to eq(runtime_config)
+          end
+        end
       end
     end
   end

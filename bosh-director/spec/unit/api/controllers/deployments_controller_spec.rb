@@ -115,6 +115,20 @@ module Bosh::Director
               end
             end
 
+            context 'when using cloud config and runtime config' do
+              it 'should persist these relations when persisting the deployment' do
+                cloud_config = Models::CloudConfig.make
+                runtime_config = Models::RuntimeConfig.make
+
+                post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                expect_redirect_to_queued_task(last_response)
+                deployment = Models::Deployment.first
+                expect(deployment.cloud_config).to eq(cloud_config)
+                expect(deployment.runtime_config).to eq(runtime_config)
+              end
+            end
+
             context 'when doing a deploy with dry-run' do
               it 'should queue a dry run task' do
                 expect(Models::Task.all).to be_empty
