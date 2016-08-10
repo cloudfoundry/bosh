@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `FIt8zUezoG4E8.qO_F_.coYxHFtUcjSG`
+  - kernel revert to vivid
+  - built from 3146.x-os-image (ac4b7586cbe72397d56e7b03c02eb66a75414c89)
+
 * `ErFXJp_OM7zSy8SxDIRJ9B7.A.oSuPVq`
   - kernel bump to xenial
   - built from 3146.x-os-image (d04d6676bc881c69116046ace763498548c80a33)
