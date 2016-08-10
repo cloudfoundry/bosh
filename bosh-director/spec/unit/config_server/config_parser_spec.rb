@@ -188,7 +188,10 @@ module Bosh::Director::ConfigServer
         it 'should raise an error message when the certificate is invalid' do
           allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
           manifest_hash['properties'] = { 'key' => '((value))' }
-          expect{ parsed_manifest }.to raise_error('SSL certificate verification failed')
+          expect{ parsed_manifest }.to raise_error(
+                                         Bosh::Director::ConfigServerSSLError,
+                                         'Config Server SSL error'
+                                       )
         end
 
         it 'should not replace values in ignored subtrees' do

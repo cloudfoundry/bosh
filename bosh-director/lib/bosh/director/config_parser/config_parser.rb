@@ -34,7 +34,7 @@ module Bosh::Director::ConfigServer
         begin
           response = http.get(config_server_uri.path, {'Authorization' => auth_provider.auth_header})
         rescue OpenSSL::SSL::SSLError
-          raise 'SSL certificate verification failed'
+          raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
         end
 
         if response.kind_of? Net::HTTPSuccess
