@@ -5,16 +5,14 @@ module Bosh::Director
       include LegacyDeploymentHelper
 
       @queue = :normal
-      @local_fs = true
-
 
       def self.job_type
         :update_deployment
       end
 
-      def initialize(manifest_file_path, cloud_config_id, runtime_config_id, options = {})
+      def initialize(manifest_text, cloud_config_id, runtime_config_id, options = {})
         @blobstore = App.instance.blobstores.blobstore
-        @manifest_file_path = manifest_file_path
+        @manifest_text = manifest_text
         @cloud_config_id = cloud_config_id
         @runtime_config_id = runtime_config_id
         @options = options
@@ -27,10 +25,8 @@ module Bosh::Director
 
       def perform
         logger.info('Reading deployment manifest')
-
-        manifest_text = File.read(@manifest_file_path)
-        manifest_hash = YAML.load(manifest_text)
-        logger.debug("Manifest:\n#{manifest_text}")
+        manifest_hash = YAML.load(@manifest_text)
+        logger.debug("Manifest:\n#{@manifest_text}")
 
         if ignore_cloud_config?(manifest_hash)
           warning = "Ignoring cloud config. Manifest contains 'networks' section."
@@ -110,8 +106,6 @@ module Bosh::Director
           add_event(context, parent_id, e)
           raise e
         end
-      ensure
-        FileUtils.rm_rf(@manifest_file_path)
       end
 
       private
