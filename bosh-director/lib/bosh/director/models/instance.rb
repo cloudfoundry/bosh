@@ -20,6 +20,10 @@ module Bosh::Director::Models
       self.persistent_disks.find { |disk| disk.active }
     end
 
+    def active_persistent_disks
+      self.persistent_disks.select { |disk| disk.active }
+    end
+
     def persistent_disk_cid
       disk = persistent_disk
       return disk.disk_cid if disk

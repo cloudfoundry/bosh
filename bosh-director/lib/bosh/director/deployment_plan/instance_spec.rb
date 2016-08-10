@@ -39,16 +39,9 @@ module Bosh::Director
           'update' => instance_group.update_spec
         }
 
-        if instance_group.persistent_disk_type
-          # supply both for reverse compatibility with old agent
-          spec['persistent_disk'] = instance_group.persistent_disk_type.disk_size
-          # old agents will ignore this pool
-          # keep disk pool for backwards compatibility
-          spec['persistent_disk_pool'] = instance_group.persistent_disk_type.spec
-          spec['persistent_disk_type'] = instance_group.persistent_disk_type.spec
-        else
-          spec['persistent_disk'] = 0
-        end
+        disk_spec = instance_group.persistent_disk_collection.generate_spec
+
+        spec.merge!(disk_spec)
 
         new(spec, instance)
       end

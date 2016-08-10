@@ -52,15 +52,12 @@ module Bosh
             return !@existing_instance.persistent_disk.nil?
           end
 
-          job = @desired_instance.instance_group
-          new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
-          new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
-          changed = new_disk_size != disk_size
-          log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}", @existing_instance) if changed
-          return true if changed
-
-          changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
-          log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties, @existing_instance) if changed
+          existing_disk_models = instance_model.active_persistent_disks
+          desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
+          changed = desired_disks_collection.is_different_from(existing_disk_models)
+          if changed
+            @logger.debug("#{__method__} changed on instance #{@existing_instance}")
+          end
           changed
         end
 
@@ -266,7 +263,7 @@ module Bosh
         def needs_disk?
           job = @desired_instance.instance_group
 
-          job && job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
+          job.persistent_disk_collection.needs_disk?
         end
 
         def persist_current_spec

@@ -266,10 +266,8 @@ module Bosh::Director
     end
 
     def create_and_attach_disk(instance_plan)
-      instance = instance_plan.instance
-      disk = create_disk(instance_plan)
-      @cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
-      disk
+      disks = create_disk(instance_plan)
+      disks.first
     end
 
     def mount_and_migrate_disk(instance, new_disk, old_disk)
@@ -285,23 +283,18 @@ module Bosh::Director
     end
 
     def create_disk(instance_plan)
+      disks = []
       job = instance_plan.desired_instance.instance_group
       instance_model = instance_plan.instance.model
       parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
-      disk_size = job.persistent_disk_type.disk_size
-      cloud_properties = job.persistent_disk_type.cloud_properties
-      disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
-      Models::PersistentDisk.create(
-        disk_cid: disk_cid,
-        active: false,
-        instance_id: instance_model.id,
-        size: disk_size,
-        cloud_properties: cloud_properties,
-      )
+      @disk_creator = DeploymentPlan::DiskCreator.new(@cloud, instance_model.vm_cid)
+      disks = job.persistent_disk_collection.create_disks(@disk_creator, instance_model.id)
+      disks
     rescue Exception => e
       raise e
     ensure
+      disk_cid = disks.empty? ? nil : disks.first.disk_cid
       add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
     end
   end

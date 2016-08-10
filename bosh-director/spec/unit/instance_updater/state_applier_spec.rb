@@ -26,13 +26,13 @@ module Bosh::Director
         spec: {'name' => 'job'},
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {"gateway" => "default"},
+        default_network: {'gateway' => 'default'},
         vm_type: DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}),
         vm_extensions: [],
         stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
         env: DeploymentPlan::Env.new({'key' => 'value'}, {'key' => 'value'}),
         package_spec: {},
-        persistent_disk_type: nil,
+        persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
         is_errand?: false,
         link_spec: {},
         compilation?: false,
@@ -120,7 +120,7 @@ module Bosh::Director
       expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered
       expect(logger).to receive(:debug).with('Task was cancelled. Stop waiting for the desired state').ordered
 
-      expect { state_applier.apply(update_config) }.to raise_error Bosh::Director::TaskCancelled, "Task 42 cancelled"
+      expect { state_applier.apply(update_config) }.to raise_error Bosh::Director::TaskCancelled, 'Task 42 cancelled'
     end
 
     context 'when instance state is stopped' do
@@ -153,7 +153,7 @@ module Bosh::Director
             expect { state_applier.apply(update_config) }.to raise_error
           end
         end
-        
+
         context 'when the interval length is longer than 150 seconds' do
           let(:update_watch_time) { '1000-301000' }
 

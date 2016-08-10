@@ -16,7 +16,8 @@ module Bosh::Director
     let(:job) do
       job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
-      job.persistent_disk_type = DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'})
+      job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+      job.persistent_disk_collection.add_by_disk_type(DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}))
       job
     end
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
