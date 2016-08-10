@@ -73,15 +73,15 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'returns original raw manifest when downloaded through cli' do
-        config_server_helper.put_value('test_property', 'cats are happy')
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+        config_server_helper.put_value('smurf_placeholder', 'happy smurf')
+        manifest_hash['jobs'].first['properties'] = {'test_property' => '((smurf_placeholder))'}
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
         downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
 
-        expect(downloaded_manifest).to include '((test_property))'
-        expect(downloaded_manifest).to_not include 'cats are happy'
+        expect(downloaded_manifest).to include '((smurf_placeholder))'
+        expect(downloaded_manifest).to_not include 'happy smurf'
         expect(downloaded_manifest).to_not include 'uninterpolated_properties'
       end
 
