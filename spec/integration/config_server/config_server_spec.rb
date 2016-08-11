@@ -175,73 +175,125 @@ describe 'using director with config server', type: :integration do
         end
       end
 
-      context 'when instance groups env is using placeholders' do
-        let(:cloud_config_hash) do
-          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_config_hash.delete('resource_pools')
+      describe 'env values in instance groups and resource pools' do
+        context 'when instance groups env is using placeholders' do
+          let(:cloud_config_hash) do
+            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+            cloud_config_hash.delete('resource_pools')
 
-          cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-          cloud_config_hash
-        end
+            cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+            cloud_config_hash
+          end
 
-        let(:env_hash) do
-          {
-            'env1' => '((env1_placeholder))',
-            'env2' => 'env_value2',
-            'env3' => {
-              'color' => '((color_placeholder))'
-            },
-            'bosh' => {
-              'group_name' => 'foobar'
-            },
-          }
-        end
+          let(:env_hash) do
+            {
+              'env1' => '((env1_placeholder))',
+              'env2' => 'env_value2',
+              'env3' => {
+                'color' => '((color_placeholder))'
+              },
+              'bosh' => {
+                'group_name' => 'foobar'
+              },
+            }
+          end
 
-        let(:resolved_env_hash) do
-          {
-            'env1' => 'lazy smurf',
-            'env2' => 'env_value2',
-            'env3' => {
-              'color' => 'blue'
-            },
-            'bosh' => {
-              'group_name' => 'foobar'
-            },
-          }
-        end
+          let(:resolved_env_hash) do
+            {
+              'env1' => 'lazy smurf',
+              'env2' => 'env_value2',
+              'env3' => {
+                'color' => 'blue'
+              },
+              'bosh' => {
+                'group_name' => 'foobar'
+              },
+            }
+          end
 
-        let(:manifest_hash) do
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          manifest_hash.delete('resource_pools')
-          manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
-          manifest_hash['jobs'] = [{
-                                     'name' => 'foobar',
-                                     'templates' => ['name' => 'foobar'],
-                                     'vm_type' => 'vm-type-name',
-                                     'stemcell' => 'default',
-                                     'instances' => 1,
-                                     'networks' => [{ 'name' => 'a' }],
-                                     'properties' => {},
-                                     'env' => env_hash
-                                   }]
-          manifest_hash
-        end
+          let(:manifest_hash) do
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash.delete('resource_pools')
+            manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+            manifest_hash['jobs'] = [{
+                                       'name' => 'foobar',
+                                       'templates' => ['name' => 'foobar'],
+                                       'vm_type' => 'vm-type-name',
+                                       'stemcell' => 'default',
+                                       'instances' => 1,
+                                       'networks' => [{ 'name' => 'a' }],
+                                       'properties' => {},
+                                       'env' => env_hash
+                                     }]
+            manifest_hash
+          end
 
-        it 'should interpolate them correctly' do
-          manifest_hash['jobs'].first.delete('properties')
-          config_server_helper.put_value('env1_placeholder', 'lazy smurf')
-          config_server_helper.put_value('color_placeholder', 'blue')
-          deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
+          it 'should interpolate them correctly' do
+            manifest_hash['jobs'].first.delete('properties')
+            config_server_helper.put_value('env1_placeholder', 'lazy smurf')
+            config_server_helper.put_value('color_placeholder', 'blue')
+            deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
 
-          create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-          expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
-          expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
+            create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+            expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
 +--------+----------------------+-------------------+--------------+
 | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
 +--------+----------------------+-------------------+--------------+
 | simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | latest       |
 +--------+----------------------+-------------------+--------------+
     )
+          end
+        end
+
+        context 'when resource pool env is using placeholders (legacy manifest)' do
+          let(:env_hash) do
+            {
+              'env1' => '((env1_placeholder))',
+              'env2' => 'env_value2',
+              'env3' => {
+                'color' => '((color_placeholder))'
+              },
+              'bosh' => {
+                'group_name' => 'foobar',
+                'password' => 'foobar'
+              },
+            }
+          end
+
+          let(:resolved_env_hash) do
+            {
+              'env1' => 'lazy cat',
+              'env2' => 'env_value2',
+              'env3' => {
+                'color' => 'smurf blue'
+              },
+              'bosh' => {
+                'group_name' => 'foobar',
+                'password' => 'foobar'
+              },
+            }
+          end
+
+          it 'should interpolate them correctly' do
+            config_server_helper.put_value('env1_placeholder', 'lazy cat')
+            config_server_helper.put_value('color_placeholder', 'smurf blue')
+
+            deployment_manifest = Bosh::Spec::Deployments.legacy_manifest
+            deployment_manifest['resource_pools'][0]['env'] = env_hash
+
+            deploy_from_scratch(no_login: true, env: client_env, manifest_hash: deployment_manifest)
+
+            create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+            expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
++--------+----------------------+-------------------+--------------+
+| Name   | Release(s)           | Stemcell(s)       | Cloud Config |
++--------+----------------------+-------------------+--------------+
+| simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | none         |
++--------+----------------------+-------------------+--------------+
+    )
+          end
         end
       end
     end
