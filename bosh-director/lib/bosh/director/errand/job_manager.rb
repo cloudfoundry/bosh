@@ -4,16 +4,16 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Clouds] cloud
     # @param [Logger] logger
-    def initialize(deployment, job, cloud, logger)
+    def initialize(deployment, job, logger)
       @deployment = deployment
       @job = job
       @logger = logger
-      @disk_manager = DiskManager.new(cloud, logger)
+      @disk_manager = DiskManager.new(logger)
       @job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       @dns_manager = DnsManagerProvider.create
-      vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
+      vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
+      @vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
     end
 
     def create_missing_vms

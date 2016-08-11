@@ -6,10 +6,8 @@ module Bosh::Director
     include IpUtil
     include LegacyDeploymentHelper
 
-    def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger)
+    def initialize(deployment_plan, stemcell_manager, dns_manager, logger)
       @deployment_plan = deployment_plan
-      # FIXME: is @cloud used?
-      @cloud = cloud
       @logger = logger
       @stemcell_manager = stemcell_manager
       @dns_manager = dns_manager

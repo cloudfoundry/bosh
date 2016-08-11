@@ -3,9 +3,9 @@ require 'spec_helper'
 module Bosh
   module Director
     describe VmDeleter do
-      subject { VmDeleter.new(cloud, logger) }
+      subject { VmDeleter.new(logger) }
 
-      let(:cloud) { instance_double('Bosh::Cloud') }
+      let(:cloud) { Config.cloud }
       let(:event_manager) { Api::EventManager.new(true)}
       let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
       let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
@@ -67,7 +67,7 @@ module Bosh
 
         before do
           expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
-          expect(subject).to receive(:delete_vm).with(instance_model.vm_cid)
+          expect(subject).to receive(:delete_vm).with(instance_model)
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end
 
@@ -92,17 +92,17 @@ module Bosh
       describe '#delete_vm' do
         it 'calls delete_vm on the cloud' do
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with('vm-cid')
-          subject.delete_vm('vm-cid')
+          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
+          subject.delete_vm(instance_model)
         end
 
         context 'when virtual delete is enabled' do
-          subject { VmDeleter.new(cloud, logger, false, true) }
+          subject { VmDeleter.new(logger, false, true) }
 
           it 'skips calling delete_vm on the cloud' do
             expect(logger).to receive(:info).with('Deleting VM')
             expect(cloud).not_to receive(:delete_vm)
-            subject.delete_vm('vm-cid')
+            subject.delete_vm(instance_model)
           end
         end
       end

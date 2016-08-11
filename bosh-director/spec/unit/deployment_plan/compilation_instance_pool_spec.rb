@@ -26,11 +26,11 @@ module Bosh::Director
       stemcell
     end
 
-    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger, false, false) }
+    let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
-    let(:disk_manager) {DiskManager.new(cloud, logger)}
+    let(:disk_manager) {DiskManager.new(logger)}
     let(:compilation_config) do
       compilation_spec = {
         'workers' => n_workers,

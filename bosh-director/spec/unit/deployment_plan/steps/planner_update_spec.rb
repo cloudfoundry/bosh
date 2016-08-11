@@ -49,11 +49,11 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
-          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger) }
+          let(:assembler) { Assembler.new(deployment_plan, nil, nil, logger) }
           let(:cloud_config) { nil }
           let(:runtime_config) { nil }
 

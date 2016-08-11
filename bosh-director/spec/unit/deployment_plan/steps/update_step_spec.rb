@@ -4,7 +4,7 @@ require 'bosh/director/job_updater'
 
 module Bosh::Director
   describe DeploymentPlan::Steps::UpdateStep do
-    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
+    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}

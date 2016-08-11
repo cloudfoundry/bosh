@@ -72,6 +72,7 @@ module Bosh::Director
 
         if @instance.vm_cid
           begin
+            cloud = cloud_factory(@instance.deployment).for_availability_zone(@instance.availability_zone)
             cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
           rescue => e
             # We are going to delete this disk anyway
@@ -81,7 +82,7 @@ module Bosh::Director
           end
         end
 
-        DiskManager.new(cloud, @logger).orphan_disk(@disk)
+        DiskManager.new(@logger).orphan_disk(@disk)
       end
 
       def disk_mounted?

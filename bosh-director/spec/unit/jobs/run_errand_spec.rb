@@ -95,7 +95,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(planner, deployment_job, Config.cloud, logger).
+                  with(planner, deployment_job, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do

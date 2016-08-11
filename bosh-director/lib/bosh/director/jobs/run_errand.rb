@@ -81,7 +81,7 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      job_manager = Errand::JobManager.new(deployment, job, Config.cloud, logger)
+      job_manager = Errand::JobManager.new(deployment, job, logger)
 
       begin
         update_instances(job_manager)

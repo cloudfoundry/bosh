@@ -5,6 +5,7 @@ module Bosh::Director
 
     class Base
       include CloudcheckHelper
+      include CloudFactoryHelper
 
       attr_reader :data
       attr_accessor :job # so we can checkpoint task

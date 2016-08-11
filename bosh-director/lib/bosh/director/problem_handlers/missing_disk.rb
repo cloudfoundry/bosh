@@ -40,6 +40,7 @@ module Bosh::Director
 
       def delete_disk_reference
         @disk.update(active: false)
+        cloud = cloud_factory(@instance.deployment).for_availability_zone(@instance.availability_zone)
 
         # If VM is present we try to unmount and detach disk from VM
         if @instance.vm_cid && cloud.has_vm?(@instance.vm_cid)
@@ -65,12 +66,12 @@ module Bosh::Director
 
           begin
             @logger.debug('Sending cpi request: detach_disk')
-            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid) if @instance.vm_cid
+            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
           rescue Bosh::Clouds::DiskNotAttached, Bosh::Clouds::DiskNotFound
           end
         end
 
-        DiskManager.new(cloud, @logger).orphan_disk(@disk)
+        DiskManager.new(@logger).orphan_disk(@disk)
 
       end
     end

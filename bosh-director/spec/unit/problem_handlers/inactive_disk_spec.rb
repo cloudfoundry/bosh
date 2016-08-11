@@ -6,8 +6,9 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     Bosh::Director::ProblemHandlers::InactiveDisk.new(disk_id, data)
   end
 
+  let(:cloud) { Bosh::Director::Config.cloud }
+
   before(:each) do
-    @cloud = instance_double('Bosh::Cloud')
     @agent = double('agent')
 
     @instance = Bosh::Director::Models::Instance.
@@ -18,7 +19,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
            :size => 300, :active => false)
 
     @handler = make_handler(@disk.id)
-    allow(@handler).to receive(:cloud).and_return(@cloud)
+    allow(@handler).to receive(:cloud).and_return(cloud)
     allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
   end
 
@@ -92,7 +93,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
     it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
-      expect(@cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
+      expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
       @handler.apply_resolution(:delete_disk)
 
       expect(Bosh::Director::Models::PersistentDisk[@disk.id]).to be_nil
@@ -102,7 +103,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     it 'ignores cloud errors and proceeds with deletion from DB' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
 
-      expect(@cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid').
+      expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid').
         and_raise(RuntimeError.new('Cannot detach disk'))
 
       @handler.apply_resolution(:delete_disk)

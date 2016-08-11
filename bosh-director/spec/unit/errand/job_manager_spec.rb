@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::JobManager do
-    subject { described_class.new(deployment, job, cloud, logger) }
+    subject { described_class.new(deployment, job, logger) }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
@@ -11,8 +11,6 @@ module Bosh::Director
       }) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-
-    let(:cloud) { instance_double('Bosh::Clouds') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
     before { fake_app }
 

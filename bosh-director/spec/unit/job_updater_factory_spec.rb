@@ -1,9 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdaterFactory do
-  subject(:job_updater_factory) { described_class.new(cloud, logger) }
+  subject(:job_updater_factory) { described_class.new(logger) }
 
-  let(:cloud) { instance_double(Bosh::Cloud) }
   let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
   let(:logger) { double(:logger).as_null_object }
 

@@ -31,8 +31,8 @@ module Bosh::Director
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
-    let(:vm_deleter) { Bosh::Director::VmDeleter.new(Config.cloud, logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(Config.cloud, logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
+    let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:job_renderer) { instance_double(JobRenderer) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -58,7 +58,7 @@ module Bosh::Director
         before { allow(agent_client).to receive(:list_disk).and_return([]) }
 
         it 'deletes VM using vm_deleter' do
-          expect(vm_deleter).to receive(:delete_vm).with(instance.vm_cid)
+          expect(vm_deleter).to receive(:delete_vm).with(instance)
           test_problem_handler.delete_vm(instance)
         end
       end

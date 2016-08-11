@@ -5,12 +5,11 @@ module Bosh::Director
     subject { described_class.new(*params) } # Resque splats the params Array before giving it to the ctor
     let(:params) do
       [{
-        'max_orphaned_age_in_days' => max_orphaned_age_in_days,
-        :cloud => cloud
+        'max_orphaned_age_in_days' => max_orphaned_age_in_days
       }]
     end
     let(:max_orphaned_age_in_days) { 1 }
-    let(:cloud) { instance_double(Bosh::Cloud) }
+    let(:cloud) { Config.cloud }
     let(:time) { Time.now }
     let(:one_day_seconds) { 24 * 60 * 60 }
     let(:one_day_one_second_ago) { time - one_day_seconds - 1 }

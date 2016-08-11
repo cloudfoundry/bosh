@@ -6,8 +6,9 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     Bosh::Director::ProblemHandlers::MountInfoMismatch.new(disk_id, data)
   end
 
+  let(:cloud) { Bosh::Director::Config.cloud }
+
   before(:each) do
-    @cloud = instance_double('Bosh::Cloud')
     @agent = double('agent')
 
     @instance = Bosh::Director::Models::Instance.
@@ -49,15 +50,15 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
     describe 'reattach_disk' do
       it 'attaches disk' do
-        expect(@cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-        expect(@cloud).not_to receive(:reboot_vm)
+        expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+        expect(cloud).not_to receive(:reboot_vm)
         expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
       end
 
       it 'attaches disk and reboots the vm' do
-        expect(@cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-        expect(@cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+        expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+        expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
         expect(@agent).to receive(:wait_until_ready)
         expect(@agent).not_to receive(:mount_disk)
         @handler.apply_resolution(:reattach_disk_and_reboot)

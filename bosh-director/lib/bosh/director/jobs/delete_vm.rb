@@ -10,8 +10,7 @@ module Bosh::Director
 
       def initialize(vm_cid)
         @vm_cid = vm_cid
-        @cloud = Config.cloud
-        @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, false, false)
+        @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, false)
         @deployment_name = nil
         @instance_name = nil
       end
@@ -26,7 +25,8 @@ module Bosh::Director
           @vm_deleter.delete_for_instance(instance, false)
         rescue InstanceNotFound
           parent_id = add_event
-          @vm_deleter.delete_vm(@vm_cid)
+          # TODO FIXME: what to do in this case?
+          #@vm_deleter.delete_vm(@vm_cid)
         end
       rescue Bosh::Clouds::VMNotFound
         logger.info("vm #{@vm_cid} does not exists")

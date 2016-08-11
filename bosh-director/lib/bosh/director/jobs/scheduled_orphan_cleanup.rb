@@ -23,8 +23,7 @@ module Bosh::Director
       def initialize(params = {})
         logger.debug("ScheduledOrphanCleanup initialized with params: #{params.inspect}")
         @max_orphaned_age_in_days = params['max_orphaned_age_in_days']
-        cloud = params.fetch(:cloud) { Config.cloud }
-        @disk_manager = DiskManager.new(cloud, logger)
+        @disk_manager = DiskManager.new(logger)
       end
 
       def perform

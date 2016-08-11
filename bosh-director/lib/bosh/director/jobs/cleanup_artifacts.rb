@@ -16,7 +16,7 @@ module Bosh::Director
 
       def initialize(config)
         @config = config
-        @disk_manager = DiskManager.new(Config.cloud, Config.logger)
+        @disk_manager = DiskManager.new(Config.logger)
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore

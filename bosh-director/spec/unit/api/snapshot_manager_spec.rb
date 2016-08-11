@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::SnapshotManager do
-    let(:cloud) { instance_double('Bosh::Cloud') }
+    let(:cloud) { Config.cloud }
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
 

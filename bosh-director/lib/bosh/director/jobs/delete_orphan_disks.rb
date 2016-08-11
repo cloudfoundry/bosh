@@ -21,7 +21,7 @@ module Bosh::Director
 
       def initialize(orphan_disk_cids)
         @orphan_disk_cids = orphan_disk_cids
-        @disk_manager = Bosh::Director::DiskManager.new(Config.cloud, Config.logger)
+        @disk_manager = Bosh::Director::DiskManager.new(Config.logger)
       end
 
       def perform

@@ -272,7 +272,7 @@ module Bosh::Director
     def create_and_attach_disk(instance_plan)
       instance = instance_plan.instance
       disk = create_disk(instance_plan)
-      cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance.model.availability_zone)
+      cloud = cloud_factory(instance.model.deployment).for_availability_zone(instance.model.availability_zone)
       cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
       disk
     end
