@@ -9,9 +9,11 @@ module Bosh::Director
         inject_uninterpolated_properties!(runtime_config_manifest)
 
         if Bosh::Director::Config.config_server_enabled
+          index_type = Integer
+
           ignored_subtrees = []
-          ignored_subtrees << ['addons', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['addons', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
+          ignored_subtrees << ['addons', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'uninterpolated_properties']
           runtime_config_manifest = Bosh::Director::ConfigServer::ConfigParser.parse(runtime_config_manifest, ignored_subtrees)
         end
         runtime_config_manifest

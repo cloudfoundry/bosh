@@ -37,10 +37,10 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def self.path_matches_subtrees_to_ignore?(subtrees_to_ignore, to_be_replaced_path)
+    def self.path_matches_subtrees_to_ignore?(subtrees_to_ignore, element_path)
       path_matches = false
-      subtrees_to_ignore.each do |ignored_subtree_path|
-        if self.paths_match?(ignored_subtree_path, to_be_replaced_path)
+      subtrees_to_ignore.each do |subtree_to_ignore|
+        if self.paths_match?(subtree_to_ignore, element_path)
           path_matches = true
           break
         end
@@ -48,15 +48,15 @@ module Bosh::Director::ConfigServer
       path_matches
     end
 
-    def self.paths_match?(ignored_subtree_path, to_be_replaced_path)
+    def self.paths_match?(ignore_path, element_path)
       paths_match = true
-      if ignored_subtree_path.size <= to_be_replaced_path.size
-        ignored_subtree_path.each_with_index do | ignored_node, index |
-          to_be_replaced_node = to_be_replaced_path[index]
-          if ignored_node.is_a?(Numeric)
-            (paths_match = false) unless to_be_replaced_node.is_a?(Integer)
+      if ignore_path.size <= element_path.size
+        ignore_path.each_with_index do | ignored_node, index |
+          element_node = element_path[index]
+          if ignored_node.is_a?(Class)
+            (paths_match = false) unless element_node.is_a?(ignored_node)
           else
-            (paths_match = false) unless to_be_replaced_node == ignored_node
+            (paths_match = false) unless element_node == ignored_node
           end
         end
       else

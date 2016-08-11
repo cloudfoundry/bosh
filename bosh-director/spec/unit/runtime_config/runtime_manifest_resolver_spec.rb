@@ -104,17 +104,17 @@ module Bosh::Director
           }
         }
 
-        let(:my_numeric) {Numeric.new}
         let(:ignored_subtrees) do
+          index_type = Integer
+
           ignored_subtrees = []
-          ignored_subtrees << ['addons', my_numeric, 'uninterpolated_properties']
-          ignored_subtrees << ['addons', my_numeric, 'jobs', my_numeric, 'uninterpolated_properties']
+          ignored_subtrees << ['addons', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'uninterpolated_properties']
           ignored_subtrees
         end
 
         before do
           allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          allow(Numeric).to receive(:new).and_return(my_numeric)
         end
 
         it 'injects uninterpolated properties in the the manifest' do

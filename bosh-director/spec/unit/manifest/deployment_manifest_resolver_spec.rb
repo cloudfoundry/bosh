@@ -239,15 +239,17 @@ module Bosh::Director
 
         let(:my_numeric) {Numeric.new}
         let(:ignored_subtrees) do
+          index_type = Integer
+
           ignored_subtrees = []
           ignored_subtrees << ['uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', Numeric.new, 'templates', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_env']
-          ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_env']
-          ignored_subtrees << ['resource_pools', Numeric.new, 'uninterpolated_env']
+          ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['jobs', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_env']
+          ignored_subtrees << ['jobs', index_type, 'uninterpolated_env']
+          ignored_subtrees << ['resource_pools', index_type, 'uninterpolated_env']
           ignored_subtrees
         end
 

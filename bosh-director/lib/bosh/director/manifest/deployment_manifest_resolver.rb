@@ -13,17 +13,19 @@ module Bosh::Director
       self.inject_resource_pool_uninterpolated_env!(result_deployment_manifest)
 
       if Bosh::Director::Config.config_server_enabled && resolve_interpolation
+        index_type = Integer
+        
         ignored_subtrees = []
         ignored_subtrees << ['uninterpolated_properties']
-        ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_properties']
-        ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
-        ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_properties']
-        ignored_subtrees << ['jobs', Numeric.new, 'templates', Numeric.new, 'uninterpolated_properties']
+        ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_properties']
+        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
+        ignored_subtrees << ['jobs', index_type, 'uninterpolated_properties']
+        ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'uninterpolated_properties']
 
-        ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_env']
-        ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_env']
+        ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_env']
+        ignored_subtrees << ['jobs', index_type, 'uninterpolated_env']
 
-        ignored_subtrees << ['resource_pools', Numeric.new, 'uninterpolated_env']
+        ignored_subtrees << ['resource_pools', index_type, 'uninterpolated_env']
 
         result_deployment_manifest = Bosh::Director::ConfigServer::ConfigParser.parse(result_deployment_manifest, ignored_subtrees)
       end

@@ -195,7 +195,8 @@ module Bosh::Director::ConfigServer
         end
 
         it 'should not replace values in ignored subtrees' do
-          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
+          index_type = Integer
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
 
           manifest_hash['instance_groups'] = [
             {
