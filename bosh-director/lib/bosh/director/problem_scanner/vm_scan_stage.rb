@@ -1,14 +1,14 @@
 module Bosh::Director
   class ProblemScanner::VmScanStage
+    include CloudFactoryHelper
 
     AGENT_TIMEOUT_IN_SECONDS = 10
 
     attr_reader :agent_disks
 
-    def initialize(instance_manager, problem_register, cloud, deployment, event_logger, logger)
+    def initialize(instance_manager, problem_register, deployment, event_logger, logger)
       @instance_manager = instance_manager
       @problem_register = problem_register
-      @cloud = cloud
       @deployment = deployment
       @event_logger = event_logger
       @logger = logger
@@ -94,7 +94,8 @@ module Bosh::Director
     end
 
     def has_vm?(instance)
-      instance.vm_cid && @cloud.has_vm?(instance.vm_cid)
+      cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
+      instance.vm_cid && cloud.has_vm?(instance.vm_cid)
     end
 
     def add_disk_owner(disk_cid, vm_cid)

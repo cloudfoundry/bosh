@@ -1,17 +1,20 @@
 module Bosh::Director
   class VmMetadataUpdater
+    include CloudFactoryHelper
+
     def self.build
-      new(Config.cloud, {director: Config.name}, Config.logger)
+      new({director: Config.name}, Config.logger)
     end
 
-    def initialize(cloud, director_metadata, logger)
-      @cloud = cloud
+    def initialize(director_metadata, logger)
       @director_metadata = director_metadata
       @logger = logger
     end
 
     def update(instance, metadata)
-      if @cloud.respond_to?(:set_vm_metadata)
+      cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
+
+      if cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
         metadata[:deployment] = instance.deployment.name
 
@@ -22,7 +25,7 @@ module Bosh::Director
 
         metadata[:created_at] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        @cloud.set_vm_metadata(instance.vm_cid, metadata)
+        cloud.set_vm_metadata(instance.vm_cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
       @logger.debug(e.inspect)

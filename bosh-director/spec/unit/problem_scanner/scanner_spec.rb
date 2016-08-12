@@ -73,7 +73,6 @@ module Bosh::Director
         expect(ProblemScanner::VmScanStage).to receive(:new).with(
           instance_of(Api::InstanceManager),
           problem_register,
-          cloud,
           deployment,
           event_logger,
           logger
@@ -100,7 +99,6 @@ module Bosh::Director
         expect(ProblemScanner::DiskScanStage).to receive(:new).with(
           agent_disks,
           problem_register,
-          cloud,
           deployment.id,
           event_logger,
           logger

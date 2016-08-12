@@ -20,6 +20,7 @@ module Bosh::Director
           return
         end
 
+        # we do not use cloud factory here because current_vm_id is anyway deprecated and will be removed.
         vm_id = @cloud.current_vm_id
         disks = @cloud.get_disks(vm_id)
         metadata = {

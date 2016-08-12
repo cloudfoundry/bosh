@@ -41,7 +41,6 @@ module Bosh::Director
         vm_scanner = VmScanStage.new(
           @instance_manager,
           @problem_register,
-          Config.cloud,
           @deployment,
           @event_logger,
           @logger
@@ -55,7 +54,6 @@ module Bosh::Director
         disk_scanner = DiskScanStage.new(
           @agent_disks,
           @problem_register,
-          Config.cloud,
           @deployment.id,
           @event_logger,
           @logger

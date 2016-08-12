@@ -6,7 +6,6 @@ module Bosh::Director
       described_class.new(
         disk_owners,
         problem_register,
-        cloud,
         deployment.id,
         event_logger,
         double(:logger, info: nil, warn: nil)
@@ -15,7 +14,7 @@ module Bosh::Director
 
     let(:disk_owners) { {} }
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
-    let(:cloud) { instance_double('Bosh::Cloud') }
+    let(:cloud) { Config.cloud }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     before do

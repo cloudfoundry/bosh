@@ -5,22 +5,19 @@ require 'timecop'
 describe Bosh::Director::VmMetadataUpdater do
   describe '.build' do
     it 'returns metadata updater' do
-      cloud = instance_double('Bosh::Cloud')
       logger = double('logger')
-      allow(Bosh::Director::Config).to receive_messages(
-          cloud: cloud, name: 'fake-director-name', logger: logger)
+      allow(Bosh::Director::Config).to receive_messages(name: 'fake-director-name', logger: logger)
 
       updater = instance_double('Bosh::Director::VmMetadataUpdater')
-      expect(described_class).to receive(:new).with(
-          cloud, {director: 'fake-director-name'}, logger).and_return(updater)
+      expect(described_class).to receive(:new).with({director: 'fake-director-name'}, logger).and_return(updater)
 
       expect(described_class.build).to eq(updater)
     end
   end
 
   describe '#update' do
-    subject(:vm_metadata_updater) { described_class.new(cloud, director_metadata, logger) }
-    let(:cloud) { instance_double('Bosh::Cloud') }
+    subject(:vm_metadata_updater) { described_class.new(director_metadata, logger) }
+    let(:cloud) { Bosh::Director::Config.cloud }
     let(:director_metadata) { {} }
     let(:instance) { BD::Models::Instance.make(deployment: deployment, vm_cid: 'fake-vm-cid', uuid: 'some_instance_id', job: 'job-value', index: 12345) }
     let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }

@@ -1,6 +1,8 @@
 module Bosh::Director
   module Api
     class SnapshotManager
+      extend CloudFactoryHelper
+
       def create_deployment_snapshot_task(username, deployment, options = {})
         JobQueue.new.enqueue(username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment)
       end
@@ -57,7 +59,11 @@ module Bosh::Director
       def self.delete_snapshots(snapshots, options={})
         keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
         snapshots.each do |snapshot|
-          Config.cloud.delete_snapshot(snapshot.snapshot_cid) unless keep_snapshots_in_the_cloud
+          unless keep_snapshots_in_the_cloud
+            instance = snapshot.persistent_disk.instance
+            cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
+            cloud.delete_snapshot(snapshot.snapshot_cid)
+          end
           snapshot.delete
         end
       end
@@ -80,7 +86,8 @@ module Bosh::Director
         }
 
         instance.persistent_disks.each do |disk|
-          cid = Config.cloud.snapshot_disk(disk.disk_cid, metadata)
+          cloud = cloud_factory(disk.instance.deployment).for_availability_zone(disk.instance.availability_zone)
+          cid = cloud.snapshot_disk(disk.disk_cid, metadata)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)
           snapshot.save
           snapshot_cids << snapshot.snapshot_cid
