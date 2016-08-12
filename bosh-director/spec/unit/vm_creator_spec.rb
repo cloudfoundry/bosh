@@ -8,9 +8,9 @@ module Bosh
           cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
       ) }
 
-      let(:disk_manager) { DiskManager.new(cloud, logger) }
+      let(:disk_manager) { SingleDiskManager.new(cloud, logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
-      let(:disk_manager) { DiskManager.new(cloud, logger) }
+      let(:disk_manager) { SingleDiskManager.new(cloud, logger) }
       let(:vm_deleter) { VmDeleter.new(cloud, logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }

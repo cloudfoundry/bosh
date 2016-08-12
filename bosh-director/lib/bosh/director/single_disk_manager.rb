@@ -1,5 +1,5 @@
 module Bosh::Director
-  class DiskManager
+  class SingleDiskManager
 
     def initialize(cloud, logger)
       @cloud = cloud
@@ -20,6 +20,7 @@ module Bosh::Director
       disk = nil
       if instance_plan.needs_disk?
         disk = create_and_attach_disk(instance_plan)
+
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 

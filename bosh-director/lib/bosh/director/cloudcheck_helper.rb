@@ -165,7 +165,7 @@ module Bosh::Director
     end
 
     def vm_creator
-      disk_manager = DiskManager.new(cloud, @logger)
+      disk_manager = SingleDiskManager.new(cloud, @logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
       @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)

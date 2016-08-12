@@ -30,7 +30,7 @@ module Bosh::Director
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
-    let(:disk_manager) {DiskManager.new(cloud, logger)}
+    let(:disk_manager) {SingleDiskManager.new(cloud, logger)}
     let(:compilation_config) do
       compilation_spec = {
         'workers' => n_workers,

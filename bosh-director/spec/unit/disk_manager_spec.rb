@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Bosh::Director::DiskManager do
-    subject(:disk_manager) { DiskManager.new(cloud, logger) }
+  describe Bosh::Director::SingleDiskManager do
+    subject(:disk_manager) { SingleDiskManager.new(cloud, logger) }
 
     let(:cloud) { Config.cloud }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
