@@ -98,7 +98,7 @@ shared_examples_for 'every OS image' do
       it { should be_file }
 
       it 'should reload rsyslog on rotate' do
-        should contain 'reload rsyslog >/dev/null 2>&1 || true'
+        should contain '/sbin/reload rsyslog >/dev/null 2>&1 || true'
       end
 
       it 'should not restart rsyslog on rotate so that logs are not lost' do
