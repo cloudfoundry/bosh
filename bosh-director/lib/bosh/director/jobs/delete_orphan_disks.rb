@@ -21,7 +21,7 @@ module Bosh::Director
 
       def initialize(orphan_disk_cids)
         @orphan_disk_cids = orphan_disk_cids
-        @disk_manager = Bosh::Director::DiskManager.new(Config.cloud, Config.logger)
+        @orphan_disk_manager = OrphanDiskManager.new(Config.cloud, Config.logger)
       end
 
       def perform
@@ -31,7 +31,7 @@ module Bosh::Director
           @orphan_disk_cids.each do |orphan_disk_cid|
             pool.process do
               event_log_stage.advance_and_track("Deleting orphaned disk #{orphan_disk_cid}") do
-                @disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
+                @orphan_disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
               end
             end
           end

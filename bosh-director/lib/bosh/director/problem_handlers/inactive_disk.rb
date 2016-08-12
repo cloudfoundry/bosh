@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module ProblemHandlers
     class InactiveDisk < Base
@@ -28,38 +26,38 @@ module Bosh::Director
       end
 
       def description
-        job = @instance.job || "unknown job"
-        uuid = @instance.uuid || "unknown id"
-        index = @instance.index || "unknown index"
+        job = @instance.job || 'unknown job'
+        uuid = @instance.uuid || 'unknown id'
+        index = @instance.index || 'unknown index'
         disk_label = "'#{@disk.disk_cid}' (#{@disk.size.to_i}M) for instance '#{job}/#{uuid} (#{index})'"
         "Disk #{disk_label} is inactive"
       end
 
       resolution :ignore do
-        plan { "Skip for now" }
+        plan { 'Skip for now' }
         action { }
       end
 
       resolution :delete_disk do
-        plan { "Delete disk" }
+        plan { 'Delete disk' }
         action { delete_disk }
       end
 
       resolution :activate_disk do
-        plan { "Activate disk" }
+        plan { 'Activate disk' }
         action { activate_disk }
       end
 
       def activate_disk
         unless disk_mounted?
-          handler_error("Disk is not mounted")
+          handler_error('Disk is not mounted')
         end
         # Currently the director allows ONLY one persistent disk per
         # instance. We are about to activate a disk but the instance already
         # has an active disk.
         # For now let's be conservative and return an error.
         if @instance.persistent_disk
-          handler_error("Instance already has an active disk")
+          handler_error('Instance already has an active disk')
         end
         @disk.active = true
         @disk.save
@@ -67,7 +65,7 @@ module Bosh::Director
 
       def delete_disk
         if disk_mounted?
-          handler_error("Disk is currently in use")
+          handler_error('Disk is currently in use')
         end
 
         if @instance.vm_cid
@@ -81,7 +79,7 @@ module Bosh::Director
           end
         end
 
-        DiskManager.new(cloud, @logger).orphan_disk(@disk)
+        OrphanDiskManager.new(cloud, @logger).orphan_disk(@disk)
       end
 
       def disk_mounted?
