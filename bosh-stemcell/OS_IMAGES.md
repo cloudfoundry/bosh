@@ -7,7 +7,7 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `OSizSd9nykb4nJhqibd1_fygZxqVoqam`
+* `OSizSd9nykb4nJhqibd1_fygZxqVoqam` Ubuntu & `EMmtKu8QybBV_V15316Qn9kcRUfVtJB1` CentOS-7
   - revert xenial -> vivid
   - built from 257.x (a6ba6c7cb071aee92374a61f0aeef4be46482390)
 
