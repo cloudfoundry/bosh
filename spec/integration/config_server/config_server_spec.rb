@@ -61,6 +61,17 @@ describe 'using director with config server', type: :integration do
         expect(output).to_not include('uninterpolated_properties')
       end
 
+      it 'does not log interpolated properties in the task debug logs and deploy output' do
+        config_server_helper.put_value('test_placeholder', 'cats are happy')
+        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_placeholder))'}
+
+        deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+        expect(deploy_output).to_not include('cats are happy')
+
+        debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
+        expect(debug_output).to_not include('cats are happy')
+      end
+
       it 'replaces placeholders in the manifest when config server has value for placeholders' do
         config_server_helper.put_value('test_property', 'cats are happy')
         manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
@@ -228,12 +239,14 @@ describe 'using director with config server', type: :integration do
             manifest_hash
           end
 
-          it 'should interpolate them correctly' do
+          before do
             manifest_hash['jobs'].first.delete('properties')
             config_server_helper.put_value('env1_placeholder', 'lazy smurf')
             config_server_helper.put_value('color_placeholder', 'blue')
-            deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
+          end
 
+          it 'should interpolate them correctly' do
+            deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
             expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
@@ -243,6 +256,17 @@ describe 'using director with config server', type: :integration do
 | simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | latest       |
 +--------+----------------------+-------------------+--------------+
     )
+          end
+
+          it 'should not log interpolated env values in the debug logs and deploy output' do
+            deploy_output = deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
+            debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
+
+            expect(deploy_output).to_not include('lazy smurf')
+            expect(deploy_output).to_not include('blue')
+
+            expect(debug_output).to_not include('lazy smurf')
+            expect(debug_output).to_not include('blue')
           end
         end
 
@@ -416,6 +440,15 @@ describe 'using director with config server', type: :integration do
         expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
       end
 
+      it 'does not log interpolated properties in deploy output and debug logs' do
+        config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+        deploy_output = deploy_simple_manifest(manifest_hash: manifest, env: client_env)
+        debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
+
+        expect(deploy_output).to_not include('fibonacci_value')
+        expect(debug_output).to_not include('fibonacci_value')
+      end
+
       context 'when manual links are involved' do
         let (:job_with_manual_consumes_link) do
           job_spec = Bosh::Spec::Deployments.simple_job(
@@ -442,13 +475,15 @@ describe 'using director with config server', type: :integration do
           job_spec
         end
 
-        it 'resolves the properties defined inside the links section of the deployment manifest' do
+        before do
           config_server_helper.put_value('a_placeholder', 'a_value')
           config_server_helper.put_value('b_placeholder', 'b_value')
           config_server_helper.put_value('c_placeholder', 'c_value')
 
           manifest['jobs'] = [job_with_manual_consumes_link]
+        end
 
+        it 'resolves the properties defined inside the links section of the deployment manifest' do
           deploy_simple_manifest(manifest_hash: manifest, env: client_env)
 
           link_vm = director.vm('property_job', '0', env: client_env)
@@ -458,6 +493,19 @@ describe 'using director with config server', type: :integration do
           expect(template['a']).to eq('a_value')
           expect(template['b']).to eq('b_value')
           expect(template['c']).to eq('c_value')
+        end
+
+        it 'does not log interpolated properties in deploy output and debug logs' do
+          deploy_output = deploy_simple_manifest(manifest_hash: manifest, env: client_env)
+          debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
+
+          expect(deploy_output).to_not include('a_value')
+          expect(deploy_output).to_not include('b_value')
+          expect(deploy_output).to_not include('c_value')
+
+          expect(debug_output).to_not include('a_value')
+          expect(debug_output).to_not include('b_value')
+          expect(debug_output).to_not include('c_value')
         end
       end
 
