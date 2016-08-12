@@ -99,7 +99,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:uninterpolated_properties).and_return({}) # change
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
@@ -152,20 +151,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
-    let(:uninterpolated_props) do
-      {
-        'cc_url' => 'www.cc.com',
-        'deep_property' => {
-          'unneeded' => 'abc',
-          'dont_override' => 'def'
-        },
-        'dea_max_memory' => '((dea_max_memory_placeholder))'
-      }
-    end
-
     before do
       allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:uninterpolated_properties).and_return(uninterpolated_props)
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
@@ -204,16 +191,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       before do
         allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
         allow(foo_template).to receive(:template_scoped_properties).and_return(props)
-        allow(foo_template).to receive(:template_scoped_uninterpolated_properties).and_return(uninterpolated_props)
       end
 
       it 'only bind the local properties ' do
         expect(foo_template).to receive(:bind_template_scoped_properties)
-        expect(foo_template).to receive(:bind_template_scoped_uninterpolated_properties)
 
         instance_group.bind_properties
         expect(instance_group.properties['bar']).to eq({"dea_max_memory"=>1024})
-        expect(instance_group.uninterpolated_properties['bar']).to eq({"dea_max_memory"=>"((dea_max_memory_placeholder))"})
       end
     end
   end
@@ -258,7 +242,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:uninterpolated_properties).and_return({})
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
       instance_group.bind_properties
@@ -279,7 +262,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
     before do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:uninterpolated_properties).and_return({})
     end
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -420,7 +402,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)
       allow(plan).to receive(:properties).with(no_args).and_return({})
-      allow(plan).to receive(:uninterpolated_properties).and_return({})
     end
 
     context "when a template has 'logs'" do
@@ -594,7 +575,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'should sort instance plans on adding them' do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:uninterpolated_properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 

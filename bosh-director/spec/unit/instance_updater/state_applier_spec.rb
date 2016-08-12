@@ -39,7 +39,6 @@ module Bosh::Director
         templates: [],
         update_spec: update_config.to_hash,
         properties: {},
-        uninterpolated_properties: {}
       )
     end
     let(:update_config) do

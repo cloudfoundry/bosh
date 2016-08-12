@@ -31,7 +31,6 @@ module Bosh::Director
           'uninterpolated_env' => instance_group.env.uninterpolated_spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
-          'uninterpolated_properties' => instance_group.uninterpolated_properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => instance_group.link_spec,

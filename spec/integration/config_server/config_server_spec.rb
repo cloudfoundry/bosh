@@ -53,14 +53,6 @@ describe 'using director with config server', type: :integration do
         expect(output).to include('Error 540000: Failed to find keys in the config server: test_property')
       end
 
-      it 'does not include uninterpolated_properties key in the cli output on deploy failure' do
-        output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
-                                                cloud_config_hash: cloud_config, failure_expected: true,
-                                                return_exit_code: true, env: client_env)
-        expect(exit_code).to_not eq(0)
-        expect(output).to_not include('uninterpolated_properties')
-      end
-
       it 'does not log interpolated properties in the task debug logs and deploy output' do
         config_server_helper.put_value('test_placeholder', 'cats are happy')
         manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_placeholder))'}
@@ -80,6 +72,7 @@ describe 'using director with config server', type: :integration do
         vm = director.vm('foobar', '0', env: client_env)
 
         template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+
         expect(template).to include('test_property=cats are happy')
       end
 

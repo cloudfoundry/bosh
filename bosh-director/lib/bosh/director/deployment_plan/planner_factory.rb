@@ -122,10 +122,8 @@ module Bosh
               ## if job manifest had a "properties key" in the template block
               if template.template_scoped_properties.has_key?(current_job.name)
                 scoped_properties = template.template_scoped_properties[current_job.name]
-                scoped_uninterpolated_properties = template.template_scoped_uninterpolated_properties[current_job.name]
               else
                 scoped_properties = current_job.all_properties || {}
-                scoped_uninterpolated_properties = current_job.all_uninterpolated_properties || {}
               end
 
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('provides')
@@ -135,7 +133,6 @@ module Bosh
                     default_properties = get_default_properties(deployment, template)
 
                     provided_link['mapped_properties'] = process_link_properties(scoped_properties, default_properties, provided_link['link_properties_exported'], errors)
-                    provided_link['mapped_uninterpolated_properties'] = process_link_properties(scoped_uninterpolated_properties, default_properties, provided_link['link_properties_exported'], [])
                   end
                 end
               end

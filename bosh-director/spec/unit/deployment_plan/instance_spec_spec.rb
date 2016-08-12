@@ -7,7 +7,6 @@ module Bosh::Director::DeploymentPlan
     let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
-    let(:uninterpolated_properties) { {'key' => '((key_placeholder))'} }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
@@ -30,7 +29,6 @@ module Bosh::Director::DeploymentPlan
         compilation?: false,
         update_spec: {},
         properties: properties,
-        uninterpolated_properties: uninterpolated_properties
       )
     }
     let(:index) { 0 }
@@ -62,10 +60,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#full_spec' do
-      it 'returns the spec including uninterpolated properties' do
-        expect(instance_spec.full_spec['uninterpolated_properties']).to eq({'key' => '((key_placeholder))'})
-      end
-
       it 'returns the spec including uninterpolated env' do
         expect(instance_spec.full_spec['uninterpolated_env']).to eq({'key' => '((value_place_holder))'})
       end

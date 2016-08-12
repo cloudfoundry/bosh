@@ -447,9 +447,6 @@ module Bosh::Director
           ],
           'properties' => {
             'test' => 'helo'
-          },
-          'unterinterpolated_properties' => {
-            'test' => '((test_placeholder))'
           }
         }
       end
@@ -480,9 +477,6 @@ module Bosh::Director
               'name' => 'test',
               'properties' => {
                 'test2' => 'smurfy'
-              },
-              'uninterpolated_properties' => {
-                'test2' => '((test2_placeholder))'
               }
             }
           ]
@@ -500,17 +494,11 @@ module Bosh::Director
               'name' => 'test',
               'properties' => {
                 'test2' => 'smurfy',
-              },
-              'uninterpolated_properties' => {
-                'test2' => '((test2_placeholder))'
               }
             }
           ],
           'properties' => {
             'test' => 'helo'
-          },
-          'unterinterpolated_properties' => {
-            'test' => '((test_placeholder))'
           }
         })
       end

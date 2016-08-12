@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module RuntimeConfig
     describe Addon do
-      subject(:addon) { Addon.new(addon_name, jobs, properties,uninterpolated_properties, includes) }
+      subject(:addon) { Addon.new(addon_name, jobs, properties, includes) }
       let(:addon_name) { 'addon-name' }
       let(:jobs) {
         [
@@ -18,7 +18,6 @@ module Bosh::Director
         ]
       }
       let(:properties) { {'echo_value' => 'addon_prop_value'} }
-      let(:uninterpolated_properties) { {'echo_value' => '((echo_value_placeholder))'} }
 
       let(:cloud_config) { Models::CloudConfig.make }
 
@@ -92,15 +91,11 @@ module Bosh::Director
 
                 expect(instance_group.jobs[1].template_scoped_properties).to eq({'foobar' => properties})
                 expect(instance_group.jobs[2].template_scoped_properties).to eq({'foobar' => properties})
-
-                expect(instance_group.jobs[1].template_scoped_uninterpolated_properties).to eq({'foobar' => uninterpolated_properties})
-                expect(instance_group.jobs[2].template_scoped_uninterpolated_properties).to eq({'foobar' => uninterpolated_properties})
               end
             end
 
             context 'when the addon has no addon level properties' do
               let(:properties) { {} }
-              let(:uninterpolated_properties) { {} }
 
               it 'adds empty properties to addon job so they do not get overwritten by instance group or manifest level properties' do
                 added_jobs = []
@@ -109,9 +104,6 @@ module Bosh::Director
 
                 expect(added_jobs[0].template_scoped_properties).to eq({'foobar' => {}})
                 expect(added_jobs[1].template_scoped_properties).to eq({'foobar' => {}})
-
-                expect(added_jobs[0].template_scoped_uninterpolated_properties).to eq({'foobar' => {}})
-                expect(added_jobs[1].template_scoped_uninterpolated_properties).to eq({'foobar' => {}})
               end
             end
           end
@@ -123,15 +115,14 @@ module Bosh::Director
                   'release' => 'dummy',
                   'provides_links' => [],
                   'consumes_links' => [],
-                  'properties' => {'job' => 'properties'},
-                  'uninterpolated_properties' => {'job' => '((properties_placeholder))'}}
+                  'properties' => {'job' => 'properties'}
+                }
               ]
             }
 
             it 'does not overwrite jobs properties with addon properties' do
               expect(instance_group).to(receive(:add_job)) { |added_job|
                 expect(added_job.template_scoped_properties).to eq({'foobar' => {'job' => 'properties'}})
-                expect(added_job.template_scoped_uninterpolated_properties).to eq({'foobar' => {'job' => '((properties_placeholder))'}})
               }
               addon.add_to_deployment(deployment)
             end
@@ -140,13 +131,12 @@ module Bosh::Director
       end
 
       describe '#parse' do
-        context 'when name, jobs, include, properties, and uninterpolated_properties are provided' do
+        context 'when name, jobs, include, and properties' do
           let(:include_hash) { {'jobs' => [], 'properties' => []} }
           let(:addon_hash) { {
             'name' => 'addon-name',
             'jobs' => jobs,
             'properties' => properties,
-            'uninterpolated_properties' => uninterpolated_properties,
             'include' => include_hash
           } }
 
@@ -157,7 +147,6 @@ module Bosh::Director
             expect(addon.jobs.count).to eq(2)
             expect(addon.jobs.map { |job| job['name'] }).to eq(['dummy_with_properties', 'dummy_with_package'])
             expect(addon.properties).to eq(properties)
-            expect(addon.uninterpolated_properties).to eq(uninterpolated_properties)
           end
         end
 
@@ -169,7 +158,6 @@ module Bosh::Director
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(0)
             expect(addon.properties).to be_nil
-            expect(addon.uninterpolated_properties).to be_nil
           end
         end
 
@@ -181,7 +169,6 @@ module Bosh::Director
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(0)
             expect(addon.properties).to be_nil
-            expect(addon.uninterpolated_properties).to be_nil
           end
         end
 

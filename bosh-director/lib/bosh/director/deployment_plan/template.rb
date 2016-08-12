@@ -14,7 +14,6 @@ module Bosh::Director
 
       attr_reader :link_infos
       attr_reader :template_scoped_properties
-      attr_reader :template_scoped_uninterpolated_properties
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
@@ -33,7 +32,6 @@ module Bosh::Director
         # in multiple deployment jobs, the properties will not be shared across
         # jobs
         @template_scoped_properties = {}
-        @template_scoped_uninterpolated_properties = {}
       end
 
       # Looks up template model and its package models in DB
@@ -193,10 +191,6 @@ module Bosh::Director
         @template_scoped_properties[deployment_instance_group_name] = template_scoped_properties
       end
 
-      def add_template_scoped_uninterpolated_properties(template_scoped_uninterpolated_properties, deployment_instance_group_name)
-        @template_scoped_uninterpolated_properties[deployment_instance_group_name] = template_scoped_uninterpolated_properties
-      end
-
       def has_template_scoped_properties(deployment_instance_group_name)
         return !@template_scoped_properties[deployment_instance_group_name].nil?
       end
@@ -212,19 +206,6 @@ module Bosh::Director
           )
         end
         @template_scoped_properties[deployment_instance_group_name] = bound_template_scoped_properties
-      end
-
-      def bind_template_scoped_uninterpolated_properties(deployment_instance_group_name)
-        bound_template_scoped_uninterpolated_properties = {}
-        properties.each_pair do |name, definition|
-          copy_property(
-            bound_template_scoped_uninterpolated_properties,
-            @template_scoped_uninterpolated_properties[deployment_instance_group_name],
-            name,
-            definition["default"]
-          )
-        end
-        @template_scoped_uninterpolated_properties[deployment_instance_group_name] = bound_template_scoped_uninterpolated_properties
       end
 
       private
@@ -250,7 +231,6 @@ module Bosh::Director
       end
 
       def validate_provide_link(link_name, job_name)
-
         # Assumption: release spec has been parsed prior to the manifest being
         # parsed. This way, we can check to see if there are any provides link being provided.
         errors = []

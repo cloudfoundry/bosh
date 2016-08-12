@@ -193,11 +193,6 @@ module Bosh::Director
                   safe_property(job_spec, 'properties', class: Hash, optional: true, default: nil),
                   @instance_group.name
               )
-
-              template.add_template_scoped_uninterpolated_properties(
-                  safe_property(job_spec, 'uninterpolated_properties', class: Hash, optional: true, default: nil),
-                  @instance_group.name
-              )
             end
 
             @instance_group.templates << template
@@ -293,10 +288,8 @@ module Bosh::Director
       def parse_properties
         # Manifest can contain global and per-job properties section
         job_properties = safe_property(@instance_group_spec, "properties", :class => Hash, :optional => true, :default => {})
-        uninterpolated_job_properties = safe_property(@instance_group_spec, "uninterpolated_properties", :class => Hash, :optional => true, :default => {})
 
         @instance_group.all_properties = @deployment.properties.recursive_merge(job_properties)
-        @instance_group.all_uninterpolated_properties = @deployment.uninterpolated_properties.recursive_merge(uninterpolated_job_properties)
 
         mappings = safe_property(@instance_group_spec, "property_mappings", :class => Hash, :default => {})
 

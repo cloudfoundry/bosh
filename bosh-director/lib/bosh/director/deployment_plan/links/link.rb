@@ -16,7 +16,6 @@ module Bosh::Director
         {
           'networks' => @source.networks.map { |network| network.name },
           'properties' => @template.provides_link_info(@source.name, @name)['mapped_properties'],
-          'uninterpolated_properties' => @template.provides_link_info(@source.name, @name)['mapped_uninterpolated_properties'],
           'instances' => @source.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone

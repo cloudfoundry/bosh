@@ -126,7 +126,6 @@ module Bosh::Director
         instance_group.name = 'dummy-job-for-compilation'
         instance_group.stemcell = deployment_plan_stemcell
         instance_group.all_properties = planner.properties
-        instance_group.all_uninterpolated_properties = planner.properties
         release_version_model.templates.map do |template|
           instance_group.templates << release.get_or_create_template(template.name)
         end

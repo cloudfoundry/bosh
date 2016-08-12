@@ -264,7 +264,6 @@ module Bosh::Director::Models
       let(:instance_spec) do
         {
           'properties' => {'name' => 'a'},
-          'uninterpolated_properties' => {'name' => '((name_placeholder))'}
         }
       end
 

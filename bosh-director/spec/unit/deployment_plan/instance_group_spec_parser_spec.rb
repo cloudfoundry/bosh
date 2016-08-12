@@ -10,7 +10,6 @@ module Bosh::Director
           Planner,
           model: Models::Deployment.make,
           properties: {},
-          uninterpolated_properties: {},
           update: nil,
           name: 'fake-deployment',
           networks: [network],
@@ -566,12 +565,6 @@ module Bosh::Director
                         'life' => 'life_value'
                       }
                     },
-                    'uninterpolated_properties' => {
-                      'property_1' => '((property_1_placeholder))',
-                      'property_2' => {
-                        'life' => '((life_placeholder))'
-                      }
-                    }
                   }
                 ]
                 job_spec['release'] = 'fake-job-release'
@@ -592,8 +585,6 @@ module Bosh::Director
                                         .and_return(template)
                 expect(template).to receive(:add_template_scoped_properties)
                                       .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'fake-job-name')
-                expect(template).to receive(:add_template_scoped_uninterpolated_properties)
-                                      .with({'property_1' => '((property_1_placeholder))', 'property_2' =>{'life' => '((life_placeholder))'}}, 'fake-job-name')
 
                 parsed_job
               end
@@ -619,12 +610,6 @@ module Bosh::Director
                         'life' => 'life_value'
                       }
                     },
-                    'uninterpolated_properties' => {
-                      'property_1' => '((property_1_placeholder))',
-                      'property_2' => {
-                        'life' => '((life_placeholder))'
-                      }
-                    }
                   }
                 ]
                 job_spec['release'] = 'fake-job-release'
@@ -645,8 +630,6 @@ module Bosh::Director
                                         .and_return(template)
                 allow(template).to receive(:add_template_scoped_properties)
                                      .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'fake-job-name')
-                allow(template).to receive(:add_template_scoped_uninterpolated_properties)
-                                     .with({'property_1' => '((property_1_placeholder))', 'property_2' =>{'life' => '((life_placeholder))'}}, 'fake-job-name')
 
                 parsed_job
               end
@@ -1110,36 +1093,6 @@ module Bosh::Director
             }.to raise_error(
               InstanceGroupInvalidPropertyMapping,
             )
-          end
-
-          context 'when uninterpolated properties are around' do
-            before do
-              props = { 'foo' => 'foo_value', 'bar' => 'bar_value', 'length' => 5 }
-              job_spec['properties'] = props
-
-              uninterpolated_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))', 'length' => '((length_placeholder))' }
-              job_spec['uninterpolated_properties'] = uninterpolated_props
-            end
-
-            it 'sets the instance goups uninterpolated properties' do
-              instance_group = parsed_job
-              expect(instance_group.all_uninterpolated_properties).to eq({'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))', 'length' => '((length_placeholder))'})
-            end
-
-            context 'when global properties exist' do
-              before do
-                uninterpolated_global_props = { 'foo' => '((foo_global_placeholder))', 'bar' => '((bar_global_placeholder))', 'length' => '((length_global_placeholder))' }
-                allow(deployment_plan).to receive(:uninterpolated_properties).and_return(uninterpolated_global_props)
-
-                uninterpolated_instance_group_props = { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' }
-                job_spec['uninterpolated_properties'] = uninterpolated_instance_group_props
-              end
-
-              it 'merges instance group uninterpolated properties with global uninterpolated properties correctly' do
-                instance_group = parsed_job
-                expect(instance_group.all_uninterpolated_properties).to eq({'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))', 'length' => '((length_global_placeholder))'})
-              end
-            end
           end
         end
 

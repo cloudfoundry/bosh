@@ -16,13 +16,11 @@ module Bosh::Director
       self.load_manifest({}, nil, nil, {:resolve_interpolation => false})
     end
 
-    # Check 'Bosh::Director::DeploymentManifestResolver.resolve_manifest' for the
-    # details about the structure of hybrid_manifest_hash
+    # hybrid_manifest_hash is a resolved raw_manifest except for properties
     attr_reader :hybrid_manifest_hash
     attr_reader :raw_manifest_hash
 
-    # Check 'Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest' for
-    # details about the structure of hybrid_runtime_config_hash
+    # hybrid_runtime_config_hash a resolved raw_runtime_config_hash except for properties
     attr_reader :hybrid_runtime_config_hash
     attr_reader :raw_runtime_config_hash
 

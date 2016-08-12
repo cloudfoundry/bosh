@@ -24,9 +24,6 @@ module Bosh::Director
 
       attr_accessor :properties
 
-      # uninterpolated global properties hash
-      attr_accessor :uninterpolated_properties
-
       # Hash of resolved links spec provided by deployment
       # in format job_name > template_name > link_name > link_type
       # used by LinksResolver
@@ -59,7 +56,6 @@ module Bosh::Director
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
-        @uninterpolated_properties = {}
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)

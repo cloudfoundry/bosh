@@ -5,8 +5,8 @@ module Bosh::Director
     let(:raw_manifest) do
       {
         'releases' => [
-          {'name' => 'release_1', 'version' => 'v1'},
-          {'name' => 'release_2', 'version' => 'v2'}
+          {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+          {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
         ],
         'instance_groups' => [
           {
@@ -41,13 +41,13 @@ module Bosh::Director
           allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
         end
 
-        it 'injects uninterpolated properties in the manifest without resolving any values' do
+        it 'injects uninterpolated env in the manifest without resolving any values' do
           actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, true)
           expect(actual_manifest).to eq(
            {
              'releases' => [
-               {'name' => 'release_1', 'version' => 'v1'},
-               {'name' => 'release_2', 'version' => 'v2'}
+               {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+               {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
              ],
              'instance_groups' => [
                {
@@ -61,18 +61,13 @@ module Bosh::Director
                  'jobs' => [
                    {'name' => 'mysql',
                     'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
-                    'uninterpolated_properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}}
                    },
                    {'name' => '((job_name))'}
                  ],
                  'properties' => {'a' => ['123', 45, '((secret_key))']},
-                 'uninterpolated_properties' => {'a' => ['123', 45, '((secret_key))']}
                }
              ],
              'properties' => {
-               'global_property' => '((something))'
-             },
-             'uninterpolated_properties' => {
                'global_property' => '((something))'
              },
              'resource_pools' => [
@@ -101,8 +96,8 @@ module Bosh::Director
           expect(actual_manifest).to eq(
              {
                'releases' => [
-                 {'name' => 'release_1', 'version' => 'v1'},
-                 {'name' => 'release_2', 'version' => 'v2'}
+                   {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+                   {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
                ],
                'jobs' => [
                  {
@@ -116,18 +111,13 @@ module Bosh::Director
                    'templates' => [
                      {'name' => 'mysql',
                       'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
-                      'uninterpolated_properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}}
                      },
                      {'name' => '((job_name))'}
                    ],
                    'properties' => {'a' => ['123', 45, '((secret_key))']},
-                   'uninterpolated_properties' => {'a' => ['123', 45, '((secret_key))']}
                  }
                ],
                'properties' => {
-                 'global_property' => '((something))'
-               },
-               'uninterpolated_properties' => {
                  'global_property' => '((something))'
                },
                'resource_pools' => [
@@ -147,11 +137,11 @@ module Bosh::Director
       end
 
       context 'when config server is enabled' do
-        let(:injected_manifest) do
+        let(:prepared_manifest) do
           {
             'releases' => [
-              {'name' => 'release_1', 'version' => 'v1'},
-              {'name' => 'release_2', 'version' => 'v2'}
+              {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+              {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
             ],
             'instance_groups' => [
               {
@@ -162,20 +152,15 @@ module Bosh::Director
                   {
                     'name' => 'mysql',
                     'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
-                    'uninterpolated_properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}}
                   },
                   {
                     'name' => '((job_name))'
                   }
                 ],
                 'properties' =>  {'a' => ['123', 45, '((secret_key))']},
-                'uninterpolated_properties' => {'a' => ['123', 45, '((secret_key))']}
               }
             ],
             'properties' => {
-              'global_property' => '((something))'
-            },
-            'uninterpolated_properties' => {
               'global_property' => '((something))'
             },
             'resource_pools' => [
@@ -206,21 +191,16 @@ module Bosh::Director
                 'jobs' => [
                   {
                     'name' => 'mysql',
-                    'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
-                    'uninterpolated_properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
+                    'properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
                   },
                   {
                     'name' => '((job_name))'
                   }
                 ],
-                'properties' => {'a' => ['123', 45, 'secret']},
-                'uninterpolated_properties' => {'a' => ['123', 45, '((secret_key))']}
+                'properties' => {'a' => ['123', 45, '((secret_key))']}
               }
             ],
             'properties' => {
-              'global_property' => 'something'
-            },
-            'uninterpolated_properties' => {
               'global_property' => '((something))'
             },
             'resource_pools' => [
@@ -240,13 +220,16 @@ module Bosh::Director
         let(:my_numeric) {Numeric.new}
         let(:ignored_subtrees) do
           index_type = Integer
+          any_string = String
 
           ignored_subtrees = []
-          ignored_subtrees << ['uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', index_type, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['properties']
+          ignored_subtrees << ['instance_groups', index_type, 'properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
           ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_env']
           ignored_subtrees << ['jobs', index_type, 'uninterpolated_env']
           ignored_subtrees << ['resource_pools', index_type, 'uninterpolated_env']
@@ -255,11 +238,11 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          allow(Numeric).to receive(:new).and_return(my_numeric)
         end
 
         it 'injects uninterpolated properties in the the manifest and resolve the values' do
-          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(injected_manifest, ignored_subtrees).and_return(resolved_manifest)
+          # TODO: Need to change this test when using the dependency injection path
+          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(prepared_manifest, ignored_subtrees).and_return(resolved_manifest)
           actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, true)
 
           expect(actual_manifest).to eq(resolved_manifest)
@@ -272,8 +255,8 @@ module Bosh::Director
             expect(actual_manifest).to eq(
               {
                'releases' => [
-                 {'name' => 'release_1', 'version' => 'v1'},
-                 {'name' => 'release_2', 'version' => 'v2'}
+                 {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+                 {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
                ],
                'instance_groups' => [
                  {
@@ -283,18 +266,13 @@ module Bosh::Director
                    'jobs' => [
                      {'name' => 'mysql',
                       'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
-                      'uninterpolated_properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}}
                      },
                      {'name' => '((job_name))'}
                    ],
                    'properties' => {'a' => ['123', 45, '((secret_key))']},
-                   'uninterpolated_properties' => {'a' => ['123', 45, '((secret_key))']}
                  }
                ],
                'properties' => {
-                 'global_property' => '((something))'
-               },
-               'uninterpolated_properties' => {
                  'global_property' => '((something))'
                },
                'resource_pools' => [

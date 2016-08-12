@@ -102,7 +102,6 @@ module Bosh::Director::DeploymentPlan
             'dns_domain_name' => 'test-domain',
             'persistent_disk' => 0,
             'properties' => {},
-            'uninterpolated_properties' => {}
           }
         end
         let(:apply_spec) do

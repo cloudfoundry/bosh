@@ -168,7 +168,6 @@ require 'bosh/director/jobs/db_job'
 
 require 'bosh/director/models/helpers/model_helper'
 require 'bosh/director/models/helpers/instance_model_helper'
-require 'bosh/director/models/helpers/deployment_model_helper'
 
 require 'bosh/director/db_backup'
 require 'bosh/director/blobstores'
