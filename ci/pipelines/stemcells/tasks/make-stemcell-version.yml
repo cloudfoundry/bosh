@@ -6,5 +6,9 @@ image: docker:///cloudfoundry/bosh-lite-ci
 inputs:
 - name: bosh-src
 - name: published-stemcell
+
+outputs:
+- name: version
+
 run:
   path: bosh-src/ci/pipelines/stemcells/tasks/make-stemcell-version.sh
