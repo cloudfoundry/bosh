@@ -49,6 +49,6 @@ vagrant ssh -c "
 
 builder_ip=$(get_ip_from_vagrant_ssh_config)
 
-mkdir ../../out
+mkdir ../../stemcell
 
-scp ubuntu@${builder_ip}:/mnt/stemcells/$IAAS/$HYPERVISOR/$OS_NAME/work/work/*.tgz ../../out/
+scp ubuntu@${builder_ip}:/mnt/stemcells/$IAAS/$HYPERVISOR/$OS_NAME/work/work/*.tgz ../../stemcell/
