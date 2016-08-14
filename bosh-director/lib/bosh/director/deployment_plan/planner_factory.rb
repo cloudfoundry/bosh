@@ -64,8 +64,8 @@ module Bosh
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
-            'max_in_flight' => parse_numerical_arguments(options['max_in_flight']),
-            'canaries' => parse_numerical_arguments(options['canaries'])
+            'max_in_flight' => parse_arguments(options['max_in_flight']),
+            'canaries' => parse_arguments(options['canaries'])
           }
 
           @logger.info('Creating deployment plan')
@@ -229,16 +229,16 @@ module Bosh
           return mapped_properties
         end
 
-        def parse_numerical_arguments arg
+        def parse_arguments arg
           case arg
             when nil
               nil
-            when /%/
-              raise 'percentages not yet supported for max in flight and canary cli overrides'
+            when /^\d+%$/
+              arg
             when /\A[-+]?[0-9]+\z/
               arg.to_i
             else
-              raise 'cannot be converted to integer'
+              raise 'cannot be converted'
           end
         end
       end
