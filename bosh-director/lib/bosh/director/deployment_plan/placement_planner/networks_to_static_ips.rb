@@ -18,7 +18,7 @@ module Bosh
               job_network.static_ips.each do |static_ip|
                 subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
                 if subnet_for_ip.nil?
-                  raise JobNetworkInstanceIpMismatch,
+                  raise InstanceGroupNetworkInstanceIpMismatch,
                     "Instance group '#{job_name}' with network '#{job_network.name}' declares static ip '#{format_ip(static_ip)}', " +
                       "which belongs to no subnet"
                 end
@@ -79,7 +79,7 @@ module Bosh
           def distribute_evenly_per_zone
             best_combination = BruteForceIpAllocation.new(@networks_to_static_ips).find_best_combination
             if best_combination.nil?
-              raise JobNetworkInstanceIpMismatch, "Failed to evenly distribute static IPs between zones for instance group '#{@job_name}'"
+              raise InstanceGroupNetworkInstanceIpMismatch, "Failed to evenly distribute static IPs between zones for instance group '#{@job_name}'"
             end
             @networks_to_static_ips = best_combination
           end

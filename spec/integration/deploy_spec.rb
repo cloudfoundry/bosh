@@ -1123,7 +1123,7 @@ Deployed 'simple' to 'Test Director'
 
         minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.minimal_manifest)
         minimal_manifest["properties"] = {}
-        for i in 0..10000
+        for i in 0..100000
           minimal_manifest["properties"]["property#{i}"] = "value#{i}"
         end
 

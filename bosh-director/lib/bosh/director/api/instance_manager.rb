@@ -75,7 +75,7 @@ module Bosh::Director
       def ssh(username, deployment, options)
         description = "ssh: #{options['command']}:#{options['target']}"
 
-        JobQueue.new.enqueue(username, Jobs::Ssh, description, [deployment.id, options])
+        JobQueue.new.enqueue(username, Jobs::Ssh, description, [deployment.id, options], deployment)
       end
     end
   end

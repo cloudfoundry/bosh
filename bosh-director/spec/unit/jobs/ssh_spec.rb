@@ -30,6 +30,7 @@ module Bosh::Director
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})
       allow(job).to receive(:task_id).and_return(task.id)
+      allow(Config).to receive(:record_events).and_return(true)
       allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       Config.default_ssh_options = {'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}
       Config.result = result_file

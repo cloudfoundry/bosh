@@ -103,16 +103,16 @@ describe Bosh::Director::Config do
   describe '#local_dns' do
     context 'when hash has value set' do
       it 'returns the configuration value' do
-        test_config['local_dns'] = true
+        test_config['local_dns']['enabled'] = true
         described_class.configure(test_config)
-        expect(described_class.local_dns).to eq(true)
+        expect(described_class.local_dns_enabled?).to eq(true)
       end
     end
 
     context 'when hash does not have value set' do
       it 'returns default value of false' do
         described_class.configure(test_config)
-        expect(described_class.local_dns).to eq(false)
+        expect(described_class.local_dns_enabled?).to eq(false)
       end
     end
   end
@@ -163,16 +163,30 @@ describe Bosh::Director::Config do
     context 'config server' do
       context 'when enabled' do
         before {
-          test_config['config_server']['enabled'] = true
-          test_config['config_server']['url'] = 'https://127.0.0.1:8080'
-          test_config['config_server']['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
+          test_config['config_server'] = {
+              'enabled' => true,
+              'url' => 'https://127.0.0.1:8080',
+              'ca_cert_path' => '/var/vcap/jobs/director/config/config_server_ca.cert'
+          }
+
+          test_config['config_server']['uaa'] = {
+              'url' => 'fake-uaa-url',
+              'client_id' => 'fake-client-id',
+              'client_secret' => 'fake-client-secret',
+              'ca_cert_path' => 'fake-uaa-ca-cert-path'
+          }
         }
 
         it 'should have parsed out config server values' do
           described_class.configure(test_config)
 
-          expect(described_class.config_server_url).to eq('https://127.0.0.1:8080')
-          expect(described_class.config_server_cert_path).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
+          expect(described_class.config_server['url']).to eq('https://127.0.0.1:8080')
+          expect(described_class.config_server['ca_cert_path']).to eq('/var/vcap/jobs/director/config/config_server_ca.cert')
+
+          expect(described_class.config_server['uaa']['url']).to eq('fake-uaa-url')
+          expect(described_class.config_server['uaa']['client_id']).to eq('fake-client-id')
+          expect(described_class.config_server['uaa']['client_secret']).to eq('fake-client-secret')
+          expect(described_class.config_server['uaa']['ca_cert_path']).to eq('fake-uaa-ca-cert-path')
         end
 
         context 'when url is not https' do
@@ -194,8 +208,7 @@ describe Bosh::Director::Config do
         it 'should not have parsed out the values' do
           described_class.configure(test_config)
 
-          expect(described_class.config_server_url).to be(nil)
-          expect(described_class.config_server_cert_path).to be(nil)
+          expect(described_class.config_server).to eq({"enabled"=>false})
         end
       end
     end

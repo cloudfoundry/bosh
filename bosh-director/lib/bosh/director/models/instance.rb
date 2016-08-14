@@ -20,6 +20,10 @@ module Bosh::Director::Models
       self.persistent_disks.find { |disk| disk.active }
     end
 
+    def active_persistent_disks
+      self.persistent_disks.select { |disk| disk.active }
+    end
+
     def persistent_disk_cid
       disk = persistent_disk
       return disk.disk_cid if disk
@@ -78,6 +82,9 @@ module Bosh::Director::Models
       rescue JSON::ParserError
         return 'error'
       end
+
+      result = Bosh::Director::InstanceModelHelper.adjust_instance_spec_after_retrieval!(result)
+
       if result['resource_pool'].nil?
         result
       else
@@ -100,10 +107,15 @@ module Bosh::Director::Models
     end
 
     def spec=(spec)
-      begin
-        self.spec_json = spec.nil? ? nil : JSON.generate(spec)
-      rescue JSON::GeneratorError
-        self.spec_json = 'error'
+      if spec.nil?
+        self.spec_json = nil
+      else
+        prepared_spec = Bosh::Director::InstanceModelHelper.prepare_instance_spec_for_saving!(spec)
+        begin
+          self.spec_json = JSON.generate(prepared_spec)
+        rescue JSON::GeneratorError
+          self.spec_json = 'error'
+        end
       end
     end
 
@@ -121,6 +133,11 @@ module Bosh::Director::Models
       spec['env'] || {}
     end
 
+    def vm_uninterpolated_env
+      return {} if spec.nil?
+      spec['uninterpolated_env'] || {}
+    end
+
     def credentials
       object_or_nil(credentials_json)
     end
@@ -129,7 +146,28 @@ module Bosh::Director::Models
       self.credentials_json = json_encode(spec)
     end
 
+    def lifecycle
+      return nil if self.deployment.manifest == nil
+
+      deployment_plan = create_deployment_plan_from_manifest(deployment)
+      instance_group = deployment_plan.instance_group(self.job)
+      if instance_group
+        instance_group.lifecycle
+      else
+        nil
+      end
+    end
+
+    def expects_vm?
+      lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
+    end
+
     private
+
+    def create_deployment_plan_from_manifest(deployment)
+      planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
+      planner_factory.create_from_model(deployment)
+    end
 
     def object_or_nil(value)
       if value == 'null' || value.nil?

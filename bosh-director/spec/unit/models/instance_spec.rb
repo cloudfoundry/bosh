@@ -195,6 +195,12 @@ module Bosh::Director::Models
     end
 
     context 'spec' do
+      it 'calls adjust_instance_spec_after_retrieval helper method after reading from DB' do
+        subject.spec=({'stuff' => 'stuff'})
+        expect(Bosh::Director::InstanceModelHelper).to receive(:adjust_instance_spec_after_retrieval!).with({'stuff' => 'stuff'}).and_return({})
+        subject.spec
+      end
+
       context 'when spec_json persisted in database has no resource pool' do
         it 'returns spec_json as is' do
           subject.spec=({
@@ -202,7 +208,8 @@ module Bosh::Director::Models
             'stemcell' => 'stuff'
           })
 
-          expect(subject.spec).to eq({'vm_type' => 'stuff', 'stemcell' => 'stuff'})
+          expect(subject.spec['vm_type']).to eq('stuff')
+          expect(subject.spec['stemcell']).to eq('stuff')
         end
       end
 
@@ -219,18 +226,19 @@ module Bosh::Director::Models
                   }
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    },
-                  'stemcell' =>
-                    {'name' => 'ubuntu-stemcell',
-                      'version' => '1',
-                      'alias' => 'a'
-                    }
-                })
+
+            expect(subject.spec['vm_type']).to eq(
+                {'name' => 'a',
+                 'cloud_properties' => {}
+                }
+            )
+
+            expect(subject.spec['stemcell']).to eq(
+              {'name' => 'ubuntu-stemcell',
+               'version' => '1',
+               'alias' => 'a'
+              }
+             )
           end
         end
 
@@ -242,15 +250,172 @@ module Bosh::Director::Models
                   'cloud_properties' => {},
                 }
             })
-            expect(subject.spec).to eq(
-                {
-                  'vm_type' =>
-                    {'name' => 'a',
-                      'cloud_properties' => {}
-                    }
-                }
-              )
+            expect(subject.spec['vm_type']).to eq(
+              {'name' => 'a',
+                'cloud_properties' => {}
+              }
+            )
           end
+        end
+      end
+    end
+
+    context 'spec=' do
+      let(:instance_spec) do
+        {
+          'properties' => {'name' => 'a'},
+          'uninterpolated_properties' => {'name' => '((name_placeholder))'}
+        }
+      end
+
+      it 'calls prepare_instance_spec_for_saving helper method before saving' do
+        expect(Bosh::Director::InstanceModelHelper).to receive(:prepare_instance_spec_for_saving!).with(instance_spec).and_return({})
+        subject.spec=(instance_spec)
+      end
+    end
+
+    context 'vm_env' do
+      it 'returns env contents' do
+        subject.spec=({'env' => {'a' => 'a_value'}})
+        expect(subject.vm_env).to eq({'a' => 'a_value'})
+      end
+
+      it 'returns empty hash when env is nil' do
+        subject.spec=({'env' => nil})
+        expect(subject.vm_env).to eq({})
+      end
+
+      it 'returns empty hash when spec is nil' do
+        subject.spec=(nil)
+        expect(subject.vm_env).to eq({})
+      end
+    end
+
+    context 'vm_uninterpolated_env' do
+      it 'returns uninterpolated_env contents' do
+        subject.spec=({'env' => {'a' => '((a_placeholder))'}})
+        expect(subject.vm_uninterpolated_env).to eq({'a' => '((a_placeholder))'})
+      end
+
+      it 'returns empty hash when vm_uninterpolated_env is nil' do
+        subject.spec=({'uninterpolated_env' => nil})
+        expect(subject.vm_uninterpolated_env).to eq({})
+      end
+
+      it 'returns empty hash when spec is nil' do
+        subject.spec=(nil)
+        expect(subject.vm_uninterpolated_env).to eq({})
+      end
+    end
+
+    context 'with deployment_plan' do
+      subject { described_class.make(deployment: deployment, job: 'job-1') }
+
+      let(:instance_groups) {
+        [{
+             'name' => 'job-1',
+             'lifecycle' => lifecycle,
+             'instances' => 1,
+             'jobs' => [],
+             'vm_type' => 'm1.small',
+             'stemcell' => 'stemcell',
+             'networks' => [{'name' => 'network'}]
+         }]
+      }
+
+      let(:manifest) {
+        {
+            'name' => 'something',
+            'releases' => [],'instance_groups' => instance_groups,
+            'update' => {
+                'canaries' => 1,
+                'max_in_flight' => 1,
+                'canary_watch_time' => 20,
+                'update_watch_time' => 20
+            },
+            'stemcells' => [{
+                                'name' => 'stemcell',
+                                'alias' => 'stemcell'
+                            }]
+        }
+      }
+
+      let(:cloud_config_hash) {
+        {
+            'compilation' => {
+                'network' => 'network',
+                'workers' => 1
+            },
+            'networks' => [{
+                               'name' => 'network',
+                               'subnets' => []
+
+                           }],
+            'vm_types' => [{
+                               'name' => 'm1.small'
+                           }]
+
+        }
+      }
+      let(:manifest_text) { manifest.to_yaml }
+      let(:cloud_config) { CloudConfig.make(manifest: cloud_config_hash) }
+      let(:deployment) { Deployment.make(name: 'deployment', manifest: manifest_text, cloud_config: cloud_config) }
+
+      describe '#lifecycle' do
+        context "when lifecycle is 'service'" do
+          let(:lifecycle) { 'service' }
+          it "returns 'service'" do
+            expect(subject.lifecycle).to eq('service')
+          end
+        end
+
+        context "when lifecycle is 'errand'" do
+          let(:lifecycle) { 'errand' }
+          it "returns 'errand'" do
+            expect(subject.lifecycle).to eq('errand')
+          end
+        end
+
+        context 'when no manifest is stored in the database' do
+          let(:manifest_text) { nil }
+          it "returns 'nil'" do
+            expect(subject.lifecycle).to be_nil
+          end
+        end
+      end
+
+      describe '#expects_vm?' do
+
+        context "when lifecycle is 'errand'" do
+          let(:lifecycle) { 'errand' }
+
+          it "doesn't expect vm" do
+            expect(subject.expects_vm?).to eq(false)
+          end
+        end
+
+        context "when lifecycle is 'service'" do
+          let(:lifecycle) { 'service' }
+
+          ['started', 'stopped'].each do |state|
+
+            context "when state is '#{state}'" do
+              subject { described_class.make(deployment: deployment, job: 'job-1', state: "#{state}") }
+
+              it 'expects a vm' do
+                expect(subject.expects_vm?).to eq(true)
+              end
+            end
+          end
+
+          context "when state is 'detached'" do
+            subject { described_class.make(deployment: deployment, job: 'job-1', state: 'detached') }
+
+            it "doesn't expect vm" do
+              expect(subject.expects_vm?).to eq(false)
+            end
+          end
+
         end
       end
     end

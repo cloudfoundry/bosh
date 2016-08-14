@@ -41,6 +41,41 @@ describe 'deploy job with addons', type: :integration do
     expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
   end
 
+
+
+  it 'allows addons to be added for specific stemcell operating systems' do
+    target_and_login
+
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon_includes_stemcell_os))
+      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}")).to include("Successfully updated runtime config")
+    end
+
+    bosh_runner.run("upload release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
+
+    upload_stemcell   # name: ubuntu-stemcell, os: toronto-os
+    upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
+
+    manifest_hash = Bosh::Spec::Deployments.stemcell_os_specific_addon_manifest
+
+    cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    vms = director.vms
+
+    addon_vm = vms.detect { |vm| vm.job_name == "has-addon-vm" }
+    expect(File.exist?(addon_vm.job_path('foobar'))).to eq(true)
+    expect(File.exist?(addon_vm.job_path('dummy'))).to eq(true)
+
+    no_addon_vm = vms.detect { |vm| vm.job_name == "no-addon-vm" }
+    expect(File.exist?(no_addon_vm.job_path('foobar'))).to eq(true)
+    expect(File.exist?(no_addon_vm.job_path('dummy'))).to eq(false)
+  end
+
   it 'collocates addon jobs with deployment jobs and evaluates addon properties' do
     target_and_login
 

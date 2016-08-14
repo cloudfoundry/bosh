@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
   subject(:job_updater) { described_class.new(deployment_plan, job, links_resolver, disk_manager) }
-  let(:disk_manager) { BD::DiskManager.new(cloud, logger)}
+  let(:disk_manager) { BD::SingleDiskManager.new(cloud, logger)}
   let(:cloud) { instance_double(Bosh::Clouds) }
 
   let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}

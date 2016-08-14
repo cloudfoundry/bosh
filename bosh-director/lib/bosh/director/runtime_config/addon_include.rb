@@ -4,22 +4,29 @@ module Bosh::Director
 
       extend ValidationHelper
 
-      def initialize(applicable_jobs, applicable_deployment_names)
+      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells)
         @applicable_jobs = applicable_jobs
         @applicable_deployment_names = applicable_deployment_names
+        @applicable_stemcells = applicable_stemcells
       end
 
       def self.parse(addon_include_hash)
         applicable_deployment_names = safe_property(addon_include_hash, 'deployments', :class => Array, :default => [])
         applicable_jobs = safe_property(addon_include_hash, 'jobs', :class => Array, :default => [])
+        applicable_stemcells = safe_property(addon_include_hash, 'stemcell', :class => Array, :default => [])
 
         #TODO throw an exception with all wrong jobs
         verify_jobs_section(applicable_jobs)
 
-        new(applicable_jobs, applicable_deployment_names)
+        verify_stemcells_section(applicable_stemcells)
+
+        new(applicable_jobs, applicable_deployment_names, applicable_stemcells)
       end
 
       def applies?(deployment_name, deployment_instance_group)
+        if has_stemcells? && !has_applicable_stemcell(deployment_instance_group)
+          return false
+        end
         case {has_deployments: has_deployments?, has_jobs: has_jobs?}
           when {has_deployments: true, has_jobs: false}
             return @applicable_deployment_names.include?(deployment_name)
@@ -45,6 +52,15 @@ module Bosh::Director
         end
       end
 
+      def self.verify_stemcells_section(applicable_stemcells)
+        applicable_stemcells.each do |stemcell|
+          if safe_property(stemcell, 'os', :class => String, :default => '').empty?
+            raise RuntimeIncompleteIncludeStemcellSection.new("Stemcell #{stemcell} in runtime config's " +
+              'include section must have an os name.')
+          end
+        end
+      end
+
       def has_deployments?
         !@applicable_deployment_names.nil? && !@applicable_deployment_names.empty?
       end
@@ -58,6 +74,17 @@ module Bosh::Director
           deployment_instance_group.has_job?(job['name'], job['release'])
         end
       end
+
+      def has_stemcells?
+        !@applicable_stemcells.nil? && !@applicable_stemcells.empty?
+      end
+
+      def has_applicable_stemcell(deployment_instance_group)
+        @applicable_stemcells.any? do |stemcell|
+          deployment_instance_group.has_os?(stemcell['os'])
+        end
+      end
+
     end
   end
 end

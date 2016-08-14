@@ -17,8 +17,7 @@ module Bosh::Dev
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     before do
-      allow(Resolv).to receive(:getaddresses).with('bosh.example.com').and_return(['127.0.0.1'])
-      stub_request(:get, 'http://127.0.0.1/info').
+      stub_request(:get, 'http://bosh.example.com/info').
         to_return(:status => 200, :body => '{"uuid":"uuid_value"}')
     end
 
@@ -34,7 +33,7 @@ module Bosh::Dev
       end
 
       before do
-        stub_request(:get, 'http://127.0.0.1/stemcells').
+        stub_request(:get, 'http://bosh.example.com/stemcells').
           to_return(:status => 200, :body => '{}')
       end
 
@@ -58,7 +57,7 @@ module Bosh::Dev
       context 'when the stemcell being uploaded exists on the director' do
         before do
           stemcells = [{ 'name' => 'fake-stemcell', 'version' => '008' }]
-          stub_request(:get, 'http://127.0.0.1/stemcells').
+          stub_request(:get, 'http://bosh.example.com/stemcells').
             to_return(:status => 200, :body => JSON.generate(stemcells), :headers => {})
         end
 

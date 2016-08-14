@@ -341,6 +341,10 @@ module Bosh::Dev
                                                           body: anything,
                                                           public: true)
 
+          expect(Open3).to receive(:capture3)
+                             .with("sha1sum #{stemcell_archive.path}", anything)
+                             .and_return(["a1b2c3d4 light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz", nil, instance_double('Process::Status', success?: true)])
+
           build.upload_stemcell(stemcell_archive)
 
           expect(log_string).to include("uploaded to s3://#{bucket_name}/#{key}")

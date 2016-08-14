@@ -17,6 +17,11 @@ module Bosh::Director
       # @return [Hash] Resource pool environment
       attr_reader :env
 
+      # @return [Hash] UnResolved Resource pool environment
+      # significant when env values are using config server
+      # placeholders
+      attr_reader :uninterpolated_env
+
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw resource pool spec from the deployment manifest
       # @param [Logger] logger Director logger
@@ -31,6 +36,7 @@ module Bosh::Director
         @stemcell = Stemcell.parse(stemcell_spec)
 
         @env = safe_property(spec, "env", class: Hash, default: {})
+        @uninterpolated_env = safe_property(spec, 'uninterpolated_env', class: Hash, default: {})
       end
 
       # Returns resource pools spec as Hash (usually for agent to serialize)

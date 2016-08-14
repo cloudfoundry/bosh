@@ -38,6 +38,37 @@ module Bosh::Director
           end
         end
 
+        describe 'when the include has a stemcell property' do
+          describe 'when the stemcell property has an os missing a name' do
+            let(:include_hash) { {'stemcell' => [{'os' => ''}]} }
+
+            it 'raises' do
+              expect {
+                addon_include.applies?('anything', instance_group)
+              }.to raise_error RuntimeIncompleteIncludeStemcellSection,
+                "Stemcell {\"os\"=>\"\"} in runtime config's include section must have an os name."
+            end
+          end
+
+          describe 'when the stemcell os matches the instance group stemcell os' do
+            let(:include_hash) { {'stemcell' => [{'os' => 'my_os'}]} }
+
+            it 'applies' do
+              allow(instance_group).to receive(:has_os?).with('my_os').and_return(true)
+              expect(addon_include.applies?('anything', instance_group)).to be(true)
+            end
+          end
+
+          describe 'when the stemcell os does not match the instance group stemcell os' do
+            let(:include_hash) { {'stemcell' => [{'os' => 'my_os'}]} }
+
+            it 'does not apply' do
+              allow(instance_group).to receive(:has_os?).with('my_os').and_return(false)
+              expect(addon_include.applies?('anything', instance_group)).to be(false)
+            end
+          end
+        end
+
         describe 'when the include spec has only a deployments section' do
           let(:include_hash) { {'deployments' => ['deployment_1', 'deployment_2']} }
 

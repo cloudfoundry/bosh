@@ -6,9 +6,14 @@ module Bosh::Director
     let (:db_job) { Jobs::DBJob.new(job_class, task.id, args) }
     let(:job_class) do
       Class.new(Jobs::BaseJob) do
-        define_method :perform do
+        def perform
           'foo'
         end
+
+        def self.perform(*args)
+          'foo'
+        end
+
         @queue = :normal
       end
     end
@@ -19,7 +24,7 @@ module Bosh::Director
       allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
     end
 
-    let(:args) { ["1", "2"] }
+    let(:args) { ['1', '2'] }
 
     it "doesn't accept job class that is not a subclass of base job" do
       expect {
@@ -51,7 +56,7 @@ module Bosh::Director
 
     it 'raises error when task is not in queue state' do
       task.update(state: 'processing')
-      expect{db_job.perform}.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+      expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
     end
 
     context 'when forked process is signaled' do
@@ -64,7 +69,7 @@ module Bosh::Director
       end
     end
 
-    it "performs new job" do
+    it 'performs new job' do
       expect(job_class).to receive(:perform).with(task.id, *args)
       db_job.perform
     end
@@ -84,8 +89,19 @@ module Bosh::Director
         end
       end
 
+      before { allow(Config).to receive(:director_pool).and_return('local.hostname') }
+
       it 'set specific queue for the job' do
-        expect(db_job.queue_name).to eq(Socket.gethostname)
+        expect(db_job.queue_name).to eq('local.hostname')
+      end
+    end
+
+    context 'when db connection times out when pulling record' do
+      it 'retries on Sequel::DatabaseConnectionError' do
+        expect(Models::Task).to receive(:first).and_raise(Sequel::DatabaseConnectionError).once.ordered
+        expect(Models::Task).to receive(:first).and_return(task).ordered
+
+        db_job.perform
       end
     end
   end

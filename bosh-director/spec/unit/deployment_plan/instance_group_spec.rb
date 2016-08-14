@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
-  subject(:job)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
+  subject(:instance_group)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
@@ -99,6 +99,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return({}) # change
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
@@ -109,7 +110,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       it 'overrides canaries value with one from parse_options' do
         expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
           .with( parse_options, nil)
-        job
+        instance_group
       end
     end
 
@@ -120,7 +121,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       it 'overrides max_in_flight value with one from parse_options' do
         expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
           .with( parse_options, nil)
-        job
+        instance_group
       end
     end
   end
@@ -151,28 +152,40 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
+    let(:uninterpolated_props) do
+      {
+        'cc_url' => 'www.cc.com',
+        'deep_property' => {
+          'unneeded' => 'abc',
+          'dont_override' => 'def'
+        },
+        'dea_max_memory' => '((dea_max_memory_placeholder))'
+      }
+    end
+
     before do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return(uninterpolated_props)
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
-    context 'when all the job specs (aka templates) specify properties' do
+    context 'when all the job specs (fka templates) specify properties' do
       it 'should drop deployment manifest properties not specified in the job spec properties' do
-        job.bind_properties
-        expect(job.properties).to_not have_key('cc')
-        expect(job.properties['foo']['deep_property']).to_not have_key('unneeded')
+        instance_group.bind_properties
+        expect(instance_group.properties).to_not have_key('cc')
+        expect(instance_group.properties['foo']['deep_property']).to_not have_key('unneeded')
       end
 
       it 'should include properties that are in the job spec properties but not in the deployment manifest' do
-        job.bind_properties
-        expect(job.properties['foo']['dea_min_memory']).to eq(512)
-        expect(job.properties['foo']['deep_property']['new_property']).to eq('jkl')
+        instance_group.bind_properties
+        expect(instance_group.properties['foo']['dea_min_memory']).to eq(512)
+        expect(instance_group.properties['foo']['deep_property']['new_property']).to eq('jkl')
       end
 
       it 'should not override deployment manifest properties with job_template defaults' do
-        job.bind_properties
-        expect(job.properties['bar']['dea_max_memory']).to eq(1024)
-        expect(job.properties['foo']['deep_property']['dont_override']).to eq('def')
+        instance_group.bind_properties
+        expect(instance_group.properties['bar']['dea_max_memory']).to eq(1024)
+        expect(instance_group.properties['foo']['deep_property']['dont_override']).to eq('def')
       end
     end
 
@@ -181,7 +194,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       it 'raises an exception explaining which property is the wrong type' do
         expect {
-          job.bind_properties
+          instance_group.bind_properties
         }.to raise_error Bosh::Template::InvalidPropertyType,
           "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
       end
@@ -191,13 +204,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       before do
         allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
         allow(foo_template).to receive(:template_scoped_properties).and_return(props)
+        allow(foo_template).to receive(:template_scoped_uninterpolated_properties).and_return(uninterpolated_props)
       end
 
-      it 'only bond the local properties ' do
+      it 'only bind the local properties ' do
         expect(foo_template).to receive(:bind_template_scoped_properties)
+        expect(foo_template).to receive(:bind_template_scoped_uninterpolated_properties)
 
-        job.bind_properties
-        expect(job.properties['bar']).to eq({"dea_max_memory"=>1024})
+        instance_group.bind_properties
+        expect(instance_group.properties['bar']).to eq({"dea_max_memory"=>1024})
+        expect(instance_group.uninterpolated_properties['bar']).to eq({"dea_max_memory"=>"((dea_max_memory_placeholder))"})
       end
     end
   end
@@ -242,11 +258,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
-      job.bind_properties
+      instance_group.bind_properties
 
-      expect(job.properties).to eq('foo' => {
+      expect(instance_group.properties).to eq('foo' => {
                                     'db' => {
                                       'user' => 'admin',
                                       'password' => '12321',
@@ -260,7 +277,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#validate_package_names_do_not_collide!' do
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
-    before { allow(plan).to receive(:properties).and_return({}) }
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
+    end
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
     let(:foo_template_model) { instance_double('Bosh::Director::Models::Template') }
@@ -302,7 +322,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         before { allow(plan).to receive(:releases).with(no_args).and_return([release]) }
 
         it 'does not raise an error' do
-          expect { job.validate_package_names_do_not_collide! }.to_not raise_error
+          expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
         end
       end
     end
@@ -353,7 +373,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         before { allow(bar_template_model).to receive(:package_names).and_return(['another-name']) }
 
         it 'does not raise an exception' do
-          expect { job.validate_package_names_do_not_collide! }.to_not raise_error
+          expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
         end
       end
 
@@ -363,7 +383,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
         it 'raises an exception because agent currently cannot collocate similarly named packages from multiple releases' do
           expect {
-            job.validate_package_names_do_not_collide!
+            instance_group.validate_package_names_do_not_collide!
           }.to raise_error(
             Bosh::Director::JobPackageCollision,
             "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
@@ -400,6 +420,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)
       allow(plan).to receive(:properties).with(no_args).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
     end
 
     context "when a template has 'logs'" do
@@ -412,7 +433,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'contains name, release for the job, and logs spec for each template' do
-        expect(job.spec).to eq(
+        expect(instance_group.spec).to eq(
           {
             'name' => 'job1',
             'templates' => [
@@ -444,7 +465,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'contains name, release and information for each template' do
-        expect(job.spec).to eq(
+        expect(instance_group.spec).to eq(
           {
             'name' => 'job1',
             'templates' =>[
@@ -466,29 +487,29 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#bind_unallocated_vms' do
-    subject(:job) { described_class.new(logger) }
+    subject(:instance_group) { described_class.new(logger) }
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
       instance_plan0 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
       instance_plan1 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
       obsolete_plan = BD::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
-      job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
+      instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
     end
   end
 
   describe '#bind_instances' do
-    subject(:job) { described_class.new(logger) }
+    subject(:instance_group) { described_class.new(logger) }
 
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
@@ -514,13 +535,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
-      job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
+      instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
 
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_model_bound).with(no_args).ordered
       end
 
-      job.bind_instances(fake_ip_provider)
+      instance_group.bind_instances(fake_ip_provider)
 
       expect(fake_ip_provider).to have_received(:reserve).with(instance0_reservation)
       expect(fake_ip_provider).to have_received(:reserve).with(instance1_reservation)
@@ -573,15 +594,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'should sort instance plans on adding them' do
       allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:uninterpolated_properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 1, 'started', deployment, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 1, 'started', deployment, {}, nil, logger)
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_job(job, 2, 'started', deployment, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 2, 'started', deployment, {}, nil, logger)
       instance2.bind_new_instance_model
-      instance3 = BD::DeploymentPlan::Instance.create_from_job(job, 3, 'started', deployment, {}, nil, logger)
+      instance3 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 3, 'started', deployment, {}, nil, logger)
       instance3.bind_new_instance_model
 
       desired_instance = BD::DeploymentPlan::DesiredInstance.new
@@ -590,12 +612,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance_plan3 = BD::DeploymentPlan::InstancePlan.new(instance: instance3, existing_instance: nil, desired_instance: nil)
 
       unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
-      job.add_instance_plans(unsorted_plans)
+      instance_group.add_instance_plans(unsorted_plans)
 
       needed_instance_plans = [instance_plan1, instance_plan2]
 
-      expect(job.needed_instance_plans).to eq(needed_instance_plans)
-      expect(job.obsolete_instance_plans).to eq([instance_plan3])
+      expect(instance_group.needed_instance_plans).to eq(needed_instance_plans)
+      expect(instance_group.obsolete_instance_plans).to eq([instance_plan3])
     end
   end
 

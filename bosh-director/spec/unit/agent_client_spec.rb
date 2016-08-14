@@ -97,6 +97,7 @@ module Bosh::Director
 
         describe 'send asynchronous messages' do
           before do
+            allow(Config).to receive(:nats_rpc)
             allow(Api::ResourceManager).to receive(:new)
           end
 
@@ -208,6 +209,7 @@ module Bosh::Director
         end
 
         before do
+          allow(Config).to receive(:nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
         end
 
@@ -230,11 +232,13 @@ module Bosh::Director
 
     describe '#sync_dns' do
       before do
+        allow(Config).to receive(:nats_rpc)
         allow(Api::ResourceManager).to receive(:new)
       end
 
       subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
         before do
+          allow(Config).to receive(:nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
         end
 
@@ -260,6 +264,7 @@ module Bosh::Director
         subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
 
         before do
+          allow(Config).to receive(:nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
         end
 
@@ -286,12 +291,15 @@ module Bosh::Director
       end
 
       it 'should use provided credentials' do
+        nats_rpc = double('nats_rpc')
+
+        allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
         Config.encryption = true
 
         allow(App).to receive_messages(instance: double('App Instance').as_null_object)
 
         handler = Bosh::Core::EncryptionHandler.new('fake-agent-id', credentials)
-        expect(Config.nats_rpc).to receive(:send_request) do |*args, &blk|
+        expect(nats_rpc).to receive(:send_request) do |*args, &blk|
           data = args[1]['encrypted_data']
           handler.decrypt(data) # decrypt to initiate session
           blk.call('encrypted_data' => handler.encrypt('value' => 'pong'))
@@ -303,6 +311,8 @@ module Bosh::Director
 
     before do
       allow(Api::ResourceManager).to receive(:new)
+      @nats_rpc = instance_double('Bosh::Director::NatsRpc')
+      allow(Bosh::Director::Config).to receive(:nats_rpc).and_return(@nats_rpc)
     end
 
     let(:test_args) do
@@ -316,7 +326,7 @@ module Bosh::Director
     it 'should send messages and return values' do
       response = { 'value' => 5 }
 
-      expect(Config.nats_rpc).to receive(:send_request).
+      expect(@nats_rpc).to receive(:send_request).
         with('foo.bar', expected_rpc_args).and_yield(response)
 
       client = AgentClient.new('foo', 'bar')
@@ -324,7 +334,7 @@ module Bosh::Director
     end
 
     it 'should include the current protocol version in each request' do
-      expect(Config.nats_rpc).to receive(:send_request).
+      expect(@nats_rpc).to receive(:send_request).
         with(anything(), hash_including(protocol: Bosh::Director::AgentClient::PROTOCOL_VERSION)).
         and_yield({'value' => 'whatever'})
 
@@ -341,7 +351,7 @@ module Bosh::Director
         }
       }
 
-      expect(Config.nats_rpc).to receive(:send_request).
+      expect(@nats_rpc).to receive(:send_request).
         with('foo.bar', expected_rpc_args).and_yield(response)
 
       rm = double(Bosh::Director::Api::ResourceManager)
@@ -359,9 +369,9 @@ module Bosh::Director
 
     describe 'timeouts/retries' do
       it 'should handle timeouts' do
-        expect(Config.nats_rpc).to receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', expected_rpc_args).and_return('req_id')
-        expect(Config.nats_rpc).to receive(:cancel_request).with('req_id')
+        expect(@nats_rpc).to receive(:cancel_request).with('req_id')
 
         client = AgentClient.new('foo', 'bar', timeout: 0.1)
 
@@ -378,7 +388,7 @@ module Bosh::Director
 
         args = { method: :baz, arguments: [] }
 
-        expect(Config.nats_rpc).to receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', hash_including(args)).once.and_raise(Bosh::Director::RpcTimeout)
 
         client = AgentClient.new('foo', 'bar', client_opts)
@@ -391,7 +401,7 @@ module Bosh::Director
       it 'should retry methods' do
         args = { method: :baz, arguments: [] }
 
-        expect(Config.nats_rpc).to receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', hash_including(args)).exactly(2).times.and_raise(Bosh::Director::RpcTimeout)
 
         client_opts = {
@@ -409,7 +419,7 @@ module Bosh::Director
       it 'should retry only timeout errors' do
         args = { method: :baz, arguments: [] }
 
-        expect(Config.nats_rpc).to receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', hash_including(args)).once.and_raise(RuntimeError.new('foo'))
 
         client_opts = {
@@ -457,6 +467,9 @@ module Bosh::Director
             end
           end
           task_id = 1
+          tasks_dir = Dir.mktmpdir
+          allow(Config).to receive(:base_dir).and_return(tasks_dir)
+          allow(Config).to receive(:cloud_options).and_return({})
           task = Models::Task.make(:id => task_id, :state => 'cancelling')
           testjob_class.perform(task_id)
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
@@ -470,7 +483,7 @@ module Bosh::Director
         client_opts = { timeout: 0.1, :credentials => credentials }
         response = { 'value' => 5 }
 
-        expect(Config.nats_rpc).to receive(:send_request) { |*args, &blk|
+        expect(@nats_rpc).to receive(:send_request) { |*args, &blk|
           expect(args[0]).to eq('foo.bar')
           request = args[1]
           data = request['encrypted_data']
@@ -501,7 +514,7 @@ module Bosh::Director
           }
         }
 
-        expect(Config.nats_rpc).to receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', expected_rpc_args).and_yield(response)
 
         rm = instance_double('Bosh::Director::Api::ResourceManager')
@@ -543,6 +556,9 @@ module Bosh::Director
 
     describe '#run_errand' do
       it 'sends a run errand message over nats and returns a task' do
+        nats_rpc = instance_double('Bosh::Director::NatsRpc')
+        allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
+
         client = AgentClient.new('fake-service-name', 'fake-client-id')
 
         args = double
@@ -553,7 +569,7 @@ module Bosh::Director
           }
         }
 
-        expect(Config.nats_rpc).to receive(:send_request).with(
+        expect(nats_rpc).to receive(:send_request).with(
           'fake-service-name.fake-client-id', hash_including(method: :run_errand, arguments: [args]))
           .and_yield(nats_rpc_response)
 
@@ -565,6 +581,9 @@ module Bosh::Director
     end
 
     describe '#wait_for_task' do
+      let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
+      before { allow(Config).to receive(:nats_rpc).and_return(nats_rpc) }
+
       context 'when a block is passed' do
         let(:fake_block) { Proc.new {} }
 
@@ -578,7 +597,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -589,7 +608,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -609,7 +628,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -619,7 +638,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -638,7 +657,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -657,7 +676,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -668,7 +687,7 @@ module Bosh::Director
             }
           }
 
-          expect(Config.nats_rpc).to receive(:send_request).once.with(
+          expect(nats_rpc).to receive(:send_request).once.with(
             'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
@@ -692,7 +711,7 @@ module Bosh::Director
             }
           }
 
-          allow(Config.nats_rpc).to receive(:send_request).with(
+          allow(nats_rpc).to receive(:send_request).with(
               'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
                                .and_yield(nats_rpc_response)
 
@@ -705,8 +724,10 @@ module Bosh::Director
     end
 
     describe '#stop' do
+      let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
       let(:fake_timeout_ticks) { 3 }
 
+      before { allow(Config).to receive(:nats_rpc).and_return(nats_rpc) }
 
       it 'should timeout and continue on after 5 minutes' do
         handle_method_response = {

@@ -127,7 +127,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises' do
             expect {
               PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
-            }.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch,
+            }.to raise_error(Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
                 "Instance group 'fake-job' with network 'network_A' declares static ip '192.168.1.244', which belongs to no subnet")
           end
         end

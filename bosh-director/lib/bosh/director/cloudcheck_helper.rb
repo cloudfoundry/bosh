@@ -45,7 +45,6 @@ module Bosh::Director
       validate_env(instance_model.vm_env)
 
       begin
-        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         vm_deleter.delete_for_instance(instance_model)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
@@ -66,8 +65,7 @@ module Bosh::Director
       @logger.debug("Recreating Vm: #{instance_model})")
       delete_vm_from_cloud(instance_model)
 
-      existing_vm_env = instance_model.vm_env
-      instance_plan_to_create = create_instance_plan(instance_model, existing_vm_env)
+      instance_plan_to_create = create_instance_plan(instance_model)
 
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
@@ -108,9 +106,9 @@ module Bosh::Director
 
     private
 
-    def create_instance_plan(instance_model, vm_env)
+    def create_instance_plan(instance_model)
       vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
-      env = DeploymentPlan::Env.new(vm_env)
+      env = DeploymentPlan::Env.new(instance_model.vm_env, instance_model.vm_uninterpolated_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_model
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
@@ -167,7 +165,7 @@ module Bosh::Director
     end
 
     def vm_creator
-      disk_manager = DiskManager.new(cloud, @logger)
+      disk_manager = SingleDiskManager.new(cloud, @logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
       @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)

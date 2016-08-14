@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class JobAvailabilityZoneParser
+    class InstanceGroupAvailabilityZoneParser
       include ValidationHelper
 
       def parse(job_spec, job, deployment, networks)

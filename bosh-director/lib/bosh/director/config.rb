@@ -48,8 +48,7 @@ module Bosh::Director
         :record_events,
         :director_ips,
         :config_server_enabled,
-        :config_server_url,
-        :config_server_cert_path
+        :config_server,
       )
 
       def clear
@@ -127,10 +126,10 @@ module Bosh::Director
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db ||= configure_db(config['db'])
+        @db = configure_db(config['db'])
         @dns = config['dns']
         if @dns && @dns['db']
-          @dns_db ||= configure_db(@dns['db'])
+          @dns_db = configure_db(@dns['db'])
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
@@ -146,7 +145,10 @@ module Bosh::Director
             Bosh::Director::Models::Dns::Domain.class
           end
         end
-        @dns_manager = DnsManagerProvider.create
+
+        @local_dns_enabled = config.fetch('local_dns', {}).fetch('enabled', false)
+        @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
+
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
@@ -163,22 +165,18 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
-        @local_dns = config.fetch('local_dns', false)
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
         @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
-        config_server = config['config_server'] || {}
-        @config_server_enabled = config_server['enabled']
-        if @config_server_enabled
-          @config_server_url = config_server['url']
-          @config_server_cert_path = config_server['ca_cert_path']
+        @config_server = config.fetch('config_server', {})
+        @config_server_enabled = @config_server['enabled']
 
-          unless URI.parse(@config_server_url).scheme == 'https'
-            raise ArgumentError,
-                  'Config Server URL should always be https. Currently ' +
-                    "it is #{@config_server_url}"
+        if @config_server_enabled
+          config_server_url = config_server['url']
+          unless URI.parse(config_server_url).scheme == 'https'
+            raise ArgumentError, "Config Server URL should always be https. Currently it is #{config_server_url}"
           end
         end
 
@@ -198,6 +196,14 @@ module Bosh::Director
 
       def use_compiled_package_cache?
         !@compiled_package_cache_options.nil?
+      end
+
+      def local_dns_enabled?
+        !!@local_dns_enabled
+      end
+
+      def local_dns_include_index?
+        !!@local_dns_include_index
       end
 
       def get_revision

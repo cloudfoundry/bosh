@@ -116,6 +116,10 @@ module Bosh::Spec
       Yajl::Parser.parse(File.read(spec_path))
     end
 
+    def read_etc_hosts
+      read_file(File.join('bosh', 'etc_hosts'))
+    end
+
     private
 
     def jobs_logs_path

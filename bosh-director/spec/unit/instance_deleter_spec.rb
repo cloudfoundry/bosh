@@ -19,7 +19,7 @@ module Bosh::Director
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil, cleanup_dns_records: nil, publish_dns_records: nil) }
     let(:options) { {} }
     let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
-    let(:disk_manager) { DiskManager.new(cloud, logger) }
+    let(:disk_manager) { SingleDiskManager.new(cloud, logger) }
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }
@@ -96,9 +96,10 @@ module Bosh::Director
         end
 
         it 'should delete the instances with the config max threads option' do
-          Config.max_threads = 5
-          pool = ThreadPool.new
+          allow(Config).to receive(:max_threads).and_return(5)
+          pool = double('pool')
           expect(ThreadPool).to receive(:new).with(max_threads: 5).and_return(pool)
+          expect(pool).to receive(:wrap).and_yield(pool)
           expect(pool).to receive(:process).exactly(5).times.and_yield
 
           5.times do |index|

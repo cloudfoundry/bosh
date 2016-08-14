@@ -15,7 +15,7 @@ module Bosh
         stemcell.add_stemcell_model
         stemcell
       end
-      let(:env) { DeploymentPlan::Env.new({}) }
+      let(:env) { DeploymentPlan::Env.new({}, {}) }
       let(:job) do
         template_model = BD::Models::Template.make
         template = BD::DeploymentPlan::Template.new(nil, 'fake-template')
@@ -57,31 +57,33 @@ module Bosh
       end
 
       describe '#delete_for_instance' do
-        let!(:local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.uuid}.job_name.name.bosh.bosh",
-                                                                ip: '1.2.3.4',
-                                                                instance_id: instance.id) }
+        let!(:uuid_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.uuid}.job_name.name.bosh.bosh",
+                                                                     ip: '1.2.3.4',
+                                                                     instance_id: instance.id) }
 
-        before {
-          expect(instance).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
-          expect(subject).to receive(:delete_vm).with('vm-cid')
-        }
+        let!(:index_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.index}.job_name.name.bosh.bosh",
+                                                                      ip: '1.2.3.4',
+                                                                      instance_id: instance.id) }
+
+        before do
+          expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
+          expect(subject).to receive(:delete_vm).with(instance_model.vm_cid)
+          allow(Config).to receive(:local_dns_enabled?).and_return(true)
+        end
 
         it 'deletes the instance and stores an event' do
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-          expect(Models::LocalDnsRecord.all.last).to eq(local_dns_record)
+          expect(Models::LocalDnsRecord.all).to eq([uuid_local_dns_record, index_local_dns_record])
 
           expect {
-            subject.delete_for_instance(instance)
-          }.to change { [Models::Event.count,
-                         Models::LocalDnsRecord.count]}.from([0,1]).to([2, 0])
+            subject.delete_for_instance(instance_model)
+          }.to change { Models::Event.count }.from(0).to(2)
         end
 
         context 'when store_event is false' do
           it 'deletes the instance and does not store an event' do
-            expect(subject).to receive(:delete_local_dns_record).with(instance)
-
             expect {
-              subject.delete_for_instance(instance, false)
+              subject.delete_for_instance(instance_model, false)
             }.not_to change { Models::Event.count }
           end
         end

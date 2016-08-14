@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-    manifest = Bosh::Director::Manifest.new(deployment_manifest, nil, nil)
+    manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, nil, nil, {:resolve_interpolation => false})
     planner = planner_factory.create_from_manifest(manifest, nil, nil, {})
     planner.bind_models
     planner
@@ -40,7 +40,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {'name' => 'mysql-template',
              'release' => 'fake-release',
              'provides' => {'db' => {'as' => 'db'}},
-             "properties" => {'mysql' => nil}
+             'properties' => {'mysql' => nil}
             }
           ],
           'resource_pool' => 'fake-resource-pool',
@@ -162,6 +162,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect(api_server_job.link_spec).to eq(
             {"db" => {"networks" => ["fake-manual-network", "fake-dynamic-network"],
                       "properties" => {"mysql" => nil},
+                      "uninterpolated_properties" => {"mysql" => nil},
                       "instances" => [
                           {"name" => "mysql",
                            "index" => 0,
@@ -191,7 +192,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])
 
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-          manifest = Bosh::Director::Manifest.new(other_deployment_manifest, nil, nil)
+          manifest = Bosh::Director::Manifest.load_from_hash(other_deployment_manifest, nil, nil, {:resolve_interpolation => false})
           deployment_plan = planner_factory.create_from_manifest(manifest, nil, nil, {})
           deployment_plan.bind_models
 
@@ -211,6 +212,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'db' => {
                   'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                   "properties"=>{"mysql"=>nil},
+                  "uninterpolated_properties"=>{"mysql"=>nil},
                   'instances' => [
                     {
                       'name' => 'mysql',
@@ -276,6 +278,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'backup_db' => {
                 'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                 "properties"=>{"mysql"=>nil},
+                "uninterpolated_properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',
@@ -350,7 +353,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when there is a cloud config' do
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-        manifest = Bosh::Director::Manifest.new(deployment_manifest, cloud_config.manifest, nil)
+        manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, cloud_config, nil, {:resolve_interpolation => false})
+
         planner = planner_factory.create_from_manifest(manifest, cloud_config, nil, {})
         planner.bind_models
         planner
@@ -482,6 +486,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'db' => {
                 'networks' => ['fake-manual-network', 'fake-dynamic-network'],
                 "properties"=>{"mysql"=>nil},
+                "uninterpolated_properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',

@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe JobNetworksParser do
+  describe InstanceGroupNetworksParser do
     include Bosh::Director::IpUtil
 
-    let(:job_networks_parser) { JobNetworksParser.new(Network::VALID_DEFAULTS) }
+    let(:job_networks_parser) { InstanceGroupNetworksParser.new(Network::VALID_DEFAULTS) }
     let(:job_spec) do
       job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
       job_network = job['networks'].first

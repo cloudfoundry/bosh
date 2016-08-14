@@ -9,6 +9,8 @@ module Bosh::Director
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
+      @cloud = instance_double('Bosh::Cloud')
+      allow(Config).to receive(:cloud).and_return(@cloud)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
     end
 
@@ -32,7 +34,7 @@ module Bosh::Director
           agent = double('agent')
           expect(agent).to receive(:list_disk).and_return([])
 
-          expect(Config.cloud).to receive(:detach_disk).exactly(1).times
+          expect(@cloud).to receive(:detach_disk).exactly(1).times
 
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 
@@ -94,8 +96,8 @@ module Bosh::Director
 
           expect(resolver).to receive(:track_and_log)
                                   .and_raise(Bosh::Director::ProblemHandlerError.new('Resolution failed'))
-          expect(Config.logger).to receive(:error).with("Error resolving problem '1': Resolution failed")
-          expect(Config.logger).to receive(:error).with(backtrace)
+          expect(logger).to receive(:error).with("Error resolving problem '1': Resolution failed")
+          expect(logger).to receive(:error).with(backtrace)
 
           count, error_message = resolver.apply_resolutions({ problem.id.to_s => 'ignore' })
 
@@ -113,8 +115,8 @@ module Bosh::Director
 
           expect(ProblemHandlers::Base).to receive(:create_from_model)
                                                .and_raise(StandardError.new('Model creation failed'))
-          expect(Config.logger).to receive(:error).with("Error resolving problem '1': Model creation failed")
-          expect(Config.logger).to receive(:error).with(backtrace)
+          expect(logger).to receive(:error).with("Error resolving problem '1': Model creation failed")
+          expect(logger).to receive(:error).with(backtrace)
 
           count, error_message = resolver.apply_resolutions({ problem.id.to_s => 'ignore' })
 

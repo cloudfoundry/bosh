@@ -10,7 +10,7 @@ module Bosh::Director
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
-    let(:disk_manager) {DiskManager.new(cloud, logger)}
+    let(:disk_manager) {SingleDiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:reuse_compilation_vms) { false }
     let(:number_of_workers) { 3 }
@@ -41,21 +41,33 @@ module Bosh::Director
     let(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, 4)
     end
+    let(:thread_pool) do
+      thread_pool = instance_double('Bosh::Director::ThreadPool')
+      allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
+      allow(thread_pool).to receive(:process).and_yield
+      allow(thread_pool).to receive(:working?).and_return(false)
+      thread_pool
+    end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
     let(:event_manager) {Api::EventManager.new(true)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     before do
-      # allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
+      allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
+      @blobstore = double(:blobstore)
+      allow(Config).to receive(:blobstore).and_return(@blobstore)
 
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
+      allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
       allow(plan).to receive(:network).with('default').and_return(network)
+
+      allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
 
       allow(Config).to receive(:current_job).and_return(update_job)
       @all_packages = []
@@ -447,7 +459,7 @@ module Bosh::Director
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-      let(:disk_manager) { DiskManager.new(cloud, logger) }
+      let(:disk_manager) { SingleDiskManager.new(cloud, logger) }
 
       it 'reuses compilation VMs' do
         prepare_samples
@@ -509,7 +521,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {}).
+          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {'bosh' => {'group_name' => 'compilation-deadbeef'}}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)

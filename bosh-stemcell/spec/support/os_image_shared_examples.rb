@@ -117,7 +117,7 @@ shared_examples_for 'every OS image' do
       it { should be_file }
 
       it 'should reload rsyslog on rotate' do
-        should contain 'reload rsyslog >/dev/null 2>&1 || true'
+        should contain '/sbin/reload rsyslog >/dev/null 2>&1 || true'
       end
 
       it 'should not restart rsyslog on rotate so that logs are not lost' do
@@ -601,6 +601,13 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
       its(:content) { should match /^-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
       its(:content) { should match /^-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod$/ }
+    end
+
+    describe 'record unsuccessful unauthorized access attempts to files - EACCES (CIS-8.1.11)' do
+      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
     end
   end
 

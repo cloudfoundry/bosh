@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
     let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, cloud_config_hash, nil, nil) }
     let(:job) { planner.instance_groups.first }
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
@@ -163,7 +163,7 @@ module Bosh::Director::DeploymentPlan
           let(:desired_instance_count) { 1 }
 
           it 'raises an exception' do
-            expect{instance_plans}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Instance group 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
+            expect{instance_plans}.to raise_error(Bosh::Director::InstanceGroupNetworkInstanceIpMismatch, "Instance group 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
           end
         end
 
@@ -333,7 +333,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'raises an error' do
             expect{ instance_plans }.to raise_error(
-                Bosh::Director::JobNetworkInstanceIpMismatch,
+                Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
                 "Failed to evenly distribute static IPs between zones for instance group 'fake-job'"
               )
           end

@@ -16,7 +16,7 @@ module Bosh::Director
 
       def initialize(config)
         @config = config
-        @disk_manager = DiskManager.new(Config.cloud, Config.logger)
+        @orphan_disk_manager = OrphanDiskManager.new(Config.cloud, Config.logger)
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
@@ -79,7 +79,7 @@ module Bosh::Director
             orphan_disks.each do |orphan_disk|
               pool.process do
                 orphan_disk_stage.advance_and_track("#{orphan_disk.disk_cid}") do
-                  @disk_manager.delete_orphan_disk(orphan_disk)
+                  @orphan_disk_manager.delete_orphan_disk(orphan_disk)
                 end
               end
             end

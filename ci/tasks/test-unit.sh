@@ -7,7 +7,7 @@ check_param RUBY_VERSION
 
 echo "Starting $DB..."
 case "$DB" in
-  mysql2)
+  mysql)
     mv /var/lib/mysql /var/lib/mysql-src
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=256M tmpfs /var/lib/mysql
@@ -50,4 +50,4 @@ print_git_state
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/go
 bundle install --local
-bundle exec rake --trace go spec:unit
+bundle exec rake --trace spec:unit

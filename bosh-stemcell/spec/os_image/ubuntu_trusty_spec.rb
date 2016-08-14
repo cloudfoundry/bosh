@@ -16,7 +16,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_kernel' do
-    describe package('linux-generic-lts-vivid') do
+    describe package('linux-generic-lts-xenial') do
       it { should be_installed }
     end
   end
@@ -301,6 +301,13 @@ EOF
     end
   end
 
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
+    end
+  end
+
+
   context 'PAM configuration' do
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
@@ -309,6 +316,10 @@ EOF
 
       it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
         should contain /password.*pam_unix\.so.*minlen=14/
+      end
+
+      it 'must use the cracklib library to set correct password requirements (CIS-9.2.1)' do
+        should contain /password.*pam_cracklib\.so.*retry=3.*minlen=14.*dcredit=-1.*ucredit=-1.*ocredit=-1.*lcredit=-1/
       end
     end
 

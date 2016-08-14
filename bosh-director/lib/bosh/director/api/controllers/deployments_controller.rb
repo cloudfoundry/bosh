@@ -81,15 +81,15 @@ module Bosh::Director
         options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
-          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
+          manifest = deployment.manifest
         else
-          manifest_file_path, _ = prepare_yml_file(request.body, 'deployment')
-          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
+          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest =  YAML.dump(manifest_hash)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -112,15 +112,15 @@ module Bosh::Director
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         if request.content_length.nil? || request.content_length.to_i == 0
-          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment')
+          manifest = deployment.manifest
         else
-          manifest_file_path = prepare_yml_file(request.body, 'deployment')
-          validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
+          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest =  YAML.dump(manifest_hash)
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -246,7 +246,7 @@ module Bosh::Director
           redirect "/tasks/#{task.id}"
         else
           instances = @instance_manager.find_instances_by_deployment(deployment)
-          JSON.generate(create_instances_response(instances))
+          JSON.generate(create_instances_response_with_vm_expected(instances))
         end
       end
 
@@ -330,9 +330,7 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
-        manifest_file_path = prepare_yml_file(request.body, 'deployment')
-        deployment = validate_manifest_yml(File.read(manifest_file_path), manifest_file_path)
-
+        deployment = validate_manifest_yml(request.body.read, nil)
         unless deployment.kind_of?(Hash)
           raise ValidationInvalidType, 'Deployment manifest must be a hash'
         end
@@ -361,7 +359,7 @@ module Bosh::Director
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_model, options)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options)
 
         redirect "/tasks/#{task.id}"
       end
@@ -372,16 +370,16 @@ module Bosh::Director
         ignore_cc = ignore_cloud_config?(manifest_hash)
 
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, ignore_cc ? nil : deployment.cloud_config, deployment.runtime_config)
+          before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
           before_manifest.resolve_aliases
         else
-          before_manifest = Manifest.load_from_text(nil, nil, nil)
+          before_manifest = Manifest.generate_empty_manifest
         end
 
         after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
-        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config)
+        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config, {:resolve_interpolation => false})
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'
@@ -466,14 +464,24 @@ module Bosh::Director
 
       def create_instances_response(instances)
         instances.map do |instance|
-          {
-              'agent_id' => instance.agent_id,
-              'cid' => instance.vm_cid,
-              'job' => instance.job,
-              'index' => instance.index,
-              'id' => instance.uuid
-          }
+          create_instance_response(instance)
         end
+      end
+
+      def create_instances_response_with_vm_expected(instances)
+        instances.map do |instance|
+          create_instance_response(instance).merge('expects_vm' => instance.expects_vm?)
+        end
+      end
+
+      def create_instance_response(instance)
+        {
+            'agent_id' => instance.agent_id,
+            'cid' => instance.vm_cid,
+            'job' => instance.job,
+            'index' => instance.index,
+            'id' => instance.uuid
+        }
       end
     end
   end

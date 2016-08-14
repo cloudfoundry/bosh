@@ -9,7 +9,7 @@ module Bosh::Director
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
     let(:event_manager) {Api::EventManager.new(true)}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
@@ -234,18 +234,22 @@ module Bosh::Director
               size: 50)
         end
 
-        let(:disk_manager) { instance_double(DiskManager)}
-
-        before {
-          allow(DiskManager).to receive(:new).and_return(disk_manager)
-          allow(disk_manager).to receive(:detach_disk)
-          allow(disk_manager).to receive(:unmount_disk)
-          allow(disk_manager).to receive(:orphan_disk)
-          allow(disk_manager).to receive(:attach_disk)
-        }
+        let(:agent_client) do
+          instance_double(AgentClient,
+            mount_disk: nil,
+            list_disk: ['original-disk-cid'],
+            stop: nil,
+            unmount_disk: nil
+          )
+        end
+        before do
+          allow(Config.cloud).to receive(:attach_disk)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        end
 
         it 'attaches the new disk' do
-          expect(disk_manager).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:detach_disk)
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -254,10 +258,13 @@ module Bosh::Director
         end
 
         it 'orphans and unmounts the previous disk' do
-          expect(disk_manager).to receive(:detach_disk).with(instance_model, original_disk)
-          expect(disk_manager).to receive(:unmount_disk).with(instance_model, original_disk)
-          expect(disk_manager).to receive(:orphan_disk).with(original_disk)
+          expect(Models::OrphanDisk.all).to be_empty
+          expect(Config.cloud).to receive(:detach_disk).with(instance_model.vm_cid, 'original-disk-cid')
+          expect(agent_client).to receive(:unmount_disk)
+
           attach_disk_job.perform
+
+          expect(Models::OrphanDisk.all).not_to be_empty
         end
       end
 
@@ -265,21 +272,17 @@ module Bosh::Director
         let(:vm_cid) { nil }
 
         let(:instance_state) {'stopped'}
-        
+
         let(:original_disk) { nil }
 
-        let(:disk_manager) { instance_double(DiskManager)}
-
-        before {
-          allow(DiskManager).to receive(:new).and_return(disk_manager)
-          allow(disk_manager).to receive(:detach_disk)
-          allow(disk_manager).to receive(:unmount_disk)
-          allow(disk_manager).to receive(:orphan_disk)
-          allow(disk_manager).to receive(:attach_disk)
-        }
+        let(:agent_client) { instance_double(AgentClient, mount_disk: nil) }
+        before do
+          allow(Config.cloud).to receive(:attach_disk)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        end
 
         it 'attaches the new disk' do
-          expect(disk_manager).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:attach_disk)
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -288,9 +291,13 @@ module Bosh::Director
         end
 
         it 'performs no action for previous disk' do
-          expect(disk_manager).to_not receive(:detach_disk).with(instance_model, original_disk)
-          expect(disk_manager).to_not receive(:unmount_disk).with(instance_model, original_disk)
-          expect(disk_manager).to_not receive(:orphan_disk).with(original_disk)
+          expect(Models::OrphanDisk.all).to be_empty
+          expect(Config.cloud).to_not receive(:detach_disk).with(instance_model, original_disk)
+          expect(agent_client).to_not receive(:unmount_disk)
+
+          attach_disk_job.perform
+
+          expect(Models::OrphanDisk.all).to be_empty
         end
       end
     end

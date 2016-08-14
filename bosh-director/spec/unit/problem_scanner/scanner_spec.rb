@@ -62,6 +62,9 @@ module Bosh::Director
         and_return(problem_register)
     end
 
+    let(:logger) { double(:logger) }
+    before { allow(Config).to receive(:logger).and_return(logger) }
+
     describe 'scan_vms' do
       it 'delegates to VmScanStage' do
         vms = double(:vms)

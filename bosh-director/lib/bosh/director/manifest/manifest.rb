@@ -3,51 +3,98 @@ require 'set'
 module Bosh::Director
   class Manifest
 
-    def self.load_from_text(manifest_text, cloud_config, runtime_config, use_config_server=false)
-      manifest_text ||= '{}'
-      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config, use_config_server)
+    def self.load_from_model(deployment_model, options = {})
+      manifest_text = deployment_model.manifest || '{}'
+      self.load_manifest(YAML.load(manifest_text), deployment_model.cloud_config, deployment_model.runtime_config, options)
     end
 
-    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, use_config_server=false)
-      cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
-      runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
-      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-      new(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server)
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config, options = {})
+      self.load_manifest(manifest_hash, cloud_config, runtime_config, options)
     end
 
-    attr_reader :manifest_hash, :cloud_config_hash, :runtime_config_hash
+    def self.generate_empty_manifest
+      self.load_manifest({}, nil, nil, {:resolve_interpolation => false})
+    end
 
-    def initialize(manifest_hash, cloud_config_hash, runtime_config_hash, use_config_server=false)
-      @manifest_hash = manifest_hash
+    # Check 'Bosh::Director::DeploymentManifestResolver.resolve_manifest' for the
+    # details about the structure of hybrid_manifest_hash
+    attr_reader :hybrid_manifest_hash
+    attr_reader :raw_manifest_hash
+
+    # Check 'Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest' for
+    # details about the structure of hybrid_runtime_config_hash
+    attr_reader :hybrid_runtime_config_hash
+    attr_reader :raw_runtime_config_hash
+
+    attr_reader :cloud_config_hash
+
+    def initialize(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+      @hybrid_manifest_hash = hybrid_manifest_hash
+      @raw_manifest_hash = raw_manifest_hash
+
       @cloud_config_hash = cloud_config_hash
-      @runtime_config_hash = runtime_config_hash
-      @use_config_server = use_config_server
 
-      setup_config_values if can_use_config_server?
+      @hybrid_runtime_config_hash = hybrid_runtime_config_hash
+      @raw_runtime_config_hash = raw_runtime_config_hash
     end
 
     def resolve_aliases
-      hashed = to_hash
-      hashed['resource_pools'].to_a.each do |rp|
+      resolve_aliases_for_generic_hash(to_hash)
+      resolve_aliases_for_generic_hash(to_hash({:raw => true}))
+    end
+
+    def diff(other_manifest, redact)
+      options = { :raw => true }
+      Changeset.new(to_hash(options), other_manifest.to_hash(options)).diff(redact).order
+    end
+
+    def to_hash(options={})
+      raw = options.fetch(:raw, false)
+      merge_manifests(
+        raw ? @raw_manifest_hash : @hybrid_manifest_hash,
+        @cloud_config_hash,
+        raw ? @raw_runtime_config_hash : @hybrid_runtime_config_hash
+      )
+    end
+
+    private
+
+    def self.load_manifest(manifest_hash, cloud_config, runtime_config, options = {})
+      resolve_interpolation = options.fetch(:resolve_interpolation, true)
+      ignore_cloud_config = options.fetch(:ignore_cloud_config, false)
+
+      cloud_config = nil if ignore_cloud_config
+
+      cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
+
+      hybrid_runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
+      raw_runtime_config_hash = runtime_config.nil? ? nil : runtime_config.raw_manifest
+
+      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
+
+      raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+      hybrid_manifest_hash = Bosh::Director::DeploymentManifestResolver.resolve_manifest(manifest_hash, resolve_interpolation)
+
+      new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+    end
+
+    def resolve_aliases_for_generic_hash(generic_hash)
+      generic_hash['resource_pools'].to_a.each do |rp|
         rp['stemcell']['version'] = resolve_stemcell_version(rp['stemcell'])
       end
 
-      hashed['stemcells'].to_a.each do |stemcell|
+      generic_hash['stemcells'].to_a.each do |stemcell|
         stemcell['version'] = resolve_stemcell_version(stemcell)
       end
 
-      hashed['releases'].to_a.each do |release|
+      generic_hash['releases'].to_a.each do |release|
         release['version'] = resolve_release_version(release)
       end
     end
 
-    def diff(other_manifest, redact)
-      Changeset.new(to_hash, other_manifest.to_hash).diff(redact).order
-    end
-
-    def to_hash
-      hash = @manifest_hash.merge(@cloud_config_hash || {})
-      hash.merge(@runtime_config_hash || {}) do |key, old, new|
+    def merge_manifests(deployment_manifest, cloud_manifest, runtime_config_manifest)
+      hash = deployment_manifest.merge(cloud_manifest || {})
+      hash.merge(runtime_config_manifest || {}) do |key, old, new|
         if key == 'releases'
           if old && new
             old.to_set.merge(new.to_set).to_a
@@ -58,24 +105,6 @@ module Bosh::Director
           new
         end
       end
-    end
-
-    def setup_config_values
-      return if !@raw_manifest_hash.nil?
-
-      manifest_parser = Bosh::Director::ConfigServer::ConfigParser.new(@manifest_hash)
-      @raw_manifest_hash = @manifest_hash
-      @manifest_hash = manifest_parser.parsed
-    end
-
-    def raw_manifest_hash
-      @raw_manifest_hash || @manifest_hash
-    end
-
-    private
-
-    def can_use_config_server?
-      @use_config_server && Bosh::Director::Config.config_server_enabled
     end
 
     def resolve_stemcell_version(stemcell)

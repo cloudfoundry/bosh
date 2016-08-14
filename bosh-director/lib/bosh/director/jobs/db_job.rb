@@ -5,10 +5,10 @@ module Bosh::Director
 
       def initialize(job_class, task_id, args)
         unless job_class.kind_of?(Class) &&
-            job_class <= Jobs::BaseJob
+          job_class <= Jobs::BaseJob
           raise DirectorError, "Invalid director job class `#{job_class}'"
         end
-        raise DirectorError, "Invalid director job class `#{job_class}'. It should have `perform' method."  unless job_class.instance_methods(false).include?(:perform)
+        raise DirectorError, "Invalid director job class `#{job_class}'. It should have `perform' method." unless job_class.instance_methods(false).include?(:perform)
         @job_class = job_class
         @task_id = task_id
         @args = args
@@ -16,8 +16,10 @@ module Bosh::Director
       end
 
       def perform
-        if Models::Task.first(id: @task_id, state: 'queued').nil?
-          raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
+        Config.db.transaction(:retry_on => [Sequel::DatabaseConnectionError]) do
+          if Models::Task.first(id: @task_id, state: 'queued').nil?
+            raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
+          end
         end
 
         process_status = ForkedProcess.run do
@@ -25,18 +27,18 @@ module Bosh::Director
         end
 
         if process_status.signaled?
-          puts "Task #{@task_id} was terminated, marking as failed"
+          Config.logger.debug("Task #{@task_id} was terminated, marking as failed")
           fail_task
         end
       end
 
       def queue_name
         if (@job_class.instance_variable_get(:@local_fs) ||
-            (@job_class.respond_to?(:local_fs) && @job_class.local_fs)) && !Config.director_pool.nil?
+          (@job_class.respond_to?(:local_fs) && @job_class.local_fs)) && !Config.director_pool.nil?
           Config.director_pool
         else
           @job_class.instance_variable_get(:@queue) ||
-              (@job_class.respond_to?(:queue) && @job_class.queue)
+            (@job_class.respond_to?(:queue) && @job_class.queue)
         end
       end
 
