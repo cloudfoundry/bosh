@@ -149,7 +149,7 @@ module Bosh::Director
     end
 
     def agent_client(instance_model)
-      AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
+      AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id, instance_model.name)
     end
 
     def create_and_attach_disk(instance_plan)

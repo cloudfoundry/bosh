@@ -55,7 +55,7 @@ module Bosh::Director
       private
 
       def agent_alive?
-        agent_client(@instance.credentials, @instance.agent_id).ping
+        agent_client(@instance.credentials, @instance.agent_id, @instance.name).ping
         true
       rescue Bosh::Director::RpcTimeout
         false

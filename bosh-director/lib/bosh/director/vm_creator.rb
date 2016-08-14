@@ -60,7 +60,7 @@ module Bosh::Director
 
       begin
         VmMetadataUpdater.build.update(instance_model, {})
-        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
+        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id, instance_model.name)
         agent_client.wait_until_ready
 
         if Config.flush_arp

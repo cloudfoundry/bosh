@@ -7,8 +7,8 @@ module Bosh::Director
     def make_handler(instance, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(instance.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id, anything, anything).and_return(@agent)
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id, anything).and_return(@agent)
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id).and_return(@agent)
       handler
     end
 
@@ -139,8 +139,8 @@ module Bosh::Director
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @instance.update(spec: spec)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222', anything, anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222', anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
           fake_app
           allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')

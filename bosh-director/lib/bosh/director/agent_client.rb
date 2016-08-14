@@ -22,7 +22,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
+    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, instance_name, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -32,12 +32,13 @@ module Bosh::Director
 
       defaults.merge!(credentials: vm_credentials) if vm_credentials
 
-      self.new('agent', agent_id, defaults.merge(options))
+      self.new('agent', agent_id, instance_name, defaults.merge(options))
     end
 
-    def initialize(service_name, client_id, options = {})
+    def initialize(service_name, client_id, instance_name, options = {})
       @service_name = service_name
       @client_id = client_id
+      @instance_name = instance_name
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 45
       @logger = Config.logger
@@ -180,7 +181,7 @@ module Bosh::Director
         raise e
       rescue RpcTimeout
         retry if @deadline - Time.now.to_i > 0
-        raise RpcTimeout, "Timed out pinging to #{@client_id} after #{deadline} seconds"
+        raise RpcTimeout, "Timed out pinging to #{@instance_name} (agent: #{@client_id}) after #{deadline} seconds"
       rescue RpcRemoteException => e
         retry if e.message =~ /^restarting agent/ && @deadline - Time.now.to_i > 0
         raise e
@@ -232,7 +233,7 @@ module Bosh::Director
           if timeout <= 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
-              "Timed out sending '#{method_name}' to #{@client_id} " +
+              "Timed out sending '#{method_name}' to #{@instance_name} (agent: #{@client_id}) " +
                 "after #{@timeout} seconds"
           end
           cond.wait(timeout)
@@ -308,7 +309,7 @@ module Bosh::Director
     def fire_and_forget(message_name, *args)
       send_nats_request(message_name, args)
     rescue => e
-      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
+      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@instance_name}' (agent: #{@client_id})")
     end
 
     def send_message(method_name, *args, &blk)

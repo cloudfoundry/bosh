@@ -86,7 +86,7 @@ module Bosh::Director
 
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', anything) }
         let(:task) do
           {
               'agent_task_id' => 'fake-agent_task_id',
@@ -199,7 +199,7 @@ module Bosh::Director
 
     context 'task is fired and forgotten' do
       describe 'delete_arp_entries' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', 'test/1') }
         let(:task) do
           {
             'agent_task_id' => 'fake-agent_task_id',
@@ -224,8 +224,15 @@ module Bosh::Director
         it 'does not raise an exception for failures' do
           allow(client).to receive(:send_nats_request).and_raise(RpcRemoteException, 'random failure!')
 
-          expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: delete_arp_entries on client: 'fake-agent-id'")
+          expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: delete_arp_entries on client: 'test/1' (agent: fake-agent-id)")
           expect { client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2']) }.to_not raise_error
+        end
+
+        it 'shows instance name in the error when instance name passed' do
+          allow(client).to receive(:send_nats_request).and_raise(RpcRemoteException, 'random failure!')
+
+          expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: delete_arp_entries on client: 'test/1' (agent: fake-agent-id)")
+          client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2'])
         end
       end
     end
@@ -236,7 +243,7 @@ module Bosh::Director
         allow(Api::ResourceManager).to receive(:new)
       end
 
-      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
+      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', anything, timeout: 0.1) }
         before do
           allow(Config).to receive(:nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
@@ -261,7 +268,7 @@ module Bosh::Director
 
     context 'task is synchronous' do
       describe 'it does not have agent_task_id' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', anything) }
 
         before do
           allow(Config).to receive(:nats_rpc)
@@ -287,7 +294,7 @@ module Bosh::Director
 
       let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
       subject(:client) do
-        AgentClient.with_vm_credentials_and_agent_id(credentials, 'fake-agent-id')
+        AgentClient.with_vm_credentials_and_agent_id(credentials, 'fake-agent-id', anything)
       end
 
       it 'should use provided credentials' do
@@ -329,7 +336,7 @@ module Bosh::Director
       expect(@nats_rpc).to receive(:send_request).
         with('foo.bar', expected_rpc_args).and_yield(response)
 
-      client = AgentClient.new('foo', 'bar')
+      client = AgentClient.new('foo', 'bar', anything)
       expect(client.baz(*test_args)).to eq(5)
     end
 
@@ -338,7 +345,7 @@ module Bosh::Director
         with(anything(), hash_including(protocol: Bosh::Director::AgentClient::PROTOCOL_VERSION)).
         and_yield({'value' => 'whatever'})
 
-      client = AgentClient.new('foo', 'bar')
+      client = AgentClient.new('foo', 'bar', anything)
       client.baz(*test_args)
     end
 
@@ -359,7 +366,7 @@ module Bosh::Director
       expect(rm).to receive(:delete_resource).with('deadbeef')
       expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
 
-      client = AgentClient.new('foo', 'bar')
+      client = AgentClient.new('foo', 'bar', anything)
       expected_error_message = "test\na\nb\nc\nan exception"
 
       expect {
@@ -373,11 +380,22 @@ module Bosh::Director
           with('foo.bar', expected_rpc_args).and_return('req_id')
         expect(@nats_rpc).to receive(:cancel_request).with('req_id')
 
-        client = AgentClient.new('foo', 'bar', timeout: 0.1)
+        client = AgentClient.new('foo', 'bar', anything, timeout: 0.1)
 
         expect {
           client.baz(*test_args)
         }.to raise_exception(Bosh::Director::RpcTimeout)
+      end
+
+      it 'shows instance name in the error when instance name passed' do
+        expect(@nats_rpc).to receive(:send_request).
+            with('foo.bar', expected_rpc_args).and_return('req_id')
+        expect(@nats_rpc).to receive(:cancel_request).with('req_id')
+        client = AgentClient.new('foo', 'bar', 'test/1', timeout: 0.1)
+
+        expect {
+          client.baz(*test_args)
+        }.to raise_exception(Bosh::Director::RpcTimeout, "Timed out sending 'baz' to test/1 (agent: bar) after 0.1 seconds")
       end
 
       it 'should retry only methods in the options list' do
@@ -391,7 +409,7 @@ module Bosh::Director
         expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', hash_including(args)).once.and_raise(Bosh::Director::RpcTimeout)
 
-        client = AgentClient.new('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', anything, client_opts)
 
         expect {
           client.baz
@@ -409,7 +427,7 @@ module Bosh::Director
           retry_methods: { baz: 1 }
         }
 
-        client = AgentClient.new('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', anything, client_opts)
 
         expect {
           client.baz
@@ -427,7 +445,7 @@ module Bosh::Director
           retry_methods: { retry_method: 10 }
         }
 
-        client = AgentClient.new('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', anything, client_opts)
 
         expect {
           client.baz
@@ -435,7 +453,7 @@ module Bosh::Director
       end
 
       describe :wait_until_ready do
-        let(:client) { AgentClient.new('foo', 'bar', timeout: 0.1) }
+        let(:client) { AgentClient.new('foo', 'bar', anything, timeout: 0.1) }
 
         it 'should wait for the agent to be ready' do
           expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
@@ -474,6 +492,12 @@ module Bosh::Director
           testjob_class.perform(task_id)
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
         end
+
+        it 'shows instance name in the error when instance name passed' do
+          client = AgentClient.new('foo', 'bar', 'test/1', timeout: 0.1)
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout, 'timeout exception')
+          expect { client.wait_until_ready(0) }.to raise_error(Bosh::Director::RpcTimeout, 'Timed out pinging to test/1 (agent: bar) after 0 seconds')
+        end
       end
     end
 
@@ -499,7 +523,7 @@ module Bosh::Director
           blk.call('encrypted_data' => handler.encrypt(response))
         }
 
-        client = AgentClient.new('foo', 'bar', client_opts)
+        client = AgentClient.new('foo', 'bar', anything, client_opts)
         expect(client.baz(1, 2, 3)).to eq(5)
       end
     end
@@ -522,7 +546,7 @@ module Bosh::Director
         expect(rm).to receive(:delete_resource).with('cafe')
         expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
 
-        client = AgentClient.new('foo', 'bar')
+        client = AgentClient.new('foo', 'bar', anything)
         value = client.baz(*test_args)
         expect(value['result']['compile_log']).to eq('blob')
       end
@@ -530,7 +554,7 @@ module Bosh::Director
 
     describe 'formatting RPC remote exceptions' do
       it 'supports old style (String)' do
-        client = AgentClient.new('foo', 'bar')
+        client = AgentClient.new('foo', 'bar', anything)
         expect(client.format_exception('message string')).to eq('message string')
       end
 
@@ -549,7 +573,7 @@ module Bosh::Director
 
         expected_error = "something happened\nin zbb.rb:35\nin zbb.rb:26\nFailed to compile: no such file 'zbb'"
 
-        client = AgentClient.new('foo', 'bar')
+        client = AgentClient.new('foo', 'bar', anything)
         expect(client.format_exception(exception)).to eq(expected_error)
       end
     end
@@ -559,7 +583,7 @@ module Bosh::Director
         nats_rpc = instance_double('Bosh::Director::NatsRpc')
         allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
 
-        client = AgentClient.new('fake-service-name', 'fake-client-id')
+        client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
         args = double
         nats_rpc_response = {
@@ -588,7 +612,7 @@ module Bosh::Director
         let(:fake_block) { Proc.new {} }
 
         it 'calls the block while the task is running' do
-          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
           nats_rpc_response = {
             'value' => {
@@ -618,7 +642,7 @@ module Bosh::Director
         end
 
         it 'sleeps for the default poll interval' do
-          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
           allow(fake_block).to receive(:call)
 
@@ -648,7 +672,7 @@ module Bosh::Director
         end
 
         it 'returns the task value' do
-          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
           nats_rpc_response = {
             'value' => {
@@ -667,7 +691,7 @@ module Bosh::Director
 
       context 'when no block is passed' do
         it 'sleeps for the default poll interval and returns task value' do
-          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
           nats_rpc_response = {
             'value' => {
@@ -701,7 +725,7 @@ module Bosh::Director
         let(:fake_timeout_ticks) { 3 }
 
         it 'uses the timeout if one is passed' do
-          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
           timeout = Timeout.new(fake_timeout_ticks)
 
           nats_rpc_response = {
@@ -739,7 +763,7 @@ module Bosh::Director
         timeout = Timeout.new(fake_timeout_ticks)
 
         allow(Timeout).to receive(:new).and_return(timeout)
-        client = AgentClient.new('fake-service-name', 'fake-client-id')
+        client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
         expect(client).to receive(:handle_method).with(:stop, []).once.and_return(handle_method_response)
         expect(client).to receive(:handle_method).with(:get_task, ['fake-task-id']).exactly(fake_timeout_ticks + 1).times.and_return(handle_method_response)
@@ -754,7 +778,7 @@ module Bosh::Director
       it 'should suppress timeout errors received from the agent' do
         allow(Timeout).to receive(:new).and_return(Timeout.new(fake_timeout_ticks))
 
-        client = AgentClient.new('fake-service-name', 'fake-client-id')
+        client = AgentClient.new('fake-service-name', 'fake-client-id', anything)
 
         expect(Config.logger).to receive(:warn).with("Ignoring stop timeout error from the agent: #<Bosh::Director::RpcRemoteException: Timed out waiting for service 'foo'.>")
 

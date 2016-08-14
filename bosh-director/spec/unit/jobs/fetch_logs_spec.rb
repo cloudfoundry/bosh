@@ -19,7 +19,7 @@ module Bosh::Director
       context 'when instance is associated with a vm' do
         before { instance.update(vm_cid: 'vm-1') }
 
-        before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent) }
+        before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, instance.name).and_return(agent) }
         let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'new-fake-blobstore-id'}) }
 
         it 'cleans old log bundles' do

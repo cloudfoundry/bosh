@@ -37,7 +37,7 @@ module Bosh::Director
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         instances.each do |instance|
           pool.process do
-            send_agent_request(instance.credentials, instance.agent_id, method, *args)
+            send_agent_request(instance.credentials, instance.agent_id, instance.name, method, *args)
           end
         end
       end
@@ -50,7 +50,7 @@ module Bosh::Director
         instance_to_request_id = {}
         instances.each do |instance|
           instance_to_request_id[instance] = true
-          send_agent_request(instance.credentials, instance.agent_id, method, *args) do |response|
+          send_agent_request(instance.credentials, instance.agent_id, instance.name, method, *args) do |response|
             if response['value'] == VALID_RESPONSE
               @logger.info("Got response #{response} from instance #{instance.agent_id}")
             else
@@ -83,8 +83,8 @@ module Bosh::Director
       end
     end
 
-    def send_agent_request(instance_credentials, instance_agent_id, method, *args, &blk)
-      agent = AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id)
+    def send_agent_request(instance_credentials, instance_agent_id, instance_name, method, *args, &blk)
+      agent = AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id, instance_name)
       agent.send(method, *args, &blk)
     end
   end

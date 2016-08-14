@@ -8,7 +8,7 @@ module Bosh::Director
 
       def get_state(instance)
         @logger.debug("Requesting current VM state for: #{instance.agent_id}")
-        agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
+        agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, instance.name)
         state = agent.get_state
 
         @logger.debug("Received VM state: #{state.pretty_inspect}")

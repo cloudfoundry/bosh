@@ -62,7 +62,7 @@ module Bosh::Director
     describe '#delete_arp_entries' do
       it 'successfully broadcast :delete_arp_entries call' do
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-            with(instance.credentials, instance.agent_id).and_return(agent)
+            with(instance.credentials, instance.agent_id, instance.name).and_return(agent)
         expect(agent).to receive(:send).with(:delete_arp_entries, ips: ip_addresses)
 
         agent_broadcast.delete_arp_entries('fake-vm-cid-to-exclude', ip_addresses)
@@ -70,7 +70,7 @@ module Bosh::Director
 
       it 'successfully filers out id-1 and broadcast :delete_arp_entries call' do
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-            with(instance.credentials, instance.agent_id).and_return(agent)
+            with(instance.credentials, instance.agent_id, instance.name).and_return(agent)
         expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id).
             with(instance2.credentials, instance2.agent_id)
         expect(agent).to receive(:delete_arp_entries).with(ips: ip_addresses)
@@ -83,7 +83,7 @@ module Bosh::Director
       context 'when all agents are responsive' do
         it 'successfully broadcast :sync_dns call' do
           expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance.credentials, instance.agent_id).and_return(agent)
+              with(instance.credentials, instance.agent_id, instance.name).and_return(agent)
           expect(agent).to receive(:send).with(:sync_dns, 'fake-blob-id', 'fake-sha1', 1) do |args, &blk|
             blk.call({'value' => 'synced'})
           end
@@ -98,14 +98,14 @@ module Bosh::Director
         context 'and agent succeeds within retry count' do
           it 'retries broadcasting to failed agents' do
             expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-                with(instance.credentials, instance.agent_id) do
+                with(instance.credentials, instance.agent_id, instance.name) do
               expect(agent).to receive(:sync_dns) do |*args, &blk|
                 blk.call({'value' => 'synced'})
               end
               agent
             end
             expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-                with(instance2.credentials, instance2.agent_id) do
+                with(instance2.credentials, instance2.agent_id, instance2.name) do
               expect(agent).to receive(:sync_dns)
               agent
             end.twice
