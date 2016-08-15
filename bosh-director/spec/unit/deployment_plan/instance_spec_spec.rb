@@ -7,6 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
+    let(:links) { {'link_name' => {'stuff' => 'foo'}} }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
@@ -25,7 +26,7 @@ module Bosh::Director::DeploymentPlan
         package_spec: packages,
         persistent_disk_collection: persistent_disk_collection,
         is_errand?: false,
-        link_spec: 'fake-link',
+        link_spec: links,
         compilation?: false,
         update_spec: {},
         properties: properties,
@@ -105,6 +106,82 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
+      context 'when properties placeholders are present' do
+        let(:properties) do
+          {
+            'smurf_1' => '((smurf_placeholder_1))',
+            'smurf_2' => '((smurf_placeholder_2))'
+          }
+        end
+
+        let(:links) do
+          {
+            'link_1' => {
+              'networks' => 'foo',
+              'properties' => {
+                'smurf' => '((smurf_val1))'
+              }
+            },
+            'link_2' => {
+              'netwroks' => 'foo2',
+              'properties' => {
+                'smurf' => '((smurf_val2))'
+              }
+            }
+          }
+        end
+
+        context 'when config server is enabled' do
+          let(:resolved_properties) do
+            {
+              'smurf_1' => 'lazy smurf',
+              'smurf_2' => 'happy smurf'
+            }
+          end
+
+          let(:resolved_links) do
+            {
+              'link_1' => {
+                'networks' => 'foo',
+                'properties' => {
+                  'smurf' => 'strong smurf'
+                }
+              },
+              'link_2' => {
+                'netwroks' => 'foo2',
+                'properties' => {
+                  'smurf' => 'sleepy smurf'
+                }
+              }
+            }
+          end
+
+          before do
+            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          end
+
+          it 'resolves properties and links properties' do
+            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(properties).and_return(resolved_properties)
+            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(links).and_return(resolved_links)
+
+            spec = instance_spec.as_template_spec
+            expect(spec['properties']).to eq(resolved_properties)
+            expect(spec['links']).to eq(resolved_links)
+          end
+        end
+
+        context 'when config server is disabled' do
+          before do
+            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+          end
+
+          it 'does not resolve properties' do
+            spec = instance_spec.as_template_spec
+            expect(spec['properties']).to eq(properties)
+          end
+        end
+      end
+
       context 'when job has a manual network' do
         let(:subnet_spec) do
           {
@@ -138,7 +215,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
           expect(spec['dns_domain_name']).to eq('bosh')
-          expect(spec['links']).to eq('fake-link')
+          expect(spec['links']).to eq(links)
           expect(spec['id']).to eq('uuid-1')
           expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
@@ -171,7 +248,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)
@@ -214,7 +291,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)

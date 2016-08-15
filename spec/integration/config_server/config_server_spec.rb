@@ -27,7 +27,7 @@ describe 'using director with config server', type: :integration do
                                               return_exit_code: true, env: client_env)
 
       expect(exit_code).to_not eq(0)
-      expect(output).to include('Error 540001: Config Server SSL error')
+      expect(output).to include('Config Server SSL error')
     end
   end
 
@@ -50,7 +50,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Error 540000: Failed to find keys in the config server: test_property')
+        expect(output).to include('Failed to find keys in the config server: test_property')
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -322,7 +322,23 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to find keys in the config server: release_name, addon_prop')
+          expect(output).to include('Error 540000: Failed to find keys in the config server: release_name')
+        end
+
+        it 'will throw an error when property can not be found at render time' do
+          bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}", env: client_env)
+          config_server_helper.put_value('release_name', 'dummy2')
+          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+          output, exit_code = deploy_from_scratch(
+            no_login: true,
+            manifest_hash: manifest_hash,
+            cloud_config_hash: cloud_config,
+            failure_expected: true,
+            return_exit_code: true,
+            env: client_env
+          )
+          expect(exit_code).to_not eq(0)
+          expect(output).to include('Failed to find keys in the config server: addon_prop')
         end
       end
 

@@ -106,14 +106,15 @@ module Bosh::Director
           'id',
           'az',
           'networks',
-          'properties',
           'properties_need_filtering',
           'dns_domain_name',
-          'links',
           'persistent_disk',
           'address'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
+
+        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['properties'])
+        template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
 
         networks_hash = template_hash['networks']
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
@@ -135,6 +136,13 @@ module Bosh::Director
         'resource_pool' => @full_spec['vm_type']['name'],
         'networks' => modified_networks_hash
         })
+      end
+
+      private
+
+      def resolve_uninterpolated_values(to_be_resolved_hash)
+        return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
+        Bosh::Director::ConfigServer::ConfigParser.parse(to_be_resolved_hash)
       end
     end
 
