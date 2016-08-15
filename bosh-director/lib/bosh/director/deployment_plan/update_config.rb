@@ -11,15 +11,18 @@ module Bosh::Director
       attr_accessor :min_update_watch_time
       attr_accessor :max_update_watch_time
 
+      attr_reader :canaries_before_calculation
+      attr_reader :max_in_flight_before_calculation
+
       # @param [Hash] update_config Raw update config from deployment manifest
       # @param [optional, Hash] default_update_config Default update config
       def initialize(update_config, default_update_config = nil)
         optional = !default_update_config.nil?
 
-        @canaries = safe_property(update_config, "canaries",
+        @canaries_before_calculation = safe_property(update_config, "canaries",
                                   :class => String, :optional => optional)
 
-        @max_in_flight = safe_property(update_config, "max_in_flight",
+        @max_in_flight_before_calculation = safe_property(update_config, "max_in_flight",
                                        :class => String, :optional => optional)
 
         canary_watch_times = safe_property(update_config, "canary_watch_time",
@@ -46,7 +49,7 @@ module Bosh::Director
         })
 
         if optional
-          @canaries ||= default_update_config.canaries
+          @canaries_before_calculation ||= default_update_config.canaries_before_calculation
 
           @min_canary_watch_time ||= default_update_config.min_canary_watch_time
           @max_canary_watch_time ||= default_update_config.max_canary_watch_time
@@ -54,27 +57,27 @@ module Bosh::Director
           @min_update_watch_time ||= default_update_config.min_update_watch_time
           @max_update_watch_time ||= default_update_config.max_update_watch_time
 
-          @max_in_flight ||= default_update_config.max_in_flight
+          @max_in_flight_before_calculation ||= default_update_config.max_in_flight_before_calculation
         end
       end
 
       def to_hash
         {
-          'canaries' => @canaries,
-          'max_in_flight' => @max_in_flight,
+          'canaries' => @canaries_before_calculation,
+          'max_in_flight' => @max_in_flight_before_calculation,
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?
         }
       end
 
-      def canaries(size = nil)
-        parse_arguments(@canaries, size)
+      def canaries(size)
+        get_numerical_value(@canaries_before_calculation, size)
       end
 
-      def max_in_flight(size = nil)
-        value = parse_arguments(@max_in_flight, size)
-        ((value.is_a? Integer) && (value < 1))? 1: value
+      def max_in_flight(size)
+        value = get_numerical_value(@max_in_flight_before_calculation, size)
+        (value < 1) ? 1: value
       end
 
       def parse_watch_times(value)
@@ -102,15 +105,14 @@ module Bosh::Director
       end
 
       private
-      def parse_arguments(value, size)
-        return value if size.nil?
+      def get_numerical_value(value, size)
         case value
           when /^\d+%$/
             [((/\d+/.match(value)[0].to_i * size) / 100).round, size].min
           when /\A[-+]?[0-9]+\z/
             value.to_i
           else
-            raise 'cannot be converted'
+            raise 'cannot be calculated'
         end
       end
     end

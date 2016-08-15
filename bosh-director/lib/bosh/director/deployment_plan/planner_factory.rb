@@ -64,8 +64,8 @@ module Bosh
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
-            'max_in_flight' => parse_arguments(options['max_in_flight']),
-            'canaries' => parse_arguments(options['canaries'])
+            'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
+            'canaries' => validate_and_get_argument(options['canaries'], 'canaries')
           }
 
           @logger.info('Creating deployment plan')
@@ -232,17 +232,9 @@ module Bosh
           return mapped_properties
         end
 
-        def parse_arguments arg
-          case arg
-            when nil
-              nil
-            when /^\d+%$/
-              arg
-            when /\A[-+]?[0-9]+\z/
-              arg.to_i
-            else
-              raise 'cannot be converted'
-          end
+        def validate_and_get_argument arg, type
+          raise "#{type} value should be integer or percent" unless arg =~/^\d+%$|\A[-+]?[0-9]+\z/ || arg == nil
+          arg
         end
       end
     end
