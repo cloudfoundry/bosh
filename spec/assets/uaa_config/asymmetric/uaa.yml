@@ -16,31 +16,39 @@ oauth:
       scope: openid
       authorities: bosh.admin
       secret: "secret"
+
+    hm:
+      id: hm
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid
+      authorities: uaa.none,bosh.admin
+      secret: "secret"
 jwt:
   token:
     signing-key: |
-        -----BEGIN RSA PRIVATE KEY-----
-        MIICXQIBAAKBgQC/85WUjM7WKxnSMkd/TtGo+WWXkI5pH8ACBtb5oameiMJIw/wZ
-        +dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88jWzjaaTp8930UyY23oMxSa6JM
-        G6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduVVRs5sM3o4r1UYUTD6wIDAQAB
-        AoGAP0IpQ4F8ELy3j7weL+hr1AIM5vwu0poyDvjuE+qhGav8Szq7dFwRY/YCnlPQ
-        7GkrDfJSHBs0tG7h+3a+rtQteCrWLljyYaA9VTpelmvuB/zgNMUhhV2KqhtRYeZl
-        QM7LVC/furMFfV43UQIVeKsJKJyXzm8ny3x9RwT6dTn5eGECQQDtiDfnw6dEYvlz
-        3NwRcYx5Zdf+rLd934j5yCjC1TEWFja8Vo3ObBC5aPYtioaSPIeryhTr6TALKkk7
-        eD+tWrCpAkEAzuAj//pNNonuPdyRQSwTgiTpcr12eTYVbtny6HmwRFGvfirfRAs7
-        9W1AyA3iFtKQlY+/Pm1jv/GTEAI6UaUocwJBAN5G6onnfU9xjx3tP8LTDzFLLKUV
-        21/fHr8fn4UzG4wfnXkBRhI07jGTF0vmpaeTHSKVKJ7ayCqql30fOfdvNoECQQC7
-        VGok9LIQjewHZoC95DyyH9ypQvlSH3BfFcsJSpAb/WANvqK4Cfg8cLc1sKSnh/rX
-        A/jofcPS3t0NpQbMQeMTAkAYjCzyBaAc/zjLy1xpQrOGt/WRv1QYxvTFUwJhiPUW
-        KE4imo4yPyd/GY7rzwDtokv+pDTdaVbC8zUfC7iiJoiX
-        -----END RSA PRIVATE KEY-----
+      -----BEGIN RSA PRIVATE KEY-----
+      MIICXQIBAAKBgQC/85WUjM7WKxnSMkd/TtGo+WWXkI5pH8ACBtb5oameiMJIw/wZ
+      +dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88jWzjaaTp8930UyY23oMxSa6JM
+      G6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduVVRs5sM3o4r1UYUTD6wIDAQAB
+      AoGAP0IpQ4F8ELy3j7weL+hr1AIM5vwu0poyDvjuE+qhGav8Szq7dFwRY/YCnlPQ
+      7GkrDfJSHBs0tG7h+3a+rtQteCrWLljyYaA9VTpelmvuB/zgNMUhhV2KqhtRYeZl
+      QM7LVC/furMFfV43UQIVeKsJKJyXzm8ny3x9RwT6dTn5eGECQQDtiDfnw6dEYvlz
+      3NwRcYx5Zdf+rLd934j5yCjC1TEWFja8Vo3ObBC5aPYtioaSPIeryhTr6TALKkk7
+      eD+tWrCpAkEAzuAj//pNNonuPdyRQSwTgiTpcr12eTYVbtny6HmwRFGvfirfRAs7
+      9W1AyA3iFtKQlY+/Pm1jv/GTEAI6UaUocwJBAN5G6onnfU9xjx3tP8LTDzFLLKUV
+      21/fHr8fn4UzG4wfnXkBRhI07jGTF0vmpaeTHSKVKJ7ayCqql30fOfdvNoECQQC7
+      VGok9LIQjewHZoC95DyyH9ypQvlSH3BfFcsJSpAb/WANvqK4Cfg8cLc1sKSnh/rX
+      A/jofcPS3t0NpQbMQeMTAkAYjCzyBaAc/zjLy1xpQrOGt/WRv1QYxvTFUwJhiPUW
+      KE4imo4yPyd/GY7rzwDtokv+pDTdaVbC8zUfC7iiJoiX
+      -----END RSA PRIVATE KEY-----
 
     verification-key: |
-        -----BEGIN PUBLIC KEY-----
-        MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/85WUjM7WKxnSMkd/TtGo+WWX
-        kI5pH8ACBtb5oameiMJIw/wZ+dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88j
-        WzjaaTp8930UyY23oMxSa6JMG6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduV
-        VRs5sM3o4r1UYUTD6wIDAQAB
-        -----END PUBLIC KEY-----
+      -----BEGIN PUBLIC KEY-----
+      MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/85WUjM7WKxnSMkd/TtGo+WWX
+      kI5pH8ACBtb5oameiMJIw/wZ+dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88j
+      WzjaaTp8930UyY23oMxSa6JMG6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduV
+      VRs5sM3o4r1UYUTD6wIDAQAB
+      -----END PUBLIC KEY-----
 
 require_https: false

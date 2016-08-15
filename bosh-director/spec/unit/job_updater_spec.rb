@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
   subject(:job_updater) { described_class.new(deployment_plan, job, links_resolver, disk_manager) }
-  let(:disk_manager) { BD::DiskManager.new(logger)}
+  let(:disk_manager) { BD::SingleDiskManager.new(logger)}
 
   let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
   let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}

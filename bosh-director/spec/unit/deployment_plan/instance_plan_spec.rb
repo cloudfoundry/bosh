@@ -380,7 +380,7 @@ module Bosh::Director::DeploymentPlan
         job
       end
 
-      context 'when disk size changes' do
+      context 'when there is a change' do
         before do
           persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: {'new' => 'properties'})
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
@@ -391,40 +391,11 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log' do
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: disk size: 42 TO: disk size: 24' +
-                ' on instance ' + "#{instance_plan.existing_instance}")
+          allow(logger).to receive(:debug)
+
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed on instance ' + "#{instance_plan.existing_instance}")
+
           instance_plan.persistent_disk_changed?
-        end
-      end
-
-      context 'when disk pool size is greater than 0 and disk properties changed' do
-        it 'should log the disk properties change' do
-          persistent_disk = BD::Models::PersistentDisk.make(size: 24, cloud_properties: {'old' => 'properties'})
-          instance_plan.instance.model.add_persistent_disk(persistent_disk)
-
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {"old"=>"properties"} TO: {"new"=>"properties"}' +
-                ' on instance ' + "#{instance_plan.existing_instance}")
-          instance_plan.persistent_disk_changed?
-        end
-      end
-
-      context 'when disk pool with size 0 is used' do
-        let(:cloud_config_manifest) do
-          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_config['disk_types'] = [{
-              'name' => 'disk_a',
-              'disk_size' => 0,
-              'cloud_properties' => {
-                'new' => 'properties'
-              }
-            }]
-          cloud_config
-        end
-
-        context 'when disk_size is still 0' do
-          it 'returns false' do
-            expect(instance_plan.persistent_disk_changed?).to be(false)
-          end
         end
       end
 
@@ -432,7 +403,7 @@ module Bosh::Director::DeploymentPlan
         let(:obsolete_instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil) }
 
         it 'should return true if instance had a persistent disk' do
-          persistent_disk = BD::Models::PersistentDisk.make
+          persistent_disk = BD::Models::PersistentDisk.make(active: true)
           obsolete_instance_plan.existing_instance.add_persistent_disk(persistent_disk)
 
           expect(obsolete_instance_plan.persistent_disk_changed?).to be_truthy

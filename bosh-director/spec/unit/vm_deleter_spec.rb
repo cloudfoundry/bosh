@@ -15,7 +15,7 @@ module Bosh
         stemcell.add_stemcell_model
         stemcell
       end
-      let(:env) { DeploymentPlan::Env.new({}) }
+      let(:env) { DeploymentPlan::Env.new({}, {}) }
       let(:job) do
         template_model = BD::Models::Template.make
         template = BD::DeploymentPlan::Template.new(nil, 'fake-template')

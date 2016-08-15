@@ -20,6 +20,10 @@ module Bosh::Director::Models
       self.persistent_disks.find { |disk| disk.active }
     end
 
+    def active_persistent_disks
+      self.persistent_disks.select { |disk| disk.active }
+    end
+
     def persistent_disk_cid
       disk = persistent_disk
       return disk.disk_cid if disk
@@ -127,6 +131,11 @@ module Bosh::Director::Models
     def vm_env
       return {} if spec.nil?
       spec['env'] || {}
+    end
+
+    def vm_uninterpolated_env
+      return {} if spec.nil?
+      spec['uninterpolated_env'] || {}
     end
 
     def credentials

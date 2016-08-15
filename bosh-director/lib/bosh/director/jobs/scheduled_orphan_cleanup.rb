@@ -23,7 +23,7 @@ module Bosh::Director
       def initialize(params = {})
         logger.debug("ScheduledOrphanCleanup initialized with params: #{params.inspect}")
         @max_orphaned_age_in_days = params['max_orphaned_age_in_days']
-        @disk_manager = DiskManager.new(logger)
+        @orphan_disk_manager = OrphanDiskManager.new(logger)
       end
 
       def perform
@@ -35,7 +35,7 @@ module Bosh::Director
         stage = Config.event_log.begin_stage('Deleting orphan disks', old_orphans_count)
         old_orphans.each do |old_orphan|
           stage.advance_and_track("#{old_orphan.disk_cid}") do
-            @disk_manager.delete_orphan_disk(old_orphan)
+            @orphan_disk_manager.delete_orphan_disk(old_orphan)
           end
         end
         "Deleted #{old_orphans_count} orphaned disk(s) older than #{time}"

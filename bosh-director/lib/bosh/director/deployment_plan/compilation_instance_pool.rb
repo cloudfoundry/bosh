@@ -117,9 +117,11 @@ module Bosh::Director
 
         vm_extensions = @deployment_plan.compilation.vm_extensions
 
-        env = Env.new(@deployment_plan.compilation.env)
+        # we don't care about the uninterpolated env here. The instance spec of the compilation job
+        # wil not contain any envs.
+        env = Env.new(@deployment_plan.compilation.env, @deployment_plan.compilation.env)
 
-        compile_job = CompilationJob.new(vm_type, vm_extensions, stemcell, env, @deployment_plan.compilation.network_name)
+        compile_job = CompilationJob.new(vm_type, vm_extensions, stemcell, env, @deployment_plan.compilation.network_name, @logger)
         availability_zone = @deployment_plan.compilation.availability_zone
         instance = Instance.create_from_job(compile_job, 0, 'started', @deployment_plan.model, {}, availability_zone, @logger)
         instance.bind_new_instance_model
@@ -204,7 +206,7 @@ module Bosh::Director
       attr_reader :vm_type, :vm_extensions, :stemcell, :env, :name
       attr_reader :instance_plans
 
-      def initialize(vm_type, vm_extensions, stemcell, env, compilation_network_name)
+      def initialize(vm_type, vm_extensions, stemcell, env, compilation_network_name, logger)
         @vm_type = vm_type
         @vm_extensions = vm_extensions
         @stemcell = stemcell
@@ -212,6 +214,7 @@ module Bosh::Director
         @network = compilation_network_name
         @name = "compilation-#{SecureRandom.uuid}"
         @instance_plans = []
+        @logger = logger
       end
 
       def default_network
@@ -255,8 +258,8 @@ module Bosh::Director
         nil
       end
 
-      def persistent_disk_type
-        nil
+      def persistent_disk_collection
+        PersistentDiskCollection.new(@logger, multiple_disks: false)
       end
 
       def compilation?

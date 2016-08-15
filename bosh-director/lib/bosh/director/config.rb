@@ -48,8 +48,7 @@ module Bosh::Director
         :record_events,
         :director_ips,
         :config_server_enabled,
-        :config_server_url,
-        :config_server_cert_path
+        :config_server,
       )
 
       def clear
@@ -171,16 +170,13 @@ module Bosh::Director
 
         @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
-        config_server = config['config_server'] || {}
-        @config_server_enabled = config_server['enabled']
-        if @config_server_enabled
-          @config_server_url = config_server['url']
-          @config_server_cert_path = config_server['ca_cert_path']
+        @config_server = config.fetch('config_server', {})
+        @config_server_enabled = @config_server['enabled']
 
-          unless URI.parse(@config_server_url).scheme == 'https'
-            raise ArgumentError,
-                  'Config Server URL should always be https. Currently ' +
-                    "it is #{@config_server_url}"
+        if @config_server_enabled
+          config_server_url = config_server['url']
+          unless URI.parse(config_server_url).scheme == 'https'
+            raise ArgumentError, "Config Server URL should always be https. Currently it is #{config_server_url}"
           end
         end
 

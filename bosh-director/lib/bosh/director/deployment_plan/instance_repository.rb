@@ -21,7 +21,7 @@ module Bosh::Director::DeploymentPlan
 
     def create(desired_instance, index)
       @logger.debug("Creating new desired instance for: #{desired_instance.inspect}")
-      instance = Instance.create_from_job(desired_instance.job, index, 'started', desired_instance.deployment.model, nil, desired_instance.az, @logger)
+      instance = Instance.create_from_job(desired_instance.instance_group, index, 'started', desired_instance.deployment.model, nil, desired_instance.az, @logger)
       instance.bind_new_instance_model
       instance
     end

@@ -11,6 +11,9 @@ module Bosh::Director
         'instance_groups' => [
           {
             'name' => 'logs',
+            'env' => {
+              'smurf' => '((which_smurf))'
+            },
             'jobs' => [
               {'name' => 'mysql', 'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}}},
               {'name' => '((job_name))'}
@@ -20,7 +23,15 @@ module Bosh::Director
         ],
         'properties' => {
           'global_property' => '((something))'
-        }
+        },
+        'resource_pools' => [
+          {
+            'name' => 'resource_pool_name',
+            'env' => {
+              'f' => '((f_placeholder))'
+            }
+          }
+        ]
       }
     end
 
@@ -41,6 +52,12 @@ module Bosh::Director
              'instance_groups' => [
                {
                  'name' => 'logs',
+                 'env' => {
+                   'smurf' => '((which_smurf))'
+                 },
+                 'uninterpolated_env' => {
+                   'smurf' => '((which_smurf))'
+                 },
                  'jobs' => [
                    {'name' => 'mysql',
                     'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
@@ -57,7 +74,18 @@ module Bosh::Director
              },
              'uninterpolated_properties' => {
                'global_property' => '((something))'
-             }
+             },
+             'resource_pools' => [
+               {
+                 'name' => 'resource_pool_name',
+                 'env' => {
+                   'f' => '((f_placeholder))'
+                 },
+                 'uninterpolated_env' => {
+                   'f' => '((f_placeholder))'
+                 }
+               }
+             ]
            }
          )
         end
@@ -79,6 +107,12 @@ module Bosh::Director
                'jobs' => [
                  {
                    'name' => 'logs',
+                   'env' => {
+                     'smurf' => '((which_smurf))'
+                   },
+                   'uninterpolated_env' => {
+                     'smurf' => '((which_smurf))'
+                   },
                    'templates' => [
                      {'name' => 'mysql',
                       'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
@@ -95,7 +129,18 @@ module Bosh::Director
                },
                'uninterpolated_properties' => {
                  'global_property' => '((something))'
-               }
+               },
+               'resource_pools' => [
+                 {
+                   'name' => 'resource_pool_name',
+                   'env' => {
+                     'f' => '((f_placeholder))'
+                   },
+                   'uninterpolated_env' => {
+                     'f' => '((f_placeholder))'
+                   }
+                 }
+               ]
              }
            )
         end
@@ -111,6 +156,8 @@ module Bosh::Director
             'instance_groups' => [
               {
                 'name' => 'logs',
+                'env' => {'smurf' => '((which_smurf))'},
+                'uninterpolated_env' => {'smurf' => '((which_smurf))'},
                 'jobs' => [
                   {
                     'name' => 'mysql',
@@ -130,7 +177,18 @@ module Bosh::Director
             },
             'uninterpolated_properties' => {
               'global_property' => '((something))'
-            }
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => '((f_placeholder))'
+                },
+                'uninterpolated_env' => {
+                  'f' => '((f_placeholder))'
+                }
+              }
+            ]
           }
         end
 
@@ -143,6 +201,8 @@ module Bosh::Director
             'instance_groups' => [
               {
                 'name' => 'logs',
+                'env' => {'smurf' => 'lazy'},
+                'uninterpolated_env' => {'smurf' => '((which_smurf))'},
                 'jobs' => [
                   {
                     'name' => 'mysql',
@@ -162,18 +222,34 @@ module Bosh::Director
             },
             'uninterpolated_properties' => {
               'global_property' => '((something))'
-            }
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => 'f_value'
+                },
+                'uninterpolated_env' => {
+                  'f' => '((f_placeholder))'
+                }
+              }
+            ]
           }
         end
 
         let(:my_numeric) {Numeric.new}
         let(:ignored_subtrees) do
+          index_type = Integer
+
           ignored_subtrees = []
           ignored_subtrees << ['uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', Numeric.new, 'uninterpolated_properties']
-          ignored_subtrees << ['jobs', Numeric.new, 'templates', Numeric.new, 'uninterpolated_properties']
+          ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['jobs', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'uninterpolated_properties']
+          ignored_subtrees << ['instance_groups', index_type, 'uninterpolated_env']
+          ignored_subtrees << ['jobs', index_type, 'uninterpolated_env']
+          ignored_subtrees << ['resource_pools', index_type, 'uninterpolated_env']
           ignored_subtrees
         end
 
@@ -189,11 +265,12 @@ module Bosh::Director
           expect(actual_manifest).to eq(resolved_manifest)
         end
 
-        it 'injects uninterpolated properties in the the manifest but does not resolve the values' do
-          expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
-          actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, false)
-          expect(actual_manifest).to eq(
-             {
+        context 'when resolve_interpolation flag is false' do
+          it 'injects uninterpolated properties in the the manifest but does not resolve the values' do
+            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
+            actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, false)
+            expect(actual_manifest).to eq(
+              {
                'releases' => [
                  {'name' => 'release_1', 'version' => 'v1'},
                  {'name' => 'release_2', 'version' => 'v2'}
@@ -201,6 +278,8 @@ module Bosh::Director
                'instance_groups' => [
                  {
                    'name' => 'logs',
+                   'env' => {'smurf' => '((which_smurf))'},
+                   'uninterpolated_env' => {'smurf' => '((which_smurf))'},
                    'jobs' => [
                      {'name' => 'mysql',
                       'properties' => {'foo' => 'foo_value', 'bar' => {'smurf' => 'blue'}},
@@ -217,9 +296,21 @@ module Bosh::Director
                },
                'uninterpolated_properties' => {
                  'global_property' => '((something))'
-               }
-             }
-           )
+               },
+               'resource_pools' => [
+                 {
+                   'name' => 'resource_pool_name',
+                   'env' => {
+                     'f' => '((f_placeholder))'
+                   },
+                   'uninterpolated_env' => {
+                     'f' => '((f_placeholder))'
+                   }
+                 }
+               ]
+              }
+            )
+          end
         end
       end
     end

@@ -25,8 +25,7 @@ module Bosh::Director
       # @return [String] Instance group canonical name (mostly for DNS)
       attr_accessor :canonical_name
 
-      # @return [DiskType] Persistent disk type (or nil)
-      attr_accessor :persistent_disk_type
+      attr_accessor :persistent_disk_collection
 
       # @return [DeploymentPlan::ReleaseVersion] Release this instance group belongs to
       attr_accessor :release
@@ -118,6 +117,7 @@ module Bosh::Director
         @instance_plans = []
 
         @did_change = false
+        @persistent_disk_collection = nil
       end
 
       def self.is_legacy_spec?(instance_group_spec)
@@ -321,11 +321,6 @@ module Bosh::Director
         @lifecycle == 'errand'
       end
 
-      # reverse compatibility: translate disk size into a disk pool
-      def persistent_disk=(disk_size)
-        @persistent_disk_type = DiskType.new(SecureRandom.uuid, disk_size, {})
-      end
-
       def instance_plans_with_missing_vms
         needed_instance_plans.reject do |instance_plan|
           instance_plan.instance.vm_created? || instance_plan.instance.state == 'detached'
@@ -355,6 +350,10 @@ module Bosh::Director
 
       def has_job?(name, release)
         @templates.any? { |job| job.name == name && job.release.name == release }
+      end
+
+      def has_os?(os)
+        @stemcell.os == os
       end
 
       private

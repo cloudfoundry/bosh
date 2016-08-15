@@ -25,7 +25,7 @@ module Bosh::Director::DeploymentPlan
         stemcell: stemcell,
         env: env,
         name: 'fake-job',
-        persistent_disk_type: disk_type,
+        persistent_disk_collection: PersistentDiskCollection.new(logger),
         compilation?: false,
         is_errand?: false,
         vm_extensions: vm_extensions
@@ -34,8 +34,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:vm_extensions) {[]}
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
-    let(:env) { Env.new({'key' => 'value'}) }
-    let(:disk_type) { nil }
+    let(:env) { Env.new({'key' => 'value'}, {'key' => '((key_placeholder))'}) }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
 
@@ -94,6 +93,8 @@ module Bosh::Director::DeploymentPlan
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'env' => {},
+            'uninterpolated_env' => {},
             'id' => 'uuid-1',
             'networks' => {'fake-network' => {'fake-network-settings' => {}}},
             'packages' => {},

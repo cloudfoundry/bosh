@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
         stemcell: stemcell,
         env: env,
         package_spec: packages,
-        persistent_disk_type: disk_pool,
+        persistent_disk_collection: persistent_disk_collection,
         is_errand?: false,
         link_spec: 'fake-link',
         compilation?: false,
@@ -39,7 +39,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
-    let(:env) { Env.new({'key' => 'value'}) }
+    let(:env) { Env.new({'key' => 'value'}, {'key' => '((value_place_holder))'}) }
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner', {
           name: 'fake-deployment',
@@ -49,10 +49,11 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
-    let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_pool_spec) }
-    let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
+    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger, multiple_disks: false) }
 
     before do
+      persistent_disk_collection.add_by_disk_size(0)
+
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, network)
       reservation.resolve_ip('192.168.0.10')
 
@@ -63,6 +64,10 @@ module Bosh::Director::DeploymentPlan
     describe '#full_spec' do
       it 'returns the spec including uninterpolated properties' do
         expect(instance_spec.full_spec['uninterpolated_properties']).to eq({'key' => '((key_placeholder))'})
+      end
+
+      it 'returns the spec including uninterpolated env' do
+        expect(instance_spec.full_spec['uninterpolated_env']).to eq({'key' => '((value_place_holder))'})
       end
     end
 
@@ -102,14 +107,6 @@ module Bosh::Director::DeploymentPlan
 
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
         expect(instance_spec.as_apply_spec).to_not have_key('rendered_templates_archive')
-      end
-
-      it 'does not require persistent_disk_type' do
-        allow(job).to receive(:persistent_disk_type).and_return(nil)
-
-        spec = instance_spec.as_apply_spec
-        expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(nil)
       end
     end
 

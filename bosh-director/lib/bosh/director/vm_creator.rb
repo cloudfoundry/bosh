@@ -113,7 +113,7 @@ module Bosh::Director
 
       unless instance_plan.instance.compilation?
         # re-render job templates with updated dynamic network settings
-        @logger.debug("Re-rendering templates with spec: #{instance_plan.spec.as_template_spec}")
+        @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
         @job_renderer.render_job_instance(instance_plan)
       end
     end

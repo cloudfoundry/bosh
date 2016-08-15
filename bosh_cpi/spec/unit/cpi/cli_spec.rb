@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 require 'spec_helper'
 
 describe Bosh::Cpi::Cli do
@@ -462,6 +464,37 @@ describe Bosh::Cpi::Cli do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass4, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to include('{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to include_the_backtrace
+      end
+    end
+
+    context 'when logger has invalid utf-8 characters in the message string' do
+      class ErrorClass4 < Exception; end
+
+      it 'writes the result response to the provided logger' do
+        expect(cpi).to receive(:has_disk?).with('fake-disk-cid') do
+          bad_encoding = "\255"
+          expect(bad_encoding.valid_encoding?).to be(false)
+          logs_io.print(bad_encoding)
+
+          true
+        end
+
+        subject.run('{"method":"has_disk","arguments":["fake-disk-cid"],"context":{"director_uuid":"abc"}}')
+        expect(result_io.string).to include('�')
+      end
+
+      it 'writes the error response to the provided logger' do
+        expect(cpi).to receive(:has_disk?).with('fake-disk-cid') do
+          bad_encoding = "\255"
+          expect(bad_encoding.valid_encoding?).to be(false)
+          logs_io.print(bad_encoding)
+
+          raise ErrorClass4.new('fäke-error')
+        end
+
+        subject.run('{"method":"has_disk","arguments":["fake-disk-cid"],"context":{"director_uuid":"abc"}}')
+        expect(result_io.string).to include('�', 'fäke-error')
         expect(result_io.string).to include_the_backtrace
       end
     end

@@ -33,8 +33,14 @@ module Bosh::Director::ConfigServer
         }
       end
 
+      let(:config_server_hash) do
+        {
+            'url' => 'http://127.0.0.1:8080',
+        }
+      end
+
       before do
-        @mock_http = double("Net::HTTP")
+        @mock_http = double('Net::HTTP')
 
         allow(Net::HTTP).to receive(:new) do |_|
           @mock_http
@@ -56,15 +62,20 @@ module Bosh::Director::ConfigServer
           end
         end
 
-        allow(Bosh::Director::Config).to receive(:config_server_url).and_return("http://127.0.0.1:8080")
+        allow(Bosh::Director::Config).to receive(:config_server).and_return(config_server_hash)
+
+        auth_provider_double = instance_double(Bosh::Director::UAAAuthProvider)
+        allow(auth_provider_double).to receive(:auth_header).and_return('fake-auth-header')
+        allow(Bosh::Director::UAAAuthProvider).to receive(:new).and_return(auth_provider_double)
       end
 
       context 'ca_cert file exists and is not empty' do
+
         before do
+          config_server_hash['ca_cert_path'] = '/root/cert.crt'
           allow(@mock_http).to receive(:ca_file=).with(any_args)
-          allow(Bosh::Director::Config).to receive(:config_server_cert_path).and_return("/root/cert.crt")
           allow(File).to receive(:exist?).and_return(true)
-          allow(File).to receive(:read).and_return("my-fake-content")
+          allow(File).to receive(:read).and_return('my-fake-content')
         end
 
         it 'should use https when trying to fetch values' do
@@ -81,8 +92,18 @@ module Bosh::Director::ConfigServer
 
         it 'should request keys from the proper url' do
           manifest_hash['properties'] = { 'key' => '((value))' }
-          expect(@mock_http).to receive(:get).with("/v1/data/value")
+          expect(@mock_http).to receive(:get).with('/v1/data/value', {'Authorization' => 'fake-auth-header'})
           parsed_manifest
+        end
+
+        it 'should replace any top level property key in the passed hash' do
+          manifest_hash['name'] = '((name_val))'
+
+          expected_manifest = {
+            'name' => 'test4'
+          }
+
+          expect(parsed_manifest).to eq(expected_manifest)
         end
 
         it 'should replace the global property keys in the passed hash' do
@@ -167,11 +188,15 @@ module Bosh::Director::ConfigServer
         it 'should raise an error message when the certificate is invalid' do
           allow(@mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
           manifest_hash['properties'] = { 'key' => '((value))' }
-          expect{ parsed_manifest }.to raise_error('SSL certificate verification failed')
+          expect{ parsed_manifest }.to raise_error(
+                                         Bosh::Director::ConfigServerSSLError,
+                                         'Config Server SSL error'
+                                       )
         end
 
         it 'should not replace values in ignored subtrees' do
-          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'uninterpolated_properties']
+          index_type = Integer
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
 
           manifest_hash['instance_groups'] = [
             {
@@ -226,14 +251,15 @@ module Bosh::Director::ConfigServer
 
       context 'ca_cert file does not exist' do
         before do
-          allow(Bosh::Director::Config).to receive(:config_server_cert_path).and_return('')
+          config_server_hash['ca_cert_path'] = ''
         end
+
         it_behaves_like 'cert_store'
       end
 
       context 'ca_cert file exists and is empty' do
         before do
-          allow(Bosh::Director::Config).to receive(:config_server_cert_path).and_return("/root/cert.crt")
+          config_server_hash['ca_cert_path'] = '/root/cert.crt'
           allow(File).to receive(:exist?).and_return(true)
           allow(File).to receive(:read).and_return('')
         end

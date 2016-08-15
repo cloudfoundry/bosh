@@ -62,4 +62,7 @@ require 'bosh/director/deployment_plan/instance_group_availability_zone_parser'
 require 'bosh/director/deployment_plan/placement_planner'
 require 'bosh/director/deployment_plan/network_planner'
 require 'bosh/director/deployment_plan/instance_spec.rb'
+require 'bosh/director/deployment_plan/persistent_disk_collection.rb'
+require 'bosh/director/deployment_plan/disk_creator.rb'
+
 require 'bosh/director/dns/powerdns'

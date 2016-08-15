@@ -301,6 +301,13 @@ EOF
     end
   end
 
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
+    end
+  end
+
+
   context 'PAM configuration' do
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do

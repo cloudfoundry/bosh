@@ -12,7 +12,7 @@ module Bosh::Director
       def self.create_from_instance_plan(instance_plan)
         instance = instance_plan.instance
         deployment_name = instance.deployment_model.name
-        instance_group = instance_plan.desired_instance.job
+        instance_group = instance_plan.desired_instance.instance_group
         instance_plan = instance_plan
         dns_manager = DnsManagerProvider.create
 
@@ -28,6 +28,7 @@ module Bosh::Director
           'vm_type' => instance_group.vm_type.spec,
           'stemcell' => instance_group.stemcell.spec,
           'env' => instance_group.env.spec,
+          'uninterpolated_env' => instance_group.env.uninterpolated_spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
           'uninterpolated_properties' => instance_group.uninterpolated_properties,
@@ -38,16 +39,9 @@ module Bosh::Director
           'update' => instance_group.update_spec
         }
 
-        if instance_group.persistent_disk_type
-          # supply both for reverse compatibility with old agent
-          spec['persistent_disk'] = instance_group.persistent_disk_type.disk_size
-          # old agents will ignore this pool
-          # keep disk pool for backwards compatibility
-          spec['persistent_disk_pool'] = instance_group.persistent_disk_type.spec
-          spec['persistent_disk_type'] = instance_group.persistent_disk_type.spec
-        else
-          spec['persistent_disk'] = 0
-        end
+        disk_spec = instance_group.persistent_disk_collection.generate_spec
+
+        spec.merge!(disk_spec)
 
         new(spec, instance)
       end

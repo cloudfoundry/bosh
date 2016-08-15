@@ -274,6 +274,39 @@ module Bosh::Director::Models
       end
     end
 
+    context 'vm_env' do
+      it 'returns env contents' do
+        subject.spec=({'env' => {'a' => 'a_value'}})
+        expect(subject.vm_env).to eq({'a' => 'a_value'})
+      end
+
+      it 'returns empty hash when env is nil' do
+        subject.spec=({'env' => nil})
+        expect(subject.vm_env).to eq({})
+      end
+
+      it 'returns empty hash when spec is nil' do
+        subject.spec=(nil)
+        expect(subject.vm_env).to eq({})
+      end
+    end
+
+    context 'vm_uninterpolated_env' do
+      it 'returns uninterpolated_env contents' do
+        subject.spec=({'env' => {'a' => '((a_placeholder))'}})
+        expect(subject.vm_uninterpolated_env).to eq({'a' => '((a_placeholder))'})
+      end
+
+      it 'returns empty hash when vm_uninterpolated_env is nil' do
+        subject.spec=({'uninterpolated_env' => nil})
+        expect(subject.vm_uninterpolated_env).to eq({})
+      end
+
+      it 'returns empty hash when spec is nil' do
+        subject.spec=(nil)
+        expect(subject.vm_uninterpolated_env).to eq({})
+      end
+    end
 
     context 'with deployment_plan' do
       subject { described_class.make(deployment: deployment, job: 'job-1') }

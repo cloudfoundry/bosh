@@ -8,7 +8,7 @@ module Bosh::Director
       @deployment = deployment
       @job = job
       @logger = logger
-      @disk_manager = DiskManager.new(logger)
+      @disk_manager = SingleDiskManager.new(logger)
       @job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       @dns_manager = DnsManagerProvider.create

@@ -185,23 +185,27 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   context 'with config server enabled' do
-    with_reset_sandbox_before_each(config_server_enabled: true)
+    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox.port_provider.get_port(:config_server_port)) }
+    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox) }
+    let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
 
     before do
+      bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
+      bosh_runner.run('logout')
+
       config_server_helper.put_value('test_property', 'cats are happy')
 
       manifest = Bosh::Spec::Deployments.simple_manifest
       manifest['jobs'][0]['persistent_disk'] = 100
       manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
-      deploy_from_scratch(manifest_hash: manifest)
+      deploy_from_scratch(manifest_hash: manifest, no_login: true, env: client_env)
 
-      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+      expect(runner.run('cloudcheck --report', env: client_env)).to match(regexp('No problems found'))
     end
 
     it 'resolves issues correctly and gets values from config server' do
-      vm = director.vm('foobar', '0')
+      vm = director.vm('foobar', '0', env: client_env)
 
       template = vm.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('test_property=cats are happy')
@@ -211,18 +215,23 @@ describe 'cli: cloudcheck', type: :integration do
       config_server_helper.put_value('test_property', 'smurfs are happy')
 
       recreate_vm_without_waiting_for_process = 3
-      bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process)
-      expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+      bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process, client_env)
+      expect(runner.run('cloudcheck --report', env: client_env)).to match(regexp('No problems found'))
 
-      vm = director.vm('foobar', '0')
+      vm = director.vm('foobar', '0', env: client_env)
 
       template = vm.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('test_property=smurfs are happy')
     end
   end
 
-  def bosh_run_cck_with_resolution(num_errors, option=1)
+  def bosh_run_cck_with_resolution(num_errors, option=1, env={})
     resolution_selections = "#{option}\n"*num_errors + "yes"
+
+    env.each do |key, value|
+      ENV[key] = value
+    end
+
     output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
     if $?.exitstatus != 0
       fail("Cloud check failed, output: #{output}")

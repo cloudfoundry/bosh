@@ -121,7 +121,7 @@ module Bosh::Director
       def compile_packages
         validate_packages
 
-        disk_manager = DiskManager.new(@logger)
+        disk_manager = SingleDiskManager.new(@logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create

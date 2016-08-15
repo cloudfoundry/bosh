@@ -71,7 +71,7 @@ module Bosh::Director
           end
         end
 
-        DiskManager.new(@logger).orphan_disk(@disk)
+        OrphanDiskManager.new(@logger).orphan_disk(@disk)
 
       end
     end
