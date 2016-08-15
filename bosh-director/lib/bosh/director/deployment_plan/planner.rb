@@ -119,7 +119,7 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        disk_manager = SingleDiskManager.new(cloud, @logger)
+        disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create

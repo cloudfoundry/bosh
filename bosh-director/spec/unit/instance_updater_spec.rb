@@ -86,8 +86,8 @@ module Bosh::Director
       context 'when instance is currently stopped' do
         let(:instance_model_state) { 'stopped' }
 
-        let(:disk_manager) { instance_double(SingleDiskManager) }
-        before { allow(SingleDiskManager).to receive(:new).and_return(disk_manager) }
+        let(:disk_manager) { instance_double(DiskManager) }
+        before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
 
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
         before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }

@@ -18,7 +18,7 @@ module Bosh::Director
         @instance_id = instance_id
         @disk_cid = disk_cid
         @transactor = Transactor.new
-        @disk_manager = SingleDiskManager.new(Config.cloud, logger)
+        @disk_manager = DiskManager.new(Config.cloud, logger)
         @orphan_disk_manager = OrphanDiskManager.new(Config.cloud, logger)
       end
 
