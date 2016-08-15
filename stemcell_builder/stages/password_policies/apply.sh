@@ -47,3 +47,12 @@ fi
 # /etc/login.defs are only effective for new users
 sed -i -r 's/^PASS_MIN_DAYS.+/PASS_MIN_DAYS 1/' $chroot/etc/login.defs
 run_in_chroot $chroot "chage --mindays 1 vcap"
+
+# restrict Access to the su Command
+#add the following line to the /etc/pam.d/su file.
+#    auth required pam_wheel.so use_uid
+# add vcap user to 'root' group
+run_in_chroot $chroot "
+  sudo echo 'auth required pam_wheel.so use_uid' >> /etc/pam.d/su
+  sudo usermod -a -G sudo vcap
+"
