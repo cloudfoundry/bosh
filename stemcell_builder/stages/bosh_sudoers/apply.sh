@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# Copyright (c) 2012 VMware, Inc.
 
 set -e
 

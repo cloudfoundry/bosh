@@ -447,4 +447,14 @@ EOF
       it { should_not be_installed }
     end
   end
+
+  context 'restrict access to the su command CIS-9.5' do
+    describe command('grep "^\s*auth\s*required\s*pam_wheel.so\s*use_uid" /etc/pam.d/su') do
+      it { should return_exit_status(0)}
+    end
+    describe user('vcap') do
+      it { should exist }
+      it { should belong_to_group 'sudo' }
+    end
+  end
 end

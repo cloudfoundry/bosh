@@ -258,16 +258,6 @@ shared_examples_for 'every OS image' do
       end
     end
 
-    context 'restrict access to the su command CIS-9.5' do
-      describe command('grep "^\s*auth\s*required\s*pam_wheel.so\s*use_uid" /etc/pam.d/su') do
-        it { should return_exit_status(0)}
-      end
-      describe user('vcap') do
-        it { should exist }
-        it { should belong_to_group 'sudo' }
-      end
-    end
-
     context 'a stronger hashing algorithm should be used (stig: V-38574)' do
       describe command('egrep -h -r "^password" /etc/pam.d | grep pam_unix.so | grep -v sha512') do
         it { should return_exit_status(1) }
