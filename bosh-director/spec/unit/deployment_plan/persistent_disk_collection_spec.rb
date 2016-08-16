@@ -137,26 +137,35 @@ module Bosh::Director
       end
 
       describe '#is_different_from' do
+        let(:old_persistent_disk_collection) { PersistentDiskCollection.new(logger, options) }
+
+        before do
+          persistent_disk_models.each do |disk|
+            old_persistent_disk_collection.add_by_model(disk)
+          end
+        end
+
         context 'when using a single disk' do
           let(:persistent_disk_models) { [] }
 
           context 'when there are no disks in the persistent disk collection' do
             context 'when deployment has no disks' do
               it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
               end
             end
+
             context 'when deployment has disks' do
               let(:persistent_disk_models) { [Models::PersistentDisk.make(size: 3)] }
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-                end
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
+              end
 
               it 'logs' do
-                expect(logger).to receive(:debug).with('Persistent disk size changed FROM: 3 TO: 0')
+                expect(logger).to receive(:debug).with('Persistent disk removed: size 3, cloud_properties: {}')
 
-                persistent_disk_collection.is_different_from(persistent_disk_models)
+                persistent_disk_collection.is_different_from(old_persistent_disk_collection)
               end
             end
           end
@@ -170,7 +179,7 @@ module Bosh::Director
               let(:persistent_disk_models) { [] }
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
               end
             end
 
@@ -181,7 +190,7 @@ module Bosh::Director
 
               context 'when disks are the same' do
                 it 'returns false' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
+                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
                 end
               end
 
@@ -189,7 +198,7 @@ module Bosh::Director
                 let(:disk_size) { 4 }
 
                 it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
                 end
               end
 
@@ -197,13 +206,13 @@ module Bosh::Director
                 let(:cloud_properties) { {'some' => 'cloud'} }
 
                 it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
                 end
 
                 it 'logs' do
-                  expect(logger).to receive(:debug).with('Persistent disk cloud properties changed FROM: {} TO: {"some"=>"cloud"}')
+                  expect(logger).to receive(:debug).with('Persistent disk changed: cloud_properties FROM {} TO {"some"=>"cloud"}')
 
-                  persistent_disk_collection.is_different_from(persistent_disk_models)
+                  persistent_disk_collection.is_different_from(old_persistent_disk_collection)
                 end
               end
             end
@@ -223,7 +232,7 @@ module Bosh::Director
               Models::PersistentDisk.make(size: 3)
             ] }
             it 'returns true' do
-              expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+              expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
             end
           end
 
@@ -237,7 +246,7 @@ module Bosh::Director
 
             context 'when all disks are equal' do
               it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
               end
             end
 
@@ -247,7 +256,7 @@ module Bosh::Director
               end
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
               end
             end
 
@@ -255,7 +264,7 @@ module Bosh::Director
               let(:disk_size) { 4 }
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
               end
             end
 
@@ -263,7 +272,7 @@ module Bosh::Director
               let(:cloud_properties) { { 'a' => 'b' } }
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
               end
             end
 
@@ -274,12 +283,33 @@ module Bosh::Director
               ] }
 
               it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
               end
             end
           end
         end
       end
+
+      # describe '#create_disks' do
+      #   let(:disk_creator) { double thing }
+      #   let(:instance_id) { 'fake-instance-id' }
+      #
+      #   before do
+      #     allow(Models::PersistentDisk).to_receive(:create)
+      #   end
+      #
+      #   it 'creates disks for all disks in the collection' do
+      #     persistent_disk_collection.create_disks(disk_creator, instance_id)
+      #
+      #     expect(disk_creator).to_receive(:create).with(the params)
+      #   end
+      #
+      #   it 'attaches disks for all disks in the collection' do
+      #     persistent_disk_collection.create_disks(disk_creator, instance_id)
+      #
+      #     expect(disk_creator).to_receive(:attach).with(the params)
+      #   end
+      # end
     end
   end
 end

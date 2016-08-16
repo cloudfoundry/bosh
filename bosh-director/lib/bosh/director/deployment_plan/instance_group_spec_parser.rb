@@ -241,56 +241,50 @@ module Bosh::Director
           disk_source = 'pool'
         end
 
-        case {disk_size: disk_size.nil?, disk_name: disk_name.nil?, persistent_disks: persistent_disks.nil?}
+        persistent_disk_collection = PersistentDiskCollection.new(@logger)
 
-          when {disk_size: false, disk_name: true, persistent_disks: true}
-            if disk_size < 0
-              raise InstanceGroupInvalidPersistentDisk,
-                "Instance group '#{@instance_group.name}' references an invalid persistent disk size '#{disk_size}'"
-            else
-              persistent_disk_collection = PersistentDiskCollection.new(@logger, multiple_disks: false)
-              persistent_disk_collection.add_by_disk_size(disk_size)
-              @instance_group.persistent_disk_collection = persistent_disk_collection
-            end
+        if disk_size
+          if disk_size < 0
+            raise InstanceGroupInvalidPersistentDisk,
+              "Instance group '#{@instance_group.name}' references an invalid persistent disk size '#{disk_size}'"
+          end
 
-          when {disk_size: true, disk_name: false, persistent_disks: true}
-            disk_type = @deployment.disk_type(disk_name)
+          persistent_disk_collection.add_by_disk_size(disk_size)
+        end
+
+        if disk_name
+          disk_type = @deployment.disk_type(disk_name)
+          if disk_type.nil?
+            raise InstanceGroupUnknownDiskType,
+              "Instance group '#{@instance_group.name}' references an unknown disk #{disk_source} '#{disk_name}'"
+          end
+
+          persistent_disk_collection.add_by_disk_type(disk_type)
+        end
+
+        if persistent_disks
+          unique_names = persistent_disks.map { |persistent_disk| persistent_disk['name'] }.uniq
+          if unique_names.size != persistent_disks.size
+            raise InstanceGroupInvalidPersistentDisk,
+              "Instance group '#{@instance_group.name}' persistent_disks's section contains duplicate names"
+          end
+
+          persistent_disks.each do |persistent_disk|
+            disk_type_name = persistent_disk['type']
+            disk_type = @deployment.disk_type(disk_type_name)
             if disk_type.nil?
               raise InstanceGroupUnknownDiskType,
-                "Instance group '#{@instance_group.name}' references an unknown disk #{disk_source} '#{disk_name}'"
-            else
-              persistent_disk_collection = PersistentDiskCollection.new(@logger, multiple_disks: false)
-              persistent_disk_collection.add_by_disk_type(disk_type)
+                "Instance group '#{@instance_group.name}' persistent_disks's section references an unknown disk type '#{disk_type_name}'"
             end
 
-          when {disk_name: true, disk_size: true, persistent_disks: false}
-            persistent_disk_collection = PersistentDiskCollection.new(@logger, multiple_disks: true)
-
-            unique_names = persistent_disks.map { |persistent_disk| persistent_disk['name'] }.uniq
-            if unique_names.size != persistent_disks.size
+            persistent_disk_name = persistent_disk['name']
+            if persistent_disk_name.blank?
               raise InstanceGroupInvalidPersistentDisk,
-                "Instance group '#{@instance_group.name}' persistent_disks's section contains duplicate names"
+                "Instance group '#{@instance_group.name}' persistent_disks's section contains a disk with no name"
             end
 
-            persistent_disks.each do |persistent_disk|
-              disk_type_name = persistent_disk['type']
-              disk_type = @deployment.disk_type(disk_type_name)
-              if disk_type.nil?
-                raise InstanceGroupUnknownDiskType,
-                  "Instance group '#{@instance_group.name}' persistent_disks's section references an unknown disk type '#{disk_type_name}'"
-              end
-
-              persistent_disk_name = persistent_disk['name']
-              if persistent_disk_name.blank?
-                raise InstanceGroupInvalidPersistentDisk,
-                  "Instance group '#{@instance_group.name}' persistent_disks's section contains a disk with no name"
-              end
-
-              persistent_disk_collection.add_by_disk_name_and_type(persistent_disk_name, disk_type)
-            end
-
-          else
-            persistent_disk_collection = PersistentDiskCollection.new(@logger, multiple_disks: false)
+            persistent_disk_collection.add_by_disk_name_and_type(persistent_disk_name, disk_type)
+          end
         end
 
         @instance_group.persistent_disk_collection = persistent_disk_collection

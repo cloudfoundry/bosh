@@ -21,7 +21,11 @@ module Bosh::Director::Models
     end
 
     def active_persistent_disks
-      self.persistent_disks.select { |disk| disk.active }
+      disk_collection = Bosh::Director::DeploymentPlan::PersistentDiskCollection.new(Bosh::Director::Config.logger)
+      self.persistent_disks.select { |disk| disk.active }.each do |disk|
+        disk_collection.add_by_model(disk)
+      end
+      disk_collection
     end
 
     def persistent_disk_cid

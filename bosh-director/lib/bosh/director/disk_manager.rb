@@ -20,7 +20,10 @@ module Bosh::Director
       disk = nil
       if instance_plan.needs_disk?
         disk = create_and_attach_disk(instance_plan)
-        mount_and_migrate_disk(instance, disk, old_disk)
+
+        # if legacy disk
+        mount_and_migrate_disk(instance, disk, old_disk)# if disk.name.empty?
+        # end
       end
 
       @transactor.retryable_transaction(Bosh::Director::Config.db) do

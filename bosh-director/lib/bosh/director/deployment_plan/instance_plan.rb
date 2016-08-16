@@ -52,9 +52,10 @@ module Bosh
             return !@existing_instance.persistent_disk.nil?
           end
 
-          existing_disk_models = instance_model.active_persistent_disks
+          existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
-          changed = desired_disks_collection.is_different_from(existing_disk_models)
+
+          changed = desired_disks_collection.is_different_from(existing_disk_collection)
           if changed
             @logger.debug("#{__method__} changed on instance #{@existing_instance}")
           end

@@ -11,64 +11,73 @@ module Bosh::Director
       end
 
       def add_by_disk_size(disk_size)
-        if disk_size > 0
-          @collection << LegacyPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {}))
+        add_to_collection(LegacyPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
 
-          raise Exception, 'This instance group is not supposed to have multiple disks,
-                            but tried to attach multiple disks.' if @collection.size > 1
-        end
+        raise Exception, 'This instance group is not supposed to have multiple disks,
+                          but tried to attach multiple disks.' if @collection.size > 1
       end
 
       def add_by_disk_type(disk_type)
-        @collection << LegacyPersistentDisk.new(disk_type)
+        add_to_collection(LegacyPersistentDisk.new(disk_type))
 
         raise Exception, 'This instance group is not supposed to have multiple disks,
                         but tried to attach multiple disks.' if @collection.size > 1
       end
 
       def add_by_model(disk_model)
-        @collection << ModelPersistentDisk.new(disk_model)
+        add_to_collection(ModelPersistentDisk.new(disk_model))
       end
 
       def add_by_disk_name_and_type(disk_name, disk_type)
         #TODO: make sure collection is a collection of new disks
-        @collection << NewPersistentDisk.new(disk_name, disk_type)
+        add_to_collection(NewPersistentDisk.new(disk_name, disk_type))
       end
 
       def needs_disk?
-        if @multiple_disks
-          return @collection.size > 0
-        else
-          if @collection.size > 0
-            return @collection.first.size > 0
-          end
-        end
-
-        false
+        collection.length > 0
       end
 
-      def is_different_from(persistent_disk_models)
-        if @multiple_disks
-          old_persistent_disk_collection = PersistentDiskCollection.new(@logger, {multiple_disks: @multiple_disks})
-          persistent_disk_models.each do |model|
-            old_persistent_disk_collection.add_by_model(model)
+      def is_different_from(old_persistent_disk_collection)
+        changed = false
+
+        collection.each do |disk|
+          old_disk = old_persistent_disk_collection.collection.find { |old_disk| disk.name == old_disk.name }
+
+          if old_disk.nil?
+            @logger.debug("Persistent disk added: size #{disk.size}, cloud_properties: #{disk.cloud_properties}")
+            changed = true
+          else
+            change_detail = []
+            change_detail << "size FROM #{old_disk.size} TO #{disk.size}" if disk.size != old_disk.size
+            change_detail << "cloud_properties FROM #{old_disk.cloud_properties} TO #{disk.cloud_properties}" if disk.cloud_properties != old_disk.cloud_properties
+
+            if change_detail.length > 0
+              changed = true
+              @logger.debug("Persistent disk changed: #{change_detail.join(', ')}")
+            end
           end
-          !collections_are_exact_set_matches(self, old_persistent_disk_collection)
-        else
-          diff_legacy_persistent_disk(persistent_disk_models)
         end
+
+        old_persistent_disk_collection.collection.each do |disk|
+          new_disk = @collection.find { |new_disk| disk.name == new_disk.name }
+
+          if new_disk.nil?
+            @logger.debug("Persistent disk removed: size #{disk.size}, cloud_properties: #{disk.cloud_properties}")
+            changed = true
+          end
+        end
+
+        changed
       end
 
       def create_disks(disk_creator, instance_id)
-        if @multiple_disks
-          []
-        else
-          disk_size = @collection.first.size
-          cloud_properties = @collection.first.cloud_properties
+        collection.map do |disk|
+          disk_size = disk.size
+          cloud_properties = disk.cloud_properties
 
           disk_cid = disk_creator.create(disk_size, cloud_properties)
 
-          disk = Models::PersistentDisk.create(
+          disk_model = Models::PersistentDisk.create(
             disk_cid: disk_cid,
             active: false,
             instance_id: instance_id,
@@ -78,7 +87,7 @@ module Bosh::Director
 
           disk_creator.attach(disk_cid)
 
-          [disk]
+          disk_model
         end
       end
 
@@ -112,33 +121,8 @@ module Bosh::Director
 
       private
 
-      def diff_legacy_persistent_disk(persistent_disk_models)
-        #TODO: what about moving from multiple disks to a single disk?
-
-        old_disk_size = persistent_disk_models.empty? ? 0 : persistent_disk_models.first.size
-        new_disk_size = @collection.empty? ? 0 : @collection.first.size
-        changed = new_disk_size != old_disk_size
-        if changed
-          @logger.debug("Persistent disk size changed FROM: #{old_disk_size} TO: #{new_disk_size}")
-          return true
-        end
-
-        old_disk_cloud_properties = persistent_disk_models.empty? ? 0 : persistent_disk_models.first.cloud_properties
-        new_disk_cloud_properties = @collection.empty? ? {} : @collection.first.cloud_properties
-        changed = new_disk_size != 0 && new_disk_cloud_properties != old_disk_cloud_properties
-        if changed
-          @logger.debug("Persistent disk cloud properties changed FROM: #{old_disk_cloud_properties} TO: #{new_disk_cloud_properties}")
-          return true
-        end
-
-        changed
-      end
-
-      def collections_are_exact_set_matches(collection1, collection2)
-        collection1 = collection1.collection.sort { |a, b| a.name <=> b.name }
-        collection2 = collection2.collection.sort { |a, b| a.name <=> b.name }
-
-        collection1 == collection2
+      def add_to_collection(disk)
+        @collection << disk if disk.size > 0
       end
 
       class PersistentDisk
