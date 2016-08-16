@@ -70,22 +70,14 @@ module Bosh::Director
         changed
       end
 
-      def create_disks(disk_creator, instance_id)
+      def create_disks(disk_creator)
         collection.map do |disk|
           disk_size = disk.size
           cloud_properties = disk.cloud_properties
 
-          disk_cid = disk_creator.create(disk_size, cloud_properties)
+          disk_model = disk_creator.create(disk.name, disk_size, cloud_properties)
 
-          disk_model = Models::PersistentDisk.create(
-            disk_cid: disk_cid,
-            active: false,
-            instance_id: instance_id,
-            size: disk_size,
-            cloud_properties: cloud_properties,
-          )
-
-          disk_creator.attach(disk_cid)
+          disk_creator.attach(disk_model.disk_cid)
 
           disk_model
         end

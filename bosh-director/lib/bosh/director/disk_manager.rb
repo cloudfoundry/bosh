@@ -186,17 +186,17 @@ module Bosh::Director
     end
 
     def create_disk(instance_plan)
-      disks = []
       job = instance_plan.desired_instance.instance_group
       instance_model = instance_plan.instance.model
       parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-      @disk_creator = DeploymentPlan::DiskCreator.new(@cloud, instance_model.vm_cid)
-      disks = job.persistent_disk_collection.create_disks(@disk_creator, instance_model.id)
+      @disk_creator = DeploymentPlan::DiskCreator.new(@cloud, instance_model)
+      disks = job.persistent_disk_collection.create_disks(@disk_creator)
       disks
     rescue Exception => e
       raise e
     ensure
+      disks ||= []
       disk_cid = disks.empty? ? nil : disks.first.disk_cid
       add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
     end

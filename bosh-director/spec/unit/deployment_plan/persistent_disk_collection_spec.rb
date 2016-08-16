@@ -290,26 +290,58 @@ module Bosh::Director
         end
       end
 
-      # describe '#create_disks' do
-      #   let(:disk_creator) { double thing }
-      #   let(:instance_id) { 'fake-instance-id' }
-      #
-      #   before do
-      #     allow(Models::PersistentDisk).to_receive(:create)
-      #   end
-      #
-      #   it 'creates disks for all disks in the collection' do
-      #     persistent_disk_collection.create_disks(disk_creator, instance_id)
-      #
-      #     expect(disk_creator).to_receive(:create).with(the params)
-      #   end
-      #
-      #   it 'attaches disks for all disks in the collection' do
-      #     persistent_disk_collection.create_disks(disk_creator, instance_id)
-      #
-      #     expect(disk_creator).to_receive(:attach).with(the params)
-      #   end
-      # end
+      describe '#create_disks' do
+        let(:disk_creator) { instance_double(DiskCreator) }
+        let(:instance_id) { 'fake-instance-id' }
+        let(:disk_hash) do
+          {
+            disk_cid: 'fake-disk-cid',
+            active: false,
+            instance_id: instance_id,
+
+          }
+        end
+        let(:created_disk_model) { instance_double(Models::PersistentDisk, disk_cid: 'fake-disk-cid') }
+
+        before do
+          allow(disk_creator).to receive(:create).and_return(created_disk_model)
+          allow(disk_creator).to receive(:attach)
+        end
+
+        it 'creates disks' do
+          persistent_disk_collection.add_by_disk_size(disk_size)
+          expect(disk_creator).to receive(:create).with('', disk_size, {})
+
+          persistent_disk_collection.create_disks(disk_creator)
+        end
+
+        it 'attaches disks' do
+          persistent_disk_collection.add_by_disk_size(disk_size)
+          expect(disk_creator).to receive(:attach).with('fake-disk-cid')
+
+          persistent_disk_collection.create_disks(disk_creator)
+        end
+
+        context 'when there are multiple disks on the collection' do
+          before do
+            5.times do
+              persistent_disk_collection.add_by_disk_name_and_type('fake-disk', disk_type)
+            end
+          end
+
+          it 'creates disks for all disks in the collection' do
+            expect(disk_creator).to receive(:create).with('fake-disk', disk_size, {}).exactly(5).times
+
+            persistent_disk_collection.create_disks(disk_creator)
+          end
+
+          it 'attaches disks for all disks in the collection' do
+            expect(disk_creator).to receive(:attach).with('fake-disk-cid').exactly(5).times
+
+            persistent_disk_collection.create_disks(disk_creator)
+          end
+        end
+      end
     end
   end
 end
