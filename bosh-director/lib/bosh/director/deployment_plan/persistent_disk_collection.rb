@@ -70,19 +70,6 @@ module Bosh::Director
         changed
       end
 
-      def create_disks(disk_creator)
-        collection.map do |disk|
-          disk_size = disk.size
-          cloud_properties = disk.cloud_properties
-
-          disk_model = disk_creator.create(disk.name, disk_size, cloud_properties)
-
-          disk_creator.attach(disk_model.disk_cid)
-
-          disk_model
-        end
-      end
-
       def generate_spec
         if @collection.empty?
           return {'persistent_disk' => 0}

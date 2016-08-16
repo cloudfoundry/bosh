@@ -19,7 +19,9 @@ module Bosh::Director
 
       disk = nil
       if instance_plan.needs_disk?
-        disk = create_and_attach_disk(instance_plan)
+        disks = create_disks(instance_plan)
+        attach_disks(disks)
+        disk = disks.first
 
         # if legacy disk
         mount_and_migrate_disk(instance, disk, old_disk)# if disk.name.empty?
@@ -185,20 +187,44 @@ module Bosh::Director
       detach_disk(instance_model, disk)
     end
 
-    def create_disk(instance_plan)
+    def create_disks(instance_plan)
       job = instance_plan.desired_instance.instance_group
       instance_model = instance_plan.instance.model
-      parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-      @disk_creator = DeploymentPlan::DiskCreator.new(@cloud, instance_model)
-      disks = job.persistent_disk_collection.create_disks(@disk_creator)
+      disks = job.persistent_disk_collection.collection.map do |disk|
+        disk_size = disk.size
+        cloud_properties = disk.cloud_properties
+        disk_model = nil
+
+        begin
+          parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
+
+          disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
+
+          disk_model = Models::PersistentDisk.create(
+            name: disk.name,
+            disk_cid: disk_cid,
+            active: false,
+            instance_id: instance_model.id,
+            size: disk_size,
+            cloud_properties: cloud_properties,
+          )
+        rescue Exception => e
+          raise e
+        ensure
+          add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
+        end
+
+        disk_model
+      end
+
       disks
-    rescue Exception => e
-      raise e
-    ensure
-      disks ||= []
-      disk_cid = disks.empty? ? nil : disks.first.disk_cid
-      add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
+    end
+
+    def attach_disks(disks)
+      disks.each do |disk|
+        @cloud.attach_disk(disk.instance.vm_cid, disk.disk_cid)
+      end
     end
   end
 end
