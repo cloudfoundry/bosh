@@ -53,12 +53,12 @@ shared_examples_for 'every OS image' do
       it { should be_file }
     end
 
-    describe command("grep -q .bashrc /root/.profile") do
+    describe command('grep -q .bashrc /root/.profile') do
       it { should return_exit_status(0) }
     end
 
-    describe command("stat -c %a ~vcap") do
-      it { should return_stdout("755") }
+    describe command('stat -c %a ~vcap') do
+      it { should return_stdout('755') }
     end
   end
 
@@ -79,6 +79,12 @@ shared_examples_for 'every OS image' do
       describe command("awk '$1 !~ /^(console|#.*|\s*)$/ { print; f=1 } END { if (!f) print \"none\" }' /etc/securetty") do
         its(:stdout) { should eq "none\n" }
       end
+    end
+  end
+
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
     end
   end
 
@@ -467,7 +473,7 @@ shared_examples_for 'every OS image' do
     describe file('/var/log/audit') do
       it { should be_directory }
 
-      describe "Audit log directories must have mode 0755 or less permissive (750 by default) (stig: V-38493)" do
+      describe 'Audit log directories must have mode 0755 or less permissive (750 by default) (stig: V-38493)' do
         it { should be_mode 750 }
       end
     end
@@ -542,7 +548,7 @@ shared_examples_for 'every OS image' do
 
     describe 'audit rules are made immutable (CIS-8.1.18)' do
       it 'last line should be -e 2' do
-        expect(subject.content.split("\n").last).to eq "-e 2"
+        expect(subject.content.split("\n").last).to eq '-e 2'
       end
     end
 
