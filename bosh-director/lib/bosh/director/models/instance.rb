@@ -15,6 +15,7 @@ module Bosh::Director::Models
       validates_includes %w(started stopped detached), :state
     end
 
+    # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
     def persistent_disk
       # Currently we support only 1 persistent disk.
       self.persistent_disks.find { |disk| disk.active }
@@ -28,6 +29,7 @@ module Bosh::Director::Models
       disk_collection
     end
 
+    # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
     def persistent_disk_cid
       disk = persistent_disk
       return disk.disk_cid if disk

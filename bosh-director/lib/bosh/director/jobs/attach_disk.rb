@@ -72,12 +72,11 @@ module Bosh::Director
         if orphan_disk
           @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
-          Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
+          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
         end
 
         if instance.state == 'stopped'
-          instance = query_instance_model
-          @disk_manager.attach_disk(instance)
+          @disk_manager.attach_disk(disk)
         end
       end
 
