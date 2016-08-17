@@ -76,12 +76,21 @@ module Bosh::Director
           persistent_disk_collection.add_by_disk_name_and_type('first_disk', disk_type)
           persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type)
 
-          disk_spec = persistent_disk_collection.generate_spec
+          expect(persistent_disk_collection.collection[0].size).to eq(30)
+          expect(persistent_disk_collection.collection[0].name).to eq('first_disk')
 
-          expect(disk_spec['persistent_disks']).to eq([
-            {'disk_size' => 30, 'disk_name' => 'first_disk'},
-            {'disk_size' => 30, 'disk_name' => 'another_disk'},
-          ])
+          expect(persistent_disk_collection.collection[1].size).to eq(30)
+          expect(persistent_disk_collection.collection[1].name).to eq('another_disk')
+        end
+
+        context 'a legacy disk has already been added' do
+          before do
+            persistent_disk_collection.add_by_disk_size(disk_size)
+          end
+
+          it 'raises' do
+            expect{ persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type) }.to raise_error
+          end
         end
       end
 

@@ -11,17 +11,17 @@ module Bosh::Director
       end
 
       def add_by_disk_size(disk_size)
-        add_to_collection(LegacyPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
-
         raise Exception, 'This instance group is not supposed to have multiple disks,
-                          but tried to attach multiple disks.' if @collection.size > 1
+                          but tried to attach multiple disks.' if @collection.size > 0
+
+        add_to_collection(LegacyPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
       end
 
       def add_by_disk_type(disk_type)
-        add_to_collection(LegacyPersistentDisk.new(disk_type))
-
         raise Exception, 'This instance group is not supposed to have multiple disks,
-                        but tried to attach multiple disks.' if @collection.size > 1
+                        but tried to attach multiple disks.' if @collection.size > 0
+
+        add_to_collection(LegacyPersistentDisk.new(disk_type))
       end
 
       def add_by_model(disk_model)
@@ -29,7 +29,10 @@ module Bosh::Director
       end
 
       def add_by_disk_name_and_type(disk_name, disk_type)
-        #TODO: make sure collection is a collection of new disks
+        unless collection.find { |disk| disk.is_a? LegacyPersistentDisk }.nil?
+          raise Exception, 'This instance group cannot have multiple disks when using a legacy disk.'
+        end
+
         add_to_collection(NewPersistentDisk.new(disk_name, disk_type))
       end
 
@@ -77,22 +80,13 @@ module Bosh::Director
 
         spec = {}
 
-        @collection.each do |disk|
-          if disk.is_a? LegacyPersistentDisk
-            # supply both for reverse compatibility with old agent
-            spec['persistent_disk'] = @collection.first.size
-            # old agents will ignore this pool
-            # keep disk pool for backwards compatibility
-            spec['persistent_disk_pool'] = @collection.first.spec
-            spec['persistent_disk_type'] = @collection.first.spec
-          elsif disk.is_a? NewPersistentDisk
-            spec['persistent_disks'] ||= []
-
-            spec['persistent_disks'] << {
-              'disk_size' => disk.size,
-              'disk_name' => disk.name,
-            }
-          end
+        if collection.length == 1 && collection[0].is_a?(LegacyPersistentDisk)
+          # supply both for reverse compatibility with old agent
+          spec['persistent_disk'] = collection[0].size
+          # old agents will ignore this pool
+          # keep disk pool for backwards compatibility
+          spec['persistent_disk_pool'] = collection[0].spec
+          spec['persistent_disk_type'] = collection[0].spec
         end
 
         spec
@@ -114,6 +108,7 @@ module Bosh::Director
         end
 
         def ==(other)
+          return false unless nil
           cloud_properties == other.cloud_properties &&
             size == other.size && name == other.name
         end
@@ -138,7 +133,10 @@ module Bosh::Director
       end
 
       class ModelPersistentDisk < PersistentDisk
+        attr_reader :model
+
         def initialize(disk_model)
+          @model = disk_model
           super(disk_model.name, disk_model.cloud_properties, disk_model.size)
         end
       end
