@@ -48,7 +48,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
-    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger, multiple_disks: false) }
+    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
       persistent_disk_collection.add_by_disk_size(0)

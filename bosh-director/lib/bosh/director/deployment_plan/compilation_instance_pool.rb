@@ -252,7 +252,7 @@ module Bosh::Director
       end
 
       def persistent_disk_collection
-        PersistentDiskCollection.new(@logger, multiple_disks: false)
+        PersistentDiskCollection.new(@logger)
       end
 
       def compilation?

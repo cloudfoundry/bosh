@@ -165,7 +165,6 @@ module Bosh::Director
           expect(event_2.error).to eq('error')
         end
 
-
         context 'when the persistent disk is changed' do
           before { expect(instance_plan.persistent_disk_changed?).to be_truthy }
 
@@ -214,8 +213,16 @@ module Bosh::Director
 
             context 'when there is no old disk to migrate' do
               let(:persistent_disk) { nil }
+              before { allow(agent_client).to receive(:list_disk).and_return([]) }
+
               it 'does not attempt to migrate the disk' do
                 expect(agent_client).to_not receive(:migrate_disk)
+                disk_manager.update_persistent_disk(instance_plan)
+              end
+
+              it 'mounts the new disk' do
+                expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
+                disk_manager.update_persistent_disk(instance_plan)
               end
             end
 
