@@ -83,8 +83,6 @@ module Bosh::Director::Models
         return 'error'
       end
 
-      result = Bosh::Director::InstanceModelHelper.adjust_instance_spec_after_retrieval!(result)
-
       if result['resource_pool'].nil?
         result
       else
@@ -110,9 +108,8 @@ module Bosh::Director::Models
       if spec.nil?
         self.spec_json = nil
       else
-        prepared_spec = Bosh::Director::InstanceModelHelper.prepare_instance_spec_for_saving!(spec)
         begin
-          self.spec_json = JSON.generate(prepared_spec)
+          self.spec_json = JSON.generate(spec)
         rescue JSON::GeneratorError
           self.spec_json = 'error'
         end
@@ -131,11 +128,6 @@ module Bosh::Director::Models
     def vm_env
       return {} if spec.nil?
       spec['env'] || {}
-    end
-
-    def vm_uninterpolated_env
-      return {} if spec.nil?
-      spec['uninterpolated_env'] || {}
     end
 
     def credentials

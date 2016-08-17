@@ -195,12 +195,6 @@ module Bosh::Director::Models
     end
 
     context 'spec' do
-      it 'calls adjust_instance_spec_after_retrieval helper method after reading from DB' do
-        subject.spec=({'stuff' => 'stuff'})
-        expect(Bosh::Director::InstanceModelHelper).to receive(:adjust_instance_spec_after_retrieval!).with({'stuff' => 'stuff'}).and_return({})
-        subject.spec
-      end
-
       context 'when spec_json persisted in database has no resource pool' do
         it 'returns spec_json as is' do
           subject.spec=({
@@ -260,19 +254,6 @@ module Bosh::Director::Models
       end
     end
 
-    context 'spec=' do
-      let(:instance_spec) do
-        {
-          'properties' => {'name' => 'a'},
-        }
-      end
-
-      it 'calls prepare_instance_spec_for_saving helper method before saving' do
-        expect(Bosh::Director::InstanceModelHelper).to receive(:prepare_instance_spec_for_saving!).with(instance_spec).and_return({})
-        subject.spec=(instance_spec)
-      end
-    end
-
     context 'vm_env' do
       it 'returns env contents' do
         subject.spec=({'env' => {'a' => 'a_value'}})
@@ -287,23 +268,6 @@ module Bosh::Director::Models
       it 'returns empty hash when spec is nil' do
         subject.spec=(nil)
         expect(subject.vm_env).to eq({})
-      end
-    end
-
-    context 'vm_uninterpolated_env' do
-      it 'returns uninterpolated_env contents' do
-        subject.spec=({'env' => {'a' => '((a_placeholder))'}})
-        expect(subject.vm_uninterpolated_env).to eq({'a' => '((a_placeholder))'})
-      end
-
-      it 'returns empty hash when vm_uninterpolated_env is nil' do
-        subject.spec=({'uninterpolated_env' => nil})
-        expect(subject.vm_uninterpolated_env).to eq({})
-      end
-
-      it 'returns empty hash when spec is nil' do
-        subject.spec=(nil)
-        expect(subject.vm_uninterpolated_env).to eq({})
       end
     end
 

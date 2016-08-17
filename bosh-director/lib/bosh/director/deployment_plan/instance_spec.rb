@@ -28,7 +28,6 @@ module Bosh::Director
           'vm_type' => instance_group.vm_type.spec,
           'stemcell' => instance_group.stemcell.spec,
           'env' => instance_group.env.spec,
-          'uninterpolated_env' => instance_group.env.uninterpolated_spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,

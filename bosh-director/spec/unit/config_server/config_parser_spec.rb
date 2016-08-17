@@ -12,10 +12,10 @@ module Bosh::Director::ConfigServer
       let(:mock_config_store) do
         {
           'value' => {'value' => 123},
-          'instance_val' => {'value' => 'test1'},
-          'job_val' => {'value' => 'test2'},
-          'env_val' => {'value' => 'test3'},
-          'name_val' => {'value' => 'test4'}
+          'instance_placeholder' => {'value' => 'test1'},
+          'job_placeholder' => {'value' => 'test2'},
+          'env_placeholder' => {'value' => 'test3'},
+          'name_placeholder' => {'value' => 'test4'}
         }
       end
 
@@ -38,7 +38,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should replace any top level property key in the passed hash' do
-        manifest_hash['name'] = '((name_val))'
+        manifest_hash['name'] = '((name_placeholder))'
 
         expected_manifest = {
           'name' => 'test4'
@@ -61,7 +61,7 @@ module Bosh::Director::ConfigServer
         manifest_hash['instance_groups'] = [
           {
             'name' => 'bla',
-            'properties' => { 'instance_prop' => '((instance_val))' }
+            'properties' => { 'instance_prop' => '((instance_placeholder))' }
           }
         ]
 
@@ -78,7 +78,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should replace the env keys in the passed hash' do
-        manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_val))'} } ]
+        manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_placeholder))'} } ]
 
         expected_manifest = {
           'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
@@ -94,7 +94,7 @@ module Bosh::Director::ConfigServer
             'jobs' => [
               {
                 'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_val))' }
+                'properties' => { 'job_prop' => '((job_placeholder))' }
               }
             ]
           }
@@ -130,16 +130,15 @@ module Bosh::Director::ConfigServer
 
       it 'should not replace values in ignored subtrees' do
         index_type = Integer
-        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'uninterpolated_properties']
+        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
 
         manifest_hash['instance_groups'] = [
           {
-            'name' => 'bla',
+            'name' => '((name_placeholder))',
             'jobs' => [
               {
                 'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_val))' },
-                'uninterpolated_properties' => { 'job_prop' => '((job_val))' }
+                'properties' => { 'job_prop' => '((job_placeholder))' },
               }
             ]
           }
@@ -148,12 +147,11 @@ module Bosh::Director::ConfigServer
         expected_manifest = {
           'instance_groups' => [
             {
-              'name' => 'bla',
+              'name' => 'test4',
               'jobs' => [
                 {
                   'name' => 'test_job',
-                  'properties' => { 'job_prop' => 'test2' },
-                  'uninterpolated_properties' => { 'job_prop' => '((job_val))' },
+                  'properties' => { 'job_prop' => '((job_placeholder))' },
                 }
               ]
             }

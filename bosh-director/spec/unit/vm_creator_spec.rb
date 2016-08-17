@@ -40,7 +40,7 @@ module Bosh
         stemcell.add_stemcell_model
         stemcell
       end
-      let(:env) { DeploymentPlan::Env.new({}, {}) }
+      let(:env) { DeploymentPlan::Env.new({}) }
 
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
@@ -54,6 +54,7 @@ module Bosh
         )
         instance.bind_existing_instance_model(instance_model)
         allow(instance).to receive(:apply_spec).and_return({})
+        allow(instance).to receive(:spec).and_return({})
         instance
       end
       let(:reservation) do
@@ -408,8 +409,7 @@ module Bosh
         context 'password is specified' do
           let(:env) do
             DeploymentPlan::Env.new(
-              {'bosh' => {'password' => 'custom-password'}},
-              {'bosh' => {'password' => '((password_placeholder))'}}
+              {'bosh' => {'password' => 'custom-password'}}
             )
           end
           it 'should generate a random VM password' do
@@ -440,8 +440,7 @@ module Bosh
         context 'password is specified' do
           let(:env) do
             DeploymentPlan::Env.new(
-              {'bosh' => {'password' => 'custom-password'}},
-              {'bosh' => {'password' => '((password_placeholder))'}}
+              {'bosh' => {'password' => 'custom-password'}}
             )
           end
           it 'should generate a random VM password' do
@@ -451,6 +450,50 @@ module Bosh
 
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
           end
+        end
+      end
+
+      context 'Config.config_server_enabled flag is true' do
+        let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
+
+        let(:env_hash) do
+          {
+            'foo' => 'bar',
+            'smurf' => '((smurf_placeholder))',
+            'gargamel' => '((gargamel_placeholder))'
+          }
+        end
+        let(:env) do
+          DeploymentPlan::Env.new(
+            env_hash
+          )
+        end
+
+        let(:resolved_env_hash) do
+          {
+            'foo' => 'bar',
+            'smurf' => 'blue',
+            'gargamel' => 'green'
+          }
+        end
+        before do
+          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          allow(instance_spec).to receive(:as_apply_spec).and_return({})
+          allow(instance_spec).to receive(:full_spec).and_return({})
+          allow(instance_spec).to receive(:as_template_spec).and_return({})
+          allow(instance_plan).to receive(:spec).and_return(instance_spec)
+        end
+
+        it 'should interpolated env values' do
+          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(env_hash).and_return(resolved_env_hash)
+
+          expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+            expect(env['foo']).to eq('bar')
+            expect(env['smurf']).to eq('blue')
+            expect(env['gargamel']).to eq('green')
+          end.and_return('new-vm-cid')
+
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
         end
       end
     end

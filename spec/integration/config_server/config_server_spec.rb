@@ -86,7 +86,6 @@ describe 'using director with config server', type: :integration do
 
         expect(downloaded_manifest).to include '((smurf_placeholder))'
         expect(downloaded_manifest).to_not include 'happy smurf'
-        expect(downloaded_manifest).to_not include 'uninterpolated_properties'
       end
 
       context 'when health monitor is around and resurrector is enabled' do
@@ -312,6 +311,86 @@ describe 'using director with config server', type: :integration do
     )
           end
         end
+
+        context 'when remove_dev_tools key exist' do
+          with_reset_sandbox_before_each(
+            remove_dev_tools: true,
+            config_server_enabled: true,
+            user_authentication: 'uaa',
+            uaa_encryption: 'asymmetric'
+          )
+
+          let(:env_hash) do
+            {
+              'env1' => '((env1_placeholder))',
+              'env2' => 'env_value2',
+              'env3' => {
+                'color' => '((color_placeholder))'
+              },
+              'bosh' => {
+                'password' => 'foobar'
+              }
+            }
+          end
+
+          let(:simple_manifest) do
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash['jobs'][0]['instances'] = 1
+            manifest_hash['jobs'][0]['env'] = env_hash
+            manifest_hash
+          end
+
+          let(:cloud_config) do
+            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+            cloud_config_hash['resource_pools'][0].delete('env')
+            cloud_config_hash
+          end
+
+          before do
+            bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
+
+            config_server_helper.put_value('env1_placeholder', 'lazy smurf')
+            config_server_helper.put_value('color_placeholder', 'blue')
+          end
+
+          it 'should send the flag to the agent with interpolated values' do
+            deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, env: client_env)
+
+            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+            expect(invocations[2].inputs).to match({'agent_id' => String,
+                                                    'stemcell_id' => String,
+                                                    'cloud_properties' => {},
+                                                    'networks' => Hash,
+                                                    'disk_cids' => Array,
+                                                    'env' =>
+                                                      {
+                                                        'env1' => 'lazy smurf',
+                                                        'env2' => 'env_value2',
+                                                        'env3' => {
+                                                          'color' => 'blue'
+                                                        },
+                                                        'bosh' => {
+                                                          'password' => 'foobar',
+                                                          'remove_dev_tools' => true,
+                                                          'group_name' => 'foobar'
+                                                        }
+                                                      }
+                                                   })
+          end
+
+          it 'does not cause a recreate vm on redeploy' do
+            deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, env: client_env)
+
+            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+            expect(invocations.size).to eq(3) # 2 compilation vms and 1 for the one in the instance_group
+
+            output = deploy_simple_manifest(no_login: true, manifest_hash: simple_manifest, env: client_env)
+            expect(output).to_not include('Started updating job foobar')
+
+            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+            expect(invocations.size).to eq(3) # no vms should have been deleted/created
+          end
+        end
       end
     end
 
@@ -373,11 +452,6 @@ describe 'using director with config server', type: :integration do
           vm = director.vm('foobar', '0', env: client_env)
           template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
           expect(template).to include('smurfs are blue')
-        end
-
-        it 'does not include uninterpolated_properties key in the cli output' do
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-          expect(output).to_not include('uninterpolated_properties')
         end
       end
     end

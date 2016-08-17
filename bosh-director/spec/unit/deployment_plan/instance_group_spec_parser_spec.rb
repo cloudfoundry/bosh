@@ -37,7 +37,7 @@ module Bosh::Director
         let(:resource_pool_env) { {'key' => 'value'} }
         let(:uninterpolated_resource_pool_env) { {'key' => '((value_placeholder))'} }
         let(:resource_pool) do
-          instance_double(ResourcePool, env: resource_pool_env, uninterpolated_env: uninterpolated_resource_pool_env)
+          instance_double(ResourcePool, env: resource_pool_env)
         end
         let(:disk_type) { instance_double(DiskType) }
         let(:job_rel_ver) { instance_double(ReleaseVersion, template: nil) }
@@ -894,7 +894,6 @@ module Bosh::Director
             expect(job.stemcell.name).to eq('fake-stemcell-name')
             expect(job.stemcell.version).to eq('1')
             expect(job.env.spec).to eq({'key' => 'value'})
-            expect(job.env.uninterpolated_spec).to eq({'key' => '((value_placeholder))'})
           end
 
           context 'when env is also declared in the job spec' do
@@ -917,10 +916,8 @@ module Bosh::Director
 
       context 'when the job declares env, and the resource pool does not' do
         let(:resource_pool_env) { {} }
-        let(:uninterpolated_resource_pool_env) { {} }
         before do
           job_spec['env'] = {'job' => 'env'}
-          job_spec['uninterpolated_env'] = {'job' => '((job_placeholder))'}
           expect(deployment_plan).to receive(:resource_pool)
                                        .with('fake-resource-pool-name')
                                        .and_return(resource_pool)
@@ -929,7 +926,6 @@ module Bosh::Director
         it 'should assign the job env to the job' do
           job = parsed_job
           expect(job.env.spec).to eq({'job' => 'env'})
-          expect(job.env.uninterpolated_spec).to eq({'job' => '((job_placeholder))'})
         end
       end
 

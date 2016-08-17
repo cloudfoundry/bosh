@@ -307,7 +307,6 @@ module Bosh::Director
 
       def parse_resource_pool
         env_hash = safe_property(@instance_group_spec, 'env', class: Hash, :default => {})
-        uninterpolated_env_hash = safe_property(@instance_group_spec, 'uninterpolated_env', class: Hash, :default => {})
 
         resource_pool_name = safe_property(@instance_group_spec, "resource_pool", class: String, optional: true)
 
@@ -334,7 +333,6 @@ module Bosh::Director
 
           if env_hash.empty?
             env_hash = resource_pool.env
-            uninterpolated_env_hash = resource_pool.uninterpolated_env
           end
         else
           vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String)
@@ -358,7 +356,7 @@ module Bosh::Director
         @instance_group.vm_type = vm_type
         @instance_group.vm_extensions = vm_extensions
         @instance_group.stemcell = stemcell
-        @instance_group.env = Env.new(env_hash, uninterpolated_env_hash)
+        @instance_group.env = Env.new(env_hash)
       end
 
       def parse_update_config(parse_options)

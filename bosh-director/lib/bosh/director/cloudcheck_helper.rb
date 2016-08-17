@@ -108,7 +108,7 @@ module Bosh::Director
 
     def create_instance_plan(instance_model)
       vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
-      env = DeploymentPlan::Env.new(instance_model.vm_env, instance_model.vm_uninterpolated_env)
+      env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_model
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)

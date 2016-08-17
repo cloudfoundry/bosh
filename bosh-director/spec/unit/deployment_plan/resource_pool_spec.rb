@@ -16,7 +16,6 @@ module Bosh::Director::DeploymentPlan
         },
         'cloud_properties' => { 'foo' => 'bar' },
         'env' => { 'key' => 'value' },
-        'uninterpolated_env' => { 'key' => '((key_placeholder))' },
       }
     end
 
@@ -24,14 +23,13 @@ module Bosh::Director::DeploymentPlan
 
 
     describe 'creating' do
-      it 'parses name, size, stemcell spec, cloud properties, env, uninterpolated_env' do
+      it 'parses name, size, stemcell spec, cloud properties, env' do
         expect(resource_pool.name).to eq('small')
         expect(resource_pool.stemcell).to be_kind_of(Stemcell)
         expect(resource_pool.stemcell.name).to eq('stemcell-name')
         expect(resource_pool.stemcell.version).to eq('0.5.2')
         expect(resource_pool.cloud_properties).to eq({ 'foo' => 'bar' })
         expect(resource_pool.env).to eq({ 'key' => 'value' })
-        expect(resource_pool.uninterpolated_env).to eq({ 'key' => '((key_placeholder))' })
       end
 
       context 'when name is missing' do
