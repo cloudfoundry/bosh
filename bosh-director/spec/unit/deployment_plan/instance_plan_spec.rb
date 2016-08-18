@@ -388,8 +388,8 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when instance is nill' do
-        let(:job_state) { 'running' }
+      context 'when instance is nil' do
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: nil, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return false' do
           expect(instance_plan.needs_to_fix?).to be_falsey

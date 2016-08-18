@@ -166,7 +166,7 @@ module Bosh::Director
 
           context 'with the "skip_drain" param as "job_one,job_two"' do
             it 'skips draining' do
-              allow_any_instance_of(DeploymentManager)
+              expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
                 .and_return(OpenStruct.new(:id => 1))
