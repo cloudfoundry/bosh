@@ -9,7 +9,6 @@ image_resource:
 inputs:
   - name: bosh-src
   - name: bosh-release
-  - name: os-image
   - name: version
 
 outputs:

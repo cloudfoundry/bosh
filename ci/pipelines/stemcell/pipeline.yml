@@ -52,9 +52,8 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
-      - get: ubuntu-trusty-os-image
-      - get: centos-7-os-image
       - get: bosh-release
+        version: {version: 257.3}
       - get: version
         params:
           bump: major
@@ -148,9 +147,6 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-release
             passed: [build-stemcell]
-          - get: os-image
-            resource: ubuntu-trusty-os-image
-            passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
@@ -174,9 +170,6 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
-          - get: os-image
-            resource: centos-7-os-image
             passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
@@ -206,9 +199,6 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-release
             passed: [build-stemcell]
-          - get: os-image
-            resource: ubuntu-trusty-os-image
-            passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
@@ -232,9 +222,6 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
-          - get: os-image
-            resource: centos-7-os-image
             passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
@@ -264,9 +251,6 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-release
             passed: [build-stemcell]
-          - get: os-image
-            resource: ubuntu-trusty-os-image
-            passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
@@ -293,9 +277,6 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
-          - get: os-image
-            resource: centos-7-os-image
             passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
@@ -328,9 +309,6 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-release
             passed: [build-stemcell]
-          - get: os-image
-            resource: ubuntu-trusty-os-image
-            passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
@@ -354,9 +332,6 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
-          - get: os-image
-            resource: centos-7-os-image
             passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
@@ -385,9 +360,6 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
-          - get: os-image
-            resource: ubuntu-trusty-os-image
             passed: [build-stemcell]
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
@@ -428,22 +400,6 @@ resources:
     type: bosh-io-release
     source:
       repository: cloudfoundry/syslog-release
-
-  #
-  # os-images
-  #
-
-  - name: ubuntu-trusty-os-image
-    type: s3
-    source:
-      bucket: {{osimage_bucket}}
-      regexp: ubuntu-trusty/ubuntu-trusty-(.+).tgz
-
-  - name: centos-7-os-image
-    type: s3
-    source:
-      bucket: {{osimage_bucket}}
-      regexp: centos-7/centos-7-(.+).tgz
 
   #
   # AWS
