@@ -317,7 +317,7 @@ module Bosh
         end
 
         def needs_disk?
-          @existing_instance.persistent_disk_cid
+          @existing_instance.managed_persistent_disk_cid
         end
 
         def templates

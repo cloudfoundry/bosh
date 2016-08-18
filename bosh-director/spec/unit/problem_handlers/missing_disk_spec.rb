@@ -87,7 +87,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
               expect(Bosh::Director::Models::PersistentDisk[disk.id]).to be_nil
               expect(Bosh::Director::Models::Snapshot.all).to be_empty
-              expect(instance.persistent_disk_cid).to be_nil
+              expect(instance.managed_persistent_disk_cid).to be_nil
             end
 
             context 'when unmount_disk fails with RpcTimeout error' do

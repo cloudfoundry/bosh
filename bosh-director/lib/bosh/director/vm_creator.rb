@@ -28,7 +28,7 @@ module Bosh::Director
             with_thread_name("create_missing_vm(#{instance.model}/#{total})") do
               event_log_stage.advance_and_track(instance.model.to_s) do
                 @logger.info('Creating missing VM')
-                disks = [instance.model.persistent_disk_cid].compact
+                disks = [instance.model.managed_persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks)
                 instance_plan.network_plans
                     .select(&:obsolete?)

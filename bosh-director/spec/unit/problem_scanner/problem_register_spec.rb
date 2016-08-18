@@ -70,7 +70,7 @@ module Bosh::Director
     end
 
     describe '#get_disk' do
-      let(:instance) { double(:instance, persistent_disk_cid: 'fake-disk-cid') }
+      let(:instance) { double(:instance, managed_persistent_disk_cid: 'fake-disk-cid') }
 
       it 'returns vm instance and disk' do
         mounted_disk_cid = problem_register.get_disk(instance)

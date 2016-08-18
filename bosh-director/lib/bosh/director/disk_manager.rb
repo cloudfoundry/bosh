@@ -143,11 +143,11 @@ module Bosh::Director
 
       if agent_disk_cid.nil? && !instance_plan.needs_disk?
         @logger.debug('Disk is already detached')
-      elsif agent_disk_cid != instance.model.persistent_disk_cid
+      elsif agent_disk_cid != instance.model.managed_persistent_disk_cid
         raise AgentDiskOutOfSync,
           "'#{instance}' has invalid disks: agent reports " +
             "'#{agent_disk_cid}' while director record shows " +
-            "'#{instance.model.persistent_disk_cid}'"
+            "'#{instance.model.managed_persistent_disk_cid}'"
       end
 
       instance.model.persistent_disks.each do |disk|
