@@ -18,7 +18,8 @@ module Bosh::Director
         @instance_id = instance_id
         @disk_cid = disk_cid
         @transactor = Transactor.new
-        @disk_manager = DiskManager.new(Config.cloud, logger)
+        @disk_manager = SingleDiskManager.new(Config.cloud, logger)
+        @orphan_disk_manager = OrphanDiskManager.new(Config.cloud, logger)
       end
 
       def perform
@@ -63,13 +64,13 @@ module Bosh::Director
           @disk_manager.detach_disk(instance, previous_persistent_disk)
         end
 
-        @disk_manager.orphan_disk(previous_persistent_disk)
+        @orphan_disk_manager.orphan_disk(previous_persistent_disk)
       end
 
       def handle_new_disk(instance)
         orphan_disk = Models::OrphanDisk[:disk_cid => @disk_cid]
         if orphan_disk
-          @disk_manager.unorphan_disk(orphan_disk, instance.id)
+          @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
           Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
         end

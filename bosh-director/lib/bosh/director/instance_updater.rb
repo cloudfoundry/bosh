@@ -7,7 +7,7 @@ module Bosh::Director
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      disk_manager = DiskManager.new(cloud, logger)
+      disk_manager = SingleDiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       dns_manager = DnsManagerProvider.create
@@ -108,7 +108,7 @@ module Bosh::Director
           @logger,
           canary: options[:canary]
         )
-        state_applier.apply(instance_plan.desired_instance.job.update)
+        state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
       InstanceUpdater::InstanceState.with_instance_update_and_event_creation(instance.model, parent_id, instance.deployment_model.name, action, &update_procedure)
     end

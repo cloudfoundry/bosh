@@ -111,7 +111,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expect(existing_instance_plan.new?).to eq(false)
         expect(existing_instance_plan.obsolete?).to eq(false)
 
-        expect(existing_instance_plan.desired_instance.job).to eq(expected_desired_instance.job)
+        expect(existing_instance_plan.desired_instance.instance_group).to eq(expected_desired_instance.instance_group)
         expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
         expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
         expect(existing_instance_plan.instance.bootstrap?).to eq(true)
@@ -163,7 +163,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(existing_instance_plan.new?).to eq(false)
       expect(existing_instance_plan.obsolete?).to eq(false)
 
-      expect(existing_instance_plan.desired_instance.job).to eq(expected_desired_instance.job)
+      expect(existing_instance_plan.desired_instance.instance_group).to eq(expected_desired_instance.instance_group)
       expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
       expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
       expect(existing_instance_plan.instance.bootstrap?).to eq(true)

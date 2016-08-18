@@ -1,0 +1,3 @@
+'InstanceSetup': {
+    'set_host_keys': 'false',
+},

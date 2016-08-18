@@ -6,8 +6,8 @@ module Bosh::Director
       # @return [Hash]
       attr_reader :env
 
-      def initialize(spec)
-        @env = spec
+      def initialize(env)
+        @env = env
       end
 
       def spec

@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
-    let(:uninterpolated_properties) { {'key' => '((key_placeholder))'} }
+    let(:links) { {'link_name' => {'stuff' => 'foo'}} }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
@@ -24,13 +24,12 @@ module Bosh::Director::DeploymentPlan
         stemcell: stemcell,
         env: env,
         package_spec: packages,
-        persistent_disk_type: disk_pool,
+        persistent_disk_collection: persistent_disk_collection,
         is_errand?: false,
-        link_spec: 'fake-link',
+        link_spec: links,
         compilation?: false,
         update_spec: {},
         properties: properties,
-        uninterpolated_properties: uninterpolated_properties
       )
     }
     let(:index) { 0 }
@@ -49,21 +48,16 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
-    let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_pool_spec) }
-    let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
+    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger, multiple_disks: false) }
 
     before do
+      persistent_disk_collection.add_by_disk_size(0)
+
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, network)
       reservation.resolve_ip('192.168.0.10')
 
       instance_plan.network_plans << NetworkPlanner::Plan.new(reservation: reservation)
       instance.bind_existing_instance_model(instance_model)
-    end
-
-    describe '#full_spec' do
-      it 'returns the spec including uninterpolated properties' do
-        expect(instance_spec.full_spec['uninterpolated_properties']).to eq({'key' => '((key_placeholder))'})
-      end
     end
 
     describe '#apply_spec' do
@@ -103,17 +97,85 @@ module Bosh::Director::DeploymentPlan
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
         expect(instance_spec.as_apply_spec).to_not have_key('rendered_templates_archive')
       end
-
-      it 'does not require persistent_disk_type' do
-        allow(job).to receive(:persistent_disk_type).and_return(nil)
-
-        spec = instance_spec.as_apply_spec
-        expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(nil)
-      end
     end
 
     describe '#template_spec' do
+      context 'when properties placeholders are present' do
+        let(:properties) do
+          {
+            'smurf_1' => '((smurf_placeholder_1))',
+            'smurf_2' => '((smurf_placeholder_2))'
+          }
+        end
+
+        let(:links) do
+          {
+            'link_1' => {
+              'networks' => 'foo',
+              'properties' => {
+                'smurf' => '((smurf_val1))'
+              }
+            },
+            'link_2' => {
+              'netwroks' => 'foo2',
+              'properties' => {
+                'smurf' => '((smurf_val2))'
+              }
+            }
+          }
+        end
+
+        context 'when config server is enabled' do
+          let(:resolved_properties) do
+            {
+              'smurf_1' => 'lazy smurf',
+              'smurf_2' => 'happy smurf'
+            }
+          end
+
+          let(:resolved_links) do
+            {
+              'link_1' => {
+                'networks' => 'foo',
+                'properties' => {
+                  'smurf' => 'strong smurf'
+                }
+              },
+              'link_2' => {
+                'netwroks' => 'foo2',
+                'properties' => {
+                  'smurf' => 'sleepy smurf'
+                }
+              }
+            }
+          end
+
+          before do
+            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          end
+
+          it 'resolves properties and links properties' do
+            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(properties).and_return(resolved_properties)
+            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(links).and_return(resolved_links)
+
+            spec = instance_spec.as_template_spec
+            expect(spec['properties']).to eq(resolved_properties)
+            expect(spec['links']).to eq(resolved_links)
+          end
+        end
+
+        context 'when config server is disabled' do
+          before do
+            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
+          end
+
+          it 'does not resolve properties' do
+            spec = instance_spec.as_template_spec
+            expect(spec['properties']).to eq(properties)
+          end
+        end
+      end
+
       context 'when job has a manual network' do
         let(:subnet_spec) do
           {
@@ -147,7 +209,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
           expect(spec['dns_domain_name']).to eq('bosh')
-          expect(spec['links']).to eq('fake-link')
+          expect(spec['links']).to eq(links)
           expect(spec['id']).to eq('uuid-1')
           expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
@@ -180,7 +242,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)
@@ -223,7 +285,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)

@@ -5,7 +5,7 @@ module Bosh::Director
     class DisksController < BaseController
       get '/' do
         content_type(:json)
-        orphan_json = @disk_manager.list_orphan_disks
+        orphan_json = OrphanDiskManager.new(nil, @logger).list_orphan_disks
         json_encode(orphan_json)
       end
 

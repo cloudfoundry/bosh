@@ -252,79 +252,24 @@ module Bosh::Director::Models
           end
         end
       end
-
-      context 'when config server is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          allow(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with({'name' => '((name_placeholder))'}).and_return({'name' => 'Big papa smurf'})
-
-          spec_to_save = {
-            'properties' => {'name' => '((name_placeholder))'}
-          }
-
-          subject.spec_json = JSON.generate(spec_to_save)
-        end
-
-        it 'resolves properties and populates uninterpolated props' do
-          result = subject.spec
-          expect(result['properties']).to eq({'name'=>'Big papa smurf'})
-          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
-        end
-      end
-
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-
-          spec_to_save = {
-            'properties' => {'name' => '((name_placeholder))'}
-          }
-
-          subject.spec_json = JSON.generate(spec_to_save)
-        end
-
-        it 'does not resolve properties and populates uninterpolated props with properties' do
-          result = subject.spec
-          expect(result['properties']).to eq({'name'=>'((name_placeholder))'})
-          expect(result['uninterpolated_properties']).to eq({'name'=>'((name_placeholder))'})
-        end
-      end
     end
 
-    context 'spec=' do
-      context 'when config server is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          subject.spec=({
-            'properties' => {'name' => 'a'},
-            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
-          })
-        end
-
-        it 'only saves uninterpolated properties' do
-          saved_json = JSON.parse(subject.spec_json)
-          expect(saved_json).to eq({'properties'=>{'name'=>'((name_placeholder))'}})
-          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
-        end
+    context 'vm_env' do
+      it 'returns env contents' do
+        subject.spec=({'env' => {'a' => 'a_value'}})
+        expect(subject.vm_env).to eq({'a' => 'a_value'})
       end
 
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          subject.spec=({
-            'properties' => {'name' => 'a'},
-            'uninterpolated_properties' => {'name' => '((name_placeholder))'},
-          })
-        end
+      it 'returns empty hash when env is nil' do
+        subject.spec=({'env' => nil})
+        expect(subject.vm_env).to eq({})
+      end
 
-        it 'only saves properties' do
-          saved_json = JSON.parse(subject.spec_json)
-          expect(saved_json).to eq({'properties'=>{'name'=>'a'}})
-          expect(saved_json.key?('uninterpolated_properties')).to be_falsey
-        end
+      it 'returns empty hash when spec is nil' do
+        subject.spec=(nil)
+        expect(subject.vm_env).to eq({})
       end
     end
-
 
     context 'with deployment_plan' do
       subject { described_class.make(deployment: deployment, job: 'job-1') }

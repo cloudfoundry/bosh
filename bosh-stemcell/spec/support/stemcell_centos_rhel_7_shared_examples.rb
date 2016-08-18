@@ -37,6 +37,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
       it('should be of mode 600 (stig: V-38583)') { should be_mode('600') }
       it('should be owned by root (stig: V-38579)') { should be_owned_by('root') }
       it('should be grouped into root (stig: V-38581)') { should be_grouped_into('root') }
+      it('audits processes that start prior to auditd (CIS-8.1.3)') { should contain ' audit=1' }
     end
   end
 

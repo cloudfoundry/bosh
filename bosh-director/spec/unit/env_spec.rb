@@ -5,7 +5,9 @@ module Bosh::Director::DeploymentPlan
     describe '#spec' do
       it 'returns env' do
         env_spec =  {'key' => 'value'}
+
         env = Env.new(env_spec)
+
         expect(env.spec).to eq({'key' => 'value'})
       end
     end

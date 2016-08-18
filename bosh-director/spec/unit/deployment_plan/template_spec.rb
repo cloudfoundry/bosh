@@ -68,32 +68,4 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
       end
     end
   end
-
-  describe '#add_template_scoped_uninterpolated_properties' do
-    subject(:template) { described_class.new(nil, 'foo') }
-
-    it 'should set template scoped uninterpolated properties correctly' do
-      template.add_template_scoped_uninterpolated_properties({'smurf' => 'blue'}, 'deployment_instance_group_name')
-      expect(template.template_scoped_uninterpolated_properties).to eq({'deployment_instance_group_name'=>{'smurf'=>'blue'}})
-    end
-  end
-
-  describe '#bind_template_scoped_uninterpolated_properties' do
-    subject(:template) { Bosh::Director::DeploymentPlan::Template.new(release, 'foo') }
-    let(:release) {Bosh::Director::Models::Release.make(name: 'release1')}
-    let(:template_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release, properties: {'smurf' => { 'default' => 'black' }}) }
-
-    before do
-      allow(release).to receive(:get_template_model_by_name).and_return(template_model)
-    end
-
-    it 'should bind properties correctly' do
-      template.bind_models
-      template.add_template_scoped_uninterpolated_properties({'smurf' => 'blue'}, 'instance_group_1')
-      template.add_template_scoped_uninterpolated_properties({}, 'instance_group_2')
-      template.bind_template_scoped_uninterpolated_properties('instance_group_2')
-
-      expect(template.template_scoped_uninterpolated_properties).to eq({'instance_group_1'=>{'smurf'=>'blue'}, 'instance_group_2'=>{'smurf'=>'black'}})
-    end
-  end
 end

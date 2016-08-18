@@ -97,24 +97,48 @@ module Bosh::Director::ConfigServer
 
       context 'when to_be_ignored subtrees exist' do
         let(:ignored_subtrees) {[]}
-        let(:replacement_list) do
-          DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
+        let(:consume_spec) do
+          {
+            'primary_db' => {
+              'instances' => [
+                {
+                  'address' => '((address_placeholder))'
+                }
+              ],
+              'properties'  => {
+                'port' => '((manual_link_port))',
+                'adapter' => 'mysql2',
+                'username' => '((user_name_placeholder))',
+                'password' => 'some-password',
+                'name' => '((name_placeholder))'
+              }
+            }
+          }
         end
+
+        before do
+          test_obj['instance_groups'][0]['jobs'][0]['consumes'] = consume_spec
+        end
+
         it 'should should not include ignored paths in the result' do
+          any_string = String
+          index = Integer
+
           ignored_subtrees = []
-          ignored_subtrees << ['instance_groups', Numeric.new, 'jobs', Numeric.new, 'properties']
-          ignored_subtrees << ['instance_groups', Numeric.new, 'properties']
+          ignored_subtrees << ['instance_groups', index, 'jobs', index, 'consumes', any_string, 'properties']
+          ignored_subtrees << ['instance_groups', index, 'jobs', index, 'properties']
+          ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
           replacements = DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
 
-          expected = [
+          expected_replacements = [
             {'key'=>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
             {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-            {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']}
+            {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+            {'key'=>'address_placeholder', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']}
           ]
-
-          expect(replacements).to eq(expected)
+          expect(replacements).to match_array(expected_replacements)
         end
       end
     end

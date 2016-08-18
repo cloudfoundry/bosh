@@ -10,7 +10,7 @@ module Bosh::Director::ConfigServer
 
       config_values, invalid_keys = fetch_config_values(config_keys)
       if invalid_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: " + invalid_keys.join(", ")
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{invalid_keys.join(", ")}"
       end
 
       replace_config_values!(config_map, config_values, result)
@@ -23,21 +23,15 @@ module Bosh::Director::ConfigServer
       invalid_keys = []
       config_values = {}
 
-      http = setup_http
+      http = HTTPClient.new
 
       keys.each do |k|
-        config_server_uri = URI.join(Bosh::Director::Config.config_server_url, 'v1/', 'data/', k)
+        config_value = http.get(k)
 
-        begin
-          response = http.get(config_server_uri.path)
-        rescue OpenSSL::SSL::SSLError
-          raise "SSL certificate verification failed"
-        end
-
-        if response.kind_of? Net::HTTPSuccess
-          config_values[k] = JSON.parse(response.body)['value']
-        else
+        if config_value.nil?
           invalid_keys << k
+        else
+          config_values[k] = config_value['value']
         end
       end
 
@@ -47,30 +41,15 @@ module Bosh::Director::ConfigServer
     def self.replace_config_values!(config_map, config_values, obj_to_be_resolved)
       config_map.each do |config_loc|
         config_path = config_loc['path']
+        ret = obj_to_be_resolved
 
-        ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
-          obj[el]
+        if config_path.length > 1
+          ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
+            obj[el]
+          end
         end
         ret[config_path.last] = config_values[config_loc['key']]
       end
     end
-
-    def self.setup_http
-      config_server_uri = URI(Bosh::Director::Config.config_server_url)
-      http = Net::HTTP.new(config_server_uri.hostname, config_server_uri.port)
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-
-      ca_cert_file_path = Bosh::Director::Config.config_server_cert_path
-      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
-        http.ca_file = ca_cert_file_path
-      else
-        cert_store = OpenSSL::X509::Store.new
-        cert_store.set_default_paths
-        http.cert_store = cert_store
-      end
-      http
-    end
-
   end
 end

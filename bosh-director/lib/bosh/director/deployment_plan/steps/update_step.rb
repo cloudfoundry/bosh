@@ -8,7 +8,7 @@ module Bosh::Director
           @cloud = cloud
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @disk_manager = DiskManager.new(@cloud, @logger)
+          @disk_manager = SingleDiskManager.new(@cloud, @logger)
           @dns_manager = DnsManagerProvider.create
           job_renderer = JobRenderer.create
           agent_broadcaster = AgentBroadcaster.new

@@ -113,7 +113,7 @@ module Bosh::Director
 
       unless instance_plan.instance.compilation?
         # re-render job templates with updated dynamic network settings
-        @logger.debug("Re-rendering templates with spec: #{instance_plan.spec.as_template_spec}")
+        @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
         @job_renderer.render_job_instance(instance_plan)
       end
     end
@@ -121,7 +121,8 @@ module Bosh::Director
     def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
       parent_id = add_event(instance_model.deployment.name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
-      env = Bosh::Common::DeepCopy.copy(env)
+      env = resolve_uninterpolated_values(Bosh::Common::DeepCopy.copy(env))
+
       options = {:agent_id => agent_id}
 
       if Config.encryption?
@@ -168,6 +169,11 @@ module Bosh::Director
 
     def self.generate_agent_id
       SecureRandom.uuid
+    end
+
+    def resolve_uninterpolated_values(to_be_resolved_hash)
+      return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
+      Bosh::Director::ConfigServer::ConfigParser.parse(to_be_resolved_hash)
     end
 
     private

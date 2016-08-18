@@ -52,8 +52,6 @@ module Bosh::Director
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})
-        @deployment.uninterpolated_properties = safe_property(@deployment_manifest, 'uninterpolated_properties',
-          :class => Hash, :default => {})
       end
 
       def parse_releases

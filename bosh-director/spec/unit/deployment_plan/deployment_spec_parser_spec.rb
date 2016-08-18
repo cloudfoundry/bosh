@@ -154,18 +154,6 @@ module Bosh::Director
           manifest_hash.delete('properties')
           expect(parsed_deployment.properties).to eq({})
         end
-
-        describe 'uninterpolated global properties' do
-          before do
-            manifest_hash.merge!('properties' => { 'foo' => 'foo_value', 'bar' => 'bar_value' })
-            manifest_hash.merge!('uninterpolated_properties' => { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' })
-          end
-
-          it 'parses them correctly' do
-            expect(parsed_deployment.properties).to eq({'foo' => 'foo_value', 'bar' => 'bar_value'})
-            expect(parsed_deployment.uninterpolated_properties).to eq({'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))'})
-          end
-        end
       end
 
       describe 'releases/release key' do

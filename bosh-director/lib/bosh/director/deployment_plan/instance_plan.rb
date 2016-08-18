@@ -57,15 +57,12 @@ module Bosh
             return !@existing_instance.persistent_disk.nil?
           end
 
-          job = @desired_instance.job
-          new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
-          new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
-          changed = new_disk_size != disk_size
-          log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}", @existing_instance) if changed
-          return true if changed
-
-          changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
-          log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties, @existing_instance) if changed
+          existing_disk_models = instance_model.active_persistent_disks
+          desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
+          changed = desired_disks_collection.is_different_from(existing_disk_models)
+          if changed
+            @logger.debug("#{__method__} changed on instance #{@existing_instance}")
+          end
           changed
         end
 
@@ -193,7 +190,7 @@ module Bosh
           DeploymentPlan::NetworkSettings.new(
             @instance.job_name,
             @instance.model.deployment.name,
-            @desired_instance.job.default_network,
+            @desired_instance.instance_group.default_network,
             desired_reservations,
             @instance.current_networks,
             @instance.availability_zone,
@@ -243,11 +240,11 @@ module Bosh
         end
 
         def templates
-          @desired_instance.job.templates
+          @desired_instance.instance_group.templates
         end
 
         def job_changed?
-          job = @desired_instance.job
+          job = @desired_instance.instance_group
           return true if @instance.current_job_spec.nil?
 
           # The agent job spec could be in legacy form.  job_spec cannot be,
@@ -260,7 +257,7 @@ module Bosh
         end
 
         def packages_changed?
-          job = @desired_instance.job
+          job = @desired_instance.instance_group
 
           changed = job.package_spec != @instance.current_packages
           log_changes(__method__, @instance.current_packages, job.package_spec, @instance) if changed
@@ -274,9 +271,9 @@ module Bosh
         end
 
         def needs_disk?
-          job = @desired_instance.job
+          job = @desired_instance.instance_group
 
-          job && job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
+          job.persistent_disk_collection.needs_disk?
         end
 
         def persist_current_spec
@@ -291,7 +288,7 @@ module Bosh
         end
 
         def env_changed?
-          job = @desired_instance.job
+          job = @desired_instance.instance_group
 
           if @existing_instance && @existing_instance.vm_env && job.env.spec != @existing_instance.vm_env
             log_changes(__method__, @existing_instance.vm_env, job.env.spec, @existing_instance)

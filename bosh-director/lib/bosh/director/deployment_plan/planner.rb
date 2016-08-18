@@ -24,9 +24,6 @@ module Bosh::Director
 
       attr_accessor :properties
 
-      # uninterpolated global properties hash
-      attr_accessor :uninterpolated_properties
-
       # Hash of resolved links spec provided by deployment
       # in format job_name > template_name > link_name > link_type
       # used by LinksResolver
@@ -59,7 +56,6 @@ module Bosh::Director
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
-        @uninterpolated_properties = {}
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
@@ -78,7 +74,7 @@ module Bosh::Director
         @recreate = !!options['recreate']
         @fix = !!options['fix']
 
-        @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+        @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @logger = Config.logger
@@ -124,7 +120,7 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        disk_manager = DiskManager.new(cloud, @logger)
+        disk_manager = SingleDiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create
@@ -282,6 +278,14 @@ module Bosh::Director
 
       def using_global_networking?
         !@cloud_config.nil?
+      end
+
+      # If we don't want to do what we are doing in this method, then link_spec should be an object
+      def add_deployment_link_spec(instance_group_name, job_name, provided_link_name, provided_link_type, link_spec)
+        @link_spec[instance_group_name] ||= {}
+        @link_spec[instance_group_name][job_name] ||= {}
+        @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
+        @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
       end
 
       private

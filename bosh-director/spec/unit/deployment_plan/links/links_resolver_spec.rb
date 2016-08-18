@@ -40,7 +40,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {'name' => 'mysql-template',
              'release' => 'fake-release',
              'provides' => {'db' => {'as' => 'db'}},
-             "properties" => {'mysql' => nil}
+             'properties' => {'mysql' => nil}
             }
           ],
           'resource_pool' => 'fake-resource-pool',

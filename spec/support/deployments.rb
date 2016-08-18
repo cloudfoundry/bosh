@@ -24,6 +24,35 @@ module Bosh::Spec
         })
     end
 
+    def self.simple_os_specific_cloud_config
+      resource_pools = [
+        {
+          'name' => 'a',
+          'size' => 1,
+          'cloud_properties' => {},
+          'network' => 'a',
+          'stemcell' => {
+            'os' => 'toronto-os',
+            'version' => 'latest',
+          }
+        },
+        {
+          'name' => 'b',
+          'size' => 1,
+          'cloud_properties' => {},
+          'network' => 'a',
+          'stemcell' => {
+            'os' => 'toronto-centos',
+            'version' => 'latest'
+          }
+        }
+      ]
+      minimal_cloud_config.merge({
+        'networks' => [network],
+        'resource_pools' => resource_pools,
+      })
+    end
+
     def self.simple_runtime_config
       {
         'releases' => [{'name' => 'test_release_2', 'version' => '2'}]
@@ -69,6 +98,20 @@ module Bosh::Spec
               ]
             }
           }]
+      })
+    end
+
+    def self.runtime_config_with_addon_includes_stemcell_os
+      runtime_config_with_addon.merge({
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'include' => {
+            'stemcell' => [
+              {'os' => 'toronto-os'}
+            ]
+          }
+        ]
       })
     end
 
@@ -186,6 +229,15 @@ module Bosh::Spec
             'url' => stemcell_path,
           },
         }],
+      })
+    end
+
+    def self.stemcell_os_specific_addon_manifest
+      test_release_manifest.merge({
+        'jobs' => [
+          simple_job(resource_pool: 'a', name: "has-addon-vm", instances: 1),
+          simple_job(resource_pool: 'b', name: "no-addon-vm", instances: 1)
+        ]
       })
     end
 
@@ -491,7 +543,7 @@ module Bosh::Spec
       job_hash = {
         'name' => opts.fetch(:name, 'foobar'),
         'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
-        'resource_pool' => 'a',
+        'resource_pool' => opts.fetch(:resource_pool, 'a'),
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => 'a' }],
         'properties' => {},

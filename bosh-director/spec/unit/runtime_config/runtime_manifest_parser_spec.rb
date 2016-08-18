@@ -29,7 +29,7 @@ module Bosh::Director
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(RuntimeConfig::AddonInclude).to receive(:new).with([], [])
+          expect(RuntimeConfig::AddonInclude).to receive(:new).with([], [], [])
 
           result = subject.parse(runtime_manifest)
 
@@ -41,8 +41,8 @@ module Bosh::Director
           expect(result.addons.count).to eq(1)
           addon = result.addons.first
           expect(addon.name).to eq('addon1')
-          expect(addon.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil, 'uninterpolated_properties' => nil},
-            {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil, 'uninterpolated_properties' => nil}])
+          expect(addon.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
+            {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}])
           expect(addon.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
         end
       end
@@ -63,7 +63,7 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(RuntimeConfig::AddonInclude).to receive(:new).with([], ['dep1'])
+            expect(RuntimeConfig::AddonInclude).to receive(:new).with([], ['dep1'], [])
 
             subject.parse(runtime_manifest)
           end

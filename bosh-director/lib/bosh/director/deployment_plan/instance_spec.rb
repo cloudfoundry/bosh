@@ -12,7 +12,7 @@ module Bosh::Director
       def self.create_from_instance_plan(instance_plan)
         instance = instance_plan.instance
         deployment_name = instance.deployment_model.name
-        instance_group = instance_plan.desired_instance.job
+        instance_group = instance_plan.desired_instance.instance_group
         instance_plan = instance_plan
         dns_manager = DnsManagerProvider.create
 
@@ -30,7 +30,6 @@ module Bosh::Director
           'env' => instance_group.env.spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
-          'uninterpolated_properties' => instance_group.uninterpolated_properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => instance_group.link_spec,
@@ -38,16 +37,9 @@ module Bosh::Director
           'update' => instance_group.update_spec
         }
 
-        if instance_group.persistent_disk_type
-          # supply both for reverse compatibility with old agent
-          spec['persistent_disk'] = instance_group.persistent_disk_type.disk_size
-          # old agents will ignore this pool
-          # keep disk pool for backwards compatibility
-          spec['persistent_disk_pool'] = instance_group.persistent_disk_type.spec
-          spec['persistent_disk_type'] = instance_group.persistent_disk_type.spec
-        else
-          spec['persistent_disk'] = 0
-        end
+        disk_spec = instance_group.persistent_disk_collection.generate_spec
+
+        spec.merge!(disk_spec)
 
         new(spec, instance)
       end
@@ -113,14 +105,15 @@ module Bosh::Director
           'id',
           'az',
           'networks',
-          'properties',
           'properties_need_filtering',
           'dns_domain_name',
-          'links',
           'persistent_disk',
           'address'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
+
+        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['properties'])
+        template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
 
         networks_hash = template_hash['networks']
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
@@ -142,6 +135,13 @@ module Bosh::Director
         'resource_pool' => @full_spec['vm_type']['name'],
         'networks' => modified_networks_hash
         })
+      end
+
+      private
+
+      def resolve_uninterpolated_values(to_be_resolved_hash)
+        return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
+        Bosh::Director::ConfigServer::ConfigParser.parse(to_be_resolved_hash)
       end
     end
 
