@@ -63,8 +63,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(foo_template).to receive(:template_scoped_properties)
     allow(bar_template).to receive(:template_scoped_properties)
 
-    allow(foo_template).to receive(:add_template_scoped_properties)
-    allow(bar_template).to receive(:add_template_scoped_properties)
+    allow(foo_template).to receive(:add_properties)
+    allow(bar_template).to receive(:add_properties)
   end
 
   describe '#parse' do

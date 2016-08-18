@@ -146,7 +146,7 @@ module Bosh::Director
                                          .and_return(job_rel_ver)
 
             template = make_template('fake-template-name', job_rel_ver)
-            expect(template).to receive(:add_template_scoped_properties)
+            expect(template).to receive(:add_properties)
                                   .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template-name')
@@ -164,7 +164,7 @@ module Bosh::Director
                                         .and_return(job_rel_ver)
 
             template1 = make_template('fake-template-name', job_rel_ver)
-            allow(template1).to receive(:add_template_scoped_properties)
+            allow(template1).to receive(:add_properties)
 
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template-name')
@@ -182,14 +182,14 @@ module Bosh::Director
                                          .and_return(job_rel_ver)
 
             template1 = make_template('fake-template1-name', job_rel_ver)
-            expect(template1).to receive(:add_template_scoped_properties)
+            expect(template1).to receive(:add_properties)
                                   .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template1-name')
                                      .and_return(template1)
 
             template2 = make_template('fake-template2-name', job_rel_ver)
-            expect(template2).to receive(:add_template_scoped_properties)
+            expect(template2).to receive(:add_properties)
                                   .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template2-name')
@@ -207,14 +207,14 @@ module Bosh::Director
                                         .and_return(job_rel_ver)
 
             template1 = make_template('fake-template1-name', job_rel_ver)
-            allow(template1).to receive(:add_template_scoped_properties)
+            allow(template1).to receive(:add_properties)
 
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template1-name')
                                     .and_return(template1)
 
             template2 = make_template('fake-template2-name', job_rel_ver)
-            allow(template2).to receive(:add_template_scoped_properties)
+            allow(template2).to receive(:add_properties)
 
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template2-name')
@@ -266,7 +266,7 @@ module Bosh::Director
                                          .and_return(job_rel_ver)
 
             template1 = make_template('fake-template1-name', job_rel_ver)
-            expect(template1).to receive(:add_template_scoped_properties)
+            expect(template1).to receive(:add_properties)
                                    .with({
                                            'instance_group_property_1' => 'moop',
                                            'property_1' => 'meow',
@@ -277,7 +277,7 @@ module Bosh::Director
                                      .and_return(template1)
 
             template2 = make_template('fake-template2-name', job_rel_ver)
-            expect(template2).to receive(:add_template_scoped_properties)
+            expect(template2).to receive(:add_properties)
                                    .with({
                                            'instance_group_property_1' => 'moop',
                                            'property_1' => 'meow',
@@ -334,7 +334,7 @@ module Bosh::Director
                                                .with('fake-template-name')
                                                .and_return(template)
                   allow(template).to receive(:add_link_from_manifest)
-                  allow(template).to receive(:add_template_scoped_properties)
+                  allow(template).to receive(:add_properties)
                 end
 
                 it 'sets job template from release specified in a hash' do
@@ -368,7 +368,7 @@ module Bosh::Director
                                                .with('fake-template-name')
                                                .and_return(template)
                   allow(template).to receive(:add_link_from_manifest)
-                  allow(template).to receive(:add_template_scoped_properties)
+                  allow(template).to receive(:add_properties)
                 end
 
                 it 'sets job template from release specified in a hash' do
@@ -405,7 +405,7 @@ module Bosh::Director
                                               .and_return(job_rel_ver)
 
                   template = make_template('fake-template-name', nil)
-                  allow(template).to receive(:add_template_scoped_properties)
+                  allow(template).to receive(:add_properties)
                   expect(job_rel_ver).to receive(:get_or_create_template)
                                            .with('fake-template-name')
                                            .and_return(template)
@@ -437,7 +437,7 @@ module Bosh::Director
                   let(:template) { make_template('fake-template-name', nil) }
                   before do
                     allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
-                    allow(template).to receive(:add_template_scoped_properties)
+                    allow(template).to receive(:add_properties)
                   end
 
                   it 'sets job template from deployment release because first release assumed as default' do
@@ -514,7 +514,7 @@ module Bosh::Director
 
                 allow(job_rel_ver).to receive(:get_or_create_template) do |name|
                   template = instance_double(Template, name: name)
-                  allow(template).to receive(:add_template_scoped_properties)
+                  allow(template).to receive(:add_properties)
                   template
                 end
               end
@@ -554,7 +554,7 @@ module Bosh::Director
                                             .and_return(rel_ver1)
 
                 template1 = make_template('fake-template-name1', rel_ver1)
-                allow(template1).to receive(:add_template_scoped_properties)
+                allow(template1).to receive(:add_properties)
 
                 expect(rel_ver1).to receive(:get_or_create_template)
                                       .with('fake-template-name1')
@@ -567,7 +567,7 @@ module Bosh::Director
                                             .and_return(rel_ver2)
 
                 template2 = make_template('fake-template-name2', rel_ver2)
-                allow(template2).to receive(:add_template_scoped_properties)
+                allow(template2).to receive(:add_properties)
 
                 expect(rel_ver2).to receive(:get_or_create_template)
                                       .with('fake-template-name2')
@@ -640,7 +640,7 @@ module Bosh::Director
                 allow(job_rel_ver).to receive(:get_or_create_template)
                                         .with('fake-template-name')
                                         .and_return(template)
-                expect(template).to receive(:add_template_scoped_properties)
+                expect(template).to receive(:add_properties)
                                       .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'fake-job-name')
 
                 parsed_job
@@ -690,7 +690,7 @@ module Bosh::Director
                 allow(job_rel_ver).to receive(:get_or_create_template)
                                         .with('fake-template-name')
                                         .and_return(template)
-                expect(template).to receive(:add_template_scoped_properties)
+                expect(template).to receive(:add_properties)
                                       .with(props, 'fake-job-name')
 
                 parsed_job
@@ -743,7 +743,7 @@ module Bosh::Director
                   allow(job_rel_ver).to receive(:get_or_create_template)
                                           .with('fake-template-name')
                                           .and_return(template)
-                  expect(template).to receive(:add_template_scoped_properties)
+                  expect(template).to receive(:add_properties)
                                         .with(mapped_props, 'fake-job-name')
 
                   parsed_job
@@ -789,7 +789,7 @@ module Bosh::Director
                 allow(job_rel_ver).to receive(:get_or_create_template)
                                         .with('fake-template-name')
                                         .and_return(template)
-                allow(template).to receive(:add_template_scoped_properties)
+                allow(template).to receive(:add_properties)
                                      .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'fake-job-name')
 
                 parsed_job

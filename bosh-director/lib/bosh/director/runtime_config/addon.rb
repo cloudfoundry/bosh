@@ -88,9 +88,9 @@ module Bosh::Director
 
       def add_properties(addon_job_hash, addon_job_object, instance_group_name)
         if addon_job_hash['properties']
-          addon_job_object.add_template_scoped_properties(addon_job_hash['properties'], instance_group_name)
+          addon_job_object.add_properties(addon_job_hash['properties'], instance_group_name)
         else
-          addon_job_object.add_template_scoped_properties(@addon_level_properties, instance_group_name)
+          addon_job_object.add_properties(@addon_level_properties, instance_group_name)
         end
       end
 

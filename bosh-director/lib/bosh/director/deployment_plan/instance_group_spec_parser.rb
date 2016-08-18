@@ -119,7 +119,7 @@ module Bosh::Director
 
           Array(template_names).each do |template_name|
             current_template = @instance_group.release.get_or_create_template(template_name)
-            current_template.add_template_scoped_properties(
+            current_template.add_properties(
               merged_global_and_instance_group_properties,
               @instance_group.name
             )
@@ -201,7 +201,7 @@ module Bosh::Director
             else
               template_properties = merged_global_and_instance_group_properties
             end
-            template.add_template_scoped_properties(
+            template.add_properties(
               template_properties,
               @instance_group.name
             )

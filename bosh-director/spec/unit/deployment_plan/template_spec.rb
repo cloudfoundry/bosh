@@ -106,7 +106,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
       allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
       allow(template_model).to receive(:properties).and_return(release_job_spec_prop)
       allow(template_model).to receive(:package_names).and_return([])
-      template.add_template_scoped_properties(user_defined_prop, 'instance_group_name')
+      template.add_properties(user_defined_prop, 'instance_group_name')
       template.bind_models
     end
 
