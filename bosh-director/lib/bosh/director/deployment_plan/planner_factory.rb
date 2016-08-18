@@ -118,7 +118,7 @@ module Bosh
                 end
               end
 
-              template_properties = current_job.template_scoped_properties[current_instance_group.name]
+              template_properties = current_job.properties[current_instance_group.name]
 
               if current_job.link_infos.has_key?(current_instance_group.name) && current_job.link_infos[current_instance_group.name].has_key?('provides')
                 current_job.link_infos[current_instance_group.name]['provides'].each do |link_name, provided_link|

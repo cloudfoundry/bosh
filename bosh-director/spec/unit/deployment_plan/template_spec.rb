@@ -113,7 +113,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
     it 'should drop user provided properties not specified in the release job spec properties' do
       template.bind_properties('instance_group_name')
 
-      expect(template.template_scoped_properties).to eq({
+      expect(template.properties).to eq({
           'instance_group_name' =>{
           'cc_url' => 'www.cc.com',
           'deep_property' =>{
@@ -128,7 +128,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
       user_defined_prop.delete('dea_max_memory')
       template.bind_properties('instance_group_name')
 
-      expect(template.template_scoped_properties).to eq({
+      expect(template.properties).to eq({
                                                           'instance_group_name' =>{
                                                             'cc_url' => 'www.cc.com',
                                                             'deep_property' =>{
@@ -141,7 +141,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
     it 'should not override user provided properties with release job spec defaults' do
       template.bind_properties('instance_group_name')
-      expect(template.template_scoped_properties['instance_group_name']['cc_url']).to eq('www.cc.com')
+      expect(template.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
     end
 
     context 'when user specifies invalid property type for job' do

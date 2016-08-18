@@ -58,8 +58,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
     allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
 
-    allow(foo_template).to receive(:template_scoped_properties)
-    allow(bar_template).to receive(:template_scoped_properties)
+    allow(foo_template).to receive(:properties)
+    allow(bar_template).to receive(:properties)
 
     allow(foo_template).to receive(:add_properties)
     allow(bar_template).to receive(:add_properties)
@@ -134,7 +134,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
-    let(:foo_template_scoped_properties) do
+    let(:foo_properties) do
       {
         'foobar' => {
           'cc_url' => 'www.cc.com',
@@ -146,7 +146,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
-    let(:bar_template_scoped_properties) do
+    let(:bar_properties) do
       {
         'foobar' => {
           'vroom' => 'smurf',
@@ -158,8 +158,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     before do
       allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
-      allow(foo_template).to receive(:template_scoped_properties).and_return(foo_template_scoped_properties)
-      allow(bar_template).to receive(:template_scoped_properties).and_return(bar_template_scoped_properties)
+      allow(foo_template).to receive(:properties).and_return(foo_properties)
+      allow(bar_template).to receive(:properties).and_return(bar_properties)
     end
 
     it 'binds all templates properties' do
@@ -325,7 +325,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(foo_template).to receive(:version).and_return('200')
       allow(foo_template).to receive(:sha1).and_return('fake_sha1')
       allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
-      allow(foo_template).to receive(:template_scoped_properties).and_return({})
+      allow(foo_template).to receive(:properties).and_return({})
 
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)

@@ -89,8 +89,8 @@ module Bosh::Director
               it 'adds addon properties to addon job' do
                 addon.add_to_deployment(deployment)
 
-                expect(instance_group.jobs[1].template_scoped_properties).to eq({'foobar' => properties})
-                expect(instance_group.jobs[2].template_scoped_properties).to eq({'foobar' => properties})
+                expect(instance_group.jobs[1].properties).to eq({'foobar' => properties})
+                expect(instance_group.jobs[2].properties).to eq({'foobar' => properties})
               end
             end
 
@@ -102,8 +102,8 @@ module Bosh::Director
                 expect(instance_group).to(receive(:add_job)) { |job| added_jobs << job }.twice
                 addon.add_to_deployment(deployment)
 
-                expect(added_jobs[0].template_scoped_properties).to eq({'foobar' => {}})
-                expect(added_jobs[1].template_scoped_properties).to eq({'foobar' => {}})
+                expect(added_jobs[0].properties).to eq({'foobar' => {}})
+                expect(added_jobs[1].properties).to eq({'foobar' => {}})
               end
             end
           end
@@ -122,7 +122,7 @@ module Bosh::Director
 
             it 'does not overwrite jobs properties with addon properties' do
               expect(instance_group).to(receive(:add_job)) { |added_job|
-                expect(added_job.template_scoped_properties).to eq({'foobar' => {'job' => 'properties'}})
+                expect(added_job.properties).to eq({'foobar' => {'job' => 'properties'}})
               }
               addon.add_to_deployment(deployment)
             end

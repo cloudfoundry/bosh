@@ -13,7 +13,7 @@ module Bosh::Director
       attr_reader :package_models
 
       attr_reader :link_infos
-      attr_reader :template_scoped_properties
+      attr_reader :properties
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
@@ -31,7 +31,7 @@ module Bosh::Director
         # section of the deployment manifest. This way if a template is used
         # in multiple deployment jobs, the properties will not be shared across
         # jobs
-        @template_scoped_properties = {}
+        @properties = {}
       end
 
       # Looks up template model and its package models in DB
@@ -183,22 +183,22 @@ module Bosh::Director
         return @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
       end
 
-      def add_properties(template_scoped_properties, deployment_instance_group_name)
-        @template_scoped_properties[deployment_instance_group_name] = template_scoped_properties
+      def add_properties(properties, deployment_instance_group_name)
+        @properties[deployment_instance_group_name] = properties
       end
 
       def bind_properties(deployment_instance_group_name)
-        bound_template_scoped_properties = {}
-        @template_scoped_properties[deployment_instance_group_name] ||= {}
+        bound_properties = {}
+        @properties[deployment_instance_group_name] ||= {}
         release_job_spec_properties.each_pair do |name, definition|
           copy_property(
-              bound_template_scoped_properties,
-              @template_scoped_properties[deployment_instance_group_name],
+              bound_properties,
+              @properties[deployment_instance_group_name],
               name,
               definition['default']
           )
         end
-        @template_scoped_properties[deployment_instance_group_name] = bound_template_scoped_properties
+        @properties[deployment_instance_group_name] = bound_properties
       end
 
       private
