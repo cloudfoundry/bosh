@@ -256,7 +256,7 @@ module Bosh::Director
         @properties = {}
 
         @templates.each do |template|
-          template.bind_template_scoped_properties(@name)
+          template.bind_properties(@name)
           @properties[template.name] = template.template_scoped_properties[@name]
         end
       end

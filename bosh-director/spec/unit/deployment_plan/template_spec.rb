@@ -69,7 +69,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
     end
   end
 
-  describe '#bind_template_scoped_properties' do
+  describe '#bind_properties' do
     subject(:template) { described_class.new(release_version, 'foo') }
 
     let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
@@ -111,7 +111,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
     end
 
     it 'should drop user provided properties not specified in the release job spec properties' do
-      template.bind_template_scoped_properties('instance_group_name')
+      template.bind_properties('instance_group_name')
 
       expect(template.template_scoped_properties).to eq({
           'instance_group_name' =>{
@@ -126,7 +126,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
     it 'should include properties that are in the release job spec but not provided by a user' do
       user_defined_prop.delete('dea_max_memory')
-      template.bind_template_scoped_properties('instance_group_name')
+      template.bind_properties('instance_group_name')
 
       expect(template.template_scoped_properties).to eq({
                                                           'instance_group_name' =>{
@@ -140,7 +140,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
     end
 
     it 'should not override user provided properties with release job spec defaults' do
-      template.bind_template_scoped_properties('instance_group_name')
+      template.bind_properties('instance_group_name')
       expect(template.template_scoped_properties['instance_group_name']['cc_url']).to eq('www.cc.com')
     end
 
@@ -149,7 +149,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
       it 'raises an exception explaining which property is the wrong type' do
         expect {
-          template.bind_template_scoped_properties('instance_group_name')
+          template.bind_properties('instance_group_name')
         }.to raise_error Bosh::Template::InvalidPropertyType,
                          "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
       end

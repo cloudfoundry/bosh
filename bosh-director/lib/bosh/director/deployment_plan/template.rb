@@ -191,7 +191,7 @@ module Bosh::Director
         @template_scoped_properties[deployment_instance_group_name] = template_scoped_properties
       end
 
-      def bind_template_scoped_properties(deployment_instance_group_name)
+      def bind_properties(deployment_instance_group_name)
         bound_template_scoped_properties = {}
         @template_scoped_properties[deployment_instance_group_name] ||= {}
         properties.each_pair do |name, definition|

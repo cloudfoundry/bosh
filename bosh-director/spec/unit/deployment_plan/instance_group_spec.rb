@@ -165,8 +165,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     it 'binds all templates properties' do
-      expect(foo_template).to receive(:bind_template_scoped_properties)
-      expect(bar_template).to receive(:bind_template_scoped_properties)
+      expect(foo_template).to receive(:bind_properties)
+      expect(bar_template).to receive(:bind_properties)
 
       instance_group.bind_properties
 
