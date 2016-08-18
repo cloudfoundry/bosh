@@ -123,7 +123,7 @@ describe 'CentOS 7 OS image', os_image: true do
   end
 
   # V-38498 and V-38495 are the package defaults and cannot be configured
-  context 'ensure auditd is installed and enabled (stig: V-38628) (stig: V-38631) (stig: V-38632) (stig: V-38498) (stig: V-38495)' do
+  context 'ensure auditd is installed but not enabled (stig: V-38628) (stig: V-38631) (stig: V-38632) (stig: V-38498) (stig: V-38495)' do
     describe package('audit') do
       it { should be_installed }
     end
@@ -131,11 +131,6 @@ describe 'CentOS 7 OS image', os_image: true do
     describe file('/etc/systemd/system/default.target') do
       it { should be_file }
       its(:content) { should match /^Requires=multi-user\.target/ }
-    end
-
-    describe file('/etc/systemd/system/multi-user.target.wants/auditd.service') do
-      it { should be_file }
-      its(:content) { should match /^ExecStart=\/sbin\/auditd/ }
     end
   end
 
@@ -268,6 +263,15 @@ describe 'CentOS 7 OS image', os_image: true do
     describe user('vcap') do
       it { should exist }
       it { should belong_to_group 'wheel' }
+    end
+  end
+
+  describe 'logging and audit startup script' do
+    describe file('/var/vcap/bosh/bin/start_logging_and_auditing.sh') do
+      it { should be_file }
+      it { should be_executable }
+      it { should contain('service rsyslog start') }
+      it { should contain('service auditd start') }
     end
   end
 end

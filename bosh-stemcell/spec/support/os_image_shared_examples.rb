@@ -173,6 +173,20 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'auditd should be installed but not enabled (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      # Agent is responsible for starting auditd
+      it { should_not be_enabled }
+    end
+  end
+
+  context 'rsyslog should be installed but not enabled' do
+    describe service('rsyslog') do
+      # Agent is responsible for starting rsyslog
+      it { should_not be_enabled }
+    end
+  end
+
   context 'configured by base_ssh' do
     it 'is secure' do
       expect(sshd_config).to be_mode('600')

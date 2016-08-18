@@ -371,12 +371,6 @@ EOF
     end
   end
 
-  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
-    describe service('auditd') do
-      it { should be_enabled }
-    end
-  end
-
   context 'ensure audit package file have unmodified contents (stig: V-38637)' do
     # ignore auditd.conf, auditd, and audit.rules since we modify these files in
     # other stigs
@@ -448,6 +442,15 @@ EOF
     describe user('vcap') do
       it { should exist }
       it { should belong_to_group 'sudo' }
+    end
+  end
+
+  describe 'logging and audit startup script' do
+    describe file('/var/vcap/bosh/bin/start_logging_and_auditing.sh') do
+      it { should be_file }
+      it { should be_executable }
+      it { should contain('service rsyslog start') }
+      it { should contain('service auditd start') }
     end
   end
 end
