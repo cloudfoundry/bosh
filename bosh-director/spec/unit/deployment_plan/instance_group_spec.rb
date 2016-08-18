@@ -37,14 +37,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     'Bosh::Director::DeploymentPlan::Template',
     name: 'foo',
     release: release,
-    properties: foo_properties,
   ) }
 
   let(:bar_template) { instance_double(
     'Bosh::Director::DeploymentPlan::Template',
     name: 'bar',
     release: release,
-    properties: bar_properties,
   ) }
 
   let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }

@@ -91,10 +91,6 @@ module Bosh::Director
         present_model.logs
       end
 
-      # @return [Hash]
-      def properties
-        present_model.properties
-      end
 
       # return [Array]
       def model_consumed_links
@@ -194,7 +190,7 @@ module Bosh::Director
       def bind_properties(deployment_instance_group_name)
         bound_template_scoped_properties = {}
         @template_scoped_properties[deployment_instance_group_name] ||= {}
-        properties.each_pair do |name, definition|
+        release_job_spec_properties.each_pair do |name, definition|
           copy_property(
               bound_template_scoped_properties,
               @template_scoped_properties[deployment_instance_group_name],
@@ -254,6 +250,12 @@ module Bosh::Director
         end
         @model
       end
+
+      # @return [Hash]
+      def release_job_spec_properties
+        present_model.properties
+      end
+
     end
   end
 end
