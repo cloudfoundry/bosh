@@ -52,6 +52,7 @@ module Bosh::Stemcell
               :escape_ctrl_alt_del,
               :system_users,
               :bosh_audit,
+              :bosh_log_audit_start,
             ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
           )
         end
@@ -85,6 +86,7 @@ module Bosh::Stemcell
               :cron_config,
               :escape_ctrl_alt_del,
               :bosh_audit,
+              :bosh_log_audit_start
             ]
           )
         end
