@@ -68,4 +68,91 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
       end
     end
   end
+
+  describe '#bind_template_scoped_properties' do
+    subject(:template) { described_class.new(release_version, 'foo') }
+
+    let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+    let(:template_model) { instance_double('Bosh::Director::Models::Template') }
+
+    let (:release_job_spec_prop) do
+      {
+        'cc_url' => {
+          'description' => 'some desc',
+          'default' => 'cloudfoundry.com'
+        },
+        'deep_property.dont_override' => {
+          'description' => 'I have no default',
+        },
+        'dea_max_memory' => {
+          'description' => 'max memory',
+          'default' => 2048
+        },
+      }
+    end
+
+    let (:user_defined_prop) do
+      {
+        'cc_url' => 'www.cc.com',
+        'deep_property' => {
+          'unneeded' => 'abc',
+          'dont_override' => 'def'
+        },
+        'dea_max_memory' => 1024
+      }
+    end
+
+    before do
+      allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
+      allow(template_model).to receive(:properties).and_return(release_job_spec_prop)
+      allow(template_model).to receive(:package_names).and_return([])
+      template.add_template_scoped_properties(user_defined_prop, 'instance_group_name')
+      template.bind_models
+    end
+
+    it 'should drop user provided properties not specified in the release job spec properties' do
+      template.bind_template_scoped_properties('instance_group_name')
+
+      expect(template.template_scoped_properties).to eq({
+          'instance_group_name' =>{
+          'cc_url' => 'www.cc.com',
+          'deep_property' =>{
+            'dont_override' => 'def'
+          },
+          'dea_max_memory' =>1024
+        }
+      })
+    end
+
+    it 'should include properties that are in the release job spec but not provided by a user' do
+      user_defined_prop.delete('dea_max_memory')
+      template.bind_template_scoped_properties('instance_group_name')
+
+      expect(template.template_scoped_properties).to eq({
+                                                          'instance_group_name' =>{
+                                                            'cc_url' => 'www.cc.com',
+                                                            'deep_property' =>{
+                                                              'dont_override' => 'def'
+                                                            },
+                                                            'dea_max_memory' =>2048
+                                                          }
+                                                        })
+    end
+
+    it 'should not override user provided properties with release job spec defaults' do
+      template.bind_template_scoped_properties('instance_group_name')
+      expect(template.template_scoped_properties['instance_group_name']['cc_url']).to eq('www.cc.com')
+    end
+
+    context 'when user specifies invalid property type for job' do
+      let(:user_defined_prop) { {'deep_property' => false} }
+
+      it 'raises an exception explaining which property is the wrong type' do
+        expect {
+          template.bind_template_scoped_properties('instance_group_name')
+        }.to raise_error Bosh::Template::InvalidPropertyType,
+                         "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
+      end
+    end
+  end
 end

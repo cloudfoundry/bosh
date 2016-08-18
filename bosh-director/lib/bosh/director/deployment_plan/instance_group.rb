@@ -73,8 +73,6 @@ module Bosh::Director
 
       attr_accessor :availability_zones
 
-      attr_accessor :all_properties
-
       attr_accessor :networks
 
       attr_accessor :migrated_from
@@ -95,7 +93,6 @@ module Bosh::Director
 
         @release = nil
         @templates = []
-        @all_properties = nil # All properties available to instance group
         @properties = nil # Actual instance group properties
 
         @instances = []
@@ -256,7 +253,12 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist instance group template
       # property definitions in DB).
       def bind_properties
-        @properties = extract_jobs_properties(@all_properties)
+        @properties = {}
+
+        @templates.each do |template|
+          template.bind_template_scoped_properties(@name)
+          @properties[template.name] = template.template_scoped_properties[@name]
+        end
       end
 
       def validate_package_names_do_not_collide!
@@ -352,29 +354,6 @@ module Bosh::Director
       end
 
       private
-
-      def extract_jobs_properties(all_properties)
-        result = {}
-
-        @templates.each do |template|
-          # If a template has properties that were defined in the deployment manifest
-          # for that template only, then we need to bind only these properties, and not
-          # make them available to other templates in the same deployment instance group. That can
-          # be done by checking @template_scoped_properties variable of each
-          # template
-          result[template.name] ||= {}
-          if template.has_template_scoped_properties(@name)
-            template.bind_template_scoped_properties(@name)
-            result[template.name] = template.template_scoped_properties[@name]
-          else
-            template.properties.each_pair do |name, definition|
-              copy_property(result[template.name], all_properties, name, definition["default"])
-            end
-          end
-        end
-
-        result
-      end
 
       def run_time_dependencies
         templates.flat_map { |template| template.package_models }.uniq.map(&:name)

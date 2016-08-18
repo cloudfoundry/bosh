@@ -5,17 +5,17 @@ module Bosh::Director
     class Link
       attr_reader :name
 
-      def initialize(name, source, template, network_name = nil)
+      def initialize(name, source, job, network_name = nil)
         @name = name
         @source = source
         @network_name = network_name
-        @template = template
+        @job = job
       end
 
       def spec
         {
           'networks' => @source.networks.map { |network| network.name },
-          'properties' => @template.provides_link_info(@source.name, @name)['mapped_properties'],
+          'properties' => @job.provides_link_info(@source.name, @name)['mapped_properties'],
           'instances' => @source.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone

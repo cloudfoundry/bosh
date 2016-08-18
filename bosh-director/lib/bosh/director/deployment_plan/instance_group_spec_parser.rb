@@ -26,12 +26,15 @@ module Bosh::Director
         parse_release
         validate_jobs
 
-        parse_legacy_template
-        parse_jobs
+
+        merged_global_and_instance_group_properties = extract_global_and_instance_group_properties
+
+        parse_legacy_template(merged_global_and_instance_group_properties)
+        parse_jobs(merged_global_and_instance_group_properties)
 
         check_job_uniqueness
         parse_disks
-        parse_properties
+
         parse_resource_pool
         check_remove_dev_tools
 
@@ -96,8 +99,8 @@ module Bosh::Director
       end
 
       # legacy template parsing
-      def parse_legacy_template
-        template_names = safe_property(@instance_group_spec, "template", optional: true)
+      def parse_legacy_template(merged_global_and_instance_group_properties)
+        template_names = safe_property(@instance_group_spec, 'template', optional: true)
         if template_names
           if template_names.is_a?(Array)
             @event_log.warn_deprecated(
@@ -115,12 +118,17 @@ module Bosh::Director
           end
 
           Array(template_names).each do |template_name|
-            @instance_group.templates << @instance_group.release.get_or_create_template(template_name)
+            current_template = @instance_group.release.get_or_create_template(template_name)
+            current_template.add_template_scoped_properties(
+              merged_global_and_instance_group_properties,
+              @instance_group.name
+            )
+            @instance_group.templates << current_template
           end
         end
       end
 
-      def parse_jobs
+      def parse_jobs(merged_global_and_instance_group_properties)
         legacy_jobs = safe_property(@instance_group_spec, 'templates', class: Array, optional: true)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array, optional: true)
 
@@ -188,12 +196,15 @@ module Bosh::Director
               template.add_link_from_manifest(@instance_group.name, 'consumes', link_name, source)
             end
 
-            if job_spec.has_key?("properties")
-              template.add_template_scoped_properties(
-                  safe_property(job_spec, 'properties', class: Hash, optional: true, default: nil),
-                  @instance_group.name
-              )
+            if job_spec.has_key?('properties')
+              template_properties = safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
+            else
+              template_properties = merged_global_and_instance_group_properties
             end
+            template.add_template_scoped_properties(
+              template_properties,
+              @instance_group.name
+            )
 
             @instance_group.templates << template
           end
@@ -285,24 +296,25 @@ module Bosh::Director
         @instance_group.persistent_disk_collection = persistent_disk_collection
       end
 
-      def parse_properties
+      def extract_global_and_instance_group_properties
         # Manifest can contain global and per-job properties section
-        job_properties = safe_property(@instance_group_spec, "properties", :class => Hash, :optional => true, :default => {})
+        instance_group_properties = safe_property(@instance_group_spec, 'properties', :class => Hash, :optional => true, :default => {})
 
-        @instance_group.all_properties = @deployment.properties.recursive_merge(job_properties)
+        merged_properties = @deployment.properties.recursive_merge(instance_group_properties)
 
-        mappings = safe_property(@instance_group_spec, "property_mappings", :class => Hash, :default => {})
+        mappings = safe_property(@instance_group_spec, 'property_mappings', :class => Hash, :default => {})
 
         mappings.each_pair do |to, from|
-          resolved = lookup_property(@instance_group.all_properties, from)
+          resolved = lookup_property(merged_properties, from)
 
           if resolved.nil?
             raise InstanceGroupInvalidPropertyMapping,
                   "Cannot satisfy property mapping '#{to}: #{from}', as '#{from}' is not in deployment properties"
           end
 
-          @instance_group.all_properties[to] = resolved
+          merged_properties[to] = resolved
         end
+        merged_properties
       end
 
       def parse_resource_pool

@@ -65,9 +65,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     allow(foo_template).to receive(:add_template_scoped_properties)
     allow(bar_template).to receive(:add_template_scoped_properties)
-
-    allow(foo_template).to receive(:has_template_scoped_properties).and_return(false)
-    allow(bar_template).to receive(:has_template_scoped_properties).and_return(false)
   end
 
   describe '#parse' do
@@ -135,126 +132,59 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'env' => {'key' => 'value'},
         'instances' => 1,
         'networks'  => [{'name' => 'fake-network-name'}],
-        'properties' => props,
         'template' => %w(foo bar),
       }
     end
 
-    let(:props) do
+    let(:foo_template_scoped_properties) do
       {
-        'cc_url' => 'www.cc.com',
-        'deep_property' => {
-          'unneeded' => 'abc',
-          'dont_override' => 'def'
-        },
-        'dea_max_memory' => 1024
-      }
-    end
-
-    before do
-      allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
-    end
-
-    context 'when all the job specs (fka templates) specify properties' do
-      it 'should drop deployment manifest properties not specified in the job spec properties' do
-        instance_group.bind_properties
-        expect(instance_group.properties).to_not have_key('cc')
-        expect(instance_group.properties['foo']['deep_property']).to_not have_key('unneeded')
-      end
-
-      it 'should include properties that are in the job spec properties but not in the deployment manifest' do
-        instance_group.bind_properties
-        expect(instance_group.properties['foo']['dea_min_memory']).to eq(512)
-        expect(instance_group.properties['foo']['deep_property']['new_property']).to eq('jkl')
-      end
-
-      it 'should not override deployment manifest properties with job_template defaults' do
-        instance_group.bind_properties
-        expect(instance_group.properties['bar']['dea_max_memory']).to eq(1024)
-        expect(instance_group.properties['foo']['deep_property']['dont_override']).to eq('def')
-      end
-    end
-
-    context 'when user specifies invalid property type for job' do
-      let(:props) { {'deep_property' => false} }
-
-      it 'raises an exception explaining which property is the wrong type' do
-        expect {
-          instance_group.bind_properties
-        }.to raise_error Bosh::Template::InvalidPropertyType,
-          "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
-      end
-    end
-
-    context 'when the deployment manifest specifies properties for templates' do
-      before do
-        allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
-        allow(foo_template).to receive(:template_scoped_properties).and_return(props)
-      end
-
-      it 'only bind the local properties ' do
-        expect(foo_template).to receive(:bind_template_scoped_properties)
-
-        instance_group.bind_properties
-        expect(instance_group.properties['bar']).to eq({"dea_max_memory"=>1024})
-      end
-    end
-  end
-
-  describe 'property mappings' do
-    let(:foo_properties) do
-      {
-        'db.user' => {'default' => 'root'},
-        'db.password' => {},
-        'db.host' => {'default' => 'localhost'},
-        'mem' => {'default' => 256},
-      }
-    end
-
-    let(:props) do
-      {
-        'ccdb' => {
-          'user' => 'admin',
-          'password' => '12321',
-          'unused' => 'yada yada'
-        },
-        'dea' => {
-          'max_memory' => 2048
+        'foobar' => {
+          'cc_url' => 'www.cc.com',
+          'deep_property' => {
+            'unneeded' => 'abc',
+            'dont_override' => 'def'
+          }
         }
       }
     end
 
-    let(:spec) do
+    let(:bar_template_scoped_properties) do
       {
-        'name' => 'foobar',
-        'release' => 'appcloud',
-        'vm_type' => 'dea',
-        'stemcell' => 'dea',
-        'env' => {'key' => 'value'},
-        'instances' => 1,
-        'networks' => [{'name' => 'fake-network-name'}],
-        'properties' => props,
-        'property_mappings' => {'db' => 'ccdb', 'mem' => 'dea.max_memory'},
-        'template' => 'foo',
+        'foobar' => {
+          'vroom' => 'smurf',
+          'dea_max_memory' => 1024
+        }
       }
     end
 
-    it 'supports property mappings' do
-      allow(plan).to receive(:properties).and_return(props)
-      expect(plan).to receive(:release).with('appcloud').and_return(release)
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(foo_template).to receive(:template_scoped_properties).and_return(foo_template_scoped_properties)
+      allow(bar_template).to receive(:template_scoped_properties).and_return(bar_template_scoped_properties)
+    end
+
+    it 'binds all templates properties' do
+      expect(foo_template).to receive(:bind_template_scoped_properties)
+      expect(bar_template).to receive(:bind_template_scoped_properties)
 
       instance_group.bind_properties
 
-      expect(instance_group.properties).to eq('foo' => {
-                                    'db' => {
-                                      'user' => 'admin',
-                                      'password' => '12321',
-                                      'host' => 'localhost'
-                                    },
-                                    'mem' => 2048
-                                   }
-                                )
+      expect(instance_group.properties).to eq(
+                                             {
+                                               'foo' => {
+                                                 'cc_url' => 'www.cc.com',
+                                                 'deep_property' => {
+                                                   'unneeded' => 'abc',
+                                                   'dont_override' => 'def'
+                                                 }
+                                               },
+                                               'bar' => {
+                                                 'vroom' => 'smurf',
+                                                 'dea_max_memory' =>1024
+                                               }
+                                             }
+                                           )
     end
   end
 

@@ -146,6 +146,8 @@ module Bosh::Director
                                          .and_return(job_rel_ver)
 
             template = make_template('fake-template-name', job_rel_ver)
+            expect(template).to receive(:add_template_scoped_properties)
+                                  .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template-name')
                                      .and_return(template)
@@ -162,6 +164,8 @@ module Bosh::Director
                                         .and_return(job_rel_ver)
 
             template1 = make_template('fake-template-name', job_rel_ver)
+            allow(template1).to receive(:add_template_scoped_properties)
+
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template-name')
                                     .and_return(template1)
@@ -178,11 +182,15 @@ module Bosh::Director
                                          .and_return(job_rel_ver)
 
             template1 = make_template('fake-template1-name', job_rel_ver)
+            expect(template1).to receive(:add_template_scoped_properties)
+                                  .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template1-name')
                                      .and_return(template1)
 
             template2 = make_template('fake-template2-name', job_rel_ver)
+            expect(template2).to receive(:add_template_scoped_properties)
+                                  .with({}, 'fake-job-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template2-name')
                                      .and_return(template2)
@@ -199,11 +207,15 @@ module Bosh::Director
                                         .and_return(job_rel_ver)
 
             template1 = make_template('fake-template1-name', job_rel_ver)
+            allow(template1).to receive(:add_template_scoped_properties)
+
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template1-name')
                                     .and_return(template1)
 
             template2 = make_template('fake-template2-name', job_rel_ver)
+            allow(template2).to receive(:add_template_scoped_properties)
+
             allow(job_rel_ver).to receive(:get_or_create_template)
                                     .with('fake-template2-name')
                                     .and_return(template2)
@@ -234,6 +246,51 @@ module Bosh::Director
               "Cannot tell what release job 'fake-job-name' is supposed to use, please explicitly specify one",
             )
           end
+
+          it 'adds merged global & instance group properties to template(s)' do
+            allow(deployment_plan).to receive(:properties)
+                                        .and_return({
+                                          'property_1' => 'woof',
+                                          'deployment_plan_property_1' => 'smurf'
+                                        })
+
+            job_spec['template'] = %w( fake-template1-name fake-template2-name )
+
+            job_spec['properties'] = {
+              'instance_group_property_1' => 'moop',
+              'property_1' => 'meow'
+            }
+
+            expect(deployment_plan).to receive(:release)
+                                         .with('fake-release-name')
+                                         .and_return(job_rel_ver)
+
+            template1 = make_template('fake-template1-name', job_rel_ver)
+            expect(template1).to receive(:add_template_scoped_properties)
+                                   .with({
+                                           'instance_group_property_1' => 'moop',
+                                           'property_1' => 'meow',
+                                           'deployment_plan_property_1' => 'smurf'
+                                         }, 'fake-job-name')
+            allow(job_rel_ver).to receive(:get_or_create_template)
+                                     .with('fake-template1-name')
+                                     .and_return(template1)
+
+            template2 = make_template('fake-template2-name', job_rel_ver)
+            expect(template2).to receive(:add_template_scoped_properties)
+                                   .with({
+                                           'instance_group_property_1' => 'moop',
+                                           'property_1' => 'meow',
+                                           'deployment_plan_property_1' => 'smurf'
+                                         }, 'fake-job-name')
+            allow(job_rel_ver).to receive(:get_or_create_template)
+                                     .with('fake-template2-name')
+                                     .and_return(template2)
+
+            job = parsed_job
+            expect(job.templates).to eq([template1, template2])
+          end
+
         end
 
         shared_examples_for 'templates/jobs key' do
@@ -545,7 +602,7 @@ module Bosh::Director
               end
             end
 
-            context 'when properties are provided in a template' do
+            context 'when properties are provided in the job hash' do
               let(:job_rel_ver) do
                 instance_double(
                   ReleaseVersion,
@@ -587,6 +644,110 @@ module Bosh::Director
                                       .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'fake-job-name')
 
                 parsed_job
+              end
+            end
+
+            context 'when properties are not provided in the job hash' do
+              let(:job_rel_ver) do
+                instance_double(
+                  ReleaseVersion,
+                  name: 'fake-release-version',
+                  version: '1',
+                  template: nil,
+                )
+              end
+
+              let (:props) do
+                {
+                  'smurf' => 'lazy',
+                  'cat' => {
+                    'color' => 'black'
+                  }
+                }
+              end
+
+              before do
+                job_spec['templates'] = [
+                  {'name' => 'fake-template-name',
+                   'links' => {'db' => 'a.b.c'}
+                  }
+                ]
+
+                job_spec['properties'] = props
+                job_spec['release'] = 'fake-job-release'
+
+                fake_template_release_model = Models::Release.make(name: 'fake-release-version')
+                fake_template_release_version_model = Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+                fake_template_release_version_model.add_template(Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+              end
+
+              it 'assigns merged global & instance group properties to the intended template' do
+                allow(deployment_plan).to receive(:release)
+                                            .with('fake-job-release')
+                                            .and_return(job_rel_ver)
+
+                template = make_template('fake-template-name', nil)
+                allow(job_rel_ver).to receive(:get_or_create_template)
+                                        .with('fake-template-name')
+                                        .and_return(template)
+                expect(template).to receive(:add_template_scoped_properties)
+                                      .with(props, 'fake-job-name')
+
+                parsed_job
+              end
+
+              context 'property mapping' do
+                let(:props) do
+                  {
+                    'ccdb' => {
+                      'user' => 'admin',
+                      'password' => '12321',
+                      'unused' => 'yada yada'
+                    },
+                    'dea' => {
+                      'max_memory' => 2048
+                    }
+                  }
+                end
+
+                let(:mapped_props) do
+                  {
+                    'ccdb' => {
+                      'user' => 'admin',
+                      'password' => '12321',
+                      'unused' => 'yada yada'
+                    },
+                    'dea' => {
+                      'max_memory' => 2048
+                    },
+                    'db' => {
+                      'user' => 'admin',
+                      'password' => '12321',
+                      'unused' => 'yada yada'
+                    },
+                    'mem' => 2048
+                  }
+                end
+
+                it 'supports it' do
+                  job_spec['properties'] = props
+                  job_spec['property_mappings'] = {'db' => 'ccdb', 'mem' => 'dea.max_memory'}
+
+                  job_spec['release'] = 'fake-job-release'
+
+                  allow(deployment_plan).to receive(:release)
+                                              .with('fake-job-release')
+                                              .and_return(job_rel_ver)
+
+                  template = make_template('fake-template-name', nil)
+                  allow(job_rel_ver).to receive(:get_or_create_template)
+                                          .with('fake-template-name')
+                                          .and_return(template)
+                  expect(template).to receive(:add_template_scoped_properties)
+                                        .with(mapped_props, 'fake-job-name')
+
+                  parsed_job
+                end
               end
             end
 
@@ -1076,19 +1237,42 @@ module Bosh::Director
         end
 
         describe 'properties key' do
-          it 'complains about unsatisfiable property mappings' do
-            props = { 'foo' => 'bar' }
+          context 'properties mapping' do
+            it 'complains about unsatisfiable property mappings' do
+              props = { 'foo' => 'bar' }
 
-            job_spec['properties'] = props
-            job_spec['property_mappings'] = { 'db' => 'ccdb' }
+              job_spec['properties'] = props
+              job_spec['property_mappings'] = { 'db' => 'ccdb' }
 
-            allow(deployment_plan).to receive(:properties).and_return(props)
+              allow(deployment_plan).to receive(:properties).and_return(props)
 
-            expect {
+              expect {
+                parsed_job
+              }.to raise_error(
+                     InstanceGroupInvalidPropertyMapping,
+                   )
+            end
+
+            it 'maps properties correctly' do
+
+              props = {
+                'ccdb' => {
+                  'user' => 'admin',
+                  'password' => '12321',
+                  'unused' => 'yada yada'
+                },
+                'dea' => {
+                  'max_memory' => 2048
+                }
+              }
+
+              job_spec['properties'] = props
+              job_spec['property_mappings'] = {'db' => 'ccdb', 'mem' => 'dea.max_memory'}
+
+              allow(deployment_plan).to receive(:properties).and_return(props)
+
               parsed_job
-            }.to raise_error(
-              InstanceGroupInvalidPropertyMapping,
-            )
+            end
           end
         end
 

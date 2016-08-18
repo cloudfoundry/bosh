@@ -53,7 +53,7 @@ module Bosh::Director
 
         release = planner.release(@release_name)
 
-        export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
+        export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, deployment_plan_stemcell)
         planner.add_instance_group(export_release_job)
         planner.bind_models(true)
 
@@ -120,12 +120,11 @@ module Bosh::Director
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
-      def create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
+      def create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, deployment_plan_stemcell)
         instance_group = DeploymentPlan::InstanceGroup.new(logger)
 
         instance_group.name = 'dummy-job-for-compilation'
         instance_group.stemcell = deployment_plan_stemcell
-        instance_group.all_properties = planner.properties
         release_version_model.templates.map do |template|
           instance_group.templates << release.get_or_create_template(template.name)
         end
