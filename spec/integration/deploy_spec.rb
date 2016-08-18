@@ -411,7 +411,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
         end
 
-        it 'runs the post-deploy script when a vms is resurrected', hm: true do
+        it 'runs the post-deploy script when a vm is resurrected', hm: true do
           current_sandbox.with_health_monitor_running do
             deploy({})
 
