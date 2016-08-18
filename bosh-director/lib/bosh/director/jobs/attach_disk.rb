@@ -27,7 +27,7 @@ module Bosh::Director
         validate_instance(instance)
 
         @transactor.retryable_transaction(instance.db) do
-          handle_previous_disk(instance) if instance.persistent_disk
+          handle_previous_disk(instance) if instance.managed_persistent_disk
           handle_new_disk(instance)
         end
 
@@ -56,12 +56,11 @@ module Bosh::Director
       end
 
       def handle_previous_disk(instance)
-        previous_persistent_disk = instance.persistent_disk
+        previous_persistent_disk = instance.managed_persistent_disk
         previous_persistent_disk.update(active: false)
 
         if instance.state == 'stopped'
-          @disk_manager.unmount_disk(instance, previous_persistent_disk)
-          @disk_manager.detach_disk(instance, previous_persistent_disk)
+          @disk_manager.detach_disk(previous_persistent_disk)
         end
 
         @orphan_disk_manager.orphan_disk(previous_persistent_disk)
@@ -79,7 +78,6 @@ module Bosh::Director
           @disk_manager.attach_disk(disk)
         end
       end
-
     end
   end
 end

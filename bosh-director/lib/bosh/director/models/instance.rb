@@ -16,9 +16,8 @@ module Bosh::Director::Models
     end
 
     # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
-    def persistent_disk
-      # Currently we support only 1 persistent disk.
-      self.persistent_disks.find { |disk| disk.active }
+    def managed_persistent_disk
+      PersistentDisk.first(active: true, name: '', instance: self)
     end
 
     def active_persistent_disks
@@ -31,7 +30,7 @@ module Bosh::Director::Models
 
     # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
     def persistent_disk_cid
-      disk = persistent_disk
+      disk = managed_persistent_disk
       return disk.disk_cid if disk
       nil
     end

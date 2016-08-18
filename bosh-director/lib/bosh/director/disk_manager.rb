@@ -21,8 +21,7 @@ module Bosh::Director
       changed_disk_pairs = new_disks.changed_disk_pairs(old_disks)
 
       changed_disk_pairs.each do |disk_pair|
-        old_disk = disk_pair[:old]
-        old_disk_model = old_disk.model unless old_disk.nil?
+        old_disk_model = disk_pair[:old].model unless disk_pair[:old].nil?
 
         new_disk = disk_pair[:new]
         new_disk_model = nil
@@ -32,12 +31,8 @@ module Bosh::Director
 
           attach_disk(new_disk_model)
 
-          if new_disk.managed?
-            mount_disk(instance_model, new_disk_model)
-
-            if old_disk
-              migrate_disk(instance_model, new_disk_model, old_disk_model)
-            end
+          if new_disk.managed? && old_disk_model
+            migrate_disk(instance_model, new_disk_model, old_disk_model)
           end
         end
 
@@ -46,9 +41,8 @@ module Bosh::Director
           new_disk_model.update(:active => true) if new_disk_model
         end
 
-        if old_disk
-          unmount_disk(instance_model, old_disk_model)
-          detach_disk(instance_model, old_disk_model)
+        if old_disk_model
+          detach_disk(old_disk_model)
 
           @orphan_disk_manager.orphan_disk(old_disk_model)
         end
@@ -56,7 +50,7 @@ module Bosh::Director
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)
       inactive_disks.each do |disk|
-        detach_disk(instance_model, disk)
+        detach_disk(disk)
         @orphan_disk_manager.orphan_disk(disk)
       end
     end
@@ -79,16 +73,20 @@ module Bosh::Director
     end
 
     def unmount_disk_for(instance_plan)
-      disk = instance_plan.instance.model.persistent_disk
-      return if disk.nil?
-      unmount_disk(instance_plan.instance.model, disk)
+      instance_model = instance_plan.instance.model
+      instance_model.active_persistent_disks.select(&:managed?).each do |disk|
+        unmount_disk(disk.model)
+      end
     end
 
     def attach_disk(disk)
       @cloud.attach_disk(disk.instance.vm_cid, disk.disk_cid)
+      mount_disk(disk) if disk.managed?
     end
 
-    def detach_disk(instance_model, disk)
+    def detach_disk(disk)
+      instance_model = disk.instance
+      unmount_disk(disk) if disk.managed?
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
         @cloud.detach_disk(instance_model.vm_cid, disk.disk_cid)
@@ -101,7 +99,8 @@ module Bosh::Director
       end
     end
 
-    def unmount_disk(instance_model, disk)
+    def unmount_disk(disk)
+      instance_model = disk.instance
       disk_cid = disk.disk_cid
       if disk_cid.nil?
         @logger.info('Skipping disk unmounting, instance does not have a disk')
@@ -167,13 +166,13 @@ module Bosh::Director
     end
 
     # @todo[multi-disks] the rescue is duplicated with migrate_disk
-    def mount_disk(instance_model, disk)
-      agent_client = agent_client(instance_model)
+    def mount_disk(disk)
+      agent_client = agent_client(disk.instance)
       agent_client.mount_disk(disk.disk_cid)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 
-      unmount_and_detach_disk(instance_model, disk)
+      unmount_and_detach_disk(disk)
       @orphan_disk_manager.orphan_disk(disk)
       raise e
     end
@@ -186,13 +185,13 @@ module Bosh::Director
     rescue => e
       @logger.debug("Failed to migrate disk, deleting new disk. #{e.inspect}")
 
-      unmount_and_detach_disk(instance_model, disk)
+      unmount_and_detach_disk(disk)
       @orphan_disk_manager.orphan_disk(disk)
       raise e
     end
 
-    def unmount_and_detach_disk(instance_model, disk)
-      unmount_disk(instance_model, disk)
+    def unmount_and_detach_disk(disk)
+      unmount_disk(disk)
 
       disk_cid = disk.disk_cid
       if disk_cid.nil?
@@ -200,7 +199,7 @@ module Bosh::Director
         return
       end
 
-      detach_disk(instance_model, disk)
+      detach_disk(disk)
     end
 
     def create_disk(instance_model, disk)
@@ -228,40 +227,6 @@ module Bosh::Director
       end
 
       disk_model
-    end
-
-    def create_disks(instance_plan)
-      job = instance_plan.desired_instance.instance_group.persistent_disk_collection
-      instance_model = instance_plan.instance.model
-
-      disks = job.persistent_disk_collection.collection.map do |disk|
-        disk_size = disk.size
-        cloud_properties = disk.cloud_properties
-        disk_model = nil
-
-        begin
-          parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
-
-          disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
-
-          disk_model = Models::PersistentDisk.create(
-            name: disk.name,
-            disk_cid: disk_cid,
-            active: false,
-            instance_id: instance_model.id,
-            size: disk_size,
-            cloud_properties: cloud_properties,
-          )
-        rescue Exception => e
-          raise e
-        ensure
-          add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
-        end
-
-        disk_model
-      end
-
-      disks
     end
   end
 end

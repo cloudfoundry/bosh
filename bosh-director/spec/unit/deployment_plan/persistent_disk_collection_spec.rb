@@ -29,14 +29,6 @@ module Bosh::Director
             }.to raise_error
           end
         end
-
-        context 'when given a disk_size of 0' do
-          it 'does not add disk to collection' do
-            persistent_disk_collection.add_by_disk_size(0)
-
-            expect(persistent_disk_collection.generate_spec).to eq( { 'persistent_disk' => 0 } )
-          end
-        end
       end
 
       describe '#add_by_disk_type' do
@@ -98,14 +90,6 @@ module Bosh::Director
               persistent_disk_collection.add_by_disk_type(disk_type)
             end
 
-            context 'when disk size is 0' do
-              let(:disk_type) { DiskType.new('disk_name', 0, {'empty' => 'cloud'}) }
-
-              it 'returns false' do
-                expect(persistent_disk_collection.needs_disk?).to be(false)
-              end
-            end
-
             context 'when disk size is greater than 0' do
               it 'returns true' do
                 expect(persistent_disk_collection.needs_disk?).to be(true)
@@ -129,158 +113,6 @@ module Bosh::Director
 
             it 'returns true' do
               expect(persistent_disk_collection.needs_disk?).to be(true)
-            end
-          end
-        end
-      end
-
-      describe '#is_different_from' do
-        let(:old_persistent_disk_collection) { PersistentDiskCollection.new(logger) }
-
-        before do
-          persistent_disk_models.each do |disk|
-            old_persistent_disk_collection.add_by_model(disk)
-          end
-        end
-
-        context 'when using a single disk' do
-          let(:persistent_disk_models) { [] }
-
-          context 'when there are no disks in the persistent disk collection' do
-            context 'when deployment has no disks' do
-              it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
-              end
-            end
-
-            context 'when deployment has disks' do
-              let(:persistent_disk_models) { [Models::PersistentDisk.make(size: 3)] }
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
-
-              it 'logs' do
-                expect(logger).to receive(:debug).with('Persistent disk removed: size 3, cloud_properties: {}')
-
-                persistent_disk_collection.is_different_from(old_persistent_disk_collection)
-              end
-            end
-          end
-
-          context 'when there is one disk in the persistent disk collection' do
-            before do
-              persistent_disk_collection.add_by_disk_type(disk_type)
-            end
-
-            context 'when deployment has no disks' do
-              let(:persistent_disk_models) { [] }
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
-            end
-
-            context 'when deployment has one disk' do
-              let(:persistent_disk_models) do
-                [Models::PersistentDisk.make(size: 30, cloud_properties: {})]
-              end
-
-              context 'when disks are the same' do
-                it 'returns false' do
-                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
-                end
-              end
-
-              context 'when disk sizes are different' do
-                let(:disk_size) { 4 }
-
-                it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-                end
-              end
-
-              context 'when disk cloud properties are different' do
-                let(:cloud_properties) { {'some' => 'cloud'} }
-
-                it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-                end
-
-                it 'logs' do
-                  expect(logger).to receive(:debug).with('Persistent disk changed: cloud_properties FROM {} TO {"some"=>"cloud"}')
-
-                  persistent_disk_collection.is_different_from(old_persistent_disk_collection)
-                end
-              end
-            end
-          end
-        end
-
-        context 'when using multiple disks' do
-          before do
-            persistent_disk_collection.add_by_disk_name_and_type('disk1', disk_type)
-            persistent_disk_collection.add_by_disk_name_and_type('disk2', disk_type)
-          end
-
-          context 'when deployment has one legacy disk' do
-            let(:persistent_disk_models) { [
-              Models::PersistentDisk.make(size: 3)
-            ] }
-            it 'returns true' do
-              expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-            end
-          end
-
-          context 'when deployment has many disks' do
-            let(:disk_size) { 3 }
-
-            let(:persistent_disk_models) { [
-              Models::PersistentDisk.make(name: 'disk2', size: 3),
-              Models::PersistentDisk.make(name: 'disk1', size: 3),
-            ] }
-
-            context 'when all disks are equal' do
-              it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(false)
-              end
-            end
-
-            context 'when number of disks is different' do
-              before do
-                persistent_disk_collection.add_by_disk_name_and_type('disk3', disk_type)
-              end
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
-            end
-
-            context 'when there is a disk with size disagreement' do
-              let(:disk_size) { 4 }
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
-            end
-
-            context 'when there is a disk with cloud config disagreement' do
-              let(:cloud_properties) { { 'a' => 'b' } }
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
-            end
-
-            context 'when there is a disk with name disagreement' do
-              let(:persistent_disk_models) { [
-                Models::PersistentDisk.make(name: 'disk13', size: 3),
-                Models::PersistentDisk.make(name: 'disk2', size: 3),
-              ] }
-
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(old_persistent_disk_collection)).to be(true)
-              end
             end
           end
         end

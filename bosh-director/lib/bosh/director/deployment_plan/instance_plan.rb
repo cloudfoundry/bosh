@@ -49,17 +49,17 @@ module Bosh
 
         def persistent_disk_changed?
           if @existing_instance && obsolete?
-            return !@existing_instance.persistent_disk.nil?
+            return @existing_instance.active_persistent_disks.any?
           end
 
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
-          changed = desired_disks_collection.is_different_from(existing_disk_collection)
-          if changed
-            @logger.debug("#{__method__} changed on instance #{@existing_instance}")
+          changed_disk_pairs = desired_disks_collection.changed_disk_pairs(existing_disk_collection)
+          changed_disk_pairs.each do |disk_pair|
+            log_changes(__method__, disk_pair[:old], disk_pair[:new], instance)
           end
-          changed
+          !changed_disk_pairs.empty?
         end
 
         def instance_model
@@ -304,30 +304,6 @@ module Bosh
 
         def log_changes(method_sym, old_state, new_state, instance)
           @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state} on instance #{instance}")
-        end
-
-        def disk_size
-          if @instance.model.nil?
-            raise DirectorError, "Instance '#{@instance}' model is not bound"
-          end
-
-          if @instance.model.persistent_disk
-            @instance.model.persistent_disk.size
-          else
-            0
-          end
-        end
-
-        def disk_cloud_properties
-          if @instance.model.nil?
-            raise DirectorError, "Instance '#{@instance}' model is not bound"
-          end
-
-          if @instance.model.persistent_disk
-            @instance.model.persistent_disk.cloud_properties
-          else
-            {}
-          end
         end
       end
 

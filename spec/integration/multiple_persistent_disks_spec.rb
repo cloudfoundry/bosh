@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-xdescribe 'multiple persistent disks', type: :integration do
+describe 'multiple persistent disks', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should attach multiple persistent disks to the VM' do
@@ -25,8 +25,24 @@ xdescribe 'multiple persistent disks', type: :integration do
     ]
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    puts director.instances.pretty_inspect
+    instances = director.instances
+    disk_infos = current_sandbox.cpi.attached_disk_infos(instances.first.vm_cid)
 
-    expect(director.instances.first.disk_cids).to eq ['hi', 'bye']
+    expect(disk_infos).to match([
+      {
+        'size' => 1024,
+        'cloud_properties' => {'type' => 'gp2'},
+        'vm_locality' => String,
+        'disk_cid' => String,
+        'device_path' => 'attached'
+      },
+      {
+        'size' => 4096,
+        'cloud_properties' => {'type' => 'io1'},
+        'vm_locality' => String,
+        'disk_cid' => String,
+        'device_path' => 'attached'
+      }
+    ])
   end
 end

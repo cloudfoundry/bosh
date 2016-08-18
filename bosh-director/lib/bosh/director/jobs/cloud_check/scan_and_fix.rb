@@ -75,7 +75,7 @@ module Bosh::Director
 
           @jobs.reject do |job, index|
             instance = @instance_manager.find_by_name(@deployment, job, index)
-            instance.persistent_disk
+            instance.active_persistent_disks.any?
           end
         end
       end

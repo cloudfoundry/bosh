@@ -17,7 +17,9 @@ module Bosh::Director
       job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
       job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-      job.persistent_disk_collection.add_by_disk_type(DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}))
+      unless job_persistent_disk_size == 0
+        job.persistent_disk_collection.add_by_disk_type(DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}))
+      end
       job
     end
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
@@ -46,6 +48,44 @@ module Bosh::Director
       allow(agent_client).to receive(:unmount_disk)
       allow(cloud).to receive(:detach_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
+    end
+
+    describe '#attach_disk' do
+      context 'managed disks' do
+        it 'attaches + mounts disk' do
+          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:mount_disk).with('disk123')
+          disk_manager.attach_disk(persistent_disk)
+        end
+      end
+
+      context 'unmanaged disks' do
+        it 'attaches the disk without mounting' do
+          persistent_disk.update(name: 'chewbacca')
+          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(agent_client).to_not receive(:mount_disk)
+          disk_manager.attach_disk(persistent_disk)
+        end
+      end
+    end
+
+    describe '#detach_disk' do
+      context 'managed disks' do
+        it 'unmounts + detaches disk' do
+          expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:unmount_disk).with('disk123')
+          disk_manager.detach_disk(persistent_disk)
+        end
+      end
+
+      context 'unmanaged disks' do
+        it 'detaches the disk without unmounting' do
+          persistent_disk.update(name: 'chewbacca')
+          expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to_not receive(:unmount_disk)
+          disk_manager.detach_disk(persistent_disk)
+        end
+      end
     end
 
     describe '#update_persistent_disk' do

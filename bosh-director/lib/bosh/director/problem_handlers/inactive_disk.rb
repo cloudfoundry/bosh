@@ -56,9 +56,11 @@ module Bosh::Director
         # instance. We are about to activate a disk but the instance already
         # has an active disk.
         # For now let's be conservative and return an error.
-        if @instance.persistent_disk
-          handler_error('Instance already has an active disk')
-        end
+        # if @instance.persistent_disk
+        #   handler_error('Instance already has an active disk')
+        # end
+        #TODO [multi-disks] get clarification from DK as to what should happen here
+
         @disk.active = true
         @disk.save
       end

@@ -70,31 +70,6 @@ module Bosh::Director
         paired.select { |disk_pair| disk_pair[:old] != disk_pair[:new] }
       end
 
-      def is_different_from(old_persistent_disk_collection)
-        changed_disk_pairs = changed_disk_pairs(old_persistent_disk_collection)
-
-        changed_disk_pairs.each do |disk_pair|
-          old_disk = disk_pair[:old]
-          new_disk = disk_pair[:new]
-
-          if old_disk.nil?
-            @logger.debug("Persistent disk added: size #{new_disk.size}, cloud_properties: #{new_disk.cloud_properties}")
-          elsif new_disk.nil?
-            @logger.debug("Persistent disk removed: size #{old_disk.size}, cloud_properties: #{old_disk.cloud_properties}")
-          else
-            change_detail = []
-            change_detail << "size FROM #{old_disk.size} TO #{new_disk.size}" if new_disk.size != old_disk.size
-            change_detail << "cloud_properties FROM #{old_disk.cloud_properties} TO #{new_disk.cloud_properties}" if new_disk.cloud_properties != old_disk.cloud_properties
-
-            if change_detail.length > 0
-              @logger.debug("Persistent disk changed: #{change_detail.join(', ')}")
-            end
-          end
-        end
-
-        !changed_disk_pairs.empty?
-      end
-
       def generate_spec
         if @collection.empty?
           return {'persistent_disk' => 0}
@@ -117,7 +92,7 @@ module Bosh::Director
       private
 
       def add_to_collection(disk)
-        @collection << disk if disk.size > 0
+        @collection << disk
       end
 
       class PersistentDisk
@@ -127,6 +102,10 @@ module Bosh::Director
           @name = name
           @cloud_properties = cloud_properties
           @size = size
+        end
+
+        def to_s
+          {name: name, size: size, cloud_properties: cloud_properties}.inspect
         end
 
         def managed?
