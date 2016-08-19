@@ -212,6 +212,69 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['config_server']['uaa']['client_secret']).to eq('fake-client-secret')
           expect(parsed_yaml['config_server']['uaa']['ca_cert_path']).to eq('/var/vcap/jobs/director/config/uaa_server_ca.cert')
         end
+
+        describe 'UAA properties' do
+          it 'throws an error when uaa properties are not defined' do
+            deployment_manifest_fragment['properties']['director']['config_server'] = {
+                'enabled' => true,
+                'url' => 'https://config-server-host',
+            }
+            expect { parsed_yaml['config_server'] }.to raise_error
+          end
+
+          it 'throws an error when uaa url is not defined' do
+            deployment_manifest_fragment['properties']['director']['config_server'] = {
+                'enabled' => true,
+                'url' => 'https://config-server-host',
+                'uaa' => {}
+            }
+
+            expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.url\"]'")
+          end
+
+          it 'throws an error when uaa client id is not defined' do
+            deployment_manifest_fragment['properties']['director']['config_server'] = {
+                'enabled' => true,
+                'url' => 'https://config-server-host',
+                'uaa' => {
+                    'url' => 'http://something.com',
+                    'client_secret' => 'secret',
+                    'ca_cert_path' => '/var/vcap/blah/to/go'
+                }
+            }
+
+            expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_id\"]'")
+          end
+
+          it 'throws an error when uaa client secret is not defined' do
+            deployment_manifest_fragment['properties']['director']['config_server'] = {
+                'enabled' => true,
+                'url' => 'https://config-server-host',
+                'uaa' => {
+                    'url' => 'https://something.com',
+                    'client_id' => 'id',
+                    'ca_cert_path' => '/var/vcap/blah/to/go'
+                }
+            }
+
+            expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_secret\"]'")
+          end
+
+          it 'does not throw any error when all the uaa properties are defined' do
+            deployment_manifest_fragment['properties']['director']['config_server'] = {
+                'enabled' => true,
+                'url' => 'https://config-server-host',
+                'uaa' => {
+                    'url' => 'https://something.com',
+                    'client_id' => 'id',
+                    'client_secret' => 'secret',
+                    'ca_cert_path' => '/var/some/path'
+                }
+            }
+
+            expect { parsed_yaml['config_server'] }.to_not raise_error
+          end
+        end
       end
 
       context 'when turned off' do

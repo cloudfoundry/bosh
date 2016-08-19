@@ -39,11 +39,10 @@ if config_server['enabled']
  config_server['url'] = p('director.config_server.url')
  config_server['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
 
- uaa_config =  p('director.config_server.uaa')
  config_server['uaa'] = {
-    'url' => uaa_config['url'],
-    'client_id' => uaa_config['client_id'],
-    'client_secret' => uaa_config['client_secret'],
+    'url' => p('director.config_server.uaa.url'),
+    'client_id' => p('director.config_server.uaa.client_id'),
+    'client_secret' => p('director.config_server.uaa.client_secret'),
     'ca_cert_path' => '/var/vcap/jobs/director/config/uaa_server_ca.cert'
  }
 end
