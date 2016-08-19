@@ -1,11 +1,7 @@
 module Bosh::Monitor
   class Instance
 
-    attr_reader :id
-    ATTRIBUTES = [:agent_id, :job, :index, :cid, :expects_vm ]
-    ATTRIBUTES.each do |attribute|
-      attr_reader attribute
-    end
+    attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm
     attr_accessor :deployment
 
     def initialize(instance_data)
@@ -33,24 +29,37 @@ module Bosh::Monitor
     end
 
     def name
-      if @job
-        name = "#{@deployment}: #{@job}(#{@id}) ["
-        name = name + "agent_id=#{@agent_id}, " if @agent_id
-        name = name + "index=#{@index}, " if @index
-        name + "cid=#{@cid}]"
-      else
-        state = ATTRIBUTES.inject([]) do |acc, attribute|
-          value = send(attribute)
-          acc << "#{attribute}=#{value}" if value
-          acc
-        end
 
-        "#{deployment}: instance #{@id} [#{state.join(", ")}]"
+      if @job
+        identifier = "#{@job}(#{@id})"
+        attributes = create_optional_attributes([:agent_id, :index])
+        attributes += create_mandatory_attributes([:cid])
+      else
+        identifier = "instance #{@id}"
+        attributes = create_optional_attributes([:agent_id, :job, :index, :cid, :expects_vm])
       end
+
+      "#{@deployment}: #{identifier} [#{attributes.join(', ')}]"
     end
 
     def has_vm?
       @cid != nil
+    end
+
+    private
+
+    def create_optional_attributes(attributes)
+      attributes.map do |attribute|
+        value = send(attribute)
+        "#{attribute}=#{value}" if value
+      end.compact
+    end
+
+    def create_mandatory_attributes(attributes)
+      attributes.map do |attribute|
+        value = send(attribute)
+        "#{attribute}=#{value}"
+      end
     end
   end
 end
