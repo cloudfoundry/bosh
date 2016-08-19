@@ -345,7 +345,7 @@ module Bosh::Monitor
     def sync_active_agents(deployment, instances)
       active_agent_ids = Set.new
       instances.each do |instance|
-        if deployment.add_agent(instance)
+        if deployment.upsert_agent(instance)
           active_agent_ids << instance.agent_id
         end
       end

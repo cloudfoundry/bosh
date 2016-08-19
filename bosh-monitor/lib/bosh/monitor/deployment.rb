@@ -4,9 +4,9 @@ module Bosh::Monitor
     attr_reader :name
     attr_reader :agent_id_to_agent
 
-    def initialize(instance_data)
+    def initialize(deployment_data)
       @logger = Bhm.logger
-      @name = instance_data['name']
+      @name = deployment_data['name']
       @instance_id_to_instance = {}
       @agent_id_to_agent = {}
     end
@@ -63,7 +63,7 @@ module Bosh::Monitor
     # Processes VM data from BOSH Director,
     # extracts relevant agent data, wraps it into Agent object
     # and adds it to a list of managed agents.
-    def add_agent(instance)
+    def upsert_agent(instance)
 
       @logger.info("Adding agent #{instance.agent_id} (#{instance.job}/#{instance.id}) to #{name}...")
 
@@ -83,15 +83,11 @@ module Bosh::Monitor
 
       if agent.nil?
         @logger.debug("Discovered agent #{agent_id}")
-        agent = Agent.new(agent_id)
+        agent = Agent.new(agent_id, deployment: name)
         @agent_id_to_agent[agent_id] = agent
       end
 
-      agent.deployment = name
-      agent.job = instance.job
-      agent.index = instance.index
-      agent.cid = instance.cid
-      agent.instance_id = instance.id
+      agent.update_instance(instance)
 
       true
     end

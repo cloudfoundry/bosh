@@ -86,12 +86,12 @@ describe Bhm::Deployment do
     end
   end
 
-  describe '#add_agent' do
+  describe '#upsert_agent' do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
     let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
 
     it "adds agent" do
-      expect(deployment.add_agent(instance)).to be(true)
+      expect(deployment.upsert_agent(instance)).to be(true)
       expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
       expect(deployment.agent('auuid').id).to eq('auuid')
       expect(deployment.agent('auuid').deployment).to eq('deployment-name')
@@ -100,8 +100,8 @@ describe Bhm::Deployment do
     it "updates existing agents" do
       updated_instance = Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'new_job', 'index' => '0', 'expects_vm' => true})
 
-      deployment.add_agent(instance)
-      deployment.add_agent(updated_instance)
+      deployment.upsert_agent(instance)
+      deployment.upsert_agent(updated_instance)
 
       expect(deployment.agents.size).to eq(1)
       expect(deployment.agent('auuid').id).to eq('auuid')
@@ -111,7 +111,7 @@ describe Bhm::Deployment do
     context 'Instance has no agent id' do
       let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
       it "refuses to add agent" do
-        expect(deployment.add_agent(instance)).to be_falsey
+        expect(deployment.upsert_agent(instance)).to be_falsey
       end
     end
   end
@@ -121,7 +121,7 @@ describe Bhm::Deployment do
     let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
 
     it "remove agent with id" do
-      deployment.add_agent(instance)
+      deployment.upsert_agent(instance)
 
       expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
       expect(deployment.remove_agent('auuid').id).to be_truthy
@@ -133,8 +133,8 @@ describe Bhm::Deployment do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
 
     before do
-      deployment.add_agent(Bhm::Instance.create({'id' => 'iuuid1', 'agent_id' => 'auuid1', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
-      deployment.add_agent(Bhm::Instance.create({'id' => 'iuuid2', 'agent_id' => 'auuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
+      deployment.upsert_agent(Bhm::Instance.create({'id' => 'iuuid1', 'agent_id' => 'auuid1', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
+      deployment.upsert_agent(Bhm::Instance.create({'id' => 'iuuid2', 'agent_id' => 'auuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
     end
 
     it "returns all agent ids" do
