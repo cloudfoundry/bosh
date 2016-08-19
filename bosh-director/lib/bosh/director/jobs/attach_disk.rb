@@ -69,7 +69,7 @@ module Bosh::Director
       def handle_new_disk(instance)
         orphan_disk = Models::OrphanDisk[:disk_cid => @disk_cid]
         if orphan_disk
-          @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
+          disk = @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
           disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
         end
