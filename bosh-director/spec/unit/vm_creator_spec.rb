@@ -70,19 +70,19 @@ module Bosh
 
       let(:job) do
         template_model = BD::Models::Template.make
-        template = BD::DeploymentPlan::Template.new(nil, 'fake-template')
-        template.bind_existing_model(template_model)
+        job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
+        job.bind_existing_model(template_model)
 
-        job = BD::DeploymentPlan::InstanceGroup.new(logger)
-        job.name = 'fake-job'
-        job.vm_type = vm_type
-        job.stemcell = stemcell
-        job.env = env
-        job.templates << template
-        job.default_network = {'gateway' => 'name'}
-        job.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-        job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-        job
+        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+        instance_group.name = 'fake-job'
+        instance_group.vm_type = vm_type
+        instance_group.stemcell = stemcell
+        instance_group.env = env
+        instance_group.templates << job
+        instance_group.default_network = {'gateway' => 'name'}
+        instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+        instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+        instance_group
       end
 
       let(:extra_ip) do {

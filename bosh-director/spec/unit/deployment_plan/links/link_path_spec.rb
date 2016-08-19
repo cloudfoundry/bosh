@@ -4,7 +4,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   let(:logger) { Logging::Logger.new('TestLogger') }
   let(:template) {
     instance_double(
-        'Bosh::Director::DeploymentPlan::Template',
+        'Bosh::Director::DeploymentPlan::Job',
         {
             name: 'provider_template',
             link_infos: {
@@ -228,7 +228,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     let(:path) { {"name" => 'link_name', 'type' => 'link_type'} }
     let(:additional_template) {
       instance_double(
-          'Bosh::Director::DeploymentPlan::Template',
+          'Bosh::Director::DeploymentPlan::Job',
           {
               name: 'provider_template',
               link_infos: {

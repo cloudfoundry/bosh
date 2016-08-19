@@ -2,7 +2,7 @@ require 'bosh/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
-    class Template
+    class Job
       include Bosh::Template::PropertyHelper
       include ValidationHelper
 
@@ -183,22 +183,22 @@ module Bosh::Director
         return @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
       end
 
-      def add_properties(properties, deployment_instance_group_name)
-        @properties[deployment_instance_group_name] = properties
+      def add_properties(properties, instance_group_name)
+        @properties[instance_group_name] = properties
       end
 
-      def bind_properties(deployment_instance_group_name)
+      def bind_properties(instance_group_name)
         bound_properties = {}
-        @properties[deployment_instance_group_name] ||= {}
+        @properties[instance_group_name] ||= {}
         release_job_spec_properties.each_pair do |name, definition|
           copy_property(
               bound_properties,
-              @properties[deployment_instance_group_name],
+              @properties[instance_group_name],
               name,
               definition['default']
           )
         end
-        @properties[deployment_instance_group_name] = bound_properties
+        @properties[instance_group_name] = bound_properties
       end
 
       private

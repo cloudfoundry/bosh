@@ -44,7 +44,7 @@ module Bosh::Director
 
       attr_accessor :default_network
 
-      # @return [Array<DeploymentPlan::Template] Jobs included on the instance group
+      # @return [Array<DeploymentPlan::Job] Jobs included on the instance group
       attr_accessor :templates
       # `jobs` is the correct name, keep `templates` around for backward compatibility
       alias :jobs :templates

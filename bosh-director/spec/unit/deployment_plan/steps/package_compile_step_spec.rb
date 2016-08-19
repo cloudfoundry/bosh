@@ -114,15 +114,15 @@ module Bosh::Director
       vm_type_large = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'large')
       vm_type_small = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'small')
 
-      @t_dea = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_dea, @p_nginx, @p_syslog], name: 'dea')
+      @t_dea = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_dea, @p_nginx, @p_syslog], name: 'dea')
 
-      @t_warden = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_warden], name: 'warden')
+      @t_warden = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_warden], name: 'warden')
 
-      @t_nginx = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_nginx], name: 'nginx')
+      @t_nginx = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_nginx], name: 'nginx')
 
-      @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_router], name: 'router')
+      @t_router = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_router], name: 'router')
 
-      @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
+      @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
 
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'dea',
@@ -432,7 +432,7 @@ module Bosh::Director
         stemcell = make_stemcell
         job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', release: release_version, name: 'job_name', stemcell: stemcell)
         package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
-        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
+        template = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
 
         compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, director_job)
@@ -557,13 +557,13 @@ module Bosh::Director
         stemcell = make_stemcell
 
         package = make_package('common')
-        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
+        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release, package_models: [package], name: 'fake_template')
 
         instance_double(
           'Bosh::Director::DeploymentPlan::InstanceGroup',
           name: 'job-with-one-package',
           release: release,
-          templates: [template],
+          templates: [job],
           vm_type: {},
           stemcell: stemcell,
         )

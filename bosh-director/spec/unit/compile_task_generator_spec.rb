@@ -12,7 +12,7 @@ module Bosh::Director
       let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
 
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', use_compiled_package: nil) }
-      let(:template) { instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version) }
+      let(:template) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version) }
 
       let(:package_a) { Bosh::Director::Models::Package.make(name: 'package_a', dependency_set_json: ['package_b'].to_json) }
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b', version: '2', dependency_set_json: ['package_c'].to_json) }

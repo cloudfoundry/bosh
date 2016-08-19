@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    let(:job) { InstanceGroup.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
+    let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         uuid: 'fake-uuid-1',
@@ -22,10 +22,10 @@ module Bosh::Director::DeploymentPlan
       }
     end
 
-    let(:desired_instance) { DesiredInstance.new(job, deployment_plan, availability_zone) }
-    let(:current_state) { {'current' => 'state', 'job' => job_spec } }
+    let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
+    let(:current_state) { {'current' => 'state', 'job' => instance_group_spec } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { Instance.create_from_job(job, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
+    let(:instance) { Instance.create_from_job(instance_group, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan, [], logger) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
@@ -38,7 +38,7 @@ module Bosh::Director::DeploymentPlan
     let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
     let(:existing_instance) { instance_model }
 
-    let(:job_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
+    let(:instance_group_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
     let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)
-      job.add_instance_plans([instance_plan])
+      instance_group.add_instance_plans([instance_plan])
     end
 
     describe 'networks_changed?' do
@@ -375,10 +375,10 @@ module Bosh::Director::DeploymentPlan
         cloud_config
       end
 
-      let(:job_spec) do
-        job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
-        job['persistent_disk_pool'] = 'disk_a'
-        job
+      let(:instance_group_spec) do
+        instance_group_spec = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+        instance_group_spec['persistent_disk_pool'] = 'disk_a'
+        instance_group_spec
       end
 
       context 'when there is a change' do
@@ -440,10 +440,10 @@ module Bosh::Director::DeploymentPlan
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       context 'when an instance exists (with the same job name & instance index)' do
-        let(:current_state) { { 'job' => job.spec } }
+        let(:current_state) { { 'job' => instance_group.spec } }
 
         context 'that fully matches the job spec' do
-          before { allow(instance).to receive(:current_job_spec).and_return(job.spec) }
+          before { allow(instance).to receive(:current_job_spec).and_return(instance_group.spec) }
 
           it 'returns false' do
             expect(instance_plan.job_changed?).to eq(false)
@@ -452,11 +452,11 @@ module Bosh::Director::DeploymentPlan
 
         context 'that does not match the job spec' do
           before do
-            job.templates = [template]
+            instance_group.templates = [job]
             allow(instance).to receive(:current_job_spec).and_return({})
           end
-          let(:template) do
-            instance_double('Bosh::Director::DeploymentPlan::Template', {
+          let(:job) do
+            instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: state['job']['name'],
                 version: state['job']['version'],
                 sha1: state['job']['sha1'],
@@ -477,7 +477,7 @@ module Bosh::Director::DeploymentPlan
             }
           end
 
-          let(:current_state) { {'job' => job.spec.merge('version' => 'old-version')} }
+          let(:current_state) { {'job' => instance_group.spec.merge('version' => 'old-version')} }
 
           it 'returns true' do
             expect(instance_plan.job_changed?).to eq(true)

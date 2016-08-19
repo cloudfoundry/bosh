@@ -95,11 +95,11 @@ module Bosh::Director
       # current deployment
       # @param [String] options Template name
       def get_or_create_template(name)
-        @templates[name] ||= Template.new(self, name)
+        @templates[name] ||= Job.new(self, name)
       end
 
-      # @param [String] name Template name
-      # @return [DeploymentPlan::Template] Template with given name used by this
+      # @param [String] name Job name
+      # @return [DeploymentPlan::Job] Job with given name used by this
       #   release (if any)
       def template(name)
         @templates[name]
@@ -109,7 +109,7 @@ module Bosh::Director
       # release. Note that this is not just a list of all templates existing
       # in the release but rather a list of templates for jobs that are included
       # into current deployment plan.
-      # @return [Array<DeploymentPlan::Template>] List of job templates
+      # @return [Array<DeploymentPlan::Job>] List of job templates
       def templates
         @templates.values
       end

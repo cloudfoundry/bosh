@@ -234,7 +234,7 @@ LOGMESSAGE
                 end
 
                 let(:template1) do
-                  instance_double('Bosh::Director::DeploymentPlan::Template',
+                  instance_double('Bosh::Director::DeploymentPlan::Job',
                       {
                           name: 'provides_template',
                           link_infos:{

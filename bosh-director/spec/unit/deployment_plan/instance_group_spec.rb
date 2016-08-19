@@ -33,14 +33,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     {'dea_max_memory' => {'default' => 2048}}
   end
 
-  let(:foo_template) { instance_double(
-    'Bosh::Director::DeploymentPlan::Template',
+  let(:foo_job) { instance_double(
+    'Bosh::Director::DeploymentPlan::Job',
     name: 'foo',
     release: release,
   ) }
 
-  let(:bar_template) { instance_double(
-    'Bosh::Director::DeploymentPlan::Template',
+  let(:bar_job) { instance_double(
+    'Bosh::Director::DeploymentPlan::Job',
     name: 'bar',
     release: release,
   ) }
@@ -55,14 +55,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
 
-    allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
-    allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
+    allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_job)
+    allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_job)
 
-    allow(foo_template).to receive(:properties)
-    allow(bar_template).to receive(:properties)
+    allow(foo_job).to receive(:properties)
+    allow(bar_job).to receive(:properties)
 
-    allow(foo_template).to receive(:add_properties)
-    allow(bar_template).to receive(:add_properties)
+    allow(foo_job).to receive(:add_properties)
+    allow(bar_job).to receive(:add_properties)
   end
 
   describe '#parse' do
@@ -158,13 +158,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     before do
       allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
-      allow(foo_template).to receive(:properties).and_return(foo_properties)
-      allow(bar_template).to receive(:properties).and_return(bar_properties)
+      allow(foo_job).to receive(:properties).and_return(foo_properties)
+      allow(bar_job).to receive(:properties).and_return(bar_properties)
     end
 
     it 'binds all templates properties' do
-      expect(foo_template).to receive(:bind_properties)
-      expect(bar_template).to receive(:bind_properties)
+      expect(foo_job).to receive(:bind_properties)
+      expect(bar_job).to receive(:bind_properties)
 
       instance_group.bind_properties
 
@@ -192,10 +192,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:properties).and_return({})
     end
 
-    before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
+    before { allow(foo_job).to receive(:model).and_return(foo_template_model) }
     let(:foo_template_model) { instance_double('Bosh::Director::Models::Template') }
 
-    before { allow(bar_template).to receive(:model).and_return(bar_template_model) }
+    before { allow(bar_job).to receive(:model).and_return(bar_template_model) }
     let(:bar_template_model) { instance_double('Bosh::Director::Models::Template') }
 
     before { allow(plan).to receive(:release).with('release1').and_return(release) }
@@ -270,9 +270,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
       let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release', version: '1') }
 
-      before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_template) }
-      let(:bar_template) do
-        instance_double('Bosh::Director::DeploymentPlan::Template', {
+      before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_job) }
+      let(:bar_job) do
+        instance_double('Bosh::Director::DeploymentPlan::Job', {
           name: 'bar',
           release: bar_release,
         })
@@ -322,10 +322,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     before do
       allow(release).to receive(:name).and_return('cf')
 
-      allow(foo_template).to receive(:version).and_return('200')
-      allow(foo_template).to receive(:sha1).and_return('fake_sha1')
-      allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
-      allow(foo_template).to receive(:properties).and_return({})
+      allow(foo_job).to receive(:version).and_return('200')
+      allow(foo_job).to receive(:sha1).and_return('fake_sha1')
+      allow(foo_job).to receive(:blobstore_id).and_return('blobstore_id_for_foo_job')
+      allow(foo_job).to receive(:properties).and_return({})
 
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)
@@ -334,7 +334,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context "when a template has 'logs'" do
       before do
-        allow(foo_template).to receive(:logs).and_return(
+        allow(foo_job).to receive(:logs).and_return(
           {
             'filter_name1' => 'foo/*',
           }
@@ -350,7 +350,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                 'name' => 'foo',
                 'version' => '200',
                 'sha1' => 'fake_sha1',
-                'blobstore_id' => 'blobstore_id_for_foo_template',
+                'blobstore_id' => 'blobstore_id_for_foo_job',
                 'logs' => {
                   'filter_name1' => 'foo/*',
                 },
@@ -359,7 +359,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
             'template' => 'foo',
             'version' => '200',
             'sha1' => 'fake_sha1',
-            'blobstore_id' => 'blobstore_id_for_foo_template',
+            'blobstore_id' => 'blobstore_id_for_foo_job',
             'logs' => {
               'filter_name1' => 'foo/*',
             }
@@ -370,7 +370,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context "when a template does not have 'logs'" do
       before do
-        allow(foo_template).to receive(:logs)
+        allow(foo_job).to receive(:logs)
       end
 
       it 'contains name, release and information for each template' do
@@ -382,13 +382,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                 'name' => 'foo',
                 'version' => '200',
                 'sha1' => 'fake_sha1',
-                'blobstore_id' => 'blobstore_id_for_foo_template',
+                'blobstore_id' => 'blobstore_id_for_foo_job',
               },
             ],
             'template' => 'foo',
             'version' => '200',
             'sha1' => 'fake_sha1',
-            'blobstore_id' => 'blobstore_id_for_foo_template',
+            'blobstore_id' => 'blobstore_id_for_foo_job',
           },
         )
       end

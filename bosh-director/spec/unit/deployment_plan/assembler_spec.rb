@@ -68,19 +68,19 @@ module Bosh::Director
 
       context 'when there are desired jobs' do
         def make_job(template_name)
-          job = DeploymentPlan::InstanceGroup.new(logger)
+          instance_group = DeploymentPlan::InstanceGroup.new(logger)
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
-          template = DeploymentPlan::Template.new(release_version, template_name)
-          template.bind_models
-          job.templates = [template]
-          allow(job).to receive(:validate_package_names_do_not_collide!)
-          job
+          job = DeploymentPlan::Job.new(release_version, template_name)
+          job.bind_models
+          instance_group.templates = [job]
+          allow(instance_group).to receive(:validate_package_names_do_not_collide!)
+          instance_group
         end
 
-        let(:j1) { make_job('fake-template-1') }
-        let(:j2) { make_job('fake-template-2') }
+        let(:j1) { make_job('fake-job-1') }
+        let(:j2) { make_job('fake-job-2') }
 
         before { allow(deployment_plan).to receive(:instance_groups).and_return([j1, j2]) }
 

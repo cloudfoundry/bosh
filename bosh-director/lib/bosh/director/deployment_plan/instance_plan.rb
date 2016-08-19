@@ -322,7 +322,7 @@ module Bosh
 
         def templates
           @existing_instance.templates.map do |template_model|
-            template = Template.new(nil, template_model.name)
+            template = Job.new(nil, template_model.name)
             template.bind_existing_model(template_model)
             template
           end

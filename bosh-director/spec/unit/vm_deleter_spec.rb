@@ -18,21 +18,21 @@ module Bosh
       let(:env) { DeploymentPlan::Env.new({}) }
       let(:job) do
         template_model = BD::Models::Template.make
-        template = BD::DeploymentPlan::Template.new(nil, 'fake-template')
-        template.bind_existing_model(template_model)
+        job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
+        job.bind_existing_model(template_model)
 
-        job = BD::DeploymentPlan::InstanceGroup.new(logger)
-        job.name = 'fake-job'
-        job.vm_type = vm_type
-        job.stemcell = stemcell
-        job.env = env
-        job.templates << template
-        job.default_network = {"gateway" => "name"}
-        job.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-        allow(job).to receive(:username).and_return('fake-username')
-        allow(job).to receive(:task_id).and_return('fake-task-id')
-        allow(job).to receive(:event_manager).and_return(event_manager)
-        job
+        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+        instance_group.name = 'fake-job'
+        instance_group.vm_type = vm_type
+        instance_group.stemcell = stemcell
+        instance_group.env = env
+        instance_group.templates << job
+        instance_group.default_network = {"gateway" => "name"}
+        instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+        allow(instance_group).to receive(:username).and_return('fake-username')
+        allow(instance_group).to receive(:task_id).and_return('fake-task-id')
+        allow(instance_group).to receive(:event_manager).and_return(event_manager)
+        instance_group
       end
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment) }
