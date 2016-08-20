@@ -121,7 +121,7 @@ describe Bosh::Cli::Command::JobManagement do
         command.public_send(method_name, 'dea', '0')
       end
       it 'changes the job state' do
-        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state, {skip_drain: false})
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state, {skip_drain: false, fix: false})
         command.public_send(method_name, 'dea', '0')
       end
 
@@ -141,7 +141,7 @@ describe Bosh::Cli::Command::JobManagement do
       end
 
       it 'changes the job state' do
-        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', nil, new_state, {skip_drain: false})
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', nil, new_state, {skip_drain: false, fix: false})
         command.public_send(method_name, 'dea')
       end
 
@@ -161,7 +161,7 @@ describe Bosh::Cli::Command::JobManagement do
       end
 
       it 'changes the all job states' do
-        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, '*', nil, new_state, {skip_drain: false})
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, '*', nil, new_state, {skip_drain: false, fix: false})
         command.public_send(method_name)
       end
 
@@ -186,7 +186,20 @@ describe Bosh::Cli::Command::JobManagement do
     end
   end
 
-  describe 'starting a job' do
+  shared_examples :fix do |options|
+    method_name = options.fetch(:with)
+
+    before { command.options[:fix] = true }
+
+    context 'when fix is specified' do
+      it 'passes it to director request' do
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', anything, {skip_drain: false, fix: true})
+        command.public_send(method_name, 'dea', '0')
+      end
+    end
+  end
+
+describe 'starting a job' do
     it_behaves_like 'a command which modifies the vm state', with: :start_job,
                     verb: 'start', past_verb: 'started', extra_task_report_info: ''
   end
@@ -220,6 +233,6 @@ describe Bosh::Cli::Command::JobManagement do
     it_behaves_like 'a command which modifies the vm state', with: :recreate_job,
                     verb: 'recreate', past_verb: 'recreated', extra_task_report_info: '', new_state: 'recreate'
 
+    it_behaves_like :fix, with: :recreate_job
   end
-
 end

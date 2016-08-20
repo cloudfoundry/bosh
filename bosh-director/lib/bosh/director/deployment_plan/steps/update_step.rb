@@ -52,22 +52,13 @@ module Bosh::Director
         end
 
         def delete_unneeded_instances
-          unneeded_instances = @deployment_plan.unneeded_instances
-          if unneeded_instances.empty?
+          unneeded_instance_plans = @deployment_plan.unneeded_instance_plans
+          if unneeded_instance_plans.empty?
             @logger.info('No unneeded instances to delete')
             return
           end
-          event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
+          event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', unneeded_instance_plans.size)
           instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @dns_manager, @disk_manager)
-          unneeded_instance_plans = unneeded_instances.map do |instance|
-            DeploymentPlan::InstancePlan.new(
-              existing_instance: instance,
-              instance: nil,
-              desired_instance: nil,
-              network_plans: [],
-              recreate_deployment: @deployment_plan.recreate
-            )
-          end
           instance_deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage)
           @logger.info('Deleted no longer needed instances')
         end

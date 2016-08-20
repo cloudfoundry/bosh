@@ -24,6 +24,11 @@ module Bosh
           !changes.empty?
         end
 
+        def needs_to_fix?
+          return false if @instance.nil?
+          @instance.current_job_state == 'unresponsive'
+        end
+
         ##
         # @return [Set<Symbol>] returns a set of all of the specification differences
         def changes
@@ -78,6 +83,9 @@ module Bosh
           if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             true
+          elsif needs_to_fix?
+            @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
+            true
           else
             @instance.virtual_state == 'recreate'
           end
@@ -115,6 +123,8 @@ module Bosh
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
+
+          return true if needs_to_fix?
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
             instance.state == 'started' && instance.current_job_state != 'running'

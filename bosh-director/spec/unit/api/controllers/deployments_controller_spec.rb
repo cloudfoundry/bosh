@@ -166,11 +166,22 @@ module Bosh::Director
 
           context 'with the "skip_drain" param as "job_one,job_two"' do
             it 'skips draining' do
-              allow_any_instance_of(DeploymentManager)
+              expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with the "fix" param' do
+            it 'passes the parameter' do
+              allow_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .and_return(OpenStruct.new(:id => 1))
+              post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
           end
@@ -366,6 +377,19 @@ module Bosh::Director
                       .and_return(OpenStruct.new(:id => 1))
 
               put '/foo/jobs/dea?max_in_flight=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with a "fix" param' do
+            it 'passes the parameter' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?fix=true', JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
           end

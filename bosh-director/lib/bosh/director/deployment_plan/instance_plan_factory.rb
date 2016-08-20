@@ -13,11 +13,11 @@ module Bosh
 
         def obsolete_instance_plan(existing_instance_model)
           existing_instance_state = instance_state(existing_instance_model)
-          @network_reservation_repository.fetch_network_reservations(existing_instance_model, existing_instance_state)
+          instance = @instance_repo.fetch_obsolete_existing(existing_instance_model, existing_instance_state)
           InstancePlan.new(
             desired_instance: nil,
             existing_instance: existing_instance_model,
-            instance: nil,
+            instance: instance,
             skip_drain: @skip_drain_decider.for_job(existing_instance_model.job),
             recreate_deployment: @recreate_deployment
           )

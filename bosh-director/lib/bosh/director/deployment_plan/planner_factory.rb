@@ -62,6 +62,7 @@ module Bosh
 
           plan_options = {
             'recreate' => !!options['recreate'],
+            'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
             'max_in_flight' => parse_numerical_arguments(options['max_in_flight']),

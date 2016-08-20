@@ -84,6 +84,7 @@ module Bosh::Cli::Command
     option '--no-redact', 'Redact manifest value changes in deployment'
     option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
     option '--dry-run', 'Renders job templates without altering deployment'
+    option '--fix', 'Recreates vms if they are unresponsive'
 
     def perform
       auth_required
@@ -91,6 +92,7 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:no_redact].nil?
       dry_run = !!options[:dry_run]
+      fix = !!options[:fix]
 
       manifest = build_manifest
 
@@ -152,7 +154,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      deploy_options = { recreate: recreate, context: context, dry_run: dry_run }
+      deploy_options = { recreate: recreate, context: context, dry_run: dry_run, fix: fix}
 
       if options.has_key?(:skip_drain)
         # when key is present but no jobs specified OptionParser

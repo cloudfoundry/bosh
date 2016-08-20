@@ -8,7 +8,7 @@ module Bosh::Cli
       SKIP_DRAIN = 'Skip running drain script'
       MAX_IN_FLIGHT = 'Overwrites max_in_flight value in the manifest'
       CANARIES = 'Overwrites canaries value in the manifest'
-
+      FIX = 'Fix unresponsive vms'
 
       # bosh start
       usage 'start'
@@ -55,6 +55,8 @@ module Bosh::Cli
       option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
       option '--canaries CANARIES', CANARIES
       option '--skip-drain', SKIP_DRAIN
+      option '--fix', FIX
+
       def recreate_job(job = '*', index_or_id = nil)
         change_job_state(:recreate, job, index_or_id)
       end
@@ -64,7 +66,7 @@ module Bosh::Cli
       def change_job_state(state, job, index_or_id = nil)
         auth_required
         manifest = parse_manifest(state)
-        options = {skip_drain: skip_drain?}
+        options = {skip_drain: skip_drain?, fix: fix?}
         options[:canaries] = canaries if canaries
         options[:max_in_flight] = max_in_flight if max_in_flight
 
@@ -91,6 +93,10 @@ module Bosh::Cli
 
       def canaries
         options[:canaries]
+      end
+
+      def fix?
+        !!options[:fix]
       end
 
       def max_in_flight
