@@ -12,7 +12,6 @@ module Bosh::Director
     let (:agent) { double(AgentClient)}
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
-    let (:instance) { instance_double(Models::Instance)}
     let(:result_file_path) { 'ssh-spec' }
     let(:result_file) { TaskResultFile.new(result_file_path) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
@@ -24,8 +23,8 @@ module Bosh::Director
     end
 
     before do
-      Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment, uuid: 'fake-uuid-1')
-      Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment, uuid: 'fake-uuid-2')
+      Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment, uuid: 'fake-uuid-1', vm_cid: 'cid')
+      Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment, uuid: 'fake-uuid-2', vm_cid: nil)
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})
@@ -46,6 +45,18 @@ module Bosh::Director
       job.perform
 
       expect(parsed_result_file).to eq([{'index' => 1, 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}])
+    end
+
+    context 'when instance does not have vm' do
+      let(:target) { {'job' => 'fake-job', 'indexes' => [1, 2]} }
+
+      it 'performs only for instances with vm' do
+        instance_with_vm = Models::Instance.exclude(vm_cid: nil).first
+        instance_witout_vm =  Models::Instance.filter(vm_cid: nil).first
+        expect(instance_manager).to_not receive(:agent_client_for).with(instance_witout_vm)
+        expect(instance_manager).to receive(:agent_client_for).with(instance_with_vm)
+        job.perform
+      end
     end
 
     it 'should store new event' do
@@ -86,17 +97,17 @@ module Bosh::Director
       end
 
       context 'when id is instance index' do
-        let(:target) { {'job' => 'fake-job', 'ids' => [2]} }
+        let(:target) { {'job' => 'fake-job', 'ids' => [1]} }
 
         it 'finds instance by its index and generates response with id' do
           job.perform
-          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-2', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}])
+          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}])
         end
 
         it 'stores event with instance index' do
           job.perform
           event = Bosh::Director::Models::Event.first
-          expect(event.instance).to eq('fake-job/fake-uuid-2')
+          expect(event.instance).to eq('fake-job/fake-uuid-1')
         end
       end
     end

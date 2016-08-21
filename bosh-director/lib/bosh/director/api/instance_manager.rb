@@ -29,8 +29,8 @@ module Bosh::Director
       # @param [Hash] filter Sequel-style DB record filter
       # @return [Array] List of instances that matched the filter
       # @raise [InstanceNotFound]
-      def filter_by(deployment, filter)
-        InstanceLookup.new.by_filter(filter.merge(deployment_id: deployment.id))
+      def filter_by(deployment, filter, exclude = {})
+        InstanceLookup.new.by_filter(filter.merge(deployment_id: deployment.id), exclude)
       end
 
       # @param [Models::Instance] instance Instance
