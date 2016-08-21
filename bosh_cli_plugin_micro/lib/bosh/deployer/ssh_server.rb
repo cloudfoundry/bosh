@@ -34,7 +34,7 @@ module Bosh::Deployer
 
     def start_session(ip)
       logger.info("Starting SSH session for port forwarding to #{user}@#{ip}...")
-      session = Net::SSH.start(ip, user, keys: [key], paranoid: false, port: port)
+      session = Net::SSH.start(ip, user, keys: [key], paranoid: false, port: port, keys_only: true)
       logger.debug("ssh #{user}@#{ip}: ESTABLISHED")
       session
     rescue *SSH_EXCEPTIONS => e

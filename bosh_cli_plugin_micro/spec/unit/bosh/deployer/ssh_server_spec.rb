@@ -78,6 +78,7 @@ module Bosh::Deployer
                               keys: ['fake-key'],
                               paranoid: false,
                               port: 'fake-port',
+                              keys_only: true
                             )
       end
 
