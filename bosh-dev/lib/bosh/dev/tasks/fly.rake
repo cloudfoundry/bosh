@@ -15,6 +15,29 @@ namespace :fly do
     execute('test-integration', '-p')
   end
 
+  task :integration_parallel do
+
+    num_workers = 3
+    num_groups = 24
+
+    groups = (1..num_groups).group_by { |i| i%num_workers }.values
+                            .map { |group_values| group_values.join(',') }
+
+    task_names = groups.each_with_index.map do |group, index|
+      name = "integration_#{index + 1}"
+      task name do
+        env(DB: (ENV['DB'] || 'postgresql'),
+            SPEC_PATH: (ENV['SPEC_PATH'] || nil),
+            GROUP: group,
+            NUM_GROUPS: num_groups)
+      end
+      name
+    end
+
+    multitask _parallel_integration: task_names
+    Rake::MultiTask[:_parallel_integration].invoke
+  end
+
   # bundle exec rake fly:run["pwd ; ls -al"]
   task :run, [:command] do |_, args|
     env(COMMAND: %Q|\"#{args[:command]}\"|)
