@@ -19,6 +19,7 @@ module Bosh::Director
       disk = nil
       if instance_plan.needs_disk?
         disk = create_and_attach_disk(instance_plan)
+        sleep(30)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 
@@ -142,6 +143,7 @@ module Bosh::Director
 
       begin
         @cloud.attach_disk(instance_model.vm_cid, disk_cid)
+        sleep(30)
         agent_client(instance_model).mount_disk(disk_cid)
       rescue => e
         @logger.warn("Failed to attach disk to new VM: #{e.inspect}")

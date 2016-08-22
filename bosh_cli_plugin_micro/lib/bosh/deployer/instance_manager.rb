@@ -314,6 +314,7 @@ module Bosh::Deployer
       return unless disk_cid
 
       cloud.attach_disk(state.vm_cid, disk_cid)
+      sleep(30)
       mount_disk(disk_cid)
     end
 
@@ -346,6 +347,7 @@ module Bosh::Deployer
 
     def update_persistent_disk
       attach_missing_disk
+      sleep(60)
       check_persistent_disk
 
       if state.disk_cid.nil?
