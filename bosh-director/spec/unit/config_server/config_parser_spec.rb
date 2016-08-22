@@ -11,11 +11,11 @@ module Bosh::Director::ConfigServer
     context '#parse' do
       let(:mock_config_store) do
         {
-          'value' => {'value' => 123},
-          'instance_placeholder' => {'value' => 'test1'},
-          'job_placeholder' => {'value' => 'test2'},
-          'env_placeholder' => {'value' => 'test3'},
-          'name_placeholder' => {'value' => 'test4'}
+          'value' => 123,
+          'instance_placeholder' => 'test1',
+          'job_placeholder' => 'test2',
+          'env_placeholder' => 'test3',
+          'name_placeholder' =>'test4'
         }
       end
 
@@ -24,7 +24,7 @@ module Bosh::Director::ConfigServer
       before do
         expect(HTTPClient).to receive(:new).and_return(http_client)
         mock_config_store.each do |key, value|
-          allow(http_client).to receive(:get).with(key).and_return(value)
+          allow(http_client).to receive(:get_value_for_key).with(key).and_return(value)
         end
       end
 
@@ -118,7 +118,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should raise an error message when key is missing from the config_server' do
-        allow(http_client).to receive(:get).with('missing_placeholder').and_return(nil)
+        allow(http_client).to receive(:get_value_for_key).with('missing_placeholder').and_raise(Bosh::Director::ConfigServerMissingKeys)
 
         manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
         expect{

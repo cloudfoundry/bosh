@@ -26,12 +26,10 @@ module Bosh::Director::ConfigServer
       http = HTTPClient.new
 
       keys.each do |k|
-        config_value = http.get(k)
-
-        if config_value.nil?
+        begin
+          config_values[k] = http.get_value_for_key(k)
+        rescue Bosh::Director::ConfigServerMissingKeys
           invalid_keys << k
-        else
-          config_values[k] = config_value['value']
         end
       end
 

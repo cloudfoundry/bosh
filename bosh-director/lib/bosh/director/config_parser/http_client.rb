@@ -19,17 +19,41 @@ module Bosh::Director::ConfigServer
 
     def get(key)
       config_server_uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
-
       begin
-        response = @http.get(config_server_uri.path, {'Authorization' => @auth_provider.auth_header})
+        @http.get(config_server_uri.path, {'Authorization' => @auth_provider.auth_header})
       rescue OpenSSL::SSL::SSLError
         raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
       end
+    end
+
+    def post(key, body)
+      config_server_uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
+
+      begin
+        @http.post(config_server_uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header})
+      rescue OpenSSL::SSL::SSLError
+        raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
+      end
+    end
+
+    def get_value_for_key(key)
+      response = get(key)
 
       if response.kind_of? Net::HTTPSuccess
-        JSON.parse(response.body)
+        JSON.parse(response.body)['value']
       else
-        nil
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
+      end
+    end
+
+    def generate_password(password_placeholder)
+      request_body = {
+        'type' => 'password'
+      }
+      response = post(password_placeholder, request_body)
+
+      unless response.kind_of? Net::HTTPSuccess
+        raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
       end
     end
 
