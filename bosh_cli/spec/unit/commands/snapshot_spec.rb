@@ -61,6 +61,22 @@ describe Bosh::Cli::Command::Snapshot do
           command.list
         end
 
+        it 'list all snapshots for a job/index' do
+          expect(director).to receive(:list_snapshots).with('bosh', 'foo', '0').and_return([snapshots[0]])
+          expect(command).to receive(:say) do |display_output|
+            expect(display_output.to_s).to match_output '
+               +-------------------+--------------+---------------------------+-------+
+               | Job/ID            | Snapshot CID | Created at                | Clean |
+               +-------------------+--------------+---------------------------+-------+
+               | job/12xyz4561 (0) | snap0a       | 2015-12-21 14:53:28 -0800 | true  |
+               +-------------------+--------------+---------------------------+-------+
+              '
+          end
+          expect(command).to receive(:say).with('Snapshots total: 1')
+
+          command.list('foo/0')
+        end
+
         it 'list all snapshots for a job and index' do
           expect(director).to receive(:list_snapshots).with('bosh', 'foo', '0').and_return([snapshots[0]])
           expect(command).to receive(:say) do |display_output|
@@ -107,7 +123,7 @@ describe Bosh::Cli::Command::Snapshot do
           end
 
           context 'when the user confirms taking the snapshot' do
-            it 'deletes the snapshot' do
+            it 'takes the snapshot' do
               allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'bosh'))
               expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment 'bosh'?").and_return(true)
 
@@ -118,7 +134,7 @@ describe Bosh::Cli::Command::Snapshot do
           end
 
           context 'when the user does not confirms taking the snapshot' do
-            it 'does not delete the snapshot' do
+            it 'does not take the snapshot' do
               allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'bosh'))
               expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment 'bosh'?").and_return(false)
 
@@ -147,6 +163,14 @@ describe Bosh::Cli::Command::Snapshot do
           expect(director).to receive(:take_snapshot).with('bosh', 'foo', '0')
 
           command.take('foo', '0')
+        end
+      end
+
+      context 'for a job/index' do
+        it 'takes the snapshot' do
+          expect(director).to receive(:take_snapshot).with('bosh', 'foo', '0')
+
+          command.take('foo/0')
         end
       end
 

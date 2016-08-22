@@ -7,12 +7,15 @@ describe Bosh::Cli::Command::Disks do
     allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil)
     allow(command).to receive(:show_current_state)
 
-    command.options[:orphaned] = true
   end
   let(:director) { double(Bosh::Cli::Client::Director) }
 
   describe 'list' do
-    before { command.options[:target] = target }
+    before do
+      command.options[:target] = target
+      command.options[:orphaned] = true
+    end
+
     let(:target) { 'http://example.org' }
     let(:orphaned_disk_1) do
       {
@@ -62,6 +65,66 @@ DISKS
         end
 
         command.list
+      end
+    end
+  end
+
+  describe 'attach' do
+    before do
+      allow(command).to receive(:prepare_deployment_manifest)
+        .and_return(double(:manifest, hash: deployment_manifest, name: deployment_name))
+    end
+
+    let(:deployment_name) { 'dep1' }
+    let(:deployment_manifest) { double(:deployment_manifest) }
+
+    context 'when given job, id, and disk_cid' do
+      it 'attaches the disk' do
+        expect(director).to receive(:attach_disk)
+          .with(deployment_name, 'dea', '6', 'disk_1_cid')
+
+        command.attach('dea', '6', 'disk_1_cid')
+      end
+    end
+
+    context 'when given job/id and disk_cid' do
+      it 'attaches the disk' do
+        expect(director).to receive(:attach_disk)
+          .with(deployment_name, 'dea', '6', 'disk_1_cid')
+
+        command.attach('dea/6', 'disk_1_cid')
+      end
+    end
+
+    context 'when given any other two arguments' do
+      it 'raises an ArgumentError' do
+        expect {
+          command.attach('dea', 'disk_1_cid')
+        }.to raise_error(ArgumentError, 'wrong number of arguments')
+      end
+
+      it 'does not invoke the director' do
+        expect(director).to_not receive(:attach_disk)
+
+        expect {
+          command.attach('dea', 'disk_1_cid')
+        }.to raise_error(ArgumentError)
+      end
+    end
+
+    context 'when given one argument' do
+      it 'raises an ArgumentError' do
+        expect {
+          command.attach('dea')
+        }.to raise_error(ArgumentError)
+      end
+    end
+
+    context 'when given nothing' do
+      it 'raises an ArgumentError' do
+        expect {
+          command.attach()
+        }.to raise_error(ArgumentError)
       end
     end
   end
