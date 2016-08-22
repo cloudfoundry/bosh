@@ -24,12 +24,9 @@ describe Bosh::Director::JobUpdater do
 
   let(:links_resolver) { instance_double('Bosh::Director::DeploymentPlan::LinksResolver') }
 
-  let(:update_config) do
-    instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', {
-      canaries: 1,
-      max_in_flight: 1,
-    })
-  end
+  let(:update_config) {
+    BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+  }
 
   describe 'update' do
     let(:needed_instance_plans) { [] }
@@ -233,13 +230,12 @@ describe Bosh::Director::JobUpdater do
     end
 
     context 'when there are multiple AZs' do
-      let(:update_config) do
-        instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', {
-          canaries: 1,
-          max_in_flight: 2,
-        })
-      end
+      let(:update_config) {
+        BD::DeploymentPlan::UpdateConfig.new({'canaries' => canaries, 'max_in_flight' => max_in_flight, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+      }
 
+      let (:canaries) { 1 }
+      let (:max_in_flight) { 2 }
       let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
       let(:changed_instance_model_1) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
       let(:changed_instance_model_2) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (3)") }
@@ -333,6 +329,43 @@ describe Bosh::Director::JobUpdater do
           ]
           expected_events.map do |expected_event|
             expect(last_events.select { |event| same_event?(event, expected_event) }).not_to be_empty
+          end
+        end
+      end
+
+      context 'when max_in_flight and canaries are specified as percents' do
+        let (:canaries) { '50%' }
+        let (:max_in_flight) { '100%' }
+
+        it 'should understand it' do
+          expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+
+          job_updater.update
+
+          check_event_log do |events|
+            [
+                updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+                updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
+                updating_stage_event(index: 2, total: 4, task: 'job_name/fake_uuid (2)', state: 'started'),
+                updating_stage_event(index: 2, total: 4, task: 'job_name/fake_uuid (2)', state: 'finished'),
+            ].each_with_index do |expected_event, index|
+              expect(events[index]).to include(expected_event)
+            end
+
+            # blocked until next az...
+            last_events = events[3..-1]
+            expected_events = [
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (3)', state: 'started'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (4)', state: 'started'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (3)', state: 'finished'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (4)', state: 'finished'),
+            ]
+            expected_events.map do |expected_event|
+              expect(last_events.select { |event| same_event?(event, expected_event) }).not_to be_empty
+            end
           end
         end
       end

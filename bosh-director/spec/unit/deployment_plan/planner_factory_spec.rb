@@ -65,6 +65,22 @@ module Bosh
             expect(hybrid_manifest_hash['releases'].first['version']).to eq('0.1-dev')
           end
 
+          context 'plan_options' do
+            let(:plan_options) { {'canaries' => '10%', 'max_in_flight' => '3'} }
+            it 'uses plan options' do
+              deployment = planner
+              expect(deployment.update.canaries_before_calculation).to eq('10%')
+              expect(deployment.update.max_in_flight_before_calculation).to eq('3')
+            end
+
+            context 'when option value is incorrect' do
+              let(:plan_options) { {'canaries' => 'wrong'} }
+              it 'raises an error' do
+                expect { planner }.to raise_error 'canaries value should be integer or percent'
+              end
+            end
+          end
+
           it 'logs the migrated manifests' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
               manifest.raw_manifest_hash.merge!({'name' => 'migrated_name'})

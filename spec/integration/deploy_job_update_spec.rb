@@ -16,6 +16,33 @@ describe 'deploy job update', type: :integration do
     expect(updating_job_events[2]['state']).to eq('finished')
   end
 
+  it 'updates a job taking into account max_in_flight and canaries as percents' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['update']['canaries'] = '40%'
+    manifest_hash['update']['max_in_flight'] = '70%'
+    deploy_from_scratch(manifest_hash: manifest_hash)
+
+    updating_job_events = events('last').select { |e| e['stage'] == 'Updating job' }
+    expect(updating_job_events[0]['state']).to eq('started')
+    expect(updating_job_events[0]['task']).to include('(canary)')
+    expect(updating_job_events[1]['state']).to eq('finished')
+    expect(updating_job_events[1]['task']).to include('(canary)')
+    expect(updating_job_events[2]['state']).to eq('started')
+    expect(updating_job_events[3]['state']).to eq('started')
+    expect(updating_job_events[4]['state']).to eq('finished')
+    expect(updating_job_events[5]['state']).to eq('finished')
+
+    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash['update']['max_in_flight'] = '40%'
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    deleting_job_events = events('last').select { |e| e['stage'] == 'Deleting unneeded instances' }
+    expect(deleting_job_events[0]['state']).to eq('started')
+    expect(deleting_job_events[1]['state']).to eq('finished')
+    expect(deleting_job_events[2]['state']).to eq('started')
+    expect(deleting_job_events[3]['state']).to eq('finished')
+  end
+
   describe 'Displaying manifest diffs' do
     let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_with_addon }
