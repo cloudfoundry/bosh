@@ -186,7 +186,7 @@ module Bosh::Cli
       end
 
       say("\n#{report}") if report
-      say("\nFor a more detailed error report, run: bosh task #{task_id} --debug") if status == :error
+      say("\nFor a more detailed error report, run: bosh -t #{target} task #{task_id} --debug") if status == :error
     end
 
     def auth_required

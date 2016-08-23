@@ -366,7 +366,7 @@ describe Bosh::Cli::Command::Errand do
               expect(actual).to match_output %(
                 Errand 'fake-errand-name' did not complete
 
-                For a more detailed error report, run: bosh task fake-task-id --debug
+                For a more detailed error report, run: bosh -t fake-target task fake-task-id --debug
               )
             end
 
