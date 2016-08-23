@@ -7,7 +7,7 @@ module Bosh::Dev::Sandbox
     TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'
     UAA_FILENAME = 'uaa.war'
 
-    UAA_VERSION = 'cloudfoundry-identity-uaa-2.0.3'
+    UAA_VERSION = 'cloudfoundry-identity-uaa-3.5.0'
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'integration-uaa', UAA_VERSION)
