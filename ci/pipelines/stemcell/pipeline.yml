@@ -69,7 +69,7 @@ jobs:
     plan:
       - get: bosh-src
       - get: bosh-release
-        version: {version: 257.3}
+        version: {version: "257.3"}
       - get: version
         params:
           bump: major
