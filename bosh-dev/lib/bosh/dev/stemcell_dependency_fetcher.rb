@@ -8,7 +8,11 @@ module Bosh::Dev
       @logger = logger
     end
 
-    def download_os_image(bucket_name:, key:, output_path:)
+    def download_os_image(opts)
+      bucket_name = opts[:bucket_name]
+      key = opts[:key]
+      output_path = opts[:output_path]
+
       os_image_versions_file = File.expand_path('../../../../../bosh-stemcell/os_image_versions.json', __FILE__)
       os_image_versions = JSON.load(File.open(os_image_versions_file))
       os_image_version = os_image_versions[key]
@@ -22,7 +26,10 @@ module Bosh::Dev
       @downloader.download(os_image_uri, output_path)
     end
 
-    def download_bosh_micro_release(bosh_version:, output_path:)
+    def download_bosh_micro_release(opts)
+      bosh_version = opts[:bosh_version]
+      output_path = opts[:output_path]
+
       os_image_uri = URI.join('https://bosh.io/d/github.com/cloudfoundry/bosh')
       os_image_uri.query = URI.encode_www_form([['v', bosh_version]])
 
