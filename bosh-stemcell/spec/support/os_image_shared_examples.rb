@@ -49,6 +49,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
+    end
+  end
+
   context '/etc/securetty' do
     context 'disallows virtual console access (stig: V-38492)' do
       describe command("grep '^vc/[0-9]+' /etc/securetty") do
