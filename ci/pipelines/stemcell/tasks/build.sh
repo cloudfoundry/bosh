@@ -55,6 +55,8 @@ done
 
 chown -R ubuntu:ubuntu bosh-src
 sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
+  set -e
+
   cd bosh-src
 
   bundle install --local
