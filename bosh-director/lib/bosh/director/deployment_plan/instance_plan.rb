@@ -269,7 +269,14 @@ module Bosh
 
         def network_settings_changed?(old_network_settings, new_network_settings)
           return false if old_network_settings == {}
-          old_network_settings != new_network_settings
+          remove_dns_record_name_from_network_settings(old_network_settings) != new_network_settings
+        end
+
+        def remove_dns_record_name_from_network_settings(network_settings)
+          network_settings.each do |name, network_setting|
+            network_setting.delete_if{|key, value| key == "dns_record_name"}
+          end
+          network_settings
         end
 
         def env_changed?
