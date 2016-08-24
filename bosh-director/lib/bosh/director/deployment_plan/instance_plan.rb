@@ -273,6 +273,7 @@ module Bosh
         end
 
         def remove_dns_record_name_from_network_settings(network_settings)
+          return network_settings if network_settings == {}
           network_settings.each do |name, network_setting|
             network_setting.delete_if{|key, value| key == "dns_record_name"}
           end
