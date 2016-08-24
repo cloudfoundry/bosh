@@ -120,16 +120,15 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should ignore dns_record_name change of network settings' do
-          let(:network_settings) do
-            {
+          old_network_settings = {
                 'existing-network' =>{
                     'type' => 'dynamic',
                     'cloud_properties' =>{},
                     'dns_record_name' => '0.job-1.my-network.deployment.bosh',
                     'dns' => '10.0.0.1',
                 },
-            }
-          end
+          }
+
 
           new_network_settings = {
               'existing-network' =>{
