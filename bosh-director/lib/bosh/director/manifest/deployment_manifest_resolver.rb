@@ -24,7 +24,7 @@ module Bosh::Director
         ignored_subtrees << ['jobs', index_type, 'env']
         ignored_subtrees << ['resource_pools', index_type, 'env']
 
-        result_deployment_manifest = Bosh::Director::ConfigServer::ConfigParser.parse(result_deployment_manifest, ignored_subtrees)
+        result_deployment_manifest = Bosh::Director::ConfigServer::Interpolator.interpolate(result_deployment_manifest, ignored_subtrees)
       end
       result_deployment_manifest
     end

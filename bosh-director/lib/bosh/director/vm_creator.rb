@@ -173,7 +173,7 @@ module Bosh::Director
 
     def resolve_uninterpolated_values(to_be_resolved_hash)
       return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
-      Bosh::Director::ConfigServer::ConfigParser.parse(to_be_resolved_hash)
+      Bosh::Director::ConfigServer::Interpolator.interpolate(to_be_resolved_hash)
     end
 
     private

@@ -1,10 +1,13 @@
 module Bosh::Director::ConfigServer
 
-  class ConfigParser
+  class Interpolator
 
-    def self.parse(obj_to_be_parsed, subtrees_to_ignore = [])
-      result = Bosh::Common::DeepCopy.copy(obj_to_be_parsed)
-      config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(obj_to_be_parsed, subtrees_to_ignore)
+    # @param [Hash] src Hash to be interpolated
+    # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
+    # @return [Hash] A Deep copy of the interpolated src Hash
+    def self.interpolate(src, subtrees_to_ignore = [])
+      result = Bosh::Common::DeepCopy.copy(src)
+      config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(src, subtrees_to_ignore)
 
       config_keys = config_map.map { |c| c["key"] }.uniq
 

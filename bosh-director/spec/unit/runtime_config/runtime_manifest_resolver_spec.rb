@@ -70,8 +70,8 @@ module Bosh::Director
           ignored_subtrees
         end
 
-        it 'calls the ConfigParser with correct parameters' do
-          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(raw_runtime_config_manifest, ignored_subtrees)
+        it 'calls the Interpolator with correct parameters' do
+          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(raw_runtime_config_manifest, ignored_subtrees)
 
           Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest(raw_runtime_config_manifest)
         end

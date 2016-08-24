@@ -172,9 +172,9 @@ module Bosh::Director
         expect(result_manifest.hybrid_runtime_config_hash).to eq(nil)
       end
 
-      it 'does not call config server parser even if config server is enabled' do
+      it 'does not call config server interpolator even if config server is enabled' do
         allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
+        expect(Bosh::Director::ConfigServer::Interpolator).to_not receive(:interpolate)
         Manifest.generate_empty_manifest
       end
     end

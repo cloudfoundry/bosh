@@ -485,7 +485,7 @@ module Bosh
         end
 
         it 'should interpolated env values' do
-          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(env_hash).and_return(resolved_env_hash)
+          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(env_hash).and_return(resolved_env_hash)
 
           expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
             expect(env['foo']).to eq('bar')

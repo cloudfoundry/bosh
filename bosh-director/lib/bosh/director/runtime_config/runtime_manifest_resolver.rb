@@ -14,7 +14,7 @@ module Bosh::Director
           ignored_subtrees << ['addons', index_type, 'properties']
           ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
           ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', String, 'properties']
-          runtime_config_manifest = Bosh::Director::ConfigServer::ConfigParser.parse(runtime_config_manifest, ignored_subtrees)
+          runtime_config_manifest = Bosh::Director::ConfigServer::Interpolator.interpolate(runtime_config_manifest, ignored_subtrees)
         end
         runtime_config_manifest
       end

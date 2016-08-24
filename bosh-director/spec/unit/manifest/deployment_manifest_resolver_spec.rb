@@ -107,7 +107,7 @@ module Bosh::Director
 
         it 'resolve the values and ignore properties and env' do
           # TODO: Need to change this test when using the dependency injection path
-          expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(raw_manifest, ignored_subtrees).and_return(resolved_manifest)
+          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(raw_manifest, ignored_subtrees).and_return(resolved_manifest)
           actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, true)
 
           expect(actual_manifest).to eq(resolved_manifest)
@@ -115,7 +115,7 @@ module Bosh::Director
 
         context 'when resolve_interpolation flag is false' do
           it 'does not interpolate the values and returns manifest as is' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
+            expect(Bosh::Director::ConfigServer::Interpolator).to_not receive(:interpolate)
             raw_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, false)
           end
         end

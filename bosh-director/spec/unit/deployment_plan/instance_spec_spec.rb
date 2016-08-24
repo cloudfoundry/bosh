@@ -155,8 +155,8 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'resolves properties and links properties' do
-            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(properties).and_return(resolved_properties)
-            expect(Bosh::Director::ConfigServer::ConfigParser).to receive(:parse).with(links).and_return(resolved_links)
+            expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(properties).and_return(resolved_properties)
+            expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(links).and_return(resolved_links)
 
             spec = instance_spec.as_template_spec
             expect(spec['properties']).to eq(resolved_properties)

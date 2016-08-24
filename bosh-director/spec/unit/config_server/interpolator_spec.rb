@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe ConfigParser do
+  describe Interpolator do
 
-    subject(:parsed_manifest) { ConfigParser.parse(manifest_hash, ignored_subtrees) }
+    subject(:interpolated_manifest) { Interpolator.interpolate(manifest_hash, ignored_subtrees) }
 
     let(:manifest_hash) { {} }
     let(:ignored_subtrees) {[]}
 
-    context '#parse' do
+    context '#interpolate' do
       let(:mock_config_store) do
         {
           'value' => 123,
@@ -29,12 +29,12 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should return a new copy of the original manifest' do
-        expect(parsed_manifest).to_not equal(manifest_hash)
+        expect(interpolated_manifest).to_not equal(manifest_hash)
       end
 
       it 'should request keys from the proper url' do
         manifest_hash['properties'] = { 'key' => '((value))' }
-        parsed_manifest
+        interpolated_manifest
       end
 
       it 'should replace any top level property key in the passed hash' do
@@ -44,7 +44,7 @@ module Bosh::Director::ConfigServer
           'name' => 'test4'
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
       it 'should replace the global property keys in the passed hash' do
@@ -54,7 +54,7 @@ module Bosh::Director::ConfigServer
           'properties' => { 'key' => 123 }
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
       it 'should replace the instance group property keys in the passed hash' do
@@ -74,7 +74,7 @@ module Bosh::Director::ConfigServer
           ]
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
       it 'should replace the env keys in the passed hash' do
@@ -84,7 +84,7 @@ module Bosh::Director::ConfigServer
           'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
       it 'should replace the job properties in the passed hash' do
@@ -114,7 +114,7 @@ module Bosh::Director::ConfigServer
           ]
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
       it 'should raise an error message when key is missing from the config_server' do
@@ -122,7 +122,7 @@ module Bosh::Director::ConfigServer
 
         manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
         expect{
-          parsed_manifest
+          interpolated_manifest
         }.to raise_error(
                Bosh::Director::ConfigServerMissingKeys,
                'Failed to find keys in the config server: missing_placeholder')
@@ -158,7 +158,7 @@ module Bosh::Director::ConfigServer
           ]
         }
 
-        expect(parsed_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_manifest)
       end
 
 
