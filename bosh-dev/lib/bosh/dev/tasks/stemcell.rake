@@ -163,7 +163,7 @@ namespace :stemcell do
   end
 
   desc 'Build a stemcell using a local OS image and bosh micro release'
-  task :build_with_local_os_image_with_bosh_release_tarball, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path, :bosh_release_tarball_path] do |_, args|
+  task :build_with_local_os_image_with_bosh_release_tarball, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path, :bosh_release_tarball_path, :build_number] do |_, args|
     begin
       require 'bosh/dev/build'
       require 'bosh/dev/gem_components'
@@ -174,13 +174,14 @@ namespace :stemcell do
       require 'bosh/stemcell/stemcell_packager'
       require 'bosh/stemcell/stemcell_builder'
 
-      build_number = Bosh::Dev::Build.build_number
-      gem_components = Bosh::Dev::GemComponents.new(build_number)
+      args.with_defaults(build_number: Bosh::Dev::Build.build_number)
+
+      gem_components = Bosh::Dev::GemComponents.new(args.build_number)
       definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, false)
       environment = Bosh::Stemcell::BuildEnvironment.new(
         ENV.to_hash,
         definition,
-        build_number,
+        args.build_number,
         args.bosh_release_tarball_path,
         args.os_image_path,
       )
