@@ -39,6 +39,18 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'must not send ICMPv4 redirects from any interface. (stig: V-38601)' do
         should contain /^net.ipv4.conf.all.send_redirects=0$/
       end
+
+      it 'should disable ipv6 router advertisements on all interfaces (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.all.accept_ra=0$/
+      end
+
+      it 'should disable ipv6 router advertisements by default (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.default.accept_ra=0$/
+      end
+
+      it 'should flush ipv6 routes (CIS-7.3.1)' do
+        should contain /^net.ipv6.route.flush=1$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do

@@ -11,4 +11,10 @@ shared_examples_for 'a Linux kernel module configured OS image' do
       it { should_not be_enabled }
     end
   end
+
+  context 'prevent ipv6 module from being loaded (stig: V-38546)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'options ipv6 disable=1' }
+    end
+  end
 end
