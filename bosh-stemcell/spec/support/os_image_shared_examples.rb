@@ -230,6 +230,19 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'IPv6 should be disabled (stig: V-38546)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv6\.conf\.all\.disable_ipv6=1$/ }
+      its (:content) { should match /^net\.ipv6\.conf\.default\.disable_ipv6=1$/ }
+    end
+  end
+
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
+    end
+  end
+
   describe service('xinetd') do
     it('should be disabled (stig: V-38582)') { should_not be_enabled }
   end
