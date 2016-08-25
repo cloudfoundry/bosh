@@ -56,6 +56,10 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
         should contain /^net.ipv6.conf.default.accept_ra=0$/
       end
 
+      it 'should flush ipv6 routes (CIS-7.3.1)' do
+        should contain /^net.ipv6.route.flush=1$/
+      end
+
       it 'should disable response to broadcast requests (CIS-7.2.5)' do
         should contain /^net.ipv4.icmp_echo_ignore_broadcasts=1$/
       end
