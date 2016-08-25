@@ -16,5 +16,11 @@ module Bosh::Director::DeploymentPlan
         InstanceNetworkReservations.new(@logger)
       end
     end
+
+    def migrate_existing_instance_network_reservations(existing_instance_model, existing_instance_state)
+      if !existing_instance_state.nil? && existing_instance_model.ip_addresses.empty?
+        InstanceNetworkReservations.create_from_state(existing_instance_model, existing_instance_state, @deployment_plan, @logger)
+      end
+    end
   end
 end
