@@ -34,12 +34,12 @@ module Bosh::Blobstore
         end
 
         it 'returns davcli client' do
-          allow(Kernel).to receive(:system).with("/path --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          allow(Kernel).to receive(:system).with("/path -v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
           expect(Client.create('davcli', {
             user: 'foo',
             password: 'bar',
             endpoint: 'zaksoup.com',
-            dav_cli_path: '/path'
+            davcli_path: '/path'
           })).to be_instance_of(DavcliBlobstoreClient)
         end
 
