@@ -33,6 +33,7 @@ module Bosh::Director
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => instance_group.link_spec,
+          'ip' => instance_plan.network_settings.network_ip_address,
           'address' => instance_plan.network_settings.network_address,
           'update' => instance_group.update_spec
         }
@@ -108,7 +109,8 @@ module Bosh::Director
           'properties_need_filtering',
           'dns_domain_name',
           'persistent_disk',
-          'address'
+          'address',
+          'ip'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 

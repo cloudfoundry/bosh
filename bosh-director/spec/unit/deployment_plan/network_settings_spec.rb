@@ -76,12 +76,24 @@ module Bosh::Director::DeploymentPlan
             expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh')
           end
         end
+
+        describe '#network_ip_address' do
+          it 'returns the ip address for the instance' do
+            expect(network_settings.network_ip_address).to eq('10.0.0.6')
+          end
+        end
       end
 
       context 'manual network' do
         describe '#network_address' do
           it 'returns the ip address for manual networks on the instance' do
             expect(network_settings.network_address).to eq('10.0.0.6')
+          end
+        end
+
+        describe '#network_ip_address' do
+          it 'returns the ip address for manual networks on the instance' do
+            expect(network_settings.network_ip_address).to eq('10.0.0.6')
           end
         end
       end

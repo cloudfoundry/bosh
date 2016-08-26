@@ -215,6 +215,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['bootstrap']).to eq(true)
           expect(spec['resource_pool']).to eq('fake-vm-type')
           expect(spec['address']).to eq('192.168.0.10')
+          expect(spec['ip']).to eq('192.168.0.10')
         end
       end
 
@@ -248,6 +249,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['bootstrap']).to eq(true)
             expect(spec['resource_pool']).to eq('fake-vm-type')
             expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+            expect(spec['ip']).to eq(nil)
           end
         end
         context 'when vm has network ip assigned' do
@@ -291,6 +293,7 @@ module Bosh::Director::DeploymentPlan
             expect(spec['bootstrap']).to eq(true)
             expect(spec['resource_pool']).to eq('fake-vm-type')
             expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+            expect(spec['ip']).to eq('192.0.2.19')
           end
         end
       end
