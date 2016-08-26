@@ -65,7 +65,7 @@ module Bosh::Director
           unless job.model_consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
               "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
-                "but the release job does not consume it."
+                'but the release job does not consume it.'
           end
         end
       end

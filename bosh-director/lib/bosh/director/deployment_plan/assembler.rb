@@ -99,10 +99,10 @@ module Bosh::Director
     end
 
     def bind_links
-      links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+      links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
-      @deployment_plan.instance_groups.each do |job|
-        links_resolver.resolve(job)
+      @deployment_plan.instance_groups.each do |instance_group|
+        links_resolver.resolve(instance_group)
       end
     end
 
