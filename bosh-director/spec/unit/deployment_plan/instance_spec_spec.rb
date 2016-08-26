@@ -100,7 +100,10 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
-      context 'when properties placeholders are present' do
+      context 'properties interpolation' do
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+
         let(:properties) do
           {
             'smurf_1' => '((smurf_placeholder_1))',
@@ -125,54 +128,42 @@ module Bosh::Director::DeploymentPlan
           }
         end
 
-        context 'when config server is enabled' do
-          let(:resolved_properties) do
-            {
-              'smurf_1' => 'lazy smurf',
-              'smurf_2' => 'happy smurf'
-            }
-          end
-
-          let(:resolved_links) do
-            {
-              'link_1' => {
-                'networks' => 'foo',
-                'properties' => {
-                  'smurf' => 'strong smurf'
-                }
-              },
-              'link_2' => {
-                'netwroks' => 'foo2',
-                'properties' => {
-                  'smurf' => 'sleepy smurf'
-                }
-              }
-            }
-          end
-
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-          end
-
-          it 'resolves properties and links properties' do
-            expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(properties).and_return(resolved_properties)
-            expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(links).and_return(resolved_links)
-
-            spec = instance_spec.as_template_spec
-            expect(spec['properties']).to eq(resolved_properties)
-            expect(spec['links']).to eq(resolved_links)
-          end
+        let(:resolved_properties) do
+          {
+            'smurf_1' => 'lazy smurf',
+            'smurf_2' => 'happy smurf'
+          }
         end
 
-        context 'when config server is disabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-          end
+        let(:resolved_links) do
+          {
+            'link_1' => {
+              'networks' => 'foo',
+              'properties' => {
+                'smurf' => 'strong smurf'
+              }
+            },
+            'link_2' => {
+              'netwroks' => 'foo2',
+              'properties' => {
+                'smurf' => 'sleepy smurf'
+              }
+            }
+          }
+        end
 
-          it 'does not resolve properties' do
-            spec = instance_spec.as_template_spec
-            expect(spec['properties']).to eq(properties)
-          end
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        end
+
+        it 'resolves properties and links properties' do
+          expect(config_server_client).to receive(:interpolate).with(properties).and_return(resolved_properties)
+          expect(config_server_client).to receive(:interpolate).with(links).and_return(resolved_links)
+
+          spec = instance_spec.as_template_spec
+          expect(spec['properties']).to eq(resolved_properties)
+          expect(spec['links']).to eq(resolved_links)
         end
       end
 

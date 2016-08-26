@@ -85,7 +85,7 @@ module Bosh::Director
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_model(deployment_model)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
@@ -95,10 +95,7 @@ module Bosh::Director
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
-          expect(Bosh::Director::DeploymentManifestResolver).
-            to receive(:resolve_manifest).
-              with({'smurf' => '((smurf_placeholder))'}, false).
-              and_return({'smurf' => '((smurf_placeholder))'})
+          expect(Bosh::Director::DeploymentManifestResolver).to_not receive(:resolve_manifest)
 
           manifest_object_result = Manifest.load_from_model(deployment_model, {:resolve_interpolation => false})
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
@@ -139,7 +136,7 @@ module Bosh::Director
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
@@ -149,10 +146,7 @@ module Bosh::Director
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
-          expect(Bosh::Director::DeploymentManifestResolver).
-            to receive(:resolve_manifest).
-            with({'smurf' => '((smurf_placeholder))'}, false).
-            and_return({'smurf' => '((smurf_placeholder))'})
+          expect(Bosh::Director::DeploymentManifestResolver).to_not receive(:resolve_manifest)
 
           manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config, {:resolve_interpolation => false})
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})

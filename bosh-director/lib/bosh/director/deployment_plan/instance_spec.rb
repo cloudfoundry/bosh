@@ -48,10 +48,13 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
+
+        config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
+        @config_server_client = config_server_client_factory.create_client
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec).spec
+        TemplateSpec.new(full_spec, @config_server_client).spec
       end
 
       def as_apply_spec
@@ -91,9 +94,10 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec)
+      def initialize(full_spec, config_server_client)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
+        @config_server_client = config_server_client
       end
 
       def spec
@@ -142,8 +146,7 @@ module Bosh::Director
       private
 
       def resolve_uninterpolated_values(to_be_resolved_hash)
-        return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
-        Bosh::Director::ConfigServer::Interpolator.interpolate(to_be_resolved_hash)
+        @config_server_client.interpolate(to_be_resolved_hash)
       end
     end
 

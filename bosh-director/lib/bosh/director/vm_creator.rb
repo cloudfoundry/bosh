@@ -14,6 +14,9 @@ module Bosh::Director
       @disk_manager = disk_manager
       @job_renderer = job_renderer
       @agent_broadcaster = agent_broadcaster
+
+      config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+      @config_server_client = config_server_client_factory.create_client
     end
 
     def create_for_instance_plans(instance_plans, ip_provider)
@@ -172,8 +175,7 @@ module Bosh::Director
     end
 
     def resolve_uninterpolated_values(to_be_resolved_hash)
-      return to_be_resolved_hash unless Bosh::Director::Config.config_server_enabled
-      Bosh::Director::ConfigServer::Interpolator.interpolate(to_be_resolved_hash)
+      @config_server_client.interpolate(to_be_resolved_hash)
     end
 
     private

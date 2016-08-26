@@ -36,27 +36,6 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def get_value_for_key(key)
-      response = get(key)
-
-      if response.kind_of? Net::HTTPSuccess
-        JSON.parse(response.body)['value']
-      else
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
-      end
-    end
-
-    def generate_password(password_placeholder)
-      request_body = {
-        'type' => 'password'
-      }
-      response = post(password_placeholder, request_body)
-
-      unless response.kind_of? Net::HTTPSuccess
-        raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
-      end
-    end
-
     private
 
     def set_cert_store(ca_cert_path)

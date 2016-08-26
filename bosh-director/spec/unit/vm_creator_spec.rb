@@ -453,7 +453,10 @@ module Bosh
         end
       end
 
-      context 'Config.config_server_enabled flag is true' do
+      context 'env interpolation' do
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+
         let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
 
         let(:env_hash) do
@@ -477,15 +480,16 @@ module Bosh
           }
         end
         before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
           allow(instance_spec).to receive(:as_apply_spec).and_return({})
           allow(instance_spec).to receive(:full_spec).and_return({})
           allow(instance_spec).to receive(:as_template_spec).and_return({})
           allow(instance_plan).to receive(:spec).and_return(instance_spec)
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
-        it 'should interpolated env values' do
-          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(env_hash).and_return(resolved_env_hash)
+        it 'should happen' do
+          expect(config_server_client).to receive(:interpolate).with(env_hash).and_return(resolved_env_hash)
 
           expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
             expect(env['foo']).to eq('bar')

@@ -32,6 +32,9 @@ module Bosh::Director
         # in multiple deployment jobs, the properties will not be shared across
         # jobs
         @properties = {}
+
+        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+        @config_server_client = config_server_client_factory.create_client
       end
 
       # Looks up template model and its package models in DB
@@ -197,6 +200,9 @@ module Bosh::Director
               name,
               definition['default']
           )
+
+          key = lookup_property(@properties[instance_group_name], name)
+          @config_server_client.populate_value_for(key, definition['type'])
         end
         @properties[instance_group_name] = bound_properties
       end

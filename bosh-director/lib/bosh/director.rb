@@ -112,6 +112,7 @@ require 'common/thread_pool'
 require 'bosh/director/config_parser/deep_hash_replacement'
 require 'bosh/director/config_parser/interpolator'
 require 'bosh/director/config_parser/uaa_auth_provider'
+require 'bosh/director/config_parser/client_factory'
 require 'bosh/director/config_parser/http_client'
 
 require 'bosh/director/manifest/manifest'

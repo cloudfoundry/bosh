@@ -45,20 +45,9 @@ module Bosh::Director
     end
 
     describe '#resolve_manifest' do
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-        end
-
-        it 'return manifest as is' do
-          raw_runtime_config_manifest = Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest(raw_runtime_config_manifest)
-        end
-      end
-
       context 'when config server is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        end
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
 
         let(:ignored_subtrees) do
           index_type = Integer
@@ -70,8 +59,13 @@ module Bosh::Director
           ignored_subtrees
         end
 
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        end
+
         it 'calls the Interpolator with correct parameters' do
-          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(raw_runtime_config_manifest, ignored_subtrees)
+          expect(config_server_client).to receive(:interpolate).with(raw_runtime_config_manifest, ignored_subtrees)
 
           Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest(raw_runtime_config_manifest)
         end

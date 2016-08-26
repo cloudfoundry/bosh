@@ -115,40 +115,6 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     end
   end
 
-  describe '#get_value_for_key' do
-    context 'when successful' do
-      let(:value) { {'value'=> 'very_secret'} }
-      let(:mock_response) do
-        response = MockSuccessResponse.new
-        response.body = value.to_json
-        response
-      end
-
-      it 'makes a GET call to config server @ /v1/data/{key} and returns value' do
-        expect(subject).to receive(:get).with('smurf_password').and_return(mock_response)
-        expect(subject.get_value_for_key('smurf_password')).to eq('very_secret')
-      end
-    end
-
-    context 'when it cannot find the key' do
-      let(:mock_response) do
-        response = MockFailedResponse.new
-        response.body = 'some_bad_response'
-        response
-      end
-
-      it 'raises a Bosh::Director::ConfigServerMissingKeys error' do
-        allow(subject).to receive(:get).with('smurf_password').and_return(mock_response)
-        expect{
-          subject.get_value_for_key('smurf_password')
-        }. to raise_error(
-          Bosh::Director::ConfigServerMissingKeys,
-          "Failed to find key 'smurf_password' in the config server"
-        )
-      end
-    end
-  end
-
   describe '#post' do
     let(:request_body) do
       {
@@ -177,42 +143,4 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     end
   end
 
-  describe '#generate_password' do
-    context 'when successful' do
-      let(:request_body) do
-        {
-          'type' => 'password'
-        }
-      end
-
-      it 'makes a call to post with key and body with type password and returns response' do
-        expect(subject).to receive(:post).with('smurf_password', request_body).and_return(MockSuccessResponse.new)
-        subject.generate_password('smurf_password')
-      end
-    end
-
-    context 'when it cannot generate a password' do
-      let(:request_body) do
-        {
-          'type' => 'password'
-        }
-      end
-
-      let(:mock_response) do
-        response = MockFailedResponse.new
-        response.body = 'some_bad_response'
-        response
-      end
-
-      it 'raises a Bosh::Director::ConfigServerPasswordGenerationError error' do
-        allow(subject).to receive(:post).with('smurf_password', request_body).and_return(mock_response)
-        expect{
-          subject.generate_password('smurf_password')
-        }. to raise_error(
-          Bosh::Director::ConfigServerPasswordGenerationError,
-          'Config Server failed to generate password'
-        )
-      end
-    end
-  end
 end

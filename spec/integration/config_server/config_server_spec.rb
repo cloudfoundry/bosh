@@ -178,6 +178,76 @@ describe 'using director with config server', type: :integration do
         end
       end
 
+      context 'when release job spec properties has types' do
+        let(:manifest_hash) do
+          Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                name: 'job_with_templates_having_properties',
+                templates: [
+                  {'name' => 'job_with_property_types',
+                   'properties' => job_properties
+                  }
+                ],
+                instances: 1
+              )]
+            })
+        end
+
+        context 'when properties are defined in deployment manifest' do
+          let(:job_properties) do
+            {
+              'smurfs' => {
+                'phone_password' => '((smurfs_phone_password_placeholder))'
+              },
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+              }
+            }
+          end
+
+          it 'generates passwords for properties that have type password' do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+            vm = director.vm('job_with_templates_having_properties', '0', env: client_env)
+
+            template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['smurfs_phone_password'].to_s.empty?).to be_falsey
+          end
+        end
+
+        context 'when properties are NOT defined in deployment manifest' do
+          let(:job_properties) do
+            {
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+              }
+            }
+          end
+
+          it 'does not ask config server to generate values and fails to deploy ' do
+            output, exit_code =  deploy_from_scratch(
+               no_login: true,
+               manifest_hash: manifest_hash,
+               cloud_config_hash: cloud_config,
+               failure_expected: true,
+               return_exit_code: true,
+               env: client_env
+             )
+
+            expect(exit_code).to_not eq(0)
+
+            expect(output).to include <<-EOF
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+     - Unable to render templates for job 'job_with_property_types'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '["smurfs.phone_password"]')
+            EOF
+          end
+        end
+      end
+
+
       describe 'env values in instance groups and resource pools' do
         context 'when instance groups env is using placeholders' do
           let(:cloud_config_hash) do
@@ -669,7 +739,5 @@ describe 'using director with config server', type: :integration do
         end
       end
     end
-
-
   end
 end

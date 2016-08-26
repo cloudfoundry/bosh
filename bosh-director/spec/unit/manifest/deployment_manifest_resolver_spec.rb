@@ -36,16 +36,6 @@ module Bosh::Director
     end
 
     describe '#resolve_manifest' do
-      context 'when config server is disabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(false)
-        end
-
-        it 'returns the manifest as is with not changes' do
-          raw_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, true)
-        end
-      end
-
       context 'when config server is enabled' do
         let(:resolved_manifest) do
           {
@@ -101,23 +91,19 @@ module Bosh::Director
           ignored_subtrees
         end
 
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+
         before do
-          allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'resolve the values and ignore properties and env' do
-          # TODO: Need to change this test when using the dependency injection path
-          expect(Bosh::Director::ConfigServer::Interpolator).to receive(:interpolate).with(raw_manifest, ignored_subtrees).and_return(resolved_manifest)
-          actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, true)
+          expect(config_server_client).to receive(:interpolate).with(raw_manifest, ignored_subtrees).and_return(resolved_manifest)
+          actual_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest)
 
           expect(actual_manifest).to eq(resolved_manifest)
-        end
-
-        context 'when resolve_interpolation flag is false' do
-          it 'does not interpolate the values and returns manifest as is' do
-            expect(Bosh::Director::ConfigServer::Interpolator).to_not receive(:interpolate)
-            raw_manifest = Bosh::Director::DeploymentManifestResolver.resolve_manifest(raw_manifest, false)
-          end
         end
       end
     end

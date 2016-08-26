@@ -1,0 +1,14 @@
+---
+name: job_with_property_types
+templates:
+  properties_displayer.yml.erb: properties_displayer.yml
+
+packages: []
+
+properties:
+  smurfs.phone_password:
+    description: The phone password of the smurfs village
+    type: password
+  gargamel.secret_recipe:
+    description: The secret recipe of gargamel to take down the smurfs
+    type: password

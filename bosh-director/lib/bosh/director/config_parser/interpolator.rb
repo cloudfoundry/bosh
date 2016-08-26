@@ -1,11 +1,15 @@
 module Bosh::Director::ConfigServer
-
   class Interpolator
+
+    def initialize(http_client, logger)
+      @config_server_http_client = http_client
+      @logger = logger
+    end
 
     # @param [Hash] src Hash to be interpolated
     # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def self.interpolate(src, subtrees_to_ignore = [])
+    def interpolate(src, subtrees_to_ignore = [])
       result = Bosh::Common::DeepCopy.copy(src)
       config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(src, subtrees_to_ignore)
 
@@ -20,17 +24,32 @@ module Bosh::Director::ConfigServer
       result
     end
 
+    # @param [String] key The key for which a value will be generated
+    # @param [String] type The type of value generated (example: password, certificate, ....)
+    def populate_value_for(key, type)
+      if !key.nil? && key.to_s.match(/^\(\(.*\)\)$/)
+        stripped_key = key.gsub(/(^\(\(|\)\)$)/, '')
+
+        case type
+          when 'password'
+            begin
+              get_value_for_key(stripped_key)
+            rescue Bosh::Director::ConfigServerMissingKeys
+              generate_password(stripped_key)
+            end
+        end
+      end
+    end
+
     private
 
-    def self.fetch_config_values(keys)
+    def fetch_config_values(keys)
       invalid_keys = []
       config_values = {}
 
-      http = HTTPClient.new
-
       keys.each do |k|
         begin
-          config_values[k] = http.get_value_for_key(k)
+          config_values[k] = get_value_for_key(k)
         rescue Bosh::Director::ConfigServerMissingKeys
           invalid_keys << k
         end
@@ -39,7 +58,7 @@ module Bosh::Director::ConfigServer
       [config_values, invalid_keys]
     end
 
-    def self.replace_config_values!(config_map, config_values, obj_to_be_resolved)
+    def replace_config_values!(config_map, config_values, obj_to_be_resolved)
       config_map.each do |config_loc|
         config_path = config_loc['path']
         ret = obj_to_be_resolved
@@ -51,6 +70,36 @@ module Bosh::Director::ConfigServer
         end
         ret[config_path.last] = config_values[config_loc['key']]
       end
+    end
+
+    def generate_password(stripped_key)
+      request_body = {
+        'type' => 'password'
+      }
+      response = @config_server_http_client.post(stripped_key, request_body)
+
+      unless response.kind_of? Net::HTTPSuccess
+        raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
+      end
+    end
+
+    def get_value_for_key(key)
+      response = @config_server_http_client.get(key)
+
+      if response.kind_of? Net::HTTPSuccess
+        JSON.parse(response.body)['value']
+      else
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
+      end
+    end
+  end
+
+  class DummyInterpolator
+    def interpolate(src, subtrees_to_ignore = [])
+      Bosh::Common::DeepCopy.copy(src)
+    end
+
+    def populate_value_for(key, type)
     end
   end
 end
