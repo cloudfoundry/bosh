@@ -6,8 +6,9 @@ module Bosh::Director
       include ValidationHelper
       include IpUtil
 
-      def initialize(properties_that_require_defaults)
+      def initialize(properties_that_require_defaults, properties_that_are_optional_defaults)
         @properties_that_require_defaults = properties_that_require_defaults
+        @valid_properties = @properties_that_require_defaults | properties_that_are_optional_defaults
       end
 
       def parse(job_spec, job_name, manifest_networks)
@@ -65,7 +66,7 @@ module Bosh::Director
 
       def validate_default_properties(network, job_name)
         network.properties_for_which_the_network_is_the_default.each do |property|
-          unless @properties_that_require_defaults.include?(property)
+          unless @valid_properties.include?(property)
             raise JobNetworkInvalidDefault,
               "Instance group '#{job_name}' specified an invalid default network property '#{property}', " +
                 "valid properties are: " + @properties_that_require_defaults.join(", ")
@@ -82,8 +83,9 @@ module Bosh::Director
       end
 
       def validate_default_network_for_each_property(default_networks_for_properties, job_name)
-        missing_default_properties = default_networks_for_properties.select { |_, networks|
-          networks.empty?
+        missing_default_properties = default_networks_for_properties.select { |property, networks|
+          is_required = @properties_that_require_defaults.include?(property)
+          is_required && networks.empty?
         }.map { |property, _|
           property
         }
@@ -109,7 +111,7 @@ module Bosh::Director
       end
 
       def default_networks_for_properties(networks)
-        @properties_that_require_defaults.inject({}) do |defaults, property|
+        @valid_properties.inject({}) do |defaults, property|
           defaults.merge(property => networks.select { |network| network.default_for?(property) })
         end
       end

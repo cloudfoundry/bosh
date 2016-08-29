@@ -43,7 +43,7 @@ module Bosh::Director
         parse_options['max_in_flight'] = options['max_in_flight'] if options['max_in_flight']
         parse_update_config(parse_options)
 
-        networks = InstanceGroupNetworksParser.new(Network::VALID_DEFAULTS).parse(@instance_group_spec, @instance_group.name, @deployment.networks)
+        networks = InstanceGroupNetworksParser.new(Network::REQUIRED_DEFAULTS, Network::OPTIONAL_DEFAULTS).parse(@instance_group_spec, @instance_group.name, @deployment.networks)
         @instance_group.networks = networks
         assign_default_networks(networks)
 
@@ -440,7 +440,7 @@ module Bosh::Director
       end
 
       def assign_default_networks(networks)
-        Network::VALID_DEFAULTS.each do |property|
+        Network.valid_defaults.each do |property|
           network = networks.find { |network| network.default_for?(property) }
           @instance_group.default_network[property] = network.name if network
         end

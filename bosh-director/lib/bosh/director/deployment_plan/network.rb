@@ -7,13 +7,18 @@ module Bosh::Director
     class Network
       include ValidationHelper
 
-      VALID_DEFAULTS = %w(dns gateway).sort
+      REQUIRED_DEFAULTS = %w(dns gateway).sort
+      OPTIONAL_DEFAULTS = %w(addressable).sort
 
       # @return [String] network name
       attr_accessor :name
 
       # @return [String] canonical network name
       attr_accessor :canonical_name
+
+      def self.valid_defaults
+        (REQUIRED_DEFAULTS | OPTIONAL_DEFAULTS).sort
+      end
 
       ##
       # Creates a new network.
@@ -32,7 +37,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
+      def network_settings(reservation, default_properties = REQUIRED_DEFAULTS, availability_zone = nil)
         raise NotImplementedError,
               "#network_settings not implemented for #{self.class}"
       end
