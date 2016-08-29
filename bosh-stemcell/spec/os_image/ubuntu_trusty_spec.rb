@@ -446,7 +446,7 @@ EOF
   end
 
   describe 'logging and audit startup script' do
-    describe file('/var/vcap/bosh/bin/start_logging_and_auditing') do
+    describe file('/var/vcap/bosh/bin/bosh-start-logging-and-auditing') do
       it { should be_file }
       it { should be_executable }
       it { should contain('service rsyslog start') }
