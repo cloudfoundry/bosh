@@ -15,8 +15,7 @@ module Bosh::Director
       @job_renderer = job_renderer
       @agent_broadcaster = agent_broadcaster
 
-      config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
-      @config_server_client = config_server_client_factory.create_client
+      @config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
     end
 
     def create_for_instance_plans(instance_plans, ip_provider)
@@ -124,7 +123,9 @@ module Bosh::Director
     def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
       parent_id = add_event(instance_model.deployment.name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
-      env = resolve_uninterpolated_values(Bosh::Common::DeepCopy.copy(env))
+
+      config_server_client = @config_server_client_factory.create_client
+      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env))
 
       options = {:agent_id => agent_id}
 
@@ -173,11 +174,5 @@ module Bosh::Director
     def self.generate_agent_id
       SecureRandom.uuid
     end
-
-    def resolve_uninterpolated_values(to_be_resolved_hash)
-      @config_server_client.interpolate(to_be_resolved_hash)
-    end
-
-    private
   end
 end
