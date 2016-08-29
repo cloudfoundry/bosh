@@ -106,7 +106,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-          let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+          let(:config_server_client) { double(Bosh::Director::ConfigServer::Client) }
 
           before do
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
@@ -173,7 +173,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
               release_job_spec_prop['dea_max_memory']['type'] = 'vroom'
             end
 
-            it 'calls config server interpolator populate_value_for for all job spec properties' do
+            it 'calls config server client populate_value_for for all job spec properties' do
               expect(config_server_client).to receive(:populate_value_for).with('www.cc.com', 'password')
               expect(config_server_client).to receive(:populate_value_for).with('def', nil)
               expect(config_server_client).to receive(:populate_value_for).with(1024, 'vroom')

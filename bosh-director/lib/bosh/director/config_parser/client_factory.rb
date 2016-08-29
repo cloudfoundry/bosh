@@ -21,9 +21,9 @@ module Bosh::Director::ConfigServer
 
     def create_client
       if @config_server_enabled
-        Interpolator.new(HTTPClient.new,@logger)
+        Client.new(HTTPClient.new, @logger)
       else
-        DummyInterpolator.new
+        DummyClient.new
       end
     end
   end

@@ -1,5 +1,5 @@
 module Bosh::Director::ConfigServer
-  class Interpolator
+  class Client
 
     def initialize(http_client, logger)
       @config_server_http_client = http_client
@@ -94,7 +94,7 @@ module Bosh::Director::ConfigServer
     end
   end
 
-  class DummyInterpolator
+  class DummyClient
     def interpolate(src, subtrees_to_ignore = [])
       Bosh::Common::DeepCopy.copy(src)
     end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe Interpolator do
+  describe Client do
     class MockSuccessResponse < Net::HTTPSuccess
       attr_accessor :body
 
@@ -23,9 +23,9 @@ module Bosh::Director::ConfigServer
     end
 
     context '#interpolate' do
-      subject(:interpolator) { Interpolator.new(http_client, nil) }
+      subject(:client) { Client.new(http_client, nil) }
 
-      let(:interpolated_manifest) { interpolator.interpolate(manifest_hash, ignored_subtrees) }
+      let(:interpolated_manifest) { client.interpolate(manifest_hash, ignored_subtrees) }
       let(:manifest_hash) { {} }
       let(:ignored_subtrees) {[]}
       let(:mock_config_store) do
@@ -46,7 +46,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should return a new copy of the original manifest' do
-        expect(interpolator.interpolate(manifest_hash, ignored_subtrees)).to_not equal(manifest_hash)
+        expect(client.interpolate(manifest_hash, ignored_subtrees)).to_not equal(manifest_hash)
       end
 
       it 'should request keys from the proper url' do
@@ -182,14 +182,14 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#populate_value_for' do
-      subject(:interpolator) { Interpolator.new(http_client, nil) }
+      subject(:client) { Client.new(http_client, nil) }
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
       context 'when key is nil' do
         it 'does NOT contact the config server' do
           expect(http_client).to_not receive(:get)
           expect(http_client).to_not receive(:post)
-          interpolator.populate_value_for(nil, 'password')
+          client.populate_value_for(nil, 'password')
         end
       end
 
@@ -197,10 +197,10 @@ module Bosh::Director::ConfigServer
         it 'does NOT contact the config server regardless of type' do
           expect(http_client).to_not receive(:get)
           expect(http_client).to_not receive(:post)
-          interpolator.populate_value_for('key_1', 'password')
-          interpolator.populate_value_for('key_2', nil)
-          interpolator.populate_value_for('key_3', 'anything')
-          interpolator.populate_value_for('((key_4)', 'password')
+          client.populate_value_for('key_1', 'password')
+          client.populate_value_for('key_2', nil)
+          client.populate_value_for('key_3', 'anything')
+          client.populate_value_for('((key_4)', 'password')
         end
       end
 
@@ -220,7 +220,7 @@ module Bosh::Director::ConfigServer
           end
           it 'does NOT make a call to generate_password' do
             expect(http_client).to_not receive(:post)
-            interpolator.populate_value_for(key, type)
+            client.populate_value_for(key, type)
           end
         end
 
@@ -230,7 +230,7 @@ module Bosh::Director::ConfigServer
           end
           it 'makes a call to generate_password with trimmed key' do
             expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(MockSuccessResponse.new)
-            interpolator.populate_value_for(key, type)
+            client.populate_value_for(key, type)
           end
         end
       end
@@ -239,9 +239,9 @@ module Bosh::Director::ConfigServer
         it 'does NOT contact the config server' do
           expect(http_client).to_not receive(:get)
           expect(http_client).to_not receive(:post)
-          interpolator.populate_value_for('my_db_name', 'hello')
-          interpolator.populate_value_for('my_db_name', nil)
-          interpolator.populate_value_for('my_db_name', '')
+          client.populate_value_for('my_db_name', 'hello')
+          client.populate_value_for('my_db_name', nil)
+          client.populate_value_for('my_db_name', '')
         end
       end
 
@@ -259,7 +259,7 @@ module Bosh::Director::ConfigServer
 
           it 'raises an error' do
             expect{
-              interpolator.populate_value_for(key, type)
+              client.populate_value_for(key, type)
             }. to raise_error(
               Bosh::Director::ConfigServerPasswordGenerationError,
               'Config Server failed to generate password'
@@ -273,7 +273,7 @@ module Bosh::Director::ConfigServer
           end
           it 'does NOT make a call to generate_password' do
             expect(http_client).to_not receive(:post)
-            interpolator.populate_value_for(key, type)
+            client.populate_value_for(key, type)
           end
         end
 
@@ -283,16 +283,16 @@ module Bosh::Director::ConfigServer
           end
           it 'makes a call to generate_password with trimmed key' do
             expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(MockSuccessResponse.new)
-            interpolator.populate_value_for(key, type)
+            client.populate_value_for(key, type)
           end
         end
       end
     end
   end
 
-  describe DummyInterpolator do
+  describe DummyClient do
 
-    subject(:dummy_interpolator) { DummyInterpolator.new }
+    subject(:dummy_client) { DummyClient.new }
 
     describe '#interpolate' do
       let(:src) do
@@ -303,7 +303,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'returns src as is' do
-        expect(dummy_interpolator.interpolate(src)).to eq(src)
+        expect(dummy_client.interpolate(src)).to eq(src)
       end
     end
 
@@ -316,7 +316,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'is a no op' do
-        expect(dummy_interpolator).to respond_to(:populate_value_for).with(2).arguments
+        expect(dummy_client).to respond_to(:populate_value_for).with(2).arguments
       end
     end
 

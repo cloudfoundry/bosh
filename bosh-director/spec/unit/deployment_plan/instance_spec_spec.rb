@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
     describe '#template_spec' do
       context 'properties interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Client) }
 
         let(:properties) do
           {

@@ -92,7 +92,7 @@ module Bosh::Director
         end
 
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::Interpolator) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::Client) }
 
         before do
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
