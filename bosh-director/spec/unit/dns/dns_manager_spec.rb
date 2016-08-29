@@ -432,6 +432,13 @@ module Bosh::Director
     end
 
     describe '#create_local_dns_record' do
+      it 'creates canonicalized records' do
+        expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+        subject.create_local_dns_record(instance_model)
+        local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+        expect(local_dns_record_first.name).to eq("fake-uuid.job-name.name.bosh1.bosh")
+      end
+
       context 'when include_index enabled' do
         before do
           allow(Config).to receive(:local_dns_include_index?).and_return(true)
@@ -445,8 +452,8 @@ module Bosh::Director
           local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
           local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
 
-          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
-          expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job_name.*"))
+          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
+          expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job-name.*"))
         end
       end
 
@@ -461,7 +468,7 @@ module Bosh::Director
           subject.create_local_dns_record(instance_model)
 
           local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job_name.*"))
+          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
         end
       end
 
@@ -507,14 +514,14 @@ module Bosh::Director
       let(:record) { instance_double(Models::LocalDnsRecord) }
       let(:expected_uuid_model) do
         {
-          name: "fake-uuid.job_name.name.bosh.bosh",
+          name: "fake-uuid.job-name.name.bosh.bosh",
           ip: '1234',
           instance_id: instance_model.id
         }
       end
       let(:expected_index_model) do
         {
-          name: "0.job_name.name.bosh.bosh",
+          name: "0.job-name.name.bosh.bosh",
           ip: '1234',
           instance_id: instance_model.id
         }
@@ -522,6 +529,16 @@ module Bosh::Director
 
       before do
         allow(record).to receive(:delete)
+      end
+
+      it 'should search for canonicalized records' do
+        expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh."}').twice
+
+        expect(Models::LocalDnsRecord).to receive(:where).
+            with(expected_uuid_model).
+            and_return(record)
+
+        subject.delete_local_dns_record(instance_model)
       end
 
       context 'when include_index enabled' do
