@@ -27,14 +27,21 @@ cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
 
 cd $agent_dir
-bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 
-cd $assets_dir/go/src/github.com/cloudfoundry/bosh-davcli
-bin/build
-mv out/dav-cli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
+# Download CLI source or release from github into assets directory
+cd $assets_dir
+rm -rf davcli
+mkdir davcli
+current_version=0.0.6
+curl -L -o davcli/davcli https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-amd64
+echo "6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08 davcli/davcli" | sha1sum -c -
+cd $assets_dir/davcli
+mv davcli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
+chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
+
 
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
