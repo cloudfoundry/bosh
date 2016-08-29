@@ -178,7 +178,7 @@ describe 'using director with config server', type: :integration do
         end
       end
 
-      context 'when release job spec properties has types' do
+      context 'when release job spec properties has type password' do
         let(:manifest_hash) do
           Bosh::Spec::Deployments.test_release_manifest.merge(
             {
@@ -194,7 +194,7 @@ describe 'using director with config server', type: :integration do
             })
         end
 
-        context 'when properties are defined in deployment manifest' do
+        context 'when these properties are defined in deployment manifest' do
           let(:job_properties) do
             {
               'smurfs' => {
@@ -206,17 +206,22 @@ describe 'using director with config server', type: :integration do
             }
           end
 
-          it 'generates passwords for properties that have type password' do
+          it 'generates passwords for these properties' do
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
             vm = director.vm('job_with_templates_having_properties', '0', env: client_env)
 
             template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['smurfs_phone_password'].to_s.empty?).to be_falsey
+            expect(
+              template_hash['properties_list']['smurfs_phone_password']
+            ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
+            expect(
+              template_hash['properties_list']['gargamel_secret_recipe']
+            ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
           end
         end
 
-        context 'when properties are NOT defined in deployment manifest' do
+        context 'when these properties are NOT defined in deployment manifest' do
           let(:job_properties) do
             {
               'gargamel' => {
@@ -246,7 +251,6 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           end
         end
       end
-
 
       describe 'env values in instance groups and resource pools' do
         context 'when instance groups env is using placeholders' do
@@ -556,11 +560,12 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         cloud_config_hash
       end
 
-      let(:my_job) do
+      let(:provider_job_name) { 'http_server_with_provides' }
+      let(:my_instance_group) do
         job_spec = Bosh::Spec::Deployments.simple_job(
-            name: 'my_job',
+            name: 'my_instance_group',
             templates: [
-                {'name' => 'http_server_with_provides'},
+                {'name' => provider_job_name},
                 {'name' => 'http_proxy_with_requires'},
             ],
             instances: 1
@@ -572,7 +577,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [my_job]
+        manifest['jobs'] = [my_instance_group]
         manifest['properties'] = {'listen_port' => 9999}
         manifest
       end
@@ -588,7 +593,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
         deploy_simple_manifest(manifest_hash: manifest, env: client_env)
 
-        link_vm = director.vm('my_job', '0', env: client_env)
+        link_vm = director.vm('my_instance_group', '0', env: client_env)
         template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
         expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
       end
@@ -600,6 +605,18 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
         expect(deploy_output).to_not include('fibonacci_value')
         expect(debug_output).to_not include('fibonacci_value')
+      end
+
+      context 'when provider job has properties with type password and values are generated' do
+        let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
+
+        it 'replaces the placeholder values of properties consumed through links' do
+          deploy_simple_manifest(manifest_hash: manifest, env: client_env)
+
+          link_vm = director.vm('my_instance_group', '0', env: client_env)
+          template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value('fibonacci_placeholder'))
+        end
       end
 
       context 'when manual links are involved' do
@@ -675,7 +692,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
               name: 'first_deployment_node',
               templates: [
                   {
-                      'name' => 'http_server_with_provides',
+                      'name' => provider_job_name,
                       'properties' => {
                           'listen_port' => 15672,
                           'name_space' => {
@@ -736,6 +753,24 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
           template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
           expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
+        end
+
+        context 'when provider job has properties with type password and values are generated' do
+          let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
+
+          it 'should successfully use the shared link, where its properties are not stored in DB' do
+            deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, env: client_env)
+
+            expect {
+              deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, env: client_env)
+            }.to_not raise_error
+
+            link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
+            template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            expect(
+              template['links']['properties']['fibonacci']
+            ).to eq(config_server_helper.get_value('fibonacci_placeholder'))
+          end
         end
       end
     end

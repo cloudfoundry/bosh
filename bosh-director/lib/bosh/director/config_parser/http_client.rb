@@ -18,19 +18,18 @@ module Bosh::Director::ConfigServer
     end
 
     def get(key)
-      config_server_uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
+      uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
       begin
-        @http.get(config_server_uri.path, {'Authorization' => @auth_provider.auth_header})
+        @http.get(uri.path, {'Authorization' => @auth_provider.auth_header})
       rescue OpenSSL::SSL::SSLError
         raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
       end
     end
 
     def post(key, body)
-      config_server_uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
-
+      uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
       begin
-        @http.post(config_server_uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header})
+        @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header})
       rescue OpenSSL::SSL::SSLError
         raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
       end

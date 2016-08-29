@@ -15,21 +15,30 @@ module Bosh::Spec
 
     def put_value(key, value)
       config_server_url = URI.join("http://127.0.0.1:#{@port}", 'v1/', 'data/', key)
-      http = Net::HTTP.new(config_server_url.host, config_server_url.port)
+      response = send_request('PUT', config_server_url, JSON.dump({value: value}))
+      raise "Config server responded with an error.\n #{response.inspect}" unless response.kind_of? Net::HTTPSuccess
+    end
+
+    def get_value(key)
+      config_server_url = URI.join("http://127.0.0.1:#{@port}", 'v1/', 'data/', key)
+      response = send_request('GET', config_server_url, nil)
+      raise "Config server responded with an error.\n #{response.inspect}" unless response.kind_of? Net::HTTPSuccess
+      JSON.parse(response.body)['value']
+    end
+
+    def send_request(verb, url, body)
+      http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.ca_file = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
       auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
       auth_header = auth_provider.auth_header
-      response = http.send_request('PUT', config_server_url.request_uri, JSON.dump({value: value}), {'Authorization' => auth_header})
-
-      raise "Config server responded with an error.\n #{response.inspect}" unless response.kind_of? Net::HTTPSuccess
+      http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header})
     end
 
     def logger
       @logger ||= Bosh::Director::Config.logger
     end
-
   end
 end

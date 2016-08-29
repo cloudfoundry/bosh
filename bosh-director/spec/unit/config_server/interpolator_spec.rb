@@ -289,4 +289,36 @@ module Bosh::Director::ConfigServer
       end
     end
   end
+
+  describe DummyInterpolator do
+
+    subject(:dummy_interpolator) { DummyInterpolator.new }
+
+    describe '#interpolate' do
+      let(:src) do
+        {
+          'test' => 'smurf',
+          'test2' => '((placeholder))'
+        }
+      end
+
+      it 'returns src as is' do
+        expect(dummy_interpolator.interpolate(src)).to eq(src)
+      end
+    end
+
+    describe '#populate_value_for' do
+      let(:src) do
+        {
+          'test' => 'smurf',
+          'test2' => '((placeholder))'
+        }
+      end
+
+      it 'is a no op' do
+        expect(dummy_interpolator).to respond_to(:populate_value_for).with(2).arguments
+      end
+    end
+
+  end
 end
