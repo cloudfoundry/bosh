@@ -23,7 +23,13 @@ module Bosh::Director
         end
 
         process_status = ForkedProcess.run do
-          @job_class.perform(@task_id, *decode(encode(@args)))
+          perform_args = []
+
+          unless @args.nil?
+            perform_args = decode(encode(@args))
+          end
+
+          @job_class.perform(@task_id, *perform_args)
         end
 
         if process_status.signaled?
