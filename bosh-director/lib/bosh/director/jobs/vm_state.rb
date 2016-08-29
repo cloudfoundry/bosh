@@ -46,7 +46,7 @@ module Bosh::Director
         {
           :vm_cid => instance.vm_cid,
           :disk_cid => instance.managed_persistent_disk_cid,
-          :ips => ips,
+          :ips => instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip },
           :dns => dns_records,
           :agent_id => instance.agent_id,
           :job_name => instance.job,
