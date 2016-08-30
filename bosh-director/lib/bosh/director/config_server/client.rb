@@ -41,6 +41,8 @@ module Bosh::Director::ConfigServer
       end
     end
 
+    # @param [Hash] deployment_manifest Deployment Manifest Hash to be interpolated
+    # @return [Hash] A Deep copy of the interpolated manifest Hash
     def interpolate_deployment_manifest(deployment_manifest)
       index_type = Integer
       any_string = String
@@ -61,7 +63,8 @@ module Bosh::Director::ConfigServer
       interpolate(deployment_manifest, ignored_subtrees)
     end
 
-
+    # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
+    # @return [Hash] A Deep copy of the interpolated manifest Hash
     def interpolate_runtime_manifest(runtime_manifest)
       index_type = Integer
       any_string = String
@@ -75,6 +78,18 @@ module Bosh::Director::ConfigServer
     end
 
     private
+
+    def get_value_for_key(key)
+      response = @config_server_http_client.get(key)
+
+      if response.kind_of? Net::HTTPOK
+        JSON.parse(response.body)['value']
+      elsif response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
+      else
+        raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
+      end
+    end
 
     def fetch_config_values(keys)
       invalid_keys = []
@@ -113,16 +128,6 @@ module Bosh::Director::ConfigServer
 
       unless response.kind_of? Net::HTTPSuccess
         raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
-      end
-    end
-
-    def get_value_for_key(key)
-      response = @config_server_http_client.get(key)
-
-      if response.kind_of? Net::HTTPSuccess
-        JSON.parse(response.body)['value']
-      else
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
       end
     end
   end

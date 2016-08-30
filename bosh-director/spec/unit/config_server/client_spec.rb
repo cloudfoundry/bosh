@@ -2,27 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe Client do
-    class MockSuccessResponse < Net::HTTPSuccess
-      attr_accessor :body
+    subject(:client) { Client.new(http_client, logger) }
+    let(:logger) { double('Logging::Logger') }
 
-      def initialize
-        super(nil, Net::HTTPOK, nil)
-      end
+    before do
+      allow(logger).to receive(:info)
     end
-
-    class MockFailedResponse < Net::HTTPClientError
-      def initialize
-        super(nil, Net::HTTPNotFound, nil)
-      end
-    end
-
-    def generate_success_response(body)
-      result = MockSuccessResponse.new
-      result.body = body
-      result
-    end
-
-    subject(:client) { Client.new(http_client, nil) }
 
     context '#interpolate' do
       let(:interpolated_manifest) { client.interpolate(manifest_hash, ignored_subtrees) }
@@ -136,8 +121,8 @@ module Bosh::Director::ConfigServer
         expect(interpolated_manifest).to eq(expected_manifest)
       end
 
-      it 'should raise an error message when key is missing from the config_server' do
-        allow(http_client).to receive(:get).with('missing_placeholder').and_return(MockFailedResponse.new)
+      it 'should raise a missing key error message when key is not found in the config_server' do
+        allow(http_client).to receive(:get).with('missing_placeholder').and_return(SampleNotFoundResponse.new)
 
         manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
         expect{
@@ -145,6 +130,15 @@ module Bosh::Director::ConfigServer
         }.to raise_error(
                Bosh::Director::ConfigServerMissingKeys,
                'Failed to find keys in the config server: missing_placeholder')
+      end
+
+      it 'should raise an unknown error when config_server returns any error other than a 404' do
+        allow(http_client).to receive(:get).with('missing_placeholder').and_return(SampleErrorResponse.new)
+
+        manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
+        expect{
+          interpolated_manifest
+        }.to raise_error(Bosh::Director::ConfigServerUnknownError)
       end
 
       context 'ignored subtrees' do
@@ -328,7 +322,7 @@ module Bosh::Director::ConfigServer
         let (:key) { '((smurf_password))'}
         let(:response_body) { {'value'=> 'very_secret'} }
         let(:mock_response) do
-          response = MockSuccessResponse.new
+          response = SampleSuccessResponse.new
           response.body = response_body.to_json
           response
         end
@@ -345,11 +339,23 @@ module Bosh::Director::ConfigServer
 
         context 'when key does NOT exist in config server' do
           before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(MockFailedResponse.new)
+            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
           end
           it 'makes a call to generate_password with trimmed key' do
-            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(MockSuccessResponse.new)
+            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
             client.populate_value_for(key, type)
+          end
+        end
+
+        context 'when an error is thrown from config server while checking if key exists' do
+          before do
+            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleErrorResponse.new)
+          end
+          it 'should raise an error' do
+            expect(http_client).to_not receive(:post)
+            expect{
+              client.populate_value_for(key, type)
+            }.to raise_error(Bosh::Director::ConfigServerUnknownError)
           end
         end
       end
@@ -372,8 +378,8 @@ module Bosh::Director::ConfigServer
 
         context 'when config server post response is not successful' do
           before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(MockFailedResponse.new)
-            allow(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(MockFailedResponse.new)
+            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
+            allow(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleNotFoundResponse.new)
           end
 
           it 'raises an error' do
@@ -398,14 +404,20 @@ module Bosh::Director::ConfigServer
 
         context 'when key does NOT exist in config server' do
           before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(MockFailedResponse.new)
+            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
           end
           it 'makes a call to generate_password with trimmed key' do
-            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(MockSuccessResponse.new)
+            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
             client.populate_value_for(key, type)
           end
         end
       end
+    end
+
+    def generate_success_response(body)
+      result = SampleSuccessResponse.new
+      result.body = body
+      result
     end
   end
 
@@ -465,5 +477,25 @@ module Bosh::Director::ConfigServer
       end
     end
 
+  end
+
+  class SampleSuccessResponse < Net::HTTPOK
+    attr_accessor :body
+
+    def initialize
+      super(nil, Net::HTTPOK, nil)
+    end
+  end
+
+  class SampleNotFoundResponse < Net::HTTPNotFound
+    def initialize
+      super(nil, Net::HTTPNotFound, 'Not Found Brah')
+    end
+  end
+
+  class SampleErrorResponse < Net::HTTPForbidden
+    def initialize
+      super(nil, Net::HTTPForbidden, 'There was a problem.')
+    end
   end
 end
