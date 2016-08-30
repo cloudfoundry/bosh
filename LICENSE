@@ -346,7 +346,7 @@ SECTION 5: Ruby Clause-6
    >>> minitar-0.5.4
    >>> netaddr-1.5.0
    >>> pg-0.15.1
-   >>> progressbar-0.9.2
+   >>> progressbar-0.21.0
    >>> thin-1.5.0
    >>> thin-1.5.1
    >>> trollop-1.16.2
@@ -4309,7 +4309,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
 
->>> progressbar-0.9.2
+>>> progressbar-0.21.0
 
 Ruby/ProgressBar is a free software with ABSOLUTELY NO WARRANTY under the terms of Ruby's license.
 
