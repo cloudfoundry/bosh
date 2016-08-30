@@ -540,10 +540,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     context 'when job does not exist in instance group' do
       it 'adds job' do
         subject.add_job(job_to_add)
-        expect(subject.templates.count).to eq(1)
+        expect(subject.jobs.count).to eq(1)
 
-        expect(subject.templates.first.name).to eq('foo')
-        expect(subject.templates.first.release.name).to eq('release1')
+        expect(subject.jobs.first.name).to eq('foo')
+        expect(subject.jobs.first.release.name).to eq('release1')
       end
     end
 

@@ -2,13 +2,13 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::LinkPath do
   let(:logger) { Logging::Logger.new('TestLogger') }
-  let(:template) {
+  let(:job) {
     instance_double(
         'Bosh::Director::DeploymentPlan::Job',
         {
-            name: 'provider_template',
+            name: 'provider_job',
             link_infos: {
-              'provider_job' => {
+              'provider_instance_group' => {
                 'provides' => {
                   'link_name' => {
                       'name' => 'link_name',
@@ -20,12 +20,12 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
         }
     )
   }
-  let(:provider_job) {
+  let(:provider_instance_group) {
     instance_double(
         'Bosh::Director::DeploymentPlan::InstanceGroup',
         {
-            name: 'provider_job',
-            templates: [template]
+            name: 'provider_instance_group',
+            jobs: [job]
         }
     )
   }
@@ -34,18 +34,18 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       'Bosh::Director::DeploymentPlan::Planner',
       {
         name: 'deployment_name',
-        instance_groups: [provider_job]
+        instance_groups: [provider_instance_group]
       }
     )
   }
 
-  let(:link_path) {described_class.new(deployment, 'consumer_job', 'consumer_job_template')}
+  let(:link_path) {described_class.new(deployment, 'consumer_instance_group', 'consumer_instance_group_job')}
 
   before do
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
     release_model.add_version(version)
-    previous_deployment = Bosh::Director::Models::Deployment.make(name: 'previous_deployment', link_spec_json: '{"provider_job":{"provider_template":{"link_name":{"link_name":{"instances":[]}}}}}')
+    previous_deployment = Bosh::Director::Models::Deployment.make(name: 'previous_deployment', link_spec_json: '{"provider_instance_group":{"provider_job":{"link_name":{"link_name":{"instances":[]}}}}}')
     version.add_deployment(previous_deployment)
   end
 
@@ -54,8 +54,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     it 'gets full link path' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('deployment_name')
-      expect(link_path.job).to eq('provider_job')
-      expect(link_path.template).to eq('provider_template')
+      expect(link_path.job).to eq('provider_instance_group')
+      expect(link_path.template).to eq('provider_job')
       expect(link_path.name).to eq('link_name')
     end
 
@@ -64,8 +64,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('deployment_name')
-        expect(link_path.job).to eq('provider_job')
-        expect(link_path.template).to eq('provider_template')
+        expect(link_path.job).to eq('provider_instance_group')
+        expect(link_path.template).to eq('provider_job')
         expect(link_path.name).to eq('link_name')
       end
     end
@@ -76,8 +76,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     it 'gets full link path' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('deployment_name')
-      expect(link_path.job).to eq('provider_job')
-      expect(link_path.template).to eq('provider_template')
+      expect(link_path.job).to eq('provider_instance_group')
+      expect(link_path.template).to eq('provider_job')
       expect(link_path.name).to eq('link_name')
     end
 
@@ -86,8 +86,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('deployment_name')
-        expect(link_path.job).to eq('provider_job')
-        expect(link_path.template).to eq('provider_template')
+        expect(link_path.job).to eq('provider_instance_group')
+        expect(link_path.template).to eq('provider_job')
         expect(link_path.name).to eq('link_name')
       end
     end
@@ -98,8 +98,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     it 'gets full link path' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('previous_deployment')
-      expect(link_path.job).to eq('provider_job')
-      expect(link_path.template).to eq('provider_template')
+      expect(link_path.job).to eq('provider_instance_group')
+      expect(link_path.template).to eq('provider_job')
       expect(link_path.name).to eq('link_name')
     end
 
@@ -108,8 +108,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('previous_deployment')
-        expect(link_path.job).to eq('provider_job')
-        expect(link_path.template).to eq('provider_template')
+        expect(link_path.job).to eq('provider_instance_group')
+        expect(link_path.template).to eq('provider_job')
         expect(link_path.name).to eq('link_name')
       end
     end
@@ -121,8 +121,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     it 'should attempt to implicitly fulfill the link' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('deployment_name')
-      expect(link_path.job).to eq('provider_job')
-      expect(link_path.template).to eq('provider_template')
+      expect(link_path.job).to eq('provider_instance_group')
+      expect(link_path.template).to eq('provider_job')
       expect(link_path.name).to eq('link_name')
     end
 
@@ -131,8 +131,8 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('deployment_name')
-        expect(link_path.job).to eq('provider_job')
-        expect(link_path.template).to eq('provider_template')
+        expect(link_path.job).to eq('provider_instance_group')
+        expect(link_path.template).to eq('provider_job')
         expect(link_path.name).to eq('link_name')
       end
     end
@@ -156,7 +156,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'when consumes block does not have from key, and an invalid link type' do
     let(:path) { {"name" => "link_name", "type" => "invalid_type"} }
     it 'should throw an error' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with type 'invalid_type' for job 'consumer_job' in deployment 'deployment_name'")
+      expect{link_path.parse(path)}.to raise_error("Can't find link with type 'invalid_type' for job 'consumer_instance_group' in deployment 'deployment_name'")
     end
 
     context 'when the link is optional' do
@@ -170,13 +170,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'unprovided_link_name', "deployment" => "deployment_name"} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'.")
     end
 
     context "when link is optional and the 'from' is explicitly set" do
       let(:path) { {"from" => 'unprovided_link_name', "deployment" => "deployment_name", "optional" => true} }
       it 'should throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'.")
       end
     end
   end
@@ -184,13 +184,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a different deployment that does not provide the correct link' do
     let(:path) { {"from" => 'unprovided_link_name', "deployment" => "previous_deployment"} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
     end
 
     context "when link is optional and 'from' is explicitly set" do
       let(:path) { {"from" => 'unprovided_link_name', "deployment" => "previous_deployment", "optional" => true} }
       it 'should not throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
       end
     end
   end
@@ -198,13 +198,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a bad link name' do
     let(:path) { {"from" => 'unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'.")
     end
 
     context 'when link is optional' do
       let(:path) { {"from" => 'unprovided_link_name', "optional" => true} }
       it 'should still throw an error because the user intent has not been met' do
-        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'.")
       end
     end
 
@@ -226,13 +226,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
 
   context 'when there are multiple links with the same type' do
     let(:path) { {"name" => 'link_name', 'type' => 'link_type'} }
-    let(:additional_template) {
+    let(:additional_job) {
       instance_double(
           'Bosh::Director::DeploymentPlan::Job',
           {
-              name: 'provider_template',
+              name: 'provider_job',
               link_infos: {
-                  'additional_provider_job' => {
+                  'additional_provider_instance_group' => {
                       'provides' => {
                           'link_name' => {
                               'name' => 'link_name',
@@ -244,12 +244,12 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
           }
       )
     }
-    let(:additional_provider_job) {
+    let(:additional_provider_instance_group) {
       instance_double(
           'Bosh::Director::DeploymentPlan::InstanceGroup',
           {
-              name: 'additional_provider_job',
-              templates: [additional_template]
+              name: 'additional_provider_instance_group',
+              jobs: [additional_job]
           }
       )
     }
@@ -258,22 +258,22 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
           'Bosh::Director::DeploymentPlan::Planner',
           {
               name: 'deployment_name',
-              instance_groups: [provider_job, additional_provider_job]
+              instance_groups: [provider_instance_group, additional_provider_instance_group]
           }
       )
     }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Multiple instance groups provide links of type 'link_type'. Cannot decide which one to use for instance group 'consumer_job'.
-   deployment_name.provider_job.provider_template.link_name
-   deployment_name.additional_provider_job.provider_template.link_name")
+      expect{link_path.parse(path)}.to raise_error("Multiple instance groups provide links of type 'link_type'. Cannot decide which one to use for instance group 'consumer_instance_group'.
+   deployment_name.provider_instance_group.provider_job.link_name
+   deployment_name.additional_provider_instance_group.provider_job.link_name")
     end
 
     context 'when link is optional' do
       let(:path) { {"name" => 'link_name', 'type' => 'link_type', 'optional' => true} }
       it 'should still throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Multiple instance groups provide links of type 'link_type'. Cannot decide which one to use for instance group 'consumer_job'.
-   deployment_name.provider_job.provider_template.link_name
-   deployment_name.additional_provider_job.provider_template.link_name")
+        expect{link_path.parse(path)}.to raise_error("Multiple instance groups provide links of type 'link_type'. Cannot decide which one to use for instance group 'consumer_instance_group'.
+   deployment_name.provider_instance_group.provider_job.link_name
+   deployment_name.additional_provider_instance_group.provider_job.link_name")
       end
     end
   end

@@ -55,14 +55,14 @@ module Bosh::Director
         link_network = link_info["network"]
         found_link_paths = []
 
-        @deployment_plan.instance_groups.each do |provides_job|
-          if !link_network || provides_job.has_network?(link_network)
-            provides_job.templates.each do |provides_template|
-              if provides_template.link_infos.has_key?(provides_job.name) && provides_template.link_infos[provides_job.name].has_key?('provides')
-                matching_links = provides_template.link_infos[provides_job.name]["provides"].select { |_,v| v["type"] == link_type }
+        @deployment_plan.instance_groups.each do |provides_instance_group|
+          if !link_network || provides_instance_group.has_network?(link_network)
+            provides_instance_group.jobs.each do |provides_job|
+              if provides_job.link_infos.has_key?(provides_instance_group.name) && provides_job.link_infos[provides_instance_group.name].has_key?('provides')
+                matching_links = provides_job.link_infos[provides_instance_group.name]["provides"].select { |_,v| v["type"] == link_type }
                 matching_links.each do |_, matching_link_values|
                   link_name = matching_link_values.has_key?("as") ? matching_link_values['as'] : matching_link_values['name']
-                  found_link_paths.push({:deployment => @deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => link_name})
+                  found_link_paths.push({:deployment => @deployment_plan.name, :job => provides_instance_group.name, :template => provides_job.name, :name => link_name})
                 end
               end
             end
@@ -106,14 +106,14 @@ module Bosh::Director
 
       def get_link_path_from_deployment_plan(name, link_network)
         found_link_paths = []
-        @deployment_plan.instance_groups.each do |job|
-          if !link_network || job.has_network?(link_network)
-            job.templates.each do |template|
-              if template.link_infos.has_key?(job.name) && template.link_infos[job.name].has_key?('provides')
-                template.link_infos[job.name]['provides'].to_a.each do |provides_name, source|
+        @deployment_plan.instance_groups.each do |instance_group|
+          if !link_network || instance_group.has_network?(link_network)
+            instance_group.jobs.each do |job|
+              if job.link_infos.has_key?(instance_group.name) && job.link_infos[instance_group.name].has_key?('provides')
+                job.link_infos[instance_group.name]['provides'].to_a.each do |provides_name, source|
                   link_name = source.has_key?("as") ? source['as'] : source['name']
                   if link_name == name
-                    found_link_paths.push({:deployment => @deployment_plan.name, :job => job.name, :template => template.name, :name => source['name'], :as => source['as']})
+                    found_link_paths.push({:deployment => @deployment_plan.name, :job => instance_group.name, :template => job.name, :name => source['name'], :as => source['as']})
                   end
                 end
               end

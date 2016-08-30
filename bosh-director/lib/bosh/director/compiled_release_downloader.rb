@@ -4,9 +4,9 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompiledReleaseDownloader
-    def initialize(compiled_packages_group, templates, blobstore_client)
+    def initialize(compiled_packages_group, jobs, blobstore_client)
       @compiled_packages_group = compiled_packages_group
-      @templates = templates
+      @jobs = jobs
       @blobstore_client = blobstore_client
     end
 
@@ -32,13 +32,13 @@ module Bosh::Director
       path = File.join(@download_dir, 'jobs')
       FileUtils.mkpath(path)
 
-      event_log_stage = event_log.begin_stage("copying jobs", @templates.count)
-      @templates.each do |template|
-        desc = "#{template.name}/#{template.version}"
+      event_log_stage = event_log.begin_stage("copying jobs", @jobs.count)
+      @jobs.each do |job|
+        desc = "#{job.name}/#{job.version}"
         event_log_stage.advance_and_track(desc) do
-          blobstore_id = template.blobstore_id
-          File.open(File.join(path, "#{template.name}.tgz"), 'w') do |f|
-            @blobstore_client.get(blobstore_id, f, sha1: template.sha1)
+          blobstore_id = job.blobstore_id
+          File.open(File.join(path, "#{job.name}.tgz"), 'w') do |f|
+            @blobstore_client.get(blobstore_id, f, sha1: job.sha1)
           end
         end
       end

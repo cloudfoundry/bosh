@@ -293,12 +293,12 @@ module Bosh::Director
       def validate_packages
         release_manager = Bosh::Director::Api::ReleaseManager.new
         validator = DeploymentPlan::PackageValidator.new(@logger)
-        instance_groups.each do |job|
-          job.templates.each do |template|
-            release_model = release_manager.find_by_name(template.release.name)
-            release_version_model = release_manager.find_version(release_model, template.release.version)
+        instance_groups.each do |instance_group|
+          instance_group.jobs.each do |job|
+            release_model = release_manager.find_by_name(job.release.name)
+            release_version_model = release_manager.find_version(release_model, job.release.version)
 
-            validator.validate(release_version_model, job.stemcell.model)
+            validator.validate(release_version_model, instance_group.stemcell.model)
           end
         end
         validator.handle_faults

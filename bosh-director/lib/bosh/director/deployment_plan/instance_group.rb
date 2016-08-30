@@ -45,9 +45,7 @@ module Bosh::Director
       attr_accessor :default_network
 
       # @return [Array<DeploymentPlan::Job] Jobs included on the instance group
-      attr_accessor :templates
-      # `jobs` is the correct name, keep `templates` around for backward compatibility
-      alias :jobs :templates
+      attr_accessor :jobs
 
       # @return [Hash] Instance group properties
       attr_accessor :properties
@@ -92,7 +90,7 @@ module Bosh::Director
         @logger = logger
 
         @release = nil
-        @templates = []
+        @jobs = []
         @properties = nil # Actual instance group properties
 
         @instances = []
@@ -144,7 +142,7 @@ module Bosh::Director
       # multiple templates in legacy form.
       def self.convert_from_legacy_spec(job_spec)
         return job_spec if !self.is_legacy_spec?(job_spec)
-        template = {
+        job = {
           "name" => job_spec["template"],
           "version" => job_spec["version"],
           "sha1" => job_spec["sha1"],
@@ -155,7 +153,7 @@ module Bosh::Director
         # So we will support this feature if a user want to use legacy spec. If they
         # want to use properties per template, let them use the regular way of defining
         # templates, i.e. by using the 'templates' key
-        job_spec['templates'] = [template]
+        job_spec['templates'] = [job]
       end
 
 
@@ -179,35 +177,35 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
-        if @templates.size >= 1
-          first_template = @templates[0]
+        if @jobs.size >= 1
+          first_job = @jobs[0]
           result = {
             "name" => @name,
             "templates" => [],
             # --- Legacy ---
-            "template" => first_template.name,
-            "version" => first_template.version,
-            "sha1" => first_template.sha1,
-            "blobstore_id" => first_template.blobstore_id
+            "template" => first_job.name,
+            "version" => first_job.version,
+            "sha1" => first_job.sha1,
+            "blobstore_id" => first_job.blobstore_id
           }
 
-          if first_template.logs
-            result["logs"] = first_template.logs
+          if first_job.logs
+            result["logs"] = first_job.logs
           end
           # --- /Legacy ---
 
-          @templates.each do |template|
-            template_entry = {
-              "name" => template.name,
-              "version" => template.version,
-              "sha1" => template.sha1,
-              "blobstore_id" => template.blobstore_id
+          @jobs.each do |job|
+            job_entry = {
+              "name" => job.name,
+              "version" => job.version,
+              "sha1" => job.sha1,
+              "blobstore_id" => job.blobstore_id
             }
 
-            if template.logs
-              template_entry["logs"] = template.logs
+            if job.logs
+              job_entry["logs"] = job.logs
             end
-            result["templates"] << template_entry
+            result["templates"] << job_entry
           end
           result
         end
@@ -255,14 +253,14 @@ module Bosh::Director
       def bind_properties
         @properties = {}
 
-        @templates.each do |template|
-          template.bind_properties(@name)
-          @properties[template.name] = template.properties[@name]
+        @jobs.each do |job|
+          job.bind_properties(@name)
+          @properties[job.name] = job.properties[@name]
         end
       end
 
       def validate_package_names_do_not_collide!
-        releases_by_package_names = templates
+        releases_by_package_names = jobs
                                       .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }
                                       .reduce({}) { |memo, package_name_and_release_version|
           package_name = package_name_and_release_version.first
@@ -275,13 +273,13 @@ module Bosh::Director
         releases_by_package_names.each do |package_name, releases|
           if releases.size > 1
             release1, release2 = releases.to_a[0..1]
-            offending_template1 = templates.find { |t| t.release == release1 }
-            offending_template2 = templates.find { |t| t.release == release2 }
+            offending_job1 = jobs.find { |job| job.release == release1 }
+            offending_job2 = jobs.find { |job| job.release == release2 }
 
             raise JobPackageCollision,
               "Package name collision detected in instance group '#{@name}': "\
-                  "job '#{release1.name}/#{offending_template1.name}' depends on package '#{release1.name}/#{package_name}', "\
-                  "job '#{release2.name}/#{offending_template2.name}' depends on '#{release2.name}/#{package_name}'. " +
+                  "job '#{release1.name}/#{offending_job1.name}' depends on package '#{release1.name}/#{package_name}', "\
+                  "job '#{release2.name}/#{offending_job2.name}' depends on '#{release2.name}/#{package_name}'. " +
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
           end
         end
@@ -332,13 +330,13 @@ module Bosh::Director
         @resolved_links
       end
 
-      def link_path(template_name, link_name)
-        @link_paths.fetch(template_name, {})[link_name]
+      def link_path(job_name, link_name)
+        @link_paths.fetch(job_name, {})[link_name]
       end
 
-      def add_link_path(template_name, link_name, link_path)
-        @link_paths[template_name] ||= {}
-        @link_paths[template_name][link_name] = link_path
+      def add_link_path(job_name, link_name, link_path)
+        @link_paths[job_name] ||= {}
+        @link_paths[job_name][link_name] = link_path
       end
 
       def compilation?
@@ -346,7 +344,7 @@ module Bosh::Director
       end
 
       def has_job?(name, release)
-        @templates.any? { |job| job.name == name && job.release.name == release }
+        @jobs.any? { |job| job.name == name && job.release.name == release }
       end
 
       def has_os?(os)
@@ -356,7 +354,7 @@ module Bosh::Director
       private
 
       def run_time_dependencies
-        templates.flat_map { |template| template.package_models }.uniq.map(&:name)
+        jobs.flat_map { |job| job.package_models }.uniq.map(&:name)
       end
     end
   end

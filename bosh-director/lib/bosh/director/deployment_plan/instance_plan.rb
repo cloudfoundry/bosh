@@ -241,7 +241,7 @@ module Bosh
         end
 
         def templates
-          @desired_instance.instance_group.templates
+          @desired_instance.instance_group.jobs
         end
 
         def job_changed?

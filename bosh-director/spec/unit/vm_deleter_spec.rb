@@ -26,7 +26,7 @@ module Bosh
         instance_group.vm_type = vm_type
         instance_group.stemcell = stemcell
         instance_group.env = env
-        instance_group.templates << job
+        instance_group.jobs << job
         instance_group.default_network = {"gateway" => "name"}
         instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
         allow(instance_group).to receive(:username).and_return('fake-username')

@@ -24,21 +24,21 @@ module Bosh::Director
       def initialize(consumed_link, link_path, deployment_plan, link_network)
         @consumed_link = consumed_link
         @link_path = link_path
-        @jobs = deployment_plan.instance_groups
+        @instance_groups = deployment_plan.instance_groups
         @link_network = link_network
       end
 
       def find_link_spec
-        job = @jobs.find { |j| j.name == @link_path.job }
+        instance_group = @instance_groups.find { |instance_group| instance_group.name == @link_path.job }
+        return nil unless instance_group
+
+        job = instance_group.jobs.find { |job| job.name == @link_path.template }
         return nil unless job
 
-        template = job.templates.find { |t| t.name == @link_path.template }
-        return nil unless template
-
-        found = template.provided_links(job.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
+        found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
         return nil unless found
 
-        Link.new(@link_path.name, job, template, @link_network).spec
+        Link.new(@link_path.name, instance_group, job, @link_network).spec
       end
     end
 

@@ -100,30 +100,30 @@ module Bosh::Director
 
       # legacy template parsing
       def parse_legacy_template(merged_global_and_instance_group_properties)
-        template_names = safe_property(@instance_group_spec, 'template', optional: true)
-        if template_names
-          if template_names.is_a?(Array)
+        job_names = safe_property(@instance_group_spec, 'template', optional: true)
+        if job_names
+          if job_names.is_a?(Array)
             @event_log.warn_deprecated(
               "Please use 'templates' when specifying multiple templates for a job. " +
               "'template' for multiple templates will soon be unsupported."
             )
           end
 
-          unless template_names.is_a?(Array) || template_names.is_a?(String)
-            invalid_type("template", "String or Array", template_names)
+          unless job_names.is_a?(Array) || job_names.is_a?(String)
+            invalid_type("template", "String or Array", job_names)
           end
 
           unless @instance_group.release
             raise InstanceGroupMissingRelease, "Cannot tell what release job '#{@instance_group.name}' is supposed to use, please explicitly specify one"
           end
 
-          Array(template_names).each do |template_name|
-            current_template = @instance_group.release.get_or_create_template(template_name)
-            current_template.add_properties(
+          Array(job_names).each do |job_name|
+            current_job = @instance_group.release.get_or_create_template(job_name)
+            current_job.add_properties(
               merged_global_and_instance_group_properties,
               @instance_group.name
             )
-            @instance_group.templates << current_template
+            @instance_group.jobs << current_job
           end
         end
       end
@@ -169,7 +169,7 @@ module Bosh::Director
             templates_models_list = release_versions_templates_models_hash[release_name]
             current_template_model = templates_models_list.find {|target| target.name == template_name }
 
-            template = release.get_or_create_template(template_name)
+            job = release.get_or_create_template(template_name)
 
             if current_template_model == nil
               raise "Job '#{template_name}' not found in Template table"
@@ -177,46 +177,46 @@ module Bosh::Director
 
             if current_template_model.consumes != nil
               current_template_model.consumes.each do |consumes|
-                template.add_link_from_release(@instance_group.name,'consumes', consumes["name"], consumes)
+                job.add_link_from_release(@instance_group.name,'consumes', consumes["name"], consumes)
               end
             end
             if current_template_model.provides != nil
               current_template_model.provides.each do |provides|
-                template.add_link_from_release(@instance_group.name, 'provides', provides["name"], provides)
+                job.add_link_from_release(@instance_group.name, 'provides', provides["name"], provides)
               end
             end
 
             provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true)
             provides_links.to_a.each do |link_name, source|
-              template.add_link_from_manifest(@instance_group.name, "provides", link_name, source)
+              job.add_link_from_manifest(@instance_group.name, "provides", link_name, source)
             end
 
             consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true)
             consumes_links.to_a.each do |link_name, source|
-              template.add_link_from_manifest(@instance_group.name, 'consumes', link_name, source)
+              job.add_link_from_manifest(@instance_group.name, 'consumes', link_name, source)
             end
 
             if job_spec.has_key?('properties')
-              template_properties = safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
+              job_properties = safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
             else
-              template_properties = merged_global_and_instance_group_properties
+              job_properties = merged_global_and_instance_group_properties
             end
-            template.add_properties(
-              template_properties,
+            job.add_properties(
+              job_properties,
               @instance_group.name
             )
 
-            @instance_group.templates << template
+            @instance_group.jobs << job
           end
         end
       end
 
       def check_job_uniqueness
-        all_names = @instance_group.templates.map(&:name)
-        @instance_group.templates.each do |template|
-          if all_names.count(template.name) > 1
+        all_names = @instance_group.jobs.map(&:name)
+        @instance_group.jobs.each do |job|
+          if all_names.count(job.name) > 1
             raise InstanceGroupInvalidTemplates,
-                  "Colocated job '#{template.name}' is already added to the instance group '#{@instance_group.name}'"
+                  "Colocated job '#{job.name}' is already added to the instance group '#{@instance_group.name}'"
           end
         end
       end

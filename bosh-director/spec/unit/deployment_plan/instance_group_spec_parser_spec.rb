@@ -360,7 +360,7 @@ module Bosh::Director
                                               .and_return(rel_ver)
 
                   allow(provides_job).to receive(:provided_links).and_return([provides_link])
-                  allow(provides_instance_group).to receive(:templates).and_return([provides_job])
+                  allow(provides_instance_group).to receive(:jobs).and_return([provides_job])
                   allow(deployment_plan).to receive(:instance_groups).and_return([provides_instance_group])
 
                   allow(rel_ver).to receive(:get_or_create_template)

@@ -487,7 +487,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'that does not match the job spec' do
           before do
-            instance_group.templates = [job]
+            instance_group.jobs = [job]
             allow(instance).to receive(:current_job_spec).and_return({})
           end
           let(:job) do

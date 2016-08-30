@@ -102,7 +102,7 @@ module Bosh
           errors = []
 
           deployment.instance_groups.each do |current_instance_group|
-            current_instance_group.templates.each do |current_job|
+            current_instance_group.jobs.each do |current_job|
               if current_job.link_infos.has_key?(current_instance_group.name) && current_job.link_infos[current_instance_group.name].has_key?('consumes')
                 current_job.link_infos[current_instance_group.name]['consumes'].each do |name, source|
                   link_path = LinkPath.new(deployment, current_instance_group.name, current_job.name)
