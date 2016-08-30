@@ -6,8 +6,7 @@ module Bosh::Director
     end
 
     def new_job_updater(deployment_plan, job)
-      links_resolver = DeploymentPlan::LinksResolver.new(deployment_plan, @logger)
-      JobUpdater.new(deployment_plan, job, links_resolver, DiskManager.new(@cloud, @logger))
+      JobUpdater.new(deployment_plan, job, DiskManager.new(@cloud, @logger))
     end
   end
 end

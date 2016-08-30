@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
-  subject(:job_updater) { described_class.new(deployment_plan, job, links_resolver, disk_manager) }
+  subject(:job_updater) { described_class.new(deployment_plan, job, disk_manager) }
   let(:disk_manager) { BD::DiskManager.new(cloud, logger)}
   let(:cloud) { instance_double(Bosh::Clouds) }
 
@@ -22,8 +22,6 @@ describe Bosh::Director::JobUpdater do
     })
   end
 
-  let(:links_resolver) { instance_double('Bosh::Director::DeploymentPlan::LinksResolver') }
-
   let(:update_config) {
     BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
   }
@@ -34,7 +32,6 @@ describe Bosh::Director::JobUpdater do
       allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans)
       allow(job).to receive(:did_change=)
     }
-    before {allow(links_resolver).to receive(:resolve)}
 
     let(:update_error) { RuntimeError.new('update failed') }
 

@@ -12,11 +12,6 @@ describe Bosh::Director::JobUpdaterFactory do
       deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
       job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
 
-      links_resolver = instance_double('Bosh::Director::DeploymentPlan')
-      expect(Bosh::Director::DeploymentPlan::LinksResolver).to receive(:new).
-        with(deployment_plan, logger).
-        and_return(links_resolver)
-
       job_updater = instance_double('Bosh::Director::JobUpdater')
       expect(Bosh::Director::JobUpdater).to receive(:new).and_return(job_updater)
 

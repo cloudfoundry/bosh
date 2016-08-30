@@ -23,8 +23,7 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
-      job_updater = JobUpdater.new(@deployment, @job, links_resolver, @disk_manager)
+      job_updater = JobUpdater.new(@deployment, @job, @disk_manager)
       job_updater.update
     end
 

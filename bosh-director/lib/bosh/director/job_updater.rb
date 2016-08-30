@@ -3,10 +3,9 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, links_resolver, disk_manager)
+    def initialize(deployment_plan, job, disk_manager)
       @deployment_plan = deployment_plan
       @job = job
-      @links_resolver = links_resolver
 
       @logger = Config.logger
       @event_log = Config.event_log
