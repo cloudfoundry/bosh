@@ -1,6 +1,5 @@
 require 'bosh/director/runtime_config/parsed_runtime_config'
 require 'bosh/director/runtime_config/runtime_manifest_parser'
-require 'bosh/director/runtime_config/runtime_manifest_resolver'
 require 'bosh/director/runtime_config/addon_include'
 require 'bosh/director/runtime_config/addon'
 require 'bosh/director/runtime_config/release'

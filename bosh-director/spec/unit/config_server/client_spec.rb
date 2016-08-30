@@ -22,9 +22,9 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    context '#interpolate' do
-      subject(:client) { Client.new(http_client, nil) }
+    subject(:client) { Client.new(http_client, nil) }
 
+    context '#interpolate' do
       let(:interpolated_manifest) { client.interpolate(manifest_hash, ignored_subtrees) }
       let(:manifest_hash) { {} }
       let(:ignored_subtrees) {[]}
@@ -147,42 +147,161 @@ module Bosh::Director::ConfigServer
                'Failed to find keys in the config server: missing_placeholder')
       end
 
-      it 'should not replace values in ignored subtrees' do
-        index_type = Integer
-        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
-
-        manifest_hash['instance_groups'] = [
+      context 'ignored subtrees' do
+        let(:mock_config_store) do
           {
-            'name' => '((name_placeholder))',
-            'jobs' => [
+            'release_1_placeholder' => generate_success_response({'value' => 'release_1'}.to_json),
+            'release_2_version_placeholder' => generate_success_response({'value' => 'v2'}.to_json),
+            'job_name' => generate_success_response({'value' => 'spring_server'}.to_json)
+          }
+        end
+
+        let(:manifest_hash) do
+          {
+            'releases' => [
+              {'name' => '((release_1_placeholder))', 'version' => 'v1'},
+              {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
+            ],
+            'instance_groups' => [
               {
-                'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_placeholder))' },
+                'name' => 'logs',
+                'env' => { 'smurf' => '((smurf_placeholder))' },
+                'jobs' => [
+                  {
+                    'name' => 'mysql',
+                    'properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
+                  },
+                  {
+                    'name' => '((job_name))'
+                  }
+                ],
+                'properties' => {'a' => ['123', 45, '((secret_key))']}
+              }
+            ],
+            'properties' => {
+              'global_property' => '((something))'
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => '((f_placeholder))'
+                }
               }
             ]
           }
-        ]
+        end
 
-        expected_manifest = {
-          'instance_groups' => [
-            {
-              'name' => 'test4',
-              'jobs' => [
-                {
-                  'name' => 'test_job',
-                  'properties' => { 'job_prop' => '((job_placeholder))' },
+        let(:interpolated_manifest_hash) do
+          {
+            'releases' => [
+              {'name' => 'release_1', 'version' => 'v1'},
+              {'name' => 'release_2', 'version' => 'v2'}
+            ],
+            'instance_groups' => [
+              {
+                'name' => 'logs',
+                'env' => {'smurf' => '((smurf_placeholder))'},
+                'jobs' => [
+                  {
+                    'name' => 'mysql',
+                    'properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
+                  },
+                  {
+                    'name' => 'spring_server'
+                  }
+                ],
+                'properties' => {'a' => ['123', 45, '((secret_key))']}
+              }
+            ],
+            'properties' => {
+              'global_property' => '((something))'
+            },
+            'resource_pools' => [
+              {
+                'name' => 'resource_pool_name',
+                'env' => {
+                  'f' => '((f_placeholder))'
                 }
-              ]
-            }
-          ]
-        }
+              }
+            ]
+          }
+        end
 
-        expect(interpolated_manifest).to eq(expected_manifest)
+        let(:ignored_subtrees) do
+          index_type = Integer
+          any_string = String
+
+          ignored_subtrees = []
+          ignored_subtrees << ['properties']
+          ignored_subtrees << ['instance_groups', index_type, 'properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
+          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
+          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
+          ignored_subtrees << ['instance_groups', index_type, 'env']
+          ignored_subtrees << ['jobs', index_type, 'env']
+          ignored_subtrees << ['resource_pools', index_type, 'env']
+          ignored_subtrees
+        end
+
+        it 'should not replace values in ignored subtrees' do
+          expect(interpolated_manifest).to eq(interpolated_manifest_hash)
+        end
+      end
+    end
+
+    describe '#interpolate_deployment_manifest' do
+      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+
+      let(:ignored_subtrees) do
+        index_type = Integer
+        any_string = String
+
+        ignored_subtrees = []
+        ignored_subtrees << ['properties']
+        ignored_subtrees << ['instance_groups', index_type, 'properties']
+        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
+        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+        ignored_subtrees << ['jobs', index_type, 'properties']
+        ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
+        ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
+        ignored_subtrees << ['instance_groups', index_type, 'env']
+        ignored_subtrees << ['jobs', index_type, 'env']
+        ignored_subtrees << ['resource_pools', index_type, 'env']
+        ignored_subtrees
+      end
+
+      it 'should call interpolate with the correct arguments' do
+        expect(subject).to receive(:interpolate).with({'name' => '{{placeholder}}'}, ignored_subtrees).and_return({'name' => 'smurf'})
+        result = subject.interpolate_deployment_manifest({'name' => '{{placeholder}}'})
+        expect(result).to eq({'name' => 'smurf'})
+      end
+    end
+
+    describe '#interpolate_runtime_manifest' do
+      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+
+      let(:ignored_subtrees) do
+        index_type = Integer
+        any_string = String
+
+        ignored_subtrees = []
+        ignored_subtrees << ['addons', index_type, 'properties']
+        ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
+        ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+        ignored_subtrees
+      end
+
+      it 'should call interpolate with the correct arguments' do
+        expect(subject).to receive(:interpolate).with({'name' => '{{placeholder}}'}, ignored_subtrees).and_return({'name' => 'smurf'})
+        result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'})
+        expect(result).to eq({'name' => 'smurf'})
       end
     end
 
     describe '#populate_value_for' do
-      subject(:client) { Client.new(http_client, nil) }
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
       context 'when key is nil' do
@@ -304,6 +423,32 @@ module Bosh::Director::ConfigServer
 
       it 'returns src as is' do
         expect(dummy_client.interpolate(src)).to eq(src)
+      end
+    end
+
+    describe '#interpolate_deployment_manifest' do
+      let(:manifest) do
+        {
+          'test' => 'smurf',
+          'test2' => '((placeholder))'
+        }
+      end
+
+      it 'returns manifest as is' do
+        expect(dummy_client.interpolate_deployment_manifest(manifest)).to eq(manifest)
+      end
+    end
+
+    describe '#interpolate_runtime_manifest' do
+      let(:manifest) do
+        {
+          'test' => 'smurf',
+          'test2' => '((placeholder))'
+        }
+      end
+
+      it 'returns manifest as is' do
+        expect(dummy_client.interpolate_runtime_manifest(manifest)).to eq(manifest)
       end
     end
 

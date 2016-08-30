@@ -12,7 +12,8 @@ module Bosh
 
         def manifest
           manifest_hash = YAML.load(properties)
-          Bosh::Director::RuntimeConfig::RuntimeManifestResolver.resolve_manifest(manifest_hash)
+          config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(Config.logger).create_client
+          config_server_client.interpolate_runtime_manifest(manifest_hash)
         end
 
         def raw_manifest

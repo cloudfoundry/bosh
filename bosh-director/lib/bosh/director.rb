@@ -118,7 +118,6 @@ require 'bosh/director/config_server/http_client'
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/diff_lines'
-require 'bosh/director/manifest/deployment_manifest_resolver'
 
 require 'bosh/director/log_bundles_cleaner'
 require 'bosh/director/logs_fetcher'

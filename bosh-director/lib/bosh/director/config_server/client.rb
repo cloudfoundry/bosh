@@ -41,6 +41,39 @@ module Bosh::Director::ConfigServer
       end
     end
 
+    def interpolate_deployment_manifest(deployment_manifest)
+      index_type = Integer
+      any_string = String
+
+      ignored_subtrees = []
+      ignored_subtrees << ['properties']
+      ignored_subtrees << ['instance_groups', index_type, 'properties']
+      ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
+      ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
+
+      ignored_subtrees << ['instance_groups', index_type, 'env']
+      ignored_subtrees << ['jobs', index_type, 'env']
+      ignored_subtrees << ['resource_pools', index_type, 'env']
+
+      interpolate(deployment_manifest, ignored_subtrees)
+    end
+
+
+    def interpolate_runtime_manifest(runtime_manifest)
+      index_type = Integer
+      any_string = String
+
+      ignored_subtrees = []
+      ignored_subtrees << ['addons', index_type, 'properties']
+      ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
+      ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+
+      interpolate(runtime_manifest, ignored_subtrees)
+    end
+
     private
 
     def fetch_config_values(keys)
@@ -97,6 +130,14 @@ module Bosh::Director::ConfigServer
   class DummyClient
     def interpolate(src, subtrees_to_ignore = [])
       Bosh::Common::DeepCopy.copy(src)
+    end
+
+    def interpolate_deployment_manifest(manifest)
+      Bosh::Common::DeepCopy.copy(manifest)
+    end
+
+    def interpolate_runtime_manifest(manifest)
+      Bosh::Common::DeepCopy.copy(manifest)
     end
 
     def populate_value_for(key, type)
