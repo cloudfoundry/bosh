@@ -483,6 +483,14 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'tcp keepalive values' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv4\.tcp_keepalive_time=120$/ }
+      its (:content) { should match /^net\.ipv4\.tcp_keepalive_intvl=30$/ }
+      its (:content) { should match /^net\.ipv4\.tcp_keepalive_probes=8$/ }
+    end
+  end
+
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
