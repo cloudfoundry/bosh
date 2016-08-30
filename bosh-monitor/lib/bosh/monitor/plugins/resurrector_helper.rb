@@ -42,7 +42,7 @@ module Bosh::Monitor::Plugins
       attr_accessor :percent_threshold
 
       def initialize(args={})
-        @agent_manager       = Bhm.agent_manager
+        @instance_manager    = Bhm.instance_manager
         @alert_times         = {} # maps JobInstanceKey to time of last Alert
         @minimum_down_jobs   = args.fetch('minimum_down_jobs', 5)
         @percent_threshold   = args.fetch('percent_threshold', 0.2)
@@ -70,7 +70,7 @@ module Bosh::Monitor::Plugins
       private
 
       def alerts_for_deployment(deployment)
-        agents = @agent_manager.get_agents_for_deployment(deployment)
+        agents = @instance_manager.get_agents_for_deployment(deployment)
         keys = agents.values.map { |agent|
           JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
         }

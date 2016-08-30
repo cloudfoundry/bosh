@@ -19,8 +19,8 @@ module Bosh::Monitor
       parse_json(body, Array)
     end
 
-    def get_deployment_vms(name)
-      http = perform_request(:get, "/deployments/#{name}/vms")
+    def get_deployment_instances(name)
+      http = perform_request(:get, "/deployments/#{name}/instances")
 
       body   = http.response
       status = http.response_header.http_status

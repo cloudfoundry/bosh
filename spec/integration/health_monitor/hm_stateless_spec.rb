@@ -7,7 +7,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   after { current_sandbox.health_monitor_process.stop }
 
   # ~1m20s
-  it 'resurrects stateless nodes' do
+  it 'resurrects stateless nodes if agent is not responding' do
     deploy_from_scratch
 
     original_vm = director.vm('foobar', '0')
@@ -15,6 +15,24 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     resurrected_vm = director.wait_for_vm('foobar', '0', 300)
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
   end
+
+  # ~5m
+  it 'resurrects stateless nodes if vm is missing for instance' do
+    deploy_from_scratch
+
+    current_sandbox.cpi.commands.make_create_vm_always_fail
+
+    original_vm = director.vm('foobar', '0')
+    original_vm.kill_agent
+
+    resurrected_vm = director.wait_for_vm('foobar', '0', 150)
+    expect(resurrected_vm).to be_nil
+
+    current_sandbox.cpi.commands.allow_create_vm_to_succeed
+    resurrected_vm = director.wait_for_vm('foobar', '0', 300)
+    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+  end
+
 
   it 'runs the pre-start scripts when the VM is resurrected' do
     manifest_hash = Bosh::Spec::Deployments.test_release_manifest.merge({

@@ -54,5 +54,12 @@ module Bosh::Monitor
     def rogue?
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
+
+    def update_instance(instance)
+        @job = instance.job
+        @index = instance.index
+        @cid = instance.cid
+        @instance_id = instance.id
+    end
   end
 end

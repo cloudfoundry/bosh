@@ -51,4 +51,24 @@ describe Bhm::Agent do
     expect(agent.name).to eq("oleg-cloud: mysql_node(iuuid) [id=zb, index=0, cid=deadbeef]")
   end
 
+  describe '#update_instance' do
+
+    context 'when given an instance' do
+
+      let(:instance) {
+        double('instance', job: 'job', index: 1, cid: 'cid', id: 'id')
+      }
+
+      it 'populates the corresponding attributes' do
+        agent = make_agent('agent_with_instance')
+
+        agent.update_instance(instance)
+
+        expect(agent.job).to eq(instance.job)
+        expect(agent.index).to eq(instance.index)
+        expect(agent.cid).to eq(instance.cid)
+        expect(agent.instance_id).to eq(instance.id)
+      end
+    end
+  end
 end
