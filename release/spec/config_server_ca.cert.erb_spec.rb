@@ -21,8 +21,8 @@ describe 'director.yml.erb.erb' do
     ERB.new(erb_yaml).result(binding)
   end
 
-  it 'should not raise an error when config server is enabled but no ca_cert is defined' do
-    expect { parsed_erb }.to_not raise_error()
+  it 'renders the ca cert to empty string when config server is enabled but no ca_cert is defined' do
+    expect(parsed_erb).to eq('')
   end
 
   context 'when all needed properties exist and it is enabled' do
@@ -32,16 +32,6 @@ describe 'director.yml.erb.erb' do
 
     it 'renders the ca cert correctly' do
       expect(parsed_erb).to eq('certs-r-us')
-    end
-
-    context 'when the certificate has no new lines' do
-      before do
-        deployment_manifest_fragment['properties']['director']['config_server']['ca_cert'] = "certs-r-us\\nsecond line"
-      end
-
-      it 'substitutes escaped new lines with newlines characters and renders the ca cert correctly' do
-        expect(parsed_erb).to eq("certs-r-us\nsecond line")
-      end
     end
   end
 
