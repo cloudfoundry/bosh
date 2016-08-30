@@ -113,7 +113,7 @@ module Bosh::Monitor
     end
 
     def analyze_agents
-      @logger.info "Analyzing agents..."
+      @logger.info("Analyzing agents...")
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
       @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "agent"), Time.now - started ])
@@ -154,7 +154,7 @@ module Bosh::Monitor
     end
 
     def analyze_instances
-      @logger.info "Analyzing instances..."
+      @logger.info("Analyzing instances...")
       started = Time.now
       count = 0
 

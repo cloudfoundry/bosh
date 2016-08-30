@@ -31,7 +31,7 @@ module Bosh::Monitor
         @instance_manager.setup_events
         setup_timers
         start_http_server
-        @logger.info "BOSH HealthMonitor #{Bhm::VERSION} is running..."
+        @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
       end
     end
 
@@ -84,7 +84,7 @@ module Bosh::Monitor
     end
 
     def start_http_server
-      @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
+      @logger.info("HTTP server is starting on port #{Bhm.http_port}...")
       @http_server = Thin::Server.new("127.0.0.1", Bhm.http_port, :signals => false) do
         Thin::Logging.silent = true
         map "/" do
@@ -95,7 +95,7 @@ module Bosh::Monitor
     end
 
     def poll_director
-      @logger.debug "Getting deployments from director..."
+      @logger.debug("Getting deployments from director...")
       Fiber.new { fetch_deployments }.resume
     end
 
@@ -156,9 +156,9 @@ module Bosh::Monitor
       deployments.each do |deployment|
         deployment_name = deployment["name"]
 
-        @logger.info "Found deployment '#{deployment_name}'"
+        @logger.info("Found deployment '#{deployment_name}'")
 
-        @logger.debug "Fetching instances information for '#{deployment_name}'..."
+        @logger.debug("Fetching instances information for '#{deployment_name}'...")
         instances_data = @director.get_deployment_instances(deployment_name)
         @instance_manager.sync_deployment_state(deployment_name, instances_data)
       end
