@@ -491,6 +491,13 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'root_maxkeys and maxkeys' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^kernel\.keys\.root_maxkeys=1000000$/ }
+      its (:content) { should match /^kernel\.keys\.maxkeys=1000000$/ }
+    end
+  end
+
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
