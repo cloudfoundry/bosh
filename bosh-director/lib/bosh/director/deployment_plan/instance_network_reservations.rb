@@ -9,7 +9,7 @@ module Bosh::Director
         reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance_model}'")
 
         state.fetch('networks', []).each do |network_name, network_config|
-          reservations.add_existing(instance_model, deployment, network_name,  network_config['ip'], '', network_config['type'])
+          reservations.add_existing(instance_model, deployment, network_name, network_config['ip'], '', network_config['type'])
         end
 
         reservations

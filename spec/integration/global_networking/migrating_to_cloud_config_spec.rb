@@ -91,5 +91,112 @@ describe 'migrating to cloud config', type: :integration do
         expect(director.vms.map(&:ips)).to eq(['192.168.1.3'])
       end
     end
+
+    context 'when using azs and migrated from' do
+      let(:legacy_manifest) do
+        {
+          'name' => 'simple',
+          'director_uuid' => 'deadbeef',
+          'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+          'networks' => [
+            {
+              'name' => 'a',
+              'subnets' => [
+                {
+                  'range' => '192.168.1.0/24',
+                  'gateway' => '192.168.1.1',
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'static' => ['192.168.1.10', '192.168.1.11', '192.168.1.12'],
+                  'reserved' => [],
+                  'cloud_properties' => {}
+                }
+              ]
+            }
+          ],
+
+          'resource_pools' => [
+            {'name' => 'a1', 'cloud_properties' => {}, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}, 'env' => {'bosh' => {'password' => 'foobar'}}},
+            {'name' => 'a2', 'cloud_properties' => {}, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}, 'env' => {'bosh' => {'password' => 'foobar'}}}
+          ],
+
+          'update' => {'canaries' => 2, 'canary_watch_time' => 4000, 'max_in_flight' => 1, 'update_watch_time' => 20},
+          'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}},
+          'jobs' => [
+            {'name' => 'foobar_z1', 'templates' => [{'name' => 'foobar'}], 'resource_pool' => 'a1', 'instances' => 2, 'networks' => [{'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11']}], 'properties' => {}},
+            {'name' => 'foobar_z2', 'templates' => [{'name' => 'foobar'}], 'resource_pool' => 'a2', 'instances' => 1, 'networks' => [{'name' => 'a', 'static_ips' => ['192.168.1.12']}], 'properties' => {}}
+          ]
+        }
+      end
+
+      let(:cloud_config_hash) do
+        {
+          'azs' => [
+            {'name' => 'z1'},
+            {'name' => 'z2'}
+          ],
+
+          'networks' => [
+            {
+              'name' => 'a',
+              'subnets' => [
+                {
+                  'azs' => ['z1', 'z2'],
+                  'range' => '192.168.1.0/24',
+                  'gateway' => '192.168.1.1',
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'static' => ['192.168.1.10', '192.168.1.11', '192.168.1.12'],
+                  'reserved' => [],
+                  'cloud_properties' => {}
+                }
+              ]
+            }
+          ],
+
+
+          'vm_types' => [
+            {'name' => 'a1', 'cloud_properties' => {}}
+          ],
+
+          'compilation' => {'az' => 'z1', 'vm_type' => 'a1', 'workers' => 1, 'network' => 'a'}
+        }
+      end
+
+      let(:second_deployment_manifest) do
+        {
+          'name' => 'simple',
+          'director_uuid' => 'deadbeef',
+          'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+          'stemcells' => [
+            {'name' => 'ubuntu-stemcell', 'version' => '1', 'alias' => 'a_stemcell'}
+          ],
+
+          'update' => {'canaries' => 2, 'canary_watch_time' => 4000, 'max_in_flight' => 1, 'update_watch_time' => 20},
+          'instance_groups' => [
+            {
+              'name' => 'foobar',
+              'migrated_from' => [
+                {'name' => 'foobar_z1', 'az' => 'z1'},
+                {'name' => 'foobar_z2', 'az' => 'z2'},
+              ],
+              'azs' => ['z1', 'z2'],
+              'jobs' => [{'name' => 'foobar'}],
+              'vm_type' => 'a1',
+              'stemcell' => 'a_stemcell',
+              'instances' => 3,
+              'networks' => [
+                {'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11', '192.168.1.12']}
+              ],
+              'properties' => {}
+            }
+          ]
+        }
+      end
+
+      it 'correctly assigns static ips to existing instances' do
+        deploy_simple_manifest(manifest_hash: legacy_manifest)
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        deploy_simple_manifest(manifest_hash: second_deployment_manifest)
+      end
+    end
   end
 end

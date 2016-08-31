@@ -49,6 +49,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
+    end
+  end
+
   context '/etc/securetty' do
     context 'disallows virtual console access (stig: V-38492)' do
       describe command("grep '^vc/[0-9]+' /etc/securetty") do
@@ -145,6 +151,20 @@ shared_examples_for 'every OS image' do
     describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
       it { should be_file }
       it { should contain('ModLoad imklog') }
+    end
+  end
+
+  context 'auditd should be installed but not enabled (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      # Agent is responsible for starting auditd
+      it { should_not be_enabled }
+    end
+  end
+
+  context 'rsyslog should be installed but not enabled' do
+    describe service('rsyslog') do
+      # Agent is responsible for starting rsyslog
+      it { should_not be_enabled }
     end
   end
 

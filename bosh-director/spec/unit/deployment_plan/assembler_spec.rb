@@ -5,9 +5,11 @@ module Bosh::Director
     subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, cloud, logger) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
+      using_global_networking?: false,
       skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
       recreate: false,
-      model: BD::Models::Deployment.make
+      model: BD::Models::Deployment.make,
+
     ) }
     let(:stemcell_manager) { nil }
     let(:dns_manager) { DnsManagerProvider.create }
