@@ -11,7 +11,6 @@ module Bosh::Director
           unless deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-          
           DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)
         end
       end
@@ -32,13 +31,17 @@ module Bosh::Director
         instance_group = @instance_groups.find { |instance_group| instance_group.name == @link_path.job }
         return nil unless instance_group
 
-        job = instance_group.jobs.find { |job| job.name == @link_path.template }
-        return nil unless job
+        if @link_path.disk?
+          DiskLink.new(@link_path.name).spec
+        else
+          job = instance_group.jobs.find { |job| job.name == @link_path.template }
+          return nil unless job
 
-        found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
-        return nil unless found
+          found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
+          return nil unless found
 
-        Link.new(@link_path.name, instance_group, job, @link_network).spec
+          Link.new(@link_path.name, instance_group, job, @link_network).spec
+        end
       end
     end
 

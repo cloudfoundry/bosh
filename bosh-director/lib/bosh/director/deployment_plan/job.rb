@@ -97,7 +97,7 @@ module Bosh::Director
 
       # return [Array]
       def model_consumed_links
-        present_model.consumes.to_a.map { |l| TemplateLink.parse("consumes", l) }
+        present_model.consumes.to_a.map { |l| TemplateLink.parse('consumes', l) }
       end
 
       # return [Array]
@@ -107,20 +107,24 @@ module Bosh::Director
 
       # return [Array]
       def consumed_links(job_name)
-        if @link_infos[job_name] != nil && @link_infos[job_name]["consumes"]  != nil
-          @link_infos[job_name]["consumes"].map { |_, link_info| TemplateLink.parse("consumes", link_info) }
-        else
-          return []
+        consumes_links_for_instance_group_name(job_name).map do |_, link_info|
+          TemplateLink.parse('consumes', link_info)
         end
       end
 
       # return [Array]
       def provided_links(job_name)
-        if @link_infos[job_name] != nil && @link_infos[job_name]["provides"] != nil
-          @link_infos[job_name]["provides"].map { |_, link_info| TemplateLink.parse("provides", link_info) }
-        else
-          return []
+        provides_links_for_instance_group_name(job_name).map do |_, link_info|
+          TemplateLink.parse('provides', link_info)
         end
+      end
+
+      def consumes_links_for_instance_group_name(instance_group_name)
+        links_of_kind_for_instance_group_name(instance_group_name, 'consumes')
+      end
+
+      def provides_links_for_instance_group_name(instance_group_name)
+        links_of_kind_for_instance_group_name(instance_group_name, 'provides')
       end
 
       def add_link_from_release(job_name, kind, link_name, source)
@@ -262,6 +266,12 @@ module Bosh::Director
         present_model.properties
       end
 
+      def links_of_kind_for_instance_group_name(instance_group_name, kind)
+        if link_infos.has_key?(instance_group_name) && link_infos[instance_group_name].has_key?(kind)
+          return link_infos[instance_group_name][kind]
+        end
+        return []
+      end
     end
   end
 end

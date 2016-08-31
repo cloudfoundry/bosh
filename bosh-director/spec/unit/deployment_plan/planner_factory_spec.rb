@@ -250,28 +250,10 @@ LOGMESSAGE
                 end
 
                 let(:job1) do
-                  instance_double('Bosh::Director::DeploymentPlan::Job',
-                      {
-                          name: 'provides_template',
-                          link_infos:{
-                              'job1-name' => {
-                                  'consumes' => {
-                                      'link_name' => {
-                                          'name' => 'link_name',
-                                          'type' => 'link_type'
-                                      }
-                                  },
-                                  'provides' => {
-                                      'link_name_2' => {
-                                          'properties' => [
-                                              'a'
-                                          ]
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                  )
+                  job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_template')
+                  job.add_link_from_release('job1-name', 'consumes', 'link_name', {'name' => 'link_name', 'type' => 'link_type'})
+                  job.add_link_from_release('job1-name', 'provides', 'link_name_2', {'properties' => ['a']})
+                  job
                 end
 
                 let(:instance_group1) do
@@ -322,8 +304,6 @@ LOGMESSAGE
 
                 it 'should have a link_path' do
                   allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                  allow(job1).to receive(:release).and_return(release)
-                  allow(job1).to receive(:properties).and_return({})
                   expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
                   expect(link_path).to receive(:parse)
                   expect(instance_group1).to receive(:add_link_path).with("provides_template", 'link_name', link_path)

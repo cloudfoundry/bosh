@@ -18,14 +18,14 @@ module Bosh::Director
         raise Exception, 'This instance group is not supposed to have multiple disks,
                           but tried to attach multiple disks.' if @collection.size > 0
 
-        add_to_collection(LegacyPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
+        add_to_collection(ManagedPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
       end
 
       def add_by_disk_type(disk_type)
         raise Exception, 'This instance group is not supposed to have multiple disks,
                         but tried to attach multiple disks.' if @collection.size > 0
 
-        add_to_collection(LegacyPersistentDisk.new(disk_type))
+        add_to_collection(ManagedPersistentDisk.new(disk_type))
       end
 
       def add_by_model(disk_model)
@@ -33,11 +33,15 @@ module Bosh::Director
       end
 
       def add_by_disk_name_and_type(disk_name, disk_type)
-        unless collection.find { |disk| disk.is_a? LegacyPersistentDisk }.nil?
-          raise Exception, 'This instance group cannot have multiple disks when using a legacy disk.'
+        unless collection.find { |disk| disk.managed? }.nil?
+          raise Exception, 'This instance group cannot have multiple disks when using a managed disk.'
         end
 
         add_to_collection(NewPersistentDisk.new(disk_name, disk_type))
+      end
+
+      def non_managed_disks
+        collection.reject { |disk| disk.managed? }
       end
 
       def needs_disk?
@@ -77,7 +81,7 @@ module Bosh::Director
 
         spec = {}
 
-        if collection.length == 1 && collection[0].is_a?(LegacyPersistentDisk)
+        if collection.length == 1 && collection[0].managed?
           # supply both for reverse compatibility with old agent
           spec['persistent_disk'] = collection[0].size
           # old agents will ignore this pool
@@ -128,7 +132,7 @@ module Bosh::Director
         end
       end
 
-      class LegacyPersistentDisk < PersistentDisk
+      class ManagedPersistentDisk < PersistentDisk
         attr_reader :spec
 
         def initialize(type)
