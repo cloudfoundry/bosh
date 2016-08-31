@@ -19,7 +19,7 @@ case $1 in
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
     # workaround. nginx upload module ignores the proxy_temp_path directive
-    ln -s $TMP_DIR/proxy /var/vcap/packages/nginx/proxy_temp
+    ln -fs $TMP_DIR/proxy /var/vcap/packages/nginx/proxy_temp
 
     # if the properties contain director.ssl.key & director.ssl.cert
     # the two files below will contain key & cert, then copy them to
