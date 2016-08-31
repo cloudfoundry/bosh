@@ -1,3 +1,5 @@
+require 'common/deep_copy'
+
 module Bosh
   module Director
     module DeploymentPlan
@@ -274,10 +276,13 @@ module Bosh
 
         def remove_dns_record_name_from_network_settings(network_settings)
           return network_settings if network_settings.nil?
-          network_settings.each do |name, network_setting|
+
+          modified_network_settings = Bosh::Common::DeepCopy.copy(network_settings)
+
+          modified_network_settings.each do |name, network_setting|
             network_setting.delete_if{|key, value| key == "dns_record_name"}
           end
-          network_settings
+          modified_network_settings
         end
 
         def env_changed?
