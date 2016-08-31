@@ -30,6 +30,7 @@ namespace :fly do
             SPEC_PATH: (ENV['SPEC_PATH'] || nil),
             GROUP: group,
             NUM_GROUPS: num_groups)
+        execute('test-integration', '-p')
       end
       name
     end
