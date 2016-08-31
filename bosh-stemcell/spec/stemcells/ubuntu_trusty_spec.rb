@@ -50,7 +50,14 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
-  context 'installed by system-network', {
+  context 'installed by system-network on all IaaSes' do
+    describe file('/etc/hostname') do
+      it { should be_file }
+      its (:content) { should eq('bosh-stemcell') }
+    end
+  end
+
+  context 'installed by system-network on some IaaSes', {
     exclude_on_vsphere: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
@@ -61,11 +68,6 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should be_file }
       it { should contain 'auto lo' }
       it { should contain 'iface lo inet loopback' }
-    end
-
-    describe file('/etc/hostname') do
-      it { should be_file }
-      it { should contain 'localhost' }
     end
   end
 
