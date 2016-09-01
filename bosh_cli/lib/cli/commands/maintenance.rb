@@ -6,8 +6,8 @@ module Bosh::Cli::Command
 
     # bosh cleanup
     usage 'cleanup'
-    desc 'Cleanup releases and stemcells'
-    option '--all', 'Remove all unused releases and stemcells'
+    desc 'Cleanup releases, stemcells and disks'
+    option '--all', 'Remove all unused releases, stemcells and disks'
     def cleanup
       target_required
       auth_required
