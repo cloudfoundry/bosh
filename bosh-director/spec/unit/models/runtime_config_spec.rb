@@ -8,7 +8,7 @@ module Bosh::Director::Models
 
     describe "#manifest" do
       let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
-      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::Client)}
+      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
       let(:logger) { instance_double(Logging::Logger)}
 
       before do

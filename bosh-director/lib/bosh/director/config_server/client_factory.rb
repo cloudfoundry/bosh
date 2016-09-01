@@ -21,9 +21,9 @@ module Bosh::Director::ConfigServer
 
     def create_client
       if @config_server_enabled
-        Client.new(HTTPClient.new, @logger)
+        EnabledClient.new(HTTPClient.new, @logger)
       else
-        DummyClient.new
+        DisabledClient.new
       end
     end
   end

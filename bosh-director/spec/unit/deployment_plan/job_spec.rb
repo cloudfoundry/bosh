@@ -106,7 +106,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-          let(:config_server_client) { double(Bosh::Director::ConfigServer::Client) }
+          let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
 
           before do
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
@@ -115,13 +115,16 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
             allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).with(anything).and_return(client_factory)
             allow(client_factory).to receive(:create_client).and_return(config_server_client)
-            allow(config_server_client).to receive(:populate_value_for)
 
             subject.bind_models
             subject.add_properties(user_defined_prop, 'instance_group_name')
           end
 
           it 'should drop user provided properties not specified in the release job spec properties' do
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil).and_return(1024)
+
             subject.bind_properties('instance_group_name')
 
             expect(subject.properties).to eq({
@@ -136,6 +139,10 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should include properties that are in the release job spec but not provided by a user' do
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil).and_return(2048)
+
             user_defined_prop.delete('dea_max_memory')
             subject.bind_properties('instance_group_name')
 
@@ -151,12 +158,21 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should not override user provided properties with release job spec defaults' do
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil).and_return(1024)
+
             subject.bind_properties('instance_group_name')
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
           end
 
           context 'when user specifies invalid property type for job' do
             let(:user_defined_prop) { {'deep_property' => false} }
+
+            before do
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 'cloudfoundry.com', nil)
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil)
+            end
 
             it 'raises an exception explaining which property is the wrong type' do
               expect {
@@ -168,16 +184,32 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
           context 'properties interpolation' do
             before do
+              user_defined_prop['cc_url'] = '((secret_url_password_placeholder))'
+
               release_job_spec_prop['cc_url']['type'] = 'password'
               release_job_spec_prop['deep_property.dont_override']['type'] = nil
               release_job_spec_prop['dea_max_memory']['type'] = 'vroom'
             end
 
-            it 'calls config server client populate_value_for for all job spec properties' do
-              expect(config_server_client).to receive(:populate_value_for).with('www.cc.com', 'password')
-              expect(config_server_client).to receive(:populate_value_for).with('def', nil)
-              expect(config_server_client).to receive(:populate_value_for).with(1024, 'vroom')
+            it 'calls config server client prepare_and_get_property for all job spec properties' do
+              expect(config_server_client).to receive(:prepare_and_get_property).with(
+                '((secret_url_password_placeholder))',
+                'cloudfoundry.com',
+                'password'
+              ).and_return('generated secret')
+              expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
+              expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom').and_return(1024)
               subject.bind_properties('instance_group_name')
+
+              expect(subject.properties).to eq({
+                                                 'instance_group_name' =>{
+                                                   'cc_url' => 'generated secret',
+                                                   'deep_property' =>{
+                                                     'dont_override' => 'def'
+                                                   },
+                                                   'dea_max_memory' =>1024
+                                                 }
+                                               })
             end
           end
         end

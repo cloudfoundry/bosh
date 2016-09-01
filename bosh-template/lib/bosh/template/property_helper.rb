@@ -45,6 +45,36 @@ module Bosh
 
         ref
       end
+
+      # Inject property with a given name and value to dst.
+      # @param [Hash] dst Property destination
+      # @param [String] name Property name (dot-separated)
+      # @param [Object] value Property value to be set
+      def set_property(dst, name, value)
+        keys = name.split('.')
+        dst_ref = dst
+
+        keys[0..-2].each do |key|
+          dst_ref[key] ||= {}
+          dst_ref = dst_ref[key]
+        end
+
+        dst_ref[keys[-1]] = value
+      end
+      
+      def validate_properties_format(properties, name)
+        keys = name.split('.')
+        properties_ref = properties
+
+        keys.each do |key|
+          unless properties_ref.is_a?(Hash)
+            raise Bosh::Template::InvalidPropertyType,
+                  "Property '#{name}' expects a hash, but received '#{properties_ref.class}'"
+          end
+          properties_ref = properties_ref[key]
+          break if properties_ref.nil? # no property with this name is src
+        end
+      end
     end
   end
 end

@@ -75,7 +75,7 @@ module Bosh::Director
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
         let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
-        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::Client)}
+        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
         let(:logger) { instance_double(Logging::Logger)}
 
         before do
@@ -134,7 +134,7 @@ module Bosh::Director
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
         let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
-        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::Client)}
+        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
         let(:logger) { instance_double(Logging::Logger)}
 
         before do
@@ -178,7 +178,7 @@ module Bosh::Director
 
       it 'does not call config server client even if config server is enabled' do
         allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::Client).to_not receive(:interpolate)
+        expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:interpolate)
         Manifest.generate_empty_manifest
       end
     end

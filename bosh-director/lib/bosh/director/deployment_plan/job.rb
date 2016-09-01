@@ -197,16 +197,18 @@ module Bosh::Director
       def bind_properties(instance_group_name)
         bound_properties = {}
         @properties[instance_group_name] ||= {}
+
         release_job_spec_properties.each_pair do |name, definition|
-          copy_property(
-              bound_properties,
-              @properties[instance_group_name],
-              name,
-              definition['default']
+          validate_properties_format(@properties[instance_group_name], name)
+
+          provided_property_value = lookup_property(@properties[instance_group_name], name)
+          property_value_to_use = @config_server_client.prepare_and_get_property(
+            provided_property_value,
+            definition['default'],
+            definition['type']
           )
 
-          key = lookup_property(@properties[instance_group_name], name)
-          @config_server_client.populate_value_for(key, definition['type'])
+          set_property(bound_properties, name, property_value_to_use)
         end
         @properties[instance_group_name] = bound_properties
       end

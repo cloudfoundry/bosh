@@ -7,21 +7,42 @@ describe 'using director with config server', type: :integration do
     bosh_runner.run_in_dir('upload release', ClientSandbox.links_release_dir, env: client_env)
   end
 
-  let (:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
+  let(:manifest_hash) do
+    Bosh::Spec::Deployments.test_release_manifest.merge(
+      {
+        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+          name: 'our_instance_group',
+          templates: [
+            {'name' => 'job_1_with_many_properties',
+             'properties' => job_properties
+            }
+          ],
+          instances: 1
+        )]
+      })
+  end
   let (:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
   let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
   let (:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+  let(:job_properties) do
+    {
+      'gargamel' => {
+        'color' => '((my_placeholder))'
+      },
+      'smurfs' => {
+        'happiness_level' => 10
+      }
+    }
+  end
 
   context 'when config server certificates are not trusted' do
     with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
     before do
       bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
-      bosh_runner.run('logout')
     end
 
     it 'throws certificate validator error' do
-      manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
       output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
                                               cloud_config_hash: cloud_config, failure_expected: true,
                                               return_exit_code: true, env: client_env)
@@ -36,55 +57,47 @@ describe 'using director with config server', type: :integration do
 
     before do
       bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
-      bosh_runner.run('logout')
     end
 
     context 'when deployment manifest has placeholders' do
-      before do
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
-      end
-
       it 'raises an error when config server does not have values for placeholders' do
         output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
                                                 cloud_config_hash: cloud_config, failure_expected: true,
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to find keys in the config server: test_property')
+        expect(output).to include('Failed to find keys in the config server: my_placeholder')
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
-        config_server_helper.put_value('test_placeholder', 'cats are happy')
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_placeholder))'}
+        config_server_helper.put_value('my_placeholder', 'he is colorless')
 
         deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-        expect(deploy_output).to_not include('cats are happy')
+        expect(deploy_output).to_not include('he is colorless')
 
         debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
-        expect(debug_output).to_not include('cats are happy')
+        expect(debug_output).to_not include('he is colorless')
       end
 
       it 'replaces placeholders in the manifest when config server has value for placeholders' do
-        config_server_helper.put_value('test_property', 'cats are happy')
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+        config_server_helper.put_value('my_placeholder', 'cats are happy')
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-        vm = director.vm('foobar', '0', env: client_env)
 
-        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        vm = director.vm('our_instance_group', '0', env: client_env)
 
-        expect(template).to include('test_property=cats are happy')
+        template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
 
       it 'returns original raw manifest when downloaded through cli' do
-        config_server_helper.put_value('smurf_placeholder', 'happy smurf')
-        manifest_hash['jobs'].first['properties'] = {'test_property' => '((smurf_placeholder))'}
+        config_server_helper.put_value('my_placeholder', 'happy smurf')
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
         downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
 
-        expect(downloaded_manifest).to include '((smurf_placeholder))'
+        expect(downloaded_manifest).to include '((my_placeholder))'
         expect(downloaded_manifest).to_not include 'happy smurf'
       end
 
@@ -93,162 +106,85 @@ describe 'using director with config server', type: :integration do
         after { current_sandbox.health_monitor_process.stop }
 
         it 'interpolates values correctly when resurrector kicks in' do
-          config_server_helper.put_value('test_property', 'cats are happy')
+          config_server_helper.put_value('my_placeholder', 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-          vm = director.vm('foobar', '0', env: client_env)
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=cats are happy')
-
-          config_server_helper.put_value('test_property', 'smurfs are happy')
+          config_server_helper.put_value('my_placeholder', 'smurfs are happy')
 
           vm.kill_agent
-          director.wait_for_vm('foobar', '0', 300, env: client_env)
+          director.wait_for_vm('our_instance_group', '0', 300, env: client_env)
 
-          new_vm = director.vm('foobar', '0', env: client_env)
-          template = new_vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=smurfs are happy')
+          new_vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
         end
       end
 
       context 'when config server values changes post deployment' do
         it 'updates the job on bosh redeploy' do
-          config_server_helper.put_value('test_property', 'cats are happy')
+          config_server_helper.put_value('my_placeholder', 'cats are happy')
 
-          manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-          vm = director.vm('foobar', '0', env: client_env)
 
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=cats are happy')
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
-          config_server_helper.put_value('test_property', 'dogs are happy')
+          config_server_helper.put_value('my_placeholder', 'dogs are happy')
 
           output = bosh_runner.run('deploy', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=dogs are happy')
+          new_vm = director.vm('our_instance_group', '0', env: client_env)
+          new_template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
         end
 
         it 'updates the job on start/restart/recreate' do
-          config_server_helper.put_value('test_property', 'cats are happy')
+          config_server_helper.put_value('my_placeholder', 'cats are happy')
 
-          manifest_hash['jobs'].first['properties'] = {'test_property' => '((test_property))'}
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-          vm = director.vm('foobar', '0', env: client_env)
 
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=cats are happy')
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           # ============================================
           # Restart
-          config_server_helper.put_value('test_property', 'dogs are happy')
+          config_server_helper.put_value('my_placeholder', 'dogs are happy')
           output = bosh_runner.run('restart', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=dogs are happy')
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
 
           # ============================================
           # Recreate
-          config_server_helper.put_value('test_property', 'smurfs are happy')
+          config_server_helper.put_value('my_placeholder', 'smurfs are happy')
           output = bosh_runner.run('recreate', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=smurfs are happy')
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
 
           # ============================================
           # start
-          config_server_helper.put_value('test_property', 'kittens are happy')
+          config_server_helper.put_value('my_placeholder', 'kittens are happy')
           bosh_runner.run('stop', env: client_env)
           output = bosh_runner.run('start', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to include('test_property=kittens are happy')
-        end
-      end
-
-      context 'when release job spec properties has type password' do
-        let(:manifest_hash) do
-          Bosh::Spec::Deployments.test_release_manifest.merge(
-            {
-              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
-                name: 'job_with_templates_having_properties',
-                templates: [
-                  {'name' => 'job_with_property_types',
-                   'properties' => job_properties
-                  }
-                ],
-                instances: 1
-              )]
-            })
-        end
-
-        context 'when these properties are defined in deployment manifest' do
-          let(:job_properties) do
-            {
-              'smurfs' => {
-                'phone_password' => '((smurfs_phone_password_placeholder))'
-              },
-              'gargamel' => {
-                'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
-              }
-            }
-          end
-
-          it 'generates passwords for these properties' do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-            vm = director.vm('job_with_templates_having_properties', '0', env: client_env)
-
-            template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-            expect(
-              template_hash['properties_list']['smurfs_phone_password']
-            ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
-            expect(
-              template_hash['properties_list']['gargamel_secret_recipe']
-            ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
-          end
-        end
-
-        context 'when these properties are NOT defined in deployment manifest' do
-          let(:job_properties) do
-            {
-              'gargamel' => {
-                'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
-              }
-            }
-          end
-
-          it 'does not ask config server to generate values and fails to deploy ' do
-            output, exit_code =  deploy_from_scratch(
-               no_login: true,
-               manifest_hash: manifest_hash,
-               cloud_config_hash: cloud_config,
-               failure_expected: true,
-               return_exit_code: true,
-               env: client_env
-             )
-
-            expect(exit_code).to_not eq(0)
-
-            expect(output).to include <<-EOF
-Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
-     - Unable to render templates for job 'job_with_property_types'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '["smurfs.phone_password"]')
-            EOF
-          end
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
         end
       end
 
@@ -280,7 +216,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
               'env1' => 'lazy smurf',
               'env2' => 'env_value2',
               'env3' => {
-                'color' => 'blue'
+                'color' => 'super_color'
               },
               'bosh' => {
                 'group_name' => 'foobar'
@@ -294,21 +230,20 @@ Error 100: Unable to render instance groups for deployment. Errors are:
             manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
             manifest_hash['jobs'] = [{
                                        'name' => 'foobar',
-                                       'templates' => ['name' => 'foobar'],
+                                       'templates' => ['name' => 'job_1_with_many_properties'],
                                        'vm_type' => 'vm-type-name',
                                        'stemcell' => 'default',
                                        'instances' => 1,
                                        'networks' => [{ 'name' => 'a' }],
-                                       'properties' => {},
+                                       'properties' => {'gargamel' => {'color' => 'black'}},
                                        'env' => env_hash
                                      }]
             manifest_hash
           end
 
           before do
-            manifest_hash['jobs'].first.delete('properties')
             config_server_helper.put_value('env1_placeholder', 'lazy smurf')
-            config_server_helper.put_value('color_placeholder', 'blue')
+            config_server_helper.put_value('color_placeholder', 'super_color')
           end
 
           it 'should interpolate them correctly' do
@@ -329,10 +264,10 @@ Error 100: Unable to render instance groups for deployment. Errors are:
             debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
 
             expect(deploy_output).to_not include('lazy smurf')
-            expect(deploy_output).to_not include('blue')
+            expect(deploy_output).to_not include('super_color')
 
             expect(debug_output).to_not include('lazy smurf')
-            expect(debug_output).to_not include('blue')
+            expect(debug_output).to_not include('super_color')
           end
         end
 
@@ -469,63 +404,106 @@ Error 100: Unable to render instance groups for deployment. Errors are:
     end
 
     context 'when runtime manifest has placeholders' do
-      let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
-
       context 'when config server does not have all keys' do
+        let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
+
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
           expect(output).to include('Error 540000: Failed to find keys in the config server: release_name')
         end
 
-        it 'will throw an error when property can not be found at render time' do
-          bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}", env: client_env)
-          config_server_helper.put_value('release_name', 'dummy2')
-          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
-          output, exit_code = deploy_from_scratch(
-            no_login: true,
-            manifest_hash: manifest_hash,
-            cloud_config_hash: cloud_config,
-            failure_expected: true,
-            return_exit_code: true,
-            env: client_env
-          )
-          expect(exit_code).to_not eq(0)
-          expect(output).to include('Failed to find keys in the config server: addon_prop')
+        context 'when property cannot be found at render time' do
+          let(:runtime_config) do
+            {
+              'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+              'addons' => [
+                {
+                  'name' => 'addon1',
+                  'jobs' => [
+                    {
+                      'name' => 'job_2_with_many_properties',
+                      'release' => 'bosh-release',
+                      'properties' => {'gargamel' => {'color' => '((placeholder_used_at_render_time))'}}
+                    }
+                  ]
+                }]
+            }
+          end
+
+          it 'will throw an error' do
+            config_server_helper.put_value('my_placeholder', 'I am here for deployment manifest')
+
+            upload_stemcell(env: client_env)
+            create_and_upload_test_release(env: client_env)
+            upload_cloud_config(env: client_env)
+            upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+
+            output, exit_code = deploy_simple_manifest(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              failure_expected: true,
+              return_exit_code: true,
+              env: client_env
+            )
+
+            expect(exit_code).to_not eq(0)
+            expect(output).to include('Failed to find keys in the config server: placeholder_used_at_render_time')
+          end
         end
       end
 
       context 'when config server has all keys' do
-        before do
-          bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}", env: client_env)
+        let(:runtime_config) do
+          {
+            'releases' => [{'name' => 'bosh-release', 'version' => '((addon_release_version_placeholder))'}],
+            'addons' => [
+              {
+                'name' => 'addon1',
+                'jobs' => [
+                  {
+                    'name' => 'job_2_with_many_properties',
+                    'release' => 'bosh-release',
+                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
+                  }
+                ]
+              }]
+          }
+        end
 
-          config_server_helper.put_value('release_name', 'dummy2')
-          config_server_helper.put_value('addon_prop', 'i am Groot')
+        before do
+          create_and_upload_test_release(env: client_env)
+
+          config_server_helper.put_value('my_placeholder', 'i am just here for regular manifest')
+          config_server_helper.put_value('addon_placeholder', 'addon prop first value')
+          config_server_helper.put_value('addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include("Successfully updated runtime config")
+          manifest_hash['jobs'].first['instances'] = 3
         end
 
         it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
-          expect(template).to include("echo 'i am Groot'")
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
 
           # change value in config server and redeploy
-          config_server_helper.put_value('addon_prop', 'smurfs are blue')
+          config_server_helper.put_value('addon_placeholder', 'addon prop second value')
 
           redeploy_output = bosh_runner.run('deploy', env: client_env)
 
           scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
 
-          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-          expect(scrubbed_redeploy_output).to include('Started updating job foobar > foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
 
-          vm = director.vm('foobar', '0', env: client_env)
-          template = vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
-          expect(template).to include('smurfs are blue')
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
         end
       end
     end
@@ -540,6 +518,198 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         errand_result = bosh_runner.run('run errand fake-errand-name --keep-alive', env: client_env)
 
         expect(errand_result).to include('test value')
+      end
+    end
+
+    context 'when release job spec properties have types' do
+      let(:manifest_hash) do
+        Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+            'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'our_instance_group',
+              templates: [
+                {'name' => 'job_with_property_types',
+                 'properties' => job_properties
+                }
+              ],
+              instances: 1
+            )]
+          })
+      end
+
+      context 'when types are generatable' do
+        context 'when type is password' do
+          context 'when these properties are defined in deployment manifest' do
+            context 'when these properties are NOT defined in the config server' do
+              let(:job_properties) do
+                {
+                  'smurfs' => {
+                    'phone_password' => '((smurfs_phone_password_placeholder))',
+                    'happiness_level' => 5
+                  },
+                  'gargamel' => {
+                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+                  }
+                }
+              end
+
+              context 'when the properties have default values defined' do
+
+                before do
+                  job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
+                end
+
+                it 'uses the default values defined' do
+                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                  vm = director.vm('our_instance_group', '0', env: client_env)
+
+                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                  expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+                end
+              end
+
+              context 'when the properties do NOT have default values defined' do
+                it 'generates passwords for these properties' do
+                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                  vm = director.vm('our_instance_group', '0', env: client_env)
+
+                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                  expect(
+                    template_hash['properties_list']['smurfs_phone_password']
+                  ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
+                  expect(
+                    template_hash['properties_list']['gargamel_secret_recipe']
+                  ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
+                end
+              end
+            end
+
+            context 'when these properties are defined in config server' do
+              let(:job_properties) do
+                {
+                  'smurfs' => {
+                    'phone_password' => '((smurfs_phone_password_placeholder))',
+                    'happiness_level' => 5
+                  },
+                  'gargamel' => {
+                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+                  }
+                }
+              end
+
+              it 'uses the values defined in config server' do
+                config_server_helper.put_value('smurfs_phone_password_placeholder', 'i am smurf')
+                config_server_helper.put_value('gargamel_secret_recipe_placeholder', 'banana and jaggery')
+
+                deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                vm = director.vm('our_instance_group', '0', env: client_env)
+
+                template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
+                expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+              end
+            end
+          end
+
+          context 'when these properties are NOT defined in deployment manifest' do
+            context 'when these properties have defaults' do
+              let(:job_properties) do
+                {
+                  'gargamel' => {
+                    'secret_recipe' => 'stuff'
+                  },
+                  'smurfs' => {
+                    'phone_password' => 'anything',
+                    'happiness_level' => 5
+                  }
+                }
+              end
+
+              it 'does not ask config server to generate values and uses default values to deploy' do
+                deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                vm = director.vm('our_instance_group', '0', env: client_env)
+                template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+              end
+            end
+
+            context 'when these properties DO NOT have defaults' do
+              let(:job_properties) do
+                # set this property so that it only complains about one missing property
+                {
+                  'gargamel' => {
+                    'secret_recipe' => 'anything',
+                  },
+                  'smurfs' => {
+                    'happiness_level' => 5
+                  }
+                }
+              end
+
+              it 'does not ask config server to generate values and fails to deploy while rendering templates' do
+                output, exit_code =  deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+
+                expect(output).to include <<-EOF
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
+     - Unable to render templates for job 'job_with_property_types'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '["smurfs.phone_password"]')
+                EOF
+              end
+            end
+          end
+        end
+      end
+
+      context 'when types are NOT generatable' do
+        context 'when these properties are defined in deployment manifest' do
+
+          let(:job_properties) do
+            {
+              'gargamel' => {
+                'secret_recipe' => 'stuff'
+              },
+              'smurfs' => {
+                'phone_password' => 'anything',
+                'happiness_level' => '((happy_level_placeholder))'
+              }
+            }
+          end
+
+          context 'when these properties are NOT defined in the config server' do
+            context 'when the properties do NOT have default values defined' do
+              it 'fails to deploy when not finding property in config server' do
+                output, exit_code =  deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+                expect(output).to include <<-EOF
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Failed to find keys in the config server: happy_level_placeholder
+                EOF
+              end
+            end
+          end
+        end
       end
     end
 

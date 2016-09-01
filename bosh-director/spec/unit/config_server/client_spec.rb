@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe Client do
-    subject(:client) { Client.new(http_client, logger) }
+  describe EnabledClient do
+    subject(:client) { EnabledClient.new(http_client, logger) }
     let(:logger) { double('Logging::Logger') }
 
     before do
@@ -295,120 +295,94 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    describe '#populate_value_for' do
+    describe '#prepare_and_get_property' do
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+      let(:ok_response) do
+        response = SampleSuccessResponse.new
+        response.body = {'value'=> 'hello'}.to_json
+        response
+      end
 
-      context 'when key is nil' do
-        it 'does NOT contact the config server' do
-          expect(http_client).to_not receive(:get)
-          expect(http_client).to_not receive(:post)
-          client.populate_value_for(nil, 'password')
+      context 'when property value provided is nil' do
+        it 'returns default value' do
+          expect(client.prepare_and_get_property(nil, 'my_default_value', 'some_type')).to eq('my_default_value')
         end
       end
 
-      context 'when the key does not start with (( and ends with ))' do
-        it 'does NOT contact the config server regardless of type' do
-          expect(http_client).to_not receive(:get)
-          expect(http_client).to_not receive(:post)
-          client.populate_value_for('key_1', 'password')
-          client.populate_value_for('key_2', nil)
-          client.populate_value_for('key_3', 'anything')
-          client.populate_value_for('((key_4)', 'password')
-        end
-      end
-
-      context 'password generation' do
-        let (:type) { 'password'}
-        let (:key) { '((smurf_password))'}
-        let(:response_body) { {'value'=> 'very_secret'} }
-        let(:mock_response) do
-          response = SampleSuccessResponse.new
-          response.body = response_body.to_json
-          response
-        end
-
-        context 'when key already exists in config server' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(mock_response)
-          end
-          it 'does NOT make a call to generate_password' do
-            expect(http_client).to_not receive(:post)
-            client.populate_value_for(key, type)
+      context 'when property value is NOT nil' do
+        context 'when property value is NOT a placeholder (padded with brackets)' do
+          it 'returns that property value' do
+            expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil)).to eq('my_smurf')
+            expect(client.prepare_and_get_property('((my_smurf', 'my_default_value', nil)).to eq('((my_smurf')
+            expect(client.prepare_and_get_property('my_smurf))', 'my_default_value', 'whatever')).to eq('my_smurf))')
           end
         end
 
-        context 'when key does NOT exist in config server' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
-          end
-          it 'makes a call to generate_password with trimmed key' do
-            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
-            client.populate_value_for(key, type)
-          end
-        end
+        context 'when property value is a placeholder (padded with brackets)' do
+          let(:the_placeholder) { '((my_smurf))' }
 
-        context 'when an error is thrown from config server while checking if key exists' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleErrorResponse.new)
-          end
-          it 'should raise an error' do
-            expect(http_client).to_not receive(:post)
-            expect{
-              client.populate_value_for(key, type)
-            }.to raise_error(Bosh::Director::ConfigServerUnknownError)
-          end
-        end
-      end
-
-      context "when type is not the string 'password'" do
-        it 'does NOT contact the config server' do
-          expect(http_client).to_not receive(:get)
-          expect(http_client).to_not receive(:post)
-          client.populate_value_for('my_db_name', 'hello')
-          client.populate_value_for('my_db_name', nil)
-          client.populate_value_for('my_db_name', '')
-        end
-      end
-
-      context 'when type is password' do
-        let (:type) { 'password'}
-        let (:key) { '((smurf_password))'}
-        let(:response_body) { {'value'=> 'very_secret'} }
-        let(:mock_response) { generate_success_response(response_body.to_json) }
-
-        context 'when config server post response is not successful' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
-            allow(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleNotFoundResponse.new)
+          context 'when config server returns an error while checking for key' do
+            it 'raises an error' do
+              expect(http_client).to receive(:get).with('my_smurf').and_return(SampleErrorResponse.new)
+              expect{
+                client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)
+              }. to raise_error(Bosh::Director::ConfigServerUnknownError)
+            end
           end
 
-          it 'raises an error' do
-            expect{
-              client.populate_value_for(key, type)
-            }. to raise_error(
-              Bosh::Director::ConfigServerPasswordGenerationError,
-              'Config Server failed to generate password'
-            )
+          context 'when value is found in config server' do
+            it 'returns that property value as is' do
+              expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
+              expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq(the_placeholder)
+            end
           end
-        end
 
-        context 'when key already exists in config server' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(mock_response)
-          end
-          it 'does NOT make a call to generate_password' do
-            expect(http_client).to_not receive(:post)
-            client.populate_value_for(key, type)
-          end
-        end
+          context 'when value is NOT found in config server' do
+            before do
+              expect(http_client).to receive(:get).with('my_smurf').and_return(SampleNotFoundResponse.new)
+            end
 
-        context 'when key does NOT exist in config server' do
-          before do
-            allow(http_client).to receive(:get).with('smurf_password').and_return(SampleNotFoundResponse.new)
-          end
-          it 'makes a call to generate_password with trimmed key' do
-            expect(http_client).to receive(:post).with('smurf_password', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
-            client.populate_value_for(key, type)
+            context 'when default is defined' do
+              it 'returns the default value when type is nil' do
+                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq('my_default_value')
+              end
+
+              it 'returns the default value when type is defined' do
+                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
+              end
+
+              it 'returns the default value when type is defined and generatable' do
+                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
+              end
+            end
+
+            context 'when default is NOT defined i.e nil' do
+              let(:default_value){ nil }
+              context 'when type is generatable' do
+                context 'when type is password' do
+                  let(:type){ 'password'}
+                  it 'generates a password and returns the user provided value' do
+                    expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                    expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
+                  end
+
+                  it 'throws an error if generation of password errors' do
+                    expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleErrorResponse.new)
+
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type)
+                    }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
+                  end
+                end
+              end
+
+              context 'when type is NOT generatable' do
+                let(:type){ 'cat'}
+                it 'returns that the user provided value as is' do
+                  expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
+                end
+              end
+            end
           end
         end
       end
@@ -421,9 +395,9 @@ module Bosh::Director::ConfigServer
     end
   end
 
-  describe DummyClient do
+  describe DisabledClient do
 
-    subject(:dummy_client) { DummyClient.new }
+    subject(:dummy_client) { DisabledClient.new }
 
     describe '#interpolate' do
       let(:src) do
@@ -464,19 +438,14 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    describe '#populate_value_for' do
-      let(:src) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
+    describe '#prepare_and_get_property' do
+      it 'returns manifest property value if defined' do
+        expect(dummy_client.prepare_and_get_property('provided prop', 'default value is here', nil)).to eq('provided prop')
       end
-
-      it 'is a no op' do
-        expect(dummy_client).to respond_to(:populate_value_for).with(2).arguments
+      it 'returns default value when manifest value is nil' do
+        expect(dummy_client.prepare_and_get_property(nil, 'default value is here', nil)).to eq('default value is here')
       end
     end
-
   end
 
   class SampleSuccessResponse < Net::HTTPOK

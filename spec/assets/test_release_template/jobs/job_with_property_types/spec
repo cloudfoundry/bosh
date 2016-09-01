@@ -9,6 +9,13 @@ properties:
   smurfs.phone_password:
     description: The phone password of the smurfs village
     type: password
+  smurfs.happiness_level:
+    description: The level of the Smurfs overall happiness
+    type: happy
   gargamel.secret_recipe:
     description: The secret recipe of gargamel to take down the smurfs
+    type: password
+  gargamel.password:
+    description: The password I used for everything
+    default: abc123
     type: password
