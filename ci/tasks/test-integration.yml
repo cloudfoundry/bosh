@@ -15,7 +15,7 @@ run:
 params:
   RUBY_VERSION: replace-me
   DB:           replace-me
-  LOG_LEVEL:    INFO
+  LOG_LEVEL:    ERROR
   NUM_GROUPS:   8
   GROUP:        1,2,3,4,5,6,7,8
   SPEC_PATH:    ~
