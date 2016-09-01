@@ -24,6 +24,7 @@ module Bosh
         FileUtils.mkdir_p(@tmp_dir)
 
         @logger = Logging::Logger.new('DummyCPI')
+        @logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
         @logger.add_appenders(Logging.appenders.io(
             'DummyCPIIO',
             options['log_buffer'] || STDOUT
