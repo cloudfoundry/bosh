@@ -19,7 +19,7 @@ jobs:
   plan:
   - get: bosh-src
   - task: make
-    file: bosh-src/ci/pipelines/alpah-releases/tasks/make.yml
+    file: bosh-src/ci/pipelines/alpha-releases/tasks/make.yml
   - put: bosh-alpha-release-tarballs
     params:
       file: "release/*.tgz"
