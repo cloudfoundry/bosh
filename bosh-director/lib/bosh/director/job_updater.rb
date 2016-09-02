@@ -42,7 +42,7 @@ module Bosh::Director
       end
 
       @logger.info("Found #{instance_plans.size} instances to update")
-      event_log_stage = @event_log.begin_stage('Updating job', instance_plans.size, [ @job.name ])
+      event_log_stage = @event_log.begin_stage('Updating instance', instance_plans.size, [ @job.name ])
 
       ordered_azs = []
       instance_plans.each do | instance_plan |

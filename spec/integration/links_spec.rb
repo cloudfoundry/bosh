@@ -1283,10 +1283,10 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(output_1).to match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
         expect(output_1).to match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_1).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_1).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_1).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
 
 
         # ####################################################################
@@ -1308,10 +1308,10 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(output_2).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
         expect(output_2).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_2).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_2).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_2).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
 
         current_deployments = bosh_runner.run("deployments")
         expect(current_deployments).to match_output %(
@@ -1339,10 +1339,10 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(output_3).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
         expect(output_3).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_3).to match(/Started updating job deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to match(/Started updating job mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_3).to match(/Started updating job postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_3).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
       end
 
       it 'allows only the specified properties' do

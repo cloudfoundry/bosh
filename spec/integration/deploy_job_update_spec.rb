@@ -10,7 +10,7 @@ describe 'deploy job update', type: :integration do
     manifest_hash['properties'] = { 'test_property' => 2 }
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    updating_job_events = events('last').select { |e| e['stage'] == 'Updating job' }
+    updating_job_events = events('last').select { |e| e['stage'] == 'Updating instance' }
     expect(updating_job_events[0]['state']).to eq('started')
     expect(updating_job_events[1]['state']).to eq('started')
     expect(updating_job_events[2]['state']).to eq('finished')
@@ -22,7 +22,7 @@ describe 'deploy job update', type: :integration do
     manifest_hash['update']['max_in_flight'] = '70%'
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    updating_job_events = events('last').select { |e| e['stage'] == 'Updating job' }
+    updating_job_events = events('last').select { |e| e['stage'] == 'Updating instance' }
     expect(updating_job_events[0]['state']).to eq('started')
     expect(updating_job_events[0]['task']).to include('(canary)')
     expect(updating_job_events[1]['state']).to eq('finished')
@@ -159,12 +159,12 @@ describe 'deploy job update', type: :integration do
     task_events = events(task_id)
 
     failing_job_event = task_events[-2]
-    expect(failing_job_event['stage']).to eq('Updating job')
+    expect(failing_job_event['stage']).to eq('Updating instance')
     expect(failing_job_event['state']).to eq('failed')
     expect(scrub_random_ids(failing_job_event['task'])).to eq('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
     started_job_events = task_events.select do |e|
-      e['stage'] == 'Updating job' && e['state'] == "started"
+      e['stage'] == 'Updating instance' && e['state'] == "started"
     end
 
     expect(started_job_events.size).to eq(1)
@@ -173,7 +173,7 @@ describe 'deploy job update', type: :integration do
   def start_and_finish_times_for_job_updates(task_id)
     jobs = {}
     events(task_id).select do |e|
-      e['stage'] == 'Updating job' && %w(started finished).include?(e['state'])
+      e['stage'] == 'Updating instance' && %w(started finished).include?(e['state'])
     end.each do |e|
       jobs[e['task']] ||= {}
       jobs[e['task']][e['state']] = e['time']

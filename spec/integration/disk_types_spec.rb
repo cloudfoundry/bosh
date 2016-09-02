@@ -57,7 +57,7 @@ describe 'disk types', type: :integration do
 
       context 'when cloud_properties were not changed' do
         it 'does not update the job' do
-          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating job foobar')
+          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating instance foobar')
 
           director.vms.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
@@ -69,7 +69,7 @@ describe 'disk types', type: :integration do
         let(:cloud_properties) { {'type' => 'ssd'} }
 
         it 'does not update the job' do
-          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating job foobar')
+          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating instance foobar')
 
           director.vms.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
@@ -83,7 +83,7 @@ describe 'disk types', type: :integration do
 
       context 'when cloud_properties were not changed' do
         it 'does not update the job' do
-          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating job foobar')
+          expect(deploy_with_disk_type(disk_size, cloud_properties)).to_not include('Started updating instance foobar')
 
           director.vms.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
@@ -93,7 +93,7 @@ describe 'disk types', type: :integration do
 
       context 'when cloud_properties were changed' do
         it 'does update the job' do
-          expect(deploy_with_disk_type(disk_size, {'type' => 'ssd'})).to include('Started updating job foobar')
+          expect(deploy_with_disk_type(disk_size, {'type' => 'ssd'})).to include('Started updating instance foobar')
 
           director.vms.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)

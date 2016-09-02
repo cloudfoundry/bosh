@@ -138,7 +138,7 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value('my_placeholder', 'dogs are happy')
 
           output = bosh_runner.run('deploy', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           new_vm = director.vm('our_instance_group', '0', env: client_env)
           new_template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
@@ -159,7 +159,7 @@ describe 'using director with config server', type: :integration do
           # Restart
           config_server_helper.put_value('my_placeholder', 'dogs are happy')
           output = bosh_runner.run('restart', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
@@ -169,7 +169,7 @@ describe 'using director with config server', type: :integration do
           # Recreate
           config_server_helper.put_value('my_placeholder', 'smurfs are happy')
           output = bosh_runner.run('recreate', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
@@ -180,7 +180,7 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value('my_placeholder', 'kittens are happy')
           bosh_runner.run('stop', env: client_env)
           output = bosh_runner.run('start', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
@@ -394,7 +394,7 @@ describe 'using director with config server', type: :integration do
             expect(invocations.size).to eq(3) # 2 compilation vms and 1 for the one in the instance_group
 
             output = deploy_simple_manifest(no_login: true, manifest_hash: simple_manifest, env: client_env)
-            expect(output).to_not include('Started updating job foobar')
+            expect(output).to_not include('Started updating instance foobar')
 
             invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(invocations.size).to eq(3) # no vms should have been deleted/created
@@ -497,9 +497,9 @@ describe 'using director with config server', type: :integration do
 
           scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
 
-          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-          expect(scrubbed_redeploy_output).to include('Started updating job our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+          expect(scrubbed_redeploy_output).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+          expect(scrubbed_redeploy_output).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+          expect(scrubbed_redeploy_output).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))

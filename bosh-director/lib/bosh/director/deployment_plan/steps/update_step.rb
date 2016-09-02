@@ -43,7 +43,7 @@ module Bosh::Director
         end
 
         def update_jobs
-          @logger.info('Updating jobs')
+          @logger.info('Updating instances')
           @multi_job_updater.run(
             @base_job,
             @deployment_plan,
