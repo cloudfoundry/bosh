@@ -27,6 +27,7 @@ cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
 
 cd $agent_dir
+bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
