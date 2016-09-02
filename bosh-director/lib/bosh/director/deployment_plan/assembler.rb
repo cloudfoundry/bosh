@@ -29,19 +29,19 @@ module Bosh::Director
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
-      desired_jobs = @deployment_plan.instance_groups
+      desired_instance_groups = @deployment_plan.instance_groups
 
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
-      desired_jobs.each do |desired_job|
-        desired_instances = desired_job.desired_instances
-        existing_instances = job_migrator.find_existing_instances(desired_job)
-        instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
-        desired_job.add_instance_plans(instance_plans)
+      desired_instance_groups.each do |desired_instance_group|
+        desired_instances = desired_instance_group.desired_instances
+        existing_instances = job_migrator.find_existing_instances(desired_instance_group)
+        instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances)
+        desired_instance_group.add_instance_plans(instance_plans)
       end
 
-      instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-      @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_jobs)
+      instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
+      @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_instance_groups)
 
       bind_stemcells
       bind_templates

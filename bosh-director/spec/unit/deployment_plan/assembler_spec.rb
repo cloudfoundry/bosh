@@ -19,7 +19,7 @@ module Bosh::Director
 
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
-      let(:job) { instance_double(DeploymentPlan::InstanceGroup) }
+      let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -69,8 +69,8 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      context 'when there are desired jobs' do
-        def make_job(template_name)
+      context 'when there are desired instance_groups' do
+        def make_instance_group(template_name)
           instance_group = DeploymentPlan::InstanceGroup.new(logger)
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
@@ -82,22 +82,22 @@ module Bosh::Director
           instance_group
         end
 
-        let(:j1) { make_job('fake-job-1') }
-        let(:j2) { make_job('fake-job-2') }
+        let(:instance_group_1) { make_instance_group('fake-instance-group-1') }
+        let(:instance_group_2) { make_instance_group('fake-instance-group-2') }
 
-        before { allow(deployment_plan).to receive(:instance_groups).and_return([j1, j2]) }
+        before { allow(deployment_plan).to receive(:instance_groups).and_return([instance_group_1, instance_group_2]) }
 
-        it 'validates the jobs' do
-          expect(j1).to receive(:validate_package_names_do_not_collide!).once
-          expect(j2).to receive(:validate_package_names_do_not_collide!).once
+        it 'validates the instance_groups' do
+          expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
+          expect(instance_group_2).to receive(:validate_package_names_do_not_collide!).once
 
           assembler.bind_models
         end
 
-        context 'when the job validation fails' do
+        context 'when the instance_group validation fails' do
           it 'propagates the exception' do
-            expect(j1).to receive(:validate_package_names_do_not_collide!).once
-            expect(j2).to receive(:validate_package_names_do_not_collide!).once.and_raise('Unable to deploy manifest')
+            expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
+            expect(instance_group_2).to receive(:validate_package_names_do_not_collide!).once.and_raise('Unable to deploy manifest')
 
             expect { assembler.bind_models }.to raise_error('Unable to deploy manifest')
           end
