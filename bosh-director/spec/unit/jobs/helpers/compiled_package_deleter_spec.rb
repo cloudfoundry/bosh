@@ -2,8 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::Helpers::CompiledPackageDeleter do
-    subject(:package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger) }
-    let(:blob_deleter) { Jobs::Helpers::BlobDeleter.new(blobstore, logger) }
+    subject(:compiled_package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blobstore, logger) }
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:event_log) { EventLog::Log.new }
 
@@ -15,7 +14,8 @@ module Bosh::Director
 
         expect(blobstore).to receive(:delete).with('compiled-package-blb-1')
 
-        expect(package_deleter.delete(compiled_package)).to be_empty
+        compiled_package_deleter.delete(compiled_package)
+
         expect(Models::CompiledPackage.all).to be_empty
       end
 
@@ -24,13 +24,12 @@ module Bosh::Director
           allow(blobstore).to receive(:delete).and_raise("Failed to delete")
         end
 
-        it 'returns an error AND does not delete the compiled package from the database' do
+        it 'raises an error AND does not delete the compiled package from the database' do
           compiled_package = Models::CompiledPackage.make(
             package: Models::Package.make(name: 'package-name', version: 'version'),
             blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-          errors = package_deleter.delete(compiled_package)
-          expect(errors.count).to eq(1)
+          expect{ compiled_package_deleter.delete(compiled_package) }.to raise_error()
           expect(Models::CompiledPackage[compiled_package.id]).not_to be_nil
         end
 
@@ -40,7 +39,7 @@ module Bosh::Director
               package: Models::Package.make(name: 'package-name', version: 'version'),
               blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-            package_deleter.delete(compiled_package, {'force' => true})
+            compiled_package_deleter.delete(compiled_package, true)
             expect(Models::CompiledPackage.all).to be_empty
           end
 
@@ -49,7 +48,7 @@ module Bosh::Director
               package: Models::Package.make(name: 'package-name', version: 'version'),
               blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-            expect { package_deleter.delete(compiled_package, {'force' => true}) }.not_to raise_error
+            expect { compiled_package_deleter.delete(compiled_package, true) }.not_to raise_error
           end
         end
       end

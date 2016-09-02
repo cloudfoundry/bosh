@@ -1,19 +1,22 @@
 module Bosh::Director::Jobs
   module Helpers
     class TemplateDeleter
-      def initialize(blob_deleter, logger)
-        @blob_deleter = blob_deleter
+      def initialize(blobstore, logger)
+        @blobstore = blobstore
         @logger = logger
       end
 
       def delete(template, force)
         @logger.info("Deleting job: #{template.name}/#{template.version}")
-        errors = []
-        if @blob_deleter.delete(template.blobstore_id, errors, force)
-          template.remove_all_release_versions
-          template.destroy
+
+        begin
+          @blobstore.delete(template.blobstore_id)
+        rescue Exception => e
+          raise e unless force
         end
-        errors
+
+        template.remove_all_release_versions
+        template.destroy
       end
     end
   end

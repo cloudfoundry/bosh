@@ -1,32 +1,29 @@
 module Bosh::Director::Jobs
   module Helpers
     class PackageDeleter
-      def initialize(compiled_package_deleter, blob_deleter, logger)
+      def initialize(compiled_package_deleter, blobstore, logger)
         @compiled_package_deleter = compiled_package_deleter
-        @blob_deleter = blob_deleter
+        @blobstore = blobstore
         @logger = logger
       end
 
       def delete(package, force)
-        errors = []
         @logger.info("Deleting package #{package.name}/#{package.version}")
 
         package.compiled_packages.each do |compiled_package|
-          errors += @compiled_package_deleter.delete(compiled_package, {'force' => force})
+          @compiled_package_deleter.delete(compiled_package, force)
         end
-
-        delete_successful = true
 
         if package.blobstore_id
-          delete_successful = @blob_deleter.delete(package.blobstore_id, errors, force)
+          begin
+            @blobstore.delete(package.blobstore_id)
+          rescue Exception => e
+            raise e unless force
+          end
         end
 
-        if delete_successful
-          package.remove_all_release_versions
-          package.destroy
-        end
-
-        errors
+        package.remove_all_release_versions
+        package.destroy
       end
     end
   end

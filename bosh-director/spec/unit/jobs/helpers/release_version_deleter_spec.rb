@@ -5,9 +5,9 @@ module Bosh::Director
     describe ReleaseVersionDeleter do
       let(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger) }
       let(:compiled_package_deleter) { double('@todo', :delete => []) }
-      let(:blob_deleter) { double('@todo', :delete => true) }
-      let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
-      let(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
+      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, :delete => true) }
+      let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
+      let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:logger) { Logging::Logger.new('/dev/null') }
       let(:event_log) { Config.event_log }
       subject { described_class.new(release_deleter, package_deleter, template_deleter, logger, event_log) }
@@ -54,9 +54,9 @@ module Bosh::Director
 
             context 'when package deletion fails' do
               it 'tracks the error' do
-                expect(package_deleter).to receive(:delete).with(package, force).and_return([Exception.new])
-                errors = subject.delete(release_version, release, force)
-                expect(errors.length).to equal(1)
+                expect(package_deleter).to receive(:delete).with(package, force).and_raise('nope')
+                expect{ subject.delete(release_version, release, force) }.to raise_error('nope')
+                expect(Models::Template.all).to_not be_empty
               end
             end
 
@@ -78,9 +78,8 @@ module Bosh::Director
 
               context 'when template deletion fails' do
                 it 'tracks the error' do
-                  expect(template_deleter).to receive(:delete).with(template, force).and_return([Exception.new])
-                  errors = subject.delete(release_version, release, force)
-                  expect(errors.length).to equal(1)
+                  expect(template_deleter).to receive(:delete).with(template, force).and_raise('nope')
+                  expect{ subject.delete(release_version, release, force) }.to raise_error('nope')
                 end
               end
 
@@ -117,10 +116,7 @@ module Bosh::Director
           let(:force) { true }
 
           it 'deletes the release version' do
-            expect(blob_deleter).to receive(:delete) do |blobstore_id, errors, force |
-              errors << Exception.new
-              true
-            end
+            expect(blobstore).to receive(:delete).and_raise('nope')
 
             subject.delete(release_version, release, force)
             expect(Models::ReleaseVersion.all.length).to equal(0)

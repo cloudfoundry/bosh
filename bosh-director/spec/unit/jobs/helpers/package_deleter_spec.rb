@@ -3,10 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe PackageDeleter do
-      subject(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
-      let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
+      subject(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
       let(:event_log) { EventLog::Log.new }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       before { allow(blobstore).to receive(:delete) }
       let(:release_version_1) { Models::ReleaseVersion.make() }
@@ -44,10 +43,6 @@ module Bosh::Director
             expect(Models::CompiledPackage.all).to be_empty
           end
 
-          it 'should not return any errors' do
-            expect(package_deleter.delete(package, force)).to be_empty
-          end
-
           context 'when the package does not have source blobs and only contains compiled packages (and therefore the blobstore id is nil)' do
             before do
               package.update(blobstore_id: nil, sha1: nil)
@@ -65,13 +60,17 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).with('compiled_package_blobstore_id').and_raise('negative')
             end
 
-            it "should raise" do
-              # we don't beleive this is desirable behavior, but this was the previous behavior.
-              # if the compiled package is not deleted successfully, the package will fail to destroy.
-              # if we destroy the compiled package despite failing to delete it's blob, we lose the
-              # ability to delete the blob in the future.
-              # if we fail to destroy the compiled_pacakge, then destroy the package, we risk
-              # orphaning the compiled package.
+            it 'should raise' do
+              expect { package_deleter.delete(package, force) }.to raise_error()
+            end
+          end
+
+          context 'when failing to delete the package blob' do
+            before do
+              allow(blobstore).to receive(:delete).with('package_blobstore_id').and_raise('negative')
+            end
+
+            it 'should raise' do
               expect { package_deleter.delete(package, force) }.to raise_error()
             end
           end
@@ -107,6 +106,9 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).with('compiled_package_blobstore_id').and_raise('negative')
             end
 
+            # if the compiled package is not deleted successfully, the package will fail to destroy.
+            # if we destroy the compiled package despite failing to delete it's blob, we lose the
+            # ability to delete the blob in the future.
             it 'continues to delete the package' do
               package_deleter.delete(package, force)
               expect(Models::Package.all).to be_empty

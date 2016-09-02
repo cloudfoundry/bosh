@@ -10,33 +10,27 @@ module Bosh::Director::Jobs
       end
 
       def delete(release, force)
-        errors = []
-
         stage = @event_log.begin_stage('Deleting packages', release.packages.count)
         release.packages.each do |package|
           track_and_log(stage, "#{package.name}/#{package.version}") do
-            errors += @package_deleter.delete(package, force)
+            @package_deleter.delete(package, force)
           end
         end
 
         stage = @event_log.begin_stage('Deleting jobs', release.templates.count)
         release.templates.each do |template|
           track_and_log(stage, "#{template.name}/#{template.version}") do
-            errors += @template_deleter.delete(template, force)
+            @template_deleter.delete(template, force)
           end
         end
 
-        if errors.empty? || force
-          stage = @event_log.begin_stage('Deleting release versions', release.versions.count)
-          release.versions.each do |release_version|
-            track_and_log(stage, "#{release.name}/#{release_version.version}") do
-              release_version.destroy
-            end
+        stage = @event_log.begin_stage('Deleting release versions', release.versions.count)
+        release.versions.each do |release_version|
+          track_and_log(stage, "#{release.name}/#{release_version.version}") do
+            release_version.destroy
           end
-          release.destroy
         end
-
-        errors
+        release.destroy
       end
 
       private

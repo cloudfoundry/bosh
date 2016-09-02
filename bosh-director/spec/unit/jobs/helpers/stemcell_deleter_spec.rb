@@ -3,10 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::Helpers::StemcellDeleter do
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
-    let(:blob_deleter) { Jobs::Helpers::BlobDeleter.new(blobstore, logger) }
     let(:cloud) { Config.cloud }
-    let(:package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger)}
-    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, package_deleter, logger) }
+    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, logger) }
     let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
     before do

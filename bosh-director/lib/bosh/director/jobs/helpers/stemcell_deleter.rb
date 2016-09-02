@@ -3,9 +3,8 @@ module Bosh::Director::Jobs
     class StemcellDeleter
       include Bosh::Director::LockHelper
 
-      def initialize(cloud, compiled_package_deleter, logger)
+      def initialize(cloud, logger)
         @cloud = cloud
-        @compiled_package_deleter = compiled_package_deleter
         @logger = logger
       end
 

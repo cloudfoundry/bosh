@@ -19,15 +19,14 @@ module Bosh::Director
         @orphan_disk_manager = OrphanDiskManager.new(Config.cloud, Config.logger)
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
-        blobstore = App.instance.blobstores.blobstore
+        @blobstore = App.instance.blobstores.blobstore
         cloud = Config.cloud
-        @blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
-        compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(@blob_deleter, logger)
-        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger)
+        compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(@blobstore, logger)
+        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, logger)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
-        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, @blob_deleter, logger)
-        template_deleter = Helpers::TemplateDeleter.new(@blob_deleter, logger)
+        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, @blobstore, logger)
+        template_deleter = Helpers::TemplateDeleter.new(@blobstore, logger)
         release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger)
         release_version_deleter =
           Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log)
@@ -90,9 +89,8 @@ module Bosh::Director
         ephemeral_blob_stage = Config.event_log.begin_stage('Deleting ephemeral blobs', ephemeral_blobs.count)
         ephemeral_blobs.each do |ephemeral_blob|
           ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
-            if @blob_deleter.delete(ephemeral_blob.blobstore_id, [], false)
-              ephemeral_blob.destroy
-            end
+            @blobstore.delete(ephemeral_blob.blobstore_id)
+            ephemeral_blob.destroy
           end
         end
 
