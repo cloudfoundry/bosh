@@ -12,7 +12,7 @@ resources:
     bucket: {{uploader_bucket}}
     access_key_id: {{uploader_access_key_id}}
     secret_access_key: {{uploader_secret_access_key}}
-    regexp: "bosh.*\.dev\.(\\d+).tgz"
+    regexp: "bosh.*\\.dev\\.(\\d+)\\.tgz"
 
 jobs:
 - name: alpha-release
