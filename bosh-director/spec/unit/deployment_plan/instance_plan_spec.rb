@@ -146,7 +146,7 @@ module Bosh::Director::DeploymentPlan
                 "networks_changed? network settings changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
             )
 
-            expect(instance_plan.networks_changed?).to eq true
+            instance_plan.networks_changed?
           end
         end
 
