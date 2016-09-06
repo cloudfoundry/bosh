@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `cRIqmh9CZLfr3jdgkYpEHsj5yB7Ge5ZS`
+  - Update for CIS tests
+  - built from develop (04c48a6ec29605b547adcb6f68d02cbaa02a38cd)
+
 * `aL8fvTOVrw5FFakrMEy8kUIebgmqTGwV`
   - default hostname `bosh-stemcell`
   - increase maxkeys, root_maxkeys
@@ -474,6 +478,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `dUuH5OESdcG2gxlUY2sYRodjshUH9D8_`
+  - update for CIS tests
+  - built from develop (04c48a6ec29605b547adcb6f68d02cbaa02a38cd)
 
 * `XmT_1ipi1dbj0avjwSm2Zl1fpdd7p0VP`
   - default hostname `bosh-stemcell`
