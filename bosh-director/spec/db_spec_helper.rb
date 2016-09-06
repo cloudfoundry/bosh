@@ -23,13 +23,13 @@ module DBSpecHelper
 
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432)
         when 'mysql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger)
         when 'sqlite'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
         else
           raise "Unsupported DB value: #{ENV['DB']}"

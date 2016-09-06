@@ -161,7 +161,7 @@ module Bosh
           if regular
             super(regular)
           else
-            to_h.keys.map(&:to_sym)
+            marshal_dump.keys.map(&:to_sym)
           end
         end
       end
