@@ -202,7 +202,6 @@ describe 'network configuration', type: :integration do
     with_reset_sandbox_before_each
 
     context 'instance group has multiple networks' do
-
       let(:cloud_config_hash) {
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_hash['resource_pools'].first['size'] = 1
@@ -339,6 +338,36 @@ describe 'network configuration', type: :integration do
         vm = director.vm('foobar', '0', env: client_env)
         template = vm.read_job_template('foobar', 'bin/foobar_ctl')
         expect(template).to include('spec.ip=192.168.1.100')
+      end
+    end
+
+    context 'dynamic network' do
+      before { current_sandbox.health_monitor_process.start }
+      after { current_sandbox.health_monitor_process.stop }
+
+      it 'should update spec.ip with new ip on recreate' do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['networks'] = [{
+            'name' => 'a',
+            'type' => 'dynamic',
+            'cloud_properties' => {}
+          }
+        ]
+
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+        vm = director.vm('foobar','0', env: client_env)
+        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + vm.ips)
+
+        director.kill_vm_and_wait_for_resurrection(vm)
+
+        vm = director.vm('foobar','0', env: client_env)
+        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + vm.ips)
       end
     end
   end

@@ -33,7 +33,6 @@ module Bosh::Director
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => instance_group.link_spec,
-          'ip' => instance_plan.network_settings.network_ip_address,
           'address' => instance_plan.network_settings.network_address,
           'update' => instance_group.update_spec
         }
@@ -122,10 +121,18 @@ module Bosh::Director
         template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
 
         networks_hash = template_hash['networks']
+
+        ip = nil
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
           if @full_spec['job'] != nil
             settings_with_dns = network_settings.merge({'dns_record_name' => @dns_manager.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
             networks_hash[network_name] = settings_with_dns
+          end
+
+          defaults = network_settings['default'] || []
+
+          if defaults.include?('addressable') || (!ip && defaults.include?('gateway'))
+            ip = network_settings['ip']
           end
 
           if network_settings['type'] == 'dynamic'
@@ -138,6 +145,7 @@ module Bosh::Director
         end
 
         template_hash.merge({
+        'ip' => ip,
         'resource_pool' => @full_spec['vm_type']['name'],
         'networks' => modified_networks_hash
         })
