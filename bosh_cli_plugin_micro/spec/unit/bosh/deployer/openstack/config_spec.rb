@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'fog'
+require 'fog/openstack'
 
 describe Bosh::Deployer::Config do
   before { @dir = Dir.mktmpdir('bdc_spec') }
@@ -62,10 +62,10 @@ describe Bosh::Deployer::Config do
     Bosh::Deployer::Config.configure(config)
     openstack = double(Fog::Compute)
     allow(Fog::Compute).to receive(:new).and_return(openstack)
-    glance = double(Fog::Image)
-    allow(Fog::Image).to receive(:new).and_return(glance)
-    volume = double(Fog::Volume)
-    allow(Fog::Volume).to receive(:new).and_return(volume)
+    glance = double(Fog::Image::OpenStack::V1)
+    allow(Fog::Image::OpenStack::V1).to receive(:new).and_return(glance)
+    volume = double(Fog::Volume::OpenStack::V1)
+    allow(Fog::Volume::OpenStack::V1).to receive(:new).and_return(volume)
     cloud = Bosh::Deployer::Config.cloud
     expect(cloud.respond_to?(:openstack)).to be(true)
     expect(cloud.respond_to?(:registry)).to be(true)
