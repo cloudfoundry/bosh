@@ -2,9 +2,6 @@
 
 set -e
 
-export RUBY_VERSION=2.3.1
-
-
 source bosh-src/ci/tasks/utils.sh
 check_param RUBY_VERSION
 
