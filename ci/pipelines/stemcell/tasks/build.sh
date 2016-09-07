@@ -8,6 +8,13 @@ check_param HYPERVISOR
 check_param OS_NAME
 check_param OS_VERSION
 
+# optional
+: ${BOSHIO_TOKEN:=""}
+
+# outputs
+output_dir="stemcell"
+mkdir -p ${output_dir}
+
 export TASK_DIR=$PWD
 export CANDIDATE_BUILD_NUMBER=$( cat version/number | sed 's/\.0$//;s/\.0$//' )
 
@@ -48,21 +55,40 @@ done
 
 chown -R ubuntu:ubuntu bosh-src
 sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
+  set -e
+
   cd bosh-src
 
   bundle install --local
-  bundle exec rake stemcell:build_with_local_os_image_with_bosh_release_tarball[$IAAS,$HYPERVISOR,$OS_NAME,$OS_VERSION,go,$TASK_DIR/os-image/*.tgz,$TASK_DIR/bosh-release/*.tgz,$CANDIDATE_BUILD_NUMBER]
+  bundle exec rake stemcell:build[$IAAS,$HYPERVISOR,$OS_NAME,$OS_VERSION,go,bosh-os-images,bosh-$OS_NAME-$OS_VERSION-os-image.tgz]
+  rm -f ./tmp/base_os_image.tgz
 SUDO
 
-mkdir -p stemcell/
-
-base_path="stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent"
+stemcell_name="bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent"
 
 if [ -e bosh-src/tmp/*-raw.tgz ] ; then
   # openstack currently publishes raw files
-  mv bosh-src/tmp/*-raw.tgz $base_path-raw.tgz
-  echo -n $(sha1sum $base_path-raw.tgz | awk '{print $1}') > $base_path-raw.tgz.sha1
+  raw_stemcell_filename="${stemcell_name}-raw.tgz"
+  mv bosh-src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
+
+  if [ -n "${BOSHIO_TOKEN}" ]; then
+    raw_checksum="$(sha1sum "${output_dir}/${raw_stemcell_filename}" | awk '{print $1}')"
+    curl -X POST \
+      --fail \
+      -d "sha1=${raw_checksum}" \
+      -H "Authorization: bearer ${BOSHIO_TOKEN}" \
+      "https://bosh.io/checksums/${raw_stemcell_filename}"
+  fi
 fi
 
-mv bosh-src/tmp/*.tgz $base_path.tgz
-echo -n $(sha1sum $base_path.tgz | awk '{print $1}') > $base_path.tgz.sha1
+stemcell_filename="${stemcell_name}.tgz"
+mv bosh-src/tmp/*.tgz "${output_dir}/${stemcell_filename}"
+
+if [ -n "${BOSHIO_TOKEN}" ]; then
+  checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
+  curl -X POST \
+    --fail \
+    -d "sha1=${checksum}" \
+    -H "Authorization: bearer ${BOSHIO_TOKEN}" \
+    "https://bosh.io/checksums/${stemcell_filename}"
+fi

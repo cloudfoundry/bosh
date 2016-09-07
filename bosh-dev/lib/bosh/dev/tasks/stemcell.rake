@@ -73,38 +73,99 @@ namespace :stemcell do
     puts "OS image #{args.os_image_path} version '#{file.version}' uploaded to S3 in bucket '#{args.s3_bucket_name}' with key '#{args.s3_bucket_key}'."
   end
 
-  desc 'Build a stemcell with a remote pre-built base OS image'
-  task :build, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :os_image_key] do |_, args|
+  desc 'Download a remote pre-built base OS image'
+  task :download_os_image, [:os_image_s3_bucket_name, :os_image_key] do |_, args|
     begin
-      require 'uri'
-      require 'tempfile'
       require 'bosh/dev/download_adapter'
+      require 'bosh/dev/stemcell_dependency_fetcher'
 
-      os_image_versions_file = File.expand_path('../../../../../../bosh-stemcell/os_image_versions.json', __FILE__)
-      os_image_versions = JSON.load(File.open(os_image_versions_file))
-      os_image_version = os_image_versions[args.os_image_key]
-      puts "Using OS image #{args.os_image_key}, version #{os_image_version}"
+      puts "Using OS image #{args.os_image_key} from #{args.os_image_s3_bucket_name}"
 
-      os_image_uri = URI.join('http://s3.amazonaws.com/', "#{args.os_image_s3_bucket_name}/", args.os_image_key)
-      os_image_uri.query = URI.encode_www_form([['versionId', os_image_version]])
+      logger = Logging.logger($stdout)
+      downloader = Bosh::Dev::DownloadAdapter.new(logger)
+      fetcher = Bosh::Dev::StemcellDependencyFetcher.new(downloader, logger)
 
-      Dir.mktmpdir('os-image') do |download_path|
-        os_image_path = File.join(download_path, 'base_os_image.tgz')
-        downloader = Bosh::Dev::DownloadAdapter.new(Logging.logger($stdout))
-        downloader.download(os_image_uri, os_image_path)
+      mkdir_p('tmp')
+      os_image_path = File.join(Dir.pwd, 'tmp', 'base_os_image.tgz')
+      fetcher.download_os_image(
+        bucket_name: args.os_image_s3_bucket_name,
+        key:         args.os_image_key,
+        output_path: os_image_path,
+      )
 
-        Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, os_image_path)
-      end
-
+      puts "Successfully downloaded OS image to #{os_image_path}"
     rescue RuntimeError => e
       print_help
       raise e
     end
   end
 
-  desc 'Build a stemcell using a local OS image and release'
+  PINNED_MICRO_VERSION = '257.3'
+
+  desc "Download a remote BOSH micro release, pinned to #{PINNED_MICRO_VERSION}"
+  task :download_bosh_micro_release do |_, args|
+    begin
+      require 'bosh/dev/download_adapter'
+      require 'bosh/dev/stemcell_dependency_fetcher'
+
+      puts "Downloading BOSH micro release version '#{PINNED_MICRO_VERSION}'"
+
+      logger = Logging.logger($stdout)
+      downloader = Bosh::Dev::DownloadAdapter.new(logger)
+      fetcher = Bosh::Dev::StemcellDependencyFetcher.new(downloader, logger)
+
+      mkdir_p('tmp')
+      release_path = File.join(Dir.pwd, 'tmp', "bosh-#{PINNED_MICRO_VERSION}.tgz")
+      fetcher.download_bosh_micro_release(
+        bosh_version: PINNED_MICRO_VERSION,
+        output_path: release_path,
+      )
+
+      puts "Successfully downloaded BOSH micro release to #{release_path}"
+    rescue RuntimeError => e
+      print_help
+      raise e
+    end
+  end
+
+  desc 'Build a stemcell with a remote pre-built base OS image and bosh micro release'
+  task :build, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :os_image_key] do |_, args|
+    begin
+      require 'bosh/dev/download_adapter'
+      require 'bosh/dev/stemcell_dependency_fetcher'
+
+      logger = Logging.logger($stdout)
+      downloader = Bosh::Dev::DownloadAdapter.new(logger)
+      fetcher = Bosh::Dev::StemcellDependencyFetcher.new(downloader, logger)
+
+      mkdir_p('tmp')
+      if 'no' == ENV['BOSH_MICRO_ENABLED']
+        release_path = '/dev/null'
+      else
+        release_path = File.join(Dir.pwd, 'tmp', "bosh-#{PINNED_MICRO_VERSION}.tgz")
+        fetcher.download_bosh_micro_release(
+          bosh_version: PINNED_MICRO_VERSION,
+          output_path: release_path,
+        )
+      end
+      os_image_path = File.join(Dir.pwd, 'tmp', 'base_os_image.tgz')
+      fetcher.download_os_image(
+        bucket_name: args.os_image_s3_bucket_name,
+        key:         args.os_image_key,
+        output_path: os_image_path,
+      )
+
+      Rake::Task['stemcell:build_with_local_os_image_with_bosh_release_tarball'].invoke(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, os_image_path, release_path)
+    rescue RuntimeError => e
+      print_help
+      raise e
+    end
+  end
+
+  desc 'Build a stemcell using a local OS image and bosh micro release'
   task :build_with_local_os_image_with_bosh_release_tarball, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path, :bosh_release_tarball_path, :build_number] do |_, args|
     begin
+      require 'bosh/dev/build'
       require 'bosh/dev/gem_components'
       require 'bosh/stemcell/build_environment'
       require 'bosh/stemcell/definition'
@@ -112,6 +173,8 @@ namespace :stemcell do
       require 'bosh/stemcell/stage_runner'
       require 'bosh/stemcell/stemcell_packager'
       require 'bosh/stemcell/stemcell_builder'
+
+      args.with_defaults(build_number: Bosh::Dev::Build.build_number)
 
       gem_components = Bosh::Dev::GemComponents.new(args.build_number)
       definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, false)
@@ -172,16 +235,22 @@ namespace :stemcell do
   task :build_with_local_os_image, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path] do |_, args|
 
     begin
-      require 'bosh/dev/build'
+      require 'bosh/dev/download_adapter'
+      require 'bosh/dev/stemcell_dependency_fetcher'
 
-      # download bosh release from bucket
-      build = Bosh::Dev::Build.candidate
-      build_number = build.number
+      logger = Logging.logger($stdout)
+      downloader = Bosh::Dev::DownloadAdapter.new(logger)
+      fetcher = Bosh::Dev::StemcellDependencyFetcher.new(downloader, logger)
 
+      mkdir_p('tmp')
       if 'no' == ENV['BOSH_MICRO_ENABLED']
-        release_tarball_path = '/dev/null'
+        release_path = '/dev/null'
       else
-        release_tarball_path = build.release_tarball_path
+        release_path = File.join(Dir.pwd, 'tmp', "bosh-#{PINNED_MICRO_VERSION}.tgz")
+        fetcher.download_bosh_micro_release(
+          bosh_version: PINNED_MICRO_VERSION,
+          output_path: release_path,
+        )
       end
     rescue RuntimeError => e
       print_help
@@ -195,8 +264,7 @@ namespace :stemcell do
       args.operating_system_version,
       args.agent_name,
       args.os_image_path,
-      release_tarball_path,
-      build_number
+      release_path,
     )
   end
 

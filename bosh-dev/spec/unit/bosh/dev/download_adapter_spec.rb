@@ -14,6 +14,7 @@ module Bosh::Dev
       let(:uri) { URI(string_uri) }
       let(:write_path) { '/tmp/test.yml' }
       let(:content) { 'content' }
+      let(:http_options) { {:read_timeout=>300} }
 
       context 'when the remote file exists' do
         before { stub_request(:get, string_uri).to_return(body: content) }
@@ -46,6 +47,33 @@ module Bosh::Dev
           it 'still works as expected' do
             subject.download(string_uri, write_path)
             expect(File.read(write_path)).to eq(content)
+          end
+        end
+
+        context 'when the response is a redirect' do
+          before do
+            redirected_uri = 'http://otherdomin.uri/requesting/a/test.yml'
+            stub_request(:get, string_uri).to_return(:status => 301, :headers => { 'Location' => redirected_uri })
+            stub_request(:get, redirected_uri).to_return(:body => content)
+          end
+
+          it 'follows the redirect' do
+            subject.download(uri, write_path)
+            expect(File.read(write_path)).to eq('content')
+          end
+
+          context 'and the redirect is an infinite loop' do
+            before do
+              redirected_uri = 'http://otherdomin.uri/requesting/a/test.yml'
+              stub_request(:get, string_uri).to_return(:status => 301, :headers => { 'Location' => redirected_uri })
+              stub_request(:get, redirected_uri).to_return(:status => 301, :headers => { 'Location' => string_uri })
+            end
+
+            it 'eventually terminates and returns an error' do
+              expect {
+                subject.download(uri, write_path)
+              }.to raise_error(%r{infinite redirect loop while downloading 'http://a.sample.uri/requesting/a/test.yml'})
+            end
           end
         end
 
@@ -108,12 +136,34 @@ module Bosh::Dev
       end
 
       context 'when some error occurs' do
-        before { stub_request(:get, string_uri).to_return(status: 500) }
+        before { stub_request(:get, string_uri).to_return(status: [500, 'Internal Server Error']) }
 
         it 'raises an error' do
           expect {
             subject.download(uri, write_path)
-          }.to raise_error(%r{error 500 while downloading 'http://a.sample.uri/requesting/a/test.yml'})
+          }.to raise_error(%r{error 500 Internal Server Error while downloading 'http://a.sample.uri/requesting/a/test.yml'})
+        end
+
+        context 'and the response has a body' do
+          before { stub_request(:get, string_uri).to_return(status: [400, 'Bad Request'], body: 'Missing param foo') }
+
+          it 'raises an error containing the body' do
+            expect {
+              subject.download(uri, write_path)
+            }.to raise_error(%r{error 400 Bad Request while downloading 'http://a.sample.uri/requesting/a/test.yml': Missing param foo})
+          end
+        end
+      end
+
+      context 'when URI uses HTTPS' do
+        let(:string_uri) { 'https://a.sample.uri/requesting/a/test.yml' }
+        let(:http_options) { {:use_ssl => true, verify_mode: OpenSSL::SSL::VERIFY_NONE, :read_timeout=>300} }
+
+        it 'passes HTTPS options when opening the connection' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 443, nil, nil, nil, nil, http_options) { mock_http }
+          subject.download(uri, write_path)
         end
       end
 
@@ -123,7 +173,7 @@ module Bosh::Dev
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
           mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil) { mock_http }
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil, http_options) { mock_http }
           subject.download(uri, write_path)
         end
       end
@@ -134,7 +184,7 @@ module Bosh::Dev
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
           mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, 'user', 'password') { mock_http }
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, 'user', 'password', http_options) { mock_http }
           subject.download(uri, write_path)
         end
       end
@@ -148,7 +198,7 @@ module Bosh::Dev
           it 'uses the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
             mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil) { mock_http }
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil, http_options) { mock_http }
             subject.download(uri, write_path)
           end
         end
@@ -159,7 +209,7 @@ module Bosh::Dev
           it 'does not use the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
             mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil) { mock_http }
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil, http_options) { mock_http }
             subject.download(uri, write_path)
           end
         end
@@ -170,7 +220,7 @@ module Bosh::Dev
           it 'does not use the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
             mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil) { mock_http }
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil, http_options) { mock_http }
             subject.download(uri, write_path)
           end
         end

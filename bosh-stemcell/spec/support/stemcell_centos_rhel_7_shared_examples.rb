@@ -130,7 +130,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
-      it { should contain('"Type": "HTTP"') }
+      it { should contain('"Type": "InstanceMetadata"') }
     end
   end
 
