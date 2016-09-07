@@ -152,7 +152,7 @@ module Bosh::Director
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1', 'bosh' => {'group_name' => 'mysql_node', 'groups' => anything}})
+            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1', 'bosh' => {'group_name' => String, 'groups' => anything}})
                  .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
