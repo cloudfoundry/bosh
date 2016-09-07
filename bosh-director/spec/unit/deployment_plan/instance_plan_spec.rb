@@ -120,6 +120,36 @@ module Bosh::Director::DeploymentPlan
           instance_plan.networks_changed?
         end
 
+        context 'when dns_record_name exists in network_settings' do
+          let(:network_settings) do
+            {
+                'existing-network' =>{
+                    'type' => 'dynamic',
+                    'cloud_properties' =>{},
+                    'dns_record_name' => '0.job-1.my-network.deployment.bosh',
+                    'dns' => '10.0.0.1',
+                }
+            }
+          end
+          
+          it 'should ignore dns_record_name when comparing old and new network_settings' do
+            new_network_settings = {
+                'existing-network' =>{
+                    'type' => 'dynamic',
+                    'cloud_properties' =>{},
+                    'dns' => '10.0.0.1',
+                }
+            }
+
+            allow(logger).to receive(:debug)
+            expect(logger).to_not receive(:debug).with(
+                "networks_changed? network settings changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
+            )
+
+            instance_plan.networks_changed?
+          end
+        end
+
         context 'when there are obsolete plans' do
           let(:network_plans) do
             [
