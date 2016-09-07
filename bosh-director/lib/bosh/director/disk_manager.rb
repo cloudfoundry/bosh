@@ -56,13 +56,11 @@ module Bosh::Director
       end
 
       disk_associations = new_disk_unmanaged_models.map do |disk_model|
-         {'name' => disk_model.name, 'diskCID' => disk_model.disk_cid}
+         {'name' => disk_model.name, 'cid' => disk_model.disk_cid}
       end
 
-      @logger.debug("====DISKASSOCIATION: #{disk_associations.inspect}")
-
       agent_client(instance_model).associate_disks({
-        'diskAssociations' => disk_associations
+        'disk_associations' => disk_associations
       }) unless disk_associations.empty?
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)

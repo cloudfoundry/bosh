@@ -193,10 +193,9 @@ describe 'multiple persistent disks', type: :integration do
     high_perf_disk_cid = high_perf_disk_info['disk_cid']
     low_perf_disk_cid = low_perf_disk_info['disk_cid']
 
-    disk_associations = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
-    expect(disk_associations).to contain_exactly(
-      {"name"=>"high-iops-persistent-disk-name", "diskCid"=> high_perf_disk_cid},
-      {"name"=>"low-iops-persistent-disk-name",  "diskCid"=> low_perf_disk_cid}
+    disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_names).to contain_exactly(
+      "high-iops-persistent-disk-name", "low-iops-persistent-disk-name"
     )
   end
 end

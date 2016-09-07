@@ -364,8 +364,8 @@ module Bosh::Director
 
               it 'associates the disks with the agent' do
                 expect(agent_client).to receive(:associate_disks).with({
-                  'diskAssociations' => [
-                    {'name' => 'zak', 'diskCID' => 'new-disk-cid'},
+                  'disk_associations' => [
+                    {'name' => 'zak', 'cid' => 'new-disk-cid'},
                   ]
                 })
                 disk_manager.update_persistent_disk(instance_plan)
