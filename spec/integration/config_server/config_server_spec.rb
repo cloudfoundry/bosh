@@ -219,8 +219,7 @@ describe 'using director with config server', type: :integration do
                 'color' => 'super_color'
               },
               'bosh' => {
-                'group_name' => 'foobar',
-                'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                'group_name' => 'foobar'
               },
             }
           end
@@ -296,8 +295,7 @@ describe 'using director with config server', type: :integration do
               },
               'bosh' => {
                 'group_name' => 'foobar',
-                'password' => 'foobar',
-                'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                'password' => 'foobar'
               },
             }
           end
@@ -383,8 +381,7 @@ describe 'using director with config server', type: :integration do
                                                         'bosh' => {
                                                           'password' => 'foobar',
                                                           'remove_dev_tools' => true,
-                                                          'group_name' => 'foobar',
-                                                          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                                                          'group_name' => 'foobar'
                                                         }
                                                       }
                                                    })
@@ -482,7 +479,7 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value('addon_placeholder', 'addon prop first value')
           config_server_helper.put_value('addon_release_version_placeholder', '0.1-dev')
 
-          expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
+          expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include("Successfully updated runtime config")
           manifest_hash['jobs'].first['instances'] = 3
         end
 

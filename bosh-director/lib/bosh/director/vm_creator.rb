@@ -145,15 +145,6 @@ module Bosh::Director
       if instance_model.job
         env['bosh'] ||= {}
         env['bosh']['group_name'] = instance_model.job
-        env['bosh']['groups'] = [
-          Bosh::Director::Config.name,
-          instance_model.deployment.name,
-          instance_model.job,
-          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}",
-          "#{instance_model.deployment.name}-#{instance_model.job}",
-          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}"
-        ]
-        env['bosh']['groups'].map! { |name| Bosh::Director::Canonicalizer.canonicalize(name) }
       end
 
       count = 0

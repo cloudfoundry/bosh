@@ -264,17 +264,7 @@ module Bosh
 
       it 'sets vm metadata' do
         expect(cloud).to receive(:create_vm).with(
-          kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {'bosh' => {'group_name' => 'fake-job',
-          'groups' =>
-            [
-              'fake-director-name',
-              'deployment-name',
-              'fake-job',
-              'fake-director-name-deployment-name',
-              'deployment-name-fake-job',
-              'fake-director-name-deployment-name-fake-job'
-            ]
-        }}
+            kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {'bosh' =>{'group_name' => 'fake-job'}}
         ).and_return('new-vm-cid')
 
         allow(Config).to receive(:name).and_return('fake-director-name')
