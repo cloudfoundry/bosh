@@ -10,7 +10,8 @@ module Bosh::Director
 
     def update_persistent_disk(instance_plan)
       @logger.info('Updating persistent disk')
-      check_persistent_disk(instance_plan)
+
+      check_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
 
       return unless instance_plan.persistent_disk_changed?
 
@@ -19,6 +20,8 @@ module Bosh::Director
       old_disks = instance_model.active_persistent_disks
 
       changed_disk_pairs = new_disks.changed_disk_pairs(old_disks)
+
+      new_disk_unmanaged_models = []
 
       changed_disk_pairs.each do |disk_pair|
         old_disk_model = disk_pair[:old].model unless disk_pair[:old].nil?
@@ -34,6 +37,10 @@ module Bosh::Director
           if new_disk.managed? && old_disk_model
             migrate_disk(instance_model, new_disk_model, old_disk_model)
           end
+
+          if !new_disk.managed?
+            new_disk_unmanaged_models << new_disk_model
+          end
         end
 
         @transactor.retryable_transaction(Bosh::Director::Config.db) do
@@ -47,6 +54,16 @@ module Bosh::Director
           @orphan_disk_manager.orphan_disk(old_disk_model)
         end
       end
+
+      disk_associations = new_disk_unmanaged_models.map do |disk_model|
+         {'name' => disk_model.name, 'diskCID' => disk_model.disk_cid}
+      end
+
+      @logger.debug("====DISKASSOCIATION: #{disk_associations.inspect}")
+
+      agent_client(instance_model).associate_disks({
+        'diskAssociations' => disk_associations
+      }) unless disk_associations.empty?
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)
       inactive_disks.each do |disk|
@@ -188,6 +205,10 @@ module Bosh::Director
       unmount_and_detach_disk(disk)
       @orphan_disk_manager.orphan_disk(disk)
       raise e
+    end
+
+    def has_multiple_persistent_disks?(instance_plan)
+      !instance_plan.desired_instance.instance_group.persistent_disk_collection.non_managed_disks.empty?
     end
 
     def unmount_and_detach_disk(disk)

@@ -67,6 +67,10 @@ module Bosh::Director
       send_message(:list_disk, *args)
     end
 
+    def associate_disks(*args)
+      send_message(:associate_disks, *args)
+    end
+
     def start(*args)
       send_message(:start, *args)
     end

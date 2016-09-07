@@ -112,6 +112,7 @@ module Bosh::Director
           it_acts_as_asynchronous_message :stop
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
+          it_acts_as_asynchronous_message :associate_disks
           it_acts_as_asynchronous_message :start
         end
 

@@ -14,17 +14,20 @@ describe 'multiple persistent disks', type: :integration do
     hash['disk_types'] = [
       {
         'name' => 'low-performance-disk-type',
-        'disk_size' => 1024,
+        'disk_size' => low_perf_disk_size,
         'cloud_properties' => {'type' => 'gp2'}
       },
       {
         'name' => 'high-performance-disk-type',
-        'disk_size' => 4096,
+        'disk_size' => high_perf_disk_size,
         'cloud_properties' => {'type' => 'io1'}
       }
     ]
     hash
   end
+
+  let(:high_perf_disk_size) { 4096 }
+  let(:low_perf_disk_size) { 1024 }
 
   let(:manifest_hash) do
     {
@@ -175,5 +178,25 @@ describe 'multiple persistent disks', type: :integration do
       'slow-disk' => {'name' => 'low-iops-persistent-disk-name'},
       'fast-disk' => {'name' => 'high-iops-persistent-disk-name'}
     })
+  end
+
+  it 'notifies the agent of the name and volume information' do
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(vm = director.instances.first.vm_cid)
+
+    vm_cid = director.instances.first.vm_cid
+
+    disk_infos = current_sandbox.cpi.attached_disk_infos(vm_cid)
+
+    high_perf_disk_info = disk_infos.find { |disk_info| disk_info['size'] == high_perf_disk_size }
+    low_perf_disk_info = disk_infos.find { |disk_info| disk_info['size'] == low_perf_disk_size }
+
+    high_perf_disk_cid = high_perf_disk_info['disk_cid']
+    low_perf_disk_cid = low_perf_disk_info['disk_cid']
+
+    disk_associations = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_associations).to contain_exactly(
+      {"name"=>"high-iops-persistent-disk-name", "diskCid"=> high_perf_disk_cid},
+      {"name"=>"low-iops-persistent-disk-name",  "diskCid"=> low_perf_disk_cid}
+    )
   end
 end
