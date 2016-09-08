@@ -13,6 +13,10 @@ describe 'Stemcell with Go Agent', stemcell_image: true do
       it { should be_valid_json_file }
     end
 
+    describe file('/var/vcap/bosh/agent.key') do
+      it { should be_mode('600') }
+    end
+
     describe 'set user/group owner and permission on /etc/crontab (CIS-9.1.2)' do
       context file('/etc/crontab') do
         it { should be_mode('600') }

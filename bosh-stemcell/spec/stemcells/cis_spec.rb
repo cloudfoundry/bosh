@@ -8,6 +8,7 @@ describe 'CIS test case verification', {stemcell_image: true, security_spec: tru
         CIS-2.21
         CIS-2.22
         CIS-2.23
+        CIS-2.24
         CIS-4.1
         CIS-7.2.5
         CIS-7.2.6
@@ -49,7 +50,6 @@ describe 'CIS test case verification', {stemcell_image: true, security_spec: tru
   context "For all infrastructure except Azure", {exclude_on_azure:true} do
     it 'confirms that all CIS test cases ran' do
       expected_base_cis_test_cases = base_cis_test_cases
-      expected_base_cis_test_cases << "CIS-2.24"
 
       expected_cis_test_cases = expected_base_cis_test_cases
       case ENV['OS_NAME']

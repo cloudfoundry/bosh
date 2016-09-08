@@ -30,6 +30,7 @@ cd $agent_dir
 bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
+chmod 600 mbus/agent.key
 cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 
 # Download CLI source or release from github into assets directory
