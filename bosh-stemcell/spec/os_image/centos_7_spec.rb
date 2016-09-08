@@ -244,7 +244,6 @@ describe 'CentOS 7 OS image', os_image: true do
     describe file('/var/vcap/bosh/bin/bosh-start-logging-and-auditing') do
       it { should be_file }
       it { should be_executable }
-      it { should contain('service rsyslog start') }
       it { should contain('service auditd start') }
     end
   end
