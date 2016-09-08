@@ -25,12 +25,12 @@ module Bosh::Director
         @logger = Config.logger
         @link_infos = {}
 
-        # This hash will contain the properties specific to this template,
-        # it will be a hash where the keys are the deployment job name, and
-        # the value of each key will be the properties defined in template
-        # section of the deployment manifest. This way if a template is used
-        # in multiple deployment jobs, the properties will not be shared across
-        # jobs
+        # This hash will contain the properties specific to this job,
+        # it will be a hash where the keys are the deployment instance groups name, and
+        # the value of each key will be the properties defined in job
+        # section of the deployment manifest. This way if a job is used
+        # in multiple instance groups, the properties will not be shared across
+        # instance groups
         @properties = {}
 
         config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
@@ -194,7 +194,7 @@ module Bosh::Director
         @properties[instance_group_name] = properties
       end
 
-      def bind_properties(instance_group_name)
+      def bind_properties(instance_group_name, options = {})
         bound_properties = {}
         @properties[instance_group_name] ||= {}
 
@@ -205,7 +205,8 @@ module Bosh::Director
           property_value_to_use = @config_server_client.prepare_and_get_property(
             provided_property_value,
             definition['default'],
-            definition['type']
+            definition['type'],
+            options
           )
 
           set_property(bound_properties, name, property_value_to_use)

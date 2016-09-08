@@ -2,7 +2,7 @@ require 'securerandom'
 
 module Bosh::Director
   module DeploymentPlan
-    # Represents a single job instance.
+    # Represents a single Instance Group instance.
     class Instance
 
       # @return [Integer] Instance index

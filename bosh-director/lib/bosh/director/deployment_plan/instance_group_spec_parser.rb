@@ -55,6 +55,8 @@ module Bosh::Director
         desired_instances = parse_desired_instances(availability_zones, networks)
         @instance_group.desired_instances = desired_instances
 
+        @instance_group.deployment_name = @deployment.name
+
         @instance_group
       end
 

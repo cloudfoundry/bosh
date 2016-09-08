@@ -53,6 +53,11 @@ module Bosh::Director
           }
         end
 
+        it 'sets deployment name to instance group' do
+          instance_group = parsed_instance_group
+          expect(instance_group.deployment_name).to eq('fake-deployment')
+        end
+
         describe 'name key' do
           it 'parses name' do
             instance_group = parsed_instance_group

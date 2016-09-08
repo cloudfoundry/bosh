@@ -290,6 +290,7 @@ module Bosh::Director
   ConfigServerSSLError = err(540001)
   ConfigServerPasswordGenerationError = err(540002)
   ConfigServerUnknownError = err(540003)
+  ConfigServerCertificateGenerationError = err(540004)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)

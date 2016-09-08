@@ -374,6 +374,43 @@ module Bosh::Director::ConfigServer
                     }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
                   end
                 end
+
+                context 'when type is certificate' do
+                  let(:type){ 'certificate'}
+                  let(:dns_record_names) do
+                    %w(*.fake-name1.network-a.simple.bosh *.fake-name1.network-b.simple.bosh)
+                  end
+
+                  let(:options) do
+                    {
+                      :dns_record_names => dns_record_names
+                    }
+                  end
+
+                  let(:post_body) do
+                    {
+                      'type' => 'certificate',
+                      'parameters' => {
+                        'common_name' => dns_record_names[0],
+                        'alternative_names' => dns_record_names
+                      }
+                    }
+                  end
+
+                  it 'generates a certificate and returns the user provided placeholder' do
+                    expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleSuccessResponse.new)
+                    expect(client.prepare_and_get_property(the_placeholder, default_value, type, options)).to eq(the_placeholder)
+                  end
+
+                  it 'throws an error if generation of certficate errors' do
+                    expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleErrorResponse.new)
+                    expect(logger).to receive(:error)
+
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type, options)
+                    }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError)
+                  end
+                end
               end
 
               context 'when type is NOT generatable' do
@@ -397,7 +434,7 @@ module Bosh::Director::ConfigServer
 
   describe DisabledClient do
 
-    subject(:dummy_client) { DisabledClient.new }
+    subject(:disabled_client) { DisabledClient.new }
 
     describe '#interpolate' do
       let(:src) do
@@ -408,7 +445,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'returns src as is' do
-        expect(dummy_client.interpolate(src)).to eq(src)
+        expect(disabled_client.interpolate(src)).to eq(src)
       end
     end
 
@@ -421,7 +458,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'returns manifest as is' do
-        expect(dummy_client.interpolate_deployment_manifest(manifest)).to eq(manifest)
+        expect(disabled_client.interpolate_deployment_manifest(manifest)).to eq(manifest)
       end
     end
 
@@ -434,16 +471,20 @@ module Bosh::Director::ConfigServer
       end
 
       it 'returns manifest as is' do
-        expect(dummy_client.interpolate_runtime_manifest(manifest)).to eq(manifest)
+        expect(disabled_client.interpolate_runtime_manifest(manifest)).to eq(manifest)
       end
     end
 
     describe '#prepare_and_get_property' do
       it 'returns manifest property value if defined' do
-        expect(dummy_client.prepare_and_get_property('provided prop', 'default value is here', nil)).to eq('provided prop')
+        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil)).to eq('provided prop')
+        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, {})).to eq('provided prop')
+        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, {'whatever' => 'hello'})).to eq('provided prop')
       end
       it 'returns default value when manifest value is nil' do
-        expect(dummy_client.prepare_and_get_property(nil, 'default value is here', nil)).to eq('default value is here')
+        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil)).to eq('default value is here')
+        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, {})).to eq('default value is here')
+        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, {'whatever' => 'hello'})).to eq('default value is here')
       end
     end
   end

@@ -69,6 +69,9 @@ module Bosh::Director
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
 
+      # @return [String] deployment name the instance group belongs to
+      attr_accessor :deployment_name
+
       attr_accessor :availability_zones
 
       attr_accessor :networks
@@ -109,6 +112,9 @@ module Bosh::Director
 
         @did_change = false
         @persistent_disk_collection = nil
+
+        @deployment_name = nil
+        @dns_manager = DnsManagerProvider.create
       end
 
       def self.is_legacy_spec?(instance_group_spec)
@@ -253,8 +259,12 @@ module Bosh::Director
       def bind_properties
         @properties = {}
 
+        options = {
+          :dns_record_names => get_dns_record_names
+        }
+
         @jobs.each do |job|
-          job.bind_properties(@name)
+          job.bind_properties(@name, options)
           @properties[job.name] = job.properties[@name]
         end
       end
@@ -355,6 +365,14 @@ module Bosh::Director
 
       def run_time_dependencies
         jobs.flat_map { |job| job.package_models }.uniq.map(&:name)
+      end
+
+      def get_dns_record_names
+        result = []
+        networks.map(&:name).each do |network_name|
+          result << @dns_manager.dns_record_name('*', @name, network_name, @deployment_name)
+        end
+        result.sort
       end
     end
   end

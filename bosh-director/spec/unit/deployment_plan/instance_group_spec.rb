@@ -129,7 +129,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'env' => {'key' => 'value'},
         'instances' => 1,
-        'networks'  => [{'name' => 'fake-network-name'}],
+        'networks'  => [
+          {'name' => 'fake-network-name', 'default' => ['dns', 'gateway']},
+          {'name' => 'fake-network-name2'}
+        ],
         'template' => %w(foo bar),
       }
     end
@@ -155,16 +158,29 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
+    let(:options) do
+      {
+        :dns_record_names => [
+          '*.foobar.fake-network-name.fake-deployment.bosh',
+          '*.foobar.fake-network-name2.fake-deployment.bosh'
+        ]
+      }
+    end
+
+    let(:network2) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name2', validate_reference_from_job!: true, has_azs?: true) }
+
     before do
+      allow(plan).to receive(:networks).and_return([network, network2])
+
       allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       allow(foo_job).to receive(:properties).and_return(foo_properties)
       allow(bar_job).to receive(:properties).and_return(bar_properties)
     end
 
-    it 'binds all templates properties' do
-      expect(foo_job).to receive(:bind_properties)
-      expect(bar_job).to receive(:bind_properties)
+    it 'binds all job properties with correct parameters' do
+      expect(foo_job).to receive(:bind_properties).with( 'foobar', options)
+      expect(bar_job).to receive(:bind_properties).with( 'foobar', options)
 
       instance_group.bind_properties
 

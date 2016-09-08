@@ -535,13 +535,13 @@ describe 'using director with config server', type: :integration do
                  'properties' => job_properties
                 }
               ],
-              instances: 1
+              instances: 3
             )]
           })
       end
 
       context 'when types are generatable' do
-        context 'when type is password' do
+        context 'when type is password or certificate' do
           context 'when these properties are defined in deployment manifest' do
             context 'when these properties are NOT defined in the config server' do
               let(:job_properties) do
@@ -551,7 +551,8 @@ describe 'using director with config server', type: :integration do
                     'happiness_level' => 5
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                    'cert' => '((gargamel_certificate_placeholder))'
                   }
                 }
               end
@@ -560,6 +561,7 @@ describe 'using director with config server', type: :integration do
 
                 before do
                   job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
+                  job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
                 end
 
                 it 'uses the default values defined' do
@@ -569,11 +571,14 @@ describe 'using director with config server', type: :integration do
 
                   template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                   expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+
+                  hardcoded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+                  expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
                 end
               end
 
               context 'when the properties do NOT have default values defined' do
-                it 'generates passwords for these properties' do
+                it 'generates values for these properties' do
                   deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
                   vm = director.vm('our_instance_group', '0', env: client_env)
@@ -585,6 +590,16 @@ describe 'using director with config server', type: :integration do
                   expect(
                     template_hash['properties_list']['gargamel_secret_recipe']
                   ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
+
+                  generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+                  generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+                  root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+                  generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+
+                  expect(generated_cert).to eq(generated_cert_response['certificate'])
+                  expect(generated_private_key).to eq(generated_cert_response['private_key'])
+                  expect(root_ca).to eq(generated_cert_response['ca'])
                 end
               end
             end
@@ -597,14 +612,24 @@ describe 'using director with config server', type: :integration do
                     'happiness_level' => 5
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))'
+                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                    'cert' => '((gargamel_certificate_placeholder))'
                   }
+                }
+              end
+
+              let(:certificate_payload) do
+                {
+                  'certificate' => 'cert123',
+                  'private_key' => 'adb123',
+                  'ca' => 'ca456'
                 }
               end
 
               it 'uses the values defined in config server' do
                 config_server_helper.put_value('smurfs_phone_password_placeholder', 'i am smurf')
                 config_server_helper.put_value('gargamel_secret_recipe_placeholder', 'banana and jaggery')
+                config_server_helper.put_value('gargamel_certificate_placeholder', certificate_payload)
 
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
@@ -613,16 +638,33 @@ describe 'using director with config server', type: :integration do
                 template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                 expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
                 expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+
+                generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+                generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+                root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+                expect(generated_cert).to eq('cert123')
+                expect(generated_private_key).to eq('adb123')
+                expect(root_ca).to eq('ca456')
               end
             end
           end
 
           context 'when these properties are NOT defined in deployment manifest' do
             context 'when these properties have defaults' do
+              let(:certificate_payload) do
+                {
+                  'certificate' => 'cert123',
+                  'private_key' => 'adb123',
+                  'ca' => 'ca456'
+                }
+              end
+
               let(:job_properties) do
                 {
                   'gargamel' => {
-                    'secret_recipe' => 'stuff'
+                    'secret_recipe' => 'stuff',
+                    'cert' => certificate_payload
                   },
                   'smurfs' => {
                     'phone_password' => 'anything',
@@ -637,6 +679,9 @@ describe 'using director with config server', type: :integration do
                 vm = director.vm('our_instance_group', '0', env: client_env)
                 template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                 expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+
+                hard_coded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+                expect(hard_coded_cert).to eq('good luck hardcoding certs and private keys')
               end
             end
 
@@ -664,13 +709,10 @@ describe 'using director with config server', type: :integration do
                 )
 
                 expect(exit_code).to_not eq(0)
-
-                expect(output).to include <<-EOF
-Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
-     - Unable to render templates for job 'job_with_property_types'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '["smurfs.phone_password"]')
-                EOF
+                expect(output).to include("Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '[\"smurfs.phone_password\"]')")
+                expect(output).to include("Error filling in template 'generated_cert.pem.erb' (line 1: Can't find property '[\"gargamel.cert.certificate\"]')")
+                expect(output).to include("Error filling in template 'generated_key.key.erb' (line 1: Can't find property '[\"gargamel.cert.private_key\"]')")
+                expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
               end
             end
           end

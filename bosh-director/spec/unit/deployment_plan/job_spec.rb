@@ -107,6 +107,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
           let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+          let(:options) {{}}
+
 
           before do
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
@@ -121,9 +123,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should drop user provided properties not specified in the release job spec properties' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
 
             subject.bind_properties('instance_group_name')
 
@@ -139,9 +141,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should include properties that are in the release job spec but not provided by a user' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil).and_return(2048)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, options).and_return(2048)
 
             user_defined_prop.delete('dea_max_memory')
             subject.bind_properties('instance_group_name')
@@ -158,9 +160,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should not override user provided properties with release job spec defaults' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
 
             subject.bind_properties('instance_group_name')
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
@@ -170,8 +172,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             let(:user_defined_prop) { {'deep_property' => false} }
 
             before do
-              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 'cloudfoundry.com', nil)
-              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil)
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 'cloudfoundry.com', nil, options)
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, options)
             end
 
             it 'raises an exception explaining which property is the wrong type' do
@@ -183,6 +185,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           context 'properties interpolation' do
+            let(:options) do
+              {
+                'anything' => ['1', '2']
+              }
+            end
+
             before do
               user_defined_prop['cc_url'] = '((secret_url_password_placeholder))'
 
@@ -195,11 +203,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
               expect(config_server_client).to receive(:prepare_and_get_property).with(
                 '((secret_url_password_placeholder))',
                 'cloudfoundry.com',
-                'password'
+                'password',
+                options
               ).and_return('generated secret')
-              expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil).and_return('def')
-              expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom').and_return(1024)
-              subject.bind_properties('instance_group_name')
+              expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
+              expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom', options).and_return(1024)
+              subject.bind_properties('instance_group_name', options)
 
               expect(subject.properties).to eq({
                                                  'instance_group_name' =>{

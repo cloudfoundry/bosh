@@ -55,7 +55,7 @@ module Bosh::Director::ConfigServer
       interpolate(runtime_manifest, ignored_subtrees)
     end
 
-    def prepare_and_get_property(provided_prop, default_prop, type)
+    def prepare_and_get_property(provided_prop, default_prop, type, options = {})
       # put result here
       if provided_prop.nil?
         result = default_prop
@@ -70,6 +70,8 @@ module Bosh::Director::ConfigServer
               case type
                 when 'password'
                   generate_password(stripped_provided_prop)
+                when 'certificate'
+                  generate_certificate(stripped_provided_prop, options)
               end
               result = provided_prop
             else
@@ -135,14 +137,31 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def generate_password(stripped_key)
+    def generate_password(key)
       request_body = {
         'type' => 'password'
       }
-      response = @config_server_http_client.post(stripped_key, request_body)
+      response = @config_server_http_client.post(key, request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
+      end
+    end
+
+    def generate_certificate(key, options)
+      domain_names = options[:dns_record_names]
+      request_body = {
+        'type' => 'certificate',
+        'parameters' => {
+          'common_name' => domain_names.first,
+          'alternative_names' => domain_names
+        }
+      }
+
+      response = @config_server_http_client.post(key, request_body)
+      unless response.kind_of? Net::HTTPSuccess
+        @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
+        raise Bosh::Director::ConfigServerCertificateGenerationError, 'Config Server failed to generate certificate'
       end
     end
   end
@@ -160,7 +179,7 @@ module Bosh::Director::ConfigServer
       Bosh::Common::DeepCopy.copy(manifest)
     end
 
-    def prepare_and_get_property(manifest_provided_prop, default_prop, type)
+    def prepare_and_get_property(manifest_provided_prop, default_prop, type, options = {})
       manifest_provided_prop.nil? ? default_prop : manifest_provided_prop
     end
   end
