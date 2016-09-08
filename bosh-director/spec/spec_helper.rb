@@ -63,7 +63,7 @@ module SpecHelper
     end
 
     def spec_get_director_config
-      config = Psych.load_file(File.expand_path('assets/test-director-config.yml', __dir__))
+      config = Psych.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
 
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = '127.0.0.1'
@@ -80,15 +80,15 @@ module SpecHelper
 
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, 5432)
           @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", @init_logger, 5432)
         when 'mysql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger)
           @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", @init_logger)
         when 'sqlite'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', __dir__)
+          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
           @dns_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_dns.sqlite"), @init_logger)
         else

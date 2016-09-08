@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'fog'
+require 'fog/openstack'
 require 'fog/openstack/models/compute/servers'
 require 'bosh/deployer/instance_manager/openstack'
 require 'bosh/deployer/registry'

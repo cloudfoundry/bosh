@@ -40,14 +40,14 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bosh_openstack_cpi', '=2.1.1'
+  spec.add_dependency 'bosh_openstack_cpi', '=2.1.3'
   spec.add_dependency 'bosh_aws_cpi',       '=2.1.1'
   spec.add_dependency 'bosh_vsphere_cpi',   '=2.1.1'
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.12.1'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'
   spec.add_dependency 'eventmachine',     '~>1.0.0'
-  spec.add_dependency 'fog',              '~>1.34.0'
+  spec.add_dependency 'fog-openstack',    '~>0.1.7'
   spec.add_dependency 'fog-aws',          '~>0.7.6'
   spec.add_dependency 'httpclient',       '=2.7.1'
   spec.add_dependency 'logging',          '~>1.8.2'
