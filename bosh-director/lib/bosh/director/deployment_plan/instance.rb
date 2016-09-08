@@ -81,7 +81,6 @@ module Bosh::Director
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
-        @dns_manager = DnsManagerProvider.create
 
         @virtual_state = virtual_state
       end
@@ -192,12 +191,6 @@ module Bosh::Director
 
       def agent_client
         AgentClient.with_vm_credentials_and_agent_id(@model.credentials, @model.agent_id)
-      end
-
-      ##
-      # @return [String] dns record name
-      def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, Canonicalizer.canonicalize(network_name), Canonicalizer.canonicalize(@deployment_model.name), @dns_manager.dns_domain_name].join('.')
       end
 
       def cloud_properties_changed?
