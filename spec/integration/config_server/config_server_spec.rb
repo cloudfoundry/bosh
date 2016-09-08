@@ -206,7 +206,7 @@ describe 'using director with config server', type: :integration do
                 'color' => '((color_placeholder))'
               },
               'bosh' => {
-                'group_name' => 'foobar'
+                'group' => 'foobar'
               },
             }
           end
@@ -219,7 +219,7 @@ describe 'using director with config server', type: :integration do
                 'color' => 'super_color'
               },
               'bosh' => {
-                'group_name' => 'testdirector-simple-foobar',
+                'group' => 'testdirector-simple-foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
               },
             }
@@ -281,7 +281,7 @@ describe 'using director with config server', type: :integration do
                 'color' => '((color_placeholder))'
               },
               'bosh' => {
-                'group_name' => 'foobar',
+                'group' => 'foobar',
                 'password' => 'foobar'
               },
             }
@@ -295,7 +295,7 @@ describe 'using director with config server', type: :integration do
                 'color' => 'smurf blue'
               },
               'bosh' => {
-                'group_name' => 'testdirector-simple-foobar',
+                'group' => 'testdirector-simple-foobar',
                 'password' => 'foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
               },
@@ -383,7 +383,7 @@ describe 'using director with config server', type: :integration do
                                                         'bosh' => {
                                                           'password' => 'foobar',
                                                           'remove_dev_tools' => true,
-                                                          'group_name' => 'testdirector-simple-foobar',
+                                                          'group' => 'testdirector-simple-foobar',
                                                           'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
                                                         }
                                                       }

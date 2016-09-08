@@ -16,7 +16,7 @@ describe 'vm_types and stemcells', type: :integration do
       'env1' => 'env_value1',
       'env2' => 'env_value2',
       'bosh' => {
-        'group_name' => 'testdirector-simple-foobar',
+        'group' => 'testdirector-simple-foobar',
         'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
       },
     }
@@ -173,7 +173,7 @@ stemcells:
         'env1' => 'env_value1',
         'env2' => 'env_value2',
         'bosh' => {
-          'group_name' => 'testdirector-simple-foobar',
+          'group' => 'testdirector-simple-foobar',
           'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
         },
       }

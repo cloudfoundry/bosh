@@ -144,7 +144,7 @@ module Bosh::Director
 
       if instance_model.job
         env['bosh'] ||= {}
-        env['bosh']['group_name'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}")
+        env['bosh']['group'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}")
         env['bosh']['groups'] = [
           Bosh::Director::Config.name,
           instance_model.deployment.name,

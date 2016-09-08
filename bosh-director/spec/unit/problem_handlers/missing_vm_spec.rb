@@ -79,7 +79,7 @@ module Bosh::Director
         expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
         expect(fake_cloud).
           to receive(:create_vm).
-            with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1', 'bosh' => {'group_name' => String, 'groups' => anything}}).
+            with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1', 'bosh' => {'group' => String, 'groups' => anything}}).
             and_return('new-vm-cid')
 
         fake_job_context

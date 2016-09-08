@@ -68,7 +68,7 @@ module Bosh::Director
         'fake-director-name-mycloud-compilation-deadbeef'
       ]
     }
-    let(:compilation_env) { { 'compilation' => 'environment', 'bosh' => { 'group_name' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups} } }
+    let(:compilation_env) { { 'compilation' => 'environment', 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups} } }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { {'a' => {'property' => 'settings'}} }
