@@ -14,8 +14,13 @@ module Bosh::Director
       @dns_manager = dns_manager
     end
 
-    def bind_models(skip_links_binding = false, fix = false)
+    def bind_models(options = {})
       @logger.info('Binding models')
+
+      should_bind_links = options.fetch(:should_bind_links, true)
+      should_bind_properties = options.fetch(:should_bind_properties, true)
+      fix = options.fetch(:fix, false)
+
       bind_releases
 
       migrate_legacy_dns_records
@@ -45,14 +50,10 @@ module Bosh::Director
 
       bind_stemcells
       bind_templates
-      bind_properties
+      bind_properties if should_bind_properties
       bind_instance_networks
       bind_dns
-
-      if (!skip_links_binding)
-        bind_links
-      end
-
+      bind_links if should_bind_links
     end
 
     private

@@ -102,7 +102,7 @@ module Bosh::Director
         Canonicalizer.canonicalize(@name)
       end
 
-      def bind_models(skip_links_binding = false)
+      def bind_models(options = {})
         stemcell_manager = Api::StemcellManager.new
         dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
@@ -113,7 +113,8 @@ module Bosh::Director
           @logger
         )
 
-        assembler.bind_models(skip_links_binding, @fix)
+        options[:fix] = @fix
+        assembler.bind_models(options)
       end
 
       def compile_packages

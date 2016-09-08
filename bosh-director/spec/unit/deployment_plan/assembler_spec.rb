@@ -94,6 +94,43 @@ module Bosh::Director
           assembler.bind_models
         end
 
+        context 'links binding' do
+          let(:links_resolver) { double(DeploymentPlan::LinksResolver)}
+
+          before do
+            allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
+          end
+
+          it 'should bind links by default' do
+            expect(links_resolver).to receive(:resolve).with(instance_group_1)
+            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+
+            assembler.bind_models
+          end
+
+          it 'should skip links binding when should_bind_links flag is passed as false' do
+            expect(links_resolver).to_not receive(:resolve)
+
+            assembler.bind_models({:should_bind_links => false})
+          end
+        end
+
+        context 'properties binding' do
+          it 'should bind properties by default' do
+            expect(instance_group_1).to receive(:bind_properties)
+            expect(instance_group_2).to receive(:bind_properties)
+
+            assembler.bind_models
+          end
+
+          it 'should skip links binding when should_bind_properties flag is passed as false' do
+            expect(instance_group_1).to_not receive(:bind_properties)
+            expect(instance_group_2).to_not receive(:bind_properties)
+
+            assembler.bind_models({:should_bind_properties => false})
+          end
+        end
+
         context 'when the instance_group validation fails' do
           it 'propagates the exception' do
             expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
