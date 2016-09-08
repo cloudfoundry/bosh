@@ -40,6 +40,9 @@ module Bosh::Director
       # Stemcells in deployment by alias
       attr_reader :stemcells
 
+      # Tags in deployment by alias
+      attr_reader :tags
+
       # Job instances from the old manifest that are not in the new manifest
       attr_reader :unneeded_instance_plans
 
@@ -67,6 +70,7 @@ module Bosh::Director
         @instance_groups = []
         @instance_groups_name_index = {}
         @instance_groups_canonical_name_index = Set.new
+        @tags = {}
 
         @unneeded_vms = []
         @unneeded_instance_plans = []
@@ -167,6 +171,10 @@ module Bosh::Director
 
       def skip_drain_for_job?(name)
         @skip_drain.nil? ? false : @skip_drain.for_job(name)
+      end
+
+      def add_tag(tag)
+        @tags[tag.key] = tag.value
       end
 
       def add_stemcell(stemcell)

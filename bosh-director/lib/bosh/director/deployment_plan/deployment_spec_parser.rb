@@ -31,16 +31,29 @@ module Bosh::Director
         parse_releases
         parse_update(parse_options)
         parse_instance_groups(parse_options)
+        parse_tags
 
         @deployment
       end
 
       private
 
+      def parse_tags
+        if @deployment_manifest.has_key?('tags')
+          safe_property(@deployment_manifest, 'tags', :class => Array).each do |tag_hash|
+            key_val = safe_property(tag_hash, 'key', :class => String)
+            if @deployment.tags.has_key?(key_val)
+              raise TagAlreadyExists, "Duplicate tag '#{key_val}'"
+            end
+            @deployment.add_tag(Tag.parse(tag_hash))
+          end
+        end
+      end
+
       def parse_stemcells
         if @deployment_manifest.has_key?('stemcells')
           safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
-            alias_val = safe_property(stemcell_hash, 'alias', :class=> String)
+            alias_val = safe_property(stemcell_hash, 'alias', :class => String)
             if @deployment.stemcells.has_key?(alias_val)
               raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
             end
