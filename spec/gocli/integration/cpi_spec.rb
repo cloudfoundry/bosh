@@ -8,6 +8,11 @@ describe 'CPI calls', type: :integration do
   end
 
   describe 'deploy' do
+    let(:expected_groups) {
+      ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+    }
+    let(:expected_group) { 'testdirector-simple-first-job' }
+
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
       deploy_from_scratch(manifest_hash: manifest_hash)
@@ -36,7 +41,7 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => { 'bosh' => { 'group_name' => String } }
+        'env' => { 'bosh' => { 'group' => String, 'groups' => Array } }
       })
 
       expect(invocations[2].method_name).to eq('set_vm_metadata')
@@ -89,7 +94,7 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => { 'bosh' => { 'group_name' => String } }
+        'env' => { 'bosh' => { 'group' => String, 'groups' => Array } }
       })
 
       expect(invocations[6].method_name).to eq('set_vm_metadata')
@@ -143,7 +148,7 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => {"bosh"=>{"password"=>"foobar", "group_name" => "foobar"}}
+        'env' => {'bosh' =>{'password' => 'foobar', 'group' => 'testdirector-simple-foobar', 'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']}}
       })
 
       expect(invocations[10].method_name).to eq('set_vm_metadata')
@@ -207,7 +212,7 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [],
-          'env' => {"bosh"=>{"password"=>"foobar", "group_name"=>"first-job"}}
+          'env' => {'bosh' =>{'password' => 'foobar', 'group' => expected_group, 'groups' => expected_groups}}
         })
 
         expect(first_deploy_invocations[2].method_name).to eq('set_vm_metadata')
@@ -279,7 +284,7 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [disk_cid],
-          'env' => {"bosh"=>{"password"=>"foobar", "group_name"=>"first-job"}}
+          'env' => {'bosh' =>{'password' => 'foobar', 'group' => expected_group, 'groups' => expected_groups}}
         })
 
         expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
