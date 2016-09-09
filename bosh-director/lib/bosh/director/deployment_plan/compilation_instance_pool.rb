@@ -141,7 +141,7 @@ module Bosh::Director
         instance_model = instance_plan.instance.model
         parent_id = add_event(instance_model.deployment.name, instance_model.name)
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
-        @vm_creator.create_for_instance_plan(instance_plan, [])
+        @vm_creator.create_for_instance_plan(instance_plan, [], {})
         instance_plan.instance
       rescue Exception => e
         raise e

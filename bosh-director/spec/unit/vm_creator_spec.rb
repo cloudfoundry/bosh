@@ -68,6 +68,12 @@ module Bosh
         BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
       end
 
+      let(:tags) do
+        {
+          :mytag => 'foobar'
+        }
+      end
+
       let(:job) do
         template_model = BD::Models::Template.make
         job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
@@ -191,7 +197,7 @@ module Bosh
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }
       end
 
@@ -208,9 +214,26 @@ module Bosh
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {
-          subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider)
+          subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
         }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }.
                                    from(0).to(1)
+      end
+
+      it 'should create vm for the instance plans with arbitrary metadata' do
+        expect(cloud).to receive(:create_vm).with(
+          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, [], {'bosh' => {'group' => expected_group,
+          'groups' => expected_groups
+        }}
+        ).and_return('new-vm-cid')
+
+        expect(agent_client).to receive(:wait_until_ready)
+        expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
+        expect(instance).to receive(:update_trusted_certs)
+        expect(instance).to receive(:update_cloud_properties!)
+
+        expect {
+          subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
+        }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }.from(0).to(1)
       end
 
       it 'should record events' do
@@ -218,7 +241,7 @@ module Bosh
           kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
         ).and_return('new-vm-cid')
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to change { Models::Event.count }.from(0).to(2)
 
         event_1 = Models::Event.first
@@ -244,7 +267,7 @@ module Bosh
       it 'should record events about error' do
         expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error Bosh::Clouds::VMCreationFailed
 
         event_2 = Models::Event.order(:id)[2]
@@ -260,7 +283,7 @@ module Bosh
             network_settings.merge(extra_ip)
         )
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         expect(agent_broadcaster).to have_received(:delete_arp_entries).with(instance_model.vm_cid, ['192.168.1.3'])
       end
 
@@ -275,7 +298,7 @@ module Bosh
             network_settings.merge(extra_ip)
         )
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(instance_model.vm_cid, ['192.168.1.3'])
 
       end
@@ -298,10 +321,11 @@ module Bosh
                                           director: 'fake-director-name',
                                           id: instance_model.uuid,
                                           name: "fake-job/#{instance_model.uuid}",
+                                          mytag: 'foobar',
                                       })
           end
 
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
       end
 
@@ -310,7 +334,7 @@ module Bosh
         expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
         expect(instance).to receive(:apply_initial_vm_state)
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
 
       it 'should create credentials when encryption is enabled' do
@@ -326,7 +350,7 @@ module Bosh
                                                                'sign_key' => kind_of(String)}}})
                              .and_return('new-vm-cid')
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
 
         instance_with_new_vm = Models::Instance.find(vm_cid: 'new-vm-cid')
         expect(instance_with_new_vm).not_to be_nil
@@ -348,7 +372,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count }.from(0).to(1)
       end
 
@@ -356,7 +380,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
@@ -366,7 +390,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
@@ -378,7 +402,7 @@ module Bosh
         expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
@@ -390,13 +414,13 @@ module Bosh
           env_id = args[5].object_id
         end
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
 
         expect(cloud).to receive(:create_vm) do |*args|
           expect(args[5].object_id).not_to eq(env_id)
         end
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
 
       it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
@@ -407,7 +431,7 @@ module Bosh
         expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
@@ -422,7 +446,7 @@ module Bosh
               expect(env['bosh']['password'].length).to_not eq(0)
             end.and_return('new-vm-cid')
 
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
           end
         end
 
@@ -437,7 +461,7 @@ module Bosh
               expect(env['bosh']['password']).to eq('custom-password')
             end.and_return('new-vm-cid')
 
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
           end
         end
       end
@@ -453,7 +477,7 @@ module Bosh
               expect(env['bosh']).to eq({ 'group' => expected_group, 'groups' => expected_groups})
             end.and_return('new-vm-cid')
 
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
           end
         end
 
@@ -468,7 +492,7 @@ module Bosh
               expect(env['bosh']['password']).to eq('custom-password')
             end.and_return('new-vm-cid')
 
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
           end
         end
       end
@@ -517,7 +541,7 @@ module Bosh
             expect(env['gargamel']).to eq('green')
           end.and_return('new-vm-cid')
 
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
       end
     end

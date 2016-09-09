@@ -6,11 +6,11 @@ module Bosh::Director
       @vm_deleter = vm_deleter
     end
 
-    def recreate_vm(instance_plan, disk_cid)
+    def recreate_vm(instance_plan, disk_cid, tags)
       instance_model = instance_plan.instance.model
       @vm_deleter.delete_for_instance(instance_model)
       disks = [instance_model.managed_persistent_disk_cid, disk_cid].compact
-      @vm_creator.create_for_instance_plan(instance_plan, disks)
+      @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
     end
   end
 end

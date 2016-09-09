@@ -1,6 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-#
-
 require 'bosh/director/models/cloud_config'
 require 'bosh/director/models/runtime_config'
 require 'bosh/director/models/compiled_package'
@@ -20,6 +17,7 @@ require 'bosh/director/models/release'
 require 'bosh/director/models/release_version'
 require 'bosh/director/models/stemcell'
 require 'bosh/director/models/snapshot'
+require 'bosh/director/models/tag'
 require 'bosh/director/models/task'
 require 'bosh/director/models/template'
 require 'bosh/director/models/user'

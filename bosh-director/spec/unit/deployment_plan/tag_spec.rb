@@ -11,7 +11,7 @@ describe Bosh::Director::DeploymentPlan::Tag do
 
   let(:valid_spec) do
     {
-      'key' => 'my-tag',
+      'key' => 'mytag',
       'value' => 'foobar'
     }
   end
@@ -45,7 +45,7 @@ describe Bosh::Director::DeploymentPlan::Tag do
   describe '#parse' do
     it 'parses key and value' do
       tag = make(valid_spec)
-      expect(tag.key).to eq('my-tag')
+      expect(tag.key).to eq(:mytag)
       expect(tag.value).to eq('foobar')
     end
 

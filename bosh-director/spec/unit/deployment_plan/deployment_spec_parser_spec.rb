@@ -50,7 +50,7 @@ module Bosh::Director
       describe 'tags key' do
         context 'when tags are specified' do
           before do
-            tags = [{'key' => 'my-tag', 'value' => 'foo-tag'}]
+            tags = [{'key' => 'mytag', 'value' => 'foo-tag'}]
             manifest_hash['tags'] = tags
           end
 
@@ -60,8 +60,8 @@ module Bosh::Director
 
           context 'when we have duplicate tags' do
             before do
-              tags = [{'key' => 'my-tag', 'value' => 'foo-tag'},
-                      {'key' => 'my-tag', 'value' => 'foo-tag'}]
+              tags = [{'key' => 'mytag', 'value' => 'foo-tag'},
+                      {'key' => 'mytag', 'value' => 'foo-tag'}]
               manifest_hash['tags'] = tags
             end
 

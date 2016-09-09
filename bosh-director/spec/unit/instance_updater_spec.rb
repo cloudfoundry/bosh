@@ -5,6 +5,8 @@ module Bosh::Director
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
+    let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
+    let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
     let(:instance_model_state) { 'started' }
@@ -34,6 +36,8 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(instance_double(Bosh::Blobstore::Client))
+      allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
+      allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
     end
 
     context 'when stopping instances' do
@@ -108,6 +112,19 @@ module Bosh::Director
           expect(instance_model.update_completed).to eq true
           expect(Models::Event.count).to eq 2
           expect(Models::Event.all[1].error).to be_nil
+        end
+
+        it 'it recreates' do
+          allow(updater).to receive(:needs_recreate?).and_return(true)
+          allow(disk_manager).to receive(:update_persistent_disk)
+          allow(disk_manager).to receive(:unmount_disk_for)
+          allow(job).to receive(:update)
+          allow(vm_deleter).to receive(:delete_for_instance)
+
+          expect(vm_recreator).to receive(:recreate_vm)
+          expect(state_applier).to receive(:apply)
+
+          updater.update(instance_plan)
         end
       end
     end

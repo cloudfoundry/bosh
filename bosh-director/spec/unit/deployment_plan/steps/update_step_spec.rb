@@ -18,7 +18,8 @@ module Bosh::Director
         instance_plans_with_missing_vms: [],
         ip_provider: ip_provider,
         skip_drain: skip_drain,
-        recreate: false
+        recreate: false,
+        tags: {}
       )
     end
     let(:cloud) { Config.cloud }
