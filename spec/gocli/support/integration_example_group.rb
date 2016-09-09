@@ -49,26 +49,26 @@ module IntegrationExampleGroup
   end
 
   def target_and_login
-    bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run('login test test')
+    bosh_runner.run("env #{current_sandbox.director_url}")
+    # bosh_runner.run('login test test')
   end
 
   def upload_cloud_config(options={})
     cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
-    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}", options)
+    bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", options)
   end
 
   def upload_runtime_config(options={})
     runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
     runtime_config_manifest = yaml_file('simple', runtime_config_hash)
-    bosh_runner.run("update runtime-config #{runtime_config_manifest.path}", options)
+    bosh_runner.run("update-runtime-config #{runtime_config_manifest.path}", options)
   end
 
   def create_and_upload_test_release(options={})
     create_args = options.fetch(:force, false) ? '--force' : ''
-    bosh_runner.run_in_dir("create release #{create_args}", ClientSandbox.test_release_dir, options)
-    bosh_runner.run_in_dir('upload release', ClientSandbox.test_release_dir, options)
+    bosh_runner.run_in_dir("create-release #{create_args}", ClientSandbox.test_release_dir, options)
+    bosh_runner.run_in_dir('upload-release', ClientSandbox.test_release_dir, options)
   end
 
   def update_release
@@ -79,34 +79,36 @@ module IntegrationExampleGroup
   end
 
   def upload_stemcell(options={})
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')} --skip-if-exists", options)
+    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}", options)
   end
 
   def upload_stemcell_2(options={})
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')} --skip-if-exists", options)
+    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}", options)
   end
 
   def delete_stemcell
-    bosh_runner.run("delete stemcell ubuntu-stemcell 1")
+    bosh_runner.run("delete-stemcell ubuntu-stemcell 1")
   end
 
-  def set_deployment(options={})
-    manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
-
+  def deployment_file(manifest_hash)
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
-    deployment_manifest = yaml_file('simple', manifest_hash)
-    bosh_runner.run("deployment #{deployment_manifest.path}", options)
+    yaml_file('simple', manifest_hash)
   end
 
-  def deploy(options)
+  def deploy(options={})
     cmd = options.fetch(:no_track, false) ? '--no-track ' : ''
     cmd += options.fetch(:no_color, false) ? '--no-color ' : ''
-    cmd += 'deploy'
+
+    deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
+    cmd += " -d #{deployment_hash['name']}"
+
+    cmd += ' deploy'
     cmd += options.fetch(:no_redact, false) ? ' --no-redact' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''
     cmd += options.fetch(:dry_run, false) ? ' --dry-run' : ''
     cmd += options.fetch(:fix, false) ? ' --fix' : ''
+    cmd += options.fetch(:json, false) ? ' --json' : ''
 
     if options[:skip_drain]
       if options[:skip_drain].is_a?(Array)
@@ -116,11 +118,13 @@ module IntegrationExampleGroup
       end
     end
 
+    cmd += " #{deployment_file(deployment_hash).path}"
+
     bosh_runner.run(cmd, options)
   end
 
   def stop_job(vm_name)
-    bosh_runner.run("stop #{vm_name}", {})
+    bosh_runner.run("stop -d #{Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
   end
 
   def deploy_from_scratch(options={})
@@ -140,7 +144,6 @@ module IntegrationExampleGroup
   end
 
   def deploy_simple_manifest(options={})
-    set_deployment(options)
     return_exit_code = options.fetch(:return_exit_code, false)
 
     output, exit_code = deploy(options.merge({return_exit_code: true}))
@@ -153,9 +156,8 @@ module IntegrationExampleGroup
   end
 
   def run_errand(errand_job_name, options={})
-    set_deployment(options)
     output, exit_code = bosh_runner.run(
-      "run errand #{errand_job_name}",
+      "run-errand #{errand_job_name}",
       options.merge({return_exit_code: true, failure_expected: true})
     )
     return output, exit_code == 0
@@ -227,7 +229,7 @@ module IntegrationExampleGroup
   end
 
   def expect_table(cmd, expected)
-    expect(bosh_runner.run(cmd)).to match_output(expected)
+    expect(table(bosh_runner.run(cmd, json: true))).to eq(expected)
   end
 
   def check_for_unknowns(vms)

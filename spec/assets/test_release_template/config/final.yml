@@ -1,4 +1,5 @@
 ---
+final_name: bosh-release
 blobstore:
   provider: local
   options:

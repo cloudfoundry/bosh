@@ -1,5 +1,7 @@
 module Bosh::Spec
   class Deployments
+    DEFAULT_DEPLOYMENT_NAME = 'simple'
+
     def self.minimal_cloud_config
       {
         'networks' => [{
@@ -491,7 +493,7 @@ module Bosh::Spec
 
     def self.test_release_manifest
       minimal_manifest.merge(
-        'name' => 'simple',
+        'name' => DEFAULT_DEPLOYMENT_NAME,
 
         'releases' => [{
           'name'    => 'bosh-release',

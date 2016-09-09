@@ -179,6 +179,65 @@ jobs:
           s3_host: {{blobstore_client_aws_s3_host}}
           run_aws_tests: "Not null"
 
+  - name: integration-1.9-postgres-gocli
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src,
+          trigger: true,
+          passed: [start-job]
+        - get: gocli-release-bucket-linux
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-1"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
+
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-2"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
+
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-3"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
+
   - name: integration-1.9-postgres
     public: true
     serial: true
@@ -504,3 +563,9 @@ resources:
     type: slack-notification
     source:
       url: {{slack_hook_url}}
+
+  - name: gocli-release-bucket-linux
+    type: s3
+    source:
+      regexp: bosh-cli-(.*)-linux-amd64
+      bucket: to-be-hardcoded #TODO
