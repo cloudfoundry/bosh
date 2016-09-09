@@ -15,11 +15,12 @@ module Bosh::Director::ConfigServer
       let(:ignored_subtrees) {[]}
       let(:mock_config_store) do
         {
-          'value' => generate_success_response({'value' => 123}.to_json),
+          'integer_placeholder' => generate_success_response({'value' => 123}.to_json),
           'instance_placeholder' => generate_success_response({'value' => 'test1'}.to_json),
           'job_placeholder' => generate_success_response({'value' => 'test2'}.to_json),
           'env_placeholder' => generate_success_response({'value' => 'test3'}.to_json),
-          'name_placeholder' => generate_success_response({'value' => 'test4'}.to_json)
+          'name_placeholder' => generate_success_response({'value' => 'test4'}.to_json),
+          'hash_placeholder' => generate_success_response({'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}}.to_json),
         }
       end
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
@@ -37,7 +38,7 @@ module Bosh::Director::ConfigServer
       it 'should request keys from the proper url' do
         expected_result = { 'properties' => {'key' => 123 } }
 
-        manifest_hash['properties'] = { 'key' => '((value))' }
+        manifest_hash['properties'] = { 'key' => '((integer_placeholder))' }
         expect(interpolated_manifest).to eq(expected_result)
       end
 
@@ -52,7 +53,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should replace the global property keys in the passed hash' do
-        manifest_hash['properties'] = { 'key' => '((value))' }
+        manifest_hash['properties'] = { 'key' => '((integer_placeholder))' }
 
         expected_manifest = {
           'properties' => { 'key' => 123 }
@@ -116,6 +117,19 @@ module Bosh::Director::ConfigServer
               ]
             }
           ]
+        }
+
+        expect(interpolated_manifest).to eq(expected_manifest)
+      end
+
+      it 'should replace the exact value that it gets as is (even a hash)' do
+        manifest_hash['cert'] = '((hash_placeholder))'
+
+        expected_manifest = {
+          'cert' => {
+            'ca' => 'ca_value',
+            'private_key'=> 'abc123'
+          }
         }
 
         expect(interpolated_manifest).to eq(expected_manifest)
@@ -244,6 +258,25 @@ module Bosh::Director::ConfigServer
           expect(interpolated_manifest).to eq(interpolated_manifest_hash)
         end
       end
+
+      context 'when placeholders begin with !' do
+        let(:manifest_hash) do
+          {
+            'name' => '((!name_placeholder))',
+            'properties' => {
+              'age' => '((!integer_placeholder))'
+            }
+          }
+        end
+
+        it 'should strip the exclamation mark' do
+          expected_result = {
+            'name' => 'test4',
+            'properties' => {'age' => 123 }
+          }
+          expect(interpolated_manifest).to eq(expected_result)
+        end
+      end
     end
 
     describe '#interpolate_deployment_manifest' do
@@ -320,6 +353,7 @@ module Bosh::Director::ConfigServer
 
         context 'when property value is a placeholder (padded with brackets)' do
           let(:the_placeholder) { '((my_smurf))' }
+          let(:special_placeholder) { '((!my_smurf))' }
 
           context 'when config server returns an error while checking for key' do
             it 'raises an error' do
@@ -334,6 +368,11 @@ module Bosh::Director::ConfigServer
             it 'returns that property value as is' do
               expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
               expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq(the_placeholder)
+            end
+
+            it 'returns that property value as is when it starts with exclamation mark' do
+              expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
+              expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', nil)).to eq(special_placeholder)
             end
           end
 
@@ -354,6 +393,20 @@ module Bosh::Director::ConfigServer
               it 'returns the default value when type is defined and generatable' do
                 expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
               end
+
+              context 'when placeholder starts with exclamation mark' do
+                it 'returns the default value when type is nil' do
+                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', nil)).to eq('my_default_value')
+                end
+
+                it 'returns the default value when type is defined' do
+                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
+                end
+
+                it 'returns the default value when type is defined and generatable' do
+                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
+                end
+              end
             end
 
             context 'when default is NOT defined i.e nil' do
@@ -368,10 +421,18 @@ module Bosh::Director::ConfigServer
 
                   it 'throws an error if generation of password errors' do
                     expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleErrorResponse.new)
+                    expect(logger).to receive(:error)
 
                     expect{
                       client.prepare_and_get_property(the_placeholder, default_value, type)
                     }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
+                  end
+
+                  context 'when placeholder starts with exclamation mark' do
+                    it 'generates a password and returns the user provided value' do
+                      expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                      expect(client.prepare_and_get_property(special_placeholder, default_value, type)).to eq(special_placeholder)
+                    end
                   end
                 end
 
@@ -409,6 +470,13 @@ module Bosh::Director::ConfigServer
                     expect{
                       client.prepare_and_get_property(the_placeholder, default_value, type, options)
                     }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError)
+                  end
+
+                  context 'when placeholder starts with exclamation mark' do
+                    it 'generates a certificate and returns the user provided placeholder' do
+                      expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleSuccessResponse.new)
+                      expect(client.prepare_and_get_property(special_placeholder, default_value, type, options)).to eq(special_placeholder)
+                    end
                   end
                 end
               end

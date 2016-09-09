@@ -55,23 +55,27 @@ module Bosh::Director::ConfigServer
       interpolate(runtime_manifest, ignored_subtrees)
     end
 
+    # @param [Object] provided property value
+    # @param [Object] default property value
+    # @param [String] type of property
+    # @param [Hash] options hash containing extra options when needed
+    # @return [Object] either the provided_prop or the default_prop
     def prepare_and_get_property(provided_prop, default_prop, type, options = {})
-      # put result here
       if provided_prop.nil?
         result = default_prop
       else
-        if provided_prop.to_s.match(/^\(\(.*\)\)$/)
-          stripped_provided_prop = provided_prop.gsub(/(^\(\(|\)\)$)/, '')
+        if is_placeholder?(provided_prop)
+          provided_prop_with_no_brackets = strip_brackets_from_placeholder(provided_prop)
 
-          if key_exists?(stripped_provided_prop)
+          if key_exists?(provided_prop_with_no_brackets)
             result = provided_prop
           else
             if default_prop.nil?
               case type
                 when 'password'
-                  generate_password(stripped_provided_prop)
+                  generate_password(provided_prop_with_no_brackets)
                 when 'certificate'
-                  generate_certificate(stripped_provided_prop, options)
+                  generate_certificate(provided_prop_with_no_brackets, options)
               end
               result = provided_prop
             else
@@ -87,24 +91,25 @@ module Bosh::Director::ConfigServer
 
     private
 
+    def get_value_for_key(key)
+      stripped_key = process_key(key)
+      response = @config_server_http_client.get(stripped_key)
+
+      if response.kind_of? Net::HTTPOK
+        JSON.parse(response.body)['value']
+      elsif response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{stripped_key}' in the config server"
+      else
+        raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
+      end
+    end
+
     def key_exists?(key)
       begin
         get_value_for_key(key)
         true
       rescue Bosh::Director::ConfigServerMissingKeys
         false
-      end
-    end
-
-    def get_value_for_key(key)
-      response = @config_server_http_client.get(key)
-
-      if response.kind_of? Net::HTTPOK
-        JSON.parse(response.body)['value']
-      elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
-      else
-        raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
       end
     end
 
@@ -141,28 +146,44 @@ module Bosh::Director::ConfigServer
       request_body = {
         'type' => 'password'
       }
-      response = @config_server_http_client.post(key, request_body)
+
+      response = @config_server_http_client.post(process_key(key), request_body)
 
       unless response.kind_of? Net::HTTPSuccess
+        @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
       end
     end
 
     def generate_certificate(key, options)
-      domain_names = options[:dns_record_names]
+      dns_record_names = options[:dns_record_names]
       request_body = {
         'type' => 'certificate',
         'parameters' => {
-          'common_name' => domain_names.first,
-          'alternative_names' => domain_names
+          'common_name' => dns_record_names.first,
+          'alternative_names' => dns_record_names
         }
       }
 
-      response = @config_server_http_client.post(key, request_body)
+      response = @config_server_http_client.post(process_key(key), request_body)
+
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerCertificateGenerationError, 'Config Server failed to generate certificate'
       end
+    end
+
+    def is_placeholder?(value)
+      value.to_s.match(/^\(\(.*\)\)$/)
+    end
+
+    def strip_brackets_from_placeholder(placeholder)
+      placeholder.gsub(/(^\(\(|\)\)$)/, '')
+    end
+
+    # process key before contacting config server
+    def process_key(placeholder)
+      placeholder.gsub(/^!/, '') # remove ! because of spiff
     end
   end
 

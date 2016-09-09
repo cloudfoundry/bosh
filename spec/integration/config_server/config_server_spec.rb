@@ -90,15 +90,46 @@ describe 'using director with config server', type: :integration do
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
 
-      it 'returns original raw manifest when downloaded through cli' do
-        config_server_helper.put_value('my_placeholder', 'happy smurf')
+      context 'when manifest is downloaded through CLI' do
+        before do
+          job_properties['smurfs']['color'] = '((!smurfs_color_placeholder))'
+        end
 
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+        it 'returns original raw manifest (with no changes) when downloaded through cli' do
+          config_server_helper.put_value('my_placeholder', 'happy smurf')
 
-        downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
-        expect(downloaded_manifest).to include '((my_placeholder))'
-        expect(downloaded_manifest).to_not include 'happy smurf'
+          downloaded_manifest = bosh_runner.run("download manifest #{manifest_hash['name']}", env: client_env)
+
+          expect(downloaded_manifest).to include '((my_placeholder))'
+          expect(downloaded_manifest).to include '((!smurfs_color_placeholder))'
+          expect(downloaded_manifest).to_not include 'happy smurf'
+        end
+      end
+
+      context 'when a placeholder starts with an exclamation mark' do
+        let(:job_properties) do
+          {
+            'gargamel' => {
+              'color' => '((!my_placeholder))'
+            },
+            'smurfs' => {
+              'happiness_level' => 10
+            }
+          }
+        end
+
+        it 'strips the exclamation mark when getting value from config server' do
+          config_server_helper.put_value('my_placeholder', 'cats are very happy')
+
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are very happy')
+        end
       end
 
       context 'when health monitor is around and resurrector is enabled' do
@@ -542,7 +573,7 @@ describe 'using director with config server', type: :integration do
 
       context 'when types are generatable' do
         context 'when type is password or certificate' do
-          context 'when these properties are defined in deployment manifest' do
+          context 'when these properties are defined in deployment manifest as placeholders' do
             context 'when these properties are NOT defined in the config server' do
               let(:job_properties) do
                 {
@@ -600,6 +631,45 @@ describe 'using director with config server', type: :integration do
                   expect(generated_cert).to eq(generated_cert_response['certificate'])
                   expect(generated_private_key).to eq(generated_cert_response['private_key'])
                   expect(root_ca).to eq(generated_cert_response['ca'])
+                end
+
+                context 'when placeholders start with exclamation mark' do
+                  let(:job_properties) do
+                    {
+                      'smurfs' => {
+                        'phone_password' => '((!smurfs_phone_password_placeholder))',
+                        'happiness_level' => 9
+                      },
+                      'gargamel' => {
+                        'secret_recipe' => '((!gargamel_secret_recipe_placeholder))',
+                        'cert' => '((!gargamel_certificate_placeholder))'
+                      }
+                    }
+                  end
+
+                  it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
+                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                    vm = director.vm('our_instance_group', '0', env: client_env)
+
+                    template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                    expect(
+                      template_hash['properties_list']['smurfs_phone_password']
+                    ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
+                    expect(
+                      template_hash['properties_list']['gargamel_secret_recipe']
+                    ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
+
+                    generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+                    generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+                    root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+                    generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+
+                    expect(generated_cert).to eq(generated_cert_response['certificate'])
+                    expect(generated_private_key).to eq(generated_cert_response['private_key'])
+                    expect(root_ca).to eq(generated_cert_response['ca'])
+                  end
                 end
               end
             end
