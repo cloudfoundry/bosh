@@ -652,13 +652,13 @@ Error: Unable to render instance groups for deployment. Errors are:
           })
 
         output = deploy(manifest_hash: manifest)
-        expect(output).to include('Updating job job_with_templates_having_properties')
+        expect(output).to include('Updating instance job_with_templates_having_properties')
       end
 
       it 'should not update the job when template properties are the same' do
         deploy(manifest_hash: manifest)
         output = deploy(manifest_hash: manifest)
-        expect(output).to_not include('Updating job job_with_templates_having_properties')
+        expect(output).to_not include('Updating instance job_with_templates_having_properties')
       end
 
 
