@@ -12,6 +12,8 @@ rm -fr $chroot/etc/udev/rules.d/70-persistent-net.rules
 # https://github.com/cloudfoundry/bosh/issues/1399
 echo -n "bosh-stemcell" > $chroot/etc/hostname
 
+# Context on the need to disable NetworkManager (NM_CONTROLLED=no) is here:
+# https://github.com/Azure/WALinuxAgent/issues/190#issuecomment-226878272
 if [ -e "$chroot/etc/network/interfaces" ]; then # ubuntu
   cat >> $chroot/etc/network/interfaces <<EOS
 auto eth0
@@ -31,6 +33,7 @@ DEVICE=eth0
 BOOTPROTO=dhcp
 ONBOOT=on
 TYPE="Ethernet"
+NM_CONTROLLED=no
 EOS
 
 fi
