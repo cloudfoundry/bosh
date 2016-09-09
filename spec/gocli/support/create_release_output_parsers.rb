@@ -8,7 +8,7 @@ module Bosh::Spec
     end
 
     def parse_release_tarball_path(create_release_output)
-      regex = /^Release tarball \(.*\): (.*\.tgz)$/
+      regex = /^Archive\s+(.*\.tgz)\s*$/
       expect(create_release_output).to match(regex)
       create_release_output.match(regex)[1]
     end
