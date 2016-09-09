@@ -10,6 +10,7 @@ groups:
       - unit-2.3-postgres
       - blobstore-client-integration
       - integration-1.9-postgres
+      - integration-2.3-postgres-gocli
       - integration-2.3-mysql
       - integration-2.3-postgres
       - load-tests-postgres
