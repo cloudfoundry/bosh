@@ -87,7 +87,7 @@ module IntegrationExampleGroup
   end
 
   def delete_stemcell
-    bosh_runner.run("delete-stemcell ubuntu-stemcell 1")
+    bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
   end
 
   def deployment_file(manifest_hash)
