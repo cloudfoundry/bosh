@@ -38,8 +38,9 @@ module Bosh::Director
             if target.ids_provided?
               result["id"] = instance.uuid
             else
-              result["index"] = instance.index
+              result["index"] = result["id"] = instance.index
             end
+            result["job"] = instance.job
 
             if Config.default_ssh_options
               result["gateway_host"] = Config.default_ssh_options["gateway_host"]
