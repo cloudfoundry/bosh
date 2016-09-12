@@ -13,6 +13,12 @@ module Bosh::Director
     def update(instance, metadata)
       if @cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
+
+        manifest = Manifest.load_from_model(instance.deployment)
+        if manifest.raw_manifest_hash.is_a?(Hash)
+          metadata = metadata.merge(manifest.to_hash.fetch('tags', {}))
+        end
+
         metadata[:deployment] = instance.deployment.name
 
         metadata[:id] = instance.uuid

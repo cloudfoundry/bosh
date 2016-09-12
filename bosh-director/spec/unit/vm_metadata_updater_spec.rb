@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'logger'
 require 'timecop'
+require 'yaml'
 
 describe Bosh::Director::VmMetadataUpdater do
   describe '.build' do
@@ -36,6 +37,12 @@ describe Bosh::Director::VmMetadataUpdater do
         expected_vm_metadata = {'fake-director-key1' => 'fake-director-value1'}
         director_metadata.merge!(expected_vm_metadata)
         expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
+        vm_metadata_updater.update(instance, {})
+      end
+
+      it 'updates vm metadata with instance tags' do
+        instance.deployment.manifest = YAML.dump({'tags' => {'my-tag' => 'my-value'}})
+        expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including({'my-tag' => 'my-value'}))
         vm_metadata_updater.update(instance, {})
       end
 
