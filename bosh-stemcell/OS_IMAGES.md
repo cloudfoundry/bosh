@@ -7,6 +7,11 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `AEwn6hJ4pBmbNSYCvUzOSMoD2.A.Ic_T`
+  - Backport IPv6 CIS/STIG stories
+  - periodic bump
+  - built from 256.x (8d2beb41a7b625f698572cabcf6b573b54256139)
+
 * `EKgLrwgJBgNvidhKlm1nBHFe9Y9MeqlC`
   - USN-3065-1: Libgcrypt vulnerability
   - built from 256.x (13ebe4248f39346c4790ba88acdcbae59b947195)
