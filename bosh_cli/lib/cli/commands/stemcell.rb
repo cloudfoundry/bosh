@@ -105,9 +105,10 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
     usage 'stemcells'
     desc 'Show the list of available stemcells'
+    option "--terse", "easy to parse output"
     def list
+      terse = options[:terse]
       auth_required
-      show_current_state
 
       stemcells = director.list_stemcells.sort do |sc1, sc2|
         if sc1['name'] == sc2['name']
@@ -117,21 +118,29 @@ If --name & --version are provided, they will be used for checking if stemcell e
         end
       end
 
-      err('No stemcells') if stemcells.empty?
-
-      stemcells_table = table do |t|
-        t.headings = 'Name', 'OS', 'Version', 'CID'
-        stemcells.each do |sc|
-          t << get_stemcell_table_record(sc)
+      if terse
+        stemcells.each do |sc| 
+          row = get_stemcell_table_record(sc)
+          say(row.join("\t"))
         end
-      end
+      else
+        show_current_state
+        err('No stemcells') if stemcells.empty?
 
-      nl
-      say(stemcells_table)
-      nl
-      say('(*) Currently in-use')
-      nl
-      say('Stemcells total: %d' % stemcells.size)
+        stemcells_table = table do |t|
+          t.headings = 'Name', 'OS', 'Version', 'CID'
+          stemcells.each do |sc|
+            t << get_stemcell_table_record(sc)
+          end
+        end
+
+        nl
+        say(stemcells_table)
+        nl
+        say('(*) Currently in-use')
+        nl
+        say('Stemcells total: %d' % stemcells.size)
+      end
     end
 
     usage 'public stemcells'
