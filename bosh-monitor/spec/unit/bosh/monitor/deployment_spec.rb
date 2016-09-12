@@ -54,6 +54,15 @@ describe Bhm::Deployment do
     it "refuse to add instance with 'expects_vm=false'" do
       expect(deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => false}))).to be(false)
     end
+
+    it 'overrides existing instance' do
+      deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'cid' => 'cid', 'expects_vm' => true}))
+      updated_instance = Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'another-auuid', 'cid' => 'another-cid', 'expects_vm' => true})
+
+      deployment.add_instance(updated_instance)
+
+      expect(deployment.instance('iuuid')).to eq(updated_instance)
+    end
   end
 
   describe '#instance_ids' do
