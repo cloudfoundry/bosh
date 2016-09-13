@@ -614,6 +614,7 @@ describe 'using director with config server', type: :integration do
 
                   vm = director.vm('our_instance_group', '0', env: client_env)
 
+                  # Passwords generation
                   template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                   expect(
                     template_hash['properties_list']['smurfs_phone_password']
@@ -622,6 +623,7 @@ describe 'using director with config server', type: :integration do
                     template_hash['properties_list']['gargamel_secret_recipe']
                   ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
 
+                  # Certificate generation
                   generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
                   generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
                   root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
@@ -631,6 +633,12 @@ describe 'using director with config server', type: :integration do
                   expect(generated_cert).to eq(generated_cert_response['certificate'])
                   expect(generated_private_key).to eq(generated_cert_response['private_key'])
                   expect(root_ca).to eq(generated_cert_response['ca'])
+
+                  certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
+                  expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
+
+                  subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
+                  expect(subject_alt_name.to_s).to include('*.our-instance-group.a.simple.bosh')
                 end
 
                 context 'when placeholders start with exclamation mark' do

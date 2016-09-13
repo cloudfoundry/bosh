@@ -37,10 +37,8 @@ module Bosh::Monitor
       end
 
       instance.deployment = name
-      if @instance_id_to_instance[instance.id].nil?
-        @logger.debug("Discovered instance #{instance.id}")
-        @instance_id_to_instance[instance.id] = instance
-      end
+      @logger.debug("Discovered new instance #{instance.id}") if @instance_id_to_instance[instance.id].nil?
+      @instance_id_to_instance[instance.id] = instance
       true
     end
 
