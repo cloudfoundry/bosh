@@ -33,12 +33,13 @@ module Bosh::Spec
       failure_expected = options.fetch(:failure_expected, false)
       cli_options = ' --user=test --password=test'
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
+      cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
 
       default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
 
-      command   = "gobosh #{cli_options} #{cmd}"
+      command   = "gobosh --tty #{cli_options} #{cmd}"
       @logger.info("Running ... `#{command}`")
       output    = nil
       env = options.fetch(:env, {})

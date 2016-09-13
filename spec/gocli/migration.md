@@ -1,3 +1,12 @@
+When tests are broken due to a CLI bug, mark it as pending in the format of... 
+
+    pending('cli2: #{story-id}: #{story-title}
+
+Then we're able to find all blocked tests with...
+
+    grep -r 'pending(.cli2: #' spec/ | grep -v migration.md
+
+
 When copying over files, replace the `require 'spec_helper'` with a `relative_require`...
 
     before:
