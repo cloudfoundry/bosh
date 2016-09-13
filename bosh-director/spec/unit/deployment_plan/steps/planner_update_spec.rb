@@ -148,6 +148,7 @@ module Bosh::Director::DeploymentPlan
             allow(base_job).to receive(:task_id).and_return(task.id)
             allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
             allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
+            allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
           end
 
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }

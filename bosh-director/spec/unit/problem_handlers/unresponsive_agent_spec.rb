@@ -30,6 +30,7 @@ module Bosh::Director
         agent_id: 'agent-007'
       )
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
+      allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
     end
 
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
@@ -152,7 +153,7 @@ module Bosh::Director
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1'})
+            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1', 'bosh' => {'group' => String, 'groups' => anything}})
                  .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered

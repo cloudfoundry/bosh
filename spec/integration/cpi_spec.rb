@@ -36,7 +36,17 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => {}
+        'env' => {'bosh' => {
+          'group' => String,
+          'groups' => [
+            'testdirector',
+            'simple',
+            /compilation-.*/,
+            'testdirector-simple',
+            /simple-compilation-.*/,
+            /testdirector-simple-compilation-.*/
+          ]
+        }}
       })
 
       expect(invocations[2].method_name).to eq('set_vm_metadata')
@@ -89,7 +99,17 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => {}
+        'env' => { 'bosh' => {
+          'group' => String,
+          'groups' => [
+            'testdirector',
+            'simple',
+            /compilation-.*/,
+            'testdirector-simple',
+            /simple-compilation-.*/,
+            /testdirector-simple-compilation-.*/
+          ]
+        } }
       })
 
       expect(invocations[6].method_name).to eq('set_vm_metadata')
@@ -143,7 +163,16 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => {"bosh"=>{"password"=>"foobar"}}
+        'env' => {'bosh' =>{'password' => 'foobar', 'group' => 'testdirector-simple-foobar',
+          'groups' => [
+            'testdirector',
+            'simple',
+            'foobar',
+            'testdirector-simple',
+            'simple-foobar',
+            'testdirector-simple-foobar'
+          ]
+        }}
       })
 
       expect(invocations[10].method_name).to eq('set_vm_metadata')
@@ -207,7 +236,7 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [],
-          'env' => {"bosh"=>{"password"=>"foobar"}}
+          'env' => {'bosh' =>{'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' =>['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
         })
 
         expect(first_deploy_invocations[2].method_name).to eq('set_vm_metadata')
@@ -279,7 +308,7 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [disk_cid],
-          'env' => {"bosh"=>{"password"=>"foobar"}}
+          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
         })
 
         expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')

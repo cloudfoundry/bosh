@@ -57,6 +57,7 @@ module Bosh::Director
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
         Bosh::Director::Config.current_job.task_id = 42
+        Bosh::Director::Config.name = 'fake-director-name'
         allow(Config).to receive_messages(cloud: fake_cloud)
       end
 
@@ -78,7 +79,7 @@ module Bosh::Director
         expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
         expect(fake_cloud).
           to receive(:create_vm).
-            with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1'}).
+            with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1', 'bosh' => {'group' => String, 'groups' => anything}}).
             and_return('new-vm-cid')
 
         fake_job_context

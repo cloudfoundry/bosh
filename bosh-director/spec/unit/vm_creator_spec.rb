@@ -97,8 +97,22 @@ describe Bosh::Director::VmCreator do
   let(:task_id) {42}
   let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
 
+  let(:expected_groups) {
+    [
+      'fake-director-name',
+      'deployment-name',
+      'fake-job',
+      'fake-director-name-deployment-name',
+      'deployment-name-fake-job',
+      'fake-director-name-deployment-name-fake-job'
+    ]
+  }
+
+  let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
+
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
+    Bosh::Director::Config.name = 'fake-director-name'
     Bosh::Director::Config.max_vm_create_tries = 2
     Bosh::Director::Config.flush_arp = true
     allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
@@ -110,7 +124,9 @@ describe Bosh::Director::VmCreator do
 
   it 'should create a vm' do
     expect(cloud).to receive(:create_vm).with(
-      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
+      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {'bosh' => {'group' => expected_group,
+      'groups' => expected_groups
+    }}
     ).and_return('new-vm-cid')
 
     expect(agent_client).to receive(:wait_until_ready)
@@ -125,7 +141,7 @@ describe Bosh::Director::VmCreator do
 
   it 'should record events' do
     expect(cloud).to receive(:create_vm).with(
-        kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
+        kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
     ).and_return('new-vm-cid')
     expect {
       subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
@@ -162,10 +178,9 @@ describe Bosh::Director::VmCreator do
     expect(event_2.error).to eq('Bosh::Clouds::VMCreationFailed')
   end
 
-
   it 'flushes the ARP cache' do
     allow(cloud).to receive(:create_vm).with(
-      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {}
+      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
     ).and_return('new-vm-cid')
 
     allow(instance_plan).to receive(:network_settings_hash).and_return(
@@ -180,7 +195,7 @@ describe Bosh::Director::VmCreator do
     Bosh::Director::Config.flush_arp = false
 
     allow(cloud).to receive(:create_vm).with(
-      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {}
+      kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
     ).and_return('new-vm-cid')
 
     allow(instance_plan).to receive(:network_settings_hash).and_return(
@@ -194,8 +209,10 @@ describe Bosh::Director::VmCreator do
 
   it 'sets vm metadata' do
     expect(cloud).to receive(:create_vm).with(
-        kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
-      ).and_return('new-vm-cid')
+      kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {'bosh' => {'group' => expected_group,
+      'groups' => expected_groups
+    }}
+    ).and_return('new-vm-cid')
 
     allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
     Timecop.freeze do
@@ -229,9 +246,12 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
                                            kind_of(Hash), network_settings, ['fake-disk-cid'],
                                            {'bosh' =>
-                                             { 'credentials' =>
-                                               { 'crypt_key' => kind_of(String),
-                                                 'sign_key' => kind_of(String)}}})
+                                               {
+                                                 'group' => expected_group,
+                                                 'groups' => expected_groups,
+                                                 'credentials' =>
+                                                    { 'crypt_key' => kind_of(String),
+                                                      'sign_key' => kind_of(String)}}})
                                         .and_return('new-vm-cid')
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
@@ -355,7 +375,7 @@ describe Bosh::Director::VmCreator do
     context 'no password is specified' do
       it 'should generate a random VM password' do
         expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
-          expect(env['bosh']).to be_nil
+          expect(env['bosh']).to eq({ 'group' => expected_group, 'groups' => expected_groups})
         end.and_return('new-vm-cid')
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])

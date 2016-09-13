@@ -52,6 +52,16 @@ module Bosh::Director
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
     let(:event_manager) {Api::EventManager.new(true)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:expected_groups) {
+      [
+        'fake-director-name',
+        'mycloud',
+        'compilation-deadbeef',
+        'fake-director-name-mycloud',
+        'mycloud-compilation-deadbeef',
+        'fake-director-name-mycloud-compilation-deadbeef'
+      ]
+    }
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
@@ -72,6 +82,7 @@ module Bosh::Director
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
 
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(Config).to receive(:name).and_return('fake-director-name')
       @all_packages = []
     end
 
@@ -528,7 +539,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {}).
+          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)

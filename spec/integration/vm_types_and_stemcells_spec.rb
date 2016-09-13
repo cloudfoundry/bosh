@@ -14,7 +14,11 @@ describe 'vm_types and stemcells', type: :integration do
   let(:env_hash) do
     {
       'env1' => 'env_value1',
-      'env2' => 'env_value2'
+      'env2' => 'env_value2',
+      'bosh' => {
+        'group' => 'testdirector-simple-foobar',
+        'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+      },
     }
   end
 
@@ -167,7 +171,11 @@ stemcells:
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       env_hash = {
         'env1' => 'env_value1',
-        'env2' => 'env_value2'
+        'env2' => 'env_value2',
+        'bosh' => {
+          'group' => 'testdirector-simple-foobar',
+          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+        },
       }
       cloud_config_hash['resource_pools'].first['env'] = env_hash
 

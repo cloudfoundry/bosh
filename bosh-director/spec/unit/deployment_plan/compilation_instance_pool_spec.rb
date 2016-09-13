@@ -58,7 +58,17 @@ module Bosh::Director
     end
     let(:n_workers) { 3 }
     let(:cloud_properties) { { 'cloud' => 'properties'} }
-    let(:compilation_env) { { 'compilation' => 'environment'} }
+    let(:expected_groups) {
+      [
+        'fake-director-name',
+        'mycloud',
+        'compilation-deadbeef',
+        'fake-director-name-mycloud',
+        'mycloud-compilation-deadbeef',
+        'fake-director-name-mycloud-compilation-deadbeef'
+      ]
+    }
+    let(:compilation_env) { { 'compilation' => 'environment', 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups} } }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { {'a' => {'property' => 'settings'}} }
@@ -88,6 +98,7 @@ module Bosh::Director
       allow(cloud).to receive(:create_vm)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
+      allow(Config).to receive(:name).and_return('fake-director-name')
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)

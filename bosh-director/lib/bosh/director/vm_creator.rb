@@ -139,6 +139,20 @@ module Bosh::Director
         env['bosh']['password'] = sha512_hashed_password
       end
 
+      if instance_model.job
+        env['bosh'] ||= {}
+        env['bosh']['group'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}")
+        env['bosh']['groups'] = [
+          Bosh::Director::Config.name,
+          instance_model.deployment.name,
+          instance_model.job,
+          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}",
+          "#{instance_model.deployment.name}-#{instance_model.job}",
+          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}"
+        ]
+        env['bosh']['groups'].map! { |name| Canonicalizer.canonicalize(name) }
+      end
+
       count = 0
       begin
         vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
