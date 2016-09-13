@@ -75,7 +75,7 @@ module Bosh::Director
       context 'when id is instance uuid' do
         it 'finds instance by its id and generates response with id' do
           job.perform
-          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job'}])
+          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 'fake-uuid-1'}])
         end
 
         it 'stores event with instance uuid' do
@@ -90,7 +90,7 @@ module Bosh::Director
 
         it 'finds instance by its index and generates response with id' do
           job.perform
-          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-2', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job'}])
+          expect(parsed_result_file).to eq([{'id' => 'fake-uuid-2', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', "index"=>"fake-uuid-2"}])
         end
 
         it 'stores event with instance index' do

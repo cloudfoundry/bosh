@@ -36,7 +36,7 @@ module Bosh::Director
             logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
             result = agent.ssh(@command, @params)
             if target.ids_provided?
-              result["id"] = instance.uuid
+              result["index"] = result["id"] = instance.uuid
             else
               result["index"] = result["id"] = instance.index
             end
