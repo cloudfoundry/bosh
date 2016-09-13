@@ -12,7 +12,7 @@ describe Bosh::Director::VmMetadataUpdater do
 
       updater = instance_double('Bosh::Director::VmMetadataUpdater')
       expect(described_class).to receive(:new).with(
-          cloud, {director: 'fake-director-name'}, logger).and_return(updater)
+          cloud, {'director' => 'fake-director-name'}, logger).and_return(updater)
 
       expect(described_class.build).to eq(updater)
     end
@@ -41,7 +41,7 @@ describe Bosh::Director::VmMetadataUpdater do
 
       it 'updates vm metadata with creation time' do
         Timecop.freeze do
-          expected_vm_metadata = {:created_at => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
+          expected_vm_metadata = {'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
           expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           vm_metadata_updater.update(instance, {})
         end
@@ -55,23 +55,23 @@ describe Bosh::Director::VmMetadataUpdater do
 
       it 'updates vm metadata with deployment specific metadata' do
         expect(cloud).to receive(:set_vm_metadata)
-                           .with('fake-vm-cid', hash_including(deployment: 'deployment-value'))
+                           .with('fake-vm-cid', hash_including('deployment' => 'deployment-value'))
         vm_metadata_updater.update(instance, {})
       end
 
       it 'updates vm metadata with instance specific metadata' do
         expected_vm_metadata = {
-          id: 'some_instance_id',
-          job: 'job-value',
-          index: '12345',
-          name: 'job-value/some_instance_id',
+          'id' => 'some_instance_id',
+          'job' => 'job-value',
+          'index' => '12345',
+          'name' => 'job-value/some_instance_id',
         }
         expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
         vm_metadata_updater.update(instance, {})
       end
 
       it 'turns job index metadata into a string' do
-        expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(index: '12345'))
+        expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including('index' => '12345'))
         vm_metadata_updater.update(instance, {})
       end
     end

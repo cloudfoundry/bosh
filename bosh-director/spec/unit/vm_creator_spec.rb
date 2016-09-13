@@ -70,7 +70,7 @@ module Bosh
 
       let(:tags) do
         {
-          :mytag => 'foobar'
+          'mytag' => 'foobar'
         }
       end
 
@@ -314,14 +314,14 @@ module Bosh
           expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
             expect(vm_cid).to eq('new-vm-cid')
             expect(metadata).to match({
-                                          deployment: 'deployment_name',
-                                          created_at: Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                                          job: 'fake-job',
-                                          index: '5',
-                                          director: 'fake-director-name',
-                                          id: instance_model.uuid,
-                                          name: "fake-job/#{instance_model.uuid}",
-                                          mytag: 'foobar',
+                                          'deployment' => 'deployment_name',
+                                          'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                                          'job' => 'fake-job',
+                                          'index' => '5',
+                                          'director' => 'fake-director-name',
+                                          'id' => instance_model.uuid,
+                                          'name' => "fake-job/#{instance_model.uuid}",
+                                          'mytag' => 'foobar',
                                       })
           end
 
