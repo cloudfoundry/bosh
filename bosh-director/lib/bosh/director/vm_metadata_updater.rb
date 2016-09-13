@@ -13,6 +13,7 @@ module Bosh::Director
     def update(instance, metadata)
       if @cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
+
         metadata[:deployment] = instance.deployment.name
 
         metadata[:id] = instance.uuid

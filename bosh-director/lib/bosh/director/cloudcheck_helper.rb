@@ -66,7 +66,7 @@ module Bosh::Director
       delete_vm_from_cloud(instance_model)
 
       instance_plan_to_create = create_instance_plan(instance_model)
-      tags = Bosh::Director::Models::Tag.find(:deployment_id => instance_model.deployment.id) || {}
+      tags = instance_model.deployment.tags
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
         Array(instance_model.managed_persistent_disk_cid),

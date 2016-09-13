@@ -58,7 +58,7 @@ module Bosh::Spec
     end
 
     def find_vm(vms, job_name, index_or_id)
-      vm = vms.detect { |vm| vm.job_name == job_name && (vm.index == index_or_id || vm.instance_uuid == index_or_id)}
+      vm = vms.detect { |vm| vm.job_name == job_name && (vm.index == index_or_id.to_s || vm.instance_uuid == index_or_id.to_s)}
       vm || raise("Failed to find vm #{job_name}/#{index_or_id}")
     end
 

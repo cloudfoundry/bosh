@@ -45,7 +45,7 @@ module Bosh::Director
             if @deployment.tags.has_key?(key_val)
               raise TagAlreadyExists, "Duplicate tag '#{key_val}'"
             end
-            @deployment.add_tag(Tag.parse(tag_hash))
+            @deployment.add_tag(DeploymentPlan::Tag.parse(tag_hash))
           end
         end
       end

@@ -41,6 +41,18 @@ module Bosh::Director::Models
       end
     end
 
+    def tags
+      tags = {}
+
+      if manifest
+        tag_list = YAML.load(self.manifest)['tags'] || []
+        tag_list.each do |tag|
+          tags[tag['key'].to_sym] = tag['value']
+        end
+      end
+
+      tags
+    end
   end
 
   Deployment.plugin :association_dependencies

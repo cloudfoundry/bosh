@@ -5,10 +5,6 @@ describe Bosh::Director::DeploymentPlan::Tag do
     BD::DeploymentPlan::Tag.parse(spec)
   end
 
-  def make_tag(key, value)
-    BD::Models::Tag.make(:key => key, :value => value)
-  end
-
   let(:valid_spec) do
     {
       'key' => 'mytag',

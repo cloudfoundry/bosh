@@ -34,8 +34,6 @@ Sham.define do
                      "#{octet}.#{octet}.#{octet}.in-addr.arpa"
                    }
   lock_name     { |index| "lock-resource-entity#{index}" }
-  key           { |index| "key#{index}" }
-  value         { |index| "value#{index}" }
 end
 
 module Bosh::Director::Models
@@ -119,11 +117,6 @@ module Bosh::Director::Models
     description { Sham.description }
     result      { nil }
     output      { nil }
-  end
-
-  Tag.blueprint do
-    key        { Sham.key }
-    value      { Sham.value }
   end
 
   User.blueprint do
