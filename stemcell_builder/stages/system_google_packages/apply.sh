@@ -10,6 +10,10 @@ source $base_dir/lib/prelude_apply.bash
 # Copy google daemon packages into chroot
 cp -R $assets_dir/usr $chroot/
 
+# Configure the Google guest environment
+# https://github.com/GoogleCloudPlatform/compute-image-packages#configuration
+cp $assets_dir/instance_configs.cfg.template $chroot/etc/default/
+
 os_type="$(get_os_type)"
 if [ "${os_type}" == "ubuntu" ]
 then
