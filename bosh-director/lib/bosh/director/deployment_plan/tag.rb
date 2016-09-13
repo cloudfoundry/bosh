@@ -14,7 +14,7 @@ module Bosh::Director
           raise ValidationMissingField, "Required property 'key' or 'value' was not specified in object (#{spec})"
         end
 
-        new(key.to_sym, value)
+        new(key, value)
       end
 
       def initialize(key, value)

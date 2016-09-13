@@ -16,8 +16,8 @@ HERE
     describe '#tags' do
       it 'returns the tags in deployment manifest' do
         expect(deployment.tags).to eq({
-          tag1: 'value1',
-          tag2: 'value2',
+          'tag1' => 'value1',
+          'tag2' => 'value2',
         })
       end
 

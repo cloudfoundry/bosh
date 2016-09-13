@@ -47,7 +47,7 @@ module Bosh::Director::Models
       if manifest
         tag_list = YAML.load(self.manifest)['tags'] || []
         tag_list.each do |tag|
-          tags[tag['key'].to_sym] = tag['value']
+          tags[tag['key']] = tag['value']
         end
       end
 
