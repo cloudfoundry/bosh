@@ -72,9 +72,17 @@ shared_examples_for 'All Stemcells' do
     end
   end
 
-  describe 'logrotate should rotate every 15 minutes' do
-    describe file('/etc/cron.d/logrotate') do
-      it { should contain '0,15,30,45 * * * * root /usr/bin/logrotate-cron' }
+  describe 'logrotate' do
+    describe 'should rotate every 15 minutes' do
+      describe file('/etc/cron.d/logrotate') do
+        it { should contain '0,15,30,45 * * * * root /usr/bin/logrotate-cron' }
+      end
+    end
+
+    describe 'default su directive' do
+      describe file('/etc/logrotate.d/default_su_directive') do
+        it { should contain 'su root root'}
+      end
     end
   end
 end

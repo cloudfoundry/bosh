@@ -66,7 +66,10 @@ then
   fi
 elif [ -f $chroot/etc/redhat-release ] # Centos or RHEL
 then
-  run_in_bosh_chroot $chroot "systemctl disable rsyslog.service"
+  mkdir -p $chroot/etc/systemd/system/rsyslog.service.d
+  cp -f $assets_dir/rsyslog_override.conf $chroot/etc/systemd/system/rsyslog.service.d/rsyslog_override.conf
+  cp -f $assets_dir/systemd_mountchecker.service  $chroot/etc/systemd/system/mountchecker.service
+  run_in_bosh_chroot $chroot "systemctl enable rsyslog.service"
 elif [ -f $chroot/etc/photon-release ] # PhotonOS
 then
   sed -i "s@/dev/xconsole@/dev/console@g" $chroot/etc/rsyslog.d/50-default.conf

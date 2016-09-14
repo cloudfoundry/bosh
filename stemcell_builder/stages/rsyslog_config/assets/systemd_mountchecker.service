@@ -1,0 +1,12 @@
+[Unit]
+Description=Wait until /var/log gets bind mounted to /var/vcap/data/root_log
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/bash -c 'until mountpoint -q /var/log; do sleep .1; done'
+StandardOutput=null
+Restart=on-failure
+UMask=0066
+
+[Install]
+WantedBy=multi-user.target
