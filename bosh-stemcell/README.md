@@ -14,7 +14,7 @@ First make sure you have a local copy of this repository. If you already have a 
 
 The Docker-based environment files are located in `ci/docker/os-image-stemcell-builder`...
 
-    host$ cd ci/docker
+    host$ cd ci/docker/os-image-stemcell-builder
 
 If you do not already have Docker running, use `vagrant` to start a new VM which has Docker, and then change back into the `./docker` directory...
 
