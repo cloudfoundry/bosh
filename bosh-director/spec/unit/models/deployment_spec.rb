@@ -7,10 +7,8 @@ module Bosh::Director::Models
     let(:manifest) { <<-HERE }
 ---
 tags:
-  - key: tag1
-    value: value1
-  - key: tag2
-    value: value2
+  tag1: value1
+  tag2: value2
 HERE
 
     describe '#tags' do

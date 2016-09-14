@@ -11,10 +11,9 @@ describe 'CPI calls', type: :integration do
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
       manifest_hash.merge!({
-        'tags' => [{
-          'key' => 'tag1',
-          'value' => 'value1',
-        }],
+        'tags' => {
+          'tag1' => 'value1',
+        },
       })
 
       deploy_from_scratch(manifest_hash: manifest_hash)
@@ -214,10 +213,9 @@ describe 'CPI calls', type: :integration do
           )
         ]
         manifest_hash.merge!({
-          'tags' => [{
-            'key' => 'tag1',
-            'value' => 'value1',
-          }],
+          'tags' => {
+            'tag1' => 'value1',
+          },
         })
 
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -370,10 +368,9 @@ describe 'CPI calls', type: :integration do
           )
         ]
         manifest_hash.merge!({
-          'tags' => [{
-            'key' => 'tag1',
-            'value' => 'value1',
-          }],
+          'tags' => {
+            'tag1' => 'value1',
+          },
         })
 
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

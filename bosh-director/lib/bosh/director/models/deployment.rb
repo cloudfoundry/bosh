@@ -45,10 +45,7 @@ module Bosh::Director::Models
       tags = {}
 
       if manifest
-        tag_list = YAML.load(self.manifest)['tags'] || []
-        tag_list.each do |tag|
-          tags[tag['key']] = tag['value']
-        end
+        tags = YAML.load(manifest)['tags'] || {}
       end
 
       tags
