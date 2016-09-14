@@ -27,6 +27,7 @@ require 'bosh/director/api/restore_manager'
 require 'bosh/director/api/cloud_config_manager'
 require 'bosh/director/api/runtime_config_manager'
 require 'bosh/director/api/instance_ignore_manager'
+require 'bosh/director/api/syslog_helper'
 
 require 'bosh/director/api/instance_lookup'
 require 'bosh/director/api/deployment_lookup'

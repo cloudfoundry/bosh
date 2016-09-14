@@ -242,7 +242,7 @@ properties:
 
   # Events
   director.events.record_events:
-    description: Enable recording of events to the database
+    description: Enable recording of events to the database and syslog
     default: false
   director.events.max_events:
     description: Max number of events to keep

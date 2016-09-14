@@ -1,10 +1,3 @@
-#feature not supported for ruby < 2.0.0
-begin
-  require 'syslog/logger'
-rescue LoadError
-  puts "Failed to load Syslog::Logger. Ruby version #{RUBY_VERSION} not supported. Use RUBY_VERSION >= 2.0.0"
-end
-
 require 'socket'
 
 module Bosh::Director
@@ -64,7 +57,7 @@ module Bosh::Director
                                                          device_version, signature_id, name, severity, extension]
               cef_log_encoded = cef_log.force_encoding(Encoding::UTF_8)
 
-              Syslog::Logger.new('vcap.bosh.director').info(cef_log_encoded)
+              syslog.info(cef_log_encoded)
             end
           end
         end
