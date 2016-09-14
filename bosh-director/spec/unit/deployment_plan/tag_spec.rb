@@ -7,34 +7,25 @@ describe Bosh::Director::DeploymentPlan::Tag do
 
   let(:valid_spec) do
     {
-      'key' => 'mytag',
-      'value' => 'foobar'
-    }
-  end
-
-  let(:missing_key_spec) do
-    {
-      'value' => 'foobar'
+      'mytag' => 'foobar'
     }
   end
 
   let(:missing_value_spec) do
     {
-      'key' => 'my-tag'
+      'mytag' => nil
     }
   end
 
   let(:not_string_key_spec) do
     {
-      'key' => {'bad' => 'key, not string'},
-      'value' => 'foobar'
+      {'bad' => 'key, not string'} => 'wontwork',
     }
   end
 
   let(:not_string_value_spec) do
     {
-      'key' => 'my-tag',
-      'value' => {'bad' => 'value, not string'}
+      'my-tag' => {'bad' => 'value, not string'}
     }
   end
 
@@ -46,12 +37,6 @@ describe Bosh::Director::DeploymentPlan::Tag do
     end
 
     context 'key' do
-      context 'when it is missing' do
-        it 'raises ValidationMissingField error' do
-          expect{ make(missing_key_spec) }.to raise_error BD::ValidationMissingField
-        end
-      end
-
       context 'when it is not a String' do
         it 'ValidationInvalidType error' do
           expect {make(not_string_key_spec) }.to raise_error Bosh::Director::ValidationInvalidType
@@ -60,7 +45,7 @@ describe Bosh::Director::DeploymentPlan::Tag do
     end
 
     context 'value' do
-      context 'when it is missing' do
+      context 'when it is empty' do
         it 'raises ValidationMissingField error' do
           expect{ make(missing_value_spec) }.to raise_error BD::ValidationMissingField
         end

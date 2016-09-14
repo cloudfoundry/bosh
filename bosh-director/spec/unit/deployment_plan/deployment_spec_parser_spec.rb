@@ -50,7 +50,7 @@ module Bosh::Director
       describe 'tags key' do
         context 'when tags are specified' do
           before do
-            tags = [{'key' => 'mytag', 'value' => 'foo-tag'}]
+            tags = {'mytag' => 'foo-tag'}
             manifest_hash['tags'] = tags
           end
 
@@ -60,13 +60,15 @@ module Bosh::Director
 
           context 'when we have duplicate tags' do
             before do
-              tags = [{'key' => 'mytag', 'value' => 'foo-tag'},
-                      {'key' => 'mytag', 'value' => 'foo-tag'}]
+              tags = {
+                'mytag' => 'foo-tag',
+                'mytag' => 'foo-tag',
+              }
               manifest_hash['tags'] = tags
             end
 
-            it 'should error TagDuplicateError' do
-              expect{ parsed_deployment.tags }.to raise_error TagAlreadyExists
+            it 'returns a single tag' do
+              expect(parsed_deployment.tags.count).to eq(1)
             end
           end
         end

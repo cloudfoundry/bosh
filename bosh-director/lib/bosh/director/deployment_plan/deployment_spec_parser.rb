@@ -40,12 +40,8 @@ module Bosh::Director
 
       def parse_tags
         if @deployment_manifest.has_key?('tags')
-          safe_property(@deployment_manifest, 'tags', :class => Array).each do |tag_hash|
-            key_val = safe_property(tag_hash, 'key', :class => String)
-            if @deployment.tags.has_key?(key_val)
-              raise TagAlreadyExists, "Duplicate tag '#{key_val}'"
-            end
-            @deployment.add_tag(DeploymentPlan::Tag.parse(tag_hash))
+          safe_property(@deployment_manifest, 'tags', :class => Hash).each_pair do |key, value|
+            @deployment.add_tag(DeploymentPlan::Tag.parse({key => value}))
           end
         end
       end
