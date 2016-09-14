@@ -491,6 +491,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'dmesg_restrict' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^kernel\.dmesg_restrict\=1$/ }
+    end
+  end
+
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
