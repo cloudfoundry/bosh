@@ -52,7 +52,7 @@ module Bosh::Director
             deployment:  deployment,
             instance:    instance,
             context:     context)
-        syslog.info(JSON.generate(event.to_hash))
+        syslog(:info, JSON.generate(event.to_hash))
         event
       end
 

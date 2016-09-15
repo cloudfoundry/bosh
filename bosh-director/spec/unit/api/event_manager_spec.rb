@@ -15,6 +15,8 @@ describe Bosh::Director::Api::EventManager do
       end
 
       it 'should write event to syslog' do
+        pending("Syslog::Logger does not exist in ruby version '#{RUBY_VERSION}'") if RUBY_VERSION.to_i < 2
+
         syslog = instance_double(Syslog::Logger)
         allow(Syslog::Logger).to receive(:new).with('vcap.bosh.director').and_return(syslog)
         allow(syslog).to receive(:info)
@@ -37,6 +39,8 @@ describe Bosh::Director::Api::EventManager do
       end
 
       it 'should not write event to syslog' do
+        pending("Syslog::Logger does not exist in ruby version '#{RUBY_VERSION}'") if RUBY_VERSION.to_i < 2
+
         syslog = instance_double(Syslog::Logger)
         allow(Syslog::Logger).to receive(:new).with('vcap.bosh.director').and_return(syslog)
         allow(syslog).to receive(:info)

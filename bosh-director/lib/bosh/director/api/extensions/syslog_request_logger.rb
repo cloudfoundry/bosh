@@ -16,7 +16,7 @@ module Bosh::Director
 
         def log_request_to_syslog
           after do
-            if @config.log_access_events_to_syslog && RUBY_VERSION.to_i > 1
+            if @config.log_access_events_to_syslog && SyslogHelper.syslog_supported
               header_string = ''
               filtered_headers = request.env.select { |key, _| DESIRED_HEADERS.include?(key) }
                                      .collect { |key, value| [key.sub(/^HTTP_/, ''), value] }
@@ -57,7 +57,7 @@ module Bosh::Director
                                                          device_version, signature_id, name, severity, extension]
               cef_log_encoded = cef_log.force_encoding(Encoding::UTF_8)
 
-              syslog.info(cef_log_encoded)
+              syslog(:info, cef_log_encoded)
             end
           end
         end
