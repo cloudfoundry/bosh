@@ -82,7 +82,7 @@ if [ -e bosh-src/tmp/*-raw.tgz ] ; then
 fi
 
 stemcell_filename="${stemcell_name}.tgz"
-mv bosh-src/tmp/*.tgz "${output_dir}/${stemcell_filename}"
+mv "bosh-src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
 
 if [ -n "${BOSHIO_TOKEN}" ]; then
   checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
