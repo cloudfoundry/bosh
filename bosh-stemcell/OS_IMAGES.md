@@ -7,6 +7,17 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Hxx7ds96bprYfbT1Jd57cbDSGHSL88Oe`
+  - Update README to correct path (36622f4)
+  - Centos delays the start of rsyslogd using systemd (1c85054)
+  - Restrict syslog access via dmesg_restrict=1 sysctl call (94dadb8)
+  - Add logic to check if rsyslogd pid file exists before attempting to kill the process by pid (552376b)
+  - kill HUP rsyslog upon logrotation (723f589)
+  - bump bosh_aws_cpi gem (49bfedf)
+  - Fix broken stemcell cis spec on azure (fba40db)
+  - Change permissions on agent key to 600 (a9d7d89)
+  - built from develop (94dadb8beb7f92d6cd53a4925ff4803699e780b5)
+
 * `m7zyaL24BiYlXuS.Canxzv2AmoKK8A4_`
   - Fix issues with rsyslog
   - built from develop (4e7326cce2afc703440b0198fcad9017ad91caba)
@@ -482,6 +493,17 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `N4MRLzeURWZ_HltNBilu3v_5rjE9TpDD`
+  - Update README to correct path (36622f4)
+  - Centos delays the start of rsyslogd using systemd (1c85054)
+  - Restrict syslog access via dmesg_restrict=1 sysctl call (94dadb8)
+  - Add logic to check if rsyslogd pid file exists before attempting to kill the process by pid (552376b)
+  - kill HUP rsyslog upon logrotation (723f589)
+  - bump bosh_aws_cpi gem (49bfedf)
+  - Fix broken stemcell cis spec on azure (fba40db)
+  - Change permissions on agent key to 600 (a9d7d89)
+  - built from develop (94dadb8beb7f92d6cd53a4925ff4803699e780b5)
 
 * `Q9jt5NFnxlmffpRr9cyrwX9wLjGthk0f`
   - Fix issues with rsyslog
