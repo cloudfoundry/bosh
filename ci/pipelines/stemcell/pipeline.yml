@@ -13,8 +13,8 @@ groups:
       - build-google-kvm-ubuntu-trusty
       - build-openstack-kvm-centos-7
       - build-openstack-kvm-ubuntu-trusty
-      - build-softlayer-esxi-centos-7
-      - build-softlayer-esxi-ubuntu-trusty
+      - build-softlayer-xen-centos-7
+      - build-softlayer-xen-ubuntu-trusty
       - build-vsphere-esxi-centos-7
       - build-vsphere-esxi-ubuntu-trusty
       - build-vcloud-esxi-ubuntu-trusty
@@ -36,8 +36,8 @@ groups:
       - build-openstack-kvm-centos-7
   - name: softlayer
     jobs:
-      - build-softlayer-esxi-ubuntu-trusty
-      - build-softlayer-esxi-centos-7
+      - build-softlayer-xen-ubuntu-trusty
+      - build-softlayer-xen-centos-7
   - name: vsphere
     jobs:
       - build-vsphere-esxi-ubuntu-trusty
@@ -51,7 +51,7 @@ groups:
       - build-azure-hyperv-ubuntu-trusty
       - build-google-kvm-ubuntu-trusty
       - build-openstack-kvm-ubuntu-trusty
-      - build-softlayer-esxi-ubuntu-trusty
+      - build-softlayer-xen-ubuntu-trusty
       - build-vsphere-esxi-ubuntu-trusty
       - build-vcloud-esxi-ubuntu-trusty
   - name: centos
@@ -60,7 +60,7 @@ groups:
       - build-azure-hyperv-centos-7
       - build-google-kvm-centos-7
       - build-openstack-kvm-centos-7
-      - build-softlayer-esxi-centos-7
+      - build-softlayer-xen-centos-7
       - build-vsphere-esxi-centos-7
 
 jobs:
@@ -87,14 +87,13 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-            - build-softlayer-esxi-ubuntu-trusty
+            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
             - build-azure-hyperv-centos-7
             - build-google-kvm-centos-7
             - build-openstack-kvm-centos-7
-            - build-softlayer-esxi-centos-7
             - build-vsphere-esxi-centos-7
         - get: bosh-src
           tags: [vsphere-v5.1]
@@ -104,14 +103,13 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-            - build-softlayer-esxi-ubuntu-trusty
+            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
             - build-azure-hyperv-centos-7
             - build-google-kvm-centos-7
             - build-openstack-kvm-centos-7
-            - build-softlayer-esxi-centos-7
             - build-vsphere-esxi-centos-7
         - get: syslog-release
         - get: vsphere-esxi-ubuntu-trusty
@@ -152,8 +150,7 @@ jobs:
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
-            softlayer/bosh-stemcell-%s-softlayer-esxi-ubuntu-trusty-go_agent.tgz
-            softlayer/bosh-stemcell-%s-softlayer-esxi-centos-7-go_agent.tgz
+            softlayer/bosh-stemcell-%s-softlayer-xen-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
@@ -359,7 +356,7 @@ jobs:
   # SoftLayer
   #
 
-  - name: build-softlayer-esxi-ubuntu-trusty
+  - name: build-softlayer-xen-ubuntu-trusty
     plan:
       - aggregate:
           - get: version
@@ -372,15 +369,15 @@ jobs:
         privileged: true
         params:
           IAAS:         softlayer
-          HYPERVISOR:   esxi
+          HYPERVISOR:   xen
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
           BOSHIO_TOKEN: {{boshio_checksum_token}}
-      - put: softlayer-esxi-ubuntu-trusty
+      - put: softlayer-xen-ubuntu-trusty
         params:
           file: stemcell/*-go_agent.tgz
 
-  - name: build-softlayer-esxi-centos-7
+  - name: build-softlayer-xen-centos-7
     plan:
       - aggregate:
           - get: version
@@ -393,11 +390,11 @@ jobs:
         privileged: true
         params:
           IAAS:         softlayer
-          HYPERVISOR:   esxi
+          HYPERVISOR:   xen
           OS_NAME:      centos
           OS_VERSION:   7
           BOSHIO_TOKEN: {{boshio_checksum_token}}
-      - put: softlayer-esxi-centos-7
+      - put: softlayer-xen-centos-7
         params:
           file: stemcell/*-go_agent.tgz
 
@@ -596,19 +593,19 @@ resources:
   # SoftLayer
   #
 
-  - name: softlayer-esxi-ubuntu-trusty
+  - name: softlayer-xen-ubuntu-trusty
     type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-esxi-ubuntu-trusty-go_agent.tgz
+      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-xen-ubuntu-trusty-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: softlayer-esxi-centos-7
+  - name: softlayer-xen-centos-7
     type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-esxi-centos-7-go_agent.tgz
+      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-xen-centos-7-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 

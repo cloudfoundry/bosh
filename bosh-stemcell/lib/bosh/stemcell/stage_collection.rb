@@ -187,7 +187,6 @@ module Bosh::Stemcell
           :system_network,
           :system_softlayer_open_iscsi,
           :system_softlayer_multipath_tools,
-          :disable_blank_passwords,
           :system_parameters,
           :bosh_clean,
           :bosh_harden,
