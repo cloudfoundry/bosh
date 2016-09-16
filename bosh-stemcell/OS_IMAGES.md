@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `u9jAubTwJXggujmLtC_6g0PiFIY_rGqh`
+  - bump kernel to xenial
+  - built from 257.x-3263.x (f7d23f435d18b4d7ad1aa1f76ae315630d70d7c9)
+
 * `sKQZ9Gaut79JCdB5_OTZP55rvnKCd9Hl`
   - Backport azure ephemeral disk on root (4548e8e)
   - Backport google file perms fix (d5b1ac9)
