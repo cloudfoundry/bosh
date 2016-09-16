@@ -108,10 +108,11 @@ bosh -d ./deployment.yml ssh syslog_forwarder 0 'logger "old syslog content" \
 # wait for cron to run logrotate
 sleep 62
 bosh -d ./deployment.yml ssh syslog_forwarder 0 'logger "new syslog content"'
+bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo cp /var/vcap/data/root_log/syslog /tmp/ && sudo chmod 777 /tmp/syslog'
 
 download_destination=$(mktemp -d -t)
 #/var/log should be bind mounted to /var/vcap/data/root_log
 # download from there to show rsyslogd is running and logging to the bind mounted directory.
-bosh -d ./deployment.yml scp --download syslog_forwarder 0 /var/vcap/data/root_log/syslog $download_destination
-grep 'new syslog content' $download_destination/syslog || ( echo "logrotate did not rotate syslog and restart rsyslogd successfully" ; exit 1 )
-grep -vl 'old syslog content' $download_destination/syslog || ( echo "syslog contains content that should have been rotated" ; exit 1 )
+bosh -d ./deployment.yml scp --download syslog_forwarder 0 /tmp/syslog $download_destination
+grep 'new syslog content' $download_destination/syslog.* || ( echo "logrotate did not rotate syslog and restart rsyslogd successfully" ; exit 1 )
+grep -vl 'old syslog content' $download_destination/syslog.* || ( echo "syslog contains content that should have been rotated" ; exit 1 )
