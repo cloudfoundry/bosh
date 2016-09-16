@@ -24,6 +24,9 @@ module Bosh::Dev
 
       'google-kvm-ubuntu-trusty' => ['google', 'kvm', 'ubuntu', 'trusty', 'go', false],
       'google-kvm-centos' => ['google', 'kvm', 'centos', '7', 'go', false],
+
+      'azure-hyperv-ubuntu-trusty' => ['azure', 'hyperv', 'ubuntu', 'trusty', 'go', false],
+      'azure-hyperv-centos' => ['azure', 'hyperv', 'centos', '7', 'go', false],
     }
 
     class << self
