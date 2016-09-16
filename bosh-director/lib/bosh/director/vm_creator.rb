@@ -73,6 +73,8 @@ module Bosh::Director
           @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
+        @disk_manager.attach_disks_if_needed(instance_plan)
+
         instance.update_instance_settings
         instance.update_cloud_properties!
       rescue Exception => e
@@ -84,8 +86,6 @@ module Bosh::Director
         end
         raise e
       end
-
-      @disk_manager.attach_disks_if_needed(instance_plan)
 
       apply_initial_vm_state(instance_plan)
 

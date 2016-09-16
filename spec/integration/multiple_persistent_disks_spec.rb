@@ -188,4 +188,29 @@ describe 'multiple persistent disks', type: :integration do
       'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
     )
   end
+
+  it 'retains the correct disks after recreating the vm' do
+    bosh_runner.run("recreate disk_using_job", manifest_hash: manifest_hash)
+
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(vm = director.instances.first.vm_cid)
+
+    disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_names).to contain_exactly(
+      'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
+    )
+  end
+
+  it 'maintains existing symlinks when new disks are added' do
+    instance_group['persistent_disks'] = [low_iops_persistent_disk, high_iops_persistent_disk, additional_persistent_disk]
+    manifest_hash['instance_groups'] = [instance_group]
+
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(vm = director.instances.first.vm_cid)
+
+    disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_names).to include(
+      'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name', 'additional-persistent-disk-name'
+    )
+  end
 end

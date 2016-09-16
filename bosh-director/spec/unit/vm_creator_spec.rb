@@ -10,7 +10,6 @@ module Bosh
 
       let(:disk_manager) { DiskManager.new(cloud, logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
-      let(:disk_manager) { DiskManager.new(cloud, logger) }
       let(:vm_deleter) { VmDeleter.new(cloud, logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -210,7 +209,8 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(instance).to receive(:update_instance_settings)
+        expect(disk_manager).to receive(:attach_disks_if_needed).ordered
+        expect(instance).to receive(:update_instance_settings).ordered
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {
