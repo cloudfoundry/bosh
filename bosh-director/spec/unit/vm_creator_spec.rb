@@ -228,7 +228,7 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(instance).to receive(:update_trusted_certs)
+        expect(instance).to receive(:update_instance_settings)
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {

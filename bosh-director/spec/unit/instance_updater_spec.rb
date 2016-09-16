@@ -183,7 +183,6 @@ module Bosh::Director
 
         allow(logger).to receive(:debug)
 
-        expect(logger).to receive(:debug).with('Updating instance settings')
         expect(instance).to receive(:update_instance_settings)
         updater.update(instance_plan)
       end
