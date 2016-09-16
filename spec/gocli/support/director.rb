@@ -17,8 +17,8 @@ module Bosh::Spec
       @nats_recording = []
     end
 
-    def vms(deployment_name = '', options={})
-      vms_details(deployment_name, options).map do |vm_data|
+    def vms(options={})
+      vms_details(options).map do |vm_data|
         Bosh::Spec::Vm.new(
           @waiter,
           vm_data[:process_state],
@@ -58,8 +58,7 @@ module Bosh::Spec
 
     # vm always returns a vm
     def vm(job_name, index_or_id, options={})
-      deployment_name = options.fetch(:deployment, '')
-      find_vm(vms(deployment_name, options), job_name, index_or_id)
+      find_vm(vms(options), job_name, index_or_id)
     end
 
     def find_vm(vms, job_name, index_or_id)
@@ -72,7 +71,7 @@ module Bosh::Spec
     def wait_for_vm(job_name, index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.ips != [] }
+        vm = vms(options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.ips != [] }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
@@ -181,7 +180,7 @@ module Bosh::Spec
     private
 
     def vms_details(deployment_name, options = {})
-      parse_table_with_ips(@runner.run("vms #{deployment_name} --json --details", options))
+      parse_table_with_ips(@runner.run('vms --json --details', options))
     end
 
     def parse_table(output)
@@ -208,13 +207,15 @@ module Bosh::Spec
 
       vms.map do |vm|
         match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})(\*?)\s\((\d+)\)/.match(vm[:instance])
-        vm[:job_name] = match_data[job_name_match_index]
-        vm[:id] = match_data[instance_id_match_index]
-        vm[:bootstrap] = match_data[bootstrap_match_index]
-        vm[:index] = match_data[index_match_index]
+        if match_data
+          vm[:job_name] = match_data[job_name_match_index]
+          vm[:id] = match_data[instance_id_match_index]
+          vm[:bootstrap] = match_data[bootstrap_match_index]
+          vm[:index] = match_data[index_match_index]
 
-        vm[:ips] = vm[:ips].split("\n")
-        vm['IPs'] = vm[:ips]
+          vm[:ips] = vm[:ips].split("\n")
+          vm['IPs'] = vm[:ips]
+        end
         vm
       end
     end

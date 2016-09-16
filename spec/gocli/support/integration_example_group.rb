@@ -50,7 +50,6 @@ module IntegrationExampleGroup
 
   def target_and_login
     bosh_runner.run("env #{current_sandbox.director_url}")
-    # bosh_runner.run('login test test')
   end
 
   def upload_cloud_config(options={})
@@ -200,7 +199,7 @@ module IntegrationExampleGroup
     bosh_output_after_parent_ids = scrub_event_parent_ids(bosh_output_after_time)
     scrub_event_ids(bosh_output_after_parent_ids)
   end
-  
+
   def scrub_random_cids(bosh_output)
     bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   end

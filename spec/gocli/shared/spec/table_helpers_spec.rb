@@ -164,6 +164,36 @@ module Support
           ])
         end
       end
+
+      context 'table has no rows' do
+        let(:source) do
+          %({
+    "Tables": [
+        {
+            "Content": "stemcells",
+            "Header": [
+                "Name",
+                "Version",
+                "OS",
+                "CID"
+            ],
+            "Notes": [
+                "(*) Currently deployed"
+            ]
+        }
+    ],
+    "Blocks": null,
+    "Lines": [
+        "Using environment 'micro' as user 'admin'",
+        "Succeeded"
+    ]
+})
+        end
+
+        it 'parses the table and returns empty list' do
+          expect(parser.data).to eq([])
+        end
+      end
     end
   end
 end

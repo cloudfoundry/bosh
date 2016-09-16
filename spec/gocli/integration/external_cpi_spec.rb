@@ -11,12 +11,14 @@ describe 'external CPIs', type: :integration do
     before { deploy_from_scratch }
 
     it 'deploys using the external CPI' do
-      deploy_results = bosh_runner.run('task last --debug')
+      task_id = bosh_runner.get_most_recent_task_id
+      deploy_results = bosh_runner.run("task #{task_id} --debug")
       expect(deploy_results).to include('External CPI sending request')
     end
 
     it 'saves external CPI logs' do
-      deploy_results = bosh_runner.run('task last --cpi')
+      task_id = bosh_runner.get_most_recent_task_id
+      deploy_results = bosh_runner.run("task #{task_id} --debug")
       expect(deploy_results).to include('Dummy: create_vm')
     end
   end

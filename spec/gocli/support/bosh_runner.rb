@@ -1,5 +1,9 @@
+require_relative '../shared/support/table_helpers'
+
 module Bosh::Spec
   class BoshRunner
+    include Support::TableHelpers
+
     def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
@@ -15,7 +19,11 @@ module Bosh::Spec
 
     def run_interactively(cmd, env = {})
       Dir.chdir(@bosh_work_dir) do
-        BlueShell::Runner.run env, "bosh -c #{@bosh_config} #{cmd}" do |runner|
+        cli_options = ''
+        default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
+        cli_options += " --ca-cert #{default_ca_cert}"
+
+        BlueShell::Runner.run env, "gobosh --tty #{cli_options} #{cmd}" do |runner|
           yield runner
         end
       end
@@ -31,7 +39,12 @@ module Bosh::Spec
 
     def run_in_dir(cmd, working_dir, options = {})
       failure_expected = options.fetch(:failure_expected, false)
-      cli_options = ' --user=test --password=test'
+      log_in = options.fetch(:include_credentials, true)
+      user = options[:user] || 'test'
+      password = options[:password] || 'test'
+      cli_options = ''
+      cli_options += options.fetch(:tty, true) ? ' --tty' : ''
+      cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
 
@@ -39,7 +52,7 @@ module Bosh::Spec
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
 
-      command   = "gobosh --tty #{cli_options} #{cmd}"
+      command   = "gobosh #{cli_options} #{cmd}"
       @logger.info("Running ... `#{command}`")
       output    = nil
       env = options.fetch(:env, {})
@@ -91,6 +104,16 @@ module Bosh::Spec
       end
 
       output
+    end
+
+    def get_most_recent_task_id
+      task_table = table(run('tasks --recent --json'))
+
+      if task_table.empty?
+        raise 'No tasks found!'
+      end
+
+      task_table[0]['#']
     end
 
     private

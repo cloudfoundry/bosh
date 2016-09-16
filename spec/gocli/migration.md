@@ -1,6 +1,6 @@
 When tests are broken due to a CLI bug, mark it as pending in the format of... 
 
-    pending('cli2: #{story-id}: #{story-title}
+    pending('cli2: #{story-id}: #{story-title}')
 
 Then we're able to find all blocked tests with...
 
@@ -13,7 +13,7 @@ When copying over files, replace the `require 'spec_helper'` with a `relative_re
     require 'spec_helper'
 
     after:
-    require_relative '../../spec_helper'
+    require_relative '../spec_helper'
 
 
 We dropped `--skip-if-exists`... always remove it from upload stemcell and upload release...
@@ -72,7 +72,7 @@ Exported release artifact name...
 Download manifest...
 
     before:
-    download-manifest
+    download manifest
     
     after:
     download-manifest -d {deployment_name}
