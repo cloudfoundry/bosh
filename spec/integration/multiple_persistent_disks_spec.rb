@@ -183,19 +183,9 @@ describe 'multiple persistent disks', type: :integration do
   it 'notifies the agent of the name and volume information' do
     agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(vm = director.instances.first.vm_cid)
 
-    vm_cid = director.instances.first.vm_cid
-
-    disk_infos = current_sandbox.cpi.attached_disk_infos(vm_cid)
-
-    high_perf_disk_info = disk_infos.find { |disk_info| disk_info['size'] == high_perf_disk_size }
-    low_perf_disk_info = disk_infos.find { |disk_info| disk_info['size'] == low_perf_disk_size }
-
-    high_perf_disk_cid = high_perf_disk_info['disk_cid']
-    low_perf_disk_cid = low_perf_disk_info['disk_cid']
-
     disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
     expect(disk_names).to contain_exactly(
-      "high-iops-persistent-disk-name", "low-iops-persistent-disk-name"
+      'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
     )
   end
 end

@@ -193,7 +193,7 @@ module Bosh
         ).and_return('new-vm-cid')
 
         expect(agent_client).to receive(:wait_until_ready)
-        expect(instance).to receive(:update_trusted_certs)
+        expect(instance).to receive(:update_instance_settings)
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {
@@ -210,7 +210,7 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(instance).to receive(:update_trusted_certs)
+        expect(instance).to receive(:update_instance_settings)
         expect(instance).to receive(:update_cloud_properties!)
 
         expect {
@@ -399,7 +399,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
         expect(cloud).to_not receive(:delete_vm)
 
-        expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -428,7 +428,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
         expect(cloud).to receive(:delete_vm)
 
-        expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

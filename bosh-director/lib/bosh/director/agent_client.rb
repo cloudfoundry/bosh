@@ -115,9 +115,9 @@ module Bosh::Director
       send_nats_request(:sync_dns, args, &blk)
     end
 
-    def update_settings(certs)
+    def update_settings(certs, disk_associations)
       begin
-        send_message(:update_settings, {'trusted_certs' => certs})
+        send_message(:update_settings, {'trusted_certs' => certs, 'disk_associations' => disk_associations })
       rescue RpcRemoteException => e
         if e.message =~ /unknown message/
           @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")

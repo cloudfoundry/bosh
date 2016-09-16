@@ -55,14 +55,6 @@ module Bosh::Director
         end
       end
 
-      disk_associations = new_disk_unmanaged_models.map do |disk_model|
-         {'name' => disk_model.name, 'cid' => disk_model.disk_cid}
-      end
-
-      agent_client(instance_model).associate_disks({
-        'disk_associations' => disk_associations
-      }) unless disk_associations.empty?
-
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)
       inactive_disks.each do |disk|
         detach_disk(disk)

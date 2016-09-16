@@ -345,6 +345,46 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#update_instance_settings' do
+      let(:fake_cert) { 'super trustworthy cert' }
+      let(:persistent_disk_model) { instance_double(Bosh::Director::Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid')}
+      let(:disk_collection_model) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection::ModelPersistentDisk, model: persistent_disk_model)}
+      let(:active_persistent_disks) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model]) }
+      let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
+
+      before do
+        allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
+        allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
+        allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      context 'when there are non managed disks' do
+        before do
+          allow(persistent_disk_model).to receive(:managed?).and_return(false)
+        end
+
+        it 'tells the agent to update instance settings and updates the instance model' do
+          expect(agent_client).to receive(:update_settings).with(fake_cert, [{'name' => 'some-disk', 'cid' => 'some-cid'}])
+          instance.update_instance_settings
+          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+        end
+      end
+
+      context 'when all disks are managed' do
+        before do
+          allow(persistent_disk_model).to receive(:managed?).and_return(true)
+        end
+
+        it 'does not send any disk associations to update' do
+          expect(agent_client).to receive(:update_settings).with(fake_cert, [])
+          instance.update_instance_settings
+          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+        end
+      end
+    end
+
+
     describe '#update_cloud_properties' do
       it 'saves the cloud properties' do
         availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)

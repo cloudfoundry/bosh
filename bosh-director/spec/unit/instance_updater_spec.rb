@@ -105,6 +105,7 @@ module Bosh::Director
           allow(updater).to receive(:needs_recreate?).and_return(false)
           allow(disk_manager).to receive(:update_persistent_disk)
           allow(job).to receive(:update)
+          allow(instance).to receive(:update_instance_settings)
           expect(state_applier).to receive(:apply)
 
           updater.update(instance_plan)
@@ -157,6 +158,34 @@ module Bosh::Director
         expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
         expect(instance_model.update_completed).to eq true
         expect(Models::Event.count).to eq 2
+      end
+    end
+
+    context 'when the VM does not get recreated' do
+      let(:disk_manager) { instance_double(DiskManager) }
+      before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
+
+      let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+      before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
+
+      it 'updates the instance settings' do
+        allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+
+        allow(instance_plan).to receive(:networks_changed?).and_return(false)
+        allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+        allow(instance_plan).to receive(:cloud_properties_changed?).and_return(false)
+
+        allow(instance_plan).to receive(:already_detached?).and_return(true)
+        allow(disk_manager).to receive(:update_persistent_disk)
+        allow(state_applier).to receive(:apply)
+        allow(job).to receive(:update)
+
+        allow(logger).to receive(:debug)
+
+        expect(logger).to receive(:debug).with('Updating instance settings')
+        expect(instance).to receive(:update_instance_settings)
+        updater.update(instance_plan)
       end
     end
 

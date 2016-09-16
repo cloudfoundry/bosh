@@ -73,7 +73,7 @@ module Bosh::Director
           @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
-        instance.update_trusted_certs
+        instance.update_instance_settings
         instance.update_cloud_properties!
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")

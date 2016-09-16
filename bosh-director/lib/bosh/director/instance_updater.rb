@@ -95,10 +95,7 @@ module Bosh::Director
         @disk_manager.update_persistent_disk(instance_plan)
 
         unless recreated
-          if instance.trusted_certs_changed?
-            @logger.debug('Updating trusted certs')
-            instance.update_trusted_certs
-          end
+          instance.update_instance_settings
         end
 
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)

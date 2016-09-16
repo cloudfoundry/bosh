@@ -48,6 +48,7 @@ module Bosh::Director
       allow(agent_client).to receive(:mount_disk)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
+      allow(agent_client).to receive(:update_settings)
       allow(cloud).to receive(:detach_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
     end
@@ -243,7 +244,7 @@ module Bosh::Director
 
             context 'when the disk is managed' do
               it 'does not associate managed disk models' do
-                expect(agent_client).to_not receive(:associate_disks)
+                expect(agent_client).to_not receive(:update_settings)
               end
 
               it 'mounts the new disk' do
@@ -354,26 +355,7 @@ module Bosh::Director
                 end
               end
             end
-
-            context 'when the disk is unmanaged' do
-              let(:job_persistent_disk_size) { 0 } #this prevents a managed disk from being added to the job
-
-              before do
-                job.persistent_disk_collection.add_by_disk_name_and_type('zak', disk_type)
-              end
-
-              it 'associates the disks with the agent' do
-                expect(agent_client).to receive(:associate_disks).with({
-                  'disk_associations' => [
-                    {'name' => 'zak', 'cid' => 'new-disk-cid'},
-                  ]
-                })
-                disk_manager.update_persistent_disk(instance_plan)
-              end
-            end
           end
-
-
         end
 
         context 'when the persistent disk has not changed' do

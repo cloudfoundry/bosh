@@ -180,8 +180,15 @@ module Bosh::Director
         end
       end
 
-      def update_trusted_certs
-        agent_client.update_settings(Config.trusted_certs)
+      def update_instance_settings
+        disk_associations = @model.reload.active_persistent_disks.collection.select do |disk|
+          !disk.model.managed?
+        end
+        disk_associations.map! do |disk|
+           {'name' => disk.model.name, 'cid' => disk.model.disk_cid}
+        end
+
+        agent_client.update_settings(Config.trusted_certs, disk_associations)
         @model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
