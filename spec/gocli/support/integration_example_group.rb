@@ -181,15 +181,18 @@ module IntegrationExampleGroup
   end
 
   def scrub_event_time(bosh_output)
-    bosh_output.gsub /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx'
+    bosh_output.map do |record|
+      record['Orphaned At'] = 'xxx xxx xx xx:xx:xx UTC xxxx'
+      record
+    end
   end
 
   def scrub_event_parent_ids(bosh_output)
-    bosh_output.gsub /[0-9]{1,3} <- [0-9]{1,3} [ ]{0,}/, "x <- x "
+    bosh_output.gsub /[0-9]{1,3} <- [0-9]{1,3} [ ]{0,}/, 'x <- x '
   end
 
   def scrub_event_ids(bosh_output)
-    bosh_output.gsub /[ ][0-9]{1,3} [ ]{0,}/, " x      "
+    bosh_output.gsub /[ ][0-9]{1,3} [ ]{0,}/, ' x      '
   end
 
   def scrub_event_specific(bosh_output)
@@ -201,7 +204,10 @@ module IntegrationExampleGroup
   end
 
   def scrub_random_cids(bosh_output)
-    bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    bosh_output.map do |record|
+      record['Disk CID'] = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+      record
+    end
   end
 
   def cid_from(bosh_output)
@@ -223,7 +229,7 @@ module IntegrationExampleGroup
       JSON.parse(val[1])
     }.flat_map { |val|
       # extract method from messages that have it
-      val["method"] ? [val["method"]] : []
+      val['method'] ? [val['method']] : []
     }
   end
 

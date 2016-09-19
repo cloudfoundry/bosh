@@ -32,7 +32,7 @@ describe 'attach disk', type: :integration do
 
       instance = director.instances.first
 
-      expect(current_sandbox.cpi.disk_attached_to_vm?(instance.vm_cid, instance.disk_cid)).to eq(true)
+      expect(current_sandbox.cpi.disk_attached_to_vm?(instance.vm_cid, instance.disk_cids[0])).to eq(true)
 
       agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
 
@@ -46,7 +46,7 @@ describe 'attach disk', type: :integration do
 
       # disk_migrations.json example: "[{'FromDiskCid': 'foo-cid', 'ToDiskCid': 'bar-cid'}]"
       expect(first_disk_migration['FromDiskCid']).to eq('disk-cid-abc123')
-      expect(instance.disk_cid).to eq(first_disk_migration['ToDiskCid'])
+      expect(instance.disk_cids[0]).to eq(first_disk_migration['ToDiskCid'])
     end
 
     it 'attaches the disk to a soft stopped instance' do
@@ -57,10 +57,10 @@ describe 'attach disk', type: :integration do
       bosh_runner.run("start foobar/#{instance.id}", deployment_name: deployment_name)
 
       orphan_disk_output = bosh_runner.run('disks --orphaned')
-      expect(cid_from(orphan_disk_output)).to eq(instance.disk_cid)
+      expect(cid_from(orphan_disk_output)).to eq(instance.disk_cids[0])
 
       instance = director.instances.first
-      expect(current_sandbox.cpi.disk_attached_to_vm?(instance.vm_cid, instance.disk_cid)).to eq(true)
+      expect(current_sandbox.cpi.disk_attached_to_vm?(instance.vm_cid, instance.disk_cids[0])).to eq(true)
 
       agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
       disk_migrations = JSON.parse(File.read("#{agent_dir}/bosh/disk_migrations.json"))
@@ -68,7 +68,7 @@ describe 'attach disk', type: :integration do
 
       first_disk_migration = disk_migrations.first
       expect(first_disk_migration['FromDiskCid']).to eq('disk-cid-abc123')
-      expect(instance.disk_cid).to eq(first_disk_migration['ToDiskCid'])
+      expect(instance.disk_cids[0]).to eq(first_disk_migration['ToDiskCid'])
     end
   end
 

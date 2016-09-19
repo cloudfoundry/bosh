@@ -50,7 +50,7 @@ module Bosh::Spec
           instance_data[:index],
           !instance_data[:bootstrap].empty?,
           instance_data[:az],
-          instance_data[:disk_cid],
+          instance_data[:disk_cids],
           instance_data[:vm_cid]
         )
       end
@@ -215,6 +215,9 @@ module Bosh::Spec
 
           vm[:ips] = vm[:ips].split("\n")
           vm['IPs'] = vm[:ips]
+
+          vm[:disk_cids] = vm[:disk_cids].split("\n")
+          vm['Disk CIDs'] = vm[:disk_cids]
         end
         vm
       end
