@@ -31,8 +31,8 @@ module Bosh::Director
         name, version = params[:name], params[:version]
         options = {}
         options['force'] = true if params['force'] == 'true'
-        stemcell = @stemcell_manager.find_by_name_and_version(name, version)
-        task = @stemcell_manager.delete_stemcell(current_user, stemcell, options)
+        @stemcell_manager.all_by_name_and_version(name, version) # raises error if not found
+        task = @stemcell_manager.delete_stemcell(current_user, name, version, options)
         redirect "/tasks/#{task.id}"
       end
     end

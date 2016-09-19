@@ -51,7 +51,7 @@ module Bosh::Director
 
       create(
         instance_model,
-        instance.stemcell,
+        instance.stemcell_cid,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
         disks,
@@ -118,7 +118,7 @@ module Bosh::Director
       end
     end
 
-    def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
+    def create(instance_model, stemcell_cid, cloud_properties, network_settings, disks, env)
       parent_id = add_event(instance_model.deployment.name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
       env = Bosh::Common::DeepCopy.copy(env)
@@ -145,7 +145,7 @@ module Bosh::Director
       count = 0
       begin
         cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
-        vm_cid = cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
+        vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1
         @logger.error("failed to create VM, retrying (#{count})")

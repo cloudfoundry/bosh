@@ -17,17 +17,18 @@ module Bosh::Director
         blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
         compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger)
-        @stemcell_deleter = Helpers::StemcellDeleter.new(@cloud, compiled_package_deleter, logger)
+        @stemcell_deleter = Helpers::StemcellDeleter.new(compiled_package_deleter, logger)
       end
 
       def perform
         logger.info("Processing delete stemcell")
 
         logger.info("Looking up stemcell: #{@name}/#{@version}")
-        stemcell = @stemcell_manager.find_by_name_and_version(@name, @version)
-        logger.info("Found: #{stemcell.pretty_inspect}")
-
-        @stemcell_deleter.delete(stemcell, @options)
+        stemcells_to_delete = @stemcell_manager.all_by_name_and_version(@name, @version)
+        stemcells_to_delete.each do |stemcell|
+          logger.info("Found: #{stemcell.pretty_inspect}")
+          @stemcell_deleter.delete(stemcell, @options)
+        end
 
         "/stemcells/#{@name}/#{@version}"
       end

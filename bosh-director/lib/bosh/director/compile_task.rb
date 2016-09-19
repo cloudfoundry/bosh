@@ -189,7 +189,7 @@ module Bosh::Director
         event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
           # has side effect of putting CompiledPackage model in db
           logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}' in global cache")
-          return BlobUtil.fetch_from_global_cache(package, stemcell.model, cache_key, dependency_key)
+          return BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
         end
       end
     end

@@ -5,6 +5,7 @@ module Bosh::Director
     class UpdateStemcell < BaseJob
       include ValidationHelper
       include DownloadHelper
+      include CloudFactoryHelper
 
       UPDATE_STEPS = 5
 
@@ -78,26 +79,29 @@ module Bosh::Director
         end
 
         stemcell = nil
-        track_and_log("Checking if this stemcell already exists") do
-          begin
-            stemcell = @stemcell_manager.find_by_name_and_version @name, @version
-            raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists" unless @fix
-          rescue StemcellNotFound => e
-            stemcell = Models::Stemcell.new
-            stemcell.name = @name
-            stemcell.operating_system = @operating_system
-            stemcell.version = @version
-            stemcell.sha1 = @sha1
+        cloud_factory(nil).all_configured_clouds.each do |cloud|
+          track_and_log("Checking if this stemcell already exists on cloud #{cloud[:name]}") do
+            begin
+              stemcell = @stemcell_manager.find_by_name_and_version_and_cpi @name, @version, cloud[:name]
+              raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists on cloud #{cloud[:name]}" unless @fix
+            rescue StemcellNotFound => e
+              stemcell = Models::Stemcell.new
+              stemcell.name = @name
+              stemcell.operating_system = @operating_system
+              stemcell.version = @version
+              stemcell.sha1 = @sha1
+              stemcell.cpi = cloud[:name]
+            end
           end
-        end
 
-        track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
-          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
-          logger.info("Cloud created stemcell: #{stemcell.cid}")
-        end
+          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud #{cloud[:name]}") do
+            stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
+            logger.info("Cloud created stemcell for cloud #{cloud[:name]}: #{stemcell.cid}")
+          end
 
-        track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})") do
-          stemcell.save
+          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid}) for cloud #{cloud[:name]}") do
+            stemcell.save
+          end
         end
 
         "/stemcells/#{stemcell.name}/#{stemcell.version}"

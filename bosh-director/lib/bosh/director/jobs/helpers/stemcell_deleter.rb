@@ -2,9 +2,9 @@ module Bosh::Director::Jobs
   module Helpers
     class StemcellDeleter
       include Bosh::Director::LockHelper
+      include Bosh::Director::CloudFactoryHelper
 
-      def initialize(cloud, compiled_package_deleter, logger)
-        @cloud = cloud
+      def initialize(compiled_package_deleter, logger)
         @compiled_package_deleter = compiled_package_deleter
         @logger = logger
       end
@@ -20,7 +20,7 @@ module Bosh::Director::Jobs
           end
 
           begin
-            @cloud.delete_stemcell(stemcell.cid)
+            cloud_for_stemcell(stemcell).delete_stemcell(stemcell.cid)
           rescue => e
             raise unless options['force']
             @logger.warn(e.backtrace.join("\n"))
@@ -28,6 +28,17 @@ module Bosh::Director::Jobs
           end
 
           stemcell.destroy
+        end
+      end
+
+      private
+      def cloud_for_stemcell(stemcell)
+        if stemcell.cpi.nil?
+          cloud_factory(nil).default_from_director_config
+        else
+          cloud = cloud_factory(nil).for_cpi(stemcell.cpi)
+          raise "Stemcell has CPI defined (#{stemcell.cpi}) that is not configured anymore." if cloud.nil?
+          cloud
         end
       end
     end

@@ -6,7 +6,7 @@ module Bosh::Director
         @logger = logger
       end
 
-      def validate(release_version_model, stemcell_model)
+      def validate(release_version_model, stemcell)
         release_desc = "#{release_version_model.release.name}/#{release_version_model.version}"
 
         @logger.debug("Validating packages for release '#{release_desc}'")
@@ -16,13 +16,13 @@ module Bosh::Director
           packages_list.each do |needed_package|
             if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
               compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(:package_id => needed_package.id,
-                :stemcell_os => stemcell_model.operating_system).all
+                :stemcell_os => stemcell.os).all
               compiled_packages_list = compiled_packages_list.select do |compiled_package|
-                Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell_model.version)
+                Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
               end
               if compiled_packages_list.empty?
                 @faults[release_desc] ||= Set.new
-                @faults[release_desc] << Fault.new(needed_package, stemcell_model)
+                @faults[release_desc] << Fault.new(needed_package, stemcell)
               end
             end
           end

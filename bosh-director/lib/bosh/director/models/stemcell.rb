@@ -5,7 +5,7 @@ module Bosh::Director::Models
 
     def validate
       validates_presence [:name, :version, :cid]
-      validates_unique [:name, :version]
+      validates_unique [:name, :version, :cpi]
       validates_format VALID_ID, [:name, :version]
     end
 

@@ -264,8 +264,8 @@ module Bosh::Director
       end
 
       def update_stemcell_references!
-        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.model }
-        @stemcells.values.map(&:model).each do |stemcell|
+        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.models }.flatten
+        @stemcells.values.map(&:models).flatten.each do |stemcell|
           current_stemcell_models << stemcell
         end
         model.stemcells.each do |deployment_stemcell|
@@ -295,7 +295,7 @@ module Bosh::Director
             release_model = release_manager.find_by_name(template.release.name)
             release_version_model = release_manager.find_version(release_model, template.release.version)
 
-            validator.validate(release_version_model, job.stemcell.model)
+            validator.validate(release_version_model, job.stemcell)
           end
         end
         validator.handle_faults

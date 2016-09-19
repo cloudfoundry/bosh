@@ -37,7 +37,7 @@ module Bosh
       let(:stemcell) do
         stemcell_model
         stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
-        stemcell.add_stemcell_model
+        stemcell.add_stemcell_models
         stemcell
       end
       let(:env) { DeploymentPlan::Env.new({}, {}) }

@@ -118,7 +118,7 @@ module Bosh::Director
         allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1', 'agent-id')
         expect(cloud).to receive(:create_vm).with(
             'agent-id',
-            stemcell.cid,
+            stemcell.models.first.cid,
             cloud_properties,
             expected_network_settings,
             [],

@@ -92,7 +92,7 @@ module Bosh::Director
       end
     end
 
-    describe '#find_by_os_and_version' do
+    describe '#all_by_os_and_version' do
       before do
         Bosh::Director::Models::Stemcell.create(
           name: 'my-stemcell-with-a-name',
@@ -104,12 +104,12 @@ module Bosh::Director
 
       it 'raises an error when the requested stemcell is not found' do
         expect {
-          subject.find_by_os_and_version('CBM BASIC V2', '1')
+          subject.all_by_os_and_version('CBM BASIC V2', '1')
         }.to raise_error(Bosh::Director::StemcellNotFound)
       end
 
       it 'returns the uniquely matching stemcell' do
-        stemcell = subject.find_by_os_and_version('stemcell_os', 'stemcell_version')
+        stemcell = subject.all_by_os_and_version('stemcell_os', 'stemcell_version').first
         expect(stemcell.name).to eq('my-stemcell-with-a-name')
       end
 
@@ -124,7 +124,7 @@ module Bosh::Director
         }
 
         it 'chooses the first stemcell alhpabetically by name' do
-          stemcell = subject.find_by_os_and_version('stemcell_os', 'stemcell_version')
+          stemcell = subject.all_by_os_and_version('stemcell_os', 'stemcell_version').first
           expect(stemcell.name).to eq('my-stemcell-with-a-name')
         end
       end

@@ -33,7 +33,6 @@ module Bosh::Director
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
             expect(Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
-
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
@@ -42,9 +41,9 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
+            task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_b = compile_tasks[[package_b.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_c = compile_tasks[[package_c.id, "#{stemcell.os}/#{stemcell.version}"]]
 
             expect(task_a.dependencies).to eq([task_b])
             expect(task_b.dependencies).to eq([task_c])
@@ -82,10 +81,10 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
-            task_d = compile_tasks[[package_d.id, stemcell.model.id]]
+            task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_b = compile_tasks[[package_b.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_c = compile_tasks[[package_c.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_d = compile_tasks[[package_d.id, "#{stemcell.os}/#{stemcell.version}"]]
 
             expect(task_a.dependencies).to eq([task_b, task_c])
             expect(task_b.dependencies).to eq([task_d])
@@ -119,9 +118,9 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
+            task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_b = compile_tasks[[package_b.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_c = compile_tasks[[package_c.id, "#{stemcell.os}/#{stemcell.version}"]]
 
             expect(task_a.dependencies).to eq([task_b])
             expect(task_b.dependencies).to eq([task_c])
@@ -161,10 +160,10 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
-            task_d = compile_tasks[[package_d.id, stemcell.model.id]]
+            task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_b = compile_tasks[[package_b.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_c = compile_tasks[[package_c.id, "#{stemcell.os}/#{stemcell.version}"]]
+            task_d = compile_tasks[[package_d.id, "#{stemcell.os}/#{stemcell.version}"]]
 
             expect(task_a.dependencies).to eq([task_b, task_c])
             expect(task_b.dependencies).to eq([task_d])
@@ -189,11 +188,11 @@ module Bosh::Director
       describe 'logging' do
         it 'logs at each step of dependency resolution' do
           allow(logger).to receive(:info)
-          expect(logger).to receive(:info).with("Checking whether package '#{package_a.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'").ordered
+          expect(logger).to receive(:info).with("Checking whether package '#{package_a.desc}' needs to be compiled for stemcell '#{stemcell.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package '#{package_a.desc}' dependencies").ordered
           expect(logger).to receive(:info).with("Package '#{package_a.desc}' depends on package '#{package_b.desc}'").ordered
 
-          expect(logger).to receive(:info).with("Checking whether package '#{package_b.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'").ordered
+          expect(logger).to receive(:info).with("Checking whether package '#{package_b.desc}' needs to be compiled for stemcell '#{stemcell.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package '#{package_b.desc}' dependencies").ordered
 
           generator.generate!(compile_tasks, job, template, package_a, stemcell)

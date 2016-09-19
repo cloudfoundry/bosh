@@ -18,7 +18,7 @@ module Bosh::Director
           'version' => compiled_package.package.version,
           'fingerprint' => compiled_package.package.fingerprint,
           'sha1' => compiled_package.sha1,
-          'stemcell' => "#{@stemcell.operating_system}/#{@stemcell.version}",
+          'stemcell' => "#{@stemcell.os}/#{@stemcell.version}",
           'dependencies' => get_dependencies(compiled_package),
         }
       end

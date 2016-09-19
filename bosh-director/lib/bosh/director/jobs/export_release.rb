@@ -48,8 +48,7 @@ module Bosh::Director
         planner = planner_factory.create_from_model(targeted_deployment)
         deployment_plan_stemcell.bind_model(planner.model)
 
-        stemcell_model = deployment_plan_stemcell.model
-        logger.info "Will compile with stemcell: #{stemcell_model.desc}"
+        logger.info "Will compile with stemcell: #{deployment_plan_stemcell.desc}"
 
         release = planner.release(@release_name)
 
@@ -61,10 +60,10 @@ module Bosh::Director
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
-            with_stemcell_lock(stemcell_model.name, stemcell_model.version, :timeout => lock_timeout) do
+            with_stemcell_lock(deployment_plan_stemcell.name, deployment_plan_stemcell.version, :timeout => lock_timeout) do
               planner.compile_packages
 
-              tarball_state = create_tarball(release_version_model, stemcell_model)
+              tarball_state = create_tarball(release_version_model, deployment_plan_stemcell)
               result_file.write(tarball_state.to_json + "\n")
             end
           end
@@ -84,16 +83,16 @@ module Bosh::Director
         false
       end
 
-      def create_tarball(release_version_model, stemcell_model)
+      def create_tarball(release_version_model, stemcell)
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell_model)
+        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell)
         templates = release_version_model.templates.map
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
 
-        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, stemcell_model)
+        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, stemcell)
         manifest.write(File.join(download_dir, 'release.MF'))
 
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")

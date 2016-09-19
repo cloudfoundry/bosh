@@ -3,9 +3,11 @@ require 'bosh/director/compiled_package_group'
 
 module Bosh::Director
   describe CompiledPackageGroup do
+    include Support::StemcellHelpers
+
     let(:release_version) { Models::ReleaseVersion.make(release: release) }
     let(:release) { Models::Release.make }
-    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1', operating_system: 'chrome-os') }
+    let(:stemcell) { make_stemcell(sha1: 'fake_stemcell_sha1', operating_system: 'chrome-os') }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell) }
 
@@ -13,7 +15,7 @@ module Bosh::Director
       let(:package1) { Models::Package.make(release: release, dependency_set_json: ['pkg-2'].to_json) }
       let(:package2) { Models::Package.make(name: 'pkg-2', version: '2', release: release) }
 
-      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell_os: stemcell.operating_system, stemcell_version: stemcell.version, dependency_key: '[["pkg-2","2"]]') }
+      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: '[["pkg-2","2"]]') }
 
       before do
         release_version.add_package(package1)

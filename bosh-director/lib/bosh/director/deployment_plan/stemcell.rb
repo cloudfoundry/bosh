@@ -2,12 +2,13 @@ module Bosh::Director
   module DeploymentPlan
     class Stemcell
       extend ValidationHelper
+      include CloudFactoryHelper
 
       attr_reader :alias
       attr_reader :os
       attr_reader :name
       attr_reader :version
-      attr_reader :model
+      attr_reader :models
 
       def self.parse(spec)
         name_alias = safe_property(spec, "alias", :class => String, :optional => true)
@@ -43,33 +44,39 @@ module Bosh::Director
           raise DirectorError, "Deployment not bound in the deployment plan"
         end
 
-        add_stemcell_model
+        add_stemcell_models
+        add_deployment_to_models(deployment_model)
 
-        unless @model.deployments.include?(deployment_model)
-          @model.add_deployment(deployment_model)
+        @deployment_model = deployment_model
+      end
+
+      def add_stemcell_models
+        @models = is_using_os? ?
+            @manager.all_by_os_and_version(@os, @version) :
+            @manager.all_by_name_and_version(@name, @version)
+
+        model = @models.first
+        @name = model.name
+        @os = model.operating_system
+        @version = model.version
+      end
+
+      def add_deployment_to_models(deployment_model)
+        @models.each do |model|
+          unless model.deployments.include?(deployment_model)
+            model.add_deployment(deployment_model)
+          end
         end
       end
 
-      def add_stemcell_model
-        @model = is_using_os? ?
-          @manager.find_by_os_and_version(@os, @version) :
-          @manager.find_by_name_and_version(@name, @version)
-
-        @name = @model.name
-        @os = @model.operating_system
-        @version = @model.version
-      end
-
       def desc
-        @model.desc
+        return nil unless @models
+        @models.first.desc
       end
 
-      def cid
-        @model.cid
-      end
-
-      def id
-        @model.id
+      def sha1
+        return nil unless @models
+        @models.first.sha1
       end
 
       def spec
@@ -79,6 +86,21 @@ module Bosh::Director
         }
       end
 
+      def cid_for_az(az)
+        factory = cloud_factory(@deployment_model)
+        unless factory.uses_cpi_config?
+          stemcell = @models.first
+          raise "No stemcell found" if stemcell.nil?
+          return stemcell.cid
+        end
+
+        cpi = factory.lookup_cpi_for_az(az)
+        raise "CPI for AZ #{az} can not be found" if cpi.nil?
+
+        stemcell = @models.find{|model|model.cpi == cpi}
+        raise "Required stemcell #{spec} not found on cpi #{cpi}, please upload again" if stemcell.nil?
+        stemcell.cid
+      end
     end
   end
 end

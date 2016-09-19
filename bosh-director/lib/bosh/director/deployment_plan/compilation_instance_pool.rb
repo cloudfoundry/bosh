@@ -84,11 +84,11 @@ module Bosh::Director
               instance_memo = @instance_reuser.remove_idle_instance_not_matching_stemcell(stemcell)
               destroy_instance(instance_memo.instance_plan)
             end
-            @logger.debug("Creating new compilation VM for stemcell '#{stemcell.model.desc}'")
+            @logger.debug("Creating new compilation VM for stemcell '#{stemcell.desc}'")
             instance_memo = InstanceMemo.new(@instance_provider, stemcell)
             @instance_reuser.add_in_use_instance(instance_memo, stemcell)
           else
-            @logger.info("Reusing compilation VM '#{instance_memo.instance.model.vm_cid}' for stemcell '#{stemcell.model.desc}'")
+            @logger.info("Reusing compilation VM '#{instance_memo.instance.model.vm_cid}' for stemcell '#{stemcell.desc}'")
           end
         end
         return instance_memo

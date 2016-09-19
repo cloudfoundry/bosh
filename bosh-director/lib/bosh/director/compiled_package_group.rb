@@ -11,7 +11,7 @@ module Bosh::Director
 
         Models::CompiledPackage[
           :package_id => package.id,
-          :stemcell_os => @stemcell.operating_system,
+          :stemcell_os => @stemcell.os,
           :stemcell_version => @stemcell.version,
           :dependency_key => package_dependency_key
         ]

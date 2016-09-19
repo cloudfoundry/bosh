@@ -30,9 +30,17 @@ module Bosh::Director
     end
 
     # used when all cpis must be spoken to, i.e. when uploading stemcells.
+    def all_configured_clouds
+      if uses_cpi_config?
+        all_from_cpi_config
+      else
+        [ {name: nil, cpi: default_from_director_config } ]
+      end
+    end
+
     def all_from_cpi_config
       return [] unless uses_cpi_config?
-      @parsed_cpi_config.cpis.map{|cpi|create_from_cpi_config(cpi)}
+      @parsed_cpi_config.cpis.map{|cpi| {name: cpi.name, cpi: create_from_cpi_config(cpi)} }
     end
 
     def for_availability_zone(az_name)
@@ -43,12 +51,12 @@ module Bosh::Director
       # instance/disk can have AZ without cpi, pick default CPI then
       return default_from_director_config if cpi_for_az.nil?
 
-      configured_cpi = from_cpi_config(cpi_for_az)
-      raise 'CPI was defined for AZ but not found in cpi-config' if configured_cpi.nil?
+      configured_cpi = for_cpi(cpi_for_az)
+      raise "CPI was defined for AZ #{az_name} but not found in cpi-config" if configured_cpi.nil?
       create_from_cpi_config(configured_cpi)
     end
 
-    def from_cpi_config(cpi_name)
+    def for_cpi(cpi_name)
       return nil unless uses_cpi_config?
       @parsed_cpi_config.find_cpi_by_name(cpi_name)
     end
@@ -57,12 +65,13 @@ module Bosh::Director
       Config.cloud
     end
 
-    private
     def lookup_cpi_for_az(az_name)
       return nil if @cloud_planner.nil?
       az = @cloud_planner.availability_zone(az_name)
       az.nil? ? nil : az.cpi
     end
+
+    private
 
     def create_from_cpi_config(cpi)
       Bosh::Clouds::ExternalCpi.new(cpi.job_path, Config.uuid, cpi.properties)

@@ -13,8 +13,8 @@ module Bosh::Director
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla Depth-First Search (DFS).
 
-      @logger.info("Checking whether package '#{package.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'")
-      task_key = [package.id, stemcell.id]
+      @logger.info("Checking whether package '#{package.desc}' needs to be compiled for stemcell '#{stemcell.desc}'")
+      task_key = [package.id, "#{stemcell.os}/#{stemcell.version}"]
       task = compile_tasks[task_key]
 
       if task # We already visited this task and its dependencies
@@ -26,7 +26,7 @@ module Bosh::Director
       package_dependency_manager = PackageDependenciesManager.new(release_version)
       transitive_dependencies = package_dependency_manager.transitive_dependencies(package)
       package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model.sha1)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 

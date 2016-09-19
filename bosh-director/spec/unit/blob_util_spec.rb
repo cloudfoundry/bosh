@@ -4,11 +4,10 @@ module Bosh::Director
   describe BlobUtil do
     let(:package_name) { 'package_name' }
     let(:package_fingerprint) { 'fingerprint' }
-    let(:stemcell_sha1) { 'sha1' }
     let(:blob_id) { 'blob_id' }
-    let(:stemcell) { instance_double('Bosh::Director::Models::Stemcell', sha1: stemcell_sha1, operating_system: 'chrome-os', version: 'latest') }
+    let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell', os: 'chrome-os', version: 'latest') }
     let(:package) { instance_double('Bosh::Director::Models::Package', name: package_name, fingerprint: package_fingerprint) }
-    let(:compiled_package) { instance_double('Bosh::Director::Models::CompiledPackage', package: package, stemcell_os: stemcell.operating_system, stemcell_version: stemcell.version, blobstore_id: blob_id) }
+    let(:compiled_package) { instance_double('Bosh::Director::Models::CompiledPackage', package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: blob_id) }
     let(:dep_pkg2) { instance_double('Bosh::Director::Models::Package', fingerprint: 'dp_fingerprint2', version: '9.2-dev') }
     let(:dep_pkg1) { instance_double('Bosh::Director::Models::Package', fingerprint: 'dp_fingerprint1', version: '10.1-dev') }
     let(:compiled_package_cache_blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
@@ -60,7 +59,7 @@ module Bosh::Director
         expect(Models::CompiledPackage).to receive(:create) do |&block|
           cp = double
           expect(cp).to receive(:package=).with(package)
-          expect(cp).to receive(:stemcell_os=).with(stemcell.operating_system)
+          expect(cp).to receive(:stemcell_os=).with(stemcell.os)
           expect(cp).to receive(:stemcell_version=).with(stemcell.version)
           expect(cp).to receive(:sha1=).with('cp sha1')
           expect(cp).to receive(:build=)

@@ -183,12 +183,12 @@ module Bosh::Director
         prepare_samples
 
         @package_set_a.each do |package|
-          cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
+          cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
           expect(@j_dea).to receive(:use_compiled_package).with(cp1)
         end
 
         @package_set_b.each do |package|
-          cp2 = make_compiled(release_version_model, package, @stemcell_b.model)
+          cp2 = make_compiled(release_version_model, package, @stemcell_b.models.first)
           expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
@@ -209,8 +209,8 @@ module Bosh::Director
         # But they are already compiled!
         expect(compiler.compilations_performed).to eq(0)
 
-        expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.model.desc}'")
-        expect(log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
       end
     end
 
@@ -241,11 +241,11 @@ module Bosh::Director
         end
 
         @package_set_a.each do |package|
-          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}").and_yield
         end
 
         @package_set_b.each do |package|
-          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}").and_yield
         end
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
@@ -293,9 +293,9 @@ module Bosh::Director
           )
 
           @package_set_a.each do |package|
-            cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
+            cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
             expect(@j_dea).not_to receive(:use_compiled_package).with(cp1)
-            expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+            expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}").and_yield
           end
 
           expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times
@@ -315,7 +315,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(6)
 
-          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
         end
       end
 
@@ -332,9 +332,9 @@ module Bosh::Director
           @package_set_a.each do |package|
             package.blobstore_id = nil
             package.sha1 = nil
-            cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
+            cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
             expect(@j_dea).to receive(:use_compiled_package).with(cp1)
-            expect(compiler).not_to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+            expect(compiler).not_to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}").and_yield
           end
 
           compiler.perform
@@ -344,7 +344,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(0)
 
-          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
         end
       end
     end
@@ -503,7 +503,7 @@ module Bosh::Director
         )
 
         @package_set_a.each do |package|
-          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}").and_yield
         end
 
         compiler.perform
@@ -521,7 +521,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {'bosh' => {'group_name' => 'compilation-deadbeef'}}).
+          with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group_name' => 'compilation-deadbeef'}}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
@@ -610,7 +610,7 @@ module Bosh::Director
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
-      allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.model.id).and_yield
+      allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}").and_yield
       compiler.compile_package(task)
 
       expect(task.compiled_package).to eq(fake_compiled_package)
@@ -630,7 +630,7 @@ module Bosh::Director
       end
 
       it 'should check if compiled package is in global blobstore' do
-        allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.model.id).and_yield
+        allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}").and_yield
 
         expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
         allow(task).to receive(:find_compiled_package)
@@ -643,7 +643,7 @@ module Bosh::Director
       end
 
       it 'should save compiled package to global cache if not exists' do
-        expect(compiler).to receive(:with_compile_lock).with(package.id, stemcell.model.id).and_yield
+        expect(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}").and_yield
 
         allow(task).to receive(:find_compiled_package)
         compiled_package = instance_double(
@@ -661,7 +661,7 @@ module Bosh::Director
       it 'only checks the global cache if Config.use_compiled_package_cache? is set' do
         allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
 
-        allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.model.id).and_yield
+        allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}").and_yield
 
         expect(BlobUtil).not_to receive(:exists_in_global_cache?)
         expect(BlobUtil).not_to receive(:save_to_global_cache)
@@ -683,7 +683,7 @@ module Bosh::Director
           ip_provider: ip_provider
         )
       end
-      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {}, cid: 'stemcell-cid') }
+      let(:stemcell) { make_stemcell(cid: 'stemcell-cid') }
       let(:instance) { instance_double(DeploymentPlan::Instance) }
 
       context 'with reuse_compilation_vms' do

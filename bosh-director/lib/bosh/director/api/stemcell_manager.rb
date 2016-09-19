@@ -6,12 +6,15 @@ module Bosh::Director
     class StemcellManager
       include ApiHelper
 
-      def find_by_name_and_version(name, version)
-        stemcell = Models::Stemcell[:name => name, :version => version]
-        if stemcell.nil?
-          raise StemcellNotFound,
-                "Stemcell '#{name}/#{version}' doesn't exist"
-        end
+      def all_by_name_and_version(name, version)
+        stemcells = Models::Stemcell.where(:name => name, :version => version).all
+        raise StemcellNotFound, "Stemcell '#{name}/#{version}' doesn't exist" if stemcells.empty?
+        stemcells
+      end
+
+      def find_by_name_and_version_and_cpi(name, version, cpi)
+        stemcell = Models::Stemcell[:name => name, :version => version, :cpi => cpi]
+        raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if stemcell.nil?
         stemcell
       end
 
@@ -63,21 +66,11 @@ module Bosh::Director
         latest
       end
 
-      def find_by_os_and_version(os, version)
-        stemcell = Bosh::Director::Models::Stemcell.
-            dataset.order(:name)[:operating_system => os, :version => version]
-        if stemcell.nil?
-          raise StemcellNotFound,
-                "Stemcell version '#{version}' for OS '#{os}' doesn't exist"
-        end
-        stemcell
-      end
-
-      def stemcell_exists?(name, version)
-        find_by_name_and_version(name, version)
-        true
-      rescue StemcellNotFound
-        false
+      def all_by_os_and_version(os, version)
+        stemcells = Bosh::Director::Models::Stemcell.
+            dataset.order(:name).where(:operating_system => os, :version => version).all
+        raise StemcellNotFound, "Stemcell version '#{version}' for OS '#{os}' doesn't exist" if stemcells.empty?
+        stemcells
       end
 
       def create_stemcell_from_url(username, stemcell_url, options)
@@ -93,10 +86,10 @@ module Bosh::Director
         JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_path, options])
       end
 
-      def delete_stemcell(username, stemcell, options={})
-        description = "delete stemcell: #{stemcell.name}/#{stemcell.version}"
+      def delete_stemcell(username, stemcell_name, stemcell_version, options={})
+        description = "delete stemcell: #{stemcell_name}/#{stemcell_version}"
 
-        JobQueue.new.enqueue(username, Jobs::DeleteStemcell, description, [stemcell.name, stemcell.version, options])
+        JobQueue.new.enqueue(username, Jobs::DeleteStemcell, description, [stemcell_name, stemcell_version, options])
       end
 
       private

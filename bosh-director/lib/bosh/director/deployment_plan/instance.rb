@@ -137,7 +137,7 @@ module Bosh::Director
       end
 
       def stemcell_cid
-        # TODO
+        @stemcell.cid_for_az(availability_zone_name)
       end
 
       def env

@@ -20,10 +20,9 @@ module Bosh::Director
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
-        cloud = Config.cloud
         @blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
         compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(@blob_deleter, logger)
-        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger)
+        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(compiled_package_deleter, logger)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
         package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, @blob_deleter, logger)
@@ -64,8 +63,8 @@ module Bosh::Director
           stemcells_to_delete.each do |stemcell|
             pool.process do
               stemcell_stage.advance_and_track("#{stemcell['name']}/#{stemcell['version']}") do
-                stemcell_to_delete = @stemcell_manager.find_by_name_and_version(stemcell['name'], stemcell['version'])
-                @stemcell_deleter.delete(stemcell_to_delete)
+                stemcells = @stemcell_manager.all_by_name_and_version(stemcell['name'], stemcell['version'])
+                stemcells.each{|stemcell| @stemcell_deleter.delete(stemcell) }
               end
             end
           end

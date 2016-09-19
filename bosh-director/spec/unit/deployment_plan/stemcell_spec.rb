@@ -98,7 +98,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       stemcell = make(valid_spec)
       stemcell.bind_model(deployment)
 
-      expect(stemcell.model).to eq(stemcell_model)
+      expect(stemcell.models.first).to eq(stemcell_model)
       expect(stemcell_model.deployments).to eq([deployment])
     end
 
@@ -113,7 +113,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       })
       stemcell.bind_model(deployment)
 
-      expect(stemcell.model).to eq(stemcell_model)
+      expect(stemcell.models.first).to eq(stemcell_model)
       expect(stemcell_model.deployments).to eq([deployment])
     end
 
@@ -167,8 +167,8 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
       stemcell.bind_model(deployment)
 
-      expect(stemcell.model[:operating_system]).to eq('os2')
-      expect(stemcell.model[:version]).to eq('0.5.2')
+      expect(stemcell.models.first[:operating_system]).to eq('os2')
+      expect(stemcell.models.first[:version]).to eq('0.5.2')
     end
 
     it 'binds stemcells to the deployment DB' do
