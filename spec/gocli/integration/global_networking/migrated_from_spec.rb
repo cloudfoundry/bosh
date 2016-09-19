@@ -536,9 +536,10 @@ describe 'migrated from', type: :integration do
     original_manifest_with_azs['jobs'] = [job_spec]
 
     deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
-    output = bosh_runner.run('vms --dns')
-    expect(output).to include('0.etcd-z1.a.simple.bosh')
-    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
+    output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
+    dns_records = output[0]['DNS A Records'].split("\n")
+    expect(dns_records).to include('0.etcd-z1.a.simple.bosh')
+    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
 
     new_manifest_hash = original_manifest_with_azs
     job_spec = etcd_job
@@ -549,11 +550,12 @@ describe 'migrated from', type: :integration do
     new_manifest_hash['jobs'] = [job_spec]
 
     deploy_simple_manifest(manifest_hash: new_manifest_hash)
-    output = bosh_runner.run('vms --dns')
-    expect(output).to include('0.etcd.a.simple.bosh')
-    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
-    expect(output).to include('0.etcd-z1.a.simple.bosh')
-    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
+    output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
+    dns_records = output[0]['DNS A Records'].split("\n")
+    expect(dns_records).to include('0.etcd.a.simple.bosh')
+    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
+    expect(dns_records).to include('0.etcd-z1.a.simple.bosh')
+    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
   end
 
   context 'when migrating job that does not exist in previous deployment' do

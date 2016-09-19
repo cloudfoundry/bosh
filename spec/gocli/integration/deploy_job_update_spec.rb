@@ -158,7 +158,7 @@ describe 'deploy job update', type: :integration do
     failing_job_event = task_events[-2]
     expect(failing_job_event['stage']).to eq('Updating instance')
     expect(failing_job_event['state']).to eq('failed')
-    expect(scrub_random_ids(failing_job_event['task'])).to eq('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+    expect(failing_job_event['task']).to match(/foobar\/[0-9a-f-]{36} \(0\) \(canary\)/)
 
     started_job_events = task_events.select do |e|
       e['stage'] == 'Updating instance' && e['state'] == 'started'
