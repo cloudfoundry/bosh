@@ -411,7 +411,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
         end
 
-        it 'runs the post-deploy script when a vms is resurrected', hm: true do
+        it 'runs the post-deploy script when a vm is resurrected', hm: true do
           current_sandbox.with_health_monitor_running do
             deploy({})
 
@@ -649,13 +649,13 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         set_deployment(manifest_hash: manifest)
 
         output = deploy({})
-        expect(output).to include("Started updating job job_with_templates_having_properties")
+        expect(output).to include("Started updating instance job_with_templates_having_properties")
       end
 
       it 'should not update the job when template properties are the same' do
         deploy({})
         output = deploy({})
-        expect(output).to_not include("Started updating job job_with_templates_having_properties")
+        expect(output).to_not include("Started updating instance job_with_templates_having_properties")
       end
 
 
@@ -933,7 +933,7 @@ Director task #{task_regex}
 
   Started creating missing vms > foobar/#{uuid_regex} \\(0\\). Done #{step_duration_regex}
 
-  Started updating job foobar > foobar/#{uuid_regex} \\(0\\) \\(canary\\). Done #{step_duration_regex}
+  Started updating instance foobar > foobar/#{uuid_regex} \\(0\\) \\(canary\\). Done #{step_duration_regex}
 
 Task #{task_regex} done
 

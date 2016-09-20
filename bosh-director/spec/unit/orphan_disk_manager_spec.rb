@@ -16,6 +16,28 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(update_job)
     end
 
+    describe '#unorphan_disk' do
+      let(:instance) { Models::Instance.make(id: 123) }
+      let(:orphan_disk) { Models::OrphanDisk.make(disk_cid: 'disk456', size: 2048, cloud_properties: {'test_property' => '1'}) }
+
+      it 'unorphans disks and snapshots' do
+        snapshot = Models::OrphanSnapshot.make(orphan_disk: orphan_disk)
+
+        returned_disk = disk_manager.unorphan_disk(orphan_disk, instance.id)
+        persistent_disk = Models::PersistentDisk.first
+        persistent_snapshot = Models::Snapshot.first
+
+        expect(persistent_disk).to eq(returned_disk)
+
+        expect(persistent_disk.disk_cid).to eq(orphan_disk.disk_cid)
+        expect(persistent_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
+        expect(persistent_snapshot.persistent_disk).to eq(returned_disk)
+
+        expect(Models::OrphanDisk.all.count).to eq(0)
+        expect(Models::OrphanSnapshot.all.count).to eq(0)
+      end
+    end
+
     describe '#orphan_disk' do
       it 'orphans disks and snapshots' do
         snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)

@@ -58,6 +58,11 @@ module Bosh::Director::DeploymentPlan
       address
     end
 
+    def network_ip_address(preferred_network_name = nil)
+      network_name = preferred_network_name || @default_network['addressable'] || @default_network['gateway']
+      to_hash[network_name]['ip']
+    end
+
     def network_addresses
       network_addresses = {}
 

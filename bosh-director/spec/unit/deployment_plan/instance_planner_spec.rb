@@ -25,40 +25,40 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       'cloud_properties' => {}
     )
   end
-  let(:job) do
-    job = BD::DeploymentPlan::InstanceGroup.new(logger)
-    job.name = 'foo-job'
-    job.availability_zones << az
-    job
+  let(:instance_group) do
+    instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+    instance_group.name = 'foo-instance_group'
+    instance_group.availability_zones << az
+    instance_group
   end
-  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(job, deployment) }
+  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment) }
   let(:tracer_instance) do
     make_instance
   end
 
   def make_instance(idx=0)
-    instance = BD::DeploymentPlan::Instance.create_from_job(job, idx, 'started', deployment_model, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(instance_group, idx, 'started', deployment_model, {}, az, logger)
     instance.bind_new_instance_model
     instance
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = BD::DeploymentPlan::Instance.create_from_job(job, existing_instance_model.index, 'started', deployment_model, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(instance_group, existing_instance_model.index, 'started', deployment_model, {}, az, logger)
     instance.bind_existing_instance_model(existing_instance_model)
     instance
   end
 
-  describe 'plan_job_instances' do
+  describe 'plan_instance_group_instances' do
     before do
-      allow(job).to receive(:networks).and_return([])
+      allow(instance_group).to receive(:networks).and_return([])
     end
 
     context 'when instance should skip running drain script' do
       let(:skip_drain_decider) { BD::DeploymentPlan::SkipDrain.new('*') }
 
       it 'should set "skip_drain" on the instance plan' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
         expect(instance_plans.select(&:skip_drain).count).to eq(instance_plans.count)
       end
     end
@@ -67,9 +67,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:options) { {'recreate' => true} }
 
       it 'should return instance plans with "recreate" option set on them' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
         expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
       end
@@ -77,33 +77,33 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     context 'when there are ignored instances' do
       it 'fails if specifically changing the state of ignored vms' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, ignore: true)
-        job.instance_states = {'0' => "stopped"}
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, ignore: true)
+        instance_group.instance_states = {'0' => "stopped"}
         expect {
-          instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
         }.to raise_error(
           Bosh::Director::JobInstanceIgnored,
-          "You are trying to change the state of the ignored instance 'foo-job/#{existing_instance_model.uuid}'. " +
+          "You are trying to change the state of the ignored instance 'foo-instance_group/#{existing_instance_model.uuid}'. " +
               "This operation is not allowed. You need to unignore it first."
         )
       end
     end
 
-    context 'when job has no az' do
-      before { job.availability_zones = [] }
+    context 'when instance_group has no az' do
+      before { instance_group.availability_zones = [] }
 
       it 'creates instance plans for new instances with no az' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0)
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
 
-        allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
+        allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
 
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
 
         expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
-          job,
+          instance_group,
           deployment,
           nil,
           0
@@ -123,15 +123,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     describe 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: undesired_az.name, deployment: deployment_model)
-        another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: undesired_az.name, deployment: deployment_model)
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: undesired_az.name, deployment: deployment_model)
+        another_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 1, availability_zone: undesired_az.name, deployment: deployment_model)
         existing_instances = [existing_instance_model, another_existing_instance_model]
 
         desired_instances = [desired_instance]
         expected_new_instance_index = 2
         allow(instance_repo).to receive(:create).with(desired_instances[0], expected_new_instance_index) { make_instance(2) }
 
-        instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances)
 
         expect(instance_plans.count).to eq(3)
         obsolete_instance_plans = instance_plans.select(&:obsolete?)
@@ -145,17 +145,17 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'creates instance plans for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
+      existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
-      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
+      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
 
-      instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
       expect(instance_plans.count).to eq(1)
       existing_instance_plan = instance_plans.first
 
       expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
-        job,
+        instance_group,
         deployment,
         az,
         0
@@ -173,18 +173,18 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'updates descriptions for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
-      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
+      existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
       expect(tracer_instance).to receive(:update_description)
 
-      instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+      instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
     end
 
     it 'creates instance plans for new instances' do
       existing_instances = []
       allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
 
-      instance_plans = instance_planner.plan_job_instances(job, [desired_instance], existing_instances)
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances)
 
       expect(instance_plans.count).to eq(1)
       new_instance_plan = instance_plans.first
@@ -201,19 +201,19 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       out_of_typical_range_index = 77
       auto_picked_index = 0
 
-      desired_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: out_of_typical_range_index, availability_zone: az.name)
+      desired_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: out_of_typical_range_index, availability_zone: az.name)
 
-      desired_instances = [desired_instance, BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, out_of_typical_range_index)]
+      desired_instances = [desired_instance, BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, out_of_typical_range_index)]
 
-      undesired_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: auto_picked_index, availability_zone: undesired_az.name)
+      undesired_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: auto_picked_index, availability_zone: undesired_az.name)
       existing_instances = [undesired_existing_instance_model, desired_existing_instance_model]
-      allow(instance_repo).to receive(:fetch_existing).with(desired_existing_instance_model, nil, job, out_of_typical_range_index, deployment) do
+      allow(instance_repo).to receive(:fetch_existing).with(desired_existing_instance_model, nil, instance_group, out_of_typical_range_index, deployment) do
         make_instance(out_of_typical_range_index)
       end
 
       allow(instance_repo).to receive(:create).with(desired_instances[1], 0) { make_instance(auto_picked_index) }
 
-      instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances)
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances)
       expect(instance_plans.count).to eq(3)
 
       obsolete_instance_plan = instance_plans.find(&:obsolete?)
@@ -221,7 +221,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(obsolete_instance_plan.obsolete?).to eq(true)
       expect(obsolete_instance_plan.desired_instance).to be_nil
       expect(obsolete_instance_plan.existing_instance).to eq(undesired_existing_instance_model)
-      expect(obsolete_instance_plan.instance).to be_nil
+      expect(obsolete_instance_plan.instance).not_to be_nil
 
       existing_instance_plan = instance_plans.find(&:existing?)
       expect(existing_instance_plan.new?).to eq(false)
@@ -235,12 +235,12 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'resolving bootstrap nodes' do
       context 'when existing instance is marked as bootstrap' do
         it 'keeps bootstrap node' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name)
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: az.name)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { existing_tracer_instance }
 
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -254,15 +254,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when obsolete instance is marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name, deployment: deployment_model)
-          another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, deployment: deployment_model)
-          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, 1)
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: undesired_az.name, deployment: deployment_model)
+          another_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 1, availability_zone: az.name, deployment: deployment_model)
+          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(another_existing_instance_model, nil, job, another_desired_instance.index, deployment) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing).with(another_existing_instance_model, nil, instance_group, another_desired_instance.index, deployment) { existing_tracer_instance }
           allow(instance_repo).to receive(:create).with(desired_instance, 2) { make_instance(2) }
 
-          instance_plans = instance_planner.plan_job_instances(job, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model])
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model])
 
           expect(instance_plans.count).to eq(3)
           desired_existing_instance_plan = instance_plans.find(&:existing?)
@@ -278,15 +278,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when several existing instances are marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model_1 = BD::Models::Instance.make(job: 'foo-job-z1', index: 0, bootstrap: true, availability_zone: az.name)
-          desired_instance_1 = BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, 0)
-          existing_instance_model_2 = BD::Models::Instance.make(job: 'foo-job-z2', index: 0, bootstrap: true, availability_zone: az.name)
-          desired_instance_2 = BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, 1)
+          existing_instance_model_1 = BD::Models::Instance.make(job: 'foo-instance_group-z1', index: 0, bootstrap: true, availability_zone: az.name)
+          desired_instance_1 = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 0)
+          existing_instance_model_2 = BD::Models::Instance.make(job: 'foo-instance_group-z2', index: 0, bootstrap: true, availability_zone: az.name)
+          desired_instance_2 = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
-          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_1, nil, job, desired_instance_1.index, deployment) { make_instance(0) }
-          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_2, nil, job, desired_instance_2.index, deployment) { make_instance(1) }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_1, nil, instance_group, desired_instance_1.index, deployment) { make_instance(0) }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_2, nil, instance_group, desired_instance_2.index, deployment) { make_instance(1) }
 
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2])
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2])
 
           expect(instance_plans.count).to eq(2)
           bootstrap_instance_plans = instance_plans.select { |ip| ip.instance.bootstrap? }
@@ -298,13 +298,13 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       context 'when there are no bootstrap instances' do
         it 'assigns the instance with the lowest index as bootstrap instance' do
           existing_instances = []
-          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, deployment)
+          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, nil, deployment)
 
           allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
 
           allow(instance_repo).to receive(:create).with(another_desired_instance, 1) { make_instance(1) }
 
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance, another_desired_instance], existing_instances)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance, another_desired_instance], existing_instances)
 
           expect(instance_plans.count).to eq(2)
           new_instance_plan = instance_plans.first
@@ -318,12 +318,12 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when all instances are obsolete' do
         it 'should not mark any instance as bootstrap instance' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name)
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: undesired_az.name)
 
           obsolete_instance = instance_double(BD::DeploymentPlan::Instance, update_description: nil)
           allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { obsolete_instance }
 
-          instance_plans = instance_planner.plan_job_instances(job, [], [existing_instance_model])
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [], [existing_instance_model])
 
           expect(instance_plans.count).to eq(1)
           obsolete_instance_plan = instance_plans.first
@@ -336,7 +336,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'reconciling network plans' do
       let(:existing_instance) { make_instance_with_existing_model(existing_instance_model) }
 
-      let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name) }
+      let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: az.name) }
 
       before do
         BD::Models::IpAddress.make(address: ip_to_i('192.168.1.5'), network_name: 'fake-network', instance: existing_instance_model)
@@ -359,7 +359,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
 
       it 'marks undesired existing network reservations as obsolete' do
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
@@ -368,12 +368,12 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when network reservation is needed' do
         before do
-          job_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
-          allow(job).to receive(:networks).and_return([job_network])
+          instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
+          allow(instance_group).to receive(:networks).and_return([instance_group_network])
         end
 
         it 'marks desired existing reservations as existing' do
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -385,12 +385,12 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'when instance has vip networks' do
       let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
       before do
-        job_network = BD::DeploymentPlan::JobNetwork.new('fake-network', ['68.68.68.68'], [], vip_network)
-        allow(job).to receive(:networks).and_return([job_network])
+        instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', ['68.68.68.68'], [], vip_network)
+        allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 
       it 'creates network plan for vip network' do
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [])
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [])
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
@@ -402,36 +402,35 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
   end
 
-  describe '#plan_obsolete_jobs' do
-    it 'returns instance plans for each job' do
-      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-job', index: 0)
-      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-job', index: 1)
+  describe '#plan_obsolete_instance_groups' do
+    it 'returns instance plans for each instance_group' do
+      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
+      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-instance_group', index: 1)
 
       existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
-      instance_plans = instance_planner.plan_obsolete_jobs([job], existing_instances)
+      instance_plans = instance_planner.plan_obsolete_instance_groups([instance_group], existing_instances)
 
       expect(instance_plans.count).to eq(1)
 
       obsolete_instance_plan = instance_plans.first
-      expect(obsolete_instance_plan.instance).to be_nil
+      expect(obsolete_instance_plan.instance).not_to be_nil
       expect(obsolete_instance_plan.desired_instance).to be_nil
       expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
       expect(obsolete_instance_plan).to be_obsolete
     end
 
     it 'fails when trying to delete instance groups with ignored instances' do
-      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-job', index: 0)
-      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-job', index: 1, ignore: true)
+      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-instance-group', index: 0)
+      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-instance-group', index: 1, ignore: true)
 
       existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
 
       expect {
-        instance_planner.plan_obsolete_jobs([job], existing_instances)
+        instance_planner.plan_obsolete_instance_groups([instance_group], existing_instances)
       }.to raise_error(
          Bosh::Director::DeploymentIgnoredInstancesDeletion,
-         "You are trying to delete instance group 'bar-job', which contains ignored instance(s). Operation not allowed."
+         "You are trying to delete instance group 'bar-instance-group', which contains ignored instance(s). Operation not allowed."
       )
     end
-
   end
 end

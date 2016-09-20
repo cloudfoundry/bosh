@@ -31,16 +31,25 @@ module Bosh::Director
         parse_releases
         parse_update(parse_options)
         parse_instance_groups(parse_options)
+        parse_tags
 
         @deployment
       end
 
       private
 
+      def parse_tags
+        if @deployment_manifest.has_key?('tags')
+          safe_property(@deployment_manifest, 'tags', :class => Hash).each_pair do |key, value|
+            @deployment.add_tag(DeploymentPlan::Tag.parse({key => value}))
+          end
+        end
+      end
+
       def parse_stemcells
         if @deployment_manifest.has_key?('stemcells')
           safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
-            alias_val = safe_property(stemcell_hash, 'alias', :class=> String)
+            alias_val = safe_property(stemcell_hash, 'alias', :class => String)
             if @deployment.stemcells.has_key?(alias_val)
               raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
             end
@@ -51,8 +60,6 @@ module Bosh::Director
 
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
-          :class => Hash, :default => {})
-        @deployment.uninterpolated_properties = safe_property(@deployment_manifest, 'uninterpolated_properties',
           :class => Hash, :default => {})
       end
 

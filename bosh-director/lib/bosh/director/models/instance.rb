@@ -15,17 +15,21 @@ module Bosh::Director::Models
       validates_includes %w(started stopped detached), :state
     end
 
-    def persistent_disk
-      # Currently we support only 1 persistent disk.
-      self.persistent_disks.find { |disk| disk.active }
+    def managed_persistent_disk
+      PersistentDisk.first(active: true, name: '', instance: self)
     end
 
     def active_persistent_disks
-      self.persistent_disks.select { |disk| disk.active }
+      disk_collection = Bosh::Director::DeploymentPlan::PersistentDiskCollection.new(Bosh::Director::Config.logger)
+      self.persistent_disks.select { |disk| disk.active }.each do |disk|
+        disk_collection.add_by_model(disk)
+      end
+      disk_collection
     end
 
-    def persistent_disk_cid
-      disk = persistent_disk
+    # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
+    def managed_persistent_disk_cid
+      disk = managed_persistent_disk
       return disk.disk_cid if disk
       nil
     end
@@ -83,8 +87,6 @@ module Bosh::Director::Models
         return 'error'
       end
 
-      result = Bosh::Director::InstanceModelHelper.adjust_instance_spec_after_retrieval!(result)
-
       if result['resource_pool'].nil?
         result
       else
@@ -110,9 +112,8 @@ module Bosh::Director::Models
       if spec.nil?
         self.spec_json = nil
       else
-        prepared_spec = Bosh::Director::InstanceModelHelper.prepare_instance_spec_for_saving!(spec)
         begin
-          self.spec_json = JSON.generate(prepared_spec)
+          self.spec_json = JSON.generate(spec)
         rescue JSON::GeneratorError
           self.spec_json = 'error'
         end
@@ -131,11 +132,6 @@ module Bosh::Director::Models
     def vm_env
       return {} if spec.nil?
       spec['env'] || {}
-    end
-
-    def vm_uninterpolated_env
-      return {} if spec.nil?
-      spec['uninterpolated_env'] || {}
     end
 
     def credentials

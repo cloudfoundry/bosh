@@ -9,6 +9,27 @@ module Bosh::Dev
 
     let(:bucket_name) { 'fake-bucket' }
 
+    describe '.build_number' do
+      subject { described_class.build_number }
+      before { stub_const('ENV', environment) }
+
+      context 'when CANDIDATE_BUILD_NUMBER is set' do
+        let(:environment) { { 'CANDIDATE_BUILD_NUMBER' => 'candidate'} }
+
+        it 'returns the specified build number' do
+          expect(subject).to eq('candidate')
+        end
+      end
+
+      context 'when CANDIDATE_BUILD_NUMBER is not set' do
+        let(:environment) { {} }
+
+        it 'returns the default build number' do
+          expect(subject).to eq('0000')
+        end
+      end
+    end
+
     describe '.candidate' do
       subject { described_class.candidate(bucket_name) }
 

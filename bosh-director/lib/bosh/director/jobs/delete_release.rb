@@ -15,10 +15,9 @@ module Bosh::Director
         @version = options['version']
 
         blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
-        blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
-        compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger)
-        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
-        template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blobstore, logger)
+        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blobstore, logger)
+        template_deleter = Helpers::TemplateDeleter.new(blobstore, logger)
         release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger)
         release_version_deleter =
           Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log)
@@ -29,15 +28,8 @@ module Bosh::Director
       def perform
         logger.info('Processing delete release')
 
-        errors = nil
-
         with_release_lock(@name, :timeout => 10) do
-          errors = @name_version_release_deleter.find_and_delete_release(@name, @version, @force)
-        end
-
-        unless errors.empty?
-          error_strings = errors.map { |e| e.to_s }.join(', ')
-          raise ReleaseDeleteFailed, "Can't delete release: #{error_strings}"
+          @name_version_release_deleter.find_and_delete_release(@name, @version, @force)
         end
 
         "/release/#{@name}"

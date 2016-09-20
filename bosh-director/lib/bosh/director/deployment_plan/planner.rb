@@ -24,9 +24,6 @@ module Bosh::Director
 
       attr_accessor :properties
 
-      # uninterpolated global properties hash
-      attr_accessor :uninterpolated_properties
-
       # Hash of resolved links spec provided by deployment
       # in format job_name > template_name > link_name > link_type
       # used by LinksResolver
@@ -43,8 +40,11 @@ module Bosh::Director
       # Stemcells in deployment by alias
       attr_reader :stemcells
 
+      # Tags in deployment by alias
+      attr_reader :tags
+
       # Job instances from the old manifest that are not in the new manifest
-      attr_reader :unneeded_instances
+      attr_reader :unneeded_instance_plans
 
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
@@ -59,7 +59,6 @@ module Bosh::Director
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
-        @uninterpolated_properties = {}
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
@@ -71,11 +70,13 @@ module Bosh::Director
         @instance_groups = []
         @instance_groups_name_index = {}
         @instance_groups_canonical_name_index = Set.new
+        @tags = {}
 
         @unneeded_vms = []
-        @unneeded_instances = []
+        @unneeded_instance_plans = []
 
         @recreate = !!options['recreate']
+        @fix = !!options['fix']
 
         @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
@@ -105,23 +106,25 @@ module Bosh::Director
         Canonicalizer.canonicalize(@name)
       end
 
-      def bind_models(skip_links_binding = false)
+      def bind_models(options = {})
         stemcell_manager = Api::StemcellManager.new
         dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
           self,
           stemcell_manager,
           dns_manager,
+          Config.cloud,
           @logger
         )
 
-        assembler.bind_models(skip_links_binding)
+        options[:fix] = @fix
+        assembler.bind_models(options)
       end
 
       def compile_packages
         validate_packages
 
-        disk_manager = SingleDiskManager.new(@logger)
+        disk_manager = DiskManager.new(@logger)
         job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create
@@ -169,6 +172,10 @@ module Bosh::Director
         @skip_drain.nil? ? false : @skip_drain.for_job(name)
       end
 
+      def add_tag(tag)
+        @tags[tag.key] = tag.value
+      end
+
       def add_stemcell(stemcell)
         @stemcells[stemcell.alias] = stemcell
       end
@@ -205,8 +212,12 @@ module Bosh::Director
         end
       end
 
-      def mark_instance_for_deletion(instance)
-        @unneeded_instances << instance
+      def mark_instance_plans_for_deletion(instance_plans)
+        @unneeded_instance_plans = instance_plans
+      end
+
+      def unneeded_instances
+        @unneeded_instance_plans.map(&:existing_instance)
       end
 
       # Adds a instance_group by name
@@ -290,12 +301,12 @@ module Bosh::Director
       def validate_packages
         release_manager = Bosh::Director::Api::ReleaseManager.new
         validator = DeploymentPlan::PackageValidator.new(@logger)
-        instance_groups.each do |job|
-          job.templates.each do |template|
-            release_model = release_manager.find_by_name(template.release.name)
-            release_version_model = release_manager.find_version(release_model, template.release.version)
+        instance_groups.each do |instance_group|
+          instance_group.jobs.each do |job|
+            release_model = release_manager.find_by_name(job.release.name)
+            release_version_model = release_manager.find_version(release_model, job.release.version)
 
-            validator.validate(release_version_model, job.stemcell)
+            validator.validate(release_version_model, instance_group.stemcell)
           end
         end
         validator.handle_faults

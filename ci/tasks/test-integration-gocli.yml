@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main
+
+inputs:
+- name: bosh-src
+- name: gocli-release-bucket-linux
+
+run:
+  path: bosh-src/ci/tasks/test-integration-gocli.sh
+
+params:
+  RUBY_VERSION:      replace-me
+  DB:                replace-me
+  LOG_LEVEL:         INFO
+  NUM_GROUPS:        8
+  GROUP:             1,2,3,4,5,6,7,8
+  SPEC_PATH:         ~

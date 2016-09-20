@@ -5,9 +5,11 @@ module Bosh::Director
     subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, logger) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
+      using_global_networking?: false,
       skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
       recreate: false,
-      model: BD::Models::Deployment.make
+      model: BD::Models::Deployment.make,
+
     ) }
     let(:stemcell_manager) { nil }
     let(:dns_manager) { DnsManagerProvider.create }
@@ -17,7 +19,7 @@ module Bosh::Director
 
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
-      let(:job) { instance_double(DeploymentPlan::InstanceGroup) }
+      let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -29,6 +31,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
         allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
+        allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)
       end
 
       it 'should bind releases and their templates' do
@@ -66,35 +69,85 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      context 'when there are desired jobs' do
-        def make_job(template_name)
-          job = DeploymentPlan::InstanceGroup.new(logger)
+      context 'when there are desired instance_groups' do
+        def make_instance_group(name, template_name)
+          instance_group = DeploymentPlan::InstanceGroup.new(logger)
+          instance_group.name = name
+          instance_group.deployment_name = 'simple'
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
-          template = DeploymentPlan::Template.new(release_version, template_name)
-          template.bind_models
-          job.templates = [template]
-          allow(job).to receive(:validate_package_names_do_not_collide!)
-          job
+          job = DeploymentPlan::Job.new(release_version, template_name)
+          job.bind_models
+          instance_group.jobs = [job]
+          allow(instance_group).to receive(:validate_package_names_do_not_collide!)
+          instance_group
         end
 
-        let(:j1) { make_job('fake-template-1') }
-        let(:j2) { make_job('fake-template-2') }
+        let(:instance_group_1) { make_instance_group('ig-1', 'fake-instance-group-1') }
+        let(:instance_group_2) { make_instance_group('ig-2', 'fake-instance-group-2') }
 
-        before { allow(deployment_plan).to receive(:instance_groups).and_return([j1, j2]) }
+        let(:instance_group_network) { double(DeploymentPlan::JobNetwork) }
 
-        it 'validates the jobs' do
-          expect(j1).to receive(:validate_package_names_do_not_collide!).once
-          expect(j2).to receive(:validate_package_names_do_not_collide!).once
+        before do
+          allow(instance_group_network).to receive(:name).and_return('my-network-name')
+          allow(instance_group_network).to receive(:vip?).and_return(false)
+          allow(instance_group_network).to receive(:static_ips)
+          allow(instance_group_1).to receive(:networks).and_return([instance_group_network])
+          allow(instance_group_2).to receive(:networks).and_return([instance_group_network])
+
+          allow(deployment_plan).to receive(:instance_groups).and_return([instance_group_1, instance_group_2])
+          allow(deployment_plan).to receive(:name).and_return([instance_group_1, instance_group_2])
+        end
+
+        it 'validates the instance_groups' do
+          expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
+          expect(instance_group_2).to receive(:validate_package_names_do_not_collide!).once
 
           assembler.bind_models
         end
 
-        context 'when the job validation fails' do
+        context 'links binding' do
+          let(:links_resolver) { double(DeploymentPlan::LinksResolver)}
+
+          before do
+            allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
+          end
+
+          it 'should bind links by default' do
+            expect(links_resolver).to receive(:resolve).with(instance_group_1)
+            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+
+            assembler.bind_models
+          end
+
+          it 'should skip links binding when should_bind_links flag is passed as false' do
+            expect(links_resolver).to_not receive(:resolve)
+
+            assembler.bind_models({:should_bind_links => false})
+          end
+        end
+
+        context 'properties binding' do
+          it 'should bind properties by default' do
+            expect(instance_group_1).to receive(:bind_properties)
+            expect(instance_group_2).to receive(:bind_properties)
+
+            assembler.bind_models
+          end
+
+          it 'should skip links binding when should_bind_properties flag is passed as false' do
+            expect(instance_group_1).to_not receive(:bind_properties)
+            expect(instance_group_2).to_not receive(:bind_properties)
+
+            assembler.bind_models({:should_bind_properties => false})
+          end
+        end
+
+        context 'when the instance_group validation fails' do
           it 'propagates the exception' do
-            expect(j1).to receive(:validate_package_names_do_not_collide!).once
-            expect(j2).to receive(:validate_package_names_do_not_collide!).once.and_raise('Unable to deploy manifest')
+            expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
+            expect(instance_group_2).to receive(:validate_package_names_do_not_collide!).once.and_raise('Unable to deploy manifest')
 
             expect { assembler.bind_models }.to raise_error('Unable to deploy manifest')
           end

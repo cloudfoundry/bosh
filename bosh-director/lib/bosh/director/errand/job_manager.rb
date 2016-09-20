@@ -8,7 +8,7 @@ module Bosh::Director
       @deployment = deployment
       @job = job
       @logger = logger
-      @disk_manager = SingleDiskManager.new(logger)
+      @disk_manager = DiskManager.new(logger)
       @job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       @dns_manager = DnsManagerProvider.create
@@ -17,14 +17,13 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider)
+      @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider, @deployment.tags)
     end
 
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
-      job_updater = JobUpdater.new(@deployment, @job, links_resolver, @disk_manager)
+      job_updater = JobUpdater.new(@deployment, @job, @disk_manager)
       job_updater.update
     end
 

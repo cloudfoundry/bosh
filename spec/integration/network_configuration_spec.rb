@@ -195,4 +195,180 @@ describe 'network configuration', type: :integration do
       expect(director.vms.map(&:agent_id)).to eq([agent_id])
     end
   end
+
+  context '#spec.ip' do
+    let (:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+
+    with_reset_sandbox_before_each
+
+    context 'instance group has multiple networks' do
+      let(:cloud_config_hash) {
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['resource_pools'].first['size'] = 1
+        cloud_config_hash['networks'] = [
+          {
+            'name' => 'a',
+            'subnets' => [
+              {
+                'range' => '192.168.1.0/24',
+                'gateway' => '192.168.1.1',
+                'dns' => ['192.168.1.2'],
+                'static' => ['192.168.1.10'],
+                'reserved' => [],
+                'cloud_properties' => {},
+              }
+            ]
+          },
+          {
+            'name' => 'b',
+            'subnets' => [
+              {
+                'range' => '192.168.2.0/24',
+                'gateway' => '192.168.2.1',
+                'dns' => ['192.168.2.2'],
+                'static' => ['192.168.2.10'],
+                'reserved' => [],
+                'cloud_properties' => {},
+              }
+            ]
+          }
+        ]
+        cloud_config_hash
+      }
+
+      let(:manifest_hash) {
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash
+      }
+
+      context 'default "addressable" network is specified' do
+        it 'uses ip from default "addressable" network' do
+          manifest_hash['jobs'].first['networks'] = [
+            {
+              'name' => 'a',
+              'static_ips' => '192.168.1.10',
+              'default' => %w(dns gateway addressable)},
+            {
+              'name' => 'b',
+              'static_ips' => '192.168.2.10',
+            }
+          ]
+
+          deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+          vm = director.vm('foobar', '0', env: client_env)
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.ip=192.168.1.10')
+        end
+
+        it 'ignores default "gateway" network' do
+          manifest_hash['jobs'].first['networks'] = [
+            {
+              'name' => 'a',
+              'static_ips' => '192.168.1.10',
+              'default' => %w(dns gateway)},
+            {
+              'name' => 'b',
+              'static_ips' => '192.168.2.10',
+              'default' => %w(addressable),
+            }
+          ]
+
+          deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+          vm = director.vm('foobar', '0', env: client_env)
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.ip=192.168.2.10')
+        end
+
+        it 'errors if specified on multiple networks' do
+          manifest_hash['jobs'].first['networks'] = [
+            {
+              'name' => 'a',
+              'static_ips' => '192.168.1.10',
+              'default' => %w(dns gateway addressable)},
+            {
+              'name' => 'b',
+              'static_ips' => '192.168.2.10',
+              'default' => %w(addressable),
+            }
+          ]
+
+          expect {
+            deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+          }.to raise_error
+        end
+      end
+
+      context 'default "addressable" network not specified' do
+        it 'uses ip from default "gateway" network' do
+          manifest_hash['jobs'].first['networks'] = [
+            {
+              'name' => 'a',
+              'static_ips' => '192.168.1.10',
+              'default' => %w(dns gateway)},
+            {
+              'name' => 'b',
+              'static_ips' => '192.168.2.10'
+            }
+          ]
+
+          deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+          vm = director.vm('foobar', '0', env: client_env)
+          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.ip=192.168.1.10')
+        end
+      end
+    end
+
+    context 'instance group has single network' do
+      it 'uses ip from available network' do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.100']
+        cloud_config_hash['resource_pools'].first['size'] = 1
+
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash['jobs'].first['networks'].first['static_ips'] = '192.168.1.100'
+
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+        vm = director.vm('foobar', '0', env: client_env)
+        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=192.168.1.100')
+      end
+    end
+
+    context 'dynamic network' do
+      before { current_sandbox.health_monitor_process.start }
+      after { current_sandbox.health_monitor_process.stop }
+
+      it 'should update spec.ip with new ip on recreate' do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['networks'] = [{
+            'name' => 'a',
+            'type' => 'dynamic',
+            'cloud_properties' => {}
+          }
+        ]
+
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+        vm = director.vm('foobar','0', env: client_env)
+        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + vm.ips)
+
+        director.kill_vm_and_wait_for_resurrection(vm)
+
+        vm = director.vm('foobar','0', env: client_env)
+        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + vm.ips)
+      end
+    end
+  end
 end

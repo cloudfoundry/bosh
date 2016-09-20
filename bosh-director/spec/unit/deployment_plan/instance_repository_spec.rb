@@ -26,20 +26,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
   end
 
+  let(:existing_instance) do
+    Bosh::Director::Models::Instance.make(
+    spec: instance_spec)
+  end
+
   describe '#fetch_existing' do
-    let(:existing_instance) do
-      Bosh::Director::Models::Instance.make(
-        deployment_id: '33',
-        job: 'job-name',
-        index: 1,
-        state: 'started',
-        compilation: false,
-        uuid: 'uuid-2',
-        availability_zone: 'az-name',
-        bootstrap: false,
-        spec: instance_spec
-      )
-    end
     let(:instance_spec) { {} }
 
     it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
@@ -48,6 +40,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.model).to eq(existing_instance)
       expect(instance.uuid).to eq(existing_instance.uuid)
       expect(instance.state).to eq(existing_instance.state)
+    end
+
+    it 'returns an instance with correct current state' do
+      instance = instance_repository.fetch_existing(existing_instance, {'job_state' => 'unresponsive'}, job, nil, plan)
+      expect(instance.model).to eq(existing_instance)
+      expect(instance.current_job_state).to eq('unresponsive')
     end
 
     context 'when job has instance state' do
@@ -92,6 +90,104 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         context 'when binding without state' do
           it 'has no reservations' do
             instance = instance_repository.fetch_existing(existing_instance, nil, job, nil, plan)
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([])
+          end
+        end
+      end
+    end
+  end
+
+  describe '#fetch_obsolete_existing' do
+    let(:env) do
+      {
+        'key1' => 'value1'
+      }
+    end
+    let(:stemcell) { BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:instance_spec) do
+      {
+        'vm_type' => {
+          'name' => 'vm-type',
+          'cloud_properties' => {'foo' => 'bar'},
+        },
+        'stemcell' => {
+          'name' => stemcell.name,
+          'version' => stemcell.version
+        },
+        'env' => env,
+        'networks' => {
+          'ip' => '192.168.1.1',
+        }
+      }
+    end
+
+    it 'returns an instance with a bound Models::Instance' do
+      instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+
+      expect(instance.model).to eq(existing_instance)
+      expect(instance.uuid).to eq(existing_instance.uuid)
+      expect(instance.state).to eq(existing_instance.state)
+      expect(instance.index).to eq(existing_instance.index)
+      expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+      expect(instance.compilation?).to eq(existing_instance.compilation)
+      expect(instance.job_name).to eq(existing_instance.job)
+      expect(instance.vm_type.name).to eq('vm-type')
+      expect(instance.stemcell.model).to eq(stemcell)
+      expect(instance.env).to eq(env)
+    end
+
+    it 'returns an instance with correct current state' do
+      instance = instance_repository.fetch_obsolete_existing(existing_instance, {'job_state' => 'unresponsive'})
+      expect(instance.model).to eq(existing_instance)
+      expect(instance.current_job_state).to eq('unresponsive')
+    end
+
+    describe 'when existing instance has no spec' do
+      let(:instance_spec) { {} }
+      it 'returns an instance with no spec' do
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+        expect(instance.model).to eq(existing_instance)
+        expect(instance.uuid).to eq(existing_instance.uuid)
+        expect(instance.state).to eq(existing_instance.state)
+        expect(instance.index).to eq(existing_instance.index)
+        expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+        expect(instance.compilation?).to eq(existing_instance.compilation)
+        expect(instance.job_name).to eq(existing_instance.job)
+        expect(instance.vm_type).to be_nil
+        expect(instance.stemcell).to be_nil
+        expect(instance.env).to eq({})
+      end
+    end
+    describe 'binding existing reservations' do
+      context 'when instance has reservations in db' do
+        before do
+          existing_instance.add_ip_address(BD::Models::IpAddress.make(address: 123))
+        end
+
+        it 'is using reservation from database' do
+          instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+          expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
+        end
+      end
+
+      context 'when instance does not have reservations in database' do
+        context 'when instance has reservations on dynamic networks' do
+          it 'creates reservations from state' do
+            instance = instance_repository.fetch_obsolete_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
+          end
+        end
+
+        context 'when binding reservations with state' do
+          it 'creates reservations from state' do
+            instance = instance_repository.fetch_obsolete_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
+          end
+        end
+
+        context 'when binding without state' do
+          it 'has no reservations' do
+            instance = instance_repository.fetch_obsolete_existing(existing_instance, nil)
             expect(instance.existing_network_reservations.map(&:ip)).to eq([])
           end
         end

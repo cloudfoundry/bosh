@@ -16,7 +16,8 @@ describe 'vm_types and stemcells', type: :integration do
       'env1' => 'env_value1',
       'env2' => 'env_value2',
       'bosh' => {
-        'group_name' => 'foobar'
+        'group' => 'testdirector-simple-foobar',
+        'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
       },
     }
   end
@@ -172,7 +173,8 @@ stemcells:
         'env1' => 'env_value1',
         'env2' => 'env_value2',
         'bosh' => {
-          'group_name' => 'foobar'
+          'group' => 'testdirector-simple-foobar',
+          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
         },
       }
       cloud_config_hash['resource_pools'].first['env'] = env_hash

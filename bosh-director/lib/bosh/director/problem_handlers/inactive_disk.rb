@@ -52,11 +52,11 @@ module Bosh::Director
         unless disk_mounted?
           handler_error('Disk is not mounted')
         end
-        # Currently the director allows ONLY one persistent disk per
+        # Currently the director allows ONLY one managed persistent disk per
         # instance. We are about to activate a disk but the instance already
         # has an active disk.
         # For now let's be conservative and return an error.
-        if @instance.persistent_disk
+        if @instance.managed_persistent_disk
           handler_error('Instance already has an active disk')
         end
         @disk.active = true

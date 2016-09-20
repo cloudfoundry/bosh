@@ -193,7 +193,8 @@ module Bosh
         disk_id = SecureRandom.hex
         file = disk_file(disk_id)
         FileUtils.mkdir_p(File.dirname(file))
-        File.write(file, size.to_s)
+        disk_info = JSON.generate({size: size, cloud_properties: cloud_properties, vm_locality: vm_locality})
+        File.write(file, disk_info)
         disk_id
       end
 
@@ -317,6 +318,23 @@ module Bosh
         agent_base_dir = agent_dir_for_vm_cid(vm_cid)
         spec_file = File.join(agent_base_dir, 'bosh', 'spec.json')
         JSON.parse(File.read(spec_file))
+      end
+
+      def attached_disk_infos(vm_cid)
+        agent_id = agent_id_for_vm_id(vm_cid)
+        settings = read_agent_settings(agent_id)
+        return [] unless settings.has_key?('disks') && settings['disks'].has_key?('persistent')
+
+        settings['disks']['persistent'].inject([]) do |memo, disk_attachment|
+          disk_cid = disk_attachment[0]
+          device_path = disk_attachment[1]
+
+          disk_info_hash = JSON.parse(File.read(disk_file(disk_cid)))
+          disk_info_hash['disk_cid'] = disk_cid
+          disk_info_hash['device_path'] = device_path
+
+          memo << disk_info_hash
+        end
       end
 
       private

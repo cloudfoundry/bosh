@@ -213,7 +213,7 @@ module Bosh::Director
               }
 
               it 'skips links binding' do
-                expect(planner).to receive(:bind_models).with(true)
+                expect(planner).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
                 job.perform
               end
             end

@@ -49,13 +49,13 @@ describe 'Bhm::Director' do
       end
     end
 
-    it 'can fetch deployment by name from BOSH director' do
-      stub_request(:get, 'http://localhost:8080/director/deployments/foo/vms').
+    it 'can fetch instances by deployment name from BOSH director' do
+      stub_request(:get, 'http://localhost:8080/director/deployments/foo/instances').
         with(:headers => {'Authorization' => ['admin', 'admin']}).
         to_return(:body => json_dump(deployments), :status => 200)
 
       with_fiber do
-        expect(director.get_deployment_vms('foo')).to eq(deployments)
+        expect(director.get_deployment_instances('foo')).to eq(deployments)
       end
     end
   end

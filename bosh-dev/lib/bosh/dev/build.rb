@@ -41,6 +41,10 @@ module Bosh::Dev
       end
     end
 
+    def self.build_number
+      ENV.fetch('CANDIDATE_BUILD_NUMBER', '0000')
+    end
+
     def initialize(number, bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token)
       @number = number
       @logger = logger

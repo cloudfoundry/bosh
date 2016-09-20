@@ -79,6 +79,8 @@ module Bosh::Dev
               ['openstack', 'kvm', 'centos', '7', 'go', false],
               ['google', 'kvm', 'ubuntu', 'trusty', 'go', false],
               ['google', 'kvm', 'centos', '7', 'go', false],
+              ['azure', 'hyperv', 'ubuntu', 'trusty', 'go', false],
+              ['azure', 'hyperv', 'centos', '7', 'go', false],
             ])
 
             artifacts

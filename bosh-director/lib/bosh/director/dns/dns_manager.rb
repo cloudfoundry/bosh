@@ -227,7 +227,7 @@ module Bosh::Director
         spec['networks'].each do |network_name, network|
           unless network['ip'].nil? or spec['job'].nil?
             ip = network['ip']
-            name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
+            name_rest = '.' + Canonicalizer.canonicalize(spec['job']['name']) + '.' + network_name + '.' + Canonicalizer.canonicalize(spec['deployment']) + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
             block.call(name_uuid, name_index, ip)

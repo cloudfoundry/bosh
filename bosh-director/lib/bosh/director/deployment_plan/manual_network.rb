@@ -38,7 +38,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
+      def network_settings(reservation, default_properties = REQUIRED_DEFAULTS, availability_zone = nil)
         unless reservation.ip
           raise NetworkReservationIpMissing,
                 "Can't generate network settings without an IP"

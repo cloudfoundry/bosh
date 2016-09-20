@@ -104,5 +104,37 @@ module Bosh::Director
         db_job.perform
       end
     end
+
+    context 'passing arguments to executed jobs' do
+      let(:job_class) do
+        Class.new(Jobs::BaseJob) do
+          @queue = :normal
+
+          def perform
+            true
+          end
+        end
+      end
+
+      context 'without arguments' do
+        let(:args) { nil }
+
+        it 'executes arguments' do
+          expect(job_class).to receive(:perform).with(task.id).and_return nil
+
+          Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
+        end
+      end
+
+      context 'with basic arguments' do
+        let(:args) { [ 'string', 0, false ] }
+
+        it 'executes arguments' do
+          expect(job_class).to receive(:perform).with(task.id, 'string', 0, false).and_return nil
+
+          Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
+        end
+      end
+    end
   end
 end

@@ -193,6 +193,7 @@ module Bosh::Director
   JobStaticIPNotSupportedOnDynamicNetwork= err(150008)
   JobInvalidStaticIPs = err(150009)
 
+  #Network
   NetworkOverlappingSubnets = err(160001)
   NetworkInvalidRange = err(160002)
   NetworkInvalidGateway = err(160003)
@@ -204,11 +205,14 @@ module Bosh::Director
   NetworkSubnetInvalidAvailabilityZone = err(160009)
   NetworkInvalidIpRangeFormat = err(160010)
 
+  # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)
   ResourcePoolNotEnoughCapacity = err(170002)
 
+  # UpdateConfig
   UpdateConfigInvalidWatchTime = err(180001)
 
+  # Deployment
   DeploymentAmbiguousReleaseSpec = err(190001)
   DeploymentDuplicateReleaseName = err(190002)
   DeploymentDuplicateResourcePoolName = err(190003)
@@ -231,7 +235,11 @@ module Bosh::Director
   DeploymentIgnoredInstancesModification = err(190020)
   DeploymentIgnoredInstancesDeletion = err(190021)
 
+  # DiskType
   DiskTypeInvalidDiskSize = err(200001)
+
+  # Tag
+  TagAlreadyExists = err(210001)
 
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)
@@ -255,13 +263,16 @@ module Bosh::Director
   CloudcheckResolutionNotProvided = err(410002)
   CloudcheckInvalidResolutionFormat = err(410003)
 
+  # DNS
   DnsInvalidCanonicalName = err(420001)
 
+  # PackageCompilation
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
   PackageCompilationNotFound = err(430003)
 
   BadManifest = err(440001)
 
+  # RPC
   RpcRemoteException = err(450001)
   RpcTimeout = err(450002)
 
@@ -288,6 +299,9 @@ module Bosh::Director
   # Config server errors
   ConfigServerMissingKeys = err(540000)
   ConfigServerSSLError = err(540001)
+  ConfigServerPasswordGenerationError = err(540002)
+  ConfigServerUnknownError = err(540003)
+  ConfigServerCertificateGenerationError = err(540004)
 
   # CPI config
   CpiDuplicateName = err(550000)

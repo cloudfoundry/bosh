@@ -23,8 +23,10 @@ module Bosh::Director
       uuid: SecureRandom.uuid,
       rendered_templates_archive: nil,
       configuration_hash: {'fake-spec' => true},
-      template_hashes: []
+      template_hashes: [],
+      current_job_state: current_job_state
     ) }
+    let(:current_job_state) {'running'}
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain)
@@ -64,6 +66,17 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
+          stopper.stop
+        end
+      end
+
+      context 'when it is instance with unresponsive agent' do
+        let(:current_job_state) {'unresponsive'}
+
+        it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to_not receive(:stop)
           stopper.stop
         end
       end

@@ -13,41 +13,46 @@ module Bosh::Director
       @dns_manager = dns_manager
     end
 
-    def bind_models(skip_links_binding = false)
+    def bind_models(options = {})
       @logger.info('Binding models')
+
+      should_bind_links = options.fetch(:should_bind_links, true)
+      should_bind_properties = options.fetch(:should_bind_properties, true)
+      fix = options.fetch(:fix, false)
+
       bind_releases
 
       migrate_legacy_dns_records
+
       network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
+      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances, fix)
+
+      migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
+
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
-      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
-      desired_jobs = @deployment_plan.instance_groups
+      desired_instance_groups = @deployment_plan.instance_groups
 
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
-      desired_jobs.each do |desired_job|
-        desired_instances = desired_job.desired_instances
-        existing_instances = job_migrator.find_existing_instances(desired_job)
-        instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
-        desired_job.add_instance_plans(instance_plans)
+      desired_instance_groups.each do |desired_instance_group|
+        desired_instances = desired_instance_group.desired_instances
+        existing_instances = job_migrator.find_existing_instances(desired_instance_group)
+        instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances)
+        desired_instance_group.add_instance_plans(instance_plans)
       end
 
-      instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-      instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
+      instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
+      @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_instance_groups)
 
       bind_stemcells
       bind_templates
-      bind_properties
+      bind_properties if should_bind_properties
       bind_instance_networks
       bind_dns
-
-      if (!skip_links_binding)
-        bind_links
-      end
-
+      bind_links if should_bind_links
     end
 
     private
@@ -63,7 +68,7 @@ module Bosh::Director
       end
     end
 
-    def current_states_by_instance(existing_instances)
+    def current_states_by_instance(existing_instances, fix = false)
       lock = Mutex.new
       current_states_by_existing_instance = {}
       is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_text)
@@ -74,7 +79,15 @@ module Bosh::Director
             pool.process do
               with_thread_name("binding agent state for (#{existing_instance}") do
                 # getting current state to obtain IP of dynamic networks
-                state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                begin
+                  state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                rescue Bosh::Director::RpcTimeout => e
+                  if fix
+                    state = {'job_state' => 'unresponsive'}
+                  else
+                    raise e
+                  end
+                end
                 lock.synchronize do
                   current_states_by_existing_instance.merge!(existing_instance => state)
                 end
@@ -94,10 +107,10 @@ module Bosh::Director
     end
 
     def bind_links
-      links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+      links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
-      @deployment_plan.instance_groups.each do |job|
-        links_resolver.resolve(job)
+      @deployment_plan.instance_groups.each do |instance_group|
+        links_resolver.resolve(instance_group)
       end
     end
 
@@ -151,6 +164,19 @@ module Bosh::Director
     def migrate_legacy_dns_records
       @deployment_plan.instance_models.each do |instance_model|
         @dns_manager.migrate_legacy_records(instance_model)
+      end
+    end
+
+    def migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
+      return unless @deployment_plan.using_global_networking?
+
+      # in the case where this is their first transition to global networking, we need to make sure we have already
+      # populated the database/models with the existing IPs. Do this first before we start any of our planning.
+      @deployment_plan.instance_models.each do |existing_instance|
+        network_reservation_repository.migrate_existing_instance_network_reservations(
+          existing_instance,
+          states_by_existing_instance[existing_instance]
+        )
       end
     end
   end

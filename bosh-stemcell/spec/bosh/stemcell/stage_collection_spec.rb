@@ -42,6 +42,7 @@ module Bosh::Stemcell
               :bosh_ntpdate,
               :bosh_sudoers,
               :password_policies,
+              :restrict_su_command,
               :tty_config,
               :rsyslog_config,
               :delay_monit_start,
@@ -51,6 +52,7 @@ module Bosh::Stemcell
               :escape_ctrl_alt_del,
               :system_users,
               :bosh_audit,
+              :bosh_log_audit_start,
             ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
           )
         end
@@ -76,6 +78,7 @@ module Bosh::Stemcell
               :bosh_ntpdate,
               :bosh_sudoers,
               :password_policies,
+              :restrict_su_command,
               :tty_config,
               :rsyslog_config,
               :delay_monit_start,
@@ -83,6 +86,7 @@ module Bosh::Stemcell
               :cron_config,
               :escape_ctrl_alt_del,
               :bosh_audit,
+              :bosh_log_audit_start
             ]
           )
         end
@@ -403,6 +407,7 @@ module Bosh::Stemcell
             :system_azure_network,
             :system_azure_wala,
             :system_parameters,
+            :enable_udf_module,
             :bosh_clean,
             :bosh_harden,
             :bosh_azure_agent_settings,
@@ -450,7 +455,6 @@ module Bosh::Stemcell
                 :system_network,
                 :system_softlayer_open_iscsi,
                 :system_softlayer_multipath_tools,
-                :disable_blank_passwords,
                 :system_parameters,
                 :bosh_clean,
                 :bosh_harden,

@@ -13,7 +13,7 @@ module Bosh::Monitor
       @director      = Bhm.director
       @intervals     = Bhm.intervals
       @mbus          = Bhm.mbus
-      @agent_manager = Bhm.agent_manager
+      @instance_manager = Bhm.instance_manager
       EM.threadpool_size = Bhm.em_threadpool_size
     end
 
@@ -28,10 +28,10 @@ module Bosh::Monitor
         connect_to_mbus
         @director_monitor = DirectorMonitor.new(Bhm)
         @director_monitor.subscribe
-        @agent_manager.setup_events
+        @instance_manager.setup_events
         setup_timers
         start_http_server
-        @logger.info "BOSH HealthMonitor #{Bhm::VERSION} is running..."
+        @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
       end
     end
 
@@ -48,15 +48,16 @@ module Bosh::Monitor
 
         EM.add_timer(@intervals.poll_grace_period) do
           EM.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
+          EM.add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
         end
       end
     end
 
     def log_stats
-      n_deployments = pluralize(@agent_manager.deployments_count, "deployment")
-      n_agents = pluralize(@agent_manager.agents_count, "agent")
+      n_deployments = pluralize(@instance_manager.deployments_count, "deployment")
+      n_agents = pluralize(@instance_manager.agents_count, "agent")
       @logger.info("Managing #{n_deployments}, #{n_agents}")
-      @logger.info("Agent heartbeats received = %s" % [ @agent_manager.heartbeats_received ])
+      @logger.info("Agent heartbeats received = %s" % [ @instance_manager.heartbeats_received ])
     end
 
     def connect_to_mbus
@@ -83,7 +84,7 @@ module Bosh::Monitor
     end
 
     def start_http_server
-      @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
+      @logger.info("HTTP server is starting on port #{Bhm.http_port}...")
       @http_server = Thin::Server.new("127.0.0.1", Bhm.http_port, :signals => false) do
         Thin::Logging.silent = true
         map "/" do
@@ -94,14 +95,18 @@ module Bosh::Monitor
     end
 
     def poll_director
-      @logger.debug "Getting deployments from director..."
+      @logger.debug("Getting deployments from director...")
       Fiber.new { fetch_deployments }.resume
     end
 
     def analyze_agents
-      # N.B. Yes, his will block event loop,
+      # N.B. Yes, this will block event loop,
       # possibly consider deferring
-      @agent_manager.analyze_agents
+      @instance_manager.analyze_agents
+    end
+
+    def analyze_instances
+      @instance_manager.analyze_instances
     end
 
     private
@@ -146,17 +151,16 @@ module Bosh::Monitor
     def fetch_deployments
       deployments = @director.get_deployments
 
-      @agent_manager.sync_deployments(deployments)
+      @instance_manager.sync_deployments(deployments)
 
       deployments.each do |deployment|
         deployment_name = deployment["name"]
 
-        @logger.info "Found deployment '#{deployment_name}'"
+        @logger.info("Found deployment '#{deployment_name}'")
 
-        @logger.debug "Fetching VMs information for '#{deployment_name}'..."
-        vms = @director.get_deployment_vms(deployment_name)
-
-        @agent_manager.sync_agents(deployment_name, vms)
+        @logger.debug("Fetching instances information for '#{deployment_name}'...")
+        instances_data = @director.get_deployment_instances(deployment_name)
+        @instance_manager.sync_deployment_state(deployment_name, instances_data)
       end
 
     rescue Bhm::DirectorError => e

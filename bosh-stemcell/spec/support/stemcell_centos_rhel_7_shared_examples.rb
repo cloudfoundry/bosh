@@ -55,6 +55,13 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
+  context 'installed by system-network on all IaaSes' do
+    describe file('/etc/hostname') do
+      it { should be_file }
+      its (:content) { should eq('bosh-stemcell') }
+    end
+  end
+
   context 'installed by the system_network stage', {
     exclude_on_warden: true,
     exclude_on_azure: true,
@@ -63,7 +70,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
       it { should be_file }
       it { should contain 'NETWORKING=yes' }
       it { should contain 'NETWORKING_IPV6=no' }
-      it { should contain 'HOSTNAME=localhost.localdomain' }
+      it { should contain 'HOSTNAME=bosh-stemcell' }
       it { should contain 'NOZEROCONF=yes' }
     end
 
@@ -86,7 +93,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
       it { should be_file }
       it { should contain 'NETWORKING=yes' }
       it { should contain 'NETWORKING_IPV6=no' }
-      it { should contain 'HOSTNAME=localhost.localdomain' }
+      it { should contain 'HOSTNAME=bosh-stemcell' }
       it { should contain 'NOZEROCONF=yes' }
     end
 
@@ -123,7 +130,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
-      it { should contain('"Type": "HTTP"') }
+      it { should contain('"Type": "InstanceMetadata"') }
     end
   end
 

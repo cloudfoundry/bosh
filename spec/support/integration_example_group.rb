@@ -106,6 +106,7 @@ module IntegrationExampleGroup
     cmd += options.fetch(:no_redact, false) ? ' --no-redact' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''
     cmd += options.fetch(:dry_run, false) ? ' --dry-run' : ''
+    cmd += options.fetch(:fix, false) ? ' --fix' : ''
 
     if options[:skip_drain]
       if options[:skip_drain].is_a?(Array)
@@ -167,7 +168,7 @@ module IntegrationExampleGroup
   end
 
   def spec_asset(name)
-    File.expand_path("../../assets/#{name}", __FILE__)
+    File.expand_path("#{ASSETS_DIR}/#{name}", __FILE__)
   end
 
   def regexp(string)

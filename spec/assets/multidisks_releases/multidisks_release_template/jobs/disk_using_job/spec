@@ -1,0 +1,12 @@
+---
+name: disk_using_job
+templates:
+  disknames.json.erb: disknames.json
+
+packages: []
+
+consumes:
+  - { name: slow-disk-link-name, type: disk }
+  - { name: fast-disk-link-name, type: disk }
+
+properties: {}

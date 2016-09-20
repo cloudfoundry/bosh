@@ -301,13 +301,6 @@ EOF
     end
   end
 
-  context 'Disable IPv6 Redirect Acceptance - all (CIS-7.3.2)' do
-    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
-      its (:content) { should match /^[\s]*net\.ipv6\.conf\.all\.accept_redirects[\s]*=/ }
-    end
-  end
-
-
   context 'PAM configuration' do
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
@@ -378,12 +371,6 @@ EOF
     end
   end
 
-  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
-    describe service('auditd') do
-      it { should be_enabled }
-    end
-  end
-
   context 'ensure audit package file have unmodified contents (stig: V-38637)' do
     # ignore auditd.conf, auditd, and audit.rules since we modify these files in
     # other stigs
@@ -445,6 +432,24 @@ EOF
     end
     describe package('whoopsie') do
       it { should_not be_installed }
+    end
+  end
+
+  context 'restrict access to the su command CIS-9.5' do
+    describe command('grep "^\s*auth\s*required\s*pam_wheel.so\s*use_uid" /etc/pam.d/su') do
+      it { should return_exit_status(0)}
+    end
+    describe user('vcap') do
+      it { should exist }
+      it { should belong_to_group 'sudo' }
+    end
+  end
+
+  describe 'logging and audit startup script' do
+    describe file('/var/vcap/bosh/bin/bosh-start-logging-and-auditing') do
+      it { should be_file }
+      it { should be_executable }
+      it { should contain('service auditd start') }
     end
   end
 end

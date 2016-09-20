@@ -67,6 +67,68 @@ module Bosh
         expect(@helper.lookup_property(properties, 'router')).to eq({'token' => 'foo'})
         expect(@helper.lookup_property(properties, 'no.prop')).to be_nil
       end
+
+      context '#set_property' do
+        it 'should update the hash @ path with provided value' do
+          dst = {}
+          name = 'foo'
+          value = 'bar'
+          @helper.set_property(dst, name, value)
+          expect(dst['foo']).to eq('bar')
+        end
+
+        it 'should update the nested hash @ dot separated path with provided value' do
+          dst = {}
+          name = 'foo.smurf.color'
+          value = 'green'
+          @helper.set_property(dst, name, value)
+          expect(dst['foo']['smurf']['color']).to eq('green')
+        end
+
+      end
+
+      context '#validate_properties_format' do
+        context 'when deployment manifest properties are valid' do
+
+          let(:props) do
+            {
+              'foo' => {
+                'bar' => 'omg',
+              }
+            }
+          end
+
+          it 'doesnt raise error' do
+              @helper.validate_properties_format(props, 'foo.bar')
+          end
+        end
+
+        context 'when deployment manifest properties are  NOT valid' do
+          let(:props) do
+            {
+              'foo' => {
+                'yarb' => 'i am incorrect'
+              }
+            }
+          end
+
+          it 'raises an Bosh::Template::InvalidPropertyType error' do
+            key = 'foo.yarb.pow'
+
+            expect{
+              @helper.validate_properties_format(props, key)
+            }.to raise_error(Bosh::Template::InvalidPropertyType, "Property 'foo.yarb.pow' expects a hash, but received 'String'")
+          end
+
+          context 'when the properties variable is not a hash' do
+            it 'raises an Bosh::Template::InvalidPropertyType if the properties is not a hash' do
+              expect{
+                @helper.validate_properties_format(false, 'a')
+              }.to raise_error(Bosh::Template::InvalidPropertyType, "Property 'a' expects a hash, but received 'FalseClass'")
+            end
+          end
+        end
+      end
     end
   end
 end

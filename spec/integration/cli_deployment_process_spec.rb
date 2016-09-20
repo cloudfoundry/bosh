@@ -171,7 +171,6 @@ lines"}
 
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
-          expect(output).to_not include('uninterpolated_properties')
 
           expect(output).to match(/
   resource_pools:

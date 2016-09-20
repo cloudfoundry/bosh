@@ -8,8 +8,6 @@ image_resource:
 
 inputs:
   - name: bosh-src
-  - name: bosh-release
-  - name: os-image
   - name: version
 
 outputs:
@@ -19,7 +17,8 @@ run:
   path: bosh-src/ci/pipelines/stemcell/tasks/build.sh
 
 params:
-  IAAS:       replace-me
-  HYPERVISOR: replace-me
-  OS_NAME:    replace-me
-  OS_VERSION: replace-me
+  IAAS:         replace-me
+  HYPERVISOR:   replace-me
+  OS_NAME:      replace-me
+  OS_VERSION:   replace-me
+  BOSHIO_TOKEN: ""

@@ -436,6 +436,16 @@ module Bosh::Director
           ], release_dir)
           job.perform
         end
+
+        context 'when the release contains no packages' do
+          before do
+            manifest.delete('packages')
+          end
+          it 'should not error' do
+            allow(job).to receive(:create_jobs)
+            expect { job.perform }.to_not raise_error
+          end
+        end
       end
 
       context 'when manifest contains packages and jobs' do

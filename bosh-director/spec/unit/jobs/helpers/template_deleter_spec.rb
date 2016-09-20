@@ -3,8 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe TemplateDeleter do
-      subject(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
-      let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
+      subject(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:release_version) { Models::ReleaseVersion.make }
       let(:template) { Models::Template.make(blobstore_id: 'template-blob-id') }
@@ -34,9 +33,18 @@ module Bosh::Director
           end
 
           it 'should have no errors' do
-            expect(template_deleter.delete(template, force)).to be_empty
+            template_deleter.delete(template, force)
           end
 
+          context 'when deleting the blob fails' do
+            before do
+              allow(blobstore).to receive(:delete).and_raise('wont')
+            end
+            it 'destroys the template' do
+              expect{ template_deleter.delete(template, force) }.to raise_error
+              expect(Models::Template.all).to_not be_empty
+            end
+          end
         end
 
         describe 'when forced' do
@@ -58,7 +66,7 @@ module Bosh::Director
           end
 
           it 'should have no errors' do
-            expect(template_deleter.delete(template, force)).to be_empty
+            template_deleter.delete(template, force)
           end
 
           context 'when deleting the blob fails' do

@@ -32,6 +32,8 @@ module Bosh::Director
     end
 
     def unorphan_disk(disk, instance_id)
+      new_disk = nil
+
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         new_disk = Models::PersistentDisk.create(
             disk_cid: disk.disk_cid,
@@ -47,6 +49,8 @@ module Bosh::Director
 
         disk.destroy
       end
+
+      new_disk
     end
 
     def list_orphan_disks

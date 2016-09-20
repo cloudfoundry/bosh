@@ -7,8 +7,18 @@ module Bosh::Director::Models
     let(:new_runtime_config) { { name: 'runtime manifest' } }
 
     describe "#manifest" do
+      let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
+      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
+      let(:logger) { instance_double(Logging::Logger)}
+
+      before do
+        allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+        allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).with(logger).and_return(client_factory)
+        allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        allow(config_server_client).to receive(:interpolate_runtime_manifest).with(mock_manifest).and_return(new_runtime_config)
+      end
+
       it 'calls manifest resolver and returns its result' do
-        allow(Bosh::Director::RuntimeConfig::RuntimeManifestResolver).to receive(:resolve_manifest).with(mock_manifest).and_return(new_runtime_config)
         expect(runtime_config_model.manifest).to eq(new_runtime_config)
       end
     end

@@ -9,11 +9,11 @@ module Bosh::Director
     before do
       job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
       job.stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell-name', 'version' => '1.0'})
-      job.env = DeploymentPlan::Env.new({}, {})
+      job.env = DeploymentPlan::Env.new({})
     end
 
-    let(:template_1) { DeploymentPlan::Template.new(release_version, 'fake-template-1') }
-    let(:template_2) { DeploymentPlan::Template.new(release_version, 'fake-template-2') }
+    let(:template_1) { DeploymentPlan::Job.new(release_version, 'fake-template-1') }
+    let(:template_2) { DeploymentPlan::Job.new(release_version, 'fake-template-2') }
     let(:release_version) { DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'}) }
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
 

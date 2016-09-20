@@ -5,6 +5,8 @@ module Bosh::Director
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
+    let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
+    let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
     let(:instance_model_state) { 'started' }
@@ -34,6 +36,8 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(instance_double(Bosh::Blobstore::Client))
+      allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
+      allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
     end
 
     context 'when stopping instances' do
@@ -86,8 +90,8 @@ module Bosh::Director
       context 'when instance is currently stopped' do
         let(:instance_model_state) { 'stopped' }
 
-        let(:disk_manager) { instance_double(SingleDiskManager) }
-        before { allow(SingleDiskManager).to receive(:new).and_return(disk_manager) }
+        let(:disk_manager) { instance_double(DiskManager) }
+        before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
 
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
         before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
@@ -101,6 +105,7 @@ module Bosh::Director
           allow(updater).to receive(:needs_recreate?).and_return(false)
           allow(disk_manager).to receive(:update_persistent_disk)
           allow(job).to receive(:update)
+          allow(instance).to receive(:update_instance_settings)
           expect(state_applier).to receive(:apply)
 
           updater.update(instance_plan)
@@ -108,6 +113,19 @@ module Bosh::Director
           expect(instance_model.update_completed).to eq true
           expect(Models::Event.count).to eq 2
           expect(Models::Event.all[1].error).to be_nil
+        end
+
+        it 'it recreates' do
+          allow(updater).to receive(:needs_recreate?).and_return(true)
+          allow(disk_manager).to receive(:update_persistent_disk)
+          allow(disk_manager).to receive(:unmount_disk_for)
+          allow(job).to receive(:update)
+          allow(vm_deleter).to receive(:delete_for_instance)
+
+          expect(vm_recreator).to receive(:recreate_vm)
+          expect(state_applier).to receive(:apply)
+
+          updater.update(instance_plan)
         end
       end
     end
@@ -140,6 +158,33 @@ module Bosh::Director
         expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
         expect(instance_model.update_completed).to eq true
         expect(Models::Event.count).to eq 2
+      end
+    end
+
+    context 'when the VM does not get recreated' do
+      let(:disk_manager) { instance_double(DiskManager) }
+      before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
+
+      let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+      before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
+
+      it 'updates the instance settings' do
+        allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+
+        allow(instance_plan).to receive(:networks_changed?).and_return(false)
+        allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+        allow(instance_plan).to receive(:cloud_properties_changed?).and_return(false)
+
+        allow(instance_plan).to receive(:already_detached?).and_return(true)
+        allow(disk_manager).to receive(:update_persistent_disk)
+        allow(state_applier).to receive(:apply)
+        allow(job).to receive(:update)
+
+        allow(logger).to receive(:debug)
+
+        expect(instance).to receive(:update_instance_settings)
+        updater.update(instance_plan)
       end
     end
 

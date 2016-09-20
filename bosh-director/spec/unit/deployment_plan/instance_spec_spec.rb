@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
-    let(:uninterpolated_properties) { {'key' => '((key_placeholder))'} }
+    let(:links) { {'link_name' => {'stuff' => 'foo'}} }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
@@ -26,11 +26,10 @@ module Bosh::Director::DeploymentPlan
         package_spec: packages,
         persistent_disk_collection: persistent_disk_collection,
         is_errand?: false,
-        link_spec: 'fake-link',
+        link_spec: links,
         compilation?: false,
         update_spec: {},
         properties: properties,
-        uninterpolated_properties: uninterpolated_properties
       )
     }
     let(:index) { 0 }
@@ -39,7 +38,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
-    let(:env) { Env.new({'key' => 'value'}, {'key' => '((value_place_holder))'}) }
+    let(:env) { Env.new({'key' => 'value'}) }
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner', {
           name: 'fake-deployment',
@@ -49,7 +48,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
-    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger, multiple_disks: false) }
+    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
       persistent_disk_collection.add_by_disk_size(0)
@@ -59,16 +58,6 @@ module Bosh::Director::DeploymentPlan
 
       instance_plan.network_plans << NetworkPlanner::Plan.new(reservation: reservation)
       instance.bind_existing_instance_model(instance_model)
-    end
-
-    describe '#full_spec' do
-      it 'returns the spec including uninterpolated properties' do
-        expect(instance_spec.full_spec['uninterpolated_properties']).to eq({'key' => '((key_placeholder))'})
-      end
-
-      it 'returns the spec including uninterpolated env' do
-        expect(instance_spec.full_spec['uninterpolated_env']).to eq({'key' => '((value_place_holder))'})
-      end
     end
 
     describe '#apply_spec' do
@@ -111,6 +100,73 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
+      context 'properties interpolation' do
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+
+        let(:properties) do
+          {
+            'smurf_1' => '((smurf_placeholder_1))',
+            'smurf_2' => '((smurf_placeholder_2))'
+          }
+        end
+
+        let(:links) do
+          {
+            'link_1' => {
+              'networks' => 'foo',
+              'properties' => {
+                'smurf' => '((smurf_val1))'
+              }
+            },
+            'link_2' => {
+              'netwroks' => 'foo2',
+              'properties' => {
+                'smurf' => '((smurf_val2))'
+              }
+            }
+          }
+        end
+
+        let(:resolved_properties) do
+          {
+            'smurf_1' => 'lazy smurf',
+            'smurf_2' => 'happy smurf'
+          }
+        end
+
+        let(:resolved_links) do
+          {
+            'link_1' => {
+              'networks' => 'foo',
+              'properties' => {
+                'smurf' => 'strong smurf'
+              }
+            },
+            'link_2' => {
+              'netwroks' => 'foo2',
+              'properties' => {
+                'smurf' => 'sleepy smurf'
+              }
+            }
+          }
+        end
+
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        end
+
+        it 'resolves properties and links properties' do
+          expect(config_server_client).to receive(:interpolate).with(properties).and_return(resolved_properties)
+          expect(config_server_client).to receive(:interpolate).with(links).and_return(resolved_links)
+
+          spec = instance_spec.as_template_spec
+          expect(spec['properties']).to eq(resolved_properties)
+          expect(spec['links']).to eq(resolved_links)
+        end
+      end
+
       context 'when job has a manual network' do
         let(:subnet_spec) do
           {
@@ -144,12 +200,13 @@ module Bosh::Director::DeploymentPlan
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
           expect(spec['dns_domain_name']).to eq('bosh')
-          expect(spec['links']).to eq('fake-link')
+          expect(spec['links']).to eq(links)
           expect(spec['id']).to eq('uuid-1')
           expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
           expect(spec['resource_pool']).to eq('fake-vm-type')
           expect(spec['address']).to eq('192.168.0.10')
+          expect(spec['ip']).to eq('192.168.0.10')
         end
       end
 
@@ -177,12 +234,13 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)
             expect(spec['resource_pool']).to eq('fake-vm-type')
             expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+            expect(spec['ip']).to eq(nil)
           end
         end
         context 'when vm has network ip assigned' do
@@ -220,12 +278,13 @@ module Bosh::Director::DeploymentPlan
             expect(spec['configuration_hash']).to be_nil
             expect(spec['properties']).to eq(properties)
             expect(spec['dns_domain_name']).to eq('bosh')
-            expect(spec['links']).to eq('fake-link')
+            expect(spec['links']).to eq(links)
             expect(spec['id']).to eq('uuid-1')
             expect(spec['az']).to eq('foo-az')
             expect(spec['bootstrap']).to eq(true)
             expect(spec['resource_pool']).to eq('fake-vm-type')
             expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
+            expect(spec['ip']).to eq('192.0.2.19')
           end
         end
       end

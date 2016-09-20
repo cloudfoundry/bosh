@@ -116,10 +116,7 @@ module Bosh::Director
         end
 
         vm_extensions = @deployment_plan.compilation.vm_extensions
-
-        # we don't care about the uninterpolated env here. The instance spec of the compilation job
-        # wil not contain any envs.
-        env = Env.new(@deployment_plan.compilation.env, @deployment_plan.compilation.env)
+        env = Env.new(@deployment_plan.compilation.env)
 
         compile_job = CompilationJob.new(vm_type, vm_extensions, stemcell, env, @deployment_plan.compilation.network_name, @logger)
         availability_zone = @deployment_plan.compilation.availability_zone
@@ -144,7 +141,7 @@ module Bosh::Director
         instance_model = instance_plan.instance.model
         parent_id = add_event(instance_model.deployment.name, instance_model.name)
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
-        @vm_creator.create_for_instance_plan(instance_plan, [])
+        @vm_creator.create_for_instance_plan(instance_plan, [], {})
         instance_plan.instance
       rescue Exception => e
         raise e
@@ -246,10 +243,6 @@ module Bosh::Director
         {}
       end
 
-      def uninterpolated_properties
-        {}
-      end
-
       def link_spec
         {}
       end
@@ -259,7 +252,7 @@ module Bosh::Director
       end
 
       def persistent_disk_collection
-        PersistentDiskCollection.new(@logger, multiple_disks: false)
+        PersistentDiskCollection.new(@logger)
       end
 
       def compilation?

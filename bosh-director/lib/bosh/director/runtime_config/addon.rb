@@ -5,11 +5,10 @@ module Bosh::Director
 
       attr_reader :name
 
-      def initialize(name, job_hashes, addon_level_properties, addon_level_uninterpolated_properties, addon_include)
+      def initialize(name, job_hashes, addon_level_properties, addon_include)
         @name = name
         @addon_job_hashes = job_hashes
         @addon_level_properties = addon_level_properties
-        @addon_level_uninterpolated_properties = addon_level_uninterpolated_properties
         @addon_include = addon_include
       end
 
@@ -21,10 +20,6 @@ module Bosh::Director
         @addon_level_properties
       end
 
-      def uninterpolated_properties
-        @addon_level_uninterpolated_properties
-      end
-
       def self.parse(addon_hash)
         name = safe_property(addon_hash, 'name', :class => String)
         addon_job_hashes = safe_property(addon_hash, 'jobs', :class => Array, :default => [])
@@ -33,10 +28,9 @@ module Bosh::Director
           parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
         end
         addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        addon_level_uninterpolated_properties = safe_property(addon_hash, 'uninterpolated_properties', class: Hash, optional: true)
         addon_include = AddonInclude.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true))
 
-        new(name, parsed_addon_jobs, addon_level_properties, addon_level_uninterpolated_properties, addon_include)
+        new(name, parsed_addon_jobs, addon_level_properties, addon_include)
       end
 
       def applies?(deployment_name, deployment_instance_group)
@@ -61,7 +55,6 @@ module Bosh::Director
           'provides_links' => safe_property(addon_job, 'provides', class: Hash, default: {}).to_a,
           'consumes_links' => safe_property(addon_job, 'consumes', class: Hash, default: {}).to_a,
           'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true),
-          'uninterpolated_properties' => safe_property(addon_job, 'uninterpolated_properties', class: Hash, optional: true)
         }
       end
 
@@ -76,7 +69,7 @@ module Bosh::Director
           deployment_release_version = deployment.release(addon_job_hash['release'])
           deployment_release_version.bind_model
 
-          addon_job_object = DeploymentPlan::Template.new(deployment_release_version, addon_job_hash['name'])
+          addon_job_object = DeploymentPlan::Job.new(deployment_release_version, addon_job_hash['name'])
           addon_job_object.bind_models
           deployment_jobs = fetch_deployment_jobs(deployment, addon_job_hash['name'])
 
@@ -95,11 +88,9 @@ module Bosh::Director
 
       def add_properties(addon_job_hash, addon_job_object, instance_group_name)
         if addon_job_hash['properties']
-          addon_job_object.add_template_scoped_properties(addon_job_hash['properties'], instance_group_name)
-          addon_job_object.add_template_scoped_uninterpolated_properties(addon_job_hash['uninterpolated_properties'], instance_group_name)
+          addon_job_object.add_properties(addon_job_hash['properties'], instance_group_name)
         else
-          addon_job_object.add_template_scoped_properties(@addon_level_properties, instance_group_name)
-          addon_job_object.add_template_scoped_uninterpolated_properties(@addon_level_uninterpolated_properties, instance_group_name)
+          addon_job_object.add_properties(@addon_level_properties, instance_group_name)
         end
       end
 

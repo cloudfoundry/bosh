@@ -1,6 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-#
-
 require 'bosh/director/models/cloud_config'
 require 'bosh/director/models/runtime_config'
 require 'bosh/director/models/cpi_config'

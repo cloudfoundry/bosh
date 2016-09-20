@@ -118,7 +118,7 @@ describe 'upload release', type: :integration do
       expect(out).to match /Release repacked/
       expect(out).to match /Started creating new packages > bar.*Done/
       expect(out).to match /Started processing 17 existing packages > Processing 17 existing packages.*Done/
-      expect(out).to match /Started processing 21 existing jobs > Processing 21 existing jobs.*Done/
+      expect(out).to match /Started processing 22 existing jobs > Processing 22 existing jobs.*Done/
       expect(out).to match /Release uploaded/
 
       out = bosh_runner.run('releases')

@@ -408,7 +408,7 @@ describe 'global networking', type: :integration do
 
       manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
       output = deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(output).to include('Started updating job foobar') # actually re-deployed
+      expect(output).to include('Started updating instance foobar') # actually re-deployed
       new_ips = director.vms('my-deploy').map(&:ips).flatten
 
       expect(new_ips).to eq(original_ips)
@@ -615,7 +615,7 @@ describe 'global networking', type: :integration do
 
         manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
-        expect(output).to include('Started updating job foobar') # actually re-deployed
+        expect(output).to include('Started updating instance foobar') # actually re-deployed
         new_ips = director.vms('my-deploy').map(&:ips).flatten
 
         expect(new_ips).to eq(original_ips)

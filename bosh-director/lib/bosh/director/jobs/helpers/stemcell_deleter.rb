@@ -4,8 +4,7 @@ module Bosh::Director::Jobs
       include Bosh::Director::LockHelper
       include Bosh::Director::CloudFactoryHelper
 
-      def initialize(compiled_package_deleter, logger)
-        @compiled_package_deleter = compiled_package_deleter
+      def initialize(logger)
         @logger = logger
       end
 

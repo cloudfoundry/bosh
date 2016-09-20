@@ -59,7 +59,8 @@ module Bosh::Director::Test
         FileUtils.rm_rf(job_dir)
       end
 
-      manifest[packages_dir_name].each do |package|
+      packages = manifest[packages_dir_name] || []
+      packages.each do |package|
         package_dir = File.join(packages_dir, package["name"])
         FileUtils.mkdir(package_dir)
         File.open(File.join(package_dir, "packaging"), "w") do |f|

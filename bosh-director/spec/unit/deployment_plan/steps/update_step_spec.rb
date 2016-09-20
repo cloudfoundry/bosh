@@ -18,7 +18,8 @@ module Bosh::Director
         instance_plans_with_missing_vms: [],
         ip_provider: ip_provider,
         skip_drain: skip_drain,
-        recreate: false
+        recreate: false,
+        tags: {}
       )
     end
     let(:cloud) { Config.cloud }
@@ -44,12 +45,13 @@ module Bosh::Director
       let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
       before do
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([])
+        allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([])
       end
 
       def it_deletes_unneeded_instances
         existing_instance = Models::Instance.make
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([existing_instance])
+        existing_instance_plan = instance_double(DeploymentPlan::InstancePlan, existing_instance: existing_instance)
+        allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
 
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         expect(Config.event_log).to receive(:begin_stage)
@@ -82,10 +84,11 @@ module Bosh::Director
 
         before do
           existing_instance = Models::Instance.make(vm_cid: 'vm_cid')
-          allow(deployment_plan).to receive(:unneeded_instances).and_return([existing_instance])
+          existing_instance_plan = instance_double(DeploymentPlan::InstancePlan, existing_instance: existing_instance, new?: false, needs_to_fix?: true)
+          allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
+
           agent_client = instance_double(AgentClient, drain: 0, stop: nil)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
-
           expect(cloud).to receive(:delete_vm).with('vm_cid').and_raise(some_error)
         end
 

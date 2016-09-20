@@ -11,13 +11,24 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         'serial' => true,
       )
 
-      expect(config.canaries).to eq(2)
-      expect(config.max_in_flight).to eq(4)
+      expect(config.canaries_before_calculation).to eq('2')
+      expect(config.max_in_flight_before_calculation).to eq('4')
       expect(config.min_canary_watch_time).to eq(60000)
       expect(config.max_canary_watch_time).to eq(60000)
       expect(config.min_update_watch_time).to eq(30000)
       expect(config.max_update_watch_time).to eq(30000)
       expect(config).to be_serial
+    end
+
+    it 'should return Integer after calculation' do
+      config = BD::DeploymentPlan::UpdateConfig.new(
+          'canaries' => 2,
+          'max_in_flight' => 4,
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000,
+      )
+      expect(config.canaries(10)).to eq(2)
+      expect(config.max_in_flight(10)).to eq(4)
     end
 
     it 'should allow ranges for canary watch time' do
@@ -174,6 +185,17 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         )
       end
 
+      it 'should allow values as string' do
+        config = BD::DeploymentPlan::UpdateConfig.new({
+          'canaries' => '2',
+          'max_in_flight' => '4',
+        }, default_config)
+        expect(config.canaries_before_calculation).to eq('2')
+        expect(config.max_in_flight_before_calculation).to eq('4')
+        expect(config.canaries(10)).to eq(2)
+        expect(config.max_in_flight(10)).to eq(4)
+      end
+
       it 'should let you override all defaults' do
         config = BD::DeploymentPlan::UpdateConfig.new({
           'canaries' => 2,
@@ -182,8 +204,8 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
           'update_watch_time' => 30000,
         }, default_config)
 
-        expect(config.canaries).to eq(2)
-        expect(config.max_in_flight).to eq(4)
+        expect(config.canaries_before_calculation).to eq('2')
+        expect(config.max_in_flight_before_calculation).to eq('4')
         expect(config.min_canary_watch_time).to eq(60000)
         expect(config.max_canary_watch_time).to eq(60000)
         expect(config.min_update_watch_time).to eq(30000)
@@ -192,8 +214,10 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
 
       it 'should inherit settings from default config' do
         config = BD::DeploymentPlan::UpdateConfig.new({}, default_config)
-        expect(config.canaries).to eq(1)
-        expect(config.max_in_flight).to eq(2)
+        expect(config.canaries_before_calculation).to eq('1')
+        expect(config.max_in_flight_before_calculation).to eq('2')
+        expect(config.canaries(10)).to eq(1)
+        expect(config.max_in_flight(10)).to eq(2)
         expect(config.min_canary_watch_time).to eq(10000)
         expect(config.max_canary_watch_time).to eq(10000)
         expect(config.min_update_watch_time).to eq(5000)
@@ -225,6 +249,77 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
       expect {
         basic_config.parse_watch_times('1001 - 100')
       }.to raise_error(/Min watch time cannot/)
+    end
+  end
+
+  context 'when max_in_flight or canaries have wrong format' do
+    it 'raises an error' do
+      config = BD::DeploymentPlan::UpdateConfig.new(
+          {
+              'canaries' => 'blala',
+              'max_in_flight' => 'blabla',
+              'canary_watch_time' => 60000,
+              'update_watch_time' => 30000,
+          }
+      )
+      expect {
+        config.canaries(10)
+      }.to raise_error(/cannot be calculated/)
+      expect {
+        config.max_in_flight(10)
+      }.to raise_error(/cannot be calculated/)
+    end
+  end
+
+  context 'when max_in_flight or canaries are percents' do
+    let(:default_config) {
+      BD::DeploymentPlan::UpdateConfig.new(
+          'canaries' => canaries_before_calculation,
+          'max_in_flight' => max_in_flight_before_calculation,
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000,
+      )
+    }
+    let(:canaries_before_calculation) {'20%'}
+    let(:max_in_flight_before_calculation) {'40%'}
+    let(:size) {10}
+
+    it 'should work with percents ' do
+      expect(default_config.canaries(size)).to eq(2)
+      expect(default_config.max_in_flight(size)).to eq(4)
+    end
+
+    it 'should be minimum 1 for max_in_flight' do
+      expect(default_config.max_in_flight(0)).to eq(1)
+    end
+
+    it 'should inherit settings from default config' do
+      config = BD::DeploymentPlan::UpdateConfig.new({}, default_config)
+      expect(config.canaries_before_calculation).to eq(canaries_before_calculation)
+      expect(config.max_in_flight_before_calculation).to eq(max_in_flight_before_calculation)
+    end
+
+    it 'should let you override all defaults' do
+      config = BD::DeploymentPlan::UpdateConfig.new(
+          {
+              'canaries' => 1,
+              'max_in_flight' => 2,
+              'canary_watch_time' => 60000,
+              'update_watch_time' => 30000,
+          }, default_config)
+
+      expect(config.canaries_before_calculation).to eq('1')
+      expect(config.max_in_flight_before_calculation).to eq('2')
+
+      config = BD::DeploymentPlan::UpdateConfig.new(
+          {
+              'canaries' => '30%',
+              'max_in_flight' => '50%',
+              'canary_watch_time' => 60000,
+              'update_watch_time' => 30000,
+          }, default_config)
+      expect(config.canaries_before_calculation).to eq('30%')
+      expect(config.max_in_flight_before_calculation).to eq('50%')
     end
   end
 end

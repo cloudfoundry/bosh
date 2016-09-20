@@ -5,10 +5,9 @@ module Bosh::Director
     describe ReleaseDeleter do
       subject(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger) }
 
-      let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
-      let(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
-      let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
+      let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
+      let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
 
       describe '#delete' do
@@ -22,17 +21,15 @@ module Bosh::Director
         let(:force) { false }
 
         before do
-          allow(blobstore).to receive(:delete).with('package-blob-id-1')
-          allow(blobstore).to receive(:delete).with('package-blob-id-2')
-          allow(blobstore).to receive(:delete).with('template-blob-id-1')
-          allow(blobstore).to receive(:delete).with('template-blob-id-2')
+          allow(blobstore).to receive(:delete)
         end
 
-        let(:errors) { release_deleter.delete(release, force) }
+        let(:act) { release_deleter.delete(release, force) }
 
         describe 'success' do
           it 'deletes the packages, templates, release versions, and release' do
-            expect(errors).to be_empty
+            act
+
             expect(Models::ReleaseVersion.all).to be_empty
             expect(Models::Package.all).to be_empty
             expect(Models::Template.all).to be_empty
@@ -45,15 +42,11 @@ module Bosh::Director
             allow(blobstore).to receive(:delete).with('package-blob-id-1').and_raise('nope')
           end
 
-          it 'deletes templates' do
-            expect(errors.first.message).to eq('nope')
-            expect(Models::Template.all).to be_empty
-          end
-
-          it 'does not delete release versions, packages, and release' do
-            expect(errors).to_not be_empty
+          it 'does not delete database entries' do
+            expect{ act }.to raise_error('nope')
             expect(Models::ReleaseVersion.all).to_not be_empty
             expect(Models::Package.all).to_not be_empty
+            expect(Models::Template.all).to_not be_empty
             expect(Models::Release.all).to_not be_empty
           end
 
@@ -61,7 +54,7 @@ module Bosh::Director
             let(:force) { true }
 
             it 'deletes the packages, templates, release versions, and release' do
-              expect(errors).to_not be_empty
+              act
               expect(Models::Package.all).to be_empty
               expect(Models::Template.all).to be_empty
               expect(Models::ReleaseVersion.all).to be_empty
@@ -75,13 +68,9 @@ module Bosh::Director
             allow(blobstore).to receive(:delete).with('template-blob-id-1').and_raise('nope')
           end
 
-          it 'deletes packages' do
-            expect(errors.first.message).to eq('nope')
+          it 'does not delete templates, release versions and release but deletes packages' do
+            expect{ act }.to raise_error('nope')
             expect(Models::Package.all).to be_empty
-          end
-
-          it 'does not delete templates, release versions and release' do
-            expect(errors).to_not be_empty
             expect(Models::Template.all).to_not be_empty
             expect(Models::ReleaseVersion.all).to_not be_empty
             expect(Models::Release.all).to_not be_empty
@@ -90,7 +79,7 @@ module Bosh::Director
           describe 'when forced' do
             let(:force) { true }
             it 'deletes the packages, templates, release versions, and release' do
-              expect(errors).to_not be_empty
+              act
               expect(Models::Package.all).to be_empty
               expect(Models::Template.all).to be_empty
               expect(Models::ReleaseVersion.all).to be_empty

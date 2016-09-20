@@ -149,7 +149,7 @@ module Bosh::Director
         end
 
         single_step_stage("Resolving package dependencies") do
-          resolve_package_dependencies(@manifest[@packages_folder])
+          resolve_package_dependencies(manifest_packages)
         end
 
         process_packages(release_dir)
@@ -164,8 +164,8 @@ module Bosh::Director
       def normalize_manifest
         Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
 
-        @manifest[@packages_folder].each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
-        @manifest['jobs'].each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
+        manifest_packages.each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
+        manifest_jobs.each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
       end
 
       # Resolves package dependencies, makes sure there are no cycles
@@ -204,7 +204,7 @@ module Bosh::Director
         existing_packages = []
         registered_packages = []
 
-        @manifest[@packages_folder].each do |package_meta|
+        manifest_packages.each do |package_meta|
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
           @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
             if package.fingerprint != package_meta['fingerprint']
@@ -633,6 +633,14 @@ module Bosh::Director
       # @return [void]
       def register_template(template)
         @release_version_model.add_template(template)
+      end
+
+      def manifest_packages
+        @manifest[@packages_folder] || []
+      end
+
+      def manifest_jobs
+        @manifest['jobs']
       end
 
       # Returns the next release version (to be used for rebased release)

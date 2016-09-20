@@ -18,7 +18,7 @@ module Bosh::Director
         @instance_id = instance_id
         @disk_cid = disk_cid
         @transactor = Transactor.new
-        @disk_manager = SingleDiskManager.new(logger)
+        @disk_manager = DiskManager.new(logger)
         @orphan_disk_manager = OrphanDiskManager.new(logger)
       end
 
@@ -27,7 +27,7 @@ module Bosh::Director
         validate_instance(instance)
 
         @transactor.retryable_transaction(instance.db) do
-          handle_previous_disk(instance) if instance.persistent_disk
+          handle_previous_disk(instance) if instance.managed_persistent_disk
           handle_new_disk(instance)
         end
 
@@ -56,12 +56,11 @@ module Bosh::Director
       end
 
       def handle_previous_disk(instance)
-        previous_persistent_disk = instance.persistent_disk
+        previous_persistent_disk = instance.managed_persistent_disk
         previous_persistent_disk.update(active: false)
 
         if instance.state == 'stopped'
-          @disk_manager.unmount_disk(instance, previous_persistent_disk)
-          @disk_manager.detach_disk(instance, previous_persistent_disk)
+          @disk_manager.detach_disk(previous_persistent_disk)
         end
 
         @orphan_disk_manager.orphan_disk(previous_persistent_disk)
@@ -70,17 +69,15 @@ module Bosh::Director
       def handle_new_disk(instance)
         orphan_disk = Models::OrphanDisk[:disk_cid => @disk_cid]
         if orphan_disk
-          @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
+          disk = @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
-          Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
+          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
         end
 
         if instance.state == 'stopped'
-          instance = query_instance_model
-          @disk_manager.attach_disk(instance)
+          @disk_manager.attach_disk(disk)
         end
       end
-
     end
   end
 end

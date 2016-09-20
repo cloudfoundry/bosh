@@ -23,7 +23,7 @@ module Bosh::Director
           job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
           expect(job).to receive(:with_release_lock).with('test_release', timeout: 10).and_yield
 
-          expect { job.perform }.to raise_error ReleaseDeleteFailed
+          expect { job.perform }.to raise_error 'Oh noes!'
         end
       end
 

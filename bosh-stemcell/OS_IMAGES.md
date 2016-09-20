@@ -7,6 +7,54 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `fJsqdWrUm1v7AY.D8qUr42.4R4Nrnx9f`
+  - fix rsyslog/systemd startup
+  - restrict dmesg access
+  - built from develop (f2519686a6bd7601121b5dccb05c4b210c0ba450)
+
+* `Hxx7ds96bprYfbT1Jd57cbDSGHSL88Oe`
+  - Update README to correct path (36622f4)
+  - Centos delays the start of rsyslogd using systemd (1c85054)
+  - Restrict syslog access via dmesg_restrict=1 sysctl call (94dadb8)
+  - Add logic to check if rsyslogd pid file exists before attempting to kill the process by pid (552376b)
+  - kill HUP rsyslog upon logrotation (723f589)
+  - bump bosh_aws_cpi gem (49bfedf)
+  - Fix broken stemcell cis spec on azure (fba40db)
+  - Change permissions on agent key to 600 (a9d7d89)
+  - built from develop (94dadb8beb7f92d6cd53a4925ff4803699e780b5)
+
+* `m7zyaL24BiYlXuS.Canxzv2AmoKK8A4_`
+  - Fix issues with rsyslog
+  - built from develop (4e7326cce2afc703440b0198fcad9017ad91caba)
+
+* `cRIqmh9CZLfr3jdgkYpEHsj5yB7Ge5ZS`
+  - Update for CIS tests
+  - built from develop (04c48a6ec29605b547adcb6f68d02cbaa02a38cd)
+
+* `aL8fvTOVrw5FFakrMEy8kUIebgmqTGwV`
+  - default hostname `bosh-stemcell`
+  - increase maxkeys, root_maxkeys
+  - lower tcp keepalives
+  - built from develop (3f1bfcbd90c83455ee8b6c8aea016ef6084b0b0a)
+
+* `fDbsoGyzyAdm47.G4Y_d5pxqKQYAcSGk`
+  - periodic bump
+  - includes /var/log bind mount to ephemeral partition
+  - built from develop (23067ad8d25acde028861aaf659db8a2a43665d9)
+
+* `87OMY2hUCi7ewDzwhSUYGdyt4xd127_z`
+  - periodic bump
+  - built from develop (124a879424fe144dbc84c43922ef91131edb8f51)
+
+* `RhvGBE_qJSm7CM4gLshNvAHf9zbbNcKc`
+  - update for CIS tests
+  - built from develop (d858c19af2bf48287f5d192683d9dd606746dadf)
+
+* `3_lwAnVp59D2iUruNsSlEbfa5oBYnTmr`
+  - periodic bump
+  - update for CIS tests
+  - built from develop (d52c3358980dfe2fa21e5c6314633b8e8a06bba8)
+
 * `cjlP5Ciy18FUTcwc9KcmcWETsg7iUPxa`
   - periodic bump
   - update for CIS tests
@@ -450,6 +498,55 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `ZNADP00BuUhn3_MdzRSr8sdufTaYsN.6`
+  - fix rsyslog/systemd startup
+  - restrict dmesg access
+  - built from develop (f2519686a6bd7601121b5dccb05c4b210c0ba450)
+
+* `N4MRLzeURWZ_HltNBilu3v_5rjE9TpDD`
+  - Update README to correct path (36622f4)
+  - Centos delays the start of rsyslogd using systemd (1c85054)
+  - Restrict syslog access via dmesg_restrict=1 sysctl call (94dadb8)
+  - Add logic to check if rsyslogd pid file exists before attempting to kill the process by pid (552376b)
+  - kill HUP rsyslog upon logrotation (723f589)
+  - bump bosh_aws_cpi gem (49bfedf)
+  - Fix broken stemcell cis spec on azure (fba40db)
+  - Change permissions on agent key to 600 (a9d7d89)
+  - built from develop (94dadb8beb7f92d6cd53a4925ff4803699e780b5)
+
+* `Q9jt5NFnxlmffpRr9cyrwX9wLjGthk0f`
+  - Fix issues with rsyslog
+  - built from develop (4e7326cce2afc703440b0198fcad9017ad91caba)
+
+* `dUuH5OESdcG2gxlUY2sYRodjshUH9D8_`
+  - update for CIS tests
+  - built from develop (04c48a6ec29605b547adcb6f68d02cbaa02a38cd)
+
+* `XmT_1ipi1dbj0avjwSm2Zl1fpdd7p0VP`
+  - default hostname `bosh-stemcell`
+  - increase maxkeys, root_maxkeys
+  - lower tcp keepalives
+  - built from develop (3f1bfcbd90c83455ee8b6c8aea016ef6084b0b0a)
+
+* `CZv5v6ZNkMAULzBeMphcRlvus6OjEQrN`
+  - periodic bump
+  - includes /var/log bind mount to ephemeral partition
+  - built from develop (23067ad8d25acde028861aaf659db8a2a43665d9)
+
+* `OizyRQpsuAidGQJaiwZJxcnn8jTiRFYL`
+  - periodic bump
+  - built from develop (124a879424fe144dbc84c43922ef91131edb8f51)
+
+* `X41YZOz_1KFGRZQHewsFYIYT3wIcUTCb`
+  - update for CIS tests
+  - built from develop (d858c19af2bf48287f5d192683d9dd606746dadf)
+
+* `fCznvIcWGgpX6P8iHBVovCmkUKJ7Yppy`
+  - periodic bump
+  - update for CIS tests
+  - PR to fix `parted` tests
+  - built from develop (d52c3358980dfe2fa21e5c6314633b8e8a06bba8)
 
 * `p36yQTJQCRB46AdsY_R8xzQ6UxsXufCd`
   - periodic bump

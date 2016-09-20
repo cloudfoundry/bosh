@@ -9,7 +9,7 @@ module Bosh::Director
       def resolve(instance_group)
         @logger.debug("Resolving links for instance group '#{instance_group.name}'")
 
-        instance_group.templates.each do |job|
+        instance_group.jobs.each do |job|
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
           save_provided_links(instance_group, job)
@@ -65,7 +65,7 @@ module Bosh::Director
           unless job.model_consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
               "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
-                "but the release job does not consume it."
+                'but the release job does not consume it.'
           end
         end
       end

@@ -3,15 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe PersistentDiskCollection do
-      let(:persistent_disk_collection) { PersistentDiskCollection.new(logger, options) }
-      let(:options) { {} }
+      let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
       let(:disk_size) { 30 }
       let(:cloud_properties) { {} }
       let(:disk_type) { DiskType.new('disk_name', disk_size, cloud_properties) }
 
       describe '#add_by_disk_size' do
-        let(:options) { {multiple_disks: false} }
-
         it 'adds disk given a disk size' do
           persistent_disk_collection.add_by_disk_size(30)
 
@@ -32,21 +29,9 @@ module Bosh::Director
             }.to raise_error
           end
         end
-
-        context 'when given a disk_size of 0' do
-          let(:options) { {multiple_disks: false} }
-
-          it 'does not add disk to collection' do
-            persistent_disk_collection.add_by_disk_size(0)
-
-            expect(persistent_disk_collection.generate_spec).to eq( { 'persistent_disk' => 0 } )
-          end
-        end
       end
 
       describe '#add_by_disk_type' do
-        let(:options) { {multiple_disks: false} }
-
         it 'adds disk given a disk type' do
           persistent_disk_collection.add_by_disk_type(disk_type)
 
@@ -70,18 +55,25 @@ module Bosh::Director
       end
 
       describe '#add_by_disk_name_and_type' do
-        let(:options) { {multiple_disks: true} }
-
         it 'adds multiple disks given disk name and type' do
           persistent_disk_collection.add_by_disk_name_and_type('first_disk', disk_type)
           persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type)
 
-          disk_spec = persistent_disk_collection.generate_spec
+          expect(persistent_disk_collection.collection[0].size).to eq(30)
+          expect(persistent_disk_collection.collection[0].name).to eq('first_disk')
 
-          expect(disk_spec['persistent_disks']).to eq([
-            {'disk_size' => 30, 'disk_name' => 'first_disk'},
-            {'disk_size' => 30, 'disk_name' => 'another_disk'},
-          ])
+          expect(persistent_disk_collection.collection[1].size).to eq(30)
+          expect(persistent_disk_collection.collection[1].name).to eq('another_disk')
+        end
+
+        context 'a legacy disk has already been added' do
+          before do
+            persistent_disk_collection.add_by_disk_size(disk_size)
+          end
+
+          it 'raises' do
+            expect{ persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type) }.to raise_error
+          end
         end
       end
 
@@ -98,14 +90,6 @@ module Bosh::Director
               persistent_disk_collection.add_by_disk_type(disk_type)
             end
 
-            context 'when disk size is 0' do
-              let(:disk_type) { DiskType.new('disk_name', 0, {'empty' => 'cloud'}) }
-
-              it 'returns false' do
-                expect(persistent_disk_collection.needs_disk?).to be(false)
-              end
-            end
-
             context 'when disk size is greater than 0' do
               it 'returns true' do
                 expect(persistent_disk_collection.needs_disk?).to be(true)
@@ -115,8 +99,6 @@ module Bosh::Director
         end
 
         context 'when using multiple disks' do
-          let(:options) { {multiple_disks: true} }
-
           context 'when there are no disks' do
             it 'returns false' do
               expect(persistent_disk_collection.needs_disk?).to be(false)
@@ -136,146 +118,145 @@ module Bosh::Director
         end
       end
 
-      describe '#is_different_from' do
-        context 'when using a single disk' do
-          let(:persistent_disk_models) { [] }
+      describe '#changed_disk_pairs' do
+        let(:desired_disks) { PersistentDiskCollection.new(logger) }
+        let(:existing_disks) { PersistentDiskCollection.new(logger) }
+        let(:subject) { desired_disks.changed_disk_pairs(existing_disks) }
 
-          context 'when there are no disks in the persistent disk collection' do
-            context 'when deployment has no disks' do
-              it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
-              end
-            end
-            context 'when deployment has disks' do
-              let(:persistent_disk_models) { [Models::PersistentDisk.make(size: 3)] }
+        context 'unchanged' do
+          context 'disk ordering unchanged' do
+            it 'is not affected' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+              desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-                end
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+              existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              it 'logs' do
-                expect(logger).to receive(:debug).with('Persistent disk size changed FROM: 3 TO: 0')
-
-                persistent_disk_collection.is_different_from(persistent_disk_models)
-              end
+              expect(subject.length).to eq(0)
             end
           end
 
-          context 'when there is one disk in the persistent disk collection' do
-            before do
-              persistent_disk_collection.add_by_disk_type(disk_type)
-            end
+          context 'disk ordering changed' do
+            it 'is not affected' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+              desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-            context 'when deployment has no disks' do
-              let(:persistent_disk_models) { [] }
+              existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-              end
-            end
-
-            context 'when deployment has one disk' do
-              let(:persistent_disk_models) do
-                [Models::PersistentDisk.make(size: 30, cloud_properties: {})]
-              end
-
-              context 'when disks are the same' do
-                it 'returns false' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
-                end
-              end
-
-              context 'when disk sizes are different' do
-                let(:disk_size) { 4 }
-
-                it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-                end
-              end
-
-              context 'when disk cloud properties are different' do
-                let(:cloud_properties) { {'some' => 'cloud'} }
-
-                it 'returns true' do
-                  expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-                end
-
-                it 'logs' do
-                  expect(logger).to receive(:debug).with('Persistent disk cloud properties changed FROM: {} TO: {"some"=>"cloud"}')
-
-                  persistent_disk_collection.is_different_from(persistent_disk_models)
-                end
-              end
+              expect(subject.length).to eq(0)
             end
           end
         end
 
-        context 'when using multiple disks' do
-          let(:options) { { multiple_disks: true } }
+        context 'disk removal' do
+          context 'single disk' do
+            it 'lists the change' do
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-          before do
-            persistent_disk_collection.add_by_disk_name_and_type('disk1', disk_type)
-            persistent_disk_collection.add_by_disk_name_and_type('disk2', disk_type)
-          end
+              expect(subject.length).to eq(1)
 
-          context 'when deployment has one legacy disk' do
-            let(:persistent_disk_models) { [
-              Models::PersistentDisk.make(size: 3)
-            ] }
-            it 'returns true' do
-              expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
+              expect(subject[0][:new]).to be_nil
+              expect(subject[0][:old].name).to eq('persistent1')
             end
           end
 
-          context 'when deployment has many disks' do
-            let(:disk_size) { 3 }
+          context 'multiple disks' do
+            it 'lists the change' do
+              desired_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-            let(:persistent_disk_models) { [
-              Models::PersistentDisk.make(name: 'disk2', size: 3),
-              Models::PersistentDisk.make(name: 'disk1', size: 3),
-            ] }
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+              existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
+              existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-            context 'when all disks are equal' do
-              it 'returns false' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(false)
-              end
+              expect(subject.length).to eq(2)
+
+              expect(subject[0][:new]).to be_nil
+              expect(subject[0][:old].name).to eq('persistent1')
+
+              expect(subject[1][:new]).to be_nil
+              expect(subject[1][:old].name).to eq('persistent2')
             end
+          end
+        end
 
-            context 'when number of disks is different' do
-              before do
-                persistent_disk_collection.add_by_disk_name_and_type('disk3', disk_type)
-              end
+        context 'disk added' do
+          context 'single disk' do
+            it 'lists the change' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-              end
+              expect(subject.length).to eq(1)
+
+              expect(subject[0][:new].size).to eq(3)
+              expect(subject[0][:new].name).to eq('persistent1')
+              expect(subject[0][:new].cloud_properties).to eq({'property' => 'one'})
+              expect(subject[0][:old]).to be_nil
             end
+          end
 
-            context 'when there is a disk with size disagreement' do
-              let(:disk_size) { 4 }
+          context 'multiple disks' do
+            it 'lists the change' do
+              existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-              end
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+              desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
+              desired_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
+
+              expect(subject.length).to eq(2)
+
+              expect(subject[0][:new].name).to eq('persistent1')
+              expect(subject[0][:old]).to be_nil
+
+              expect(subject[1][:new].name).to eq('persistent2')
+              expect(subject[1][:old]).to be_nil
             end
+          end
+        end
 
-            context 'when there is a disk with cloud config disagreement' do
-              let(:cloud_properties) { { 'a' => 'b' } }
+        context 'disk modified' do
+          context 'single disk changes size' do
+            it 'lists the change' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk2', 6, {}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-              end
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {}))
+
+              expect(subject.length).to eq(1)
+
+              expect(subject[0][:new].size).to eq(6)
+              expect(subject[0][:old].size).to eq(3)
             end
+          end
 
-            context 'when there is a disk with name disagreement' do
-              let(:persistent_disk_models) { [
-                Models::PersistentDisk.make(name: 'disk13', size: 3),
-                Models::PersistentDisk.make(name: 'disk2', size: 3),
-              ] }
+          context 'single disk changes cloud_properties' do
+            it 'lists the change' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk2', 3, {'property' => 'two'}))
 
-              it 'returns true' do
-                expect(persistent_disk_collection.is_different_from(persistent_disk_models)).to be(true)
-              end
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
+
+              expect(subject.length).to eq(1)
+
+              expect(subject[0][:new].cloud_properties).to eq({'property' => 'two'})
+              expect(subject[0][:old].cloud_properties).to eq({'property' => 'one'})
+            end
+          end
+
+          context 'multiple disks' do
+            it 'lists the change' do
+              desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 6, {}))
+              desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 12, {}))
+              desired_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {}))
+
+              existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {}))
+              existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {}))
+              existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {}))
+
+              expect(subject.length).to eq(2)
+
+              expect(subject[0][:new].size).to eq(6)
+              expect(subject[0][:old].size).to eq(3)
+
+              expect(subject[1][:new].size).to eq(12)
+              expect(subject[1][:old].size).to eq(3)
             end
           end
         end

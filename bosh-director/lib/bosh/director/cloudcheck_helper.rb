@@ -68,10 +68,11 @@ module Bosh::Director
       delete_vm_from_cloud(instance_model)
 
       instance_plan_to_create = create_instance_plan(instance_model)
-
+      tags = instance_model.deployment.tags
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
-        Array(instance_model.persistent_disk_cid)
+        Array(instance_model.managed_persistent_disk_cid),
+        tags
       )
 
       dns_manager = DnsManagerProvider.create
@@ -110,7 +111,7 @@ module Bosh::Director
 
     def create_instance_plan(instance_model)
       vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
-      env = DeploymentPlan::Env.new(instance_model.vm_env, instance_model.vm_uninterpolated_env)
+      env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_models
       # FIXME cpi is not passed here (otherwise, we would need to parse the CPI using the cloud config & cloud manifest parser)
@@ -168,7 +169,7 @@ module Bosh::Director
     end
 
     def vm_creator
-      disk_manager = SingleDiskManager.new(@logger)
+      disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
       job_renderer = JobRenderer.create
       @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)

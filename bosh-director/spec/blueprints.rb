@@ -33,7 +33,7 @@ Sham.define do
                      octet = index % 255
                      "#{octet}.#{octet}.#{octet}.in-addr.arpa"
                    }
-  lock_name     { |index| "lock-resource-entity#{index}"}
+  lock_name     { |index| "lock-resource-entity#{index}" }
 end
 
 module Bosh::Director::Models

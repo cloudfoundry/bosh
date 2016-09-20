@@ -74,6 +74,9 @@ module Bosh::Director
       context 'when resolving manifest' do
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
+        let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
+        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
+        let(:logger) { instance_double(Logging::Logger)}
 
         before do
           allow(cloud_config).to receive(:manifest).and_return({})
@@ -82,10 +85,13 @@ module Bosh::Director
           allow(deployment_model).to receive(:manifest).and_return("{'smurf': '((smurf_placeholder))'}")
           allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
           allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
+          allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).with(logger).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          expect(config_server_client).to receive(:interpolate_deployment_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_model(deployment_model)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
@@ -95,12 +101,8 @@ module Bosh::Director
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
-          expect(Bosh::Director::DeploymentManifestResolver).
-            to receive(:resolve_manifest).
-              with({'smurf' => '((smurf_placeholder))'}, false).
-              and_return({'smurf' => '((smurf_placeholder))'})
-
           manifest_object_result = Manifest.load_from_model(deployment_model, {:resolve_interpolation => false})
+          expect(config_server_client).to_not receive(:interpolate_deployment_manifest)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
@@ -131,28 +133,30 @@ module Bosh::Director
         let(:passed_in_manifest_hash) { {'smurf' => '((smurf_placeholder))'} }
         let(:cloud_config) { instance_double(Models::CloudConfig)}
         let(:runtime_config) { instance_double(Models::RuntimeConfig)}
+        let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
+        let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
+        let(:logger) { instance_double(Logging::Logger)}
 
         before do
           allow(cloud_config).to receive(:manifest).and_return({})
           allow(runtime_config).to receive(:manifest).and_return({})
           allow(runtime_config).to receive(:raw_manifest).and_return({})
+          allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).with(logger).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(Bosh::Director::DeploymentManifestResolver).to receive(:resolve_manifest).with({'smurf' => '((smurf_placeholder))'}, true).and_return({'smurf' => 'blue'})
+          expect(config_server_client).to receive(:interpolate_deployment_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.cloud_config_hash).to eq({})
           expect(manifest_object_result.hybrid_runtime_config_hash).to eq({})
-
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
-          expect(Bosh::Director::DeploymentManifestResolver).
-            to receive(:resolve_manifest).
-            with({'smurf' => '((smurf_placeholder))'}, false).
-            and_return({'smurf' => '((smurf_placeholder))'})
+          expect(config_server_client).to_not receive(:interpolate_deployment_manifest)
 
           manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config, {:resolve_interpolation => false})
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
@@ -172,9 +176,9 @@ module Bosh::Director
         expect(result_manifest.hybrid_runtime_config_hash).to eq(nil)
       end
 
-      it 'does not call config server parser even if config server is enabled' do
+      it 'does not call config server client even if config server is enabled' do
         allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::ConfigParser).to_not receive(:parse)
+        expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:interpolate)
         Manifest.generate_empty_manifest
       end
     end
@@ -447,9 +451,6 @@ module Bosh::Director
           ],
           'properties' => {
             'test' => 'helo'
-          },
-          'unterinterpolated_properties' => {
-            'test' => '((test_placeholder))'
           }
         }
       end
@@ -480,9 +481,6 @@ module Bosh::Director
               'name' => 'test',
               'properties' => {
                 'test2' => 'smurfy'
-              },
-              'uninterpolated_properties' => {
-                'test2' => '((test2_placeholder))'
               }
             }
           ]
@@ -500,17 +498,11 @@ module Bosh::Director
               'name' => 'test',
               'properties' => {
                 'test2' => 'smurfy',
-              },
-              'uninterpolated_properties' => {
-                'test2' => '((test2_placeholder))'
               }
             }
           ],
           'properties' => {
             'test' => 'helo'
-          },
-          'unterinterpolated_properties' => {
-            'test' => '((test_placeholder))'
           }
         })
       end

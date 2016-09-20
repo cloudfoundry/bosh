@@ -30,16 +30,15 @@ module Bosh::Director
         vm_type: DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}),
         vm_extensions: [],
         stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
-        env: DeploymentPlan::Env.new({'key' => 'value'}, {'key' => 'value'}),
+        env: DeploymentPlan::Env.new({'key' => 'value'}),
         package_spec: {},
         persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
         is_errand?: false,
         link_spec: {},
         compilation?: false,
-        templates: [],
+        jobs: [],
         update_spec: update_config.to_hash,
         properties: {},
-        uninterpolated_properties: {}
       )
     end
     let(:update_config) do

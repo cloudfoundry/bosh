@@ -17,6 +17,10 @@ module Bosh::Director::Models
       self.cloud_properties_json = JSON.generate(cloud_properties)
     end
 
+    def managed?
+      name == ''
+    end
+
     def to_s
       "#{self.name}/#{self.disk_cid}"
     end

@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Bosh::Director::SingleDiskManager do
-    subject(:disk_manager) { SingleDiskManager.new(logger) }
+  describe Bosh::Director::DiskManager do
+    subject(:disk_manager) { DiskManager.new(logger) }
 
     let(:cloud) { Config.cloud }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
@@ -17,9 +17,12 @@ module Bosh::Director
       job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
       job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-      job.persistent_disk_collection.add_by_disk_type(DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}))
+      unless job_persistent_disk_size == 0
+        job.persistent_disk_collection.add_by_disk_type(disk_type)
+      end
       job
     end
+    let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}) }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(vm_cid: 'vm234', uuid: 'my-uuid-1')
@@ -27,7 +30,8 @@ module Bosh::Director
       instance
     end
 
-    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
+    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: {'cloud' => 'properties'}, active: true) }
+    let(:disk_name) { '' }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
 
     let(:event_manager) {Api::EventManager.new(true)}
@@ -44,8 +48,47 @@ module Bosh::Director
       allow(agent_client).to receive(:mount_disk)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
+      allow(agent_client).to receive(:update_settings)
       allow(cloud).to receive(:detach_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
+    end
+
+    describe '#attach_disk' do
+      context 'managed disks' do
+        it 'attaches + mounts disk' do
+          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:mount_disk).with('disk123')
+          disk_manager.attach_disk(persistent_disk)
+        end
+      end
+
+      context 'unmanaged disks' do
+        it 'attaches the disk without mounting' do
+          persistent_disk.update(name: 'chewbacca')
+          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(agent_client).to_not receive(:mount_disk)
+          disk_manager.attach_disk(persistent_disk)
+        end
+      end
+    end
+
+    describe '#detach_disk' do
+      context 'managed disks' do
+        it 'unmounts + detaches disk' do
+          expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:unmount_disk).with('disk123')
+          disk_manager.detach_disk(persistent_disk)
+        end
+      end
+
+      context 'unmanaged disks' do
+        it 'detaches the disk without unmounting' do
+          persistent_disk.update(name: 'chewbacca')
+          expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to_not receive(:unmount_disk)
+          disk_manager.detach_disk(persistent_disk)
+        end
+      end
     end
 
     describe '#update_persistent_disk' do
@@ -165,11 +208,10 @@ module Bosh::Director
           expect(event_2.error).to eq('error')
         end
 
-
         context 'when the persistent disk is changed' do
           before { expect(instance_plan.persistent_disk_changed?).to be_truthy }
 
-          context 'when the job has persistent disk type and the disk type is non zero' do
+          context 'when the instance group has persistent disk type and the disk type is non zero' do
             it 'calls to the cpi to create the disk specified by the job' do
               expect(cloud).to receive(:create_disk).with(1024, {'cloud' => 'properties'}, 'vm234').and_return('new-disk-cid')
               disk_manager.update_persistent_disk(instance_plan)
@@ -200,102 +242,116 @@ module Bosh::Director
               end
             end
 
-            it 'mounts the new disk' do
-              expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
-              disk_manager.update_persistent_disk(instance_plan)
-            end
+            context 'when the disk is managed' do
+              it 'does not associate managed disk models' do
+                expect(agent_client).to_not receive(:update_settings)
+              end
 
-            context 'where there is an old disk to migrate' do
-              it 'migrates the disk' do
-                expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid')
+              it 'mounts the new disk' do
+                expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
                 disk_manager.update_persistent_disk(instance_plan)
               end
-            end
 
-            context 'when there is no old disk to migrate' do
-              let(:persistent_disk) { nil }
-              it 'does not attempt to migrate the disk' do
-                expect(agent_client).to_not receive(:migrate_disk)
-              end
-            end
-
-            context 'mounting and migrating to the new disk' do
-              let(:disk_error) { StandardError.new }
-
-              context 'when mounting and migrating disks succeeds' do
-                before do
-                  allow(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                  allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
-                end
-
-                it 'switches active disks' do
+              context 'where there is an old disk to migrate' do
+                it 'migrates the disk' do
+                  expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid')
                   disk_manager.update_persistent_disk(instance_plan)
-                  expect(Models::PersistentDisk.where(instance_id: instance_model.id, disk_cid: 'new-disk-cid', active: true).first).to_not be_nil
+                end
+              end
+
+              context 'when there is no old disk to migrate' do
+                let(:persistent_disk) { nil }
+                before { allow(agent_client).to receive(:list_disk).and_return([]) }
+
+                it 'does not attempt to migrate the disk' do
+                  expect(agent_client).to_not receive(:migrate_disk)
+                  disk_manager.update_persistent_disk(instance_plan)
                 end
 
-                context 'when switching active disk succeeds' do
-                  let(:snapshot) { Models::Snapshot.make }
+                it 'mounts the new disk' do
+                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
+                  disk_manager.update_persistent_disk(instance_plan)
+                end
+              end
+
+              context 'mounting and migrating to the new disk' do
+                let(:disk_error) { StandardError.new }
+
+                context 'when mounting and migrating disks succeeds' do
                   before do
-                    persistent_disk.add_snapshot(snapshot)
-                    allow(agent_client).to receive(:unmount_disk).with('disk123')
-                    allow(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+                    allow(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
                   end
 
-                  it 'orphans the old mounted disk' do
-                    expect(agent_client).to receive(:unmount_disk).with('disk123')
-                    expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
-
+                  it 'switches active disks' do
                     disk_manager.update_persistent_disk(instance_plan)
-
-                    expect(Models::PersistentDisk.where(disk_cid: 'disk123').first).to be_nil
+                    expect(Models::PersistentDisk.where(instance_id: instance_model.id, disk_cid: 'new-disk-cid', active: true).first).to_not be_nil
                   end
 
-                  it 'orphans additional inactive disks' do
-                    expect(cloud).to receive(:detach_disk).with('vm234', 'inactive-disk')
+                  context 'when switching active disk succeeds' do
+                    let(:snapshot) { Models::Snapshot.make }
+                    before do
+                      persistent_disk.add_snapshot(snapshot)
+                      allow(agent_client).to receive(:unmount_disk).with('disk123')
+                      allow(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+                    end
 
-                    disk_manager.update_persistent_disk(instance_plan)
-                    expect(Models::PersistentDisk.where(disk_cid: 'inactive-disk').first).to be_nil
+                    it 'orphans the old mounted disk' do
+                      expect(agent_client).to receive(:unmount_disk).with('disk123')
+                      expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
 
-                    orphan_disk = Models::OrphanDisk.where(disk_cid: 'inactive-disk').first
-                    expect(orphan_disk.size).to eq(54)
-                    expect(orphan_disk.availability_zone).to eq(instance_model.availability_zone)
-                    expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
-                    expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
-                    expect(orphan_disk.cloud_properties).to eq({'cloud-props' => 'something'})
+                      disk_manager.update_persistent_disk(instance_plan)
+
+                      expect(Models::PersistentDisk.where(disk_cid: 'disk123').first).to be_nil
+                    end
+
+                    it 'orphans additional inactive disks' do
+                      expect(cloud).to receive(:detach_disk).with('vm234', 'inactive-disk')
+
+                      disk_manager.update_persistent_disk(instance_plan)
+                      expect(Models::PersistentDisk.where(disk_cid: 'inactive-disk').first).to be_nil
+
+                      orphan_disk = Models::OrphanDisk.where(disk_cid: 'inactive-disk').first
+                      expect(orphan_disk.size).to eq(54)
+                      expect(orphan_disk.availability_zone).to eq(instance_model.availability_zone)
+                      expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
+                      expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
+                      expect(orphan_disk.cloud_properties).to eq({'cloud-props' => 'something'})
+                    end
                   end
                 end
-              end
 
-              context 'when mounting the disk raises' do
-                before do
-                  allow(agent_client).to receive(:list_disk).and_return(['disk123'])
-                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid').and_raise(disk_error)
+                context 'when mounting the disk raises' do
+                  before do
+                    allow(agent_client).to receive(:list_disk).and_return(['disk123'])
+                    expect(agent_client).to receive(:mount_disk).with('new-disk-cid').and_raise(disk_error)
+                  end
+
+                  it 'deletes the disk and re-raises the error' do
+                    expect(agent_client).to_not receive(:unmount_disk)
+                    expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    expect {
+                      disk_manager.update_persistent_disk(instance_plan)
+                    }.to raise_error disk_error
+                    expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
+                  end
                 end
 
-                it 'deletes the disk and re-raises the error' do
-                  expect(agent_client).to_not receive(:unmount_disk)
-                  expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                  expect {
-                    disk_manager.update_persistent_disk(instance_plan)
-                  }.to raise_error disk_error
-                  expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
-                end
-              end
+                context 'when migrating the disk raises' do
+                  before do
+                    allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
+                    allow(agent_client).to receive(:mount_disk).with('new-disk-cid')
+                    expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid').and_raise(disk_error)
+                  end
 
-              context 'when migrating the disk raises' do
-                before do
-                  allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
-                  allow(agent_client).to receive(:mount_disk).with('new-disk-cid')
-                  expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid').and_raise(disk_error)
-                end
-
-                it 'deletes the disk and re-raises the error' do
-                  expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
-                  expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                  expect {
-                    disk_manager.update_persistent_disk(instance_plan)
-                  }.to raise_error disk_error
-                  expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
+                  it 'deletes the disk and re-raises the error' do
+                    expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
+                    expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    expect {
+                      disk_manager.update_persistent_disk(instance_plan)
+                    }.to raise_error disk_error
+                    expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
+                  end
                 end
               end
             end

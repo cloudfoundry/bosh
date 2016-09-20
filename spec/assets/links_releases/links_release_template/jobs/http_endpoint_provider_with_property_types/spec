@@ -1,0 +1,26 @@
+---
+name: http_endpoint_provider_with_property_types
+
+description: This job runs an HTTP server and with a provides link directive. It has properties with types.
+
+templates:
+  ctl.sh: bin/ctl
+
+provides:
+- name: http_endpoint
+  type: http_endpoint
+  properties:
+  - listen_port
+  - name_space.prop_a
+  - name_space.fibonacci
+
+properties:
+  listen_port:
+    description: "Port to listen on"
+    default: 8080
+  name_space.prop_a:
+    description: "a name spaced property"
+    default: "default"
+  name_space.fibonacci:
+    description: "Has a type password and no default value"
+    type: "password"

@@ -1,1 +1,1 @@
-<% if p('director.config_server.enabled') %><% if_p('director.config_server.uaa.ca_cert') do |cert|%><% if cert.index("\n").nil? %><%= cert.gsub('\\n', "\n") %><% else %><%= cert %><% end %><% end %><% end %>
+<%= p('director.config_server.uaa.ca_cert', '') %>

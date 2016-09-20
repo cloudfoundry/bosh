@@ -201,7 +201,7 @@ describe 'ignore/unignore instance', type: :integration do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         event_list_1 = director.raw_task_events('last')
         expect(event_list_1.select do |e|
-          safe_include(e['stage'], 'Updating job') &&
+          safe_include(e['stage'], 'Updating instance') &&
           safe_include(e['state'], 'started')
         end.count).to eq(3)
 
@@ -227,14 +227,14 @@ describe 'ignore/unignore instance', type: :integration do
         event_list_2 = director.raw_task_events('last')
         expect(
             event_list_2.none? do |e|
-              safe_include(e['stage'], 'Updating job') &&
+              safe_include(e['stage'], 'Updating instance') &&
               safe_include(e['task'], foobar1_vm1.instance_uuid)
             end
         ).to eq(true)
 
         expect(
             event_list_2.select { |e|
-              safe_include(e['stage'], 'Updating job') &&
+              safe_include(e['stage'], 'Updating instance') &&
               safe_include(e['state'], 'started') &&
               (
                 safe_include(e['tags'], 'foobar1') ||
@@ -256,7 +256,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         before_event_list = director.raw_task_events('last')
-        expect(before_event_list.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(6)
+        expect(before_event_list.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(6)
 
         # ignore first VM
         initial_vms = director.vms
@@ -278,13 +278,13 @@ describe 'ignore/unignore instance', type: :integration do
         after_event_list = director.raw_task_events('last')
         expect(
             after_event_list.none? do |e|
-              (e['stage'] == 'Updating job') && (safe_include(e['task'], vm1.instance_uuid))
+              (e['stage'] == 'Updating instance') && (safe_include(e['task'], vm1.instance_uuid))
             end
         ).to eq(true)
 
         expect(
             after_event_list.select { |e|
-              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
             }.count
         ).to eq(2)
       end
@@ -302,7 +302,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         event_list_1 = director.raw_task_events('last')
-        expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(2)
+        expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(2)
 
         # ignore first VM
         initial_vms = director.vms
@@ -323,7 +323,7 @@ describe 'ignore/unignore instance', type: :integration do
         event_list_2 = director.raw_task_events('last')
         expect(
             event_list_2.none? do |e|
-              (e['stage'] == 'Updating job') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
+              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
             end
         ).to eq(true)
 
@@ -335,7 +335,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         expect(
             event_list_2.select { |e|
-              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
             }.count
         ).to eq(1)
 
@@ -374,19 +374,19 @@ describe 'ignore/unignore instance', type: :integration do
 
         expect(
             event_list_3.select { |e|
-              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
             }.count
         ).to eq(4)
 
         expect(
             event_list_3.select { |e|
-              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar2'))
+              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar2'))
             }.count
         ).to eq(2)
 
         expect(
             event_list_3.select { |e|
-              (e['stage'] == 'Updating job') &&
+              (e['stage'] == 'Updating instance') &&
               (e['state'] == 'started') &&
               (safe_include(e['tags'], 'foobar1')) &&
               (safe_include(e['task'], foobar1_vm1.instance_uuid))
@@ -395,7 +395,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         expect(
             event_list_3.none? do |e|
-              (e['stage'] == 'Updating job') && (safe_include(e['task'], foobar2_vm1.instance_uuid))
+              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar2_vm1.instance_uuid))
             end
         ).to eq(true)
 
@@ -416,7 +416,7 @@ describe 'ignore/unignore instance', type: :integration do
 
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(5)
+          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(5)
 
           # ignore first VM
           initial_vms = director.vms
@@ -456,7 +456,7 @@ describe 'ignore/unignore instance', type: :integration do
 
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(5)
+          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(5)
 
           initial_vms = director.vms
 
@@ -483,7 +483,7 @@ describe 'ignore/unignore instance', type: :integration do
           expect(output).to include("Started deleting unneeded instances foobar1 > foobar1/#{foobar1_vm4.instance_uuid} (3). Done")
 
           event_list_2 = director.raw_task_events('last')
-          expect(event_list_2.none? {|e| (e['stage'] == 'Updating job')}).to eq(true)
+          expect(event_list_2.none? {|e| (e['stage'] == 'Updating instance')}).to eq(true)
           expect(event_list_2.none? {|e| (e['stage'] == 'Creating missing vms')}).to eq(true)
 
           expect(
@@ -511,7 +511,7 @@ describe 'ignore/unignore instance', type: :integration do
 
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(6)
+          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(6)
 
           initial_vms = director.vms
           foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
@@ -551,7 +551,7 @@ describe 'ignore/unignore instance', type: :integration do
 
           expect(
               event_list_2.select { |e|
-                (e['stage'] == 'Updating job') &&
+                (e['stage'] == 'Updating instance') &&
                 (e['state'] == 'started') &&
                 (safe_include(e['tags'], 'foobar1'))
               }.count
@@ -559,7 +559,7 @@ describe 'ignore/unignore instance', type: :integration do
 
           expect(
               event_list_2.select { |e|
-                (e['stage'] == 'Updating job') &&
+                (e['stage'] == 'Updating instance') &&
                 (e['state'] == 'started')
               }.count
           ).to eq(1)
@@ -626,13 +626,13 @@ describe 'ignore/unignore instance', type: :integration do
 
         expect(
             after_event_list.none? do |e|
-              (e['stage'] == 'Updating job') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
+              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
             end
         ).to eq(true)
 
         expect(
             after_event_list.select { |e|
-              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
             }.count
         ).to eq(2)
 
@@ -740,8 +740,8 @@ describe 'ignore/unignore instance', type: :integration do
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           expect(output).to include("Warning: You have ignored instances. They will not be changed.")
-          expect(output).to_not include("Started updating job foobar1 > foobar1/#{foobar1_vm1.instance_uuid} (#{foobar1_vm1.index})")
-          expect(output).to include("Started updating job foobar1 > foobar1/#{foobar1_vm2.instance_uuid} (#{foobar1_vm2.index})")
+          expect(output).to_not include("Started updating instance foobar1 > foobar1/#{foobar1_vm1.instance_uuid} (#{foobar1_vm1.index})")
+          expect(output).to include("Started updating instance foobar1 > foobar1/#{foobar1_vm2.instance_uuid} (#{foobar1_vm2.index})")
 
           modified_vms = director.vms
           modified_foobar1_vm1 = modified_vms.select{|i| i.instance_uuid == foobar1_vm1.instance_uuid}.first
@@ -778,15 +778,15 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         start_output = bosh_runner.run("start")
         expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(start_output).to_not include('Started updating job')
+        expect(start_output).to_not include('Started updating instance')
 
         # ===========================================
         stop_output = bosh_runner.run("stop")
         expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(stop_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(stop_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(stop_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(stop_output).to match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(stop_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_stop = director.vms
         expect(vms_after_stop[0].last_known_state).to eq('running')
@@ -798,10 +798,10 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         restart_output = bosh_runner.run("restart")
         expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(restart_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(restart_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(restart_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(restart_output).to match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(restart_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_restart = director.vms
         expect(vms_after_restart[0].last_known_state).to eq('running')
@@ -813,10 +813,10 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         recreate_output = bosh_runner.run("recreate")
         expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(recreate_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(recreate_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(recreate_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(recreate_output).to match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(recreate_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_recreate = director.vms
         expect(vms_after_recreate[0].last_known_state).to eq('running')
@@ -835,10 +835,10 @@ describe 'ignore/unignore instance', type: :integration do
 
         stop_output = bosh_runner.run("stop foobar1")
         expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(stop_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(stop_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(stop_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(stop_output).to_not match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(stop_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_stop = director.vms
         expect(vms_after_stop[0].last_known_state).to eq('running')
@@ -849,10 +849,10 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         start_output = bosh_runner.run("start foobar1")
         expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(start_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(start_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(start_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(start_output).to_not match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(start_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(start_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(start_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(start_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_start = director.vms
         expect(vms_after_start[0].last_known_state).to eq('running')
@@ -863,10 +863,10 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         restart_output = bosh_runner.run("restart foobar1")
         expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(restart_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(restart_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(restart_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(restart_output).to_not match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(restart_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_restart = director.vms
         foobar1_vm_2 = vms_after_restart[1]
@@ -881,10 +881,10 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         recreate_output = bosh_runner.run("recreate foobar1")
         expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(recreate_output).to_not match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(recreate_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(recreate_output).to match(/Started updating job foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(recreate_output).to_not match(/Started updating job foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(recreate_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_recreate = director.vms
         expect(vms_after_recreate[0].last_known_state).to eq('running')
@@ -1106,7 +1106,7 @@ describe 'ignore/unignore instance', type: :integration do
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.2.10', '192.168.2.11']}]
 
         output_2 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        expect(output_2).to_not include('Started updating job')
+        expect(output_2).to_not include('Started updating instance')
         expect(output_2).to include("Started deleting unneeded instances foobar1 > foobar1/#{az1_instances[0].id} (#{az1_instances[0].index}). Done")
         expect(output_2).to include("Started deleting unneeded instances foobar1 > foobar1/#{az1_instances[1].id} (#{az1_instances[1].index}). Done")
 

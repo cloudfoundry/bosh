@@ -44,7 +44,7 @@ module Bosh::Director::ProblemScanner
       mounted_disk_cid = nil
 
       @problem_lock.synchronize do
-        mounted_disk_cid = instance.persistent_disk_cid if instance
+        mounted_disk_cid = instance.managed_persistent_disk_cid if instance
       end
 
       mounted_disk_cid

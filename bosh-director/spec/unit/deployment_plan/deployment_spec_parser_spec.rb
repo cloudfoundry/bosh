@@ -47,6 +47,39 @@ module Bosh::Director
         end
       end
 
+      describe 'tags key' do
+        context 'when tags are specified' do
+          before do
+            tags = {'mytag' => 'foo-tag'}
+            manifest_hash['tags'] = tags
+          end
+
+          it 'should not error out' do
+            expect(parsed_deployment.tags.count).to eq(1)
+          end
+
+          context 'when we have duplicate tags' do
+            before do
+              tags = {
+                'mytag' => 'foo-tag',
+                'mytag' => 'foo-tag',
+              }
+              manifest_hash['tags'] = tags
+            end
+
+            it 'returns a single tag' do
+              expect(parsed_deployment.tags.count).to eq(1)
+            end
+          end
+        end
+
+        context 'when no tags are specified' do
+          it 'should have tags count of 0' do
+            expect(parsed_deployment.tags.count).to eq(0)
+          end
+        end
+      end
+
       describe 'stemcells' do
         context 'when no top level stemcells' do
           before do
@@ -153,18 +186,6 @@ module Bosh::Director
         it 'allows to not include properties key' do
           manifest_hash.delete('properties')
           expect(parsed_deployment.properties).to eq({})
-        end
-
-        describe 'uninterpolated global properties' do
-          before do
-            manifest_hash.merge!('properties' => { 'foo' => 'foo_value', 'bar' => 'bar_value' })
-            manifest_hash.merge!('uninterpolated_properties' => { 'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))' })
-          end
-
-          it 'parses them correctly' do
-            expect(parsed_deployment.properties).to eq({'foo' => 'foo_value', 'bar' => 'bar_value'})
-            expect(parsed_deployment.uninterpolated_properties).to eq({'foo' => '((foo_placeholder))', 'bar' => '((bar_placeholder))'})
-          end
         end
       end
 
@@ -333,49 +354,49 @@ module Bosh::Director
           context 'when job names are unique' do
             before do
               manifest_hash.merge!(keyword => [
-                { 'name' => 'job1-name' },
-                { 'name' => 'job2-name' },
+                { 'name' => 'instance-group-1-name' },
+                { 'name' => 'instance-group-2-name' },
               ])
             end
 
-            let(:job1) do
+            let(:instance_group_1) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-                name: 'job1-name',
-                canonical_name: 'job1-canonical-name',
-                templates: []
+                name: 'instance-group-1-name',
+                canonical_name: 'instance-group-1-canonical-name',
+                jobs: []
               })
             end
 
-            let(:job2) do
+            let(:instance_group_2) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-                name: 'job2-name',
-                canonical_name: 'job2-canonical-name',
-                templates: []
+                name: 'instance-group-2-name',
+                canonical_name: 'instance-group-2-canonical-name',
+                jobs: []
               })
             end
 
             it 'delegates to Job to parse job specs' do
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
-                and_return(job1)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                and_return(instance_group_1)
 
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
-                and_return(job2)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                and_return(instance_group_2)
 
-              expect(parsed_deployment.instance_groups).to eq([job1, job2])
+              expect(parsed_deployment.instance_groups).to eq([instance_group_1, instance_group_2])
             end
 
             context 'when canaries value is present in options' do
               let(:options) { { 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
-                  .and_return(job1)
+                  .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)
+                  .and_return(instance_group_1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
-                  and_return(job2)
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, options).
+                  and_return(instance_group_2)
 
                 parsed_deployment.instance_groups
               end
@@ -385,12 +406,12 @@ module Bosh::Director
               let(:options) { { 'max_in_flight'=> '42' } }
               it "replaces max_in_flight value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
-                   .and_return(job1)
+                   .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)
+                   .and_return(instance_group_1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
-                  and_return(job2)
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, options).
+                  and_return(instance_group_2)
 
                 parsed_deployment.instance_groups
               end
@@ -398,55 +419,55 @@ module Bosh::Director
 
             it 'allows to look up job by name' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
-                and_return(job1)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
-                and_return(job2)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                and_return(instance_group_2)
 
 
-              expect(parsed_deployment.instance_group('job1-name')).to eq(job1)
-              expect(parsed_deployment.instance_group('job2-name')).to eq(job2)
+              expect(parsed_deployment.instance_group('instance-group-1-name')).to eq(instance_group_1)
+              expect(parsed_deployment.instance_group('instance-group-2-name')).to eq(instance_group_2)
             end
           end
 
-          context 'when more than one job have same canonical name' do
+          context 'when more than one instance group have the same canonical name' do
             before do
               manifest_hash.merge!(keyword => [
-                { 'name' => 'job1-name' },
-                { 'name' => 'job2-name' },
+                { 'name' => 'instance-group-1-name' },
+                { 'name' => 'instance-group-2-name' },
               ])
             end
 
-            let(:job1) do
+            let(:instance_group_1) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-                name: 'job1-name',
+                name: 'instance-group-1-name',
                 canonical_name: 'same-canonical-name',
               })
             end
 
-            let(:job2) do
+            let(:instance_group_2) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-                name: 'job2-name',
+                name: 'instance-group-2-name',
                 canonical_name: 'same-canonical-name',
               })
             end
 
             it 'raises an error' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
-                and_return(job1)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
-                and_return(job2)
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                and_return(instance_group_2)
 
               expect {
                 parsed_deployment
               }.to raise_error(
                 DeploymentCanonicalJobNameTaken,
-                "Invalid instance group name 'job2-name', canonical name already taken",
+                "Invalid instance group name 'instance-group-2-name', canonical name already taken",
               )
             end
           end
@@ -481,12 +502,12 @@ module Bosh::Director
         context 'when there are both jobs and instance_groups' do
           before do
             manifest_hash.merge!('jobs' => [
-                                     { 'name' => 'job1-name' },
-                                     { 'name' => 'job2-name' },
+                                     { 'name' => 'instance-group-1-name' },
+                                     { 'name' => 'instance-group-2-name' },
                                  ],
                                  'instance_groups' => [
-                                     { 'name' => 'job1-name' },
-                                     { 'name' => 'job2-name' },
+                                     { 'name' => 'instance-group-1-name' },
+                                     { 'name' => 'instance-group-2-name' },
                                  ])
           end
 

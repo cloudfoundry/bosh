@@ -112,35 +112,41 @@ module Bosh::Director
           it_acts_as_asynchronous_message :stop
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
+          it_acts_as_asynchronous_message :associate_disks
           it_acts_as_asynchronous_message :start
         end
 
         describe 'update_settings' do
-          it 'packages the certificates into a map and sends to the agent' do
-            expect(client).to receive(:send_message).with(:update_settings, "trusted_certs" => "these are the certificates")
+          it 'packages the certificates and disk associations into a map and sends to the agent' do
+            expect(client).to receive(:send_message).with(
+              :update_settings,
+              {
+              "trusted_certs" => "these are the certificates",
+              'disk_associations' => [{'name' => 'zak', 'cid' => 'new-disk-cid'}]
+              })
             allow(client).to receive(:get_task)
-            client.update_settings("these are the certificates")
+            client.update_settings("these are the certificates", [{'name' => 'zak', 'cid' => 'new-disk-cid'}])
           end
 
           it 'periodically polls the update settings task while it is running' do
             allow(client).to receive(:handle_message_with_retry).and_return task
             allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
             expect(client).to receive(:get_task).with('fake-agent_task_id')
-            client.update_settings("these are the certificates")
+            client.update_settings("these are the certificates", [{'name' => 'zak', 'cid' => 'new-disk-cid'}])
           end
 
           it 'is only a warning when the remote agent does not implement update_settings' do
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
 
             expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
-            expect { client.update_settings("no certs") }.to_not raise_error
+            expect { client.update_settings("no certs", "no disks") }.to_not raise_error
           end
 
           it 'still raises an exception for other RPC failures' do
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
 
             expect(client).to_not receive(:warning)
-            expect { client.update_settings("no certs") }.to raise_error
+            expect { client.update_settings("no certs", "no disks") }.to raise_error
           end
         end
 

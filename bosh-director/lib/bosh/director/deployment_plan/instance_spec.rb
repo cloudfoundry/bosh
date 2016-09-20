@@ -28,10 +28,8 @@ module Bosh::Director
           'vm_type' => instance_group.vm_type.spec,
           'stemcell' => instance_group.stemcell.spec,
           'env' => instance_group.env.spec,
-          'uninterpolated_env' => instance_group.env.uninterpolated_spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
-          'uninterpolated_properties' => instance_group.uninterpolated_properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => instance_group.link_spec,
@@ -49,10 +47,13 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
+
+        config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
+        @config_server_client = config_server_client_factory.create_client
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec).spec
+        TemplateSpec.new(full_spec, @config_server_client).spec
       end
 
       def as_apply_spec
@@ -92,9 +93,10 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec)
+      def initialize(full_spec, config_server_client)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
+        @config_server_client = config_server_client
       end
 
       def spec
@@ -107,20 +109,30 @@ module Bosh::Director
           'id',
           'az',
           'networks',
-          'properties',
           'properties_need_filtering',
           'dns_domain_name',
-          'links',
           'persistent_disk',
-          'address'
+          'address',
+          'ip'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
+        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['properties'])
+        template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
+
         networks_hash = template_hash['networks']
+
+        ip = nil
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
           if @full_spec['job'] != nil
             settings_with_dns = network_settings.merge({'dns_record_name' => @dns_manager.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
             networks_hash[network_name] = settings_with_dns
+          end
+
+          defaults = network_settings['default'] || []
+
+          if defaults.include?('addressable') || (!ip && defaults.include?('gateway'))
+            ip = network_settings['ip']
           end
 
           if network_settings['type'] == 'dynamic'
@@ -133,9 +145,16 @@ module Bosh::Director
         end
 
         template_hash.merge({
+        'ip' => ip,
         'resource_pool' => @full_spec['vm_type']['name'],
         'networks' => modified_networks_hash
         })
+      end
+
+      private
+
+      def resolve_uninterpolated_values(to_be_resolved_hash)
+        @config_server_client.interpolate(to_be_resolved_hash)
       end
     end
 

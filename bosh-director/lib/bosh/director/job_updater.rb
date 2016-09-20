@@ -3,10 +3,9 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, links_resolver, disk_manager)
+    def initialize(deployment_plan, job, disk_manager)
       @deployment_plan = deployment_plan
       @job = job
-      @links_resolver = links_resolver
 
       @logger = Config.logger
       @event_log = Config.event_log
@@ -43,7 +42,7 @@ module Bosh::Director
       end
 
       @logger.info("Found #{instance_plans.size} instances to update")
-      event_log_stage = @event_log.begin_stage('Updating job', instance_plans.size, [ @job.name ])
+      event_log_stage = @event_log.begin_stage('Updating instance', instance_plans.size, [ @job.name ])
 
       ordered_azs = []
       instance_plans.each do | instance_plan |
@@ -58,9 +57,9 @@ module Bosh::Director
       ordered_azs.each do | az |
         az_instance_plans = instance_plans_by_az[az]
         @logger.info("Starting to update az '#{az}'")
-        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
+        ThreadPool.new(:max_threads => @job.update.max_in_flight(az_instance_plans.size)).wrap do |pool|
           unless canaries_done
-            num_canaries = [@job.update.canaries, az_instance_plans.size].min
+            num_canaries = [@job.update.canaries(az_instance_plans.size), az_instance_plans.size].min
             @logger.info("Starting canary update num_canaries=#{num_canaries}")
             update_canaries(pool, az_instance_plans, num_canaries, event_log_stage)
 
@@ -94,7 +93,7 @@ module Bosh::Director
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
       dns_manager = DnsManagerProvider.create
       deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
-      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight)
+      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight(unneeded_instances.size))
 
       @logger.info('Deleted no longer needed instances')
     end

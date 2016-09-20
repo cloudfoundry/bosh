@@ -33,6 +33,16 @@ module Bosh::Blobstore
           })).to be_instance_of(S3cliBlobstoreClient)
         end
 
+        it 'returns davcli client' do
+          allow(Kernel).to receive(:system).with("/path -v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          expect(Client.create('davcli', {
+            user: 'foo',
+            password: 'bar',
+            endpoint: 'zaksoup.com',
+            davcli_path: '/path'
+          })).to be_instance_of(DavcliBlobstoreClient)
+        end
+
         it 'should pick S3 provider when S3 is used without credentials' do
           expect(Client.create('s3', bucket_name: 'foo')).to be_instance_of(S3BlobstoreClient)
         end

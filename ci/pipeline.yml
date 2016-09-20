@@ -10,6 +10,7 @@ groups:
       - unit-2.3-postgres
       - blobstore-client-integration
       - integration-1.9-postgres
+      - integration-2.3-postgres-gocli
       - integration-2.3-mysql
       - integration-2.3-postgres
       - load-tests-postgres
@@ -78,6 +79,12 @@ jobs:
         params:
           RUBY_VERSION: 1.9.3
           DB: sqlite
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: unit-1.9-postgres
     public: true
@@ -92,6 +99,12 @@ jobs:
         params:
           RUBY_VERSION: 1.9.3
           DB: postgresql
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: unit-2.3
     public: true
@@ -105,6 +118,12 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: sqlite
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: unit-2.3-mysql
     public: true
@@ -119,6 +138,12 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: mysql
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: unit-2.3-postgres
     public: true
@@ -133,6 +158,12 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: postgresql
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: blobstore-client-integration
     public: true
@@ -148,6 +179,65 @@ jobs:
           s3_region: {{blobstore_client_aws_s3_region}}
           s3_host: {{blobstore_client_aws_s3_host}}
           run_aws_tests: "Not null"
+
+  - name: integration-2.3-postgres-gocli
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed: [start-job]
+        - get: gocli-release-bucket-linux
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-1"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
+
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-2"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
+
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-3"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
+          on_failure:
+            put: slack-alert
+            params:
+              channel: {{slack_channel_name}}
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text: {{slack_failure_message}}
 
   - name: integration-1.9-postgres
     public: true
@@ -165,6 +255,7 @@ jobs:
             RUBY_VERSION: 1.9.3
             NUM_GROUPS: 24
             GROUP:      1,4,7,10,13,16,19,22
+
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -174,6 +265,7 @@ jobs:
             RUBY_VERSION: 1.9.3
             NUM_GROUPS: 24
             GROUP:      2,5,8,11,14,17,20,23
+
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -183,6 +275,13 @@ jobs:
             RUBY_VERSION: 1.9.3
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
+
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: integration-2.3-mysql
     public: true
@@ -200,6 +299,7 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      1,4,7,10,13,16,19,22
+
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -209,6 +309,7 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      2,5,8,11,14,17,20,23
+
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -218,6 +319,13 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
+
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: integration-2.3-postgres
     public: true
@@ -235,6 +343,7 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      1,4,7,10,13,16,19,22
+
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -244,6 +353,7 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      2,5,8,11,14,17,20,23
+
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
@@ -253,6 +363,13 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
+
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: load-tests-postgres
     public: true
@@ -447,3 +564,9 @@ resources:
     type: slack-notification
     source:
       url: {{slack_hook_url}}
+
+  - name: gocli-release-bucket-linux
+    type: s3
+    source:
+      regexp: bosh-cli-(.*)-linux-amd64
+      bucket: bosh-cli-artifacts

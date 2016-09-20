@@ -125,22 +125,22 @@ module Bosh::Director
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
 
           @event_log_stage.advance_and_track('Finding packages to compile') do
-            @jobs_to_compile.each do |job|
-              stemcell = job.stemcell
+            @jobs_to_compile.each do |instance_group|
+              stemcell = instance_group.stemcell
 
-              template_descs = job.templates.map do |t|
+              job_descs = instance_group.jobs.map do |job|
                 # we purposefully did NOT inline those because
                 # when instance_double blows up,
                 # it's obscure which double is at fault
-                release_name = t.release.name
-                template_name = t.name
-                "'#{release_name}/#{template_name}'"
+                release_name = job.release.name
+                job_name = job.name
+                "'#{release_name}/#{job_name}'"
               end
-              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
+              @logger.info("Job templates #{job_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
 
-              job.templates.each do |template|
-                template.package_models.each do |package|
-                  @compile_task_generator.generate!(@compile_tasks, job, template, package, stemcell)
+              instance_group.jobs.each do |job|
+                job.package_models.each do |package|
+                  @compile_task_generator.generate!(@compile_tasks, instance_group, job, package, stemcell)
                 end
               end
             end

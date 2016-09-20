@@ -1,0 +1,25 @@
+---
+resources:
+- name: bosh-src
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh.git
+    branch: candidate
+
+- name: bosh-alpha-release-tarballs
+  type: s3
+  source:
+    bucket: {{uploader_bucket}}
+    access_key_id: {{uploader_access_key_id}}
+    secret_access_key: {{uploader_secret_access_key}}
+    regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" # bosh-257.9+dev.1472844900.tgz
+
+jobs:
+- name: alpha-release
+  plan:
+  - get: bosh-src
+  - task: make
+    file: bosh-src/ci/pipelines/alpha-releases/tasks/make.yml
+  - put: bosh-alpha-release-tarballs
+    params:
+      file: "release/*.tgz"
