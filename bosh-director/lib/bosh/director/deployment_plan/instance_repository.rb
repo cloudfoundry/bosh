@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan
       stemcell_spec=existing_instance_model.spec_p('stemcell')
       if !stemcell_spec.nil? && !stemcell_spec.empty?
         stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(stemcell_spec)
-        stemcell.add_stemcell_model
+        stemcell.add_stemcell_models
       else
         stemcell = nil
       end

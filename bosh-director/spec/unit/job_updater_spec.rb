@@ -333,7 +333,7 @@ describe Bosh::Director::JobUpdater do
 
   def updating_stage_event(options)
     events = {
-      'stage' => 'Updating job',
+      'stage' => 'Updating instance',
       'tags' => ['job_name'],
       'total' => options[:total],
       'task' => options[:task],

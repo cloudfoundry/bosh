@@ -113,7 +113,6 @@ module Bosh::Director
           self,
           stemcell_manager,
           dns_manager,
-          Config.cloud,
           @logger
         )
 

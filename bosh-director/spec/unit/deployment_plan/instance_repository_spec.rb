@@ -132,7 +132,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.compilation?).to eq(existing_instance.compilation)
       expect(instance.job_name).to eq(existing_instance.job)
       expect(instance.vm_type.name).to eq('vm-type')
-      expect(instance.stemcell.model).to eq(stemcell)
+      expect(instance.stemcell.models.first).to eq(stemcell)
       expect(instance.env).to eq(env)
     end
 
