@@ -55,8 +55,8 @@ module Bosh::Director::ConfigServer
       interpolate(runtime_manifest, ignored_subtrees)
     end
 
-    # @param [Object] provided property value
-    # @param [Object] default property value
+    # @param [Object] provided_prop property value
+    # @param [Object] default_prop property value
     # @param [String] type of property
     # @param [Hash] options hash containing extra options when needed
     # @return [Object] either the provided_prop or the default_prop
