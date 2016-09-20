@@ -8,7 +8,7 @@ Sequel.migration do
     if existing_constraint
       if [:mysql2, :mysql].include?(adapter_scheme)
         alter_table(:stemcells) do
-          drop_index unique_constraint, name: existing_constraint.first
+          drop_index old_constraint, name: existing_constraint.first
         end
       else
         alter_table(:stemcells) do
