@@ -16,7 +16,7 @@ shared_examples_for 'All Stemcells' do
     end
 
     describe command 'ls -l /etc/ssh/*_key*' do
-      its(:stderr) {should match /No such file or directory/}
+      its(:stderr) { should match /No such file or directory/ }
     end
   end
 
@@ -45,6 +45,20 @@ shared_examples_for 'All Stemcells' do
 
     describe command('if [ -e /usr/lib64 ]; then stat -c "%U" /usr/lib64 ; else echo "root" ; fi') do
       its (:stdout) { should eq("root\n") }
+    end
+  end
+
+  describe file('/var/vcap/micro_bosh/data/cache') do
+    it('should still be created') { should be_directory }
+  end
+
+  context 'libyaml should be installed' do
+    describe command('test -L /usr/lib64/libyaml.so') do
+      it { should return_exit_status(0) }
+    end
+
+    describe command('readlink -e /usr/lib64/libyaml.so') do
+      it { should return_exit_status(0) }
     end
   end
 
@@ -81,7 +95,7 @@ shared_examples_for 'All Stemcells' do
 
     describe 'default su directive' do
       describe file('/etc/logrotate.d/default_su_directive') do
-        it { should contain 'su root root'}
+        it { should contain 'su root root' }
       end
     end
   end

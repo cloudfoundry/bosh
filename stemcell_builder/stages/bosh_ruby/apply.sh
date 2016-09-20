@@ -10,30 +10,6 @@ source $base_dir/lib/prelude_bosh.bash
 
 mkdir -p $chroot/$bosh_dir/src
 
-# Libyaml
-mkdir -p $chroot/usr/lib64
-
-libyaml_basename=yaml-0.1.6
-libyaml_archive=$libyaml_basename.tar.gz
-
-cp -r $dir/assets/$libyaml_archive $chroot/$bosh_dir/src
-
-run_in_bosh_chroot $chroot "
-cd src
-tar zxvf $libyaml_archive
-cd $libyaml_basename
-./configure --prefix=/usr
-make -j4 && make install
-
-# Make symlinks for CentOS
-"
-
-for file in $(cd $chroot/usr/lib; ls libyaml*); do
-  if [ ! -e $chroot/usr/lib64/$file ]; then
-    cp -a $chroot/usr/lib/$file $chroot/usr/lib64/
-  fi
-done
-
 # Ruby
 ruby_basename=ruby-1.9.3-p545
 ruby_archive=$ruby_basename.tar.gz
