@@ -3,6 +3,7 @@ module Bosh::Director::ConfigServer
 
     def initialize(http_client, logger)
       @config_server_http_client = http_client
+      @deep_hash_replacer = DeepHashReplacement.new
       @logger = logger
     end
 
@@ -11,9 +12,10 @@ module Bosh::Director::ConfigServer
     # @return [Hash] A Deep copy of the interpolated src Hash
     def interpolate(src, subtrees_to_ignore = [])
       result = Bosh::Common::DeepCopy.copy(src)
-      config_map = Bosh::Director::ConfigServer::DeepHashReplacement.replacement_map(src, subtrees_to_ignore)
 
-      config_keys = config_map.map { |c| c["key"] }.uniq
+      config_map = @deep_hash_replacer.replacement_map(src, subtrees_to_ignore)
+
+      config_keys = config_map.map { |c| c['key'] }.uniq
 
       config_values, invalid_keys = fetch_config_values(config_keys)
       if invalid_keys.length > 0

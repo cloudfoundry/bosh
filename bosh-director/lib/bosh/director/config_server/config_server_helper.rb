@@ -1,7 +1,7 @@
 module Bosh::Director::ConfigServer
   module ConfigServerHelper
 
-    # This func is used to check if a string is a placeholder. Validation is done while extracting key, not here.
+    # Checks if string starts with '((' and ends with '))'
     # @param [String] value string to be checked
     # @return [Boolean] true is it starts with '((' and ends with '))'
     def is_placeholder?(value)

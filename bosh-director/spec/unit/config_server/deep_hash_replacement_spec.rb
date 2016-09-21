@@ -53,7 +53,7 @@ module Bosh::Director::ConfigServer
       end
 
       let(:replacement_list) do
-        DeepHashReplacement.replacement_map(test_obj)
+        DeepHashReplacement.new.replacement_map(test_obj)
       end
 
       it 'should create map for placeholders under `global` properties' do
@@ -130,7 +130,7 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
-          replacements = DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
+          replacements = DeepHashReplacement.new.replacement_map(test_obj, ignored_subtrees)
 
           expected_replacements = [
             {'key'=>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
