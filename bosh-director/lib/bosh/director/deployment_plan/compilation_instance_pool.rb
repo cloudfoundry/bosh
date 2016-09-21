@@ -251,6 +251,10 @@ module Bosh::Director
         nil
       end
 
+      def lifecycle
+        nil
+      end
+
       def persistent_disk_collection
         PersistentDiskCollection.new(@logger)
       end
