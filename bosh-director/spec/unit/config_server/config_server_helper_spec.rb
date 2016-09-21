@@ -73,7 +73,7 @@ module Bosh::Director::ConfigServer
           it 'should raise a ConfigServerIncorrectKeySyntax error' do
             invalid_placeholders_keys = [
               '(())', '(( ))', '((%))', '((  ))', '((123 345))', '((@bosh))',
-              '((hello_)))', '((t*))', '((π))', '(()))', '((())))', '((smurf cat))'
+              '((hello_)))', '((t*))', '(()))', '((())))', '((smurf cat))'
             ]
 
             invalid_placeholders_keys.each do |invalid_entity|
