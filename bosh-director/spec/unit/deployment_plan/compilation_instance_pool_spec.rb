@@ -389,4 +389,10 @@ module Bosh::Director
       end
     end
   end
+
+  describe DeploymentPlan::CompilationJob do
+    it "has no 'lifecycle'" do
+      expect(DeploymentPlan::CompilationJob.new(nil, nil, nil, nil, nil, nil).lifecycle).to be_nil
+    end
+  end
 end

@@ -271,114 +271,148 @@ module Bosh::Director::Models
       end
     end
 
-    context 'with deployment_plan' do
-      subject { described_class.make(deployment: deployment, job: 'job-1') }
+    describe '#lifecycle' do
 
-      let(:instance_groups) {
-        [{
-             'name' => 'job-1',
-             'lifecycle' => lifecycle,
-             'instances' => 1,
-             'jobs' => [],
-             'vm_type' => 'm1.small',
-             'stemcell' => 'stemcell',
-             'networks' => [{'name' => 'network'}]
-         }]
-      }
+      context "when spec has 'lifecycle'" do
+        context "and it is 'service'" do
+          before(:each) { subject.spec=({'lifecycle' => 'service'}) }
 
-      let(:manifest) {
-        {
-            'name' => 'something',
-            'releases' => [],'instance_groups' => instance_groups,
-            'update' => {
-                'canaries' => 1,
-                'max_in_flight' => 1,
-                'canary_watch_time' => 20,
-                'update_watch_time' => 20
-            },
-            'stemcells' => [{
-                                'name' => 'stemcell',
-                                'alias' => 'stemcell'
-                            }]
-        }
-      }
-
-      let(:cloud_config_hash) {
-        {
-            'compilation' => {
-                'network' => 'network',
-                'workers' => 1
-            },
-            'networks' => [{
-                               'name' => 'network',
-                               'subnets' => []
-
-                           }],
-            'vm_types' => [{
-                               'name' => 'm1.small'
-                           }]
-
-        }
-      }
-      let(:manifest_text) { manifest.to_yaml }
-      let(:cloud_config) { CloudConfig.make(manifest: cloud_config_hash) }
-      let(:deployment) { Deployment.make(name: 'deployment', manifest: manifest_text, cloud_config: cloud_config) }
-
-      describe '#lifecycle' do
-        context "when lifecycle is 'service'" do
-          let(:lifecycle) { 'service' }
           it "returns 'service'" do
             expect(subject.lifecycle).to eq('service')
           end
         end
 
-        context "when lifecycle is 'errand'" do
-          let(:lifecycle) { 'errand' }
+        context "and it is 'errand'" do
+          before(:each) { subject.spec=({'lifecycle' => 'errand'}) }
+
           it "returns 'errand'" do
             expect(subject.lifecycle).to eq('errand')
           end
         end
+      end
 
-        context 'when no manifest is stored in the database' do
-          let(:manifest_text) { nil }
-          it "returns 'nil'" do
-            expect(subject.lifecycle).to be_nil
-          end
+
+      context "when spec has 'lifecycle=nil'" do
+        before(:each) do
+          subject.spec=({'lifecycle' => nil})
+          allow(subject).to receive(:get_lifecycle_from_deployment_plan)
+        end
+
+        it 'returns nil without falling back to parsing the manifest' do
+          expect(subject.lifecycle).to be_nil
+          expect(subject).to_not have_received(:get_lifecycle_from_deployment_plan)
         end
       end
 
-      describe '#expects_vm?' do
+      context 'when model has no spec' do
+        context 'with deployment_plan' do
+          subject { described_class.make(deployment: deployment, job: 'job-1') }
+          before(:each) { subject.spec=(nil) }
 
-        context "when lifecycle is 'errand'" do
-          let(:lifecycle) { 'errand' }
+          let(:instance_groups) {
+            [{
+                'name' => 'job-1',
+                'lifecycle' => lifecycle,
+                'instances' => 1,
+                'jobs' => [],
+                'vm_type' => 'm1.small',
+                'stemcell' => 'stemcell',
+                'networks' => [{'name' => 'network'}]
+            }]
+          }
+
+          let(:manifest) {
+            {
+                'name' => 'something',
+                'releases' => [],'instance_groups' => instance_groups,
+                'update' => {
+                    'canaries' => 1,
+                    'max_in_flight' => 1,
+                    'canary_watch_time' => 20,
+                    'update_watch_time' => 20
+                },
+                'stemcells' => [{
+                    'name' => 'stemcell',
+                    'alias' => 'stemcell'
+                }]
+            }
+          }
+
+          let(:cloud_config_hash) {
+            {
+                'compilation' => {
+                    'network' => 'network',
+                    'workers' => 1
+                },
+                'networks' => [{
+                    'name' => 'network',
+                    'subnets' => []
+
+                }],
+                'vm_types' => [{
+                    'name' => 'm1.small'
+                }]
+
+            }
+          }
+          let(:manifest_text) { manifest.to_yaml }
+          let(:cloud_config) { CloudConfig.make(manifest: cloud_config_hash) }
+          let(:deployment) { Deployment.make(name: 'deployment', manifest: manifest_text, cloud_config: cloud_config) }
+
+          context "when lifecycle is 'service'" do
+            let(:lifecycle) { 'service' }
+            it "returns 'service'" do
+              expect(subject.lifecycle).to eq('service')
+            end
+          end
+
+          context "when lifecycle is 'errand'" do
+            let(:lifecycle) { 'errand' }
+            it "returns 'errand'" do
+              expect(subject.lifecycle).to eq('errand')
+            end
+          end
+
+          context 'when no manifest is stored in the database' do
+            let(:manifest_text) { nil }
+            it "returns 'nil'" do
+              expect(subject.lifecycle).to be_nil
+            end
+          end
+        end
+      end
+    end
+
+    describe '#expects_vm?' do
+
+      context "when lifecycle is 'errand'" do
+        before(:each) { allow(subject).to receive(:lifecycle).and_return('errand') }
+
+        it "doesn't expect vm" do
+          expect(subject.expects_vm?).to eq(false)
+        end
+      end
+
+      context "when lifecycle is 'service'" do
+        before(:each) { allow(subject).to receive(:lifecycle).and_return('service') }
+
+        ['started', 'stopped'].each do |state|
+
+          context "when state is '#{state}'" do
+            before(:each) { allow(subject).to receive(:state).and_return(state) }
+
+            it 'expects a vm' do
+              expect(subject.expects_vm?).to eq(true)
+            end
+          end
+        end
+
+        context "when state is 'detached'" do
+          before(:each) { allow(subject).to receive(:state).and_return('detached') }
 
           it "doesn't expect vm" do
             expect(subject.expects_vm?).to eq(false)
           end
-        end
-
-        context "when lifecycle is 'service'" do
-          let(:lifecycle) { 'service' }
-
-          ['started', 'stopped'].each do |state|
-
-            context "when state is '#{state}'" do
-              subject { described_class.make(deployment: deployment, job: 'job-1', state: "#{state}") }
-
-              it 'expects a vm' do
-                expect(subject.expects_vm?).to eq(true)
-              end
-            end
-          end
-
-          context "when state is 'detached'" do
-            subject { described_class.make(deployment: deployment, job: 'job-1', state: 'detached') }
-
-            it "doesn't expect vm" do
-              expect(subject.expects_vm?).to eq(false)
-            end
-          end
-
         end
       end
     end

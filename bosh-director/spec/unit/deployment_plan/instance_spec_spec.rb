@@ -8,6 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
     let(:links) { {'link_name' => {'stuff' => 'foo'}} }
+    let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
@@ -30,6 +31,7 @@ module Bosh::Director::DeploymentPlan
         compilation?: false,
         update_spec: {},
         properties: properties,
+        lifecycle: lifecycle,
       )
     }
     let(:index) { 0 }
@@ -285,6 +287,26 @@ module Bosh::Director::DeploymentPlan
             expect(spec['resource_pool']).to eq('fake-vm-type')
             expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
             expect(spec['ip']).to eq('192.0.2.19')
+          end
+        end
+      end
+    end
+    describe '#full_spec' do
+      context 'when CompilationJobs' do
+        let(:lifecycle) { nil }
+        context 'lifecycle is not set' do
+          it "contains 'nil' for 'lifecycle'" do
+            expect(instance_spec.full_spec['lifecycle']).to be_nil
+          end
+        end
+      end
+
+      InstanceGroup::VALID_LIFECYCLE_PROFILES.each do |lifecycle_value|
+        context "when 'lifecycle' is set to '#{lifecycle_value}'" do
+          let(:lifecycle) { lifecycle_value }
+
+          it "contains '#{lifecycle_value}' for 'lifecycle'" do
+            expect(instance_spec.full_spec['lifecycle']).to eq(lifecycle_value)
           end
         end
       end

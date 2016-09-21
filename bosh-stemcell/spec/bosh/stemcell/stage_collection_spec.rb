@@ -126,6 +126,7 @@ module Bosh::Stemcell
 
       let(:agent_stages) do
         [
+          :bosh_libyaml,
           :bosh_ruby,
           :bosh_go_agent,
           :bosh_micro_go,

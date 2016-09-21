@@ -638,7 +638,94 @@ describe 'using director with config server', type: :integration do
                   expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
 
                   subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
-                  expect(subject_alt_name.to_s).to include('*.our-instance-group.a.simple.bosh')
+                  expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
+                end
+
+                context 'when an instance group has multiple networks' do
+                  let(:job_properties) do
+                    {
+                      'smurfs' => {
+                        'phone_password' => 'vroom',
+                        'happiness_level' => 5
+                      },
+                      'gargamel' => {
+                        'secret_recipe' => 'hello',
+                        'cert' => '((gargamel_certificate_placeholder))'
+                      }
+                    }
+                  end
+
+                  let(:cloud_config) {
+                    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+                    cloud_config_hash['resource_pools'].first['size'] = 1
+                    cloud_config_hash['networks'] = [
+                      {
+                        'name' => 'a',
+                        'subnets' => [
+                          {
+                            'range' => '192.168.1.0/24',
+                            'gateway' => '192.168.1.1',
+                            'dns' => ['192.168.1.2'],
+                            'static' => '192.168.1.10-192.168.1.15',
+                            'reserved' => [],
+                            'cloud_properties' => {},
+                          }
+                        ]
+                      },
+                      {
+                        'name' => 'b',
+                        'subnets' => [
+                          {
+                            'range' => '192.168.2.0/24',
+                            'gateway' => '192.168.2.1',
+                            'dns' => ['192.168.2.2'],
+                            'static' => '192.168.2.10-192.168.2.15',
+                            'reserved' => [],
+                            'cloud_properties' => {},
+                          }
+                        ]
+                      }
+                    ]
+                    cloud_config_hash
+                  }
+
+                  before do
+                    manifest_hash['jobs'].first['networks'] = [
+                      {
+                        'name' => 'a',
+                        'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),
+                        'default' => %w(dns gateway addressable)},
+                      {
+                        'name' => 'b',
+                        'static_ips' => %w(192.168.2.10 192.168.2.11 192.168.2.12),
+                      }
+                    ]
+                  end
+
+                  it 'generates cert with SAN including all the networks with no duplicates' do
+                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+                    generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+
+                    vms = director.vms('simple', env: client_env).select{ |vm|  vm.job_name == 'our_instance_group' }
+
+                    vms.each do |vm|
+                      generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+                      generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+                      root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+                      expect(generated_cert).to eq(generated_cert_response['certificate'])
+                      expect(generated_private_key).to eq(generated_cert_response['private_key'])
+                      expect(root_ca).to eq(generated_cert_response['ca'])
+
+                      certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
+                      expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
+
+                      subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
+                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
+                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.b.simple.bosh/).count).to eq(1)
+                    end
+                  end
                 end
 
                 context 'when placeholders start with exclamation mark' do
