@@ -70,7 +70,7 @@ module Bosh::Clouds
       context = {
           'director_uuid' => @director_uuid
       }
-      context['cpi_properties'] = @properties_from_cpi_config unless @properties_from_cpi_config.nil?
+      context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
       request = JSON.dump({
           'method' => method_name.gsub(/\?$/,''),
