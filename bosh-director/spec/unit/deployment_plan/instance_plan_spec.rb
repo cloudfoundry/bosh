@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
+    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, tags: tags) }
+
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
@@ -22,6 +24,10 @@ module Bosh::Director::DeploymentPlan
       }
     end
 
+    let(:tags) do
+      {'key1' => 'value1'}
+    end
+
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
@@ -36,7 +42,6 @@ module Bosh::Director::DeploymentPlan
     }
     let(:network_plans) { [] }
     let(:job_state) { 'running' }
-    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
     let(:existing_instance) { instance_model }
 
     let(:instance_group_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
@@ -65,6 +70,25 @@ module Bosh::Director::DeploymentPlan
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)
       instance_group.add_instance_plans([instance_plan])
+    end
+
+    describe '#initialize' do
+      context 'with defaults' do
+        it 'correctly sets instance variables' do
+          expect(instance_plan.recreate_deployment).to eq(false)
+          expect(instance_plan.skip_drain).to eq(false)
+        end
+      end
+
+      context 'with given values' do
+        it 'correctly sets instance variables' do
+          expect(instance_plan.desired_instance).to eq(desired_instance)
+          expect(instance_plan.existing_instance).to eq(existing_instance)
+          expect(instance_plan.instance).to eq(instance)
+          expect(instance_plan.network_plans).to eq(network_plans)
+          expect(instance_plan.tags).to eq({'key1' => 'value1'})
+        end
+      end
     end
 
     describe 'networks_changed?' do

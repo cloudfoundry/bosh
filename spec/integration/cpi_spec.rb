@@ -353,6 +353,159 @@ describe 'CPI calls', type: :integration do
       end
     end
 
+    context 'when adding tags and changing networking on existing deployment' do
+      it 'recreates VM with correct CPI requests and includes tags' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest_hash['jobs'] = [
+          Bosh::Spec::Deployments.simple_job(
+            name: 'first-job',
+            static_ips: ['192.168.1.10'],
+            instances: 1,
+            templates: ['name' => 'foobar_without_packages'],
+            persistent_disk_pool: Bosh::Spec::Deployments.disk_pool['name'],
+          )
+        ]
+
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
+        cloud_config_hash['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
+        first_deploy_invocations = current_sandbox.cpi.invocations
+
+        expect(first_deploy_invocations[0].method_name).to eq('create_stemcell')
+        expect(first_deploy_invocations[0].inputs).to match({
+          'image_path' => String,
+          'cloud_properties' => {
+            'property1' => 'test',
+            'property2' => 'test'
+          }
+        })
+
+        expect(first_deploy_invocations[1].method_name).to eq('create_vm')
+        expect(first_deploy_invocations[1].inputs).to match({
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'ip' => '192.168.1.10',
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            }
+          },
+          'disk_cids' => [],
+          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+        })
+
+        expect(first_deploy_invocations[2].method_name).to eq('set_vm_metadata')
+        expect(first_deploy_invocations[2].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'Test Director',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+          }
+        })
+        expect_name(first_deploy_invocations[2])
+        vm_cid = first_deploy_invocations[2].inputs['vm_cid']
+
+        expect(first_deploy_invocations[3].method_name).to eq('create_disk')
+        expect(first_deploy_invocations[3].inputs).to match({
+          'size' => 123,
+          'cloud_properties' => {},
+          'vm_locality' => vm_cid
+        })
+
+        expect(first_deploy_invocations[4].method_name).to eq('attach_disk')
+        expect(first_deploy_invocations[4].inputs).to match({
+          'vm_cid' => vm_cid,
+          'disk_id' => String
+        })
+        disk_cid = first_deploy_invocations[4].inputs['disk_id']
+
+        # force a recreate by changing IP address
+        manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11']
+        manifest_hash.merge!({
+          'tags' => {
+            'tag1' => 'value1',
+          },
+        })
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
+
+        expect(second_deploy_invocations[0].method_name).to eq('snapshot_disk')
+        expect(second_deploy_invocations[0].inputs).to match({
+          'disk_id' => disk_cid,
+          'metadata' => {
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'index' => 0,
+            'director_name' => 'Test Director',
+            'director_uuid' => 'deadbeef',
+            'agent_id' => String
+          }
+        })
+
+        expect(second_deploy_invocations[1].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[1].inputs).to match({
+          'vm_cid' => vm_cid
+        })
+
+        expect(second_deploy_invocations[2].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[2].inputs).to match({
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'ip' => '192.168.1.11',
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            }
+          },
+          'disk_cids' => [disk_cid],
+          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+        })
+
+        expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[3].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'Test Director',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+          }
+        })
+
+        expect_name(second_deploy_invocations[3])
+
+        new_vm_cid = second_deploy_invocations[3].inputs['vm_cid']
+
+        expect(second_deploy_invocations[4].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[4].inputs).to match({
+          'vm_cid' => new_vm_cid,
+          'disk_id' => disk_cid
+        })
+      end
+    end
+
     context 'when recreating via cck' do
       let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 

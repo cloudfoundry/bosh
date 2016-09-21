@@ -25,12 +25,14 @@ module Bosh::Director
     let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}) }
     let(:instance_plan) do
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
-      instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance)
+      instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, tags: tags)
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
 
       instance_plan
     end
-
+    let(:tags) do
+      {'key1' => 'value1'}
+    end
     before do
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
@@ -122,7 +124,7 @@ module Bosh::Director
           allow(job).to receive(:update)
           allow(vm_deleter).to receive(:delete_for_instance)
 
-          expect(vm_recreator).to receive(:recreate_vm)
+          expect(vm_recreator).to receive(:recreate_vm).with(anything, anything, tags)
           expect(state_applier).to receive(:apply)
 
           updater.update(instance_plan)

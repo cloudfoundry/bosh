@@ -238,9 +238,6 @@ module Bosh::Director
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)
 
-  # Tag
-  TagAlreadyExists = err(210001)
-
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)
   CloudNotEnoughDiskSpace = err(390003)

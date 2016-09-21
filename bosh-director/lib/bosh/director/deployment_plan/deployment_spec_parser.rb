@@ -31,20 +31,11 @@ module Bosh::Director
         parse_releases
         parse_update(parse_options)
         parse_instance_groups(parse_options)
-        parse_tags
 
         @deployment
       end
 
       private
-
-      def parse_tags
-        if @deployment_manifest.has_key?('tags')
-          safe_property(@deployment_manifest, 'tags', :class => Hash).each_pair do |key, value|
-            @deployment.add_tag(DeploymentPlan::Tag.parse({key => value}))
-          end
-        end
-      end
 
       def parse_stemcells
         if @deployment_manifest.has_key?('stemcells')

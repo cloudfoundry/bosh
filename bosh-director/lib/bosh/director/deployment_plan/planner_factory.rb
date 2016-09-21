@@ -12,6 +12,8 @@ module Bosh
       end
 
       class PlannerFactory
+        include ValidationHelper
+
         def self.create(logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
           manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
@@ -66,7 +68,8 @@ module Bosh
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
             'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
-            'canaries' => validate_and_get_argument(options['canaries'], 'canaries')
+            'canaries' => validate_and_get_argument(options['canaries'], 'canaries'),
+            'tags' => parse_tags(migrated_hybrid_manifest_hash),
           }
 
           @logger.info('Creating deployment plan')
@@ -96,6 +99,18 @@ module Bosh
           DeploymentValidator.new.validate(deployment)
 
           deployment
+        end
+
+        def parse_tags(manifest_hash)
+          tags = {}
+
+          if manifest_hash.has_key?('tags')
+            safe_property(manifest_hash, 'tags', :class => Hash).each_pair do |key, value|
+              tags[key] = value
+            end
+          end
+
+          tags
         end
 
         def process_links(deployment)

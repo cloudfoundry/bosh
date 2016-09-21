@@ -7,7 +7,7 @@ module Bosh::Director
 
       let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
       let(:skip_drain) { SkipDrain.new(true) }
-      let(:index_assigner) { nil }
+      let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
       let(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
       let(:existing_instance_model) do
         Models::Instance.make(
@@ -48,6 +48,16 @@ module Bosh::Director
           model: deployment_model
         )
       end
+      let(:desired_instance) do
+        instance_double('Bosh::Director::DeploymentPlan::DesiredInstance')
+      end
+      let(:instance_group) do
+        instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
+      end
+
+      let(:plan_instance) do
+        instance_double('Bosh::Director::DeploymentPlan::Instance')
+      end
 
       let(:states_by_existing_instance) do
         {
@@ -75,9 +85,20 @@ module Bosh::Director
           options)
       end
 
-      before { BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+      before {
+        BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+        allow(desired_instance).to receive(:instance_group).and_return(instance_group)
+        allow(desired_instance).to receive(:index).and_return(1)
+        allow(desired_instance).to receive(:index=)
+        allow(desired_instance).to receive(:deployment)
+        allow(instance_repo).to receive(:create)
+        allow(instance_repo).to receive(:fetch_existing).and_return(plan_instance)
+        allow(instance_group).to receive(:name).and_return('group-name')
+        allow(index_assigner).to receive(:assign_index)
+        allow(plan_instance).to receive(:update_description)
+      }
 
-      context 'obsolete_instance_plan' do
+      describe '#obsolete_instance_plan' do
         it 'returns an instance plan with a nil desired instance' do
           instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(instance_plan.desired_instance).to be_nil
@@ -91,6 +112,43 @@ module Bosh::Director
         it 'fetches network reservations' do
           instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(ip_repo.contains_ip?(ip_to_i('192.168.1.1'), 'name-7')).to eq(true)
+        end
+      end
+
+      describe '#desired_existing_instance_plan' do
+        let(:tags) { {'key1' => 'value1'} }
+        let(:options) { {'tags' => tags} }
+
+        it 'passes tags to instance plan creation' do
+          expect(InstancePlan).to receive(:new).with(
+            desired_instance: anything,
+            existing_instance: anything,
+            instance: anything,
+            skip_drain: anything,
+            recreate_deployment: anything,
+            need_to_fix: anything,
+            tags: tags
+          )
+
+          instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
+        end
+      end
+
+      describe '#desired_new_instance_plan' do
+        let(:tags) { {'key1' => 'value1'} }
+        let(:options) { {'tags' => tags} }
+
+        it 'passes tags to instance plan creation' do
+          expect(InstancePlan).to receive(:new).with(
+            desired_instance: anything,
+            existing_instance: anything,
+            instance: anything,
+            skip_drain: anything,
+            recreate_deployment: anything,
+            tags: tags
+          )
+
+          instance_plan_factory.desired_new_instance_plan(desired_instance)
         end
       end
     end
