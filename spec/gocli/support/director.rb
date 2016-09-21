@@ -38,9 +38,9 @@ module Bosh::Spec
       end
     end
 
-    def instances
+    def instances(deployment_name=Deployments::DEFAULT_DEPLOYMENT_NAME)
       options = {json: true}
-      instances_output = @runner.run("instances -d #{Deployments::DEFAULT_DEPLOYMENT_NAME} --details", options)
+      instances_output = @runner.run("instances -d #{deployment_name} --details", options)
       instances = parse_table_with_ips(instances_output)
 
       instances.map do |instance_data|
