@@ -143,15 +143,9 @@ module Bosh::Director::Models
     end
 
     def lifecycle
-      return nil if self.deployment.manifest == nil
+      return spec['lifecycle'] if spec && spec.has_key?('lifecycle')
 
-      deployment_plan = create_deployment_plan_from_manifest(deployment)
-      instance_group = deployment_plan.instance_group(self.job)
-      if instance_group
-        instance_group.lifecycle
-      else
-        nil
-      end
+      get_lifecycle_from_deployment_plan
     end
 
     def expects_vm?
@@ -175,6 +169,20 @@ module Bosh::Director::Models
 
     def json_encode(value)
       value.nil? ? 'null' : JSON.generate(value)
+    end
+
+    private
+
+    def get_lifecycle_from_deployment_plan
+      return nil if self.deployment.manifest == nil
+
+      deployment_plan = create_deployment_plan_from_manifest(deployment)
+      instance_group = deployment_plan.instance_group(self.job)
+      if instance_group
+        instance_group.lifecycle
+      else
+        nil
+      end
     end
   end
 
