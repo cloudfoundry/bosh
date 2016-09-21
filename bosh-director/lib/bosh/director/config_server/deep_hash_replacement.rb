@@ -1,5 +1,9 @@
+require 'bosh/director/config_server/config_server_helper'
+
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
+    include ConfigServerHelper
+
     def replacement_map(obj, subtrees_to_ignore = [])
       map = []
       create_replacement_map(map, obj)
@@ -28,9 +32,9 @@ module Bosh::Director::ConfigServer
         end
       else
         path ||= []
-        if obj.to_s.match(/^\(\(.*\)\)$/)
-          key_name = obj.gsub(/(^\(\(|\)\)$)/, '')
-          result << {'key' => key_name, 'path' => path}
+        if is_placeholder?(obj.to_s)
+          extracted_key = extract_placeholder_key(obj.to_s)
+          result << {'key' => extracted_key, 'path' => path}
         end
       end
     end

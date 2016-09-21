@@ -1,5 +1,8 @@
+require 'bosh/director/config_server/config_server_helper'
+
 module Bosh::Director::ConfigServer
   class EnabledClient
+    include ConfigServerHelper
 
     def initialize(http_client, logger)
       @config_server_http_client = http_client
@@ -67,17 +70,17 @@ module Bosh::Director::ConfigServer
         result = default_prop
       else
         if is_placeholder?(provided_prop)
-          provided_prop_with_no_brackets = strip_brackets_from_placeholder(provided_prop)
+          extracted_key = extract_placeholder_key(provided_prop)
 
-          if key_exists?(provided_prop_with_no_brackets)
+          if key_exists?(extracted_key)
             result = provided_prop
           else
             if default_prop.nil?
               case type
                 when 'password'
-                  generate_password(provided_prop_with_no_brackets)
+                  generate_password(extracted_key)
                 when 'certificate'
-                  generate_certificate(provided_prop_with_no_brackets, options)
+                  generate_certificate(extracted_key, options)
               end
               result = provided_prop
             else
@@ -94,13 +97,12 @@ module Bosh::Director::ConfigServer
     private
 
     def get_value_for_key(key)
-      stripped_key = process_key(key)
-      response = @config_server_http_client.get(stripped_key)
+      response = @config_server_http_client.get(key)
 
       if response.kind_of? Net::HTTPOK
         JSON.parse(response.body)['value']
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{stripped_key}' in the config server"
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
       else
         raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
       end
@@ -149,7 +151,7 @@ module Bosh::Director::ConfigServer
         'type' => 'password'
       }
 
-      response = @config_server_http_client.post(process_key(key), request_body)
+      response = @config_server_http_client.post(key, request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
@@ -167,25 +169,12 @@ module Bosh::Director::ConfigServer
         }
       }
 
-      response = @config_server_http_client.post(process_key(key), request_body)
+      response = @config_server_http_client.post(key, request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerCertificateGenerationError, 'Config Server failed to generate certificate'
       end
-    end
-
-    def is_placeholder?(value)
-      value.to_s.match(/^\(\(.*\)\)$/)
-    end
-
-    def strip_brackets_from_placeholder(placeholder)
-      placeholder.gsub(/(^\(\(|\)\)$)/, '')
-    end
-
-    # process key before contacting config server
-    def process_key(placeholder)
-      placeholder.gsub(/^!/, '') # remove ! because of spiff
     end
   end
 
