@@ -1,6 +1,8 @@
 ---
-resources:
+groups: []
+resource_types: []
 
+resources:
   - name: bosh-src
     type: git
     source:
@@ -26,6 +28,11 @@ resources:
       repository: cloudfoundry/bosh
 
   - name: uaa-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/uaa-release
+
+  - name: uaa-release-3232
     type: bosh-io-release
     source:
       repository: cloudfoundry/uaa-release
@@ -162,7 +169,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
-          - get: uaa-release
+          - get: uaa-release-3232
             trigger: true
           - get: bosh-release-255
           - get: bosh-aws-cpi-release
@@ -185,7 +192,7 @@ jobs:
           file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
           input_mapping:
             stemcell: ubuntu-trusty-3232-stemcell
-            release: uaa-release
+            release: uaa-release-3232
           params:
             BOSH_TARGET_IP: 10.0.2.9
         - put: uaa-on-ubuntu-trusty-3232
