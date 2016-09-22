@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `4RVFfS5BLwb77m9sJzp5x8Wshqz5K0bY`
+  - USN-3087-1: OpenSSL vulnerabilities
+  - built from 257.x (4b714e7b53ebeac57df90e12519fa5927b8f9590)
+
 * `sKQZ9Gaut79JCdB5_OTZP55rvnKCd9Hl`
   - Backport azure ephemeral disk on root (4548e8e)
   - Backport google file perms fix (d5b1ac9)
@@ -477,6 +481,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `7OzQIleCJhZ4rDNEOS.lNEcodOohuE3u`
+  - USN-3087-1: OpenSSL vulnerabilities
+  - built from 257.x (4b714e7b53ebeac57df90e12519fa5927b8f9590)
 
 * `3MOAZkHJszaepuCsTUpqtIuOFNAYkpWg`
   - Backport azure ephemeral disk on root (4548e8e)
