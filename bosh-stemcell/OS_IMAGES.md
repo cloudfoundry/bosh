@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `OUw7AQndSV3uHlQkE4VIy5KmI3TkXmnY`
+  - USN-3087-1: OpenSSL vulnerabilities
+  - build from 257.x-3263.x (4a25cba4e8a376337a877cba5ab773fe4512da8a)
+
 * `tk6W0QWML8TQi4a6VrEEU8YxUcnzbTcg`
   - USN-3084-*: kernel vulnerabilities
   - built from 257.x-3263.x (793365982c27b4f6a49aa90b95f514f1ffe56677)
@@ -485,6 +489,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `rf5dgfOjrHVARcLz8.WchFatRffL7U1g`
+  - USN-3087-1: OpenSSL vulnerabilities
+  - build from 257.x-3263.x (4a25cba4e8a376337a877cba5ab773fe4512da8a)
 
 * `75nXPiK.._zyEyusgiwlQBVlVUc2uq_L`
   - USN-3084-*: kernel vulnerabilities
