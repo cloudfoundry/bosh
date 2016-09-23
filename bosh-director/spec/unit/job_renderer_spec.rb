@@ -149,6 +149,16 @@ module Bosh::Director
           })
         end
 
+        context 'when the dry_run flag is set to true' do
+          it 'does not persist rendered templates in the blobstore' do
+            expect(latest_archive).to_not receive(:update)
+            expect(rendered_job_instance).to_not receive(:persist)
+            expect(instance_model).to_not receive(:add_rendered_templates_archive)
+            expect(instance).to_not receive(:rendered_templates_archive=)
+            renderer.render_job_instance(instance_plan, {'dry_run' => true})
+          end
+        end
+
         context 'when latest archive has matching content_sha1' do
           let(:configuration_hash) { 'fake-latest-content-sha1' }
 
