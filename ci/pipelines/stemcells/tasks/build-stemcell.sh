@@ -41,6 +41,12 @@ set_up_vagrant_private_key
 vagrant up remote --provider=aws
 
 vagrant ssh -c "
+  cd /bosh/go/src/github.com/cloudfoundry/bosh-agent
+	git fetch --all
+	git checkout warden_stemcell
+" remote
+
+vagrant ssh -c "
   cd /bosh
   bundle
   export CANDIDATE_BUILD_NUMBER=$build_num
