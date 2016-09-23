@@ -87,7 +87,7 @@ nginx/nginx-1.11.1.tar.gz:
   object_id: 7bdb66cc-ef74-4e21-b114-23e87f8437c5
   sha: 6b6172b26628b95c4ad0d6cb5b11eb4aa59c2a83
   size: 913417
-s3cli/s3cli-0.0.41-linux-amd64:
-  object_id: 78528bfb-db30-4df8-865f-ac65eb77c29a
-  sha: 04a38c1f69167af64eb52b0226232dd30223bce4
-  size: 12288048
+s3cli/s3cli-0.0.45-linux-amd64:
+  object_id: 0c22e9a1-5d7a-48d6-9d5f-178237006042
+  sha: dd0bad17c31d215189c6ad25daf80cd00226a940
+  size: 12289048
