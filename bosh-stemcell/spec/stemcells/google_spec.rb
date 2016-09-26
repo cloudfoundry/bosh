@@ -21,16 +21,33 @@ describe 'Google Stemcell', stemcell_image: true do
     let(:mode) { '644' }
     let(:owner) { 'root' }
     let(:group) { 'root' }
+
+    describe 'Google agent has configuration file' do
+      subject { file('/etc/default/instance_configs.cfg.template') }
+
+      it { should be_file }
+      it { should be_owned_by(owner) }
+      it { should be_grouped_into(group) }
+    end
+
     case ENV['OS_NAME']
       when 'ubuntu'
         [
-          '/etc/init/google-accounts-manager-service.conf',
-          '/etc/init/google-accounts-manager-task.conf',
-          '/etc/init/google-clock-sync-manager.conf'
+          '/etc/init/google-accounts-daemon.conf',
+          '/etc/init/google-clock-skew-daemon.conf',
+          '/etc/init/google-instance-setup.conf',
+          '/etc/init/google-ip-forwarding-daemon.conf',
+          '/etc/init/google-network-setup.conf',
+          '/etc/init/google-shutdown-scripts.conf',
+          '/etc/init/google-startup-scripts.conf',
+          '/usr/bin/google_instance_setup',
+          '/usr/bin/google_ip_forwarding_daemon',
+          '/usr/bin/google_accounts_daemon',
+          '/usr/bin/google_clock_skew_daemon',
+          '/usr/bin/google_metadata_script_runner',
         ].each do |conf_file|
           describe file(conf_file) do
             it { should be_file }
-            it { should be_mode(mode) }
             it { should be_owned_by(owner) }
             it { should be_grouped_into(group) }
           end
