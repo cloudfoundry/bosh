@@ -69,7 +69,9 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
-  context 'installed by system-network on all IaaSes' do
+  context 'installed by system-network', {
+    exclude_on_warden: true
+  } do
     describe file('/etc/hostname') do
       it { should be_file }
       its (:content) { should eq('bosh-stemcell') }
