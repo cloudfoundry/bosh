@@ -47,7 +47,7 @@ module Bosh::Director
     end
 
     it 'has well-formed description' do
-      expect(handler.description).to eq('mysql_node/uuid-1 (0) (vm-cid) is not responding')
+      expect(handler.description).to eq("VM for 'mysql_node/uuid-1 (0)' with cloud ID 'vm-cid' is not responding.")
     end
 
     describe 'reboot_vm resolution' do
@@ -195,27 +195,40 @@ module Bosh::Director
             }
           end
 
-          it 'recreates the VM and skips post_start script' do
-            expect_vm_to_be_created
+          describe 'recreate_vm_skip_post_start' do
+            it 'has a plan' do
+              plan_summary = handler.instance_eval(&ProblemHandlers::UnresponsiveAgent.plan_for(:recreate_vm_skip_post_start))
+              expect(plan_summary).to eq('Recreate VM without waiting for processes to start')
+            end
 
-            expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
-            handler.apply_resolution(:recreate_vm_skip_post_start)
+            it 'recreates the VM and skips post_start script' do
+              expect_vm_to_be_created
 
-            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
+              handler.apply_resolution(:recreate_vm_skip_post_start)
+
+              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+            end
           end
 
-          it 'recreates the VM and runs post_start script' do
-            allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+          describe 'recreate_vm' do
+            it 'has a plan' do
+              plan_summary = handler.instance_eval(&ProblemHandlers::UnresponsiveAgent.plan_for(:recreate_vm))
+              expect(plan_summary).to eq('Recreate VM and wait for processes to start')
+            end
 
-            expect_vm_to_be_created
-            expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
-            handler.apply_resolution(:recreate_vm)
+            it 'recreates the VM and runs post_start script' do
+              allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
 
-            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect_vm_to_be_created
+              expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
+              handler.apply_resolution(:recreate_vm)
+
+              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+            end
           end
-
         end
 
         it 'recreates the VM' do

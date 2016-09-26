@@ -8,13 +8,15 @@ module Bosh::Director
       Models::Instance.make(
         job: manifest['jobs'].first['name'],
         index: 0,
+        uuid: '1234-5678',
         deployment: deployment_model,
         cloud_properties_hash: {'foo' => 'bar'},
         spec: spec.merge({env: {'key1' => 'value1'}}),
         agent_id: 'agent-007',
-        vm_cid: 'vm-cid'
+        vm_cid: vm_cid
       )
     end
+    let(:vm_cid) { 'vm-cid' }
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, instance.id, {}) }
     let(:spec) do
       {
@@ -46,8 +48,19 @@ module Bosh::Director
       handler.auto_resolve
     end
 
-    it 'has description' do
-      expect(handler.description).to match(/VM with cloud ID 'vm-cid' missing./)
+    describe '#description' do
+      context 'when vm cid is given' do
+        it 'includes instance job name, uuid, index and vm cid' do
+          expect(handler.description).to eq("VM for 'foobar/1234-5678 (0)' with cloud ID 'vm-cid' missing.")
+        end
+      end
+
+      context 'when vm cid is nil' do
+        let(:vm_cid) { nil }
+        it 'includes instance job name, uuid, index but no vm cid' do
+          expect(handler.description).to eq("VM for 'foobar/1234-5678 (0)' missing.")
+        end
+      end
     end
 
     describe 'Resolutions:' do
@@ -116,25 +129,42 @@ module Bosh::Director
           }
         end
 
-        it 'recreates a VM and skips post_start script' do
-          expect_vm_to_be_created
-          expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
-          handler.apply_resolution(:recreate_vm_skip_post_start)
+        describe 'recreate_vm_skip_post_start' do
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          it 'has a plan' do
+            plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm_skip_post_start))
+            expect(plan_summary).to eq('Recreate VM without waiting for processes to start')
+          end
+
+          it 'recreates a VM and skips post_start script' do
+            expect_vm_to_be_created
+            expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
+            handler.apply_resolution(:recreate_vm_skip_post_start)
+
+            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          end
         end
 
-        it 'recreates a VM and runs post_start script' do
-          allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+        describe 'recreate_vm' do
 
-          expect_vm_to_be_created
-          expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
-          handler.apply_resolution(:recreate_vm)
+          it 'has a plan' do
+            plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm))
+            expect(plan_summary).to eq('Recreate VM and wait for processes to start')
+          end
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          it 'recreates a VM and runs post_start script' do
+            allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+
+            expect_vm_to_be_created
+            expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
+            handler.apply_resolution(:recreate_vm)
+
+            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          end
         end
+
       end
 
       it 'deletes VM reference' do

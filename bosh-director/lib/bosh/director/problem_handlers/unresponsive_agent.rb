@@ -19,7 +19,12 @@ module Bosh::Director
       end
 
       def description
-        "#{@instance} (#{@instance.vm_cid}) is not responding"
+        with_vm_cid = if @instance.vm_cid
+          " with cloud ID '#{@instance.vm_cid}'"
+        else
+          ''
+        end
+        "VM for '#{@instance}'#{with_vm_cid} is not responding."
       end
 
       resolution :ignore do
@@ -33,12 +38,12 @@ module Bosh::Director
       end
 
       resolution :recreate_vm_skip_post_start do
-        plan { "Recreate VM for '#{@instance}' without waiting for processes to start" }
+        plan { 'Recreate VM without waiting for processes to start' }
         action { validate; recreate_vm_skip_post_start(@instance) }
       end
 
       resolution :recreate_vm do
-        plan { "Recreate VM for '#{@instance}' and wait for processes to start" }
+        plan { 'Recreate VM and wait for processes to start' }
         action { validate; recreate_vm(@instance) }
       end
 

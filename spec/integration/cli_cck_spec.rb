@@ -25,8 +25,8 @@ describe 'cli: cloudcheck', type: :integration do
         expect(cloudcheck_response).to match(regexp('3 unresponsive'))
         expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' without waiting for processes to start
-  4. Recreate VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' and wait for processes to start
+  3. Recreate VM without waiting for processes to start
+  4. Recreate VM and wait for processes to start
   5. Delete VM
   6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
       end
@@ -46,24 +46,24 @@ describe 'cli: cloudcheck', type: :integration do
       it 'deletes unresponsive VMs' do
         delete_vm = 5
         bosh_run_cck_with_resolution(3, delete_vm)
-        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+        expect(scrub_randoms(runner.run('cloudcheck --report', failure_expected: true))).to match_output %(
           Found 3 problems
 
-          Problem 1 of 3: VM with cloud ID '' missing.
-          Problem 2 of 3: VM with cloud ID '' missing.
-          Problem 3 of 3: VM with cloud ID '' missing.
+          Problem 1 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
+          Problem 2 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
+          Problem 3 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
         )
       end
 
       it 'deletes VM reference' do
         delete_vm_reference = 6
         bosh_run_cck_with_resolution(3, delete_vm_reference)
-        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+        expect(scrub_randoms(runner.run('cloudcheck --report', failure_expected: true))).to match_output %(
           Found 3 problems
 
-          Problem 1 of 3: VM with cloud ID '' missing.
-          Problem 2 of 3: VM with cloud ID '' missing.
-          Problem 3 of 3: VM with cloud ID '' missing.
+          Problem 1 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
+          Problem 2 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
+          Problem 3 of 3: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
         )
       end
 
@@ -80,9 +80,9 @@ describe 'cli: cloudcheck', type: :integration do
           expect(report_output).to match(regexp('Found 2 problems'))
 
           auto_output = runner.run('cloudcheck --auto')
-          expect(auto_output).to_not match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(1\)/)
-          expect(auto_output).to match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(0\)/)
-          expect(auto_output).to match(/Started applying problem resolutions > foobar\/[a-z0-9\-]+ \(2\)/)
+          expect(auto_output).to_not match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(1\)'/)
+          expect(auto_output).to match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(0\)'/)
+          expect(auto_output).to match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(2\)'/)
         end
       end
     end
@@ -97,8 +97,8 @@ describe 'cli: cloudcheck', type: :integration do
         expect(cloudcheck_response).to_not match(regexp('No problems found'))
         expect(cloudcheck_response).to match(regexp('1 missing'))
         expect(cloudcheck_response).to match(%r(1\. Skip for now
-  2\. Recreate VM for 'foobar\/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \(\d\)' without waiting for processes to start
-  3\. Recreate VM for 'foobar\/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \(\d\)' and wait for processes to start
+  2\. Recreate VM without waiting for processes to start
+  3\. Recreate VM and wait for processes to start
   4\. Delete VM reference))
       end
 
@@ -116,11 +116,16 @@ describe 'cli: cloudcheck', type: :integration do
 
       it 'deletes missing VM reference' do
         delete_vm_reference = 4
-        bosh_run_cck_with_resolution(1, delete_vm_reference)
-        expect(runner.run('cloudcheck --report', failure_expected: true)).to match_output %(
+        expect(scrub_randoms(runner.run('cloudcheck --report', failure_expected: true))).to match_output %(
           Found 1 problem
 
-          Problem 1 of 1: VM with cloud ID '' missing.
+          Problem 1 of 1: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' with cloud ID 'xxx' missing.
+        )
+        bosh_run_cck_with_resolution(1, delete_vm_reference)
+        expect(scrub_randoms(runner.run('cloudcheck --report', failure_expected: true))).to match_output %(
+          Found 1 problem
+
+          Problem 1 of 1: VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.
         )
       end
     end
@@ -245,5 +250,17 @@ describe 'cli: cloudcheck', type: :integration do
       fail("Cloud check failed, output: #{output}")
     end
     output
+  end
+
+  def scrub_randoms(text)
+    scrub_vm_cid(scrub_index(scrub_random_ids(text)))
+  end
+
+  def scrub_vm_cid(text)
+    text.gsub /'\d+'/, "'xxx'"
+  end
+
+  def scrub_index(text)
+    text.gsub /\(\d+\)/, "(x)"
   end
 end
