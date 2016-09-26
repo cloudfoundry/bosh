@@ -55,7 +55,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
-  context 'installed by system-network on all IaaSes' do
+  context 'installed by system-network on all IaaSes', { exclude_on_warden: true } do
     describe file('/etc/hostname') do
       it { should be_file }
       its (:content) { should eq('bosh-stemcell') }

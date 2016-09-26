@@ -30,6 +30,25 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
+  context 'installs recent version of unshare so it gets the -p flag', {
+    exclude_on_aws: true,
+    exclude_on_azure: true,
+    exclude_on_google: true,
+    exclude_on_vcloud: true,
+    exclude_on_vsphere: true,
+    exclude_on_openstack: true,
+    exclude_on_softlayer: true,
+  } do
+    context 'so we can run upstart in as PID 1 in the container' do
+      describe file('/var/vcap/bosh/bin/unshare') do
+        it { should be_file }
+        it { should be_executable }
+        it { should be_owned_by('root') }
+        it { should be_grouped_into('root') }
+      end
+    end
+  end
+
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
       it { should contain('ubuntu') }

@@ -85,6 +85,8 @@ jobs:
           tags: [vsphere-v5.1]
           passed:
             - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
@@ -101,6 +103,8 @@ jobs:
           tags: [vsphere-v5.1]
           passed:
             - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
@@ -176,7 +180,6 @@ jobs:
           HYPERVISOR:   boshlite
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: warden-boshlite-ubuntu-trusty
           params:
@@ -198,7 +201,6 @@ jobs:
           HYPERVISOR:   boshlite
           OS_NAME:      centos
           OS_VERSION:   '7'
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: warden-boshlite-centos-7
           params:
@@ -224,7 +226,6 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: aws-xen-ubuntu-trusty
           params:
@@ -246,7 +247,6 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: aws-xen-centos-7
           params:
@@ -272,7 +272,6 @@ jobs:
           HYPERVISOR:   hyperv
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: azure-hyperv-ubuntu-trusty
           params:
@@ -294,7 +293,6 @@ jobs:
           HYPERVISOR:   hyperv
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: azure-hyperv-centos-7
           params:
@@ -320,7 +318,6 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: google-kvm-ubuntu-trusty
           params:
@@ -342,7 +339,6 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: google-kvm-centos-7
           params:
@@ -368,7 +364,6 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: openstack-kvm-ubuntu-trusty-raw
           params:
@@ -393,7 +388,6 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: openstack-kvm-centos-7-raw
           params:
@@ -422,7 +416,6 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - put: softlayer-xen-ubuntu-trusty
         params:
           file: stemcell/*-go_agent.tgz
@@ -443,7 +436,6 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - put: softlayer-xen-centos-7
         params:
           file: stemcell/*-go_agent.tgz
@@ -468,7 +460,6 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: vsphere-esxi-ubuntu-trusty
           params:
@@ -490,7 +481,6 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      centos
           OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: vsphere-esxi-centos-7
           params:
@@ -516,7 +506,6 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: vcloud-esxi-ubuntu-trusty
           params:
