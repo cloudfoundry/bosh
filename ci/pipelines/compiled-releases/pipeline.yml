@@ -148,6 +148,8 @@ jobs:
           - get: bosh-src
           - get: bosh-release-255
             trigger: true
+            version:
+              version: "255.12"
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3232-stemcell
             trigger: true
@@ -219,7 +221,11 @@ jobs:
           - get: bosh-src
           - get: uaa-release-3232
             trigger: true
+            version:
+              version: "11.7"
           - get: bosh-release-255
+            version:
+              version: "255.12"
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3232-stemcell
             trigger: true
@@ -399,7 +405,11 @@ jobs:
           - get: bosh-src
           - get: uaa-release-3232
             trigger: true
+            version:
+              version: "11.7"
           - get: bosh-release-255
+            version:
+              version: "255.12"
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3233-stemcell
             trigger: true
