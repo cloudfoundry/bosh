@@ -11,7 +11,6 @@ module Bosh::Director
         @name = name
         @version = version
         @options = options
-        @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
 
         @stemcell_deleter = Helpers::StemcellDeleter.new(logger)
