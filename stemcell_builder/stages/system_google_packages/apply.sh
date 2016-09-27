@@ -7,21 +7,19 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-# Copy google daemon packages into chroot
-cp -R $assets_dir/usr $chroot/
-
-# Configure the Google guest environment
-# https://github.com/GoogleCloudPlatform/compute-image-packages#configuration
-cp $assets_dir/instance_configs.cfg.template $chroot/etc/default/
-
 os_type="$(get_os_type)"
 if [ "${os_type}" == "ubuntu" ]
 then
-  # Run google-accounts-manager and google-clock-sync-manager with upstart
-  cp $assets_dir/etc/init/google-accounts-manager-{task,service}.conf $chroot/etc/init/
-  cp $assets_dir/google-address-manager.conf $chroot/etc/init/
-  cp $assets_dir/google-clock-sync-manager.conf $chroot/etc/init/
-  chmod 0644 $chroot/etc/init/google*
+  # Copy google daemon packages into chroot
+  cp -R $assets_dir/*.deb $chroot/tmp/
+
+  # Configure the Google guest environment
+  # https://github.com/GoogleCloudPlatform/compute-image-packages#configuration
+  cp $assets_dir/instance_configs.cfg.template $chroot/etc/default/
+
+  run_in_chroot $chroot "apt-get update"
+  run_in_chroot $chroot "apt-get install -y python-setuptools python-boto"
+  run_in_chroot $chroot "dpkg --force-all -i /tmp/*.deb"
 elif [ "${os_type}" == "rhel" -o "${os_type}" == "centos" ]
 then
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
@@ -33,4 +31,4 @@ else
 fi
 
 # Hack: replace google metadata hostname with ip address (bosh agent might set a dns that it's unable to resolve the hostname)
-run_in_chroot $chroot "find /usr/share/google -type f -exec sed -i 's/metadata.google.internal/169.254.169.254/g' {} +"
+run_in_chroot $chroot "sed -i 's/metadata.google.internal/169.254.169.254/g' /usr/lib/python2.7/dist-packages/google_compute_engine/metadata_watcher.py"
