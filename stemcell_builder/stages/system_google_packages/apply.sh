@@ -20,7 +20,10 @@ then
 
   run_in_chroot $chroot "apt-get update"
   run_in_chroot $chroot "apt-get install -y python-setuptools python-boto"
-  run_in_chroot $chroot "dpkg --force-all -i /tmp/google/*.deb"
+  run_in_chroot $chroot "dpkg --unpack /tmp/google/*.deb"
+  run_in_chroot $chroot "rm /var/lib/dpkg/info/google-compute-engine-init-trusty.postinst"
+  run_in_chroot $chroot "dpkg --configure google-compute-engine-init-trusty google-config-trusty google-compute-engine-trusty"
+  run_in_chroot $chroot "apt-get install -yf"
 elif [ "${os_type}" == "rhel" -o "${os_type}" == "centos" ]
 then
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
