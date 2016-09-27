@@ -15,4 +15,4 @@ if [ $IMAGE_NAME == "os-image-stemcell-builder" ] ; then
   USER_OPTION="--user ubuntu "
 fi
 
-exec docker run --privileged -v /opt/bosh:$DIR/../.. --workdir /opt/bosh $USER_OPTION -t -i $DOCKER_IMAGE
+exec docker run --privileged -v $DIR/../..:/opt/bosh --workdir /opt/bosh $USER_OPTION -t -i $DOCKER_IMAGE
