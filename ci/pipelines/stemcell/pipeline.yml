@@ -4,6 +4,7 @@ groups:
     jobs:
       - build-stemcell
       - publish-stemcells
+      - tag-stemcell
       - test-stemcells
       - build-warden-boshlite-centos-7
       - build-warden-boshlite-ubuntu-trusty
@@ -91,7 +92,7 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-            - build-softlayer-xen-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -109,7 +110,7 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-            - build-softlayer-xen-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -129,6 +130,23 @@ jobs:
           BOSH_DIRECTOR_ADDRESS: {{stemcell-test-director-address}}
           BOSH_DIRECTOR_USERNAME: {{stemcell-test-director-username}}
           BOSH_DIRECTOR_PASSWORD: {{stemcell-test-director-password}}
+
+  - name: tag-stemcell
+    serial: true
+    plan:
+    - aggregate:
+      - get: version
+        trigger: true
+        passed:
+          - test-stemcells
+      - get: bosh-src
+        passed:
+          - test-stemcells
+    - task: tag
+      file: bosh-src/ci/pipelines/stemcell/tasks/tag.yml
+    - put: bosh-src-push
+      params:
+        repository: bosh-src-tagged
 
   - name: publish-stemcells
     serial: true
@@ -527,10 +545,17 @@ jobs:
             file: stemcell/*.tgz
 
 resources:
+  - name: bosh-src-push
+    type: git
+    source:
+      uri: {{bosh_src_push_url}}
+      branch: {{stemcell-branch}}
+      private_key: {{bosh_src_key}}
+
   - name: bosh-src
     type: git
     source:
-      uri: https://github.com/cloudfoundry/bosh.git
+      uri: {{bosh_src_url}}
       branch: {{stemcell-branch}}
 
   - name: version
