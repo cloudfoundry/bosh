@@ -27,7 +27,7 @@ jobs:
           OPERATING_SYSTEM_VERSION:   trusty
       - put: ubuntu-trusty-tarball
         params:
-          file: os-image/ubuntu-trusty-*.tgz
+          versioned_file: os-image/ubuntu-trusty.tgz
 
   - name: build-centos-7
     plan:
@@ -50,7 +50,7 @@ jobs:
           OPERATING_SYSTEM_VERSION:   7
       - put: centos-7-tarball
         params:
-          file: os-image/centos-7-*.tgz
+          versioned_file: os-image/centos-7.tgz
 
 resources:
   - name: bosh-src
@@ -76,7 +76,7 @@ resources:
     type: s3
     source:
       bucket: {{osimage_bucket}}
-      regexp: ubuntu-trusty/ubuntu-trusty-(.+).tgz
+      regexp: ubuntu-trusty/ubuntu-trusty.tgz
       access_key_id: {{osimage_aws_access_key}}
       secret_access_key: {{osimage_aws_secret_key}}
 
@@ -97,6 +97,6 @@ resources:
     type: s3
     source:
       bucket: {{osimage_bucket}}
-      regexp: centos-7/centos-7-(.+).tgz
+      regexp: centos-7/centos-7.tgz
       access_key_id: {{osimage_aws_access_key}}
       secret_access_key: {{osimage_aws_secret_key}}
