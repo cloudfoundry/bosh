@@ -155,7 +155,7 @@ module Bosh::Director
             expect(rendered_job_instance).to_not receive(:persist)
             expect(instance_model).to_not receive(:add_rendered_templates_archive)
             expect(instance).to_not receive(:rendered_templates_archive=)
-            renderer.render_job_instance(instance_plan, {'dry_run' => true})
+            renderer.render_job_instance(instance_plan, dry_run: true)
           end
         end
 

@@ -7,7 +7,7 @@ module Bosh::Director
       new(App.instance.blobstores.blobstore, Config.logger)
     end
 
-    def initialize(blobstore, logger, options = {})
+    def initialize(blobstore, logger)
       @blobstore = blobstore
       @logger = logger
     end
@@ -35,7 +35,7 @@ module Bosh::Director
 
       archive_model = instance.model.latest_rendered_templates_archive
 
-      unless options['dry_run']
+      unless options[:dry_run]
         if archive_model && archive_model.content_sha1 == configuration_hash
           unless @blobstore.exists?(archive_model.blobstore_id)
             # If rendered template file in blobstore crashed, we re-upload it and update database with new blobstore_id
@@ -59,7 +59,7 @@ module Bosh::Director
 
       instance.configuration_hash = configuration_hash
       instance.template_hashes    = rendered_job_instance.template_hashes
-      instance.rendered_templates_archive = rendered_templates_archive unless options['dry_run']
+      instance.rendered_templates_archive = rendered_templates_archive unless options[:dry_run]
     end
   end
 end
