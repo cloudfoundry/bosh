@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `jXtLnXSfuchThf5CMrKBRDRwB8sbga.X`
+  - Periodic bump
+  - built from 257.x (12b320cca0733a7acaf73038c9d1e8d6ba3708fe)
+
 * `DjFk7V3JLCebrhnSgS5scvjMFJSgJn6e`
   - USN-3087-2: OpenSSL regression
   - built from 257.x (fd87fe2d5d9257e5adaed8e4297cd0ca46950b44)
@@ -485,6 +489,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `5Yb6BxFInI8wujUUSE0b96cn2ALmegAD`
+  - systemd starts rsyslog after the ephemeral drive is mounted
+  - built from 257.x (12b320cca0733a7acaf73038c9d1e8d6ba3708fe)
 
 * `FSGI7zNp2423lbQHrCoHWY0rOraNeEYN`
   - USN-3087-2: OpenSSL regression
