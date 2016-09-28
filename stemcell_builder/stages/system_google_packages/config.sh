@@ -6,12 +6,15 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
 # Download package source from github into assets directory
-cd $assets_dir
+mkdir -p $assets_dir/google
+cd $assets_dir/google
 
-wget -O compute-src.tar.gz https://github.com/GoogleCloudPlatform/compute-image-packages/archive/1.3.3.tar.gz
-echo "dd115b7d56c08a3c62180a9b72552a54f7babd4f compute-src.tar.gz" | sha1sum -c -
+# Download google-image-packages
+wget https://storage.googleapis.com/bosh-cpi-artifacts/google-compute-engine-init-trusty_2.1.0-0.1474913068_amd64.deb
+echo "229a1cd551b865cab199516e7572412fa4fde903  google-compute-engine-init-trusty_2.1.0-0.1474913068_amd64.deb" | sha1sum -c -
 
-mkdir compute-src
-tar xvf compute-src.tar.gz -C compute-src
-cp -R compute-src/compute-image-packages-1.3.3/google-daemon/{etc,usr} .
-rm -rf compute-src compute-src.tar.gz
+wget https://storage.googleapis.com/bosh-stemcell-artifacts/google-compute-engine-trusty_2.2.3-0.1474912841_all.deb
+echo "0da71ccd637145f34ef4e97bcdc741d5b8177081  google-compute-engine-trusty_2.2.3-0.1474912841_all.deb" | sha1sum -c -
+
+wget https://storage.googleapis.com/bosh-stemcell-artifacts/google-config-trusty_2.0.0-0.1474912881_amd64.deb
+echo "d8cc6556a73e5766a032230b900f6a24e30e66df  google-config-trusty_2.0.0-0.1474912881_amd64.deb" | sha1sum -c -
