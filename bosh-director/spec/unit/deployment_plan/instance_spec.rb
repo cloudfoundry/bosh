@@ -402,5 +402,12 @@ module Bosh::Director::DeploymentPlan
 
       end
     end
+
+    describe '#stemcell_cid' do
+      it 'asks the stemcell business object to return the cid for the given az' do
+        expect(stemcell).to receive(:cid_for_az).with(instance.availability_zone_name).and_return('test-cid')
+        expect(instance.stemcell_cid).to eq('test-cid')
+      end
+    end
   end
 end

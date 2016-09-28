@@ -92,41 +92,105 @@ module Bosh::Director
       end
     end
 
-    describe '#all_by_os_and_version' do
+    describe '#all_by_name_and_version' do
       before do
         Bosh::Director::Models::Stemcell.create(
-          name: 'my-stemcell-with-a-name',
-          version: 'stemcell_version',
-          operating_system: 'stemcell_os',
-          cid: 'cloud-id-a',
+            name: 'my-stemcell-with-a-name',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-a',
+            cpi: 'cpi1'
+        )
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-name',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+            cpi: 'cpi2'
+        )
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-different-name',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-c',
+            cpi: 'cpi3'
+        )
+      end
+
+      it 'raises an error when no requested stemcell is found' do
+        expect {
+          subject.all_by_name_and_version('CBM BASIC V2', '1')
+        }.to raise_error(Bosh::Director::StemcellNotFound)
+      end
+
+      it 'returns all stemcells' do
+        stemcells = subject.all_by_name_and_version('my-stemcell-with-a-name', 'stemcell_version')
+        expect(stemcells.count).to eq(2)
+        expect(stemcells[0].name).to eq('my-stemcell-with-a-name')
+        expect(stemcells[0].cpi).to eq('cpi1')
+        expect(stemcells[1].name).to eq('my-stemcell-with-a-name')
+        expect(stemcells[1].cpi).to eq('cpi2')
+      end
+    end
+
+    describe '#find_by_name_and_version_and_cpi' do
+      before do
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-name',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-a',
+            cpi: 'cpi1'
         )
       end
 
       it 'raises an error when the requested stemcell is not found' do
         expect {
-          subject.all_by_os_and_version('CBM BASIC V2', '1')
+          subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi-notexisting')
         }.to raise_error(Bosh::Director::StemcellNotFound)
       end
 
       it 'returns the uniquely matching stemcell' do
-        stemcell = subject.all_by_os_and_version('stemcell_os', 'stemcell_version').first
+        stemcell = subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi1')
         expect(stemcell.name).to eq('my-stemcell-with-a-name')
       end
+    end
 
-      context 'when there are multiple matches for the requested OS and version' do
-        before {
-          Bosh::Director::Models::Stemcell.create(
-              name: 'my-stemcell-with-b-name',
-              version: 'stemcell_version',
-              operating_system: 'stemcell_os',
-              cid: 'cloud-id-b',
-          )
-        }
+    describe '#all_by_os_and_version' do
+      before do
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-name-c',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os-other',
+            cid: 'cloud-id-c',
+        )
 
-        it 'chooses the first stemcell alhpabetically by name' do
-          stemcell = subject.all_by_os_and_version('stemcell_os', 'stemcell_version').first
-          expect(stemcell.name).to eq('my-stemcell-with-a-name')
-        end
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-name-b',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+        )
+
+        Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-a-name-a',
+            version: 'stemcell_version',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-a',
+        )
+      end
+
+      it 'raises an error when no requested stemcell is found' do
+        expect {
+          subject.all_by_os_and_version('CBM BASIC V2', '1')
+        }.to raise_error(Bosh::Director::StemcellNotFound)
+      end
+
+      it 'returns all stemcells, sorted alphabetically' do
+        stemcells = subject.all_by_os_and_version('stemcell_os', 'stemcell_version')
+        expect(stemcells.count).to eq(2)
+        expect(stemcells[0].name).to eq('my-stemcell-with-a-name-a')
+        expect(stemcells[1].name).to eq('my-stemcell-with-a-name-b')
       end
     end
 

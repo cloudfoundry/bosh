@@ -1,10 +1,13 @@
 module Bosh::Director
   class CloudFactory
-    def self.create_from_deployment(deployment, cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
+    def self.create_from_deployment(deployment,
+        cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest,
+        default_cloud = Config.cloud)
+
       planner = nil
       planner = create_cloud_planner(deployment.cloud_config) unless deployment.nil?
 
-      new(planner, parse_cpi_config(cpi_config))
+      new(planner, parse_cpi_config(cpi_config), default_cloud)
     end
     
     def self.parse_cpi_config(cpi_config)
@@ -20,9 +23,10 @@ module Bosh::Director
       parser.parse(cloud_config.manifest, global_network_resolver, nil)
     end
 
-    def initialize(cloud_planner, parsed_cpi_config)
+    def initialize(cloud_planner, parsed_cpi_config, default_cloud)
       @cloud_planner = cloud_planner
       @parsed_cpi_config = parsed_cpi_config
+      @default_cloud = default_cloud
     end
 
     def uses_cpi_config?
@@ -38,31 +42,14 @@ module Bosh::Director
       end
     end
 
-    def all_from_cpi_config
-      return [] unless uses_cpi_config?
-      @parsed_cpi_config.cpis.map{|cpi| {name: cpi.name, cpi: create_from_cpi_config(cpi)} }
-    end
-
     def for_availability_zone(az_name)
-      # instance/disk can have no AZ, pick default CPI then
-      return default_from_director_config if az_name.nil?
-
       cpi_for_az = lookup_cpi_for_az(az_name)
-      # instance/disk can have AZ without cpi, pick default CPI then
+      # instance/disk can have no AZ or AZ without cpi, pick default CPI then
       return default_from_director_config if cpi_for_az.nil?
 
-      configured_cpi = for_cpi(cpi_for_az)
-      raise "CPI was defined for AZ #{az_name} but not found in cpi-config" if configured_cpi.nil?
-      create_from_cpi_config(configured_cpi)
-    end
-
-    def for_cpi(cpi_name)
-      return nil unless uses_cpi_config?
-      @parsed_cpi_config.find_cpi_by_name(cpi_name)
-    end
-
-    def default_from_director_config
-      Config.cloud
+      cloud = for_cpi(cpi_for_az)
+      raise "CPI was defined for AZ #{az_name} but not found in cpi-config" if cloud.nil?
+      cloud
     end
 
     def lookup_cpi_for_az(az_name)
@@ -71,7 +58,27 @@ module Bosh::Director
       az.nil? ? nil : az.cpi
     end
 
+    def for_cpi(cpi_name)
+      configured_cpi = cpi_from_config(cpi_name)
+      return nil if configured_cpi.nil?
+      create_from_cpi_config(configured_cpi)
+    end
+
+    def default_from_director_config
+      @default_cloud
+    end
+
     private
+
+    def all_from_cpi_config
+      return [] unless uses_cpi_config?
+      @parsed_cpi_config.cpis.map{|cpi| {name: cpi.name, cpi: create_from_cpi_config(cpi)} }
+    end
+
+    def cpi_from_config(cpi_name)
+      return nil unless uses_cpi_config?
+      @parsed_cpi_config.find_cpi_by_name(cpi_name)
+    end
 
     def create_from_cpi_config(cpi)
       Bosh::Clouds::ExternalCpi.new(cpi.job_path, Config.uuid, cpi.properties)

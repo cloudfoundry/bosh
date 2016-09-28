@@ -99,5 +99,41 @@ module Bosh::Director
         expect(Models::CompiledPackage[unassociated_package.id]).to eq(unassociated_package)
       end
     end
+
+    describe 'looking up clouds for a stemcell' do
+      let(:cloud_factory) { instance_double(BD::CloudFactory) }
+      before {
+        allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+      }
+
+      context 'if no cpi is set on stemcell' do
+        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: nil) }
+
+        it 'calls the default cloud' do
+          cloud = instance_double(Bosh::Cloud)
+          expect(cloud_factory).to receive(:default_from_director_config).and_return(cloud)
+          expect(cloud).to receive(:delete_stemcell)
+          stemcell_deleter.delete(stemcell)
+        end
+      end
+
+      context 'if a certain cpi is set on a stemcell' do
+        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: 'cpi1') }
+
+        it 'calls the cloud that cloud factory returns' do
+          cloud = instance_double(Bosh::Cloud)
+          expect(cloud_factory).to receive(:for_cpi).with('cpi1').and_return(cloud)
+          expect(cloud).to receive(:delete_stemcell)
+          stemcell_deleter.delete(stemcell)
+        end
+
+        it 'fails if cloud factory does not return a cloud for the cpi' do
+          expect(cloud_factory).to receive(:for_cpi).with('cpi1').and_return(nil)
+          expect{
+            stemcell_deleter.delete(stemcell)
+          }.to raise_error /Stemcell has CPI defined \(cpi1\) that is not configured anymore./
+        end
+      end
+    end
   end
 end

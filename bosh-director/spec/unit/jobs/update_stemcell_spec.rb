@@ -180,6 +180,71 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           update_stemcell_job.perform
         }.to raise_exception(Bosh::Director::StemcellInvalidArchive)
       end
+
+      context 'when having multiple cpis' do
+        let(:cloud_factory) { instance_double(BD::CloudFactory) }
+        before {
+          allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+        }
+
+        it 'creates multiple stemcell records with different cpi attributes' do
+          cloud1 = instance_double(Bosh::Cloud)
+          cloud2 = instance_double(Bosh::Cloud)
+          cloud3 = instance_double(Bosh::Cloud)
+
+          expect(cloud1).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid1')
+          expect(cloud2).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid2')
+          expect(cloud3).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid3')
+
+          expect(cloud_factory).to receive(:all_configured_clouds).and_return([
+                                                                                  {name: 'cloud1', cpi: cloud1},
+                                                                                  {name: 'cloud2', cpi: cloud2},
+                                                                                  {name: 'cloud3', cpi: cloud3},
+                                                                              ])
+
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+          update_stemcell_job.perform
+
+          stemcells = Bosh::Director::Models::Stemcell.where(:name => "jeos", :version => "5").all
+
+          expect(stemcells.count).to eq(3)
+          expect(stemcells[0]).not_to be_nil
+          expect(stemcells[0].sha1).to eq("shawone")
+          expect(stemcells[0].operating_system).to eq("jeos-5")
+          expect(stemcells[0].cpi).to eq("cloud1")
+          expect(stemcells[0].cid).to eq("stemcell-cid1")
+
+          expect(stemcells[1]).not_to be_nil
+          expect(stemcells[1].sha1).to eq("shawone")
+          expect(stemcells[1].operating_system).to eq("jeos-5")
+          expect(stemcells[1].cpi).to eq("cloud2")
+          expect(stemcells[1].cid).to eq("stemcell-cid2")
+
+          expect(stemcells[2]).not_to be_nil
+          expect(stemcells[2].sha1).to eq("shawone")
+          expect(stemcells[2].operating_system).to eq("jeos-5")
+          expect(stemcells[2].cpi).to eq("cloud3")
+          expect(stemcells[2].cid).to eq("stemcell-cid3")
+        end
+
+        it 'still works with the default cpi' do
+          cloud = instance_double(Bosh::Cloud)
+          expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid')
+
+          expect(cloud_factory).to receive(:all_configured_clouds).and_return([{name: nil, cpi: cloud}])
+
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+          update_stemcell_job.perform
+
+          stemcells = Bosh::Director::Models::Stemcell.where(:name => "jeos", :version => "5").all
+
+          expect(stemcells.count).to eq(1)
+          expect(stemcells[0]).not_to be_nil
+          expect(stemcells[0].sha1).to eq("shawone")
+          expect(stemcells[0].operating_system).to eq("jeos-5")
+          expect(stemcells[0].cpi).to be_nil
+        end
+      end
     end
 
     context 'when the stemcell metadata lacks a value for operating_system' do
