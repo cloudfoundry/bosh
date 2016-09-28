@@ -1,0 +1,5 @@
+# logrotate on CentOS refuses to rotate logs in /var/log because the
+# directory is owned by root:syslog and not root:root.
+# logrotate is placated by the su directive, telling syslog what user:group
+# to rotate files with. Defaulting to root:root
+su root root
