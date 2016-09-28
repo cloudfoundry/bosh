@@ -21,6 +21,7 @@ jobs:
       - put: ubuntu-trusty-tarball
         params:
           file: os-image/ubuntu-trusty.tgz
+          acl: public-read
 
   - name: build-centos-7
     plan:
@@ -37,6 +38,7 @@ jobs:
       - put: centos-7-tarball
         params:
           file: os-image/centos-7.tgz
+          acl: public-read
 
 resources:
   - name: bosh-src
