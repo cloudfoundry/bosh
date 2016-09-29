@@ -86,22 +86,27 @@ module Bosh::Spec
     end
 
     def vms_vitals
-      parse_table_with_ips(@runner.run('vms --vitals'))
+      options = add_defaults({})
+      parse_table_with_ips(@runner.run('vms --vitals', options))
     end
 
     def instances_vitals(options = {})
+      options = add_defaults(options)
       parse_table(@runner.run('instances --vitals', options))
     end
 
     def instances_ps(options = {})
+      options = add_defaults(options)
       parse_table(@runner.run('instances --ps', options))
     end
 
     def instances_ps_vitals(options = {})
+      options = add_defaults(options)
       parse_table(@runner.run('instances --ps --vitals', options))
     end
 
     def instances_ps_vitals_failing(options = {})
+      options = add_defaults(options)
       parse_table(@runner.run('instances --ps --vitals --failing', options))
     end
 
@@ -178,6 +183,12 @@ module Bosh::Spec
     end
 
     private
+
+    def add_defaults(options)
+      options[:json] = true
+      options[:deployment_name] ||= Deployments::DEFAULT_DEPLOYMENT_NAME
+      options
+    end
 
     def vms_details(deployment_name, options = {})
       parse_table_with_ips(@runner.run('vms --json --details', options))
