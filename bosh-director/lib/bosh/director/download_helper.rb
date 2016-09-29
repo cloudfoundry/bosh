@@ -13,7 +13,7 @@ module Bosh::Director
     def download_remote_file(resource, remote_file, local_file, num_redirects = 0)
       @logger.info("Downloading remote #{resource} from #{remote_file}") if @logger
       uri = URI.parse(remote_file)
-      Net::HTTP.start(uri.host, uri.port,
+      Net::HTTP.start(uri.host, uri.port, :ENV,
                       :use_ssl => uri.scheme == 'https',
                       :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
         http.request_get(uri.request_uri) do |response|
