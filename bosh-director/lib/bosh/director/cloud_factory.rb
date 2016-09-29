@@ -1,3 +1,6 @@
+# Cloud factory looks up and instantiates clouds, either taken from the director config or from the cpi config.
+# To achieve this, it uses the parsed cpis from the cpi config.
+# For lookup based on availability zone, it additionally needs the cloud planner which contains the AZ -> CPI mapping from the cloud config.
 module Bosh::Director
   class CloudFactory
     def self.create_from_deployment(deployment,
