@@ -161,6 +161,20 @@ module Bosh::Director
         expect(cloud).to eq(clouds[0])
       end
 
+      it 'returns the cpi if asking for a given existing cpi' do
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].job_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
+        cloud = cloud_factory.for_cpi('name2')
+        expect(cloud).to eq(clouds[1])
+      end
+
+      it 'returns nil if asking for a nil cpi' do
+        expect(cloud_factory.for_cpi(nil)).to be_nil
+      end
+
+      it 'returns nil if asking for a non-existing cpi' do
+        expect(cloud_factory.for_cpi('name-notexisting')).to be_nil
+      end
+
       it_behaves_like 'lookup for clouds'
     end
   end
