@@ -204,16 +204,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     }
 
     context 'if not using cpi config' do
-      it 'returns the cid of the first stemcell model' do
-        deployment = make_deployment('mycloud')
-
+      it 'can not create multiple stemcells with same name and version' do
         make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => nil)
-        make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => nil)
-
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
-        stemcell.bind_model(deployment)
-
-        expect(stemcell.cid_for_az('doesntmatter')).to eq('cid1')
+        expect {
+          make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => nil)
+        }.to raise_error Sequel::ValidationFailed, "name and version unique"
       end
 
       it 'raises an error if no stemcell model was bound' do
