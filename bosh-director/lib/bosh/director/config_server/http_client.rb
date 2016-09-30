@@ -18,7 +18,7 @@ module Bosh::Director::ConfigServer
     end
 
     def get(key)
-      uri = build_uri(key)
+      uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
       begin
         @http.get(uri.path, {'Authorization' => @auth_provider.auth_header})
       rescue OpenSSL::SSL::SSLError
@@ -27,7 +27,7 @@ module Bosh::Director::ConfigServer
     end
 
     def post(key, body)
-      uri = build_uri(key)
+      uri = URI.join(@config_server_uri, 'v1/', 'data/', key)
       begin
         @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header})
       rescue OpenSSL::SSL::SSLError
@@ -45,10 +45,6 @@ module Bosh::Director::ConfigServer
         cert_store.set_default_paths
         @http.cert_store = cert_store
       end
-    end
-
-    def build_uri(key)
-      URI.join(@config_server_uri, URI.escape('v1/data/' + key))
     end
   end
 end

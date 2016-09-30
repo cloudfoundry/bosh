@@ -32,6 +32,9 @@ module Bosh::Director
         # in multiple instance groups, the properties will not be shared across
         # instance groups
         @properties = {}
+
+        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+        @config_server_client = config_server_client_factory.create_client
       end
 
       # Looks up template model and its package models in DB
@@ -191,9 +194,7 @@ module Bosh::Director
         @properties[instance_group_name] = properties
       end
 
-      def bind_properties(instance_group_name, deployment_name, options = {})
-        @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client(deployment_name)
-
+      def bind_properties(instance_group_name, options = {})
         bound_properties = {}
         @properties[instance_group_name] ||= {}
 

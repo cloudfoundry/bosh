@@ -50,7 +50,7 @@ module Bosh::Director
         @instance = instance
 
         config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
-        @config_server_client = config_server_client_factory.create_client(full_spec['deployment'])
+        @config_server_client = config_server_client_factory.create_client
       end
 
       def as_template_spec

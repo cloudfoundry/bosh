@@ -1,7 +1,6 @@
 module Bosh::Dev::Sandbox
   class DirectorConfig
-    attr_reader :director_name,
-      :director_ruby_port,
+    attr_reader :director_ruby_port,
       :nats_port,
       :sandbox_root,
       :blobstore_storage_dir,
@@ -29,7 +28,6 @@ module Bosh::Dev::Sandbox
       :director_ips
 
     def initialize(attrs, port_provider)
-      @director_name = 'TestDirector'
       @director_ruby_port = port_provider.get_port(:director_ruby)
       @nats_port = port_provider.get_port(:nats)
 

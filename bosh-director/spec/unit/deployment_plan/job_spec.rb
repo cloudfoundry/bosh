@@ -4,8 +4,6 @@ module Bosh
   module Director
     module DeploymentPlan
       describe Job do
-        let(:deployment_name) {'deployment_name'}
-
         # Currently this class is tested mostly in DeploymentPlan::ReleaseVersion spec.
         # In the future these tests can be migrated to here.
         describe '#add_link_from_manifest' do
@@ -129,7 +127,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
             expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
 
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
 
             expect(subject.properties).to eq({
                                            'instance_group_name' =>{
@@ -148,7 +146,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, options).and_return(2048)
 
             user_defined_prop.delete('dea_max_memory')
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
 
             expect(subject.properties).to eq({
                                            'instance_group_name' =>{
@@ -166,7 +164,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
             expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
 
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
           end
 
@@ -180,7 +178,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
 
             it 'raises an exception explaining which property is the wrong type' do
               expect {
-                subject.bind_properties('instance_group_name', deployment_name, {})
+                subject.bind_properties('instance_group_name')
               }.to raise_error Bosh::Template::InvalidPropertyType,
                                "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
             end
@@ -210,7 +208,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
               ).and_return('generated secret')
               expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
               expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom', options).and_return(1024)
-              subject.bind_properties('instance_group_name', deployment_name, options)
+              subject.bind_properties('instance_group_name', options)
 
               expect(subject.properties).to eq({
                                                  'instance_group_name' =>{

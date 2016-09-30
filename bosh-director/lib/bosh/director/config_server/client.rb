@@ -4,28 +4,29 @@ module Bosh::Director::ConfigServer
   class EnabledClient
     include ConfigServerHelper
 
-    def initialize(http_client, director_name, deployment_name, logger)
+    def initialize(http_client, logger)
       @config_server_http_client = http_client
-      @director_name = director_name
-      @deployment_name = deployment_name
       @deep_hash_replacer = DeepHashReplacement.new
       @logger = logger
     end
 
     # @param [Hash] src Hash to be interpolated
     # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
-    # @param [Boolean] must_be_absolute_key Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_key = false)
-      placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
-      placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
+    def interpolate(src, subtrees_to_ignore = [])
+      result = Bosh::Common::DeepCopy.copy(src)
 
-      retrieved_config_server_values, missing_keys = fetch_keys_values(placeholders_list, must_be_absolute_key)
-      if missing_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{missing_keys.join(', ')}"
+      config_map = @deep_hash_replacer.replacement_map(src, subtrees_to_ignore)
+
+      config_keys = config_map.map { |c| c['key'] }.uniq
+
+      config_values, invalid_keys = fetch_config_values(config_keys)
+      if invalid_keys.length > 0
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{invalid_keys.join(", ")}"
       end
 
-      @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
+      replace_config_values!(config_map, config_values, result)
+      result
     end
 
     # @param [Hash] deployment_manifest Deployment Manifest Hash to be interpolated
@@ -44,7 +45,7 @@ module Bosh::Director::ConfigServer
         ['resource_pools', Integer, 'env'],
       ]
 
-      interpolate(deployment_manifest, ignored_subtrees, false)
+      interpolate(deployment_manifest, ignored_subtrees)
     end
 
     # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
@@ -56,7 +57,7 @@ module Bosh::Director::ConfigServer
         ['addons', Integer, 'jobs', Integer, 'consumes', String, 'properties'],
       ]
 
-      interpolate(runtime_manifest, ignored_subtrees, true)
+      interpolate(runtime_manifest, ignored_subtrees)
     end
 
     # @param [Object] provided_prop property value
@@ -96,7 +97,6 @@ module Bosh::Director::ConfigServer
     private
 
     def get_value_for_key(key)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
       response = @config_server_http_client.get(key)
 
       if response.kind_of? Net::HTTPOK
@@ -117,33 +117,36 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def fetch_keys_values(placeholders, must_be_absolute_key)
-      missing_keys = []
+    def fetch_config_values(keys)
+      invalid_keys = []
       config_values = {}
 
-      if must_be_absolute_key
-        non_absolute_keys = placeholders.inject([]) do |memo, placeholder|
-          key = extract_placeholder_key(placeholder)
-          memo << key unless key.start_with?('/')
-          memo
-        end
-        raise Bosh::Director::ConfigServerIncorrectKeySyntax, 'Keys must be absolute path: ' + non_absolute_keys.join(',') unless non_absolute_keys.empty?
-      end
-
-      placeholders.each do |placeholder|
-        key = extract_placeholder_key(placeholder)
+      keys.each do |k|
         begin
-          config_values[placeholder] = get_value_for_key(key)
+          config_values[k] = get_value_for_key(k)
         rescue Bosh::Director::ConfigServerMissingKeys
-          missing_keys << key
+          invalid_keys << k
         end
       end
 
-      [config_values, missing_keys]
+      [config_values, invalid_keys]
+    end
+
+    def replace_config_values!(config_map, config_values, obj_to_be_resolved)
+      config_map.each do |config_loc|
+        config_path = config_loc['path']
+        ret = obj_to_be_resolved
+
+        if config_path.length > 1
+          ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
+            obj[el]
+          end
+        end
+        ret[config_path.last] = config_values[config_loc['key']]
+      end
     end
 
     def generate_password(key)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
       request_body = {
         'type' => 'password'
       }
@@ -157,7 +160,6 @@ module Bosh::Director::ConfigServer
     end
 
     def generate_certificate(key, options)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
       dns_record_names = options[:dns_record_names]
       request_body = {
         'type' => 'certificate',
@@ -177,7 +179,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_key = false)
+    def interpolate(src, subtrees_to_ignore = [])
       Bosh::Common::DeepCopy.copy(src)
     end
 

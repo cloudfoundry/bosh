@@ -10,7 +10,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:plan) do
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       model: deployment,
-      name: deployment.name,
+      name: 'fake-deployment',
       ip_provider: fake_ip_provider,
       releases: {}
     )
@@ -161,8 +161,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:options) do
       {
         :dns_record_names => [
-          "*.foobar.fake-network-name.#{deployment.name}.bosh",
-          "*.foobar.fake-network-name2.#{deployment.name}.bosh"
+          '*.foobar.fake-network-name.fake-deployment.bosh',
+          '*.foobar.fake-network-name2.fake-deployment.bosh'
         ]
       }
     end
@@ -179,8 +179,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     it 'binds all job properties with correct parameters' do
-      expect(foo_job).to receive(:bind_properties).with('foobar', deployment.name, options)
-      expect(bar_job).to receive(:bind_properties).with('foobar', deployment.name, options)
+      expect(foo_job).to receive(:bind_properties).with( 'foobar', options)
+      expect(bar_job).to receive(:bind_properties).with( 'foobar', options)
 
       instance_group.bind_properties
 

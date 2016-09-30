@@ -264,7 +264,7 @@ module Bosh::Director
         }
 
         @jobs.each do |job|
-          job.bind_properties(@name, @deployment_name, options)
+          job.bind_properties(@name, options)
           @properties[job.name] = job.properties[@name]
         end
       end

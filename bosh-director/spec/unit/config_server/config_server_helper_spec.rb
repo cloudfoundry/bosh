@@ -140,28 +140,5 @@ module Bosh::Director::ConfigServer
         end
       end
     end
-
-    describe '#add_prefix_if_not_absolute' do
-      context 'when key is absolute' do
-        it 'should return key as is' do
-          input_key = '/dir/dep/key'
-          expected_key = '/dir/dep/key'
-          expect(@helper.add_prefix_if_not_absolute(input_key, 'dir2', 'dep2')).to eq(expected_key)
-        end
-      end
-
-      context 'when key is not absolute' do
-        context 'and both director and deployment is specified' do
-          it 'should return key with director and deployment prefix' do
-            input_key = 'key'
-            director = 'dir'
-            deployment = 'dep'
-
-            expected_key = '/dir/dep/key'
-            expect(@helper.add_prefix_if_not_absolute(input_key, director, deployment)).to eq(expected_key)
-          end
-        end
-      end
-    end
   end
 end

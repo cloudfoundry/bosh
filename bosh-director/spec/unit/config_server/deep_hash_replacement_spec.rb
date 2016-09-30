@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe DeepHashReplacement do
-    describe "#placeholders_paths" do
+    describe "#replacement_map" do
 
       let(:global_props) do
         {'a' => 'test', 'b' => '((bla))'}
@@ -56,20 +56,20 @@ module Bosh::Director::ConfigServer
       end
 
       let(:replacement_list) do
-        DeepHashReplacement.new.placeholders_paths(sample_hash)
+        DeepHashReplacement.new.replacement_map(sample_hash)
       end
 
       it 'creates replacement map for all necessary placeholders' do
         expected_result = [
-          {'placeholder'=>'((director_uuid_placeholder))', 'path'=>['director_uuid']},
-          {'placeholder'=>'((my_db_passwd))', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-          {'placeholder'=>'((secret2))', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-          {'placeholder'=>'((nuclear_launch_code))', 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
-          {'placeholder'=>'((job_name))', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-          {'placeholder'=>'((bla))', 'path'=>['properties', 'b']},
-          {'placeholder'=>'((secret_key))', 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
-          {'placeholder'=>'((/my/name/is/smurf/12-3))', 'path'=>['smurf']},
-          {'placeholder'=>'((my/name/is/gar_gamel))', 'path'=>['gargamel']}
+          {'key' =>'director_uuid_placeholder', 'path'=>['director_uuid']},
+          {'key' =>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+          {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+          {'key'=>'nuclear_launch_code', 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
+          {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+          {'key'=>'bla', 'path'=>['properties', 'b']},
+          {'key'=>'secret_key', 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
+          {'key'=>'/my/name/is/smurf/12-3', 'path'=>['smurf']},
+          {'key'=>'my/name/is/gar_gamel', 'path'=>['gargamel']}
         ]
 
         expect(replacement_list).to match_array(expected_result)
@@ -87,11 +87,27 @@ module Bosh::Director::ConfigServer
 
         it 'handles it correctly and removes ! from key (for spiff)' do
           expected_result = [
-            {'placeholder'=>'((!blue))', 'path'=>['smurf']},
-            {'placeholder'=>'((!what_is_my_color))', 'path'=>['gargamel', 'color']}
+            {'key'=>'blue', 'path'=>['smurf']},
+            {'key'=>'what_is_my_color', 'path'=>['gargamel', 'color']}
           ]
 
           expect(replacement_list).to match_array(expected_result)
+        end
+      end
+
+      context 'when a placeholder key syntax is invalid' do
+        let(:sample_hash) do
+          {
+            'gargamel' => {
+              'color' => '((i am an invalid key $ %))'
+            }
+          }
+        end
+
+        it 'raises an error' do
+          expect{
+            replacement_list
+          }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
         end
       end
 
@@ -129,62 +145,19 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
-          replacements = DeepHashReplacement.new.placeholders_paths(sample_hash, ignored_subtrees)
+          replacements = DeepHashReplacement.new.replacement_map(sample_hash, ignored_subtrees)
 
           expected_replacements = [
-            {'placeholder'=>'((my_db_passwd))', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-            {'placeholder'=>'((secret2))', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-            {'placeholder'=>'((job_name))', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-            {'placeholder'=>'((address_placeholder))', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
-            {'placeholder'=>'((director_uuid_placeholder))', 'path'=>['director_uuid']},
-            {'placeholder'=>'((/my/name/is/smurf/12-3))', 'path'=>['smurf']},
-            {'placeholder'=>'((my/name/is/gar_gamel))', 'path'=>['gargamel']}
+            {'key'=>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+            {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+            {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+            {'key'=>'address_placeholder', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
+            {'key'=>'director_uuid_placeholder', 'path'=>['director_uuid']}, 
+            {'key'=>'/my/name/is/smurf/12-3', 'path'=>['smurf']}, 
+            {'key'=>'my/name/is/gar_gamel', 'path'=>['gargamel']}
           ]
           expect(replacements).to match_array(expected_replacements)
         end
-      end
-    end
-
-    describe "#replace_placeholders" do
-      let(:values) do
-        { "((key))" => "smurf" }
-      end
-
-      it 'replaces placeholders in simple unnested objects' do
-        obj = {"bla" => "((key))"}
-        paths = [
-          {
-            'placeholder' => '((key))',
-            'path' => ['bla']
-          }
-        ]
-        result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
-        expect(result).to eq({"bla" => "smurf"})
-      end
-
-      it 'replaces placeholders in nested objects' do
-        obj = {
-          "bla" => "((key))",
-          "a" => {
-            "b" => ["bla", "((key))", {"c" => "((key))"}]
-          }
-        }
-
-        expected = {
-          "bla" => "smurf",
-          "a" => {
-            "b" => ["bla", "smurf", {"c" => "smurf"}]
-          }
-        }
-
-        paths = [{'placeholder' => '((key))', 'path' => ['bla']},
-                 {'placeholder' => '((key))', 'path' => ['a', 'b', 1]},
-                 {'placeholder' => '((key))', 'path' => ['a', 'b', 2, "c"]}
-        ]
-
-        result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
-
-        expect(result).to eq(expected)
       end
     end
   end
