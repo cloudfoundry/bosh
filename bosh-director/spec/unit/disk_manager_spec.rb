@@ -5,6 +5,7 @@ module Bosh::Director
     subject(:disk_manager) { DiskManager.new(logger) }
 
     let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(CloudFactory) }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
@@ -25,7 +26,7 @@ module Bosh::Director
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}) }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
-      instance = Models::Instance.make(vm_cid: 'vm234', uuid: 'my-uuid-1')
+      instance = Models::Instance.make(vm_cid: 'vm234', uuid: 'my-uuid-1', availability_zone: 'az1')
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end
@@ -51,12 +52,14 @@ module Bosh::Director
       allow(agent_client).to receive(:update_settings)
       allow(cloud).to receive(:detach_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(CloudFactory).to receive(:new).and_return(cloud_factory)
     end
 
     describe '#attach_disk' do
       context 'managed disks' do
         it 'attaches + mounts disk' do
           expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect(agent_client).to receive(:mount_disk).with('disk123')
           disk_manager.attach_disk(persistent_disk)
         end
@@ -66,6 +69,7 @@ module Bosh::Director
         it 'attaches the disk without mounting' do
           persistent_disk.update(name: 'chewbacca')
           expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect(agent_client).to_not receive(:mount_disk)
           disk_manager.attach_disk(persistent_disk)
         end
@@ -76,6 +80,7 @@ module Bosh::Director
       context 'managed disks' do
         it 'unmounts + detaches disk' do
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect(agent_client).to receive(:unmount_disk).with('disk123')
           disk_manager.detach_disk(persistent_disk)
         end
@@ -85,6 +90,7 @@ module Bosh::Director
         it 'detaches the disk without unmounting' do
           persistent_disk.update(name: 'chewbacca')
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect(agent_client).to_not receive(:unmount_disk)
           disk_manager.detach_disk(persistent_disk)
         end
@@ -98,6 +104,7 @@ module Bosh::Director
 
           before do
             allow(cloud).to receive(:create_disk).and_raise(error)
+            expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           end
 
           it 'should raise the error' do
@@ -113,6 +120,7 @@ module Bosh::Director
 
         it 'orphans the disk' do
           allow(cloud).to receive(:attach_disk).and_raise(error)
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
 
           expect {
             disk_manager.update_persistent_disk(instance_plan)
@@ -169,10 +177,12 @@ module Bosh::Director
 
         it 'logs when the disks are inactive' do
           expect(logger).to receive(:warn).with("'job-name/1 (my-uuid-1)' has inactive disk inactive-disk")
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           disk_manager.update_persistent_disk(instance_plan)
         end
 
         it 'stores events' do
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect {
             disk_manager.update_persistent_disk(instance_plan)
           }.to change {
@@ -200,6 +210,7 @@ module Bosh::Director
 
         it 'stores events with error information' do
           allow(cloud).to receive(:create_disk).and_raise(Exception, 'error')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           expect {
             disk_manager.update_persistent_disk(instance_plan)
           }.to raise_error Exception, 'error'
@@ -214,10 +225,12 @@ module Bosh::Director
           context 'when the instance group has persistent disk type and the disk type is non zero' do
             it 'calls to the cpi to create the disk specified by the job' do
               expect(cloud).to receive(:create_disk).with(1024, {'cloud' => 'properties'}, 'vm234').and_return('new-disk-cid')
+              expect(cloud_factory).to receive(:for_availability_zone).at_least(:once).with(instance_model.availability_zone).and_return(cloud)
               disk_manager.update_persistent_disk(instance_plan)
             end
 
             it 'creates a persistent disk record' do
+              expect(cloud_factory).to receive(:for_availability_zone).at_least(:once).with(instance_model.availability_zone).and_return(cloud)
               disk_manager.update_persistent_disk(instance_plan)
               model = Models::PersistentDisk.where(instance_id: instance_model.id, size: 1024).first
               expect(model.cloud_properties).to eq({'cloud' => 'properties'})
@@ -225,6 +238,7 @@ module Bosh::Director
 
             it 'attaches the disk to the vm' do
               expect(cloud).to receive(:attach_disk).with('vm234', 'new-disk-cid')
+              expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
               disk_manager.update_persistent_disk(instance_plan)
             end
 
@@ -233,6 +247,7 @@ module Bosh::Director
 
               before do
                 expect(cloud).to receive(:attach_disk).with('vm234', 'new-disk-cid').once.and_raise(no_space)
+                expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
               end
 
               it 'raises the error' do
@@ -248,6 +263,7 @@ module Bosh::Director
               end
 
               it 'mounts the new disk' do
+                expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
                 expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
                 disk_manager.update_persistent_disk(instance_plan)
               end
@@ -255,13 +271,17 @@ module Bosh::Director
               context 'where there is an old disk to migrate' do
                 it 'migrates the disk' do
                   expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid')
+                  expect(cloud_factory).to receive(:for_availability_zone).at_least(:once).with(instance_model.availability_zone).and_return(cloud)
                   disk_manager.update_persistent_disk(instance_plan)
                 end
               end
 
               context 'when there is no old disk to migrate' do
                 let(:persistent_disk) { nil }
-                before { allow(agent_client).to receive(:list_disk).and_return([]) }
+                before {
+                  allow(agent_client).to receive(:list_disk).and_return([])
+                  expect(cloud_factory).to receive(:for_availability_zone).at_least(:once).with(instance_model.availability_zone).and_return(cloud)
+                }
 
                 it 'does not attempt to migrate the disk' do
                   expect(agent_client).to_not receive(:migrate_disk)
@@ -280,6 +300,7 @@ module Bosh::Director
                 context 'when mounting and migrating disks succeeds' do
                   before do
                     allow(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
                     allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
                   end
 
@@ -330,6 +351,7 @@ module Bosh::Director
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
                     expect {
                       disk_manager.update_persistent_disk(instance_plan)
                     }.to raise_error disk_error
@@ -347,6 +369,7 @@ module Bosh::Director
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
+                    expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
                     expect {
                       disk_manager.update_persistent_disk(instance_plan)
                     }.to raise_error disk_error
@@ -384,6 +407,7 @@ module Bosh::Director
             expect(Models::PersistentDisk.all.size).to eq(1)
             expect(Models::OrphanDisk.all.size).to eq(0)
 
+            expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
             disk_manager.update_persistent_disk(instance_plan)
 
             expect(Models::PersistentDisk.all.size).to eq(0)
@@ -407,6 +431,8 @@ module Bosh::Director
         let(:persistent_disk) { nil }
 
         it 'does not raise' do
+          expect(cloud_factory).to receive(:for_availability_zone).at_least(:once).with(instance_model.availability_zone).and_return(cloud)
+
           expect {
             disk_manager.update_persistent_disk(instance_plan)
           }.not_to raise_error
@@ -477,6 +503,7 @@ module Bosh::Director
 
         it 'attaches current instance disk' do
           expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
           disk_manager.attach_disks_if_needed(instance_plan)
         end
       end

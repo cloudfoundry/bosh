@@ -2,16 +2,19 @@ require 'spec_helper'
 
 describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:handler) { described_class.new(disk.id, {}) }
-  before { allow(handler).to receive(:cloud).and_return(cloud) }
-  before { allow(handler).to receive(:agent_client).with(instance.credentials, instance.agent_id).and_return(agent_client) }
+  before do
+    allow(handler).to receive(:agent_client).with(instance.credentials, instance.agent_id).and_return(agent_client)
+    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+  end
 
   let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
 
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 
   let(:instance) do
     Bosh::Director::Models::Instance.
-      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'}, uuid: "uuid-42")
+      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'}, uuid: "uuid-42", availability_zone: 'az1')
   end
 
   let!(:disk) do
@@ -30,6 +33,10 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   end
 
   describe 'resolutions' do
+    before do
+      expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+    end
+
     describe 'delete_disk_reference' do
       let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
       let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}

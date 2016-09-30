@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::SnapshotManager do
     let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
 
@@ -14,25 +15,26 @@ module Bosh::Director
       allow(Config).to receive_messages(cloud: cloud)
 
       # instance 1: one disk with two snapshots
-      @instance = Models::Instance.make(vm_cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment, job: 'job', index: 0, uuid: '12abdc456')
+      @instance = Models::Instance.make(vm_cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
-      instance = Models::Instance.make(vm_cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment, job: 'job', index: 1, uuid: '12xyz456')
+      instance = Models::Instance.make(vm_cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
-      @instance2 = Models::Instance.make(vm_cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment, job: 'job2', index: 0, uuid: '12def456')
+      @instance2 = Models::Instance.make(vm_cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
 
       # snapshot from another deployment
       Models::Snapshot.make
 
       allow(JobQueue).to receive(:new).and_return(job_queue)
+      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }
@@ -129,6 +131,7 @@ module Bosh::Director
         it 'deletes the snapshots' do
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
+          expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
 
           expect {
             described_class.delete_snapshots(@disk.snapshots)
@@ -170,6 +173,7 @@ module Bosh::Director
 
         it 'takes the snapshot' do
           expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
+          expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
 
           expect {
             expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
@@ -179,6 +183,7 @@ module Bosh::Director
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
             expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
+            expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -197,6 +202,7 @@ module Bosh::Director
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
             allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
+            expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end

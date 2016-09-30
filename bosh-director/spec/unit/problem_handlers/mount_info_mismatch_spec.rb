@@ -7,12 +7,13 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   end
 
   let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
 
   before(:each) do
     @agent = double('agent')
 
     @instance = Bosh::Director::Models::Instance.
-      make(:job => 'mysql_node', :index => 3)
+      make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
@@ -21,6 +22,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     @handler = make_handler(@disk.id, 'owner_vms' => []) # Not mounted
     allow(@handler).to receive(:cloud).and_return(@cloud)
     allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
+    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
   end
 
   it 'registers under inactive_disk type' do
@@ -52,6 +54,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
       it 'attaches disk' do
         expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
         expect(cloud).not_to receive(:reboot_vm)
+        expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
         expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
       end
@@ -59,6 +62,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
       it 'attaches disk and reboots the vm' do
         expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
         expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+        expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
         expect(@agent).to receive(:wait_until_ready)
         expect(@agent).not_to receive(:mount_disk)
         @handler.apply_resolution(:reattach_disk_and_reboot)

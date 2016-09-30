@@ -10,6 +10,7 @@ module Bosh
 
       let(:disk_manager) { DiskManager.new(logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
+      let(:cloud_factory) { instance_double(CloudFactory) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -101,7 +102,7 @@ module Bosh
           }}
       end
 
-      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment) }
+      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
 
       let(:event_manager) { Api::EventManager.new(true)}
       let(:task_id) {42}
@@ -182,6 +183,8 @@ module Bosh
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
+        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
       end
 
       it 'should create a vm' do

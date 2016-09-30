@@ -5,6 +5,7 @@ module Bosh::Director
     subject(:disk_manager) { OrphanDiskManager.new(logger) }
 
     let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(CloudFactory) }
 
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
 
@@ -14,11 +15,13 @@ module Bosh::Director
 
     before do
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(CloudFactory).to receive(:new).and_return(cloud_factory)
     end
 
     describe '#unorphan_disk' do
-      let(:instance) { Models::Instance.make(id: 123) }
-      let(:orphan_disk) { Models::OrphanDisk.make(disk_cid: 'disk456', size: 2048, cloud_properties: {'test_property' => '1'}) }
+      let(:instance) { Models::Instance.make(id: 123, availability_zone: 'az1') }
+      let(:orphan_disk) { Models::OrphanDisk.make(disk_cid: 'disk456', size: 2048, availability_zone: 'az1',
+                                                  cloud_properties: {'test_property' => '1'}) }
 
       it 'unorphans disks and snapshots' do
         snapshot = Models::OrphanSnapshot.make(orphan_disk: orphan_disk)
@@ -131,8 +134,8 @@ module Bosh::Director
 
       let(:event_log) { instance_double(EventLog::Log) }
       let(:stage) { instance_double(EventLog::Stage) }
-      let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: ten_seconds_ago) }
-      let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago) }
+      let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: ten_seconds_ago, availability_zone: 'az1') }
+      let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago, availability_zone: 'az2') }
       let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
       let(:orphan_disk_cid_2) { orphan_disk_2.disk_cid }
       let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-a') }
@@ -146,6 +149,7 @@ module Bosh::Director
       describe 'deleting an orphan disk by disk cid' do
         it 'deletes disks from the cloud and from the db' do
           expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+          expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
           subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
 
@@ -159,6 +163,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_snapshot).with('snap-cid-a')
           expect(cloud).to receive(:delete_snapshot).with('snap-cid-b')
           expect(cloud).to_not receive(:delete_snapshot).with('snap-cid-2')
+          expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
           subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
 
@@ -177,6 +182,7 @@ module Bosh::Director
       describe 'deleting an orphan disk' do
         it 'deletes disks from the cloud and from the db' do
           expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+          expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
           subject.delete_orphan_disk(orphan_disk_1)
 
@@ -190,6 +196,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_snapshot).with('snap-cid-a')
           expect(cloud).to receive(:delete_snapshot).with('snap-cid-b')
           expect(cloud).to_not receive(:delete_snapshot).with('snap-cid-2')
+          expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
           subject.delete_orphan_disk(orphan_disk_1)
 
@@ -199,6 +206,7 @@ module Bosh::Director
         context 'when the snapshot is not found in the cloud' do
           it 'logs the error and continues to delete the remaining disks' do
             expect(cloud).to receive(:delete_snapshot).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
+            expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
             expect(logger).to receive(:debug).with('Disk not found in IaaS: snap-cid-a')
             subject.delete_orphan_disk(orphan_disk_1)
             expect(Models::OrphanSnapshot.where(orphan_disk_id: orphan_disk_1.id).all).to be_empty
@@ -208,6 +216,7 @@ module Bosh::Director
         context 'when disk is not found in the cloud' do
           it 'logs the error to the debug log AND continues to delete the remaining disks' do
             allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+            expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
             expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
 
@@ -219,6 +228,7 @@ module Bosh::Director
         context 'when CPI is unable to delete a disk' do
           it 'raises the error thrown by the CPI AND does NOT delete the disk from the database' do
             allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Exception.new('Bad stuff happened!'))
+            expect(cloud_factory).to receive(:for_availability_zone).with(orphan_disk_1.availability_zone).at_least(:once).and_return(cloud)
 
             expect {
               subject.delete_orphan_disk(orphan_disk_1)

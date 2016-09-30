@@ -6,6 +6,7 @@ module Bosh
       subject { VmDeleter.new(logger) }
 
       let(:cloud) { Config.cloud }
+      let(:cloud_factory) { instance_double(CloudFactory) }
       let(:event_manager) { Api::EventManager.new(true)}
       let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
       let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
@@ -35,7 +36,7 @@ module Bosh
         instance_group
       end
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
-      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment) }
+      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
             job,
@@ -54,6 +55,10 @@ module Bosh
         allow(instance).to receive(:spec).and_return(JSON.parse('{"networks":[["name",{"ip":"1.2.3.4"}]],"job":{"name":"job_name"},"deployment":"bosh"}'))
         allow(instance).to receive(:id).and_return(1)
         instance
+      end
+
+      before do
+        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
       end
 
       describe '#delete_for_instance' do
@@ -90,6 +95,10 @@ module Bosh
       end
 
       describe '#delete_vm' do
+        before do
+          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).and_return(cloud)
+        end
+
         it 'calls delete_vm on the cloud' do
           expect(logger).to receive(:info).with('Deleting VM')
           expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)

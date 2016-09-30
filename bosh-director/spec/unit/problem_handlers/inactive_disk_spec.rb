@@ -7,12 +7,14 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
 
   before(:each) do
     @agent = double('agent')
 
     @instance = Bosh::Director::Models::Instance.
-      make(:job => 'mysql_node', :index => 3, :uuid => '52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7', credentials: {'credentials' => 'json'})
+      make(:job => 'mysql_node', :index => 3, :uuid => '52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7', credentials: {'credentials' => 'json'},
+           availability_zone: 'az1')
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
@@ -21,6 +23,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     @handler = make_handler(@disk.id)
     allow(@handler).to receive(:cloud).and_return(cloud)
     allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
+    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
   end
 
   it 'registers under inactive_disk type' do
@@ -94,6 +97,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
+      expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
       @handler.apply_resolution(:delete_disk)
 
       expect(Bosh::Director::Models::PersistentDisk[@disk.id]).to be_nil
@@ -105,6 +109,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid').
         and_raise(RuntimeError.new('Cannot detach disk'))
+      expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
 
       @handler.apply_resolution(:delete_disk)
 

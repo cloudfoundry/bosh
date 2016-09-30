@@ -19,9 +19,15 @@ describe Bosh::Director::VmMetadataUpdater do
   describe '#update' do
     subject(:vm_metadata_updater) { described_class.new(director_metadata, logger) }
     let(:cloud) { Bosh::Director::Config.cloud }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:director_metadata) { {} }
-    let(:instance) { BD::Models::Instance.make(deployment: deployment, vm_cid: 'fake-vm-cid', uuid: 'some_instance_id', job: 'job-value', index: 12345) }
+    let(:instance) { BD::Models::Instance.make(deployment: deployment, vm_cid: 'fake-vm-cid', uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1') }
     let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
+
+    before do
+      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+    end
 
     context 'when CPI supports setting vm metadata' do
       it 'updates vm metadata with provided metadata' do

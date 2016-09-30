@@ -25,7 +25,8 @@ module Bosh::Director
         job: 'mysql_node',
         index: 0,
         vm_cid: 'vm-cid',
-        spec: spec
+        spec: spec,
+        availability_zone: 'az1'
       )
     end
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
@@ -50,6 +51,37 @@ module Bosh::Director
 
     def fake_job_context
       test_problem_handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
+    end
+
+    describe '#reboot_vm' do
+      let(:cloud) { Config.cloud }
+      let(:cloud_factory) { instance_double(CloudFactory) }
+      before do
+        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        expect(cloud).to receive(:reboot_vm).with(instance.vm_cid)
+        expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+      end
+
+      it 'reboots the vm on success' do
+        allow(agent_client).to receive(:wait_until_ready)
+        test_problem_handler.reboot_vm(instance)
+      end
+
+      it 'raises a ProblemHandlerError if agent is still unresponsive' do
+        allow(agent_client).to receive(:wait_until_ready).and_raise(Bosh::Director::RpcTimeout)
+
+        expect {
+          test_problem_handler.reboot_vm(instance)
+        }.to raise_error(ProblemHandlerError, 'Agent still unresponsive after reboot')
+      end
+
+      it 'raises a ProblemHandlerError if task is cancelled' do
+        allow(agent_client).to receive(:wait_until_ready).and_raise(Bosh::Director::TaskCancelled)
+
+        expect {
+          test_problem_handler.reboot_vm(instance)
+        }.to raise_error(ProblemHandlerError, 'Task was cancelled')
+      end
     end
 
     describe '#delete_vm' do
