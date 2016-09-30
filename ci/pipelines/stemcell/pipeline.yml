@@ -72,7 +72,7 @@ jobs:
       - get: bosh-src
       - get: version
         params:
-          bump: major
+          bump: {{stemcell_version_semver_bump}}
       - put: version
         params:
           file: version/number
@@ -165,6 +165,7 @@ jobs:
       - put: bosh-src-push
         params:
           repository: bosh-src-tagged
+          only_tag: true
 
   #
   # WARDEN
@@ -550,7 +551,7 @@ resources:
     type: semver
     source:
       driver: s3
-      key: bosh-stemcell/version
+      key: {{stemcell_version_key}}
       bucket: {{stemcell_bucket}}
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
