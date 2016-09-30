@@ -34,6 +34,7 @@ module Bosh::Dev::Sandbox
     attr_reader :scheduler_process
 
     attr_reader :director_service
+    attr_reader :director_name
     attr_reader :port_provider
 
     attr_reader :database_proxy
@@ -149,7 +150,10 @@ module Bosh::Dev::Sandbox
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
-      @director_service.start(director_config)
+      dir_config = director_config
+      @director_name = dir_config.director_name
+
+      @director_service.start(dir_config)
     end
 
     def director_config

@@ -4,9 +4,9 @@ module Bosh::Director::ConfigServer
   class DeepHashReplacement
     include ConfigServerHelper
 
-    def replacement_map(obj, subtrees_to_ignore = [])
+    def placeholders_paths(obj, subtrees_to_ignore = [])
       map = []
-      create_replacement_map(map, obj)
+      construct_placeholders_paths(map, obj)
 
       result = map.select do |elem|
         !path_matches_subtrees_to_ignore?(subtrees_to_ignore, elem['path'])
@@ -15,26 +15,42 @@ module Bosh::Director::ConfigServer
       result
     end
 
+    def replace_placeholders(obj_to_be_resolved, config_map, config_values)
+      result = Bosh::Common::DeepCopy.copy(obj_to_be_resolved)
+      config_map.each do |config_loc|
+        config_path = config_loc['path']
+        ret = result
+
+        if config_path.length > 1
+          ret = config_path[0..config_path.length-2].inject(result) do |obj, el|
+            obj[el]
+          end
+        end
+        ret[config_path.last] = config_values[config_loc['placeholder']]
+      end
+
+      result
+    end
+
     private
 
-    def create_replacement_map(result, obj, path = nil)
+    def construct_placeholders_paths(result, obj, path = nil)
       if obj.is_a? Array
         obj.each_with_index do |item, index|
           new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
           new_path << index
-          create_replacement_map(result, item, new_path)
+          construct_placeholders_paths(result, item, new_path)
         end
       elsif obj.is_a? Hash
         obj.each do |key, value|
           new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
           new_path << key
-          create_replacement_map(result, value, new_path)
+          construct_placeholders_paths(result, value, new_path)
         end
       else
         path ||= []
         if is_placeholder?(obj.to_s)
-          extracted_key = extract_placeholder_key(obj.to_s)
-          result << {'key' => extracted_key, 'path' => path}
+          result << {'placeholder' => obj.to_s, 'path' => path}
         end
       end
     end

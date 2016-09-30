@@ -21,9 +21,11 @@ describe 'using director with config server', type: :integration do
         )]
       })
   end
-  let (:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
-  let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
-  let (:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+  let(:deployment_name) { manifest_hash['name'] }
+  let(:director_name) { current_sandbox.director_name }
+  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
+  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -33,6 +35,10 @@ describe 'using director with config server', type: :integration do
         'happiness_level' => 10
       }
     }
+  end
+
+  def prepend_namespace(key)
+    "/#{director_name}/#{deployment_name}/#{key}"
   end
 
   context 'when config server certificates are not trusted' do
@@ -70,7 +76,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
-        config_server_helper.put_value('my_placeholder', 'he is colorless')
+        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
 
         deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
         expect(deploy_output).to_not include('he is colorless')
@@ -80,7 +86,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'replaces placeholders in the manifest when config server has value for placeholders' do
-        config_server_helper.put_value('my_placeholder', 'cats are happy')
+        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
@@ -90,13 +96,20 @@ describe 'using director with config server', type: :integration do
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
 
+      it 'does not add namespace to keys starting with slash' do
+        config_server_helper.put_value('/my_placeholder', 'cats are happy')
+        job_properties['gargamel']['color'] = "((/my_placeholder))"
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+      end
+
       context 'when manifest is downloaded through CLI' do
         before do
           job_properties['smurfs']['color'] = '((!smurfs_color_placeholder))'
         end
 
         it 'returns original raw manifest (with no changes) when downloaded through cli' do
-          config_server_helper.put_value('my_placeholder', 'happy smurf')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'happy smurf')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
@@ -121,7 +134,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'strips the exclamation mark when getting value from config server' do
-          config_server_helper.put_value('my_placeholder', 'cats are very happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are very happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
@@ -137,14 +150,14 @@ describe 'using director with config server', type: :integration do
         after { current_sandbox.health_monitor_process.stop }
 
         it 'interpolates values correctly when resurrector kicks in' do
-          config_server_helper.put_value('my_placeholder', 'cats are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
-          config_server_helper.put_value('my_placeholder', 'smurfs are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
 
           vm.kill_agent
           director.wait_for_vm('our_instance_group', '0', 300, env: client_env)
@@ -157,7 +170,7 @@ describe 'using director with config server', type: :integration do
 
       context 'when config server values changes post deployment' do
         it 'updates the job on bosh redeploy' do
-          config_server_helper.put_value('my_placeholder', 'cats are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
@@ -166,7 +179,7 @@ describe 'using director with config server', type: :integration do
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
-          config_server_helper.put_value('my_placeholder', 'dogs are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
 
           output = bosh_runner.run('deploy', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
@@ -177,7 +190,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'updates the job on start/restart/recreate' do
-          config_server_helper.put_value('my_placeholder', 'cats are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
@@ -188,7 +201,7 @@ describe 'using director with config server', type: :integration do
 
           # ============================================
           # Restart
-          config_server_helper.put_value('my_placeholder', 'dogs are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
           output = bosh_runner.run('restart', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
@@ -198,7 +211,7 @@ describe 'using director with config server', type: :integration do
 
           # ============================================
           # Recreate
-          config_server_helper.put_value('my_placeholder', 'smurfs are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
           output = bosh_runner.run('recreate', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
@@ -208,7 +221,7 @@ describe 'using director with config server', type: :integration do
 
           # ============================================
           # start
-          config_server_helper.put_value('my_placeholder', 'kittens are happy')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
           bosh_runner.run('stop', env: client_env)
           output = bosh_runner.run('start', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
@@ -274,8 +287,8 @@ describe 'using director with config server', type: :integration do
           end
 
           before do
-            config_server_helper.put_value('env1_placeholder', 'lazy smurf')
-            config_server_helper.put_value('color_placeholder', 'super_color')
+            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
+            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'super_color')
           end
 
           it 'should interpolate them correctly' do
@@ -334,8 +347,8 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'should interpolate them correctly' do
-            config_server_helper.put_value('env1_placeholder', 'lazy cat')
-            config_server_helper.put_value('color_placeholder', 'smurf blue')
+            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy cat')
+            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'smurf blue')
 
             deployment_manifest = Bosh::Spec::Deployments.legacy_manifest
             deployment_manifest['resource_pools'][0]['env'] = env_hash
@@ -391,8 +404,8 @@ describe 'using director with config server', type: :integration do
           before do
             bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
 
-            config_server_helper.put_value('env1_placeholder', 'lazy smurf')
-            config_server_helper.put_value('color_placeholder', 'blue')
+            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
+            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'blue')
           end
 
           it 'should send the flag to the agent with interpolated values' do
@@ -444,8 +457,10 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to find keys in the config server: release_name')
+          expect(output).to include('Error 540000: Failed to find keys in the config server: /release_name')
         end
+
+        # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
 
         context 'when property cannot be found at render time' do
           let(:runtime_config) do
@@ -458,7 +473,7 @@ describe 'using director with config server', type: :integration do
                     {
                       'name' => 'job_2_with_many_properties',
                       'release' => 'bosh-release',
-                      'properties' => {'gargamel' => {'color' => '((placeholder_used_at_render_time))'}}
+                      'properties' => {'gargamel' => {'color' => '((/placeholder_used_at_render_time))'}}
                     }
                   ]
                 }]
@@ -466,7 +481,7 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'will throw an error' do
-            config_server_helper.put_value('my_placeholder', 'I am here for deployment manifest')
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'I am here for deployment manifest')
 
             upload_stemcell(env: client_env)
             create_and_upload_test_release(env: client_env)
@@ -483,7 +498,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to find keys in the config server: placeholder_used_at_render_time')
+            expect(output).to include('Failed to find keys in the config server: /placeholder_used_at_render_time')
           end
         end
       end
@@ -491,7 +506,7 @@ describe 'using director with config server', type: :integration do
       context 'when config server has all keys' do
         let(:runtime_config) do
           {
-            'releases' => [{'name' => 'bosh-release', 'version' => '((addon_release_version_placeholder))'}],
+            'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
             'addons' => [
               {
                 'name' => 'addon1',
@@ -499,7 +514,7 @@ describe 'using director with config server', type: :integration do
                   {
                     'name' => 'job_2_with_many_properties',
                     'release' => 'bosh-release',
-                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
+                    'properties' => {'gargamel' => {'color' => '((/addon_placeholder))'}}
                   }
                 ]
               }]
@@ -509,9 +524,9 @@ describe 'using director with config server', type: :integration do
         before do
           create_and_upload_test_release(env: client_env)
 
-          config_server_helper.put_value('my_placeholder', 'i am just here for regular manifest')
-          config_server_helper.put_value('addon_placeholder', 'addon prop first value')
-          config_server_helper.put_value('addon_release_version_placeholder', '0.1-dev')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
+          config_server_helper.put_value('/addon_placeholder', 'addon prop first value')
+          config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
           manifest_hash['jobs'].first['instances'] = 3
@@ -525,7 +540,7 @@ describe 'using director with config server', type: :integration do
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
 
           # change value in config server and redeploy
-          config_server_helper.put_value('addon_placeholder', 'addon prop second value')
+          config_server_helper.put_value('/addon_placeholder', 'addon prop second value')
 
           redeploy_output = bosh_runner.run('deploy', env: client_env)
 
@@ -539,14 +554,24 @@ describe 'using director with config server', type: :integration do
           template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
         end
+
+        it 'throws errors when placeholders do not start with slash' do
+          runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
+
+          expect {
+            upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+          }.to raise_error(RuntimeError, /Error 540005: Keys must be absolute path: addon_release_version_placeholder/)
+        end
       end
     end
 
     context 'when running an errand that has placeholders' do
       let(:errand_manifest){ Bosh::Spec::Deployments.manifest_errand_with_placeholders }
+      let(:namespaced_key) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
 
       it 'replaces placeholder in properties' do
-        config_server_helper.put_value('placeholder', 'test value')
+        config_server_helper.put_value(namespaced_key, 'test value')
+
         deploy_from_scratch(no_login: true, manifest_hash: errand_manifest,
                             cloud_config_hash: cloud_config, env: client_env)
         errand_result = bosh_runner.run('run errand fake-errand-name --keep-alive', env: client_env)
@@ -618,17 +643,17 @@ describe 'using director with config server', type: :integration do
                   template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                   expect(
                     template_hash['properties_list']['smurfs_phone_password']
-                  ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
+                  ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
                   expect(
                     template_hash['properties_list']['gargamel_secret_recipe']
-                  ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
+                  ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
                   # Certificate generation
                   generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
                   generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
                   root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
 
-                  generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+                  generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
                   expect(generated_cert).to eq(generated_cert_response['certificate'])
                   expect(generated_private_key).to eq(generated_cert_response['private_key'])
@@ -705,7 +730,7 @@ describe 'using director with config server', type: :integration do
                   it 'generates cert with SAN including all the networks with no duplicates' do
                     deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
-                    generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
                     vms = director.vms('simple', env: client_env).select{ |vm|  vm.job_name == 'our_instance_group' }
 
@@ -750,16 +775,16 @@ describe 'using director with config server', type: :integration do
                     template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                     expect(
                       template_hash['properties_list']['smurfs_phone_password']
-                    ).to eq(config_server_helper.get_value('smurfs_phone_password_placeholder'))
+                    ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
                     expect(
                       template_hash['properties_list']['gargamel_secret_recipe']
-                    ).to eq(config_server_helper.get_value('gargamel_secret_recipe_placeholder'))
+                    ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
                     generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
                     generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
                     root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
 
-                    generated_cert_response = config_server_helper.get_value('gargamel_certificate_placeholder')
+                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
                     expect(generated_cert).to eq(generated_cert_response['certificate'])
                     expect(generated_private_key).to eq(generated_cert_response['private_key'])
@@ -792,9 +817,9 @@ describe 'using director with config server', type: :integration do
               end
 
               it 'uses the values defined in config server' do
-                config_server_helper.put_value('smurfs_phone_password_placeholder', 'i am smurf')
-                config_server_helper.put_value('gargamel_secret_recipe_placeholder', 'banana and jaggery')
-                config_server_helper.put_value('gargamel_certificate_placeholder', certificate_payload)
+                config_server_helper.put_value(prepend_namespace('smurfs_phone_password_placeholder'), 'i am smurf')
+                config_server_helper.put_value(prepend_namespace('gargamel_secret_recipe_placeholder'), 'banana and jaggery')
+                config_server_helper.put_value(prepend_namespace('gargamel_certificate_placeholder'), certificate_payload)
 
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
@@ -939,7 +964,6 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
         cloud_config_hash
       end
-
       let(:provider_job_name) { 'http_server_with_provides' }
       let(:my_instance_group) do
         job_spec = Bosh::Spec::Deployments.simple_job(
@@ -954,7 +978,6 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         job_spec['properties'] = {'listen_port' => 9035, 'name_space' => {'fibonacci' => '((fibonacci_placeholder))'}}
         job_spec
       end
-
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
         manifest['jobs'] = [my_instance_group]
@@ -970,7 +993,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
       end
 
       it 'replaces the placeholder values of properties consumed through links' do
-        config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
         deploy_simple_manifest(manifest_hash: manifest, env: client_env)
 
         link_vm = director.vm('my_instance_group', '0', env: client_env)
@@ -979,7 +1002,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
       end
 
       it 'does not log interpolated properties in deploy output and debug logs' do
-        config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
         deploy_output = deploy_simple_manifest(manifest_hash: manifest, env: client_env)
         debug_output = bosh_runner.run('task last --debug', no_login: true, env: client_env)
 
@@ -995,7 +1018,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
           link_vm = director.vm('my_instance_group', '0', env: client_env)
           template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-          expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value('fibonacci_placeholder'))
+          expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
         end
       end
 
@@ -1026,9 +1049,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         end
 
         before do
-          config_server_helper.put_value('a_placeholder', 'a_value')
-          config_server_helper.put_value('b_placeholder', 'b_value')
-          config_server_helper.put_value('c_placeholder', 'c_value')
+          config_server_helper.put_value(prepend_namespace('a_placeholder'), 'a_value')
+          config_server_helper.put_value(prepend_namespace('b_placeholder'), 'b_value')
+          config_server_helper.put_value(prepend_namespace('c_placeholder'), 'c_value')
 
           manifest['jobs'] = [job_with_manual_consumes_link]
         end
@@ -1059,7 +1082,8 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      context 'when having cross deployment links' do
+      # pending on https://www.pivotaltracker.com/story/show/130228775
+      xcontext 'when having cross deployment links' do
         let(:first_manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
           manifest['name'] = 'first'
@@ -1149,7 +1173,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
             template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
             expect(
               template['links']['properties']['fibonacci']
-            ).to eq(config_server_helper.get_value('fibonacci_placeholder'))
+            ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
           end
         end
       end
