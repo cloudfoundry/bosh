@@ -25,8 +25,7 @@ module Bosh::Director
           @vm_deleter.delete_for_instance(instance, false)
         rescue InstanceNotFound
           parent_id = add_event
-          # TODO FIXME: what to do in this case?
-          #@vm_deleter.delete_vm(@vm_cid)
+          @vm_deleter.delete_vm_by_cid(@vm_cid)
         end
       rescue Bosh::Clouds::VMNotFound
         logger.info("vm #{@vm_cid} does not exists")

@@ -59,6 +59,7 @@ module Bosh
 
       before do
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(cloud_factory).to receive(:default_from_director_config).and_return(cloud)
       end
 
       describe '#delete_for_instance' do
@@ -112,6 +113,36 @@ module Bosh
             expect(logger).to receive(:info).with('Deleting VM')
             expect(cloud).not_to receive(:delete_vm)
             subject.delete_vm(instance_model)
+          end
+        end
+      end
+
+      describe '#delete_vm_by_cid' do
+        it 'calls delete_vm if only one cloud is configured' do
+          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
+
+          expect(logger).to receive(:info).with('Deleting VM')
+          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
+          subject.delete_vm_by_cid(instance_model.vm_cid)
+        end
+
+        it 'does not call delete_vm if multiple clouds are configured' do
+          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
+
+          expect(logger).to receive(:info).with('Deleting VM')
+          expect(cloud).to_not receive(:delete_vm).with(instance_model.vm_cid)
+          subject.delete_vm_by_cid(instance_model.vm_cid)
+        end
+
+        context 'when virtual delete is enabled' do
+          subject { VmDeleter.new(logger, false, true) }
+
+          it 'skips calling delete_vm on the cloud' do
+            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
+
+            expect(logger).to receive(:info).with('Deleting VM')
+            expect(cloud).not_to receive(:delete_vm)
+            subject.delete_vm_by_cid(instance_model.vm_cid)
           end
         end
       end

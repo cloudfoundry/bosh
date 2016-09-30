@@ -78,10 +78,10 @@ module Bosh::Director
       end
 
       context 'when instance does not have reference to vm' do
-        #TODO FIXME: correct? it_behaves_like 'vm delete'
+        it_behaves_like 'vm delete'
 
         it 'should store event' do
-          expect(cloud).to_not receive(:delete_vm).with(vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
           event_1 = Bosh::Director::Models::Event.first
           expect(event_1.user).to eq(task.username)
@@ -101,6 +101,12 @@ module Bosh::Director
           expect(event_2.instance).to be_nil
           expect(event_2.deployment).to be_nil
           expect(event_2.task).to eq("#{task.id}")
+        end
+
+        it 'does not try to delete from cloud when using multiple cpis and only vm_cid is known' do
+          allow_any_instance_of(CloudFactory).to receive(:uses_cpi_config?).and_return(true)
+          expect(cloud).to_not receive(:delete_vm).with(vm_cid)
+          job.perform
         end
       end
     end
