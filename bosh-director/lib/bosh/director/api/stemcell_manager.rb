@@ -7,7 +7,7 @@ module Bosh::Director
       include ApiHelper
 
       def all_by_name_and_version(name, version)
-        stemcells = Models::Stemcell.dataset.order(:name).where(:name => name, :version => version).all
+        stemcells = Models::Stemcell.where(:name => name, :version => version).all
         raise StemcellNotFound, "Stemcell '#{name}/#{version}' doesn't exist" if stemcells.empty?
         stemcells
       end
