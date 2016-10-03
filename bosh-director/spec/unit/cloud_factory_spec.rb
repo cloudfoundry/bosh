@@ -119,9 +119,9 @@ module Bosh::Director
     context 'when using cpi config' do
       let(:cpis) {
         [
-            CpiConfig::Cpi.new('name1', 'type1', {'prop1' => 'val1'}),
-            CpiConfig::Cpi.new('name2', 'type2', {'prop2' => 'val2'}),
-            CpiConfig::Cpi.new('name3', 'type3', {'prop3' => 'val3'}),
+            CpiConfig::Cpi.new('name1', 'type1', nil, {'prop1' => 'val1'}),
+            CpiConfig::Cpi.new('name2', 'type2', nil, {'prop2' => 'val2'}),
+            CpiConfig::Cpi.new('name3', 'type3', nil, {'prop3' => 'val3'}),
         ]
       }
 
@@ -138,9 +138,9 @@ module Bosh::Director
       }
 
       it 'returns all clouds from cpi config when asking for all configured clouds' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].job_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].job_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].job_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
 
         all_clouds = cloud_factory.all_configured_clouds
         expect(all_clouds.count).to eq(3)
@@ -155,14 +155,14 @@ module Bosh::Director
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
         az = DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name)
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].job_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
 
         cloud = cloud_factory.for_availability_zone('some-az')
         expect(cloud).to eq(clouds[0])
       end
 
       it 'returns the cpi if asking for a given existing cpi' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].job_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
         cloud = cloud_factory.for_cpi('name2')
         expect(cloud).to eq(clouds[1])
       end

@@ -8,6 +8,7 @@ module Bosh::Director
         {
             'name' => 'cpi-name',
             'type' => 'cpi-type',
+            'exec_path' => 'cpi-path',
             'properties' => {
                 'somekey' => 'someproperty'
             }
@@ -18,6 +19,7 @@ module Bosh::Director
         it 'parses' do
           expect(cpi.name).to eq('cpi-name')
           expect(cpi.type).to eq('cpi-type')
+          expect(cpi.exec_path).to eq('cpi-path')
           expect(cpi.properties).to eq(cpi_hash['properties'])
         end
 
@@ -42,6 +44,14 @@ module Bosh::Director
 
           it 'parses' do
             expect(cpi.properties).to eq({})
+          end
+        end
+
+        context 'when cpi hash has no exec_path' do
+          let(:cpi_hash) { {'name' => 'cpi-name', 'type' => 'cpi-type'} }
+
+          it 'falls back to a inferred path from type' do
+            expect(cpi.exec_path).to eq('/var/vcap/jobs/cpi-type_cpi/bin/cpi')
           end
         end
       end

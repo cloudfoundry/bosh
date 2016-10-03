@@ -84,7 +84,7 @@ module Bosh::Director
     end
 
     def create_from_cpi_config(cpi)
-      Bosh::Clouds::ExternalCpi.new(cpi.job_path, Config.uuid, cpi.properties)
+      Bosh::Clouds::ExternalCpi.new(cpi.exec_path, Config.uuid, cpi.properties)
     end
   end
 end

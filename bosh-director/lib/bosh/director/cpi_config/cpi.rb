@@ -5,9 +5,10 @@ module Bosh::Director
 
       attr_reader :name, :type, :properties
 
-      def initialize(name, type, properties)
+      def initialize(name, type, exec_path, properties)
         @name = name
         @type = type
+        @exec_path = exec_path
         @properties = properties
         validate
       end
@@ -15,12 +16,13 @@ module Bosh::Director
       def self.parse(cpi_hash)
         name = safe_property(cpi_hash, 'name', :class => String)
         version = safe_property(cpi_hash, 'type', :class => String)
+        exec_path = safe_property(cpi_hash, 'exec_path', :class => String, :optional => true)
         properties = safe_property(cpi_hash, 'properties', :class => Hash, :optional => true, :default => {})
-        new(name, version, properties)
+        new(name, version, exec_path, properties)
       end
 
-      def job_path
-        "/var/vcap/jobs/#{type}_cpi/bin/cpi"
+      def exec_path
+        @exec_path || "/var/vcap/jobs/#{type}_cpi/bin/cpi"
       end
 
       private
