@@ -181,7 +181,7 @@ module IntegrationExampleGroup
   end
 
   def scrub_event_time(bosh_output)
-    sub_in_records(bosh_output, /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx')
+    sub_in_records(bosh_output, /[A-Za-z]{3} [A-Za-z]{3}\s{1,2}[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx')
   end
 
   def scrub_event_parent_ids(bosh_output)
