@@ -122,8 +122,8 @@ module Bosh::Spec
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{'name' => 'dummy_with_properties', 'release' => '((release_name))'}],
-            'properties' => {'dummy_with_properties' => {'echo_value' => '((addon_prop))'}}
+            'jobs' => [{'name' => 'dummy_with_properties', 'release' => '((/release_name))'}],
+            'properties' => {'dummy_with_properties' => {'echo_value' => '((/addon_prop))'}}
           }]
       })
     end

@@ -22,7 +22,7 @@ describe 'cli: deployment process', type: :integration do
     bosh_runner.run("upload stemcell #{stemcell_filename}")
     bosh_runner.run("upload release #{release_filename}")
 
-    expect(bosh_runner.run('deploy')).to match /Deployed 'simple' to 'Test Director'/
+    expect(bosh_runner.run('deploy')).to include("Deployed 'simple' to '#{current_sandbox.director_name}'")
     expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
   end
 
@@ -43,15 +43,15 @@ describe 'cli: deployment process', type: :integration do
         bosh_runner.run("upload stemcell #{stemcell_filename}")
         bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
 
         minimal_manifest['name'] = 'minimal2'
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
         bosh_runner.run("deployment #{deployment_manifest.path}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal2' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'minimal2' to '#{current_sandbox.director_name}'")
         expect_table('deployments', %(
-          Acting as user 'test' on 'Test Director'
+          Acting as user 'test' on '#{current_sandbox.director_name}'
 
           +----------+----------------+-------------------+--------------+
           | Name     | Release(s)     | Stemcell(s)       | Cloud Config |
@@ -233,7 +233,7 @@ DIFF
       bosh_runner.run("upload release #{release_filename}")
 
       out = bosh_runner.run('deploy')
-      expect(out).to match /Deployed 'minimal' to 'Test Director'/
+      expect(out).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
 
       deployments_output = bosh_runner.run('deployments')
       expect(deployments_output).to include(<<-OUT)

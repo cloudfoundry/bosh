@@ -981,7 +981,7 @@ Started		#{date_regex}
 Finished	#{date_regex}
 Duration	#{duration_regex}
 
-Deployed 'simple' to 'Test Director'
+Deployed 'simple' to '#{current_sandbox.director_name}'
       OUT
     end
 

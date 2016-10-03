@@ -1,13 +1,19 @@
 require 'spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
+  let(:manifest) {Bosh::Spec::Deployments.simple_manifest}
+  let(:director_name) {current_sandbox.director_name}
+  let(:deployment_name) {manifest['name']}
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
+
+  def prepend_namespace(key)
+    "/#{director_name}/#{deployment_name}/#{key}"
+  end
 
   context 'with dns enabled' do
     with_reset_sandbox_before_each
 
     before do
-      manifest = Bosh::Spec::Deployments.simple_manifest
       manifest['jobs'][0]['persistent_disk'] = 100
       deploy_from_scratch(manifest_hash: manifest)
 
@@ -169,7 +175,6 @@ describe 'cli: cloudcheck', type: :integration do
     with_reset_sandbox_before_each(dns_enabled: false)
 
     before do
-      manifest = Bosh::Spec::Deployments.simple_manifest
       manifest['jobs'][0]['persistent_disk'] = 100
       deploy_from_scratch(manifest_hash: manifest)
 
@@ -199,9 +204,8 @@ describe 'cli: cloudcheck', type: :integration do
       bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
       bosh_runner.run('logout')
 
-      config_server_helper.put_value('test_property', 'cats are happy')
+      config_server_helper.put_value(prepend_namespace('test_property'), 'cats are happy')
 
-      manifest = Bosh::Spec::Deployments.simple_manifest
       manifest['jobs'][0]['persistent_disk'] = 100
       manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
       deploy_from_scratch(manifest_hash: manifest, no_login: true, env: client_env)
@@ -217,7 +221,7 @@ describe 'cli: cloudcheck', type: :integration do
 
       current_sandbox.cpi.kill_agents
 
-      config_server_helper.put_value('test_property', 'smurfs are happy')
+      config_server_helper.put_value(prepend_namespace('test_property'), 'smurfs are happy')
 
       recreate_vm_without_waiting_for_process = 3
       bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process, client_env)

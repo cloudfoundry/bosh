@@ -121,10 +121,11 @@ module Bosh::Director
     end
 
     def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
-      parent_id = add_event(instance_model.deployment.name, instance_model.name, 'create')
+      deployment_name = instance_model.deployment.name
+      parent_id = add_event(deployment_name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
 
-      config_server_client = @config_server_client_factory.create_client
+      config_server_client = @config_server_client_factory.create_client(deployment_name)
       env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env))
 
       options = {:agent_id => agent_id}
@@ -144,14 +145,14 @@ module Bosh::Director
 
       if instance_model.job
         env['bosh'] ||= {}
-        env['bosh']['group'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}")
+        env['bosh']['group'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}")
         env['bosh']['groups'] = [
           Bosh::Director::Config.name,
-          instance_model.deployment.name,
+          deployment_name,
           instance_model.job,
-          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}",
-          "#{instance_model.deployment.name}-#{instance_model.job}",
-          "#{Bosh::Director::Config.name}-#{instance_model.deployment.name}-#{instance_model.job}"
+          "#{Bosh::Director::Config.name}-#{deployment_name}",
+          "#{deployment_name}-#{instance_model.job}",
+          "#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}"
         ]
         env['bosh']['groups'].map! { |name| Canonicalizer.canonicalize(name) }
       end
@@ -171,13 +172,13 @@ module Bosh::Director
     rescue => e
       @logger.error("error creating vm: #{e.message}")
       if vm_cid
-        parent_id = add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid)
+        parent_id = add_event(deployment_name, instance_model.name, 'delete', vm_cid)
         @vm_deleter.delete_vm(vm_cid)
-        add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid, parent_id)
+        add_event(deployment_name, instance_model.name, 'delete', vm_cid, parent_id)
       end
       raise e
     ensure
-      add_event(instance_model.deployment.name, instance_model.name, 'create', vm_cid, parent_id, e)
+      add_event(deployment_name, instance_model.name, 'create', vm_cid, parent_id, e)
     end
 
     def self.generate_agent_id

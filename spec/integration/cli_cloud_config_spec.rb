@@ -44,7 +44,7 @@ describe "cli cloud config", type: :integration do
     bosh_runner.run("login test test")
 
     # none present yet
-    expect(bosh_runner.run("cloud-config")).to include("Acting as user 'test' on 'Test Director'\n")
+    expect(bosh_runner.run("cloud-config")).to include("Acting as user 'test' on '#{current_sandbox.director_name}'\n")
 
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
