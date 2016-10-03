@@ -55,6 +55,48 @@ module Bosh::Spec
       })
     end
 
+    def self.simple_cloud_config_with_multiple_azs_and_cpis
+      networks = [
+          {
+              'name' => 'a',
+              'subnets' => [subnet('az' => 'z1'),
+                            {
+                                'range' => '192.168.2.0/24',
+                                'gateway' => '192.168.2.1',
+                                'dns' => ['192.168.2.1', '192.168.2.2'],
+                                'static' => ['192.168.2.10'],
+                                'reserved' => [],
+                                'cloud_properties' => {},
+                                'az' => 'z2'
+                            }],
+          },
+      ]
+
+      azs = [
+          {
+              'name' => 'z1',
+              'cpi' => 'cpi-name',
+              'cloud_properties' => {'a' => 'b'}
+          },
+          {
+              'name' => 'z2',
+              'cpi' => 'cpi-name2',
+              'cloud_properties' => {'a' => 'b'}
+          }
+      ]
+      minimal_cloud_config.merge({
+                                     'networks' => networks,
+                                     'resource_pools' => [resource_pool],
+                                     'azs' => azs,
+                                     'compilation' => {
+                                         'workers' => 1,
+                                         'network' => 'a',
+                                         'cloud_properties' => {},
+                                         'az' => 'z1'
+                                     },
+                                 })
+    end
+
     def self.simple_runtime_config
       {
         'releases' => [{'name' => 'test_release_2', 'version' => '2'}]
@@ -145,8 +187,8 @@ module Bosh::Spec
       }
     end
 
-    def self.simple_cpi_config
-      {
+    def self.simple_cpi_config(exec_path=nil)
+      cpi_config =  {
           'cpis' => [
               {
                   'name' => 'cpi-name',
@@ -164,6 +206,8 @@ module Bosh::Spec
               }
           ]
       }
+      cpi_config['cpis'].each{|cpi|cpi['exec_path'] = exec_path} unless exec_path.nil?
+      cpi_config
     end
 
     def self.network(options = {})

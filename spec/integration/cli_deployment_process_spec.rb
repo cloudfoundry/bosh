@@ -26,45 +26,6 @@ describe 'cli: deployment process', type: :integration do
     expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
   end
 
-  it 'generates release and deploys it using cpi config' do
-    # Test release created with bosh (see spec/assets/test_release_template)
-    release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
-      FileUtils.rm_rf('dev_releases')
-      output = bosh_runner.run_in_current_dir('create release --with-tarball')
-      parse_release_tarball_path(output)
-    end
-
-    # create a cloud config with azs & cpi
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config['azs'] = [
-        {
-            'name' => 'z1',
-            'cpi' => 'cpi-name',
-            'cloud_properties' => {'a' => 'b'}
-        }
-    ]
-    cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
-    cloud_config['compilation']['az'] = 'z1'
-    cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
-    cpi_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cpi_config)
-
-    # create a deployment with this az
-    deployment = Bosh::Spec::Deployments.simple_manifest
-    deployment['jobs'] = [ Bosh::Spec::Deployments.simple_job(azs: ['z1']) ]
-    deployment_manifest = yaml_file('deployment_manifest', deployment)
-
-    target_and_login
-    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("update cpi-config #{cpi_config_manifest.path}")
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run("upload stemcell #{stemcell_filename}")
-    bosh_runner.run("upload release #{release_filename}")
-
-    expect {
-      bosh_runner.run('deploy')
-    }.to raise_error /Failed to run cpi: '\/var\/vcap\/jobs\/cpi-type_cpi\/bin\/cpi' is not executable/
-  end
-
   describe 'bosh deploy' do
     context 'given two deployments from one release' do
       it 'is successful' do
@@ -255,6 +216,39 @@ lines"}
 +     name: new_property
 DIFF
           )
+      end
+    end
+
+    context 'with cpi config' do
+      it 'deploys to multiple cpis' do
+        cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
+
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
+        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
+
+        job = Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2'])
+        deployment = Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job])
+        deployment_manifest = yaml_file('deployment_manifest', deployment)
+
+        target_and_login
+        create_and_upload_test_release
+        bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+        bosh_runner.run("update cpi-config #{cpi_config_manifest.path}")
+        bosh_runner.run("deployment #{deployment_manifest.path}")
+        bosh_runner.run("upload stemcell #{stemcell_filename}")
+        expect(bosh_runner.run('deploy')).to match /Deployed 'simple' to 'Test Director'/
+        expect(bosh_runner.run('stemcells')).to include(<<-OUT)
++-----------------+------------+---------+------------------------------------------+
+| Name            | OS         | Version | CID                                      |
++-----------------+------------+---------+------------------------------------------+
+| ubuntu-stemcell | toronto-os | 1*      | 68aab7c44c857217641784806e2eeac4a3a99d1c |
+| ubuntu-stemcell | toronto-os | 1*      | 68aab7c44c857217641784806e2eeac4a3a99d1c |
++-----------------+------------+---------+------------------------------------------+
+
+(*) Currently in-use
+
+Stemcells total: 2
+OUT
       end
     end
   end
