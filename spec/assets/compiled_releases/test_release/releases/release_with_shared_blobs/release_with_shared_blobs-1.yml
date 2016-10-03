@@ -1,82 +1,58 @@
 ---
 packages:
 - name: pkg_1
-  version: !binary |-
-    MTZiNGM4ZWYxNTc0YjNmOTgzMDMzMDdjYWFkNDAyMjdjMjA4MzcxZg==
-  fingerprint: !binary |-
-    MTZiNGM4ZWYxNTc0YjNmOTgzMDMzMDdjYWFkNDAyMjdjMjA4MzcxZg==
-  sha1: !binary |-
-    MDI1ZmYyNjcwOWZlMTVlNThmODQ4MGNjYjJhOTc5ODBlMDFhYjUwZg==
+  version: 16b4c8ef1574b3f98303307caad40227c208371f
+  fingerprint: 16b4c8ef1574b3f98303307caad40227c208371f
+  sha1: 025ff26709fe15e58f8480ccb2a97980e01ab50f
   dependencies: []
 - name: pkg_2
-  version: !binary |-
-    ZjVjMWMzMDNjMjMwODQwNDk4M2NmMWU3NTY2ZGRjMGEyMmEyMjE1NA==
-  fingerprint: !binary |-
-    ZjVjMWMzMDNjMjMwODQwNDk4M2NmMWU3NTY2ZGRjMGEyMmEyMjE1NA==
-  sha1: !binary |-
-    YzA5NzA3NmNhZDg1YjAyZGM4OTVmOWEwMWE5M2FmNDQxYThmOWNlMg==
+  version: f5c1c303c2308404983cf1e7566ddc0a22a22154
+  fingerprint: f5c1c303c2308404983cf1e7566ddc0a22a22154
+  sha1: c097076cad85b02dc895f9a01a93af441a8f9ce2
   dependencies: []
 - name: pkg_3_depends_on_2
-  version: !binary |-
-    NDEzZTNlOTE3N2YwMDM3YjE4ODJkMTlmYjZiMzc3YjViNzE1YmUxYw==
-  fingerprint: !binary |-
-    NDEzZTNlOTE3N2YwMDM3YjE4ODJkMTlmYjZiMzc3YjViNzE1YmUxYw==
+  version: 413e3e9177f0037b1882d19fb6b377b5b715be1c
+  fingerprint: 413e3e9177f0037b1882d19fb6b377b5b715be1c
   sha1: 62fff2291aac72f5bd703dba0c5d85d0e23532e0
   dependencies:
   - pkg_2
 - name: pkg_4_depends_on_3
-  version: !binary |-
-    OTIwN2I4YTI3NzQwMzQ3N2U1MGNmYWU1MjAwOWIzMWM4NDBjNDlkNA==
-  fingerprint: !binary |-
-    OTIwN2I4YTI3NzQwMzQ3N2U1MGNmYWU1MjAwOWIzMWM4NDBjNDlkNA==
+  version: 9207b8a277403477e50cfae52009b31c840c49d4
+  fingerprint: 9207b8a277403477e50cfae52009b31c840c49d4
   sha1: 603f212d572b0307e4c51807c5e03c47944bb9c3
   dependencies:
   - pkg_3_depends_on_2
 - name: pkg_5_depends_on_4_and_1
-  version: !binary |-
-    M2NhY2Y1NzkzMjIzNzA3MzQ4NTVjMjA1NTczMjFkYWRlZWUzYTdhNA==
-  fingerprint: !binary |-
-    M2NhY2Y1NzkzMjIzNzA3MzQ4NTVjMjA1NTczMjFkYWRlZWUzYTdhNA==
+  version: 3cacf579322370734855c20557321dadeee3a7a4
+  fingerprint: 3cacf579322370734855c20557321dadeee3a7a4
   sha1: ad733ca76ab4747747d8f9f1ddcfa568519a2e00
   dependencies:
   - pkg_1
   - pkg_4_depends_on_3
 jobs:
 - name: job_using_pkg_1
-  version: !binary |-
-    OWE1ZjA5MzY0YjJjZGMxOGE0NTE3MmMxNWRjYTIxOTIyYjNmZjE5Ng==
-  fingerprint: !binary |-
-    OWE1ZjA5MzY0YjJjZGMxOGE0NTE3MmMxNWRjYTIxOTIyYjNmZjE5Ng==
+  version: 9a5f09364b2cdc18a45172c15dca21922b3ff196
+  fingerprint: 9a5f09364b2cdc18a45172c15dca21922b3ff196
   sha1: a7d51f65cda79d2276dc9cc254e6fec523b07b02
 - name: job_using_pkg_1_and_2
-  version: !binary |-
-    NjczYzM2ODkzNjJmMmFkYjM3YmFlZDNkOGQ0MzQ0Y2YwM2ZmNzYzNw==
-  fingerprint: !binary |-
-    NjczYzM2ODkzNjJmMmFkYjM3YmFlZDNkOGQ0MzQ0Y2YwM2ZmNzYzNw==
+  version: 673c3689362f2adb37baed3d8d4344cf03ff7637
+  fingerprint: 673c3689362f2adb37baed3d8d4344cf03ff7637
   sha1: c9acbf245d4b4721141b54b26bee20bfa58f4b54
 - name: job_using_pkg_2
-  version: !binary |-
-    OGU5ZTNiNWFlYmM3ZjE1ZDY2MTI4MDU0NWU5ZDFjMWM3ZDE5ZGU3NA==
-  fingerprint: !binary |-
-    OGU5ZTNiNWFlYmM3ZjE1ZDY2MTI4MDU0NWU5ZDFjMWM3ZDE5ZGU3NA==
+  version: 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74
+  fingerprint: 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74
   sha1: 79475b0b035fe70f13a777758065210407170ec3
 - name: job_using_pkg_3
-  version: !binary |-
-    NTQxMjBkZDY4ZmFiMTQ1NDMzZGY4MzI2MmE5YmE5ZjNkZTUyN2E0Yg==
-  fingerprint: !binary |-
-    NTQxMjBkZDY4ZmFiMTQ1NDMzZGY4MzI2MmE5YmE5ZjNkZTUyN2E0Yg==
+  version: 54120dd68fab145433df83262a9ba9f3de527a4b
+  fingerprint: 54120dd68fab145433df83262a9ba9f3de527a4b
   sha1: ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f
 - name: job_using_pkg_4
-  version: !binary |-
-    MGViZGI1NDRmOWM2MDRlOWEzNTEyMjk5YTAyYjZmMDRmNmVhNmQwYw==
-  fingerprint: !binary |-
-    MGViZGI1NDRmOWM2MDRlOWEzNTEyMjk5YTAyYjZmMDRmNmVhNmQwYw==
+  version: 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c
+  fingerprint: 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c
   sha1: 1ff32a12e0c574720dd8e5111834bac67229f5c1
 - name: job_using_pkg_5
-  version: !binary |-
-    ZmI0MTMwMGVkZjIyMGIxODIzZGE1YWI0YzI0M2IwODVmOWYyNDlhZg==
-  fingerprint: !binary |-
-    ZmI0MTMwMGVkZjIyMGIxODIzZGE1YWI0YzI0M2IwODVmOWYyNDlhZg==
+  version: fb41300edf220b1823da5ab4c243b085f9f249af
+  fingerprint: fb41300edf220b1823da5ab4c243b085f9f249af
   sha1: 37350e20c6f78ab96a1191e5d97981a8d2831665
 commit_hash: df30c99a
 uncommitted_changes: true

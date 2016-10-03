@@ -29,9 +29,12 @@ module Bosh::Director::ConfigServer
         }
       end
 
-      let(:test_obj) do
+      let(:sample_hash) do
         {
           'name' => 'test_manifest',
+          'director_uuid' => '((director_uuid_placeholder))',
+          'smurf' => '((/my/name/is/smurf/12-3))',
+          'gargamel' => '((my/name/is/gar_gamel))',
           'resource_pools' => [
           {
             'name' => 'rp',
@@ -53,50 +56,62 @@ module Bosh::Director::ConfigServer
       end
 
       let(:replacement_list) do
-        DeepHashReplacement.replacement_map(test_obj)
+        DeepHashReplacement.new.replacement_map(sample_hash)
       end
 
-      it 'should create map for placeholders under `global` properties' do
-        replacements = replacement_list.select { |r| r['key'] == "bla" }
-        expected = [{'key' => 'bla', 'path' => ['properties', 'b']}]
-
-        expect(replacements).to eq(expected)
-      end
-
-      it 'should create map for config placeholders under `instance_groups` properties' do
-        replacements = replacement_list.select { |r| r['key'] == "secret_key" }
-        expected = [{'key' => 'secret_key', 'path' => ['instance_groups', 0, 'properties', 'a', 2]}]
-
-        expect(replacements).to eq(expected)
-      end
-
-      it 'should create map for config placeholders under `jobs` properties' do
-        replacements = replacement_list.select { |r| r['key'] == "nuclear_launch_code" }
-        expected = [{'key' => 'nuclear_launch_code', 'path' => ['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']}]
-
-        expect(replacements).to eq(expected)
-      end
-
-      it 'should create map for all config placeholders under `env`' do
-        replacements = replacement_list.select { |r| r['key'] == "my_db_passwd" || r['key'] == 'secret2' }
-        expected = [
-          {'key' => 'my_db_passwd', 'path' => ['resource_pools', 0, 'env', 'b', 0, 'f']},
-          {'key' => 'secret2', 'path' => ['resource_pools', 0, 'env', 'b', 1, 1]}
+      it 'creates replacement map for all necessary placeholders' do
+        expected_result = [
+          {'key' =>'director_uuid_placeholder', 'path'=>['director_uuid']},
+          {'key' =>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+          {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+          {'key'=>'nuclear_launch_code', 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
+          {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+          {'key'=>'bla', 'path'=>['properties', 'b']},
+          {'key'=>'secret_key', 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
+          {'key'=>'/my/name/is/smurf/12-3', 'path'=>['smurf']},
+          {'key'=>'my/name/is/gar_gamel', 'path'=>['gargamel']}
         ]
 
-        expect(replacements).to eq(expected)
+        expect(replacement_list).to match_array(expected_result)
       end
 
-      it 'should create a map for any placeholders under other sections' do
-        replacements = replacement_list.select { |r| r['key'] == 'job_name' }
-        expected = [
-          {'key' => 'job_name', 'path' => ['instance_groups', 0, 'jobs', 1, 'name']}
-        ]
-        expect(replacements).to eq(expected)
+      context 'when key starts with a bang' do
+        let(:sample_hash) do
+          {
+            'smurf' => '((!blue))',
+            'gargamel' => {
+              'color' => '((!what_is_my_color))'
+            }
+          }
+        end
+
+        it 'handles it correctly and removes ! from key (for spiff)' do
+          expected_result = [
+            {'key'=>'blue', 'path'=>['smurf']},
+            {'key'=>'what_is_my_color', 'path'=>['gargamel', 'color']}
+          ]
+
+          expect(replacement_list).to match_array(expected_result)
+        end
+      end
+
+      context 'when a placeholder key syntax is invalid' do
+        let(:sample_hash) do
+          {
+            'gargamel' => {
+              'color' => '((i am an invalid key $ %))'
+            }
+          }
+        end
+
+        it 'raises an error' do
+          expect{
+            replacement_list
+          }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
+        end
       end
 
       context 'when to_be_ignored subtrees exist' do
-        let(:ignored_subtrees) {[]}
         let(:consume_spec) do
           {
             'primary_db' => {
@@ -117,7 +132,7 @@ module Bosh::Director::ConfigServer
         end
 
         before do
-          test_obj['instance_groups'][0]['jobs'][0]['consumes'] = consume_spec
+          sample_hash['instance_groups'][0]['jobs'][0]['consumes'] = consume_spec
         end
 
         it 'should should not include ignored paths in the result' do
@@ -130,13 +145,16 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
-          replacements = DeepHashReplacement.replacement_map(test_obj, ignored_subtrees)
+          replacements = DeepHashReplacement.new.replacement_map(sample_hash, ignored_subtrees)
 
           expected_replacements = [
             {'key'=>'my_db_passwd', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
             {'key'=>'secret2', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
             {'key'=>'job_name', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-            {'key'=>'address_placeholder', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']}
+            {'key'=>'address_placeholder', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
+            {'key'=>'director_uuid_placeholder', 'path'=>['director_uuid']}, 
+            {'key'=>'/my/name/is/smurf/12-3', 'path'=>['smurf']}, 
+            {'key'=>'my/name/is/gar_gamel', 'path'=>['gargamel']}
           ]
           expect(replacements).to match_array(expected_replacements)
         end

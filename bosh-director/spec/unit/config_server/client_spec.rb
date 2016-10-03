@@ -9,9 +9,8 @@ module Bosh::Director::ConfigServer
       allow(logger).to receive(:info)
     end
 
-    context '#interpolate' do
+    describe '#interpolate' do
       let(:interpolated_manifest) { client.interpolate(manifest_hash, ignored_subtrees) }
-      let(:manifest_hash) { {} }
       let(:ignored_subtrees) {[]}
       let(:mock_config_store) do
         {
@@ -20,10 +19,31 @@ module Bosh::Director::ConfigServer
           'job_placeholder' => generate_success_response({'value' => 'test2'}.to_json),
           'env_placeholder' => generate_success_response({'value' => 'test3'}.to_json),
           'name_placeholder' => generate_success_response({'value' => 'test4'}.to_json),
-          'hash_placeholder' => generate_success_response({'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}}.to_json),
+          'cert_placeholder' => generate_success_response({'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}}.to_json),
         }
       end
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+      let(:manifest_hash)  do
+        {
+          'name' => '((name_placeholder))',
+          'properties' => {
+            'key' => '((integer_placeholder))'
+          },
+          'instance_groups' =>           {
+            'name' => 'bla',
+            'jobs' => [
+              {
+                'name' => 'test_job',
+                'properties' => { 'job_prop' => '((job_placeholder))' }
+              }
+            ]
+          },
+          'resource_pools' => [
+            {'env' => {'env_prop' => '((env_placeholder))'} }
+          ],
+          'cert' => '((cert_placeholder))'
+        }
+      end
 
       before do
         mock_config_store.each do |key, value|
@@ -35,104 +55,31 @@ module Bosh::Director::ConfigServer
         expect(client.interpolate(manifest_hash, ignored_subtrees)).to_not equal(manifest_hash)
       end
 
-      it 'should request keys from the proper url' do
-        expected_result = { 'properties' => {'key' => 123 } }
-
-        manifest_hash['properties'] = { 'key' => '((integer_placeholder))' }
-        expect(interpolated_manifest).to eq(expected_result)
-      end
-
-      it 'should replace any top level property key in the passed hash' do
-        manifest_hash['name'] = '((name_placeholder))'
-
-        expected_manifest = {
-          'name' => 'test4'
-        }
-
-        expect(interpolated_manifest).to eq(expected_manifest)
-      end
-
-      it 'should replace the global property keys in the passed hash' do
-        manifest_hash['properties'] = { 'key' => '((integer_placeholder))' }
-
-        expected_manifest = {
-          'properties' => { 'key' => 123 }
-        }
-
-        expect(interpolated_manifest).to eq(expected_manifest)
-      end
-
-      it 'should replace the instance group property keys in the passed hash' do
-        manifest_hash['instance_groups'] = [
-          {
-            'name' => 'bla',
-            'properties' => { 'instance_prop' => '((instance_placeholder))' }
-          }
-        ]
-
-        expected_manifest = {
-          'instance_groups' => [
-            {
-              'name' => 'bla',
-              'properties' => { 'instance_prop' => 'test1' }
-            }
-          ]
-        }
-
-        expect(interpolated_manifest).to eq(expected_manifest)
-      end
-
-      it 'should replace the env keys in the passed hash' do
-        manifest_hash['resource_pools'] =  [ {'env' => {'env_prop' => '((env_placeholder))'} } ]
-
-        expected_manifest = {
-          'resource_pools' => [ {'env' => {'env_prop' => 'test3'} } ]
-        }
-
-        expect(interpolated_manifest).to eq(expected_manifest)
-      end
-
-      it 'should replace the job properties in the passed hash' do
-        manifest_hash['instance_groups'] = [
-          {
+      it 'replaces all placeholders it finds in the hash passed' do
+        expected_result =         {
+          'name' => 'test4',
+          'properties' => {
+            'key' => 123
+          },
+          'instance_groups' =>           {
             'name' => 'bla',
             'jobs' => [
               {
                 'name' => 'test_job',
-                'properties' => { 'job_prop' => '((job_placeholder))' }
+                'properties' => { 'job_prop' => 'test2' }
               }
             ]
-          }
-        ]
-
-        expected_manifest = {
-          'instance_groups' => [
-            {
-              'name' => 'bla',
-              'jobs' => [
-                {
-                  'name' => 'test_job',
-                  'properties' => { 'job_prop' => 'test2' }
-                }
-              ]
-            }
-          ]
-        }
-
-        expect(interpolated_manifest).to eq(expected_manifest)
-      end
-
-      it 'should replace the exact value that it gets as is (even a hash)' do
-        manifest_hash['cert'] = '((hash_placeholder))'
-
-        expected_manifest = {
+          },
+          'resource_pools' => [
+            {'env' => {'env_prop' => 'test3'} }
+          ],
           'cert' => {
-            'ca' => 'ca_value',
-            'private_key'=> 'abc123'
+              'ca' => 'ca_value',
+              'private_key'=> 'abc123'
           }
         }
 
-        expect(interpolated_manifest).to eq(expected_manifest)
+        expect(interpolated_manifest).to eq(expected_result)
       end
 
       it 'should raise a missing key error message when key is not found in the config_server' do
@@ -277,6 +224,22 @@ module Bosh::Director::ConfigServer
           expect(interpolated_manifest).to eq(expected_result)
         end
       end
+
+      context 'when some placeholders have invalid key syntax' do
+        let(:manifest_hash) do
+          {
+            'properties' => {
+              'age' => '((I am an invalid key &%^))'
+            }
+          }
+        end
+
+        it 'raises an error' do
+          expect{
+            interpolated_manifest
+          }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
+        end
+      end
     end
 
     describe '#interpolate_deployment_manifest' do
@@ -352,139 +315,149 @@ module Bosh::Director::ConfigServer
         end
 
         context 'when property value is a placeholder (padded with brackets)' do
-          let(:the_placeholder) { '((my_smurf))' }
-          let(:special_placeholder) { '((!my_smurf))' }
-
-          context 'when config server returns an error while checking for key' do
+          context 'when placeholder syntax is invalid' do
             it 'raises an error' do
-              expect(http_client).to receive(:get).with('my_smurf').and_return(SampleErrorResponse.new)
               expect{
-                client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)
-              }. to raise_error(Bosh::Director::ConfigServerUnknownError)
+                client.prepare_and_get_property('((invalid key $%$^))', 'my_default_value', nil)
+              }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
             end
           end
 
-          context 'when value is found in config server' do
-            it 'returns that property value as is' do
-              expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
-              expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq(the_placeholder)
+          context 'when placeholder syntax is valid' do
+            let(:the_placeholder) { '((my_smurf))' }
+            let(:bang_placeholder) { '((!my_smurf))' }
+
+            context 'when config server returns an error while checking for key' do
+              it 'raises an error' do
+                expect(http_client).to receive(:get).with('my_smurf').and_return(SampleErrorResponse.new)
+                expect{
+                  client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)
+                }. to raise_error(Bosh::Director::ConfigServerUnknownError)
+              end
             end
 
-            it 'returns that property value as is when it starts with exclamation mark' do
-              expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
-              expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', nil)).to eq(special_placeholder)
+            context 'when value is found in config server' do
+              it 'returns that property value as is' do
+                expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
+                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq(the_placeholder)
+              end
+
+              it 'returns that property value as is when it starts with exclamation mark' do
+                expect(http_client).to receive(:get).with('my_smurf').and_return(ok_response)
+                expect(client.prepare_and_get_property(bang_placeholder, 'my_default_value', nil)).to eq(bang_placeholder)
+              end
             end
-          end
 
-          context 'when value is NOT found in config server' do
-            before do
-              expect(http_client).to receive(:get).with('my_smurf').and_return(SampleNotFoundResponse.new)
-            end
-
-            context 'when default is defined' do
-              it 'returns the default value when type is nil' do
-                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq('my_default_value')
+            context 'when value is NOT found in config server' do
+              before do
+                expect(http_client).to receive(:get).with('my_smurf').and_return(SampleNotFoundResponse.new)
               end
 
-              it 'returns the default value when type is defined' do
-                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
-              end
-
-              it 'returns the default value when type is defined and generatable' do
-                expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
-              end
-
-              context 'when placeholder starts with exclamation mark' do
+              context 'when default is defined' do
                 it 'returns the default value when type is nil' do
-                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', nil)).to eq('my_default_value')
+                  expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', nil)).to eq('my_default_value')
                 end
 
                 it 'returns the default value when type is defined' do
-                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
+                  expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
                 end
 
                 it 'returns the default value when type is defined and generatable' do
-                  expect(client.prepare_and_get_property(special_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
+                  expect(client.prepare_and_get_property(the_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
+                end
+
+                context 'when placeholder starts with exclamation mark' do
+                  it 'returns the default value when type is nil' do
+                    expect(client.prepare_and_get_property(bang_placeholder, 'my_default_value', nil)).to eq('my_default_value')
+                  end
+
+                  it 'returns the default value when type is defined' do
+                    expect(client.prepare_and_get_property(bang_placeholder, 'my_default_value', 'some_type')).to eq('my_default_value')
+                  end
+
+                  it 'returns the default value when type is defined and generatable' do
+                    expect(client.prepare_and_get_property(bang_placeholder, 'my_default_value', 'password')).to eq('my_default_value')
+                  end
                 end
               end
-            end
 
-            context 'when default is NOT defined i.e nil' do
-              let(:default_value){ nil }
-              context 'when type is generatable' do
-                context 'when type is password' do
-                  let(:type){ 'password'}
-                  it 'generates a password and returns the user provided value' do
-                    expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
-                    expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
-                  end
-
-                  it 'throws an error if generation of password errors' do
-                    expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleErrorResponse.new)
-                    expect(logger).to receive(:error)
-
-                    expect{
-                      client.prepare_and_get_property(the_placeholder, default_value, type)
-                    }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
-                  end
-
-                  context 'when placeholder starts with exclamation mark' do
+              context 'when default is NOT defined i.e nil' do
+                let(:default_value){ nil }
+                context 'when type is generatable' do
+                  context 'when type is password' do
+                    let(:type){ 'password'}
                     it 'generates a password and returns the user provided value' do
                       expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
-                      expect(client.prepare_and_get_property(special_placeholder, default_value, type)).to eq(special_placeholder)
+                      expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
+                    end
+
+                    it 'throws an error if generation of password errors' do
+                      expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleErrorResponse.new)
+                      expect(logger).to receive(:error)
+
+                      expect{
+                        client.prepare_and_get_property(the_placeholder, default_value, type)
+                      }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
+                    end
+
+                    context 'when placeholder starts with exclamation mark' do
+                      it 'generates a password and returns the user provided value' do
+                        expect(http_client).to receive(:post).with('my_smurf', {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                        expect(client.prepare_and_get_property(bang_placeholder, default_value, type)).to eq(bang_placeholder)
+                      end
                     end
                   end
-                end
 
-                context 'when type is certificate' do
-                  let(:type){ 'certificate'}
-                  let(:dns_record_names) do
-                    %w(*.fake-name1.network-a.simple.bosh *.fake-name1.network-b.simple.bosh)
-                  end
+                  context 'when type is certificate' do
+                    let(:type){ 'certificate'}
+                    let(:dns_record_names) do
+                      %w(*.fake-name1.network-a.simple.bosh *.fake-name1.network-b.simple.bosh)
+                    end
 
-                  let(:options) do
-                    {
-                      :dns_record_names => dns_record_names
-                    }
-                  end
-
-                  let(:post_body) do
-                    {
-                      'type' => 'certificate',
-                      'parameters' => {
-                        'common_name' => dns_record_names[0],
-                        'alternative_names' => dns_record_names
+                    let(:options) do
+                      {
+                        :dns_record_names => dns_record_names
                       }
-                    }
-                  end
+                    end
 
-                  it 'generates a certificate and returns the user provided placeholder' do
-                    expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleSuccessResponse.new)
-                    expect(client.prepare_and_get_property(the_placeholder, default_value, type, options)).to eq(the_placeholder)
-                  end
+                    let(:post_body) do
+                      {
+                        'type' => 'certificate',
+                        'parameters' => {
+                          'common_name' => dns_record_names[0],
+                          'alternative_names' => dns_record_names
+                        }
+                      }
+                    end
 
-                  it 'throws an error if generation of certficate errors' do
-                    expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleErrorResponse.new)
-                    expect(logger).to receive(:error)
-
-                    expect{
-                      client.prepare_and_get_property(the_placeholder, default_value, type, options)
-                    }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError)
-                  end
-
-                  context 'when placeholder starts with exclamation mark' do
                     it 'generates a certificate and returns the user provided placeholder' do
                       expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleSuccessResponse.new)
-                      expect(client.prepare_and_get_property(special_placeholder, default_value, type, options)).to eq(special_placeholder)
+                      expect(client.prepare_and_get_property(the_placeholder, default_value, type, options)).to eq(the_placeholder)
+                    end
+
+                    it 'throws an error if generation of certficate errors' do
+                      expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleErrorResponse.new)
+                      expect(logger).to receive(:error)
+
+                      expect{
+                        client.prepare_and_get_property(the_placeholder, default_value, type, options)
+                      }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError)
+                    end
+
+                    context 'when placeholder starts with exclamation mark' do
+                      it 'generates a certificate and returns the user provided placeholder' do
+                        expect(http_client).to receive(:post).with('my_smurf', post_body).and_return(SampleSuccessResponse.new)
+                        expect(client.prepare_and_get_property(bang_placeholder, default_value, type, options)).to eq(bang_placeholder)
+                      end
                     end
                   end
                 end
-              end
 
-              context 'when type is NOT generatable' do
-                let(:type){ 'cat'}
-                it 'returns that the user provided value as is' do
-                  expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
+                context 'when type is NOT generatable' do
+                  let(:type){ 'cat'}
+                  it 'returns that the user provided value as is' do
+                    expect(client.prepare_and_get_property(the_placeholder, default_value, type)).to eq(the_placeholder)
+                  end
                 end
               end
             end

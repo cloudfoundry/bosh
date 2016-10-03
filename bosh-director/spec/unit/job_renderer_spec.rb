@@ -30,8 +30,8 @@ module Bosh::Director
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       it 'renders each jobs instance' do
-        expect(renderer).to receive(:render_job_instance).with(instance_plan1)
-        expect(renderer).to receive(:render_job_instance).with(instance_plan2)
+        expect(renderer).to receive(:render_job_instance).with(instance_plan1, {})
+        expect(renderer).to receive(:render_job_instance).with(instance_plan2, {})
         renderer.render_job_instances([instance_plan1, instance_plan2])
       end
     end
@@ -147,6 +147,16 @@ module Bosh::Director
             blobstore_id: 'fake-latest-blob-id',
             sha1: 'fake-latest-sha1',
           })
+        end
+
+        context 'when the dry_run flag is set to true' do
+          it 'does not persist rendered templates in the blobstore' do
+            expect(latest_archive).to_not receive(:update)
+            expect(rendered_job_instance).to_not receive(:persist)
+            expect(instance_model).to_not receive(:add_rendered_templates_archive)
+            expect(instance).to_not receive(:rendered_templates_archive=)
+            renderer.render_job_instance(instance_plan, dry_run: true)
+          end
         end
 
         context 'when latest archive has matching content_sha1' do

@@ -47,39 +47,6 @@ module Bosh::Director
         end
       end
 
-      describe 'tags key' do
-        context 'when tags are specified' do
-          before do
-            tags = {'mytag' => 'foo-tag'}
-            manifest_hash['tags'] = tags
-          end
-
-          it 'should not error out' do
-            expect(parsed_deployment.tags.count).to eq(1)
-          end
-
-          context 'when we have duplicate tags' do
-            before do
-              tags = {
-                'mytag' => 'foo-tag',
-                'mytag' => 'foo-tag',
-              }
-              manifest_hash['tags'] = tags
-            end
-
-            it 'returns a single tag' do
-              expect(parsed_deployment.tags.count).to eq(1)
-            end
-          end
-        end
-
-        context 'when no tags are specified' do
-          it 'should have tags count of 0' do
-            expect(parsed_deployment.tags.count).to eq(0)
-          end
-        end
-      end
-
       describe 'stemcells' do
         context 'when no top level stemcells' do
           before do

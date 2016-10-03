@@ -43,6 +43,46 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
         expect(director.vms).to eq ([])
       end
+
+      it 'does not upload to the blobstore' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+        deploy_from_scratch(manifest_hash: manifest_hash, dry_run: false)
+
+        first_deploy_templates = Dir.entries(current_sandbox.blobstore_storage_dir).length
+
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+          name: 'job_with_templates_having_properties',
+          templates: [
+            {'name' => 'job_1_with_many_properties',
+              'properties' => {
+                'smurfs' => {
+                  'color' => 'red'
+                },
+                'gargamel' => {
+                  'color' => 'black'
+                }
+              }
+            },
+            {'name' => 'job_2_with_many_properties'}
+          ],
+          instances: 1,
+          properties: {
+            'snoopy' => 'happy',
+            'smurfs' => {
+              'color' => 'yellow'
+            },
+            'gargamel' => {
+              'color' => 'blue'
+            }
+          })
+
+        deploy_simple_manifest(manifest_hash: manifest_hash, dry_run: true)
+
+        second_deploy_templates = Dir.entries(current_sandbox.blobstore_storage_dir).length
+
+        expect(first_deploy_templates).to eq(second_deploy_templates)
+      end
     end
   end
 

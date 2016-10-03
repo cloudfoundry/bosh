@@ -54,6 +54,15 @@ for i in $(seq 0 64); do
 done
 
 chown -R ubuntu:ubuntu bosh-src
+
+if [ $IAAS = "warden" ]; then
+sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
+  pushd bosh-src/go/src/github.com/cloudfoundry/bosh-agent
+    git checkout 48ed0810c66cdebe3ddb8ca300bbec2255fb8f1d # warden_stemcell branch HEAD
+  popd
+SUDO
+fi
+
 sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
   set -e
 

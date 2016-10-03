@@ -13,9 +13,10 @@ module Bosh
           @recreate_deployment = attrs.fetch(:recreate_deployment, false)
           @logger = attrs.fetch(:logger, Config.logger)
           @dns_manager = DnsManagerProvider.create
+          @tags = attrs.fetch(:tags, {})
         end
 
-        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment
+        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
 
         attr_accessor :network_plans
 

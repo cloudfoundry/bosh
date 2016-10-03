@@ -238,9 +238,6 @@ module Bosh::Director
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)
 
-  # Tag
-  TagAlreadyExists = err(210001)
-
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)
   CloudNotEnoughDiskSpace = err(390003)
@@ -302,6 +299,7 @@ module Bosh::Director
   ConfigServerPasswordGenerationError = err(540002)
   ConfigServerUnknownError = err(540003)
   ConfigServerCertificateGenerationError = err(540004)
+  ConfigServerIncorrectKeySyntax = err(540005)
 
   # CPI config
   CpiDuplicateName = err(550000)

@@ -2,9 +2,12 @@ require 'spec_helper'
 require 'fileutils'
 
 describe 'deploy after db migrations', type: :integration do
-  insert_data_migration_file_before_all
+  # "Pending because of test pollution, see bug: #131474103"
+  skip
+
+  # insert_data_migration_file_before_all
   with_reset_sandbox_before_each
-  delete_data_migration_file_after_all
+  # delete_data_migration_file_after_all
 
   def upload_release
     bosh_runner.run_in_dir("upload release #{File.join(ASSETS_DIR, 'valid_release.tgz')}", ASSETS_DIR)
@@ -65,7 +68,7 @@ describe 'deploy after db migrations', type: :integration do
   end
 
   context 'auto deploy' do
-    xit 'deploys a simple manifest and cloud config after running migrations on a pre-seeded database' do
+    it 'deploys a simple manifest and cloud config after running migrations on a pre-seeded database' do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
     end

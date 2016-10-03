@@ -71,10 +71,6 @@ ruby/rubygems-2.6.4.tgz:
   object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
   sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
   size: 478582
-postgres/postgresql-9.4.8.tar.gz:
-  object_id: 1bb93ed7-aa76-4a31-ba51-ca323e2ebf81
-  sha: 3358b2627072b2ab65d64702c2464363c593c08a
-  size: 23310530
 nginx/headers-more-nginx-module-0.30.tar.gz:
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
   sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
@@ -95,3 +91,7 @@ davcli/davcli-0.0.6-linux-amd64:
   object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
   sha: 6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
   size: 8705864
+postgres/postgresql-9.4.9.tar.gz:
+  object_id: 0c5a6fc6-2c99-4d7e-b73d-f4339356f40f
+  sha: c9d641eb69885672e5aacee413cd778d88b8420d
+  size: 23300245

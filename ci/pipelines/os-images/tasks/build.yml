@@ -8,7 +8,6 @@ image_resource:
 
 inputs:
 - name: bosh-src
-- name: version
 
 outputs:
 - name: os-image

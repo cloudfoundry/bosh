@@ -70,7 +70,7 @@ module Bosh::Director
         @instance_groups = []
         @instance_groups_name_index = {}
         @instance_groups_canonical_name_index = Set.new
-        @tags = {}
+        @tags = options.fetch('tags', {})
 
         @unneeded_vms = []
         @unneeded_instance_plans = []
@@ -117,6 +117,7 @@ module Bosh::Director
         )
 
         options[:fix] = @fix
+        options[:tags] = @tags
         assembler.bind_models(options)
       end
 
@@ -169,10 +170,6 @@ module Bosh::Director
 
       def skip_drain_for_job?(name)
         @skip_drain.nil? ? false : @skip_drain.for_job(name)
-      end
-
-      def add_tag(tag)
-        @tags[tag.key] = tag.value
       end
 
       def add_stemcell(stemcell)

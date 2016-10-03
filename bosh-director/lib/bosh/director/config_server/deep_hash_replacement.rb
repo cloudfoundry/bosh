@@ -1,8 +1,10 @@
-require 'net/http'
+require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
-    def self.replacement_map(obj, subtrees_to_ignore = [])
+    include ConfigServerHelper
+
+    def replacement_map(obj, subtrees_to_ignore = [])
       map = []
       create_replacement_map(map, obj)
 
@@ -15,7 +17,7 @@ module Bosh::Director::ConfigServer
 
     private
 
-    def self.create_replacement_map(result, obj, path = nil)
+    def create_replacement_map(result, obj, path = nil)
       if obj.is_a? Array
         obj.each_with_index do |item, index|
           new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
@@ -30,17 +32,17 @@ module Bosh::Director::ConfigServer
         end
       else
         path ||= []
-        if obj.to_s.match(/^\(\(.*\)\)$/)
-          key_name = obj.gsub(/(^\(\(|\)\)$)/, '')
-          result << {'key' => key_name, 'path' => path}
+        if is_placeholder?(obj.to_s)
+          extracted_key = extract_placeholder_key(obj.to_s)
+          result << {'key' => extracted_key, 'path' => path}
         end
       end
     end
 
-    def self.path_matches_subtrees_to_ignore?(subtrees_to_ignore, element_path)
+    def path_matches_subtrees_to_ignore?(subtrees_to_ignore, element_path)
       path_matches = false
       subtrees_to_ignore.each do |subtree_to_ignore|
-        if self.paths_match?(subtree_to_ignore, element_path)
+        if paths_match?(subtree_to_ignore, element_path)
           path_matches = true
           break
         end
@@ -48,7 +50,7 @@ module Bosh::Director::ConfigServer
       path_matches
     end
 
-    def self.paths_match?(ignore_path, element_path)
+    def paths_match?(ignore_path, element_path)
       paths_match = true
       if ignore_path.size <= element_path.size
         ignore_path.each_with_index do | ignored_node, index |

@@ -81,7 +81,7 @@ module Bosh::Director
         if needs_recreate?(instance_plan)
           @logger.debug('Failed to update in place. Recreating VM')
           @disk_manager.unmount_disk_for(instance_plan) unless instance_plan.needs_to_fix?
-          tags = instance_plan.instance.model.deployment.tags
+          tags = instance_plan.tags
           @vm_recreator.recreate_vm(instance_plan, nil, tags)
           recreated = true
         end

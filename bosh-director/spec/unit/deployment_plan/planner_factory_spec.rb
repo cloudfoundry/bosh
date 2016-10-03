@@ -115,6 +115,12 @@ LOGMESSAGE
               expect(planner.model.name).to eq('simple')
             end
 
+            it 'sets tag values from manifest' do
+              hybrid_manifest_hash['tags'] = {'mytag' => 'sears'}
+
+              expect(planner.tags).to eq({'mytag' => 'sears'})
+            end
+
             describe 'properties' do
               it 'comes from the deployment_manifest' do
                 expected = {

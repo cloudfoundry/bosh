@@ -8,7 +8,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   context('while errand is running') do
     with_reset_sandbox_before_each
 
-    let(:manifest_hash) do
+    let(:manifest_hash_errand) do
       manifest_hash['properties'] = {
         'errand1' => {
           'blocking_errand' => true,
@@ -20,7 +20,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     it 'creates a deployment lock' do
       pending('cli2: #130119251: backport --no-track flag')
 
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash_errand)
 
       output = bosh_runner.run('--no-track run-errand fake-errand-name', deployment_name: deployment_name)
       task_id = Bosh::Spec::OutputParser.new(output).task_id('running')

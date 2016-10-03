@@ -198,9 +198,9 @@ module Bosh
         disk_id
       end
 
-      DELTE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
+      DELETE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
       def delete_disk(disk_id)
-        validate_and_record_inputs(DELTE_DISK_SCHEMA, __method__, disk_id)
+        validate_and_record_inputs(DELETE_DISK_SCHEMA, __method__, disk_id)
         FileUtils.rm(disk_file(disk_id))
       end
 
@@ -337,8 +337,6 @@ module Bosh
         end
       end
 
-      private
-
       def spawn_agent_process(agent_id)
         root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
@@ -360,6 +358,8 @@ module Bosh
 
         agent_pid
       end
+
+      private
 
       def allocate_ips(ips)
         ips.each do |ip|

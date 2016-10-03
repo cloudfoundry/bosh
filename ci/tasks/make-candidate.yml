@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: boshcpi/aws-cpi-release
+
+inputs:
+- name: bosh-src
+- name: candidate-version
+
+outputs:
+- name: release
+
+run:
+  path: bosh-src/ci/tasks/make-candidate.sh
