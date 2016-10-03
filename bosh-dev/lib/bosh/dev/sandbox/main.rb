@@ -300,7 +300,9 @@ module Bosh::Dev::Sandbox
         exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG),
-        env_path: ENV['PATH']
+        env_path: ENV['PATH'],
+        gem_home: ENV['GEM_HOME'],
+        gem_path: ENV['GEM_PATH']
       }
     end
 

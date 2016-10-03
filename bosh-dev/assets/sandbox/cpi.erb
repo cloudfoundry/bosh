@@ -3,5 +3,7 @@
 read INPUT
 
 export PATH=<%= external_cpi_config[:env_path] %>:$PATH
+export GEM_HOME=<%= external_cpi_config[:gem_home] %>:$GEM_HOME
+export GEM_PATH=<%= external_cpi_config[:gem_path] %>:$GEM_PATH
 
 echo $INPUT | <%= external_cpi_config[:exec_path] %> <%= external_cpi_config[:config_path] %>
