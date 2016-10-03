@@ -107,7 +107,7 @@ module Bosh::Spec
     end
 
     def get_most_recent_task_id
-      task_table = table(run('tasks --recent --json'))
+      task_table = table(run('tasks --recent --all --json'))
 
       if task_table.empty?
         raise 'No tasks found!'
