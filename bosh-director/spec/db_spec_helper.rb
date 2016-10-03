@@ -77,6 +77,10 @@ module DBSpecHelper
       FileUtils.cp(migration_file_full_path, @migration_dir)
       Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
     end
+
+    def get_latest_migration_script
+      Dir.entries(@director_migrations_dir).select {|f| !File.directory? f}.sort.last
+    end
   end
 end
 

@@ -1,1 +1,0 @@
-INSERT INTO director_attributes (value, name, id) VALUES ('099486d3-5b38-4c13-b27a-135205966345', 'uuid', 1);

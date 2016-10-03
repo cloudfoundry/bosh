@@ -368,36 +368,6 @@ module IntegrationSandboxHelpers
 end
 
 module IntegrationSandboxBeforeHelpers
-
-  DATA_MIGRATION_FILE = '/bosh-director/db/migrations/director/20160324222211_add_data.rb'
-
-  def insert_data_migration_file_before_all
-    before (:all) do
-      path = Dir.pwd + DATA_MIGRATION_FILE
-
-      file = File.new(path, 'w')
-      file.write("Sequel.migration do
-  up do
-        run(\"")
-
-      (Dir[Dir.pwd + '/spec/assets/migration_data/*']).sort.each do |data_file_path|
-        data_file = File.new(data_file_path, 'r')
-        file.write(data_file.read.gsub("\"", "\\\""))
-      end
-
-      file.write("\")
-  end
-end")
-      file.close
-    end
-  end
-
-  def delete_data_migration_file_after_all
-    after (:all) do
-      File.delete(Dir.pwd + DATA_MIGRATION_FILE)
-    end
-  end
-
   def with_reset_sandbox_before_each(options={})
     before do |example|
       prepare_sandbox
