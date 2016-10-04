@@ -1048,6 +1048,8 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           job_spec
         end
 
+        let(:deployment_name) {manifest['name']}
+
         before do
           config_server_helper.put_value(prepend_namespace('a_placeholder'), 'a_value')
           config_server_helper.put_value(prepend_namespace('b_placeholder'), 'b_value')
@@ -1082,8 +1084,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      # pending on https://www.pivotaltracker.com/story/show/130228775
-      xcontext 'when having cross deployment links' do
+      context 'when having cross deployment links' do
         let(:first_manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
           manifest['name'] = 'first'
@@ -1146,8 +1147,10 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           job_spec
         end
 
+        let(:deployment_name) {first_manifest['name']}
+
         it 'should successfully use the shared link, where its properties are not stored in DB' do
-          config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+          config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
           deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, env: client_env)
 
           expect {

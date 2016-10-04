@@ -24,11 +24,6 @@ module Bosh::Director
 
       attr_accessor :properties
 
-      # Hash of resolved links spec provided by deployment
-      # in format job_name > template_name > link_name > link_type
-      # used by LinksResolver
-      attr_accessor :link_spec
-
       # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
       #   Default job update configuration
       attr_accessor :update

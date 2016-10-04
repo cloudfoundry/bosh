@@ -80,9 +80,11 @@ module Bosh::Director
 
       attr_accessor :desired_instances
 
+      attr_accessor :did_change
+
       attr_reader :link_paths
 
-      attr_accessor :did_change
+      attr_reader :resolved_links
 
       def self.parse(plan, instance_group_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
@@ -332,12 +334,8 @@ module Bosh::Director
         end
       end
 
-      def add_resolved_link(link_name, link_spec)
-        @resolved_links[link_name] = link_spec
-      end
-
-      def link_spec
-        @resolved_links
+      def add_resolved_link(link_name, link_info)
+        @resolved_links[link_name] = link_info
       end
 
       def link_path(job_name, link_name)
