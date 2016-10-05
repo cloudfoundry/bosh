@@ -514,7 +514,7 @@ describe 'using director with config server', type: :integration do
                   {
                     'name' => 'job_2_with_many_properties',
                     'release' => 'bosh-release',
-                    'properties' => {'gargamel' => {'color' => '((/addon_placeholder))'}}
+                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
                   }
                 ]
               }]
@@ -525,7 +525,7 @@ describe 'using director with config server', type: :integration do
           create_and_upload_test_release(env: client_env)
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
-          config_server_helper.put_value('/addon_placeholder', 'addon prop first value')
+          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop first value')
           config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
@@ -539,8 +539,7 @@ describe 'using director with config server', type: :integration do
           template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
 
-          # change value in config server and redeploy
-          config_server_helper.put_value('/addon_placeholder', 'addon prop second value')
+          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
 
           redeploy_output = bosh_runner.run('deploy', env: client_env)
 
@@ -1128,20 +1127,21 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
         let(:second_deployment_job_spec) do
           job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'second_deployment_node',
-              templates: [
-                  {
-                      'name' => 'http_proxy_with_requires',
-                      'consumes' => {
-                          'proxied_http_endpoint' => {
-                              'from' => 'vroom',
-                              'deployment' => 'first'
-                          }
-                      }
+            name: 'second_deployment_node',
+            templates: [
+              {
+                'name' => 'http_proxy_with_requires',
+                'release' => 'bosh-release',
+                'consumes' => {
+                  'proxied_http_endpoint' => {
+                    'from' => 'vroom',
+                    'deployment' => 'first'
                   }
-              ],
-              instances: 1,
-              static_ips: ['192.168.1.11']
+                }
+              }
+            ],
+            instances: 1,
+            static_ips: ['192.168.1.11']
           )
           job_spec['azs'] = ['z1']
           job_spec
@@ -1173,6 +1173,62 @@ Error 100: Unable to render instance groups for deployment. Errors are:
             }.to_not raise_error
 
             link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
+            template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            expect(
+              template['links']['properties']['fibonacci']
+            ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
+          end
+        end
+
+        context 'when using runtime config' do
+          let(:runtime_config) do
+            {
+              'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+              'addons' => [
+                {
+                  'name' => 'addon_job',
+                  'jobs' => [
+                    'name' => 'http_proxy_with_requires',
+                    'release' => 'bosh-release',
+                    'consumes' => {
+                      'proxied_http_endpoint' => {
+                        'from' => 'vroom',
+                        'deployment' => 'first'
+                      }
+                    }
+                  ]
+
+                }
+              ]
+            }
+          end
+
+          let(:second_deployment_job_spec) do
+            job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'second_deployment_node',
+              templates: [
+                {
+                  'name' => 'provider',
+                  'release' => 'bosh-release'
+                }
+              ],
+              instances: 1,
+              static_ips: ['192.168.1.11']
+            )
+            job_spec['azs'] = ['z1']
+            job_spec
+          end
+
+          it 'should successfully use shared link from a previous deployment' do
+            config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
+
+            deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, env: client_env)
+
+            expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
+            deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, env: client_env)
+
+            link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
+
             template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
             expect(
               template['links']['properties']['fibonacci']
