@@ -14,7 +14,16 @@ module Bosh::Director::ConfigServer
     def extract_placeholder_key(placeholder)
       key = placeholder.to_s.gsub(/(^\(\(|\)\)$)/, '')
       validate_placeholder_key(key)
-      process_key(key)
+      process_key!(key)
+    end
+
+    # @param [String] key
+    # @param [String] director_name
+    # @param [String] deployment_name
+    # @return [String] key prepended with /:director_name/:deployment_name if key is not absolute
+    def add_prefix_if_not_absolute(key, director_name, deployment_name)
+      return key if key.start_with?('/')
+      return "/#{director_name}/#{deployment_name}/#{key}"
     end
 
     private
@@ -55,7 +64,7 @@ module Bosh::Director::ConfigServer
         'it should only be at the beginning of the key. Note: it will not be considered a part of the key'
     end
 
-    def process_key(key)
+    def process_key!(key)
       key.gsub(/^!/, '') # remove ! because of spiff
     end
   end

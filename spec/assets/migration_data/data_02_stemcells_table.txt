@@ -1,2 +1,0 @@
-INSERT INTO stemcells (id, name, version, cid, sha1, operating_system) VALUES (2, 'bosh-aws-xen-centos-7-go_agent', '3202', 'ami-0413216e light', '09ace2d1dfc576b1c08cdd39d0e33a13a20e2405', 'centos-7');
-INSERT INTO stemcells (id, name, version, cid, sha1, operating_system) VALUES (3, 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', '3215', 'ami-b23f3ed8 light', 'ba07a5f8277b3f9e6b8f250aeea4ebad4244b273', 'ubuntu-trusty');

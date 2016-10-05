@@ -24,7 +24,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -37,7 +37,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
       expect(bosh_runner.run('deploy')).not_to match /Release uploaded/
@@ -55,7 +55,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Release SHA1 '#{release_sha}' does not match the expected SHA1 'abcd1234'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
     it 'fails to deploy when the url is provided, but sha is not' do
@@ -69,7 +69,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Expected SHA1 when specifying remote URL for release 'test_release'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
   end
 
@@ -85,7 +85,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -101,7 +101,7 @@ describe 'cli: deploy uploading', type: :integration do
         bosh_runner.run("deployment #{deployment_manifest.path}")
         bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
         expect(bosh_runner.run('deploy')).not_to match /Release uploaded/
@@ -135,7 +135,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Invalid URL format for release 'test_release' with URL 'goobers'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
     it 'fails to deploy when the path is not a release' do
@@ -149,7 +149,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Release file doesn't exist/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
   end
 
@@ -166,7 +166,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -181,7 +181,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Path must be a release directory when version is 'create'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
     it 'rejects paths that are not local files' do
@@ -195,7 +195,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Path must be a local release directory when version is 'create'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
   end
 
@@ -218,7 +218,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -229,10 +229,10 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -243,7 +243,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
       expect(bosh_runner.run('deploy')).not_to match /Started update stemcell/
@@ -259,7 +259,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Expected SHA1 when specifying remote URL for stemcell 'ubuntu-stemcell'/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
     it 'fails when the sha1 does not match' do
@@ -271,7 +271,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to include "Stemcell SHA1 '#{stemcell_sha}' does not match the expected SHA1 'abcd1234'"
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
   end
 
@@ -286,7 +286,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 
-      expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+      expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
@@ -300,7 +300,7 @@ describe 'cli: deploy uploading', type: :integration do
         bosh_runner.run("deployment #{deployment_manifest.path}")
         bosh_runner.run("upload release #{release_filename}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
         expect(bosh_runner.run('deploy')).not_to match /Started update stemcell/
@@ -318,7 +318,7 @@ describe 'cli: deploy uploading', type: :integration do
         expect(bosh_runner.run('deploy')).not_to match /Uploading stemcell/
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
-        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
       end
     end
@@ -334,7 +334,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Stemcell is invalid, please fix, verify and upload again/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
     it 'fails to deploy when the url is invalid' do
@@ -348,7 +348,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Invalid URL format for stemcell 'ubuntu-stemcell' with URL 'goobers'. Supported schemes: file, http, https./
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
+      expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
   end
 end

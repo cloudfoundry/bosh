@@ -2,7 +2,6 @@
 groups:
   - name: bosh
     jobs:
-      - start-job
       - unit-1.9
       - unit-1.9-postgres
       - unit-2.3
@@ -24,7 +23,6 @@ groups:
 
   - name: 1.9
     jobs:
-      - start-job
       - unit-1.9
       - unit-1.9-postgres
       - integration-1.9-postgres
@@ -33,7 +31,6 @@ groups:
 
   - name: 2.3
     jobs:
-      - start-job
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
@@ -44,7 +41,6 @@ groups:
 
   - name: mysql
     jobs:
-      - start-job
       - unit-2.3-mysql
       - integration-2.3-mysql
       - publish-coverage
@@ -52,7 +48,6 @@ groups:
 
   - name: postgres
     jobs:
-      - start-job
       - unit-1.9-postgres
       - unit-2.3-postgres
       - integration-1.9-postgres
@@ -61,19 +56,12 @@ groups:
       - promote-candidate
 
 jobs:
-  - name: start-job
-    public: true
-    serial: true
-    plan:
-      - { get: interval-trigger, trigger: true }
-      - { get: bosh-src }
-
   - name: unit-1.9
     public: true
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -92,7 +80,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -112,7 +100,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -131,7 +119,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -151,7 +139,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -171,7 +159,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
       - task: test
         file: bosh-src/ci/tasks/test-blobstore-client-integration.yml
         params:
@@ -189,7 +177,6 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-          passed: [start-job]
         - get: gocli-release-bucket-linux
       - aggregate:
         - task: test-group-1
@@ -245,7 +232,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -289,7 +276,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -333,7 +320,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -377,7 +364,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
 
     - task: test
@@ -400,7 +387,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
 
     - task: test
@@ -423,7 +410,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
 
     - task: test
@@ -447,7 +434,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
 
     - task: test
@@ -471,7 +458,7 @@ jobs:
     build_logs_to_retain: 2500
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true }
     - { get: bosh-fuzz-tests }
 
     - task: test
@@ -547,11 +534,6 @@ jobs:
         file: "release/*.tgz"
 
 resources:
-  - name: interval-trigger
-    type: time
-    source:
-      interval: 45m # average build time for the integration tests
-
   - name: bosh-src
     type: git
     source:

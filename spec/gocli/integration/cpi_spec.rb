@@ -48,7 +48,7 @@ describe 'CPI calls', type: :integration do
       expect(invocations[2].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
-          'director' => 'Test Director',
+          'director' => 'TestDirector',
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
@@ -65,7 +65,7 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => compilation_vm_id,
         'metadata' => {
           'compiling' => 'foo',
-          'director' => 'Test Director',
+          'director' => 'TestDirector',
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
@@ -101,7 +101,7 @@ describe 'CPI calls', type: :integration do
       expect(invocations[6].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
-          'director' => 'Test Director',
+          'director' => 'TestDirector',
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
@@ -119,7 +119,7 @@ describe 'CPI calls', type: :integration do
         'metadata' => {
           'compiling' => 'bar',
           'created_at' => kind_of(String),
-          'director' => 'Test Director',
+          'director' => 'TestDirector',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
@@ -155,7 +155,7 @@ describe 'CPI calls', type: :integration do
       expect(invocations[10].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
-          'director' => 'Test Director',
+          'director' => 'TestDirector',
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => 'foobar',
@@ -219,7 +219,7 @@ describe 'CPI calls', type: :integration do
         expect(first_deploy_invocations[2].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
-            'director' => 'Test Director',
+            'director' => 'TestDirector',
             'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
@@ -257,7 +257,7 @@ describe 'CPI calls', type: :integration do
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => 0,
-            'director_name' => 'Test Director',
+            'director_name' => 'TestDirector',
             'director_uuid' => 'deadbeef',
             'agent_id' => String
           }
@@ -291,7 +291,7 @@ describe 'CPI calls', type: :integration do
         expect(second_deploy_invocations[3].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
-            'director' => 'Test Director',
+            'director' => 'TestDirector',
             'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',

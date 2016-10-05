@@ -194,6 +194,45 @@ module Support
           expect(parser.data).to eq([])
         end
       end
+
+      context 'table has no header' do
+        let(:source) do
+          %({
+    "Tables": [
+        {
+            "Content": "stemcells",
+            "Header": null,
+            "Rows": [
+                [
+                    "stemcell",
+                    "",
+                    "ubuntu-trusty",
+                    "cid1"
+                ],
+                [
+                    "stemcell",
+                    "",
+                    "ubuntu-trusty",
+                    "cid1"
+                ]
+            ],
+            "Notes": [
+                "(*) Currently deployed"
+            ]
+        }
+    ],
+    "Blocks": null,
+    "Lines": [
+        "Using environment 'micro' as user 'admin'",
+        "Succeeded"
+    ]
+})
+        end
+
+        it 'parses the table and returns empty list' do
+          expect(parser.data).to eq([])
+        end
+      end
     end
   end
 end

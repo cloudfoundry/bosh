@@ -181,7 +181,7 @@ module IntegrationExampleGroup
   end
 
   def scrub_event_time(bosh_output)
-    sub_in_records(bosh_output, /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx')
+    sub_in_records(bosh_output, /[A-Za-z]{3} [A-Za-z]{3}\s{1,2}[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx')
   end
 
   def scrub_event_parent_ids(bosh_output)
@@ -368,36 +368,6 @@ module IntegrationSandboxHelpers
 end
 
 module IntegrationSandboxBeforeHelpers
-
-  DATA_MIGRATION_FILE = '/bosh-director/db/migrations/director/20160324222211_add_data.rb'
-
-  def insert_data_migration_file_before_all
-    before (:all) do
-      path = Dir.pwd + DATA_MIGRATION_FILE
-
-      file = File.new(path, 'w')
-      file.write("Sequel.migration do
-  up do
-        run(\"")
-
-      (Dir[Dir.pwd + '/spec/assets/migration_data/*']).sort.each do |data_file_path|
-        data_file = File.new(data_file_path, 'r')
-        file.write(data_file.read.gsub("\"", "\\\""))
-      end
-
-      file.write("\")
-  end
-end")
-      file.close
-    end
-  end
-
-  def delete_data_migration_file_after_all
-    after (:all) do
-      File.delete(Dir.pwd + DATA_MIGRATION_FILE)
-    end
-  end
-
   def with_reset_sandbox_before_each(options={})
     before do |example|
       prepare_sandbox

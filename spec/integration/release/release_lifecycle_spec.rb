@@ -73,7 +73,7 @@ describe 'release lifecycle', type: :integration do
     bosh_runner.run('deploy')
 
     expect_table('releases', %(
-      Acting as user 'test' on 'Test Director'
+      Acting as user 'test' on '#{current_sandbox.director_name}'
 
       +--------------+----------+-------------+
       | Name         | Versions | Commit Hash |
@@ -124,7 +124,7 @@ describe 'release lifecycle', type: :integration do
 
     bosh_runner.run('delete release bosh-release 0+dev.2')
     expect_table('releases', %(
-      Acting as user 'test' on 'Test Director'
+      Acting as user 'test' on '#{current_sandbox.director_name}'
 
       +--------------+----------+-------------+
       | Name         | Versions | Commit Hash |

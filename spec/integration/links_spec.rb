@@ -310,7 +310,7 @@ describe 'Links', type: :integration do
         it 'should not throw an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
           expect(exit_code).to eq(0)
-          expect(out).to include("Deployed 'simple' to 'Test Director'")
+          expect(out).to include("Deployed 'simple' to '#{current_sandbox.director_name}'")
         end
       end
 

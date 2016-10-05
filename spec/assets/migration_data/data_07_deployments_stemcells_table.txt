@@ -1,2 +1,0 @@
-INSERT INTO deployments_stemcells (id, deployment_id, stemcell_id) VALUES (15, 16, 2);
-INSERT INTO deployments_stemcells (id, deployment_id, stemcell_id) VALUES (16, 18, 3);

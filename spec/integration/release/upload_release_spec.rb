@@ -162,7 +162,7 @@ describe 'upload release', type: :integration do
     end
 
     expect_table('releases', %(
-      Acting as user 'test' on 'Test Director'
+      Acting as user 'test' on '#{current_sandbox.director_name}'
 
       +--------------+----------+-------------+
       | Name         | Versions | Commit Hash |
@@ -271,7 +271,7 @@ describe 'upload release', type: :integration do
 
       bosh_releases_out = bosh_runner.run("releases")
       expect(bosh_releases_out).to match_output %(
-        Acting as user 'test' on 'Test Director'
+        Acting as user 'test' on '#{current_sandbox.director_name}'
 
         +--------------+----------+-------------+
         | Name         | Versions | Commit Hash |

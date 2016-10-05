@@ -13,7 +13,7 @@ describe 'cli: target', type: :integration do
   end
 
   it 'sets correct target' do
-    expect(bosh_runner.run("target #{current_sandbox.director_url}")).to match_output "Target set to 'Test Director'"
+    expect(bosh_runner.run("target #{current_sandbox.director_url}")).to match_output "Target set to '#{current_sandbox.director_name}'"
 
     message = current_sandbox.director_url
     expect(bosh_runner.run('target')).to match_output message
@@ -32,7 +32,7 @@ describe 'cli: target', type: :integration do
     bosh_runner.run('deployment test2')
 
     expect(bosh_runner.run("target https://0.0.0.0:#{current_sandbox.director_port}"))
-      .to match_output "Target set to 'Test Director'"
+      .to match_output "Target set to '#{current_sandbox.director_name}'"
 
     expect { bosh_runner.run('deployment') }
       .to raise_error(RuntimeError, /Deployment not set/)

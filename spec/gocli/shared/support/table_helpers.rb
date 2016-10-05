@@ -24,7 +24,7 @@ module Support
           head = table['Header']
 
           table_rows = table['Rows'] || []
-          table_entries += table_rows.map { |row| Hash[head.zip(row)] }
+          table_entries += table_rows.map { |row| Hash[head.zip(row)] } if head
         end
 
         table_entries
