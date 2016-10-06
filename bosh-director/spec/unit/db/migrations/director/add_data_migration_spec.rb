@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20160803151600_add_name_to_persistent_disks.rb')
+      expect(latest_db_migration_file).to eq('20160818112257_change_stemcell_unique_key.rb')
     end
   end
 end
