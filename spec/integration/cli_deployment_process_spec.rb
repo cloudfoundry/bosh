@@ -236,7 +236,7 @@ DIFF
         bosh_runner.run("update cpi-config #{cpi_config_manifest.path}")
         bosh_runner.run("deployment #{deployment_manifest.path}")
         bosh_runner.run("upload stemcell #{stemcell_filename}")
-        expect(bosh_runner.run('deploy')).to match /Deployed 'simple' to 'Test Director'/
+        expect(bosh_runner.run('deploy')).to include("Deployed 'simple' to '#{current_sandbox.director_name}'")
         expect(bosh_runner.run('stemcells')).to include(<<-OUT)
 +-----------------+------------+---------+------------------------------------------+
 | Name            | OS         | Version | CID                                      |

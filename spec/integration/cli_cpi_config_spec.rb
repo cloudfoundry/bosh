@@ -42,7 +42,7 @@ describe "cli cpi config", type: :integration do
     target_and_login
 
     # none present yet
-    expect(bosh_runner.run("cpi-config")).to include("Acting as user 'test' on 'Test Director'\n")
+    expect(bosh_runner.run("cpi-config")).to include("Acting as user 'test' on '#{current_sandbox.director_name}'\n")
 
     Dir.mktmpdir do |tmpdir|
       cpi_config_filename = File.join(tmpdir, 'cpi_config.yml')
