@@ -209,12 +209,14 @@ module Bosh::Director
             version: 'stemcell_version-3',
             operating_system: 'stemcell_os-3',
             cid: 'cloud-id-3',
+            cpi: 'cpi3'
           )
           Bosh::Director::Models::Stemcell.create(
             name: 'fake-stemcell-2',
             version: 'stemcell_version-2',
             operating_system: 'stemcell_os-2',
-            :cid => 'cloud-id-2',
+            cid: 'cloud-id-2',
+            cpi: 'cpi2'
           )
       end
       it 'returns a list of all stemcells' do
@@ -224,6 +226,7 @@ module Bosh::Director
                 'operating_system' => 'stemcell_os-1',
                 'version' => 'stemcell_version-1',
                 'cid' => 'cloud-id-1',
+                'cpi' => nil,
                 'deployments' => [{name: 'first'}, {name: 'second'}]
               },
               {
@@ -231,6 +234,7 @@ module Bosh::Director
                 'operating_system' => 'stemcell_os-2',
                 'version' => 'stemcell_version-2',
                 'cid' => 'cloud-id-2',
+                'cpi' => 'cpi2',
                 'deployments' => []
               },
               {
@@ -238,6 +242,7 @@ module Bosh::Director
                 'operating_system' => 'stemcell_os-3',
                 'version' => 'stemcell_version-3',
                 'cid' => 'cloud-id-3',
+                'cpi' => 'cpi3',
                 'deployments' => []
               },
               ])

@@ -52,12 +52,12 @@ describe 'cli: stemcell', type: :integration do
       expect(out).to match /Stemcell uploaded and created/
 
       expect(bosh_runner.run('stemcells')).to include(<<-OUT)
-+-----------------+------------+---------+------------------------------------------+
-| Name            | OS         | Version | CID                                      |
-+-----------------+------------+---------+------------------------------------------+
-| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c |
-| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c |
-+-----------------+------------+---------+------------------------------------------+
++-----------------+------------+---------+------------------------------------------+-----------+
+| Name            | OS         | Version | CID                                      | CPI       |
++-----------------+------------+---------+------------------------------------------+-----------+
+| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c | cpi-name  |
+| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c | cpi-name2 |
++-----------------+------------+---------+------------------------------------------+-----------+
 
 (*) Currently in-use
 

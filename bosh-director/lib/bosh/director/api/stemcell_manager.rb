@@ -25,6 +25,7 @@ module Bosh::Director
             'operating_system' => stemcell.operating_system,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
+            'cpi' => stemcell.cpi,
             'deployments' => stemcell.deployments.map { |d| { name: d.name } }
           }
         end
