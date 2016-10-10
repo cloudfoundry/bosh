@@ -430,7 +430,7 @@ jobs:
           file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
           input_mapping:
             stemcell: ubuntu-trusty-3233-stemcell
-            release: uaa-release
+            release: uaa-release-3232
           params:
             BOSH_TARGET_IP: 10.0.2.14
         - put: uaa-on-ubuntu-trusty-3233
