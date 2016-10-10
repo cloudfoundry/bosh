@@ -89,22 +89,28 @@ module Bosh::Director
       def cid_for_az(az)
         raise 'please bind model first' if @models.nil?
         raise StemcellNotFound, "No stemcell found" if @models.empty?
-        return @models.first.cid unless uses_cpi_config?
+
+        # stemcell might have no AZ, pick default model then
+        return model_for_default_cpi.cid if az.nil?
 
         cpi = cloud_factory(@deployment_model).lookup_cpi_for_az(az)
-        raise "CPI for AZ #{az} can not be found" if cpi.nil?
+        # stemcell might have AZ without cpi, pick default model then
+        return model_for_default_cpi.cid if cpi.nil?
 
-        stemcell = model_for_cpi(cpi)
-        raise StemcellNotFound, "Required stemcell #{spec} not found on cpi #{cpi}, please upload again" if stemcell.nil?
-        stemcell.cid
+        model_for_cpi(cpi).cid
       end
 
-      def uses_cpi_config?
-        !@models.first.cpi.nil?
+      private
+      def model_for_default_cpi
+        stemcell = @models.find{|sc|sc.cpi.nil?}
+        raise StemcellNotFound, "Required stemcell #{spec} not found for default cpi, please upload again" if stemcell.nil?
+        stemcell
       end
 
       def model_for_cpi(cpi)
-        @models.find{|model|model.cpi == cpi}
+        stemcell = @models.find{|model|model.cpi == cpi}
+        raise StemcellNotFound, "Required stemcell #{spec} not found for cpi #{cpi}, please upload again" if stemcell.nil?
+        stemcell
       end
     end
   end

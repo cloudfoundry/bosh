@@ -51,15 +51,15 @@ module Bosh::Director
 
     shared_examples_for 'lookup for clouds' do
       it 'returns the default cloud from director config when asking for the cloud of a nil AZ' do
-        expect(cloud_planner).to receive(:availability_zone).with(nil).and_return(nil)
         cloud = cloud_factory.for_availability_zone(nil)
         expect(cloud).to eq(default_cloud)
       end
 
-      it 'returns the default cloud from director config when asking for the cloud of a non-existing AZ' do
+      it 'raises an error when asking for the cloud of a non-existing AZ' do
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(nil)
-        cloud = cloud_factory.for_availability_zone('some-az')
-        expect(cloud).to eq(default_cloud)
+        expect {
+          cloud_factory.for_availability_zone('some-az')
+        }.to raise_error /AZ some-az not found in cloud config/
       end
 
       it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
@@ -85,9 +85,10 @@ module Bosh::Director
           expect(cloud).to eq(default_cloud)
         end
 
-        it 'returns the default cloud from director config when asking for the cloud of a non-existing AZ' do
-          cloud = cloud_factory.for_availability_zone('some-az')
-          expect(cloud).to eq(default_cloud)
+        it 'raises an error if lookup of an AZ is needed' do
+          expect {
+            cloud_factory.for_availability_zone('some-az')
+          }.to raise_error /Deployment plan must be given to lookup cpis from AZ/
         end
       end
 
@@ -97,6 +98,12 @@ module Bosh::Director
 
       it 'returns nil if asking for a nil cpi' do
         expect(cloud_factory.for_cpi(nil)).to be_nil
+      end
+
+      it 'raises an error if lookup_cpi_for_az is called for a nil az' do
+        expect {
+          cloud_factory.lookup_cpi_for_az(nil)
+        }.to raise_error /AZ name must not be nil/
       end
     end
 

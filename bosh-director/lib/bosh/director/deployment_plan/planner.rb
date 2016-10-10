@@ -118,6 +118,14 @@ module Bosh::Director
 
         options[:fix] = @fix
         options[:tags] = @tags
+
+        # FIXME make sure cloud_config & runtime_config are set on deployment (and saved),
+        # so that when referencing to deployment using a different model, i.e. by using instance_model.deployment,
+        # we retrieve the current cloud_config and don't load the old one from the database
+        model.cloud_config = @cloud_config
+        model.runtime_config = @runtime_config
+        model.save
+
         assembler.bind_models(options)
       end
 

@@ -269,6 +269,9 @@ module Bosh::Director
 
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
+        let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
+        let(:cloud_config) { Models::CloudConfig.make(manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
+
         it 'spins up vm in the az' do
           vm_instance = nil
           compilation_instance_pool.with_reused_vm(stemcell) do |instance|

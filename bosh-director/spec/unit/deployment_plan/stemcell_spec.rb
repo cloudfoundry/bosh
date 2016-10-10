@@ -203,6 +203,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
     }
 
+    it 'raises an error if no stemcell model was bound' do
+      stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+      expect {  stemcell.cid_for_az('doesntmatter')  }.to raise_error /please bind model first/
+    end
+
     context 'if not using cpi config' do
       it 'can not create multiple stemcells with same name and version' do
         make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => nil)
@@ -211,9 +216,42 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         }.to raise_error Sequel::ValidationFailed, "name and version unique"
       end
 
-      it 'raises an error if no stemcell model was bound' do
+      it 'raises an error if no stemcell for the default cpi exists' do
+        deployment = make_deployment('mycloud')
+
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1') # there's only a stemcell for another cpi
+
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
-        expect {  stemcell.cid_for_az('doesntmatter')  }.to raise_error /please bind model first/
+        stemcell.bind_model(deployment)
+
+        expect {  stemcell.cid_for_az(nil)  }.to raise_error BD::StemcellNotFound
+      end
+
+      it 'returns the cid of the default stemcell when not using AZs' do
+        deployment = make_deployment('mycloud')
+
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
+
+        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell.bind_model(deployment)
+
+        expect(stemcell.cid_for_az(nil)).to eq('cid1')
+      end
+
+      it 'returns the cid of the default stemcell when using AZs without CPI' do
+        deployment = make_deployment('mycloud')
+
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
+
+        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell.bind_model(deployment)
+
+        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return(nil)
+        expect(stemcell.cid_for_az('az-example')).to eq('cid1')
       end
     end
 
@@ -231,18 +269,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         expect(stemcell.cid_for_az('az-example')).to eq('cid2')
       end
 
-      it 'raises an error if no cpi of the given az can be found' do
-        deployment = make_deployment('mycloud')
-
-        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
-
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
-        stemcell.bind_model(deployment)
-
-        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return(nil)
-        expect {  stemcell.cid_for_az('az-example')  }.to raise_error /CPI for AZ az-example can not be found/
-      end
-
       it 'raises an error if the required stemcell for the given AZ does not exist' do
         deployment = make_deployment('mycloud')
 
@@ -253,6 +279,22 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
         allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return('cpi-notexisting')
         expect {  stemcell.cid_for_az('az-example')  }.to raise_error BD::StemcellNotFound
+      end
+    end
+
+    context 'if switching to cpi config with prior stemcells' do
+      it 'returns the cid of the stemcell of the given az' do
+        deployment = make_deployment('mycloud')
+
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
+
+        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell.bind_model(deployment)
+
+        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return('cpi2')
+        expect(stemcell.cid_for_az('az-example')).to eq('cid3')
       end
     end
   end
