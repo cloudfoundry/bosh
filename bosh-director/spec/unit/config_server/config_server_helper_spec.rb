@@ -81,7 +81,7 @@ module Bosh::Director::ConfigServer
                 @helper.extract_placeholder_key(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should include alphanumeric, underscores, dashes, or forward slash characters"
+                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
                    )
             end
           end
@@ -98,7 +98,7 @@ module Bosh::Director::ConfigServer
                 @helper.extract_placeholder_key(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should not end with a forward slash"
+                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not end with a forward slash"
                    )
             end
           end
@@ -115,7 +115,7 @@ module Bosh::Director::ConfigServer
                 @helper.extract_placeholder_key(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should not contain two consecutive forward slashes"
+                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not contain two consecutive forward slashes"
                    )
             end
           end

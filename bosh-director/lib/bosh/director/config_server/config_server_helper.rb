@@ -32,17 +32,17 @@ module Bosh::Director::ConfigServer
       # Allowing exclamation mark for spiff
       unless /^[a-zA-Z0-9_\-!\/]+$/ =~ key
         raise Bosh::Director::ConfigServerIncorrectKeySyntax,
-              "Placeholder key '#{key}' should include alphanumeric, underscores, dashes, or forward slash characters"
+              "Placeholder key '#{key}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end
 
       if key.end_with? '/'
         raise Bosh::Director::ConfigServerIncorrectKeySyntax,
-              "Placeholder key '#{key}' should not end with a forward slash"
+              "Placeholder key '#{key}' must not end with a forward slash"
       end
 
       if /\/\// =~ key
         raise Bosh::Director::ConfigServerIncorrectKeySyntax,
-              "Placeholder key '#{key}' should not contain two consecutive forward slashes"
+              "Placeholder key '#{key}' must not contain two consecutive forward slashes"
       end
 
       validate_bang_character(key)
