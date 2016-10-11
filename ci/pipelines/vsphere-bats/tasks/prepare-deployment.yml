@@ -1,0 +1,24 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source: {repository: boshcpi/cpi-certification}
+
+inputs:
+  - name: bosh-cli
+  - name: pipelines
+  - name: environment
+
+outputs:
+  - name: deployment-manifest
+
+run:
+  path: pipelines/vsphere/tasks/prepare-deployment.sh
+
+params:
+  BOSH_DIRECTOR_USERNAME:                 ""
+  BOSH_DIRECTOR_PASSWORD:                 ""
+  BOSH_VSPHERE_VCENTER_VLAN:              ""
+  RELEASE_NAME:                           ""
+  STEMCELL_NAME:                          ""
+  DEPLOYMENT_NAME:                        ""

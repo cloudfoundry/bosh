@@ -1,0 +1,21 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source: {repository: boshcpi/cpi-certification}
+
+inputs:
+  - name: pipelines
+  - name: stemcell
+  - name: environment
+  - name: deployment-manifest
+  - name: bosh-cli
+
+run:
+  path: pipelines/vsphere/tasks/create-deployment.sh
+
+params:
+  BOSH_DIRECTOR_PASSWORD: ""
+  BOSH_DIRECTOR_USERNAME: ""
+  RELEASE_NAME:           ""
+  DEPLOYMENT_NAME:        ""
