@@ -17,13 +17,22 @@ module Bosh::Spec
       run_in_dir(cmd, @bosh_work_dir, options)
     end
 
-    def run_interactively(cmd, env = {})
+    def run_interactively(cmd, options = {})
       Dir.chdir(@bosh_work_dir) do
-        cli_options = ''
+        config = options.fetch(:config, @bosh_config)
+        log_in = options.fetch(:include_credentials, true)
+        user = options[:user] || 'test'
+        password = options[:password] || 'test'
+        deployment_name = options.fetch(:deployment_name, nil)
         default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
-        cli_options += " --ca-cert #{default_ca_cert}"
 
-        BlueShell::Runner.run env, "gobosh --tty #{cli_options} #{cmd}" do |runner|
+        cli_options = ''
+        cli_options += " --ca-cert #{default_ca_cert}"
+        cli_options += " --user=#{user} --password=#{password}" if log_in
+        cli_options += " -d #{deployment_name}" if deployment_name
+        cli_options += " --config #{config}"
+
+        BlueShell::Runner.run({}, "gobosh --tty #{cli_options} #{cmd}") do |runner|
           yield runner
         end
       end
@@ -42,13 +51,13 @@ module Bosh::Spec
       log_in = options.fetch(:include_credentials, true)
       user = options[:user] || 'test'
       password = options[:password] || 'test'
-      config = options.fetch(:config, nil)
+      config = options.fetch(:config, @bosh_config)
       cli_options = ''
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
-      cli_options += " --config #{config}" if config
+      cli_options += " --config #{config}"
 
       default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"

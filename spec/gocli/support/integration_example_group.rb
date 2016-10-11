@@ -155,9 +155,10 @@ module IntegrationExampleGroup
   end
 
   def run_errand(errand_job_name, options={})
+    failure_expected = options.fetch(:failure_expected, true)
     output, exit_code = bosh_runner.run(
       "run-errand #{errand_job_name}",
-      options.merge({return_exit_code: true, failure_expected: true})
+      options.merge({return_exit_code: true, failure_expected: failure_expected})
     )
     return output, exit_code == 0
   end
