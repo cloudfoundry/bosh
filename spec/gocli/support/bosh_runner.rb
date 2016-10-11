@@ -27,12 +27,14 @@ module Bosh::Spec
         default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
 
         cli_options = ''
-        cli_options += " --ca-cert #{default_ca_cert}"
+        cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
         cli_options += " --user=#{user} --password=#{password}" if log_in
         cli_options += " -d #{deployment_name}" if deployment_name
         cli_options += " --config #{config}"
+        command="gobosh --tty #{cli_options} #{cmd}"
+        @logger.info("Running ... `#{command}`")
 
-        BlueShell::Runner.run({}, "gobosh --tty #{cli_options} #{cmd}") do |runner|
+        BlueShell::Runner.run({}, "#{command}") do |runner|
           yield runner
         end
       end

@@ -191,7 +191,7 @@ module Bosh::Spec
     end
 
     def vms_details(options = {})
-      parse_table_with_ips(@runner.run('vms --json --details', options))
+      parse_table_with_ips(@runner.run('vms --details', options.merge(json: true)))
     end
 
     def parse_table(output)
