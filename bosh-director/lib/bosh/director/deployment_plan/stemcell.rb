@@ -69,6 +69,10 @@ module Bosh::Director
         end
       end
 
+      def deployment_model=(deployment_model)
+        @deployment_model = deployment_model
+      end
+
       def desc
         return nil unless @models
         @models.first.desc

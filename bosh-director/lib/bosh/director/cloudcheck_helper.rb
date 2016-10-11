@@ -114,6 +114,7 @@ module Bosh::Director
       env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_models
+      stemcell.deployment_model = instance_model.deployment
       # FIXME cpi is not passed here (otherwise, we would need to parse the CPI using the cloud config & cloud manifest parser)
       # it is not a problem, since all interactions with cpi go over cloud factory (which uses only az name)
       # but still, it is ugly and dangerous...
