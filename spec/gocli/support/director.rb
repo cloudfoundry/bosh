@@ -190,7 +190,7 @@ module Bosh::Spec
       options
     end
 
-    def vms_details(deployment_name, options = {})
+    def vms_details(options = {})
       parse_table_with_ips(@runner.run('vms --json --details', options))
     end
 
