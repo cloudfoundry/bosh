@@ -227,7 +227,7 @@ module Bosh::Spec
           vm[:ips] = vm[:ips].split("\n")
           vm['IPs'] = vm[:ips]
 
-          vm[:disk_cids] = vm[:disk_cids].split("\n")
+          vm[:disk_cids] = vm[:disk_cids].split("\n") if vm[:disk_cids]
           vm['Disk CIDs'] = vm[:disk_cids]
         end
         vm

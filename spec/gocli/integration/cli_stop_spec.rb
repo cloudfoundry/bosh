@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 describe 'stop command', type: :integration do
   with_reset_sandbox_before_each
@@ -23,8 +23,8 @@ describe 'stop command', type: :integration do
     context 'with an index or id' do
       it 'stops the indexed job' do
         expect {
-          output = bosh_runner.run('stop foobar 0')
-          expect(output).to include('foobar/0 stopped, VM(s) still running')
+          output = bosh_runner.run('stop foobar/0', deployment_name: 'simple')
+          expect(output).to match /Updating instance foobar: foobar.* \(0\)/
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -43,8 +43,8 @@ describe 'stop command', type: :integration do
         instance_uuid = vm_before_with_index_1.instance_uuid
 
         expect {
-          output = bosh_runner.run("stop foobar #{instance_uuid}")
-          expect(output).to include("foobar/#{instance_uuid} stopped, VM(s) still running")
+          output = bosh_runner.run("stop foobar/#{instance_uuid}", deployment_name: 'simple')
+          expect(output).to match /Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -59,14 +59,13 @@ describe 'stop command', type: :integration do
               'foobar/2' => 'running'
           })
 
-        output = bosh_runner.run('events')
-        parser = Support::TableHelpers::Parser.new(scrub_event_time(scrub_random_cids(scrub_random_ids(output))))
-        expect(parser.data).to include(
-          {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object type' => 'deployment', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => 'before: {"releases"=>["bosh-release/0+dev.1"], "stemcells"=>["ubuntu-stemcell/1"]},'},
-          {'ID' => '', 'Time' => '', 'User' => '', 'Action' => '', 'Object type' => '', 'Task' => '', 'Object ID' => '', 'Dep' => '', 'Inst' => '', 'Context' => 'after: {"releases"=>["bosh-release/0+dev.1"], "stemcells"=>["ubuntu-stemcell/1"]}'},
-          {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'stop', 'Object type' => 'instance', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
-          {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'stop', 'Object type' => 'instance', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
-          {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object type' => 'deployment', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'}
+        output = bosh_runner.run('events', json: true)
+        events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+        expect(events).to include(
+          {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1"},
+          {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'stop', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => ''},
+          {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'stop', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => ''},
+          {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => ''}
         )
       end
     end
@@ -74,8 +73,10 @@ describe 'stop command', type: :integration do
     context 'without an index or id' do
       it 'stops all instances of the job' do
         expect {
-          output = bosh_runner.run('stop foobar')
-          expect(output).to include('foobar/* stopped, VM(s) still running')
+          output = bosh_runner.run('stop foobar', deployment_name: 'simple')
+          expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
+          expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
+          expect(output).to match /Updating instance foobar: foobar\/.* \(2\)/
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -95,8 +96,8 @@ describe 'stop command', type: :integration do
     context 'given the --hard flag' do
       it 'deletes the VM(s)' do
         expect {
-          output = bosh_runner.run('stop foobar 0 --hard')
-          expect(output).to include('foobar/0 detached, VM(s) deleted')
+          output = bosh_runner.run('stop foobar/0 --hard', deployment_name: 'simple')
+          expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
         }.to change { director.vms.count }.by(-1)
       end
     end
@@ -109,8 +110,11 @@ describe 'stop command', type: :integration do
 
     it 'stops all jobs in the deployment' do
       expect {
-        output = bosh_runner.run('stop')
-        expect(output).to include('all jobs stopped, VM(s) still running')
+        output = bosh_runner.run('stop', deployment_name: 'simple')
+        expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
+        expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
+        expect(output).to match /Updating instance foobar: foobar\/.* \(2\)/
+        expect(output).to match /Updating instance another-job: another-job\/.* \(0\)/
       }.to change { vm_states }
         .from({
             'another-job/0' => 'running',
@@ -134,7 +138,7 @@ describe 'stop command', type: :integration do
     end
 
     it 'is successful (regression: #108398600) ' do
-      bosh_runner.run('stop foobar --hard')
+      bosh_runner.run('stop foobar --hard', deployment_name: 'simple')
       expect(vm_states).to eq({'another-job/0' => 'running'})
       expect {
         deploy_from_scratch(manifest_hash: manifest_hash)
