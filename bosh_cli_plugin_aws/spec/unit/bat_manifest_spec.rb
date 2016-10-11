@@ -27,7 +27,7 @@ resource_pools:
   network: default
   size: 1
   cloud_properties:
-    instance_type: m1.medium
+    instance_type: m3.medium
     availability_zone: us-east-1a
 
 compilation:
@@ -35,7 +35,7 @@ compilation:
   workers: 8
   network: default
   cloud_properties:
-    instance_type: c1.medium
+    instance_type: c3.large
     availability_zone: us-east-1a
 
 update:
