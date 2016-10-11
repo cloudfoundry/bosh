@@ -116,6 +116,7 @@ An OS image is a tarball that contains a snapshot of an entire OS filesystem tha
 
 The OS Image should be rebuilt when you are making changes to which packages we install in the operating system, or when making changes to how we configure those packages, or if you need to pull in and test an updated package from upstream.
 
+    $ mkdir -p $PWD/tmp
     $ bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz]
 
 The arguments to `stemcell:build_os_image` are:
