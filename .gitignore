@@ -82,7 +82,3 @@ spec_reports
 
 /tmp/*
 coverage/
-
-# zak and rob are silly
-ci/pipelines/aws-bats/secrets.yml
-ci/pipelines/vsphere-bats/secrets.yml
