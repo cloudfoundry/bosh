@@ -76,8 +76,6 @@ describe 'Links', type: :integration do
     context 'when link is provided' do
       context 'when network is manual and local_dns is enabled' do
         it 'uses UUID dns names in templates' do
-          puts ">>>>>>>>>>>>>>>>"
-          puts bosh_runner.run("releases")
           deploy_simple_manifest(manifest_hash: manifest)
           vms = director.vms
           api_vm = find_vm(vms, 'my_api', '0')

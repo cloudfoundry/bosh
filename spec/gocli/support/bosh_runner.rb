@@ -42,11 +42,13 @@ module Bosh::Spec
       log_in = options.fetch(:include_credentials, true)
       user = options[:user] || 'test'
       password = options[:password] || 'test'
+      config = options.fetch(:config, nil)
       cli_options = ''
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
+      cli_options += " --config #{config}" if config
 
       default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
