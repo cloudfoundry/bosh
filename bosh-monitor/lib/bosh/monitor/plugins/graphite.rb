@@ -17,7 +17,7 @@ module Bosh::Monitor
       end
 
       def process(event)
-        if (event.is_a? Bosh::Monitor::Events::Heartbeat) && event.node_id
+        if valid?(event)
 
           metrics = event.metrics
 
@@ -35,6 +35,13 @@ module Bosh::Monitor
       end
 
       private
+
+      def valid?(event)
+        (event.is_a? Bosh::Monitor::Events::Heartbeat) && 
+          event.node_id && 
+          event.deployment &&
+          event.job
+      end
 
       def get_metric_name heartbeat, metric
         [get_metric_prefix(heartbeat), metric.name.to_s.gsub('.', '_')].join '.'

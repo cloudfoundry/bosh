@@ -84,6 +84,32 @@ describe Bhm::Plugins::Graphite do
           EM.stop
         end
       end
+
+      it "skips sending metrics if deployment is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, deployment: nil)
+        EM.run do
+          plugin.run
+
+          expect(connection).not_to receive(:send_metric)
+
+          plugin.process(event)
+
+          EM.stop
+        end
+      end
+
+      it "skips sending metrics if job is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, job: nil)
+        EM.run do
+          plugin.run
+
+          expect(connection).not_to receive(:send_metric)
+
+          plugin.process(event)
+
+          EM.stop
+        end
+      end
     end
   end
 end
