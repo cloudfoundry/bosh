@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `i6s15Evsv75sOUUUanth_iX0b4fz2tjJ`
+  - USN-3099-2: Linux kernel (Vivid HWE) vulnerabilities
+  - built from 257.x (f1ef7f6fbedf0d2b4ea674f796ce7d7fff036f55)
+
 * `jXtLnXSfuchThf5CMrKBRDRwB8sbga.X`
   - Periodic bump
   - built from 257.x (12b320cca0733a7acaf73038c9d1e8d6ba3708fe)
@@ -489,6 +493,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `OqXYFoorRXg1ww1YWGOUZNPf0tIWE5Ny`
+  - USN-3099-2: Linux kernel (Vivid HWE) vulnerabilities
+  - built from 257.x (f1ef7f6fbedf0d2b4ea674f796ce7d7fff036f55)
 
 * `5Yb6BxFInI8wujUUSE0b96cn2ALmegAD`
   - systemd starts rsyslog after the ephemeral drive is mounted
