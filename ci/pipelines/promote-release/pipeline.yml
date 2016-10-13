@@ -1,0 +1,58 @@
+---
+jobs:
+  - name: finalize-bosh-release
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-develop
+        - get: bosh-dev-release
+          resource: bosh-candidate-release-tarballs
+        - get: bosh-cli
+      - task: promote-release
+        file: bosh-src-develop/ci/pipelines/promote-release/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
+      - put: bosh-src-master
+        params:
+          repository: bosh-src-with-final
+  - name: merge-master
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-develop
+        - get: bosh-src-master
+          trigger: true
+      - task: merge-master
+        file: bosh-src-develop/ci/pipelines/promote-release/tasks/merge-master.yml
+      - put: bosh-src-develop
+        params:
+          repository: bosh-src-merged
+
+resources:
+  - name: bosh-candidate-release-tarballs
+    type: s3
+    source:
+      bucket: {{candidate_release_bucket}}
+      regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" # bosh-257.9+dev.1472844900.tgz
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+
+  - name: bosh-src-develop
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: {{branch}}
+      private_key: {{bosh_src_key}}
+
+  - name: bosh-src-master
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: {{promote_branch}}
+      private_key: {{bosh_src_key}}
