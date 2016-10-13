@@ -78,6 +78,7 @@ describe Bhm::Plugins::Graphite do
           plugin.run
 
           expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from mysql_node. .agent_id=deadbeef index=0/)
 
           plugin.process(event)
 
@@ -91,6 +92,7 @@ describe Bhm::Plugins::Graphite do
           plugin.run
 
           expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from mysql_node.node_id_abc .agent_id=deadbeef index=0/)
 
           plugin.process(event)
 
@@ -104,6 +106,7 @@ describe Bhm::Plugins::Graphite do
           plugin.run
 
           expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from .node_id_abc .agent_id=deadbeef index=0/)
 
           plugin.process(event)
 
