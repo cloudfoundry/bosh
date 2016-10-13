@@ -72,8 +72,22 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, process_status = Open3.capture2e(env, command, chdir: working_dir)
-        exit_code = process_status.exitstatus
+        Open3.popen2e(env, command, chdir: working_dir) do |stdin, stdout_and_stderr, wait_thr|
+          if options.fetch(:no_track, false)
+            line = "negative-ghostrider"
+            start = Time.now
+            loop do
+              line = stdout_and_stderr.gets
+              break if line =~ /Task (\d+)/
+              raise 'Failed to parse task id from output within timeout' if (Time.now - start) > 20
+            end
+            output = line
+            exit_code = 0
+          else
+            output = stdout_and_stderr.read
+            exit_code = wait_thr.value.exitstatus
+          end
+        end
       end
 
       @logger.info "Exit code is #{exit_code}"

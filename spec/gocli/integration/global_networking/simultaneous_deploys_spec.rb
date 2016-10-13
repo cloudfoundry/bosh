@@ -20,7 +20,6 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are enough IPs for two deployments' do
     it 'allocates different IP to another deploy' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 6)
       first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'foobar_without_packages')
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
@@ -42,7 +41,6 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are not enough IPs for compilation for two deployments' do
     it 'fails one of deploys' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 3)
       upload_cloud_config(cloud_config_hash: cloud_config)
 
@@ -56,7 +54,6 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are not enough IPs for two deployments' do
     it 'fails one of deploys' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2, template: 'foobar_without_packages')
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
@@ -75,7 +72,6 @@ describe 'simultaneous deploys', type: :integration do
 
   describe 'running errand during deploy' do
     it 'allocates IPs correctly for simultaneous errand run and deploy' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
@@ -93,7 +89,6 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     it 'raises correct error message when we do not have enough IPs for the errand and the deploy' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2, template: 'errand_without_package')
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
@@ -102,7 +97,7 @@ describe 'simultaneous deploys', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
 
       deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
-      errand_output, errand_success = run_errand('errand_job', manifest_hash: manifest_with_errand)
+      errand_output, errand_success = run_errand('errand_job', deployment_name: 'errand', manifest_hash: manifest_with_errand)
       deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_task(deploy_task_id)
 
       expect([deploy_success, errand_success]).to match_array([true, false]), "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n"

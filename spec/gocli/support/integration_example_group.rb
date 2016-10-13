@@ -96,8 +96,7 @@ module IntegrationExampleGroup
   end
 
   def deploy(options={})
-    cmd = options.fetch(:no_track, false) ? '--no-track ' : ''
-    cmd += options.fetch(:no_color, false) ? '--no-color ' : ''
+    cmd = options.fetch(:no_color, false) ? '--no-color ' : ''
 
     deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
     cmd += " -d #{deployment_hash['name']}"
