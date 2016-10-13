@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
   - name: bosh-src-candidate
+  - name: bosh-src-develop
   - name: bosh-dev-release
   - name: bosh-cli
   - name: candidate-version

@@ -5,6 +5,7 @@ jobs:
     plan:
       - aggregate:
         - get: bosh-src-candidate
+        - get: bosh-src-develop
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
         - get: bosh-cli

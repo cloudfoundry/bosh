@@ -15,7 +15,7 @@ merge_branch() {
 
   repo_name="bosh-src-${branch_name}-merged"
   git clone ./bosh-src-master ./$repo_name
-  pushd $repo_name
+  cd $repo_name
 
   git remote add local $2
 
@@ -24,7 +24,7 @@ merge_branch() {
 
   git merge --no-edit master
 
-  popd
+  cd -
 }
 
 merge_branch develop $DEVELOP
