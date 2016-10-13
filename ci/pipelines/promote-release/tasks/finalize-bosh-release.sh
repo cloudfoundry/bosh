@@ -2,6 +2,8 @@
 
 set -eux
 
+VERSION=$( cat candidate-version/number | sed 's/\.0$//;s/\.0$//' )
+
 export ROOT_PATH=$PWD
 PROMOTED_REPO=$PWD/bosh-src-with-final
 
@@ -26,7 +28,7 @@ blobstore:
     secret_access_key: "$BLOBSTORE_SECRET_ACCESS_KEY"
 EOF
 
-$GO_CLI_PATH finalize-release $DEV_RELEASE_PATH
+$GO_CLI_PATH finalize-release --version $VERSION $DEV_RELEASE_PATH
 
 git add -A
 git status
@@ -34,4 +36,4 @@ git status
 git config --global user.email "ci@localhost"
 git config --global user.name "CI Bot"
 
-git commit -m 'Adding final release via concourse'
+git commit -m "Adding final release $VERSION via concourse"

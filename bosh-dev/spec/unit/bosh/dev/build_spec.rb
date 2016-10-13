@@ -33,12 +33,18 @@ module Bosh::Dev
     describe '.candidate' do
       subject { described_class.candidate(bucket_name) }
 
-      context 'when CANDIDATE_BUILD_NUMBER is set' do
-        let(:environment) { { 'CANDIDATE_BUILD_NUMBER' => 'candidate'} }
+      context 'when CANDIDATE_BUILD_NUMBER and CANDIDATE_BUILD_GEM_NUMBER are set' do
+        let(:environment) do
+          {
+            'CANDIDATE_BUILD_NUMBER' => 'candidate',
+            'CANDIDATE_BUILD_GEM_NUMBER' => 'candidate_gem'
+          }
+        end
         before { stub_const('ENV', environment) }
 
         it { should be_a(Build::Candidate) }
         its(:number) { should eq('candidate') }
+        its(:gem_number) { should eq('candidate_gem') }
         its(:bucket) { should eq('fake-bucket') }
 
         context 'when SKIP_PROMOTE_ARTIFACTS is set' do
@@ -54,7 +60,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Candidate)
               .to receive(:new)
-                    .with('candidate', 'fake-bucket', download_adapter, logger, ['gems', 'release'], nil)
+                    .with('candidate', 'candidate', 'fake-bucket', download_adapter, logger, ['gems', 'release'], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -74,7 +80,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Candidate)
               .to receive(:new)
-                    .with('candidate', 'fake-bucket', download_adapter, logger, [], nil)
+                    .with('candidate', 'candidate', 'fake-bucket', download_adapter, logger, [], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -100,7 +106,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Local)
               .to receive(:new)
-                    .with('0000', 'fake-bucket', download_adapter, logger, ['gems', 'stemcells'], nil)
+                    .with('0000', '0000', 'fake-bucket', download_adapter, logger, ['gems', 'stemcells'], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -118,7 +124,7 @@ module Bosh::Dev
             build = instance_double('Bosh::Dev::Build::Local')
             expect(Bosh::Dev::Build::Local)
               .to receive(:new)
-                    .with('0000', 'fake-bucket', download_adapter, logger, [], nil)
+                    .with('0000', '0000', 'fake-bucket', download_adapter, logger, [], nil)
                     .and_return(build)
 
             expect(subject).to eq(build)
@@ -130,7 +136,7 @@ module Bosh::Dev
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
     let(:skip_promote_artifacts) { [] }
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token) }
+    subject(:build) { Build::Candidate.new('123', '456', bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token) }
     let(:bearer_token) { nil }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
@@ -408,12 +414,12 @@ module Bosh::Dev
     it 'constructs the appropriate PromotableArtifacts' do
       expect(PromotableArtifacts).to receive(:new)
                                        .with(anything, logger, {skip_artifacts: ['gems']}) # TODO: anything no
-      build = Build.new('123', bucket_name, download_adapter, logger, ['gems'], bearer_token)
+      build = Build.new('123', '456', bucket_name, download_adapter, logger, ['gems'], bearer_token)
     end
   end
 
   describe Build::Candidate do
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, [], nil) }
+    subject(:build) { Build::Candidate.new('123', '456', bucket_name, download_adapter, logger, [], nil) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -441,7 +447,7 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    subject { described_class.new('build-number', bucket_name, download_adapter, logger, [], nil) }
+    subject { described_class.new('build-number', 'gem-build-number', bucket_name, download_adapter, logger, [], nil) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -450,7 +456,7 @@ module Bosh::Dev
       before { allow(Bosh::Dev::BoshRelease).to receive(:build).and_return(dev_bosh_release) }
 
       let(:gem_components) { instance_double('Bosh::Dev::GemComponents') }
-      before { allow(GemComponents).to receive(:new).with('build-number').and_return(gem_components) }
+      before { allow(GemComponents).to receive(:new).with('gem-build-number').and_return(gem_components) }
 
       it 'builds gems before creating release because the latter depends on the presence of release gems' do
         expect(gem_components).to receive(:build_release_gems).ordered

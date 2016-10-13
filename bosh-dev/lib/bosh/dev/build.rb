@@ -15,17 +15,18 @@ module Bosh::Dev
   class Build
     include CommandHelper
 
-    attr_reader :number
+    attr_reader :number, :gem_number
 
     def self.candidate(bucket_name='bosh-ci-pipeline')
       logger = Logging.logger(STDERR)
       number = ENV['CANDIDATE_BUILD_NUMBER']
+      gem_number = ENV['CANDIDATE_BUILD_GEM_NUMBER'] || number
       skip_promote_artifacts = ENV.fetch('SKIP_PROMOTE_ARTIFACTS', '').split(',')
       bearer_token = ENV.fetch('BOSHIO_BEARER_TOKEN', nil)
 
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
-        Candidate.new(number, bucket_name, DownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
+        Candidate.new(number, gem_number, bucket_name, DownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
 
@@ -37,7 +38,7 @@ module Bosh::Dev
           subnum = '0000'
         end
 
-        Local.new(subnum, bucket_name, LocalDownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
+        Local.new(subnum, subnum, bucket_name, LocalDownloadAdapter.new(logger), logger, skip_promote_artifacts, bearer_token)
       end
     end
 
@@ -45,8 +46,9 @@ module Bosh::Dev
       ENV.fetch('CANDIDATE_BUILD_NUMBER', '0000')
     end
 
-    def initialize(number, bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token)
+    def initialize(number, gem_number, bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token)
       @number = number
+      @gem_number = gem_number
       @logger = logger
       @promotable_artifacts = PromotableArtifacts.new(self, logger, {:skip_artifacts => skip_promote_artifacts} )
       @bucket = bucket_name
@@ -133,7 +135,7 @@ module Bosh::Dev
     class Local < self
       def release_tarball_path
         release = BoshRelease.build
-        GemComponents.new(@number).build_release_gems
+        GemComponents.new(@gem_number).build_release_gems
         release.dev_tarball_path
       end
 

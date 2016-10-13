@@ -10,6 +10,10 @@ inputs:
   - name: bosh-src-develop
   - name: bosh-dev-release
   - name: bosh-cli
+  - name: candidate-version
+
+outputs:
+  - name: candidate-version
 
 outputs:
   - name: bosh-src-with-final

@@ -8,6 +8,9 @@ jobs:
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
         - get: bosh-cli
+        - get: candidate-version
+          params:
+            bump: major
       - task: promote-release
         file: bosh-src-develop/ci/pipelines/promote-release/tasks/finalize-bosh-release.yml
         params:
@@ -16,6 +19,9 @@ jobs:
       - put: bosh-src-master
         params:
           repository: bosh-src-with-final
+      - put: candidate-version
+        params:
+          file: candidate-version/version
   - name: merge-master
     serial: true
     plan:
@@ -30,6 +36,14 @@ jobs:
           repository: bosh-src-merged
 
 resources:
+  - name: candidate-version
+    type: semver
+    source:
+      bucket: {{candidate_release_bucket}}
+      key: promote-dev-version
+      access_key_id: {{candidate_release_access_key_id}}
+      secret_access_key: {{candidate_release_secret_access_key}}
+
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
