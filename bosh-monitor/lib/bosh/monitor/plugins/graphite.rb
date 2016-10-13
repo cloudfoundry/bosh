@@ -18,7 +18,7 @@ module Bosh::Monitor
 
       def process(event)
         if !valid?(event)
-          logger.warn("Skipping invalid heartbeat: #{event..to_s}")
+          logger.warn("Skipping invalid heartbeat: #{event.to_s}")
           return
         end
 
