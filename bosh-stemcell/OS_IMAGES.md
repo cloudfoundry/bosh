@@ -7,17 +7,21 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `isIJ_VSA7M2hkTGxsJFi3cvAGggy9HHC`
-  - USN-3099-2: Linux kernel (Xenial HWE) vulnerabilities
-  - built from 256.x (4d1c642c6495bde34a60b06fa142e9449f3b4fa9)
+* `MpHNIGsdpED3p.3gyMQLhtJkcM8Qe.Iz`
+  - USN-3099-2: Linux kernel vulnerabilities
+  - built from 256.x-3233.x (b171ebb7486ae05e4b19b797532e44d93f7fe492)
 
-* `EIACNqGtW49yKpD19wlU8NyNcRHt9zSa`
+* `136CgQH1.Qu03N__QmvD_dw3gbKhK7t3`
   - USN-3087-2: OpenSSL regression
-  - built from 256.x (c9fcb70d3c0706087f923cff025be532e695fee5)
+  - built from 256.x-3233.x (7ded192d265b79ed0e558bf66441c5b3e51cbefc)
 
-* `je3v4c_7cZVefGR04HDxLc0dO3vEHgdd`
+* `G51iLzxsD1FciB4OXXTgYeK4TLoETxDw`
   - USN-3087-1: OpenSSL vulnerabilities
-  - built from 256.x (b040be6dc2c79b825a91648b7d91889ea6605c2f)
+  - built from 256.x-3233.x (fc86893deca490b337e106cb18ee3ef0e48c1098)
+
+* `mxhuFVpU6rcLV7XLzbRI4j2YwgO_p7dw`
+  - bump kernel to xenial
+  - built from 256.x-3233.x (7c4a51df294e19624d089b2a9c6b3d59668f16a5)
 
 * `AEwn6hJ4pBmbNSYCvUzOSMoD2.A.Ic_T`
   - Backport IPv6 CIS/STIG stories
