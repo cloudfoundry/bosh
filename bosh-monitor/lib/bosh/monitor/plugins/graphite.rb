@@ -17,28 +17,30 @@ module Bosh::Monitor
       end
 
       def process(event)
-        if valid?(event)
+        if !valid?(event)
+          logger.warn("Skipping invalid heartbeat: #{event..to_s}")
+          return
+        end
 
-          metrics = event.metrics
+        metrics = event.metrics
 
-          unless metrics.kind_of?(Enumerable)
-            raise PluginError, "Invalid event metrics: Enumerable expected, #{metrics.class} given"
-          end
+        unless metrics.kind_of?(Enumerable)
+          raise PluginError, "Invalid event metrics: Enumerable expected, #{metrics.class} given"
+        end
 
-          metrics.each do |metric|
-            metric_name = get_metric_name(event, metric)
-            metric_timestamp = get_metric_timestamp(metric.timestamp)
-            metric_value = metric.value
-            @connection.send_metric(metric_name, metric_value, metric_timestamp)
-          end
+        metrics.each do |metric|
+          metric_name = get_metric_name(event, metric)
+          metric_timestamp = get_metric_timestamp(metric.timestamp)
+          metric_value = metric.value
+          @connection.send_metric(metric_name, metric_value, metric_timestamp)
         end
       end
 
       private
 
       def valid?(event)
-        (event.is_a? Bosh::Monitor::Events::Heartbeat) && 
-          event.node_id && 
+        (event.is_a? Bosh::Monitor::Events::Heartbeat) &&
+          event.node_id &&
           event.deployment &&
           event.job
       end
