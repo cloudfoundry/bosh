@@ -15,8 +15,6 @@ inputs:
 
 outputs:
   - name: candidate-version
-
-outputs:
   - name: bosh-src-with-final
 
 params:
