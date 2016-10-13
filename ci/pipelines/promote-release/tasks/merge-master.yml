@@ -7,11 +7,13 @@ image_resource:
     repository: concourse/git-resource
 
 inputs:
-  - name: bosh-src-master
+  - name: bosh-src-candidate
   - name: bosh-src-develop
+  - name: bosh-src-master
 
 outputs:
-  - name: bosh-src-merged
+  - name: bosh-src-candidate-merged
+  - name: bosh-src-develop-merged
 
 run:
   path: bosh-src-develop/ci/pipelines/promote-release/tasks/merge-master.sh

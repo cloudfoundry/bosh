@@ -13,7 +13,7 @@ chmod +x $GO_CLI_PATH
 
 export DEV_RELEASE_PATH=$ROOT_PATH/bosh-dev-release/bosh*.tgz
 
-git clone ./bosh-src-develop $PROMOTED_REPO
+git clone ./bosh-src-candidate $PROMOTED_REPO
 cd $PROMOTED_REPO
 git status
 

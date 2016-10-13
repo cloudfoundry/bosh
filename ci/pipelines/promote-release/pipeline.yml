@@ -4,7 +4,7 @@ jobs:
     serial: true
     plan:
       - aggregate:
-        - get: bosh-src-develop
+        - get: bosh-src-candidate
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
         - get: bosh-cli
@@ -26,14 +26,18 @@ jobs:
     serial: true
     plan:
       - aggregate:
+        - get: bosh-src-candidate
         - get: bosh-src-develop
         - get: bosh-src-master
           trigger: true
       - task: merge-master
         file: bosh-src-develop/ci/pipelines/promote-release/tasks/merge-master.yml
+      - put: bosh-src-candidate
+        params:
+          repository: bosh-src-candidate-merged
       - put: bosh-src-develop
         params:
-          repository: bosh-src-merged
+          repository: bosh-src-develop-merged
 
 resources:
   - name: candidate-version
@@ -62,6 +66,13 @@ resources:
     source:
       uri: {{bosh_src_url}}
       branch: {{branch}}
+      private_key: {{bosh_src_key}}
+
+  - name: bosh-src-candidate
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: {{candidate_branch}}
       private_key: {{bosh_src_key}}
 
   - name: bosh-src-master
