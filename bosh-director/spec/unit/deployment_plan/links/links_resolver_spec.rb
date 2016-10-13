@@ -159,39 +159,44 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
-          expect(api_server_job.link_spec).to eq(
-            {"db" => {"networks" => ["fake-manual-network", "fake-dynamic-network"],
-                      "properties" => {"mysql" => nil},
-                      "instances" => [
-                          {"name" => "mysql",
-                           "index" => 0,
-                           "bootstrap" => true,
-                           "id" => instance1.uuid,
-                           "az" => nil,
-                           "address" => "127.0.0.3",
-                           },
+          spec = {
+            "networks" => ["fake-manual-network", "fake-dynamic-network"],
+              "properties" => {"mysql" => nil},
+              "instances" => [
+                {
+                  "name" => "mysql",
+                  "index" => 0,
+                  "bootstrap" => true,
+                  "id" => instance1.uuid,
+                  "az" => nil,
+                  "address" => "127.0.0.3",
+                },
+                {
+                  "name" => "mysql",
+                  "index" => 1,
+                  "bootstrap" => false,
+                  "id" => instance2.uuid,
+                  "az" => nil,
+                  "address" => "127.0.0.4",
+                }
+              ]
+          }
 
-                          {"name" => "mysql",
-                           "index" => 1,
-                           "bootstrap" => false,
-                           "id" => instance2.uuid,
-                           "az" => nil, "address" => "127.0.0.4",
-                           }
-                      ]
-            }})
+          expected = Bosh::Director::DeploymentPlan::LinkInfo.new(api_server_job.deployment_name, spec)
+
+          expect(api_server_job.resolved_links).to eq({"db" => expected})
         end
       end
     end
 
     context 'when job consumes link from another deployment' do
       let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
+      let(:manifest) { Bosh::Director::Manifest.load_from_hash(other_deployment_manifest, nil, nil, {:resolve_interpolation => false}) }
+      let(:other_deployment_manifest) {generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])}
 
       context 'when another deployment has link source' do
         before do
-          other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])
-
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-          manifest = Bosh::Director::Manifest.load_from_hash(other_deployment_manifest, nil, nil, {:resolve_interpolation => false})
           deployment_plan = planner_factory.create_from_manifest(manifest, nil, nil, {})
           deployment_plan.bind_models
 
@@ -207,30 +212,31 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
-          expect(api_server_job.link_spec).to eq({
-                'db' => {
-                  'networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                  "properties"=>{"mysql"=>nil},
-                  'instances' => [
-                    {
-                      'name' => 'mysql',
-                      'index' => 0,
-                      "bootstrap" => true,
-                      'id' => instance1.uuid,
-                      'az' => nil,
-                      'address' => '127.0.0.4'
-                    },
-                    {
-                      'name' => 'mysql',
-                      'index' => 1,
-                      "bootstrap" => false,
-                      'id' => instance2.uuid,
-                      'az' => nil,
-                      'address' => '127.0.0.5'
-                    }
-                  ]
-                }
-              })
+          spec = {
+            'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+              "properties"=>{"mysql"=>nil},
+              'instances' => [
+              {
+                'name' => 'mysql',
+                'index' => 0,
+                "bootstrap" => true,
+                'id' => instance1.uuid,
+                'az' => nil,
+                'address' => '127.0.0.4'
+              },
+              {
+                'name' => 'mysql',
+                'index' => 1,
+                "bootstrap" => false,
+                'id' => instance2.uuid,
+                'az' => nil,
+                'address' => '127.0.0.5'
+              }
+            ]
+          }
+          expected = Bosh::Director::DeploymentPlan::LinkInfo.new(other_deployment_manifest['name'], spec)
+
+          expect(api_server_job.resolved_links).to eq({'db' => expected})
         end
       end
 
@@ -272,30 +278,31 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
         instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
-        expect(api_server_job.link_spec).to eq({
-              'backup_db' => {
-                'networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                "properties"=>{"mysql"=>nil},
-                'instances' => [
-                  {
-                    'name' => 'mysql',
-                    'index' => 0,
-                    "bootstrap" => true,
-                    'id' => instance1.uuid,
-                    'az' => nil,
-                    'address' => '127.0.0.3',
-                  },
-                  {
-                    'name' => 'mysql',
-                    'index' => 1,
-                    "bootstrap" => false,
-                    'id' => instance2.uuid,
-                    'az' => nil,
-                    'address' => '127.0.0.4',
-                  }
-                ]
-              }
-            })
+        link_spec = {
+          'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+          "properties"=>{"mysql"=>nil},
+          'instances' => [
+            {
+              'name' => 'mysql',
+              'index' => 0,
+              "bootstrap" => true,
+              'id' => instance1.uuid,
+              'az' => nil,
+              'address' => '127.0.0.3',
+            },
+            {
+              'name' => 'mysql',
+              'index' => 1,
+              "bootstrap" => false,
+              'id' => instance2.uuid,
+              'az' => nil,
+              'address' => '127.0.0.4',
+            }
+          ]
+        }
+        expected = Bosh::Director::DeploymentPlan::LinkInfo.new(api_server_job.deployment_name, link_spec)
+
+        expect(api_server_job.resolved_links).to eq({'backup_db' => expected})
       end
     end
 
@@ -304,7 +311,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_job)
-        expect(api_server_job.link_spec['db']['instances'].first['name']).to eq('mysql')
+        link_spec = api_server_job.resolved_links['db'].spec
+
+        expect(link_spec['instances'].first['name']).to eq('mysql')
       end
     end
 
@@ -479,30 +488,32 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         links_resolver.resolve(api_server_job)
         instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
         instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
-        expect(api_server_job.link_spec).to eq({
-              'db' => {
-                'networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                "properties"=>{"mysql"=>nil},
-                'instances' => [
-                  {
-                    'name' => 'mysql',
-                    'index' => 0,
-                    "bootstrap" => true,
-                    'id' => instance1.uuid,
-                    'az' => 'az1',
-                    'address' => '127.0.0.3',
-                  },
-                  {
-                    'name' => 'mysql',
-                    'index' => 1,
-                    "bootstrap" => false,
-                    'id' => instance2.uuid,
-                    'az' => 'az1',
-                    'address' => '127.0.0.4',
-                  }
-                ]
-              }
-            })
+
+        link_spec = {
+          'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+          "properties"=>{"mysql"=>nil},
+          'instances' => [
+            {
+              'name' => 'mysql',
+              'index' => 0,
+              "bootstrap" => true,
+              'id' => instance1.uuid,
+              'az' => 'az1',
+              'address' => '127.0.0.3',
+            },
+            {
+              'name' => 'mysql',
+              'index' => 1,
+              "bootstrap" => false,
+              'id' => instance2.uuid,
+              'az' => 'az1',
+              'address' => '127.0.0.4',
+            }
+          ]
+        }
+        expected = Bosh::Director::DeploymentPlan::LinkInfo.new(api_server_job.deployment_name, link_spec)
+        expect(api_server_job.resolved_links).to eq({
+              'db' => expected})
       end
     end
   end

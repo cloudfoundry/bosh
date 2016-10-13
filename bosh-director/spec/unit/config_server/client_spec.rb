@@ -104,7 +104,7 @@ module Bosh::Director::ConfigServer
           interpolated_manifest
         }.to raise_error(
                Bosh::Director::ConfigServerMissingKeys,
-               'Failed to find keys in the config server: missing_placeholder')
+               'Failed to load placeholder keys from the config server: missing_placeholder')
       end
 
       it 'should raise an unknown error when config_server returns any error other than a 404' do

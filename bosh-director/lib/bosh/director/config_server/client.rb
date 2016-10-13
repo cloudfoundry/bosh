@@ -22,7 +22,7 @@ module Bosh::Director::ConfigServer
 
       retrieved_config_server_values, missing_keys = fetch_keys_values(placeholders_list, must_be_absolute_key)
       if missing_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{missing_keys.join(', ')}"
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to load placeholder keys from the config server: #{missing_keys.join(', ')}"
       end
 
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
@@ -102,7 +102,7 @@ module Bosh::Director::ConfigServer
       if response.kind_of? Net::HTTPOK
         JSON.parse(response.body)['value']
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find key '#{key}' in the config server"
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to load placeholder key '#{key}' from the config server"
       else
         raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
       end

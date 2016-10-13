@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to find keys in the config server: my_placeholder')
+        expect(output).to include('Failed to load placeholder keys from the config server: my_placeholder')
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -457,7 +457,7 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to find keys in the config server: /release_name')
+          expect(output).to include('Error 540000: Failed to load placeholder keys from the config server: /release_name')
         end
 
         # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
@@ -498,7 +498,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to find keys in the config server: /placeholder_used_at_render_time')
+            expect(output).to include('Failed to load placeholder keys from the config server: /placeholder_used_at_render_time')
           end
         end
       end
@@ -514,7 +514,7 @@ describe 'using director with config server', type: :integration do
                   {
                     'name' => 'job_2_with_many_properties',
                     'release' => 'bosh-release',
-                    'properties' => {'gargamel' => {'color' => '((/addon_placeholder))'}}
+                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
                   }
                 ]
               }]
@@ -525,7 +525,7 @@ describe 'using director with config server', type: :integration do
           create_and_upload_test_release(env: client_env)
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
-          config_server_helper.put_value('/addon_placeholder', 'addon prop first value')
+          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop first value')
           config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
@@ -539,8 +539,7 @@ describe 'using director with config server', type: :integration do
           template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
 
-          # change value in config server and redeploy
-          config_server_helper.put_value('/addon_placeholder', 'addon prop second value')
+          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
 
           redeploy_output = bosh_runner.run('deploy', env: client_env)
 
@@ -939,7 +938,7 @@ describe 'using director with config server', type: :integration do
                 expect(exit_code).to_not eq(0)
                 expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Failed to find keys in the config server: happy_level_placeholder
+   - Failed to load placeholder keys from the config server: happy_level_placeholder
                 EOF
               end
             end
@@ -1048,6 +1047,8 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           job_spec
         end
 
+        let(:deployment_name) {manifest['name']}
+
         before do
           config_server_helper.put_value(prepend_namespace('a_placeholder'), 'a_value')
           config_server_helper.put_value(prepend_namespace('b_placeholder'), 'b_value')
@@ -1082,8 +1083,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      # pending on https://www.pivotaltracker.com/story/show/130228775
-      xcontext 'when having cross deployment links' do
+      context 'when having cross deployment links' do
         let(:first_manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
           manifest['name'] = 'first'
@@ -1127,27 +1127,30 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 
         let(:second_deployment_job_spec) do
           job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'second_deployment_node',
-              templates: [
-                  {
-                      'name' => 'http_proxy_with_requires',
-                      'consumes' => {
-                          'proxied_http_endpoint' => {
-                              'from' => 'vroom',
-                              'deployment' => 'first'
-                          }
-                      }
+            name: 'second_deployment_node',
+            templates: [
+              {
+                'name' => 'http_proxy_with_requires',
+                'release' => 'bosh-release',
+                'consumes' => {
+                  'proxied_http_endpoint' => {
+                    'from' => 'vroom',
+                    'deployment' => 'first'
                   }
-              ],
-              instances: 1,
-              static_ips: ['192.168.1.11']
+                }
+              }
+            ],
+            instances: 1,
+            static_ips: ['192.168.1.11']
           )
           job_spec['azs'] = ['z1']
           job_spec
         end
 
+        let(:deployment_name) {first_manifest['name']}
+
         it 'should successfully use the shared link, where its properties are not stored in DB' do
-          config_server_helper.put_value('fibonacci_placeholder', 'fibonacci_value')
+          config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
           deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, env: client_env)
 
           expect {
@@ -1170,6 +1173,62 @@ Error 100: Unable to render instance groups for deployment. Errors are:
             }.to_not raise_error
 
             link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
+            template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            expect(
+              template['links']['properties']['fibonacci']
+            ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
+          end
+        end
+
+        context 'when using runtime config' do
+          let(:runtime_config) do
+            {
+              'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+              'addons' => [
+                {
+                  'name' => 'addon_job',
+                  'jobs' => [
+                    'name' => 'http_proxy_with_requires',
+                    'release' => 'bosh-release',
+                    'consumes' => {
+                      'proxied_http_endpoint' => {
+                        'from' => 'vroom',
+                        'deployment' => 'first'
+                      }
+                    }
+                  ]
+
+                }
+              ]
+            }
+          end
+
+          let(:second_deployment_job_spec) do
+            job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'second_deployment_node',
+              templates: [
+                {
+                  'name' => 'provider',
+                  'release' => 'bosh-release'
+                }
+              ],
+              instances: 1,
+              static_ips: ['192.168.1.11']
+            )
+            job_spec['azs'] = ['z1']
+            job_spec
+          end
+
+          it 'should successfully use shared link from a previous deployment' do
+            config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
+
+            deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, env: client_env)
+
+            expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
+            deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, env: client_env)
+
+            link_vm = director.vm('second_deployment_node', '0', {:deployment => 'second', :env => client_env})
+
             template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
             expect(
               template['links']['properties']['fibonacci']

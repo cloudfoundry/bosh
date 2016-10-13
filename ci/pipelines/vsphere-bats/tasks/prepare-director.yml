@@ -1,0 +1,35 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source: {repository: boshcpi/cpi-certification}
+
+inputs:
+  - name: pipelines
+  - name: environment
+  - name: bosh-release
+  - name: cpi-release
+  - name: stemcell
+
+outputs:
+  - name: director-config
+
+run:
+  path: pipelines/vsphere/tasks/prepare-director.sh
+
+params:
+  BOSH_DIRECTOR_USERNAME:               ""
+  BOSH_DIRECTOR_PASSWORD:               ""
+  BOSH_VSPHERE_VCENTER:                 ""
+  BOSH_VSPHERE_VCENTER_USER:            ""
+  BOSH_VSPHERE_VCENTER_PASSWORD:        ""
+  BOSH_VSPHERE_VERSION:                 ""
+  BOSH_VSPHERE_VCENTER_DC:              ""
+  BOSH_VSPHERE_VCENTER_CLUSTER:         ""
+  BOSH_VSPHERE_VCENTER_VM_FOLDER:       ""
+  BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ""
+  BOSH_VSPHERE_VCENTER_DATASTORE:       ""
+  BOSH_VSPHERE_VCENTER_DISK_PATH:       ""
+  BOSH_VSPHERE_VCENTER_VLAN:            ""
+  USE_REDIS:                            ""
+  SSLIP_IO_KEY:                         ""
