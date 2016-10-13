@@ -17,12 +17,12 @@ jobs:
         params:
           BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
           BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
-      - put: bosh-src-master
-        params:
-          repository: bosh-src-with-final
       - put: candidate-version
         params:
           file: candidate-version/version
+      - put: bosh-src-master
+        params:
+          repository: bosh-src-with-final
   - name: merge-master
     serial: true
     plan:
