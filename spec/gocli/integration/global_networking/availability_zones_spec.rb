@@ -135,8 +135,7 @@ describe 'availability zones', type: :integration do
 
       vms = director.vms
       expect(vms.count).to eq(2)
-      expect(vms[0].ips).to contain_exactly('192.168.1.2')
-      expect(vms[1].ips).to contain_exactly('192.168.2.2')
+      expect(vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.2.2')
     end
 
     it 'places the job instance in the correct subnet in dynamic network based on the availability zone' do

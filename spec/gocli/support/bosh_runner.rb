@@ -83,6 +83,7 @@ module Bosh::Spec
             end
             output = line
             exit_code = 0
+            Process.kill('INT', wait_thr.pid)
           else
             output = stdout_and_stderr.read
             exit_code = wait_thr.value.exitstatus

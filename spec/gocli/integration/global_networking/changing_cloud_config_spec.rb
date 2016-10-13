@@ -11,7 +11,6 @@ describe 'Changing cloud config', type: :integration do
 
   describe 'changing the cloud config while deploying' do
     it 'should continue to use the original cloud config when deploying a job' do
-      pending('cli2: #130119251: backport --no-track flag')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
 
