@@ -48,7 +48,7 @@ describe 'networks spanning multiple azs', type: :integration do
     it 'should deploy the vms to the azs, with ips from the single subnet' do
       vms = director.vms
 
-      expect(vms.map(&:availability_zone).to contain_exactly('my-az', 'my-az2')
+      expect(vms.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
       expect(vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
     end
   end
@@ -77,7 +77,7 @@ describe 'networks spanning multiple azs', type: :integration do
       end
 
       vms = director.vms
-      expect(vms.map(&:availability_zone).to contain_exactly('my-az', 'my-az2')
+      expect(vms.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
     end
   end
 end
