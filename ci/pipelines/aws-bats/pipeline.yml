@@ -129,7 +129,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: wip-bats-131472959
+      branch: develop
 
   - name: bosh-cpi-dev-artifacts
     type: s3
