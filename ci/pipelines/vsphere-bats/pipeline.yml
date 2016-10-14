@@ -56,6 +56,7 @@ jobs:
   - name: bats-centos
     serial: false
     plan:
+    - do:
       - aggregate:
         - {get: bosh-release,   tags: [vsphere-v5.1], trigger: true, resource: bosh-candidate-release-tarballs}
         - {get: cpi-release,    tags: [vsphere-v5.1], trigger: true}
@@ -69,24 +70,26 @@ jobs:
       - <<: *prepare-director
 
       - do:
-          - <<: *deploy-director
+        - <<: *deploy-director
 
-          - <<: *prepare-bats
-            params:
-              <<: *prepare-bats-params
-              STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
 
-          - <<: *run-bats
-
+        - <<: *run-bats
         ensure:
           do:
             - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
 
-            - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
 
   - name: bats-ubuntu
     serial: false
     plan:
+    - do:
       - aggregate:
         - {get: bosh-release,   tags: [vsphere-v5.1], trigger: true, resource: bosh-candidate-release-tarballs}
         - {get: cpi-release,    tags: [vsphere-v5.1], trigger: true}
@@ -95,11 +98,11 @@ jobs:
         - {get: bosh-cli,       tags: [vsphere-v5.1], trigger: false}
         - {get: bats,           tags: [vsphere-v5.1], trigger: false}
 
-      - {put: environment, tags: [vsphere-v5.1], params: {acquire: true}}
+        - {put: environment, tags: [vsphere-v5.1], params: {acquire: true}}
 
-      - <<: *prepare-director
+        - <<: *prepare-director
 
-      - do:
+        - do:
           - <<: *deploy-director
 
           - <<: *prepare-bats
@@ -108,12 +111,12 @@ jobs:
               STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
 
           - <<: *run-bats
-
-        ensure:
-          do:
+          ensure:
+            do:
             - <<: *teardown
-
-            - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
+      ensure:
+        do:
+        - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
 
 resources:
   - name: pipelines
