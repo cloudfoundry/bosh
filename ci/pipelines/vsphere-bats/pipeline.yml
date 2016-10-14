@@ -37,8 +37,8 @@ shared:
     file: pipelines/vsphere/tasks/prepare-bats.yml
     params: &prepare-bats-params
       BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
-      BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-      BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
+      BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
+      BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
 
   - &run-bats
     task: run-bats
