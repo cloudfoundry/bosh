@@ -96,7 +96,6 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs are released after VMs are deleted' do
-      pending('cli2: #130119251: backport --no-track flag')
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_with_ip(simple_manifest, '192.168.1.10')
@@ -105,8 +104,8 @@ describe 'global networking', type: :integration do
       expect(first_deployment_vms.first.ips).to eq(['192.168.1.10'])
 
       current_sandbox.cpi.commands.pause_delete_vms
-      output = bosh_runner.run('--no-track delete-deployment simple')
-      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('running')
+      output = bosh_runner.run('delete-deployment -d simple', no_track: true)
+      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('*')
       current_sandbox.cpi.commands.wait_for_delete_vms
 
       begin
@@ -124,7 +123,6 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs released by one deployment via scaling down can be used by another deployment' do
-      pending('cli2: #130119251: backport --no-track flag')
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])
@@ -136,7 +134,8 @@ describe 'global networking', type: :integration do
       simple_manifest['jobs'].first['networks'].first['static_ips'] = []
 
       current_sandbox.cpi.commands.pause_delete_vms
-      deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
+      output = deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
+      scale_down_task = Bosh::Spec::OutputParser.new(output).task_id('*')
 
       current_sandbox.cpi.commands.wait_for_delete_vms
 
@@ -149,6 +148,8 @@ describe 'global networking', type: :integration do
       expect(exit_code).to_not eq(0)
 
       current_sandbox.cpi.commands.unpause_delete_vms
+
+      bosh_runner.run("task #{scale_down_task}")
 
       deploy_with_ips(second_deployment_manifest, ['192.168.1.10', '192.168.1.11'])
       second_deployment_vms = director.vms(deployment_name: 'second_deployment')

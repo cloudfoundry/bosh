@@ -18,16 +18,14 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'creates a deployment lock' do
-      pending('cli2: #130119251: backport --no-track flag')
-
       deploy_from_scratch(manifest_hash: manifest_hash_errand)
 
-      output = bosh_runner.run('--no-track run-errand fake-errand-name', deployment_name: deployment_name)
-      task_id = Bosh::Spec::OutputParser.new(output).task_id('running')
+      output = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
+      task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
       director.wait_for_first_available_vm
 
-      output = bosh_runner.run_until_succeeds('locks')
-      expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
+      output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
+      expect(output['Tables'][0]['Rows']).to include(['deployment', 'errand', anything])
 
       errand_vm = director.vms.find { |vm| vm.job_name == 'fake-errand-name' && vm.index == '0' }
       expect(errand_vm).to_not be_nil
