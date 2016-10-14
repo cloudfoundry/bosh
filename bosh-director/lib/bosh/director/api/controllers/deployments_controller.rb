@@ -129,8 +129,7 @@ module Bosh::Director
       # GET /deployments/foo/jobs/dea/2/logs
       get '/:deployment/jobs/:job/:index_or_id/logs' do
         job = params[:job]
-        index_or_id = params[:index_or_id]
-
+        index_or_id = params[:index_or_id] == "*" ? nil : params[:index_or_id]
         options = {
           'type' => params[:type].to_s.strip,
           'filters' => params[:filters].to_s.strip.split(/[\s\,]+/)

@@ -60,7 +60,7 @@ module Bosh::Cli::Command
 
       if options[:download_logs] && errand_result.logs_blobstore_id
         logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
-        logs_path = logs_downloader.build_destination_path(errand_name, 0, options[:logs_dir] || Dir.pwd)
+        logs_path = logs_downloader.build_destination_path(deployment_name, errand_name, 0, options[:logs_dir] || Dir.pwd)
 
         begin
           logs_downloader.download(errand_result.logs_blobstore_id, logs_path)

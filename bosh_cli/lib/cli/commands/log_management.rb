@@ -2,16 +2,15 @@ module Bosh::Cli::Command
   class LogManagement < Base
     # bosh logs
     usage 'logs'
-    desc 'Fetch job or agent logs from a BOSH-managed VM'
+    desc 'Fetch job or agent logs from a BOSH-managed VMs'
     option '--agent', 'fetch agent logs'
     option '--job', 'fetch job logs'
     option '--only filter1,filter2,...', Array,
            'only fetch logs that satisfy',
            'given filters (defined in job spec)'
     option '--dir destination_directory', String, 'download directory'
-    option '--all', 'deprecated'
 
-    def fetch_logs(job, index_or_id)
+    def fetch_logs(job = '*', index_or_id = '*')
       auth_required
 
       manifest = prepare_deployment_manifest(show_state: true)
@@ -20,7 +19,7 @@ module Bosh::Cli::Command
       logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
 
       resource_id = fetch_log_resource_id(manifest.name, index_or_id, job)
-      logs_path = logs_downloader.build_destination_path(job, index_or_id, options[:dir] || Dir.pwd)
+      logs_path = logs_downloader.build_destination_path(manifest.name, job, index_or_id, options[:dir] || Dir.pwd)
       logs_downloader.download(resource_id, logs_path)
     end
 

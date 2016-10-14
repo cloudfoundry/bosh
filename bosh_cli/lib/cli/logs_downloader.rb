@@ -5,9 +5,14 @@ module Bosh::Cli
       @ui = ui
     end
 
-    def build_destination_path(job_name, job_index_or_id, directory)
+    def build_destination_path(deployment_name, job_name, job_index_or_id, directory)
       time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
-      File.join(directory, "#{job_name}.#{job_index_or_id}.#{time}.tgz")
+      file_name = deployment_name
+      if job_name != '*'
+        file_name += ".#{job_name}"
+        file_name += ".#{job_index_or_id}" unless job_index_or_id == "*"
+      end
+      File.join(directory, "#{file_name}.#{time}.tgz")
     end
 
     def download(resource_id, logs_destination_path)
