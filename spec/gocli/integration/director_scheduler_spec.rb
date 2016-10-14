@@ -73,7 +73,7 @@ describe 'director_scheduler', type: :integration do
       pending('cli2: #125441631: backport backup command')
 
       runner = bosh_runner_in_work_dir(tmp_dir)
-      expect(runner.run('backup backup.tgz')).to match(/Backup of BOSH director was put in/i)
+      expect(runner.run('back-up backup.tgz')).to match(/Backup of BOSH director was put in/i)
 
       backup_file = Bosh::Spec::TarFileInspector.new("#{tmp_dir}/backup.tgz")
       expect(backup_file.file_names).to match_array(%w(director_db.sql))
