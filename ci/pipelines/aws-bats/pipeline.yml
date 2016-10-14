@@ -1,6 +1,6 @@
 ---
 groups:
-  - name: bosh-aws-cpi
+  - name: bosh-aws-ubuntu-bats
     jobs:
       - create-environment
       - destroy-environment
