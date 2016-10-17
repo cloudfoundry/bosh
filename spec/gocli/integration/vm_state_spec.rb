@@ -163,13 +163,13 @@ describe 'vm state', type: :integration do
 
       bosh_runner.run('restart foobar/1', deployment_name: deployment_name)
       task_id = bosh_runner.get_most_recent_task_id
-      event_log = bosh_runner.run("task #{task_id} --event --raw")
+      event_log = bosh_runner.run("task #{task_id} --event")
       expect(event_log).to match(/foobar\/[a-z0-9\-]+ \(1\)/)
       expect(event_log).to_not match(/foobar\/[a-z0-9\-]+ \(2\)/)
 
       bosh_runner.run('restart foobar/2', deployment_name: deployment_name)
       task_id = bosh_runner.get_most_recent_task_id
-      event_log = bosh_runner.run("task #{task_id} --event --raw")
+      event_log = bosh_runner.run("task #{task_id} --event")
       expect(event_log).to_not match(/foobar\/[a-z0-9\-]+ \(1\)/)
       expect(event_log).to match(/foobar\/[a-z0-9\-]+ \(2\)/)
     end
@@ -184,7 +184,7 @@ describe 'vm state', type: :integration do
       deploy_simple_manifest
 
       task_id = bosh_runner.get_most_recent_task_id
-      event_log = bosh_runner.run("task #{task_id} --event --raw")
+      event_log = bosh_runner.run("task #{task_id} --event")
       expect(event_log).to_not match(/Updating job/)
     end
   end
