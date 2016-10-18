@@ -122,7 +122,7 @@ jobs:
 
       - task: deploy-director
         tags: [vsphere-v5.1]
-        file: bosh-src/ci/pipelines/stemcell/task/deploy-director.yml
+        file: bosh-src/ci/pipelines/stemcell/tasks/deploy-director.yml
         input_mapping:
           stemcell: vsphere-esxi-ubuntu-trusty
         params:
