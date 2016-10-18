@@ -2,9 +2,11 @@
 groups:
   - name: bosh-aws-ubuntu-bats
     jobs:
+      - ubuntu-bats
+  - name: environments
+    jobs:
       - create-environment
       - destroy-environment
-      - ubuntu-bats
 
 jobs:
   - name: create-environment
@@ -51,6 +53,7 @@ jobs:
   - name: ubuntu-bats
     max_in_flight: 3
     plan:
+    - do:
       - aggregate:
         - {get: stemcell,      trigger: true, resource: ubuntu-stemcell}
         - {get: bosh-release,  trigger: true, resource: bosh-candidate-release-tarballs}
@@ -65,7 +68,8 @@ jobs:
           acquire: true
 
       - task: prepare-director
-        file: certification/shared/tasks/prepare-director.yml
+        file: certification/aws/tasks/prepare-director.yml
+        input_mapping: {pipelines: certification}
         params:
             BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
             BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
@@ -76,39 +80,41 @@ jobs:
             PRIVATE_KEY_DATA:       {{bats_pipeline_private_key}}
 
       - do:
-          - task: deploy-director
-            file: certification/shared/tasks/deploy-director.yml
-            input_mapping: {pipelines: certification}
-            params:
-              BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-              BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
+        - task: deploy-director
+          file: certification/shared/tasks/deploy-director.yml
+          input_mapping: {pipelines: certification}
+          params:
+            BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
 
-          - task: prepare-manual-bats
-            file: certification/aws/tasks/prepare-manual-bats.yml
-            params:
-              AWS_ACCESS_KEY:         {{aws_access_key__primary}}
-              AWS_SECRET_KEY:         {{aws_secret_key__primary}}
-              AWS_REGION_NAME:        {{aws_region__primary}}
-              BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
-              PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-              BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-              BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
-              STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+        - task: prepare-manual-bats
+          file: certification/aws/tasks/prepare-manual-bats.yml
+          params:
+            AWS_ACCESS_KEY:         {{aws_access_key__primary}}
+            AWS_SECRET_KEY:         {{aws_secret_key__primary}}
+            AWS_REGION_NAME:        {{aws_region__primary}}
+            BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
+            PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
+            BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
+            STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 
-          - task: run-bats
-            file: certification/shared/tasks/run-bats.yml
-            input_mapping: {pipelines: certification}
+        - task: run-bats
+          file: certification/shared/tasks/run-bats.yml
+          input_mapping: {pipelines: certification}
 
         ensure:
           do:
-            - task: teardown
-              file: certification/shared/tasks/teardown.yml
-              input_mapping: {pipelines: certification}
-              params:
-                DEPLOYMENT_NAME:        certification
-            - put: environment
-              params:
-                release: environment
+          - task: teardown
+            file: certification/shared/tasks/teardown.yml
+            input_mapping: {pipelines: certification}
+            params:
+              DEPLOYMENT_NAME:        certification
+      ensure:
+        do:
+        - put: environment
+          params:
+            release: environment
 
 resource_types:
   - name: terraform_type
@@ -190,7 +196,7 @@ resources:
   - name: certification
     type: git
     source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
+      uri: https://github.com/zaksoup/bosh-cpi-certification
       branch: master
 
   - name: ubuntu-stemcell
