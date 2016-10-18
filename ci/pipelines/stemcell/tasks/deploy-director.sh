@@ -157,18 +157,17 @@ cloud_provider:
     ntp: [0.pool.ntp.org, 1.pool.ntp.org]
 EOF
 
-pushd ${output_dir} > /dev/null
-  echo "deploying BOSH..."
+echo "deploying BOSH..."
 
-  set +e
-  BOSH_LOG_PATH=$logfile BOSH_LOG_LEVEL=DEBUG ${BOSH_CLI} create-env ./director.yml
-  bosh_cli_exit_code="$?"
-  set -e
+set +e
+BOSH_LOG_PATH=$logfile BOSH_LOG_LEVEL=DEBUG ${BOSH_CLI} create-env ${output_dir}/director.yml
+bosh_cli_exit_code="$?"
+set -e
 
-  if [ ${bosh_cli_exit_code} != 0 ]; then
-    echo "bosh-cli deploy failed!" >&2
-    cat $logfile >&2
-    exit ${bosh_cli_exit_code}
-  fi
-popd > /dev/null
+if [ ${bosh_cli_exit_code} != 0 ]; then
+  echo "bosh-cli deploy failed!" >&2
+  cat $logfile >&2
+  exit ${bosh_cli_exit_code}
+fi
 
+mv director-state.json "${output_dir}/director-state.json"

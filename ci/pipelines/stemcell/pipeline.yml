@@ -126,7 +126,7 @@ jobs:
         input_mapping:
           stemcell: vsphere-esxi-ubuntu-trusty
         params:
-          BOSH_DIRECTOR_IP:                     {{stemcell-test-director-address}}
+          DIRECTOR_IP:                          {{stemcell-test-director-address}}
           BOSH_VSPHERE_VCENTER_CIDR:            {{bosh-director-vcenter-cidr}}
           BOSH_VSPHERE_VCENTER_GATEWAY:         {{bosh-director-vcenter-gateway}}
           BOSH_VSPHERE_DNS:                     {{bosh-director-vcenter-dns}}
