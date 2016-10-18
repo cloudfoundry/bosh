@@ -160,7 +160,7 @@ EOF
 echo "deploying BOSH..."
 
 set +e
-BOSH_LOG_PATH=$logfile BOSH_LOG_LEVEL=DEBUG ${BOSH_CLI} create-env ${output_dir}/director.yml
+BOSH_LOG_PATH=$logfile ${BOSH_CLI} create-env ${output_dir}/director.yml
 bosh_cli_exit_code="$?"
 set -e
 
