@@ -16,6 +16,7 @@ inputs:
 outputs:
   - name: candidate-version
   - name: bosh-src-with-final
+  - name: bosh-src-with-final-tag
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me

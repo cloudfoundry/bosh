@@ -469,6 +469,8 @@ jobs:
       - put: bosh-src-master
         params:
           repository: bosh-src-with-final
+          tag: bosh-src-with-final-tag/tag-name
+          annotate: bosh-src-with-final-tag/annotate-msg
 
   - name: merge-master
     serial: true

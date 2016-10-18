@@ -37,3 +37,11 @@ git config --global user.email "ci@localhost"
 git config --global user.name "CI Bot"
 
 git commit -m "Adding final release $VERSION via concourse"
+
+cat <<EOF >bosh-src-with-final-tag/tag-name
+v${VERSION}
+EOF
+
+cat <<EOF >bosh-src-with-final-tag/annotate-msg
+Final release $VERSION tagged via concourse
+EOF
