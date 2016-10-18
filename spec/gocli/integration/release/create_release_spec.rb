@@ -326,6 +326,45 @@ describe 'create-release', type: :integration do
     end
   end
 
+  it 'creates a new final release with a default version' do
+    Dir.chdir(ClientSandbox.test_release_dir) do
+      File.open('config/final.yml', 'w') do |final|
+        final.puts YAML.dump(
+            'final_name' => 'bosh-release',
+            'blobstore' => {
+                'provider' => 'local',
+                'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
+            },
+
+        )
+      end
+      File.open('config/private.yml', 'w') do |final|
+        final.puts YAML.dump(
+            'blobstore_secret' => 'something',
+            'blobstore' => {
+                'local' => {},
+            },
+        )
+      end
+
+      bosh_runner.run_in_current_dir('create-release --force')
+
+      out = bosh_runner.run_in_current_dir('create-release --final --force')
+      expect(parse_release_version(out)).to eq('1')
+      manifest_1 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-1.yml')
+      expect(File).to exist(manifest_1)
+
+      # modify a release file to force a new version
+      `echo ' ' >> #{File.join(ClientSandbox.test_release_dir, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
+      bosh_runner.run_in_current_dir('create-release --force')
+
+      out = bosh_runner.run_in_current_dir('create-release --final --force')
+      expect(parse_release_version(out)).to eq('2')
+      manifest_2 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-2.yml')
+      expect(File).to exist(manifest_2)
+    end
+  end
+
   it 'release tarball does not include excluded files' do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')

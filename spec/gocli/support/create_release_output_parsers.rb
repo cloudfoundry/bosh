@@ -1,12 +1,5 @@
 module Bosh::Spec
   module CreateReleaseOutputParsers
-
-    def parse_release_manifest_path(create_release_output)
-      regex = /^Release manifest: (.*\.yml)$/
-      expect(create_release_output).to match(regex)
-      create_release_output.match(regex)[1]
-    end
-
     def parse_release_tarball_path(create_release_output)
       regex = /^Archive\s+(.*\.tgz)\s*$/
       expect(create_release_output).to match(regex)
