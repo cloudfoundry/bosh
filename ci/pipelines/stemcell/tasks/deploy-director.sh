@@ -22,9 +22,10 @@ set -e
 
 # inputs
 # paths will be resolved in a separate task so use relative paths
-BOSH_RELEASE_URI="file://$(echo bosh-release/*.tgz)"
-CPI_RELEASE_URI="file://$(echo cpi-release/*.tgz)"
-STEMCELL_URI="file://$(echo stemcell/*.tgz)"
+
+BOSH_RELEASE_URI="file://$(realpath bosh-release/*.tgz)"
+CPI_RELEASE_URI="file://$(realpath cpi-release/*.tgz)"
+STEMCELL_URI="file://$(realpath stemcell/*.tgz)"
 BOSH_CLI=$(realpath bosh-cli/bosh-cli-*)
 chmod +x ${BOSH_CLI}
 
@@ -160,6 +161,7 @@ EOF
 echo "deploying BOSH..."
 
 set +e
+logfile=$(mktemp)
 BOSH_LOG_PATH=$logfile ${BOSH_CLI} create-env ${output_dir}/director.yml
 bosh_cli_exit_code="$?"
 set -e
