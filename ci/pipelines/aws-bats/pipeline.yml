@@ -49,15 +49,15 @@ jobs:
           remove: environment
 
   - name: ubuntu-bats
-    serial: false
+    max_in_flight: 3
     plan:
       - aggregate:
-        - {get: stemcell,      trigger: false, resource: ubuntu-stemcell}
-        - {get: bosh-release,  trigger: false, resource: bosh-candidate-release-tarballs}
+        - {get: stemcell,      trigger: true, resource: ubuntu-stemcell}
+        - {get: bosh-release,  trigger: true, resource: bosh-candidate-release-tarballs}
+        - {get: cpi-release,   trigger: true}
         - {get: bats,          trigger: false}
         - {get: bosh-cli,      trigger: false}
         - {get: bosh-src,      trigger: false}
-        - {get: cpi-release,   trigger: false}
         - {get: certification, trigger: false}
 
       - put: environment
@@ -65,10 +65,10 @@ jobs:
           acquire: true
 
       - task: prepare-director
-        file: bosh-src/ci/pipelines/aws-bats/tasks/prepare-director.yml
+        file: certification/shared/tasks/prepare-director.yml
         params:
-            BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
+            BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
             AWS_ACCESS_KEY:         {{aws_access_key__primary}}
             AWS_SECRET_KEY:         {{aws_secret_key__primary}}
             AWS_REGION_NAME:        {{aws_region__primary}}
@@ -84,7 +84,7 @@ jobs:
               BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
 
           - task: prepare-manual-bats
-            file: bosh-src/ci/pipelines/aws-bats/tasks/prepare-manual-bats.yml
+            file: certification/aws/tasks/prepare-manual-bats.yml
             params:
               AWS_ACCESS_KEY:         {{aws_access_key__primary}}
               AWS_SECRET_KEY:         {{aws_secret_key__primary}}
@@ -105,8 +105,6 @@ jobs:
               file: certification/shared/tasks/teardown.yml
               input_mapping: {pipelines: certification}
               params:
-                BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-                BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
                 DEPLOYMENT_NAME:        certification
             - put: environment
               params:
