@@ -158,7 +158,6 @@ jobs:
     plan:
       - aggregate:
         - get: version
-          trigger: true
           passed: [test-stemcells]
         - get: bosh-src
           passed: [test-stemcells]
