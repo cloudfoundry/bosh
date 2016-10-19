@@ -15,12 +15,12 @@ chmod +x $GO_CLI_PATH
 export DEV_RELEASE_PATH=$ROOT_PATH/bosh-dev-release/bosh*.tgz
 
 git clone ./bosh-src-candidate $PROMOTED_REPO
-cd $PROMOTED_REPO
-git status
 
-cd release
+pushd $PROMOTED_REPO
+  git status
 
-cat >> config/private.yml <<EOF
+  pushd release
+    cat >> config/private.yml <<EOF
 ---
 blobstore:
   provider: s3
@@ -29,15 +29,18 @@ blobstore:
     secret_access_key: "$BLOBSTORE_SECRET_ACCESS_KEY"
 EOF
 
-$GO_CLI_PATH finalize-release --version $VERSION $DEV_RELEASE_PATH
+    $GO_CLI_PATH finalize-release --version $VERSION $DEV_RELEASE_PATH
 
-git add -A
-git status
+    git add -A
+    git status
 
-git config --global user.email "ci@localhost"
-git config --global user.name "CI Bot"
+    git config --global user.email "ci@localhost"
+    git config --global user.name "CI Bot"
 
-git commit -m "Adding final release $VERSION via concourse"
+    git commit -m "Adding final release $VERSION via concourse"
+
+  popd
+popd
 
 cat <<EOF >bosh-src-with-final-tag/tag-name
 v${VERSION}
