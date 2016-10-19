@@ -89,14 +89,15 @@ jobs:
 
         - task: prepare-manual-bats
           file: certification/aws/tasks/prepare-manual-bats.yml
+          input_mapping: {pipelines: certification}
           params:
             AWS_ACCESS_KEY:         {{aws_access_key__primary}}
             AWS_SECRET_KEY:         {{aws_secret_key__primary}}
             AWS_REGION_NAME:        {{aws_region__primary}}
             BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
             PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-            BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
+            BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
             STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 
         - task: run-bats
