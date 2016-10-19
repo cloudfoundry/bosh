@@ -465,12 +465,12 @@ jobs:
           BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
       - put: candidate-version
         params:
-          file: bumped-candidate-version/version
+          file: bumped-candidate-version/number
       - put: bosh-src-master
         params:
           repository: bosh-src-with-final
-          tag: bosh-src-with-final-tag/tag-name
-          annotate: bosh-src-with-final-tag/annotate-msg
+          tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
 
   - name: merge-master
     serial: true
