@@ -23,6 +23,7 @@ module Bosh::Spec
         log_in = options.fetch(:include_credentials, true)
         user = options[:user] || 'test'
         password = options[:password] || 'test'
+        no_color = options.fetch(:no_color, false)
         deployment_name = options.fetch(:deployment_name, nil)
         default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
 
@@ -30,6 +31,7 @@ module Bosh::Spec
         cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
         cli_options += " --user=#{user} --password=#{password}" if log_in
         cli_options += " -d #{deployment_name}" if deployment_name
+        cli_options += " --no-color" if no_color
         cli_options += " --config #{config}"
         command="gobosh --tty #{cli_options} #{cmd}"
         @logger.info("Running ... `#{command}`")
