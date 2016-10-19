@@ -329,7 +329,6 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       vm = director.vm('fake-errand-name', '0')
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{vm.agent_id}.log")
 
-      # executed once each, but is echoed in the logs twice
       expect(agent_log.scan('{"protocol":3,"method":"drain"').size).to eq(1)
       expect(agent_log.scan('{"protocol":3,"method":"stop"').size).to eq(1)
       expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["pre-start",').size).to eq(1)
