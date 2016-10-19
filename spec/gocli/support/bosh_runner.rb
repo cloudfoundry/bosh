@@ -85,7 +85,11 @@ module Bosh::Spec
             end
             output = line
             exit_code = 0
-            Process.kill('INT', wait_thr.pid)
+            begin
+              Process.kill('INT', wait_thr.pid)
+            rescue
+              @logger.info("Failed to kill the cli in a :no-track scenario")
+            end
           else
             output = stdout_and_stderr.read
             exit_code = wait_thr.value.exitstatus
