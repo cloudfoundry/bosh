@@ -565,8 +565,8 @@ jobs:
       - task: promote-release
         file: bosh-src-develop/ci/pipelines/promote-release/tasks/finalize-bosh-release.yml
         params:
-          BLOBSTORE_ACCESS_KEY_ID: {{candidate_release_access_key_id}}
-          BLOBSTORE_SECRET_ACCESS_KEY: {{candidate_release_secret_access_key}}
+          BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
       - put: candidate-version
         params:
           file: bumped-candidate-version/number
