@@ -3,6 +3,7 @@
 set -eux
 
 VERSION=$( cat candidate-version/number | sed 's/\.0$//;s/\.0$//' )
+cp candidate-version/number bumped-candidate-version/number
 
 export ROOT_PATH=$PWD
 PROMOTED_REPO=$PWD/bosh-src-with-final

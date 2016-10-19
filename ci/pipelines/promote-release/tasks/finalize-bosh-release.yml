@@ -14,7 +14,7 @@ inputs:
   - name: candidate-version
 
 outputs:
-  - name: candidate-version
+  - name: bumped-candidate-version
   - name: bosh-src-with-final
   - name: bosh-src-with-final-tag
 
