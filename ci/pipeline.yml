@@ -20,6 +20,8 @@ groups:
       - publish-coverage
       - promote-candidate
       - candidate-release
+      - finalize-bosh-release
+      - merge-master
 
   - name: 1.9
     jobs:
@@ -54,6 +56,11 @@ groups:
       - integration-2.3-postgres
       - publish-coverage
       - promote-candidate
+
+  - name: finalize
+    jobs:
+      - finalize-bosh-release
+      - merge-master
 
 jobs:
   - name: unit-1.9
@@ -537,12 +544,67 @@ jobs:
       params:
         file: "release/*.tgz"
 
+  - name: finalize-bosh-release
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-candidate
+          resource: bosh-candidate
+          passed:
+            - promote-candidate
+        - get: bosh-src-develop
+          resource: bosh-src
+        - get: bosh-dev-release
+          resource: bosh-candidate-release-tarballs
+          passed:
+            - candidate-release
+        - get: bosh-cli
+        - get: candidate-version
+          params:
+            bump: major
+      - task: promote-release
+        file: bosh-src-develop/ci/pipelines/promote-release/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: {{candidate_release_access_key_id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{candidate_release_secret_access_key}}
+      - put: candidate-version
+        params:
+          file: bumped-candidate-version/number
+      - put: bosh-master
+        params:
+          repository: bosh-src-with-final
+          tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
+
+  - name: merge-master
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-candidate
+          resource: bosh-candidate
+        - get: bosh-src-develop
+          resource: bosh-src
+        - get: bosh-src-master
+          resource: bosh-master
+          trigger: true
+          passed:
+            - finalize-bosh-release
+      - task: merge-master
+        file: bosh-src-develop/ci/pipelines/promote-release/tasks/merge-master.yml
+      - put: bosh-candidate
+        params:
+          repository: bosh-src-candidate-merged
+      - put: bosh-src
+        params:
+          repository: bosh-src-develop-merged
+
 resources:
   - name: bosh-src
     type: git
     source:
-      uri: https://github.com/cloudfoundry/bosh.git
-      branch: {{branch}}
+      uri: {{bosh_src_url}}
+      branch: develop
+      private_key: {{github_deployment_key}}
 
   - name: candidate-version
     type: semver
@@ -575,8 +637,15 @@ resources:
   - name: bosh-candidate
     type: git
     source:
-      uri: git@github.com:cloudfoundry/bosh.git
+      uri: {{bosh_src_url}}
       branch: candidate
+      private_key: {{github_deployment_key}}
+
+  - name: bosh-master
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: master
       private_key: {{github_deployment_key}}
 
   - name: fuzz-interval-trigger
@@ -594,3 +663,10 @@ resources:
     source:
       regexp: bosh-cli-(.*)-linux-amd64
       bucket: bosh-cli-artifacts
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
