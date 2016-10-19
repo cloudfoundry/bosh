@@ -23,14 +23,14 @@ set -e
 # inputs
 # paths will be resolved in a separate task so use relative paths
 
-BOSH_RELEASE_URI="file://$(realpath bosh-release/*.tgz)"
-CPI_RELEASE_URI="file://$(realpath cpi-release/*.tgz)"
-STEMCELL_URI="file://$(realpath stemcell/*.tgz)"
-BOSH_CLI=$(realpath bosh-cli/bosh-cli-*)
+BOSH_RELEASE_URI="file://$(pwd)/$(echo bosh-release/*.tgz)"
+CPI_RELEASE_URI="file://$(pwd)/$(echo cpi-release/*.tgz)"
+STEMCELL_URI="file://$(pwd)/$(echo stemcell/*.tgz)"
+BOSH_CLI="$(pwd)/$(echo bosh-cli/bosh-cli-*)"
 chmod +x ${BOSH_CLI}
 
 # outputs
-output_dir="$(realpath director-state)"
+output_dir="$(pwd)/director-state"
 
 cat > "${output_dir}/director.yml" <<EOF
 ---
