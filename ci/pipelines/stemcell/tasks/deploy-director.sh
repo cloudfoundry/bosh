@@ -71,7 +71,6 @@ jobs:
 
     templates:
       - {name: nats, release: bosh}
-      - {name: redis, release: bosh}
       - {name: postgres, release: bosh}
       - {name: blobstore, release: bosh}
       - {name: director, release: bosh}
@@ -97,12 +96,6 @@ jobs:
         password: postgres-password
         database: bosh
         adapter: postgres
-
-      # required for some upgrade paths
-      redis:
-        listen_addresss: 127.0.0.1
-        address: 127.0.0.1
-        password: redis-password
 
       blobstore:
         address: ${DIRECTOR_IP}
