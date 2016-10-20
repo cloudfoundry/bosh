@@ -51,6 +51,13 @@ module Bosh::Director
         subject.enqueue('whoami', job_class, description, [], deployment)
       end
 
+      it 'should clean up old log dir' do
+        subject.enqueue('whoami', job_class, description, [], deployment)
+        Models::Task.last.delete
+        expect(FileUtils).to receive(:rmdir).with("#{tmpdir}/tasks/1")
+        subject.enqueue('whoami', job_class, description, [], deployment)
+      end
+
       it 'should create the task debug output file' do
         task = subject.enqueue('fake-user', job_class, description, [], deployment)
 
