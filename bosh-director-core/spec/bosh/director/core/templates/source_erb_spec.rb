@@ -47,6 +47,36 @@ module Bosh::Director::Core::Templates
           }.to raise_error(expected_message)
         end
       end
+
+      context 'when no space trimming is used' do
+        let(:erb_contents) do
+          <<-EOF
+first line
+<% a= 1 %>
+second line
+          EOF
+        end
+        let(:logger) { instance_double('Logger') }
+
+        it 'contains an empty newline in the rendered result' do
+          expect(subject.render(context, logger)).to eq("first line\n\nsecond line\n")
+        end
+      end
+
+      context 'when space trimming is used' do
+        let(:erb_contents) do
+          <<-EOF
+first line
+<% a= 1 -%>
+second line
+          EOF
+        end
+        let(:logger) { instance_double('Logger') }
+
+        it 'does not contain an empty newline in the rendered result' do
+          expect(subject.render(context, logger)).to eq("first line\nsecond line\n")
+        end
+      end
     end
   end
 end
