@@ -1,0 +1,7 @@
+---
+name: foobar
+templates:
+  foobar_ctl: bin/foobar_ctl
+packages:
+- foo
+- bar

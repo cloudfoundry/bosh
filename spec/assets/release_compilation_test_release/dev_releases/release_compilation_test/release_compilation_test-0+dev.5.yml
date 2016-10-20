@@ -1,0 +1,39 @@
+name: release_compilation_test
+version: 0+dev.5
+commit_hash: non-git
+uncommitted_changes: false
+jobs:
+- name: foobar
+  version: 273a352710ac61bc4a600dd651bb8dc0b5a5c824
+  fingerprint: 273a352710ac61bc4a600dd651bb8dc0b5a5c824
+  sha1: 20a8ad34fa82993330b1eba071993f587636e3cc
+- name: goobaz
+  version: 3dff8f730ba1ec8cbe530db82b0c674483901dc1
+  fingerprint: 3dff8f730ba1ec8cbe530db82b0c674483901dc1
+  sha1: fad918aa067296c7e98bd7f6fce160217b4fd4a4
+packages:
+- name: bar
+  version: 8d24c806f66e59d6cbe3ce66efe59a647fff813d
+  fingerprint: 8d24c806f66e59d6cbe3ce66efe59a647fff813d
+  sha1: e2b85b98dcd20e9738f8db9e33dde65de2d623a4
+  dependencies: []
+- name: baz
+  version: dea962f0d28b86868cd8461aa05d38cdd5baa409
+  fingerprint: dea962f0d28b86868cd8461aa05d38cdd5baa409
+  sha1: 47bd3a6469bb34c7e2192f3524f358a8dad44096
+  dependencies: []
+- name: boo
+  version: 40ccf18bfd6496c82547acfa94fe23e67950eae9
+  fingerprint: 40ccf18bfd6496c82547acfa94fe23e67950eae9
+  sha1: 4837d8ced03021db46bf184b9c163f460d8dc239
+  dependencies: []
+- name: foo
+  version: 0ee95716c58cf7aab3ef7301ff907118552c2dda
+  fingerprint: 0ee95716c58cf7aab3ef7301ff907118552c2dda
+  sha1: 78848d5018c93761a48bdd35f221a15d28ff7a5e
+  dependencies: []
+- name: goo
+  version: c1cd156d207f18323b60a89bf43ef3e396bf5a72
+  fingerprint: c1cd156d207f18323b60a89bf43ef3e396bf5a72
+  sha1: d1af8a8bad1ccd2a55bb8b77027614d5294ce0b9
+  dependencies: []

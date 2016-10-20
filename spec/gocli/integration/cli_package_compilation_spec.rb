@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 describe 'cli: package compilation', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
@@ -11,7 +11,7 @@ describe 'cli: package compilation', type: :integration do
 
     release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
-      output = bosh_runner.run_in_current_dir('create release --with-tarball')
+      output = bosh_runner.run_in_current_dir('create-release --tarball')
       parse_release_tarball_path(output)
     end
 
@@ -19,28 +19,33 @@ describe 'cli: package compilation', type: :integration do
     deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
 
     target_and_login
-    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run("upload stemcell #{stemcell_filename}")
-    bosh_runner.run("upload release #{release_filename}")
-    bosh_runner.run('deploy')
+    bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+    bosh_runner.run("upload-stemcell #{stemcell_filename}")
+    bosh_runner.run("upload-release #{release_filename}")
+
+    output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+    expect(output).to match /Compiling packages: foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda/
+    expect(output).to match /Compiling packages: bar\/f1267e1d4e06b60c91ef648fb9242e33ddcffa73/
+
+    bosh_runner.run("instances", deployment_name: 'simple')
+    bosh_runner.run("vms", deployment_name: 'simple')
+
     dir_glob = Dir.glob(File.join(simple_blob_store_path, '**/*'))
     cached_items = dir_glob.detect do |cache_item|
       cache_item =~ /foo-/
     end
     expect(cached_items).to_not be(nil)
 
-    # delete release so that the compiled packages are removed from the local blobstore
-    bosh_runner.run('delete deployment simple')
-    bosh_runner.run('delete release bosh-release')
+    bosh_runner.run('delete-deployment', deployment_name: 'simple')
+    bosh_runner.run('delete-release bosh-release')
 
-    # deploy again
-    bosh_runner.run("upload release #{release_filename}")
-    bosh_runner.run('deploy')
+    bosh_runner.run("upload-release #{release_filename}")
+    output =  bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 
-    event_log = bosh_runner.run('task last --event --raw')
-    expect(event_log).to match(/Downloading '.+' from global cache/)
-    expect(event_log).to_not match(/Compiling packages/)
+    expect(output).to match /Preparing package compilation: Downloading 'foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda' from global cache/
+    expect(output).to_not match /Compiling packages: foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda/
+    expect(output).to_not match /Compiling packages: bar\/f1267e1d4e06b60c91ef648fb9242e33ddcffa73/
+
   end
 
   RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(ASSETS_DIR, 'release_compilation_test_release')
@@ -48,36 +53,7 @@ describe 'cli: package compilation', type: :integration do
   before do
     FileUtils.rm_rf(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
     FileUtils.cp_r(RELEASE_COMPILATION_TEMPLATE_ASSETS, TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX, :preserve => true)
-
-    Dir.chdir(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX) do
-      ignore = %w(
-        blobs
-        dev-releases
-        config/dev.yml
-        config/private.yml
-        releases/*.tgz
-        dev_releases
-        .dev_builds
-        .final_builds/jobs/**/*.tgz
-        .final_builds/packages/**/*.tgz
-        blobs
-        .blobs
-        .DS_Store
-      )
-
-      File.open('.gitignore', 'w+') do |f|
-        f.write(ignore.join("\n") + "\n")
-      end
-
-      `git init;
-       git config user.name "John Doe";
-       git config user.email "john.doe@example.org";
-       git add .;
-       git commit -m "Initial Test Commit"`
-    end
-
   end
-
 
   # This should be a unit test. Need to figure out best placement.
   it "includes only immediate dependencies of the job's templates in the apply_spec" do
@@ -92,21 +68,20 @@ describe 'cli: package compilation', type: :integration do
     manifest_hash['releases'].first['version'] = 'latest'
 
     cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
-    deployment_manifest = yaml_file('whatevs_manifest', manifest_hash)
 
     target_and_login
-    puts bosh_runner.run_in_dir("create release", TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
-    puts bosh_runner.run_in_dir('upload release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
 
+    bosh_runner.run_in_dir("create-release", TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+    bosh_runner.run_in_dir('upload-release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
 
-    bosh_runner.run("update cloud-config #{cloud_manifest.path}")
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-    bosh_runner.run('deploy')
+    bosh_runner.run("update-cloud-config #{cloud_manifest.path}")
+    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    deploy_simple_manifest(manifest_hash: manifest_hash)
 
     foobar_vm = director.vm('foobar', '0')
     apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.cid)
     packages = apply_spec['packages']
+
     expect(packages.keys).to match_array(%w(foo bar baz))
   end
 

@@ -1,0 +1,7 @@
+---
+name: goobaz
+templates:
+  goobaz_ctl: bin/goobaz_ctl
+packages:
+- foo
+- baz
