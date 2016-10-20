@@ -20,6 +20,9 @@ set -e
 : ${BOSH_VSPHERE_VCENTER_GATEWAY:?}
 : ${BOSH_VSPHERE_DNS:?}
 
+source /etc/profile.d/chruby.sh
+chruby 2.1.7
+
 # inputs
 # paths will be resolved in a separate task so use relative paths
 
