@@ -16,4 +16,4 @@ print_git_state
 
 bundle install --local
 
-COVERAGE=true bundle exec rake go spec:unit ci:publish_coverage_report
+COVERAGE=true bundle exec rake spec:unit ci:publish_coverage_report
