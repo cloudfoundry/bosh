@@ -563,7 +563,7 @@ jobs:
           params:
             bump: major
       - task: promote-release
-        file: bosh-src-develop/ci/pipelines/promote-release/tasks/finalize-bosh-release.yml
+        file: bosh-src-develop/ci/tasks/finalize-bosh-release.yml
         params:
           BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
           BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
@@ -590,7 +590,7 @@ jobs:
           passed:
             - finalize-bosh-release
       - task: merge-master
-        file: bosh-src-develop/ci/pipelines/promote-release/tasks/merge-master.yml
+        file: bosh-src-develop/ci/tasks/merge-master.yml
       - put: bosh-candidate
         params:
           repository: bosh-src-candidate-merged
