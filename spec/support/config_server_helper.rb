@@ -34,7 +34,7 @@ module Bosh::Spec
 
       auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
       auth_header = auth_provider.auth_header
-      http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header})
+      http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header, 'Content-Type' => 'application/json'})
     end
 
     def logger

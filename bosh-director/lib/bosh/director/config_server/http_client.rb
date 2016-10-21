@@ -29,7 +29,7 @@ module Bosh::Director::ConfigServer
     def post(key, body)
       uri = build_uri(key)
       begin
-        @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header})
+        @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header, 'Content-Type' => 'application/json'})
       rescue OpenSSL::SSL::SSLError
         raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error'
       end
