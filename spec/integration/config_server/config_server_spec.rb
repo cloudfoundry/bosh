@@ -37,8 +37,8 @@ describe 'using director with config server', type: :integration do
     }
   end
 
-  def prepend_namespace(key)
-    "/#{director_name}/#{deployment_name}/#{key}"
+  def prepend_namespace(name)
+    "/#{director_name}/#{deployment_name}/#{name}"
   end
 
   context 'when config server certificates are not trusted' do
@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to load placeholder keys from the config server: my_placeholder')
+        expect(output).to include('Failed to load placeholder names from the config server: my_placeholder')
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -96,7 +96,7 @@ describe 'using director with config server', type: :integration do
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
 
-      it 'does not add namespace to keys starting with slash' do
+      it 'does not add namespace to names starting with slash' do
         config_server_helper.put_value('/my_placeholder', 'cats are happy')
         job_properties['gargamel']['color'] = "((/my_placeholder))"
 
@@ -451,13 +451,13 @@ describe 'using director with config server', type: :integration do
     end
 
     context 'when runtime manifest has placeholders' do
-      context 'when config server does not have all keys' do
+      context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to load placeholder keys from the config server: /release_name')
+          expect(output).to include('Error 540000: Failed to load placeholder names from the config server: /release_name')
         end
 
         # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
@@ -498,12 +498,12 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to load placeholder keys from the config server: /placeholder_used_at_render_time')
+            expect(output).to include('Failed to load placeholder names from the config server: /placeholder_used_at_render_time')
           end
         end
       end
 
-      context 'when config server has all keys' do
+      context 'when config server has all names' do
         let(:runtime_config) do
           {
             'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
@@ -559,17 +559,17 @@ describe 'using director with config server', type: :integration do
 
           expect {
             upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
-          }.to raise_error(RuntimeError, /Error 540005: Keys must be absolute path: addon_release_version_placeholder/)
+          }.to raise_error(RuntimeError, /Error 540005: Names must be absolute path: addon_release_version_placeholder/)
         end
       end
     end
 
     context 'when running an errand that has placeholders' do
       let(:errand_manifest){ Bosh::Spec::Deployments.manifest_errand_with_placeholders }
-      let(:namespaced_key) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
+      let(:namespaced_name) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
 
       it 'replaces placeholder in properties' do
-        config_server_helper.put_value(namespaced_key, 'test value')
+        config_server_helper.put_value(namespaced_name, 'test value')
 
         deploy_from_scratch(no_login: true, manifest_hash: errand_manifest,
                             cloud_config_hash: cloud_config, env: client_env)
@@ -938,7 +938,7 @@ describe 'using director with config server', type: :integration do
                 expect(exit_code).to_not eq(0)
                 expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Failed to load placeholder keys from the config server: happy_level_placeholder
+   - Failed to load placeholder names from the config server: happy_level_placeholder
                 EOF
               end
             end

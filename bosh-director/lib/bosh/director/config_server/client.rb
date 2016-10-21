@@ -14,15 +14,15 @@ module Bosh::Director::ConfigServer
 
     # @param [Hash] src Hash to be interpolated
     # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
-    # @param [Boolean] must_be_absolute_key Flag to check if all the placeholders start with '/'
+    # @param [Boolean] must_be_absolute_name Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_key = false)
+    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_name = false)
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
 
-      retrieved_config_server_values, missing_keys = fetch_keys_values(placeholders_list, must_be_absolute_key)
-      if missing_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to load placeholder keys from the config server: #{missing_keys.join(', ')}"
+      retrieved_config_server_values, missing_names = fetch_names_values(placeholders_list, must_be_absolute_name)
+      if missing_names.length > 0
+        raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder names from the config server: #{missing_names.join(', ')}"
       end
 
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
@@ -69,17 +69,17 @@ module Bosh::Director::ConfigServer
         result = default_prop
       else
         if is_placeholder?(provided_prop)
-          extracted_key = extract_placeholder_key(provided_prop)
+          extracted_name = extract_placeholder_name(provided_prop)
 
-          if key_exists?(extracted_key)
+          if name_exists?(extracted_name)
             result = provided_prop
           else
             if default_prop.nil?
               case type
                 when 'password'
-                  generate_password(extracted_key)
+                  generate_password(extracted_name)
                 when 'certificate'
-                  generate_certificate(extracted_key, options)
+                  generate_certificate(extracted_name, options)
               end
               result = provided_prop
             else
@@ -95,60 +95,60 @@ module Bosh::Director::ConfigServer
 
     private
 
-    def get_value_for_key(key)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
-      response = @config_server_http_client.get(key)
+    def get_value_for_name(name)
+      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
+      response = @config_server_http_client.get(name)
 
       if response.kind_of? Net::HTTPOK
         JSON.parse(response.body)['value']
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to load placeholder key '#{key}' from the config server"
+        raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
       else
         raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
       end
     end
 
-    def key_exists?(key)
+    def name_exists?(name)
       begin
-        get_value_for_key(key)
+        get_value_for_name(name)
         true
-      rescue Bosh::Director::ConfigServerMissingKeys
+      rescue Bosh::Director::ConfigServerMissingNames
         false
       end
     end
 
-    def fetch_keys_values(placeholders, must_be_absolute_key)
-      missing_keys = []
+    def fetch_names_values(placeholders, must_be_absolute_name)
+      missing_names = []
       config_values = {}
 
-      if must_be_absolute_key
-        non_absolute_keys = placeholders.inject([]) do |memo, placeholder|
-          key = extract_placeholder_key(placeholder)
-          memo << key unless key.start_with?('/')
+      if must_be_absolute_name
+        non_absolute_names = placeholders.inject([]) do |memo, placeholder|
+          name = extract_placeholder_name(placeholder)
+          memo << name unless name.start_with?('/')
           memo
         end
-        raise Bosh::Director::ConfigServerIncorrectKeySyntax, 'Keys must be absolute path: ' + non_absolute_keys.join(',') unless non_absolute_keys.empty?
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + non_absolute_names.join(',') unless non_absolute_names.empty?
       end
 
       placeholders.each do |placeholder|
-        key = extract_placeholder_key(placeholder)
+        name = extract_placeholder_name(placeholder)
         begin
-          config_values[placeholder] = get_value_for_key(key)
-        rescue Bosh::Director::ConfigServerMissingKeys
-          missing_keys << key
+          config_values[placeholder] = get_value_for_name(name)
+        rescue Bosh::Director::ConfigServerMissingNames
+          missing_names << name
         end
       end
 
-      [config_values, missing_keys]
+      [config_values, missing_names]
     end
 
-    def generate_password(key)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
+    def generate_password(name)
+      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
       request_body = {
         'type' => 'password'
       }
 
-      response = @config_server_http_client.post(key, request_body)
+      response = @config_server_http_client.post(name, request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
@@ -156,8 +156,8 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def generate_certificate(key, options)
-      key = add_prefix_if_not_absolute(key, @director_name, @deployment_name)
+    def generate_certificate(name, options)
+      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
       dns_record_names = options[:dns_record_names]
       request_body = {
         'type' => 'certificate',
@@ -167,7 +167,7 @@ module Bosh::Director::ConfigServer
         }
       }
 
-      response = @config_server_http_client.post(key, request_body)
+      response = @config_server_http_client.post(name, request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
@@ -177,7 +177,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_key = false)
+    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_name = false)
       Bosh::Common::DeepCopy.copy(src)
     end
 

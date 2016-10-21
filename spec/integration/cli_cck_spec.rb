@@ -6,8 +6,8 @@ describe 'cli: cloudcheck', type: :integration do
   let(:deployment_name) {manifest['name']}
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
-  def prepend_namespace(key)
-    "/#{director_name}/#{deployment_name}/#{key}"
+  def prepend_namespace(name)
+    "/#{director_name}/#{deployment_name}/#{name}"
   end
 
   context 'with dns enabled' do
