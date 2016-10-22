@@ -167,5 +167,3 @@ if [ ${bosh_cli_exit_code} != 0 ]; then
   cat $logfile >&2
   exit ${bosh_cli_exit_code}
 fi
-
-mv director-state.json "${output_dir}/director-state.json"
