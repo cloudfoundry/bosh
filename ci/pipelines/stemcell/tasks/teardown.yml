@@ -10,7 +10,10 @@ inputs:
   - name: bosh-cli
 
 params:
-  BOSH_LOG_LEVEL:         info
+  BOSH_LOG_LEVEL: info
+  DIRECTOR_IP: ""
+  BOSH_USER: ""
+  BOSH_PASSWORD: ""
 
 run:
   path: bosh-src/ci/pipelines/stemcell/tasks/teardown.sh

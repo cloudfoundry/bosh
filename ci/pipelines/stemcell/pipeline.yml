@@ -155,6 +155,7 @@ jobs:
             BOSH_DIRECTOR_PASSWORD: {{stemcell-test-director-password}}
         ensure:
           task: teardown
+          tags: [vsphere-v5.1]
           file: bosh-src/ci/pipelines/stemcell/tasks/teardown.yml
           params:
             BOSH_DIRECTOR_ADDRESS: {{stemcell-test-director-address}}
