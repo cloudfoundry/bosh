@@ -9,8 +9,12 @@ image_resource:
 inputs:
   - name: bosh-src
   - name: version
+outputs:
+  - name: version-tag
+
 run:
   path: bosh-src/ci/pipelines/stemcell/tasks/publish.sh
+
 params:
   AWS_ACCESS_KEY_ID:     required
   AWS_SECRET_ACCESS_KEY: required

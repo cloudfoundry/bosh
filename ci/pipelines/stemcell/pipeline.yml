@@ -186,12 +186,10 @@ jobs:
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
-      - task: tag
-        file: bosh-src/ci/pipelines/stemcell/tasks/tag.yml
       - put: bosh-src-push
         params:
           repository: bosh-src-tagged
-          only_tag: true
+          tag: version-tag/tag
 
   #
   # WARDEN
