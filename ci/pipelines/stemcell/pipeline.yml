@@ -97,7 +97,6 @@ jobs:
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
         - get: bosh-src
-          tags: [vsphere-v5.1]
           passed:
             - build-stemcell
             - build-warden-boshlite-centos-7
@@ -119,6 +118,9 @@ jobs:
         - get: cpi-release
         - get: vsphere-esxi-ubuntu-trusty
           passed: [build-vsphere-esxi-ubuntu-trusty]
+        - put: environment
+          params:
+            acquire: true
 
       - do:
         - task: deploy-director
@@ -150,9 +152,11 @@ jobs:
           input_mapping:
             stemcell: vsphere-esxi-ubuntu-trusty
           params:
-            BOSH_DIRECTOR_ADDRESS: {{stemcell-test-director-address}}
-            BOSH_DIRECTOR_USERNAME: {{stemcell-test-director-username}}
-            BOSH_DIRECTOR_PASSWORD: {{stemcell-test-director-password}}
+            BOSH_DIRECTOR_ADDRESS:        {{stemcell-test-director-address}}
+            BOSH_DIRECTOR_USERNAME:       {{stemcell-test-director-username}}
+            BOSH_DIRECTOR_PASSWORD:       {{stemcell-test-director-password}}
+            BOSH_VSPHERE_VCENTER_CLUSTER: {{vcenter-cluster}}
+            BOSH_VSPHERE_VCENTER_DC:      {{vcenter-dc}}
         ensure:
           task: teardown
           tags: [vsphere-v5.1]
@@ -740,3 +744,26 @@ resources:
       bucket: bosh-cli-artifacts
       region_name: us-east-1
 
+  #
+  # BATs
+  #
+
+  - name: pipelines
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
+      branch: master
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: environment
+    type: pool
+    source:
+      pool: vsphere
+      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+      branch: master
+      private_key: {{github_deployment_key__bosh-cpi-environments}}

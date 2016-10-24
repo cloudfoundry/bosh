@@ -32,6 +32,51 @@ pushd syslog-release
   bosh upload release ./*.tgz
 popd
 
+metadata=$(cat environment/metadata)
+network=$(env_attr "${metadata}" "network1")
+
+: ${STEMCELL_TEST_VLAN:=$(                          env_attr "${network}" "vCenterVLAN")}
+: ${STEMCELL_TEST_CIDR:=$(                          env_attr "${network}" "vCenterCIDR")}
+: ${STEMCELL_TEST_RESERVED_RANGE:=$(                env_attr "${network}" "reservedRange")}
+: ${STEMCELL_TEST_GATEWAY:=$(                       env_attr "${network}" "vCenterGateway")}
+
+#Build Cloud config
+cat "./cloud-config.yml" <<EOF
+azs:
+- name: z1
+  cloud_properties:
+    datacenters
+    - name: ${BOSH_VSPHERE_VCENTER_DC}
+      clusters:
+        - ${BOSH_VSPHERE_VCENTER_CLUSTER}
+
+vm_types:
+- name: default
+  cloud_properties:
+    ram: 2048
+    cpu: 1
+    disk: 5120
+
+networks:
+- name: default
+  type: manual
+  subnets:
+  - range: ${STEMCELL_TEST_CIDR}
+    reserved: [${STEMCELL_TEST_RESERVED_RANGE}]
+    gateway: ${STEMCELL_TEST_GATEWAY}
+    cloud_properties:
+      name: ${STEMCELL_TEST_VLAN}
+
+compilation:
+  workers: 2
+  reuse_compilation_vms: true
+  az: z1
+  vm_type: default
+  network: default
+EOF
+
+bosh update cloud-config ./cloud-config.yml
+
 # build manifest
 cat > "./deployment.yml" <<EOF
 ---
