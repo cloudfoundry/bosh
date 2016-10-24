@@ -864,15 +864,31 @@ module Bosh
             http_client.ssl_config.cert_store = cert_store
           end
 
+          @credentials.refresh unless payload.nil?
+
           if @credentials
             headers['Authorization'] = @credentials.authorization_header
           end
 
-          http_client.request(method, uri, {
+          response = http_client.request(method, uri, {
             :body => payload,
             :header => headers,
           }, &block)
 
+          if !response.nil? && response.code == 401
+            raise e unless @credentials
+
+            raise e unless @credentials.refresh
+
+            headers['Authorization'] = @credentials.authorization_header
+
+            response = http_client.request(method, uri, {
+                :body => payload,
+                :header => headers,
+            }, &block)
+          end
+
+          response
         rescue URI::Error,
                SocketError,
                Errno::ECONNREFUSED,

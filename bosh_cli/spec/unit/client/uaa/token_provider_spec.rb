@@ -61,6 +61,34 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
           expect(token_issuer).to receive(:client_credentials_grant).and_return(client_token)
           expect(token_provider.token).to eq(client_token.auth_header)
         end
+
+        context 'when refreshing tokens' do
+          let(:refreshed_client_token) do
+            uaa_token_info(encoded_client_id, expiration_time + 10, nil)
+          end
+
+          context 'when no token was yet requested' do
+            it 'updates the token' do
+              expect(token_issuer).to receive(:client_credentials_grant).and_return(refreshed_client_token)
+              token_provider.refresh
+
+              expect(token_provider.token).to eq(refreshed_client_token.auth_header)
+            end
+          end
+
+          context 'when a token was already requested' do
+            it 'updates the token' do
+              expect(token_issuer).to receive(:client_credentials_grant).and_return(client_token)
+              original_token = token_provider.token
+
+              expect(token_issuer).to receive(:client_credentials_grant).and_return(refreshed_client_token)
+              token_provider.refresh
+
+              expect(token_provider.token).to eq(refreshed_client_token.auth_header)
+              expect(token_provider.token).to_not eq(original_token)
+            end
+          end
+        end
       end
 
       context 'when called second time' do
@@ -112,6 +140,26 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
             )
             expect(token_issuer).to receive(:refresh_token_grant).with(password_token.info[:refresh_token]).and_return(refreshed_token_info)
             expect(token_provider.token).to eq('bearer refreshed-token')
+          end
+        end
+
+        context 'when refreshing tokens' do
+          let(:expiration_time) { Time.now.to_i + 1000}
+
+          let(:refreshed_client_token) do
+            uaa_token_info(encoded_client_id, expiration_time + 1, nil)
+          end
+
+          it 'refreshes and receives new client credentials' do
+            original_token = token_provider.token
+
+            expiration_time = Time.now.to_i
+
+            expect(token_issuer).to receive(:refresh_token_grant).and_return(refreshed_client_token)
+            token_provider.refresh
+
+            expect(token_provider.token).to eq(refreshed_client_token.auth_header)
+            expect(token_provider.token).to_not eq(original_token)
           end
         end
       end
