@@ -8,12 +8,7 @@ inputs:
   - name: bosh-src
   - name: director-state
   - name: bosh-cli
-
-params:
-  BOSH_LOG_LEVEL: info
-  DIRECTOR_IP: ""
-  BOSH_USER: ""
-  BOSH_PASSWORD: ""
+  - name: cpi-release
 
 run:
   path: bosh-src/ci/pipelines/stemcell/tasks/teardown.sh

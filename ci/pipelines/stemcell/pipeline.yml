@@ -157,10 +157,6 @@ jobs:
           task: teardown
           tags: [vsphere-v5.1]
           file: bosh-src/ci/pipelines/stemcell/tasks/teardown.yml
-          params:
-            BOSH_DIRECTOR_ADDRESS: {{stemcell-test-director-address}}
-            BOSH_DIRECTOR_USERNAME: {{stemcell-test-director-username}}
-            BOSH_DIRECTOR_PASSWORD: {{stemcell-test-director-password}}
 
   - name: publish-stemcells
     serial: true
