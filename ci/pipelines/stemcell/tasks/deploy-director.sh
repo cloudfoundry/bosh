@@ -26,9 +26,9 @@ chruby 2.1.7
 # inputs
 # paths will be resolved in a separate task so use relative paths
 
-BOSH_RELEASE_URI="file://$(pwd)/$(echo bosh-release/*.tgz)"
-CPI_RELEASE_URI="file://$(pwd)/$(echo cpi-release/*.tgz)"
-STEMCELL_URI="file://$(pwd)/$(echo stemcell/*.tgz)"
+BOSH_RELEASE_URI="file://../$(echo bosh-release/*.tgz)"
+CPI_RELEASE_URI="file://../$(echo cpi-release/*.tgz)"
+STEMCELL_URI="file://../$(echo stemcell/*.tgz)"
 BOSH_CLI="$(pwd)/$(echo bosh-cli/bosh-cli-*)"
 chmod +x ${BOSH_CLI}
 
@@ -156,11 +156,13 @@ EOF
 
 echo "deploying BOSH..."
 
-set +e
-logfile=$(mktemp)
-BOSH_LOG_PATH=$logfile ${BOSH_CLI} create-env ${output_dir}/director.yml
-bosh_cli_exit_code="$?"
-set -e
+pushd ${output_dir}
+  set +e
+  logfile=$(mktemp)
+  BOSH_LOG_PATH=$logfile ${BOSH_CLI} create-env director.yml
+  bosh_cli_exit_code="$?"
+  set -e
+popd
 
 if [ ${bosh_cli_exit_code} != 0 ]; then
   echo "bosh-cli deploy failed!" >&2
