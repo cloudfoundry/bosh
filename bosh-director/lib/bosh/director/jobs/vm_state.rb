@@ -34,7 +34,7 @@ module Bosh::Director
       def process_instance(instance)
         dns_records = []
 
-        job_state, job_vitals, processes, ips = vm_details(instance)
+        job_state, job_vitals, processes, _ = vm_details(instance)
 
         if dns_manager.dns_enabled?
           dns_records = dns_manager.find_dns_record_names_by_instance(instance)
@@ -47,7 +47,7 @@ module Bosh::Director
           :vm_cid => instance.vm_cid,
           :disk_cid => instance.managed_persistent_disk_cid,
           :disk_cids => instance.active_persistent_disks.collection.map{|d| d.model.disk_cid},
-          :ips => instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip },
+          :ips => ips(instance),
           :dns => dns_records,
           :agent_id => instance.agent_id,
           :job_name => instance.job,
@@ -67,6 +67,14 @@ module Bosh::Director
       end
 
       private
+
+      def ips(instance)
+        result = instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+        if result.empty? && instance.spec
+          result = instance.spec['networks'].map {|_, network| network['ip']}
+        end
+        result
+      end
 
       def vm_details(instance)
         ips = []

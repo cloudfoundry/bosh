@@ -73,14 +73,8 @@ module Bosh::Director
           Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('2.2.2.2').to_i, task_id: '12345')
         }
 
-        it 'parses agent info into vm_state WITHOUT vitals' do
-          expect(agent).to receive(:get_state).with('full').and_return(
-              'vm_cid' => 'fake-vm-cid',
-              'networks' => { 'test' => { 'ip' => '1.1.1.1' }, 'test-2' => { 'ip' => '2.2.2.2' } },
-              'agent_id' => 'fake-agent-id',
-              'job_state' => 'running',
-              'resource_pool' => {}
-          )
+        it "returns the ip addresses from 'Models::Instance.ip_addresses'" do
+          allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
@@ -92,6 +86,26 @@ module Bosh::Director
         end
       end
 
+      context "when 'ip_addresses' is empty for instance" do
+
+        it "returns the ip addresses from 'Models::Instance.apply_spec'" do
+          Models::Instance.make(
+              deployment: @deployment,
+              agent_id: 'fake-agent-id',
+              vm_cid: 'fake-vm-cid',
+              spec: {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}})
+
+          allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
+
+          expect(@result_file).to receive(:write) do |vm_state|
+            status = JSON.parse(vm_state)
+            expect(status['ips']).to eq(['1.1.1.1', '2.2.2.2'])
+          end
+
+          job = Jobs::VmState.new(@deployment.id, 'full')
+          job.perform
+        end
+      end
 
       it 'parses agent info into vm_state WITH vitals' do
         Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
@@ -281,7 +295,7 @@ module Bosh::Director
       end
 
       it 'should return vm_type' do
-        instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
+        instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}, 'networks' => []})
 
         stub_agent_get_state_to_return_state_with_vitals
 
