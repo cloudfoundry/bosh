@@ -5,7 +5,6 @@ set -e -x
 source /etc/profile.d/chruby.sh
 chruby 2.1
 
-
 export BUNDLE_GEMFILE="${PWD}/bosh-src/Gemfile"
 
 bundle install --local
@@ -31,6 +30,11 @@ popd
 pushd syslog-release
   bosh upload release ./*.tgz
 popd
+
+env_attr() {
+  local json=$1
+  echo $json | jq --raw-output --arg attribute $2 '.[$attribute]'
+}
 
 metadata=$(cat environment/metadata)
 network=$(env_attr "${metadata}" "network1")

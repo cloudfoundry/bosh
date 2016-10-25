@@ -2,7 +2,7 @@ platform: linux
 
 image_resource:
   type: docker-image
-  source: {repository: boshcpi/cpi-certification}
+  source: {repository: bosh/main}
 
 inputs:
 - name: bosh-src
