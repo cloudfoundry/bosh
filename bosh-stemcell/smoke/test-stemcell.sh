@@ -52,7 +52,7 @@ azs:
     datacenters:
     - name: ${BOSH_VSPHERE_VCENTER_DC}
       clusters:
-        - ${BOSH_VSPHERE_VCENTER_CLUSTER}
+        - ${BOSH_VSPHERE_VCENTER_CLUSTER}: {}
 
 vm_types:
 - name: default
@@ -68,6 +68,7 @@ networks:
   - range: ${STEMCELL_TEST_CIDR}
     reserved: [${STEMCELL_TEST_RESERVED_RANGE}]
     gateway: ${STEMCELL_TEST_GATEWAY}
+    az: z1
     cloud_properties:
       name: ${STEMCELL_TEST_VLAN}
 
