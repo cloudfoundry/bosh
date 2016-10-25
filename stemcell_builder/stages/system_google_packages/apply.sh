@@ -34,5 +34,8 @@ else
   exit 2
 fi
 
+# See https://github.com/cloudfoundry/bosh/issues/1399 for context
+run_in_chroot $chroot "rm -f /etc/dhcp/dhclient-exit-hooks.d/set_hostname"
+
 # Hack: replace google metadata hostname with ip address (bosh agent might set a dns that it's unable to resolve the hostname)
 run_in_chroot $chroot "sed -i 's/metadata.google.internal/169.254.169.254/g' /usr/lib/python2.7/dist-packages/google_compute_engine/metadata_watcher.py"
