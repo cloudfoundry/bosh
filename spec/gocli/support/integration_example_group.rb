@@ -256,10 +256,16 @@ module IntegrationExampleGroup
 
   def sub_in_records(output, regex_pattern, replace_pattern)
     output.map do |record|
-      record.each do |key, value|
-        record[key] = value.gsub(regex_pattern, replace_pattern)
+      if record.kind_of?(Hash)
+        record.each do |key, value|
+          record[key] = value.gsub(regex_pattern, replace_pattern)
+        end
+        record
+      elsif record.kind_of?(String)
+        record.gsub(regex_pattern, replace_pattern)
+      else
+        raise 'Unknown record type'
       end
-      record
     end
   end
 end
