@@ -235,17 +235,17 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   def bosh_run_cck_with_resolution(num_errors, option=1, env={})
-    resolution_selections = "#{option}\n"*num_errors + "yes"
-
-    env.each do |key, value|
-      ENV[key] = value
+    cck_runner = runner.run_interactively('cloudcheck', env) do |runner|
+      num_errors.times do
+        expect(runner).to have_output 'Please choose a resolution'
+        runner.send_keys option
+      end
+      expect(runner).to have_output 'Apply resolutions?'
+      runner.send_keys 'yes'
+      expect(runner).to have_output 'done'
     end
 
-    output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
-    if $?.exitstatus != 0
-      fail("Cloud check failed, output: #{output}")
-    end
-    output
+    cck_runner.output
   end
 
   def bosh_run_cck_with_auto
