@@ -668,12 +668,16 @@ jobs:
     plan:
     - do:
       - aggregate:
-        - {get: bosh-release, trigger: true}
-        - {get: cpi-release,  trigger: true}
-        - {get: stemcell,     trigger: true, resource: vsphere-esxi-ubuntu-trusty, passed: [build-vsphere-esxi-ubuntu-trusty]}
-        - {get: pipelines,    trigger: false}
-        - {get: bosh-cli,     trigger: false}
-        - {get: bats,         trigger: false}
+        - get: bosh-release
+        - get: cpi-release
+        - get: stemcell
+          trigger: true
+          resource: vsphere-esxi-ubuntu-trusty
+          passed:
+            - build-vsphere-esxi-ubuntu-trusty
+        - get: pipelines
+        - get: bosh-cli
+        - get: bats
         - get: bosh-src
           passed:
             - build-stemcell
@@ -924,6 +928,9 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
+  #
+  # BATs
+  #
 
   - name: bosh-cli
     type: s3
@@ -931,10 +938,6 @@ resources:
       regexp: bosh-cli-([0-9.]+)-linux-amd64
       bucket: bosh-cli-artifacts
       region_name: us-east-1
-
-  #
-  # BATs
-  #
 
   - name: pipelines
     type: git
