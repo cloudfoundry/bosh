@@ -11,4 +11,4 @@ inputs:
   - name: cpi-release
 
 run:
-  path: bosh-src/ci/pipelines/stemcell/tasks/teardown.sh
+  path: bosh-src/ci/pipelines/stemcells/tasks/teardown.sh

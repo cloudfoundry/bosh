@@ -13,7 +13,7 @@ outputs:
   - name: version-tag
 
 run:
-  path: bosh-src/ci/pipelines/stemcell/tasks/publish.sh
+  path: bosh-src/ci/pipelines/stemcells/tasks/publish.sh
 
 params:
   AWS_ACCESS_KEY_ID:     required

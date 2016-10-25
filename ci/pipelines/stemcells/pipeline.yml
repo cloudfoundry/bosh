@@ -178,7 +178,7 @@ jobs:
       - do:
         - task: deploy-director
           tags: [vsphere-v5.1]
-          file: bosh-src/ci/pipelines/stemcell/tasks/deploy-director.yml
+          file: bosh-src/ci/pipelines/stemcells/tasks/deploy-director.yml
           input_mapping:
             stemcell: vsphere-esxi-ubuntu-trusty
           params:
@@ -213,7 +213,7 @@ jobs:
         ensure:
           task: teardown
           tags: [vsphere-v5.1]
-          file: bosh-src/ci/pipelines/stemcell/tasks/teardown.yml
+          file: bosh-src/ci/pipelines/stemcells/tasks/teardown.yml
 
   - name: publish-stemcells
     serial: true
@@ -230,7 +230,7 @@ jobs:
             - bats-centos
             - bats-ubuntu
       - task: copy-artifacts
-        file: bosh-src/ci/pipelines/stemcell/tasks/publish.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/publish.yml
         params:
           AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
           AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
@@ -267,7 +267,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         warden
@@ -289,7 +289,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         warden
@@ -315,7 +315,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         aws
@@ -337,7 +337,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         aws
@@ -363,7 +363,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         azure
@@ -385,7 +385,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         azure
@@ -411,7 +411,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         google
@@ -437,7 +437,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         openstack
@@ -462,7 +462,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         openstack
@@ -491,7 +491,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         softlayer
@@ -512,7 +512,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         softlayer
@@ -537,7 +537,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         vsphere
@@ -559,7 +559,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         vsphere
@@ -585,7 +585,7 @@ jobs:
           - get: bosh-src
             passed: [build-stemcell]
       - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
         params:
           IAAS:         vcloud

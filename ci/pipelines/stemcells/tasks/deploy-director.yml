@@ -15,7 +15,7 @@ outputs:
   - name: director-state
 
 run:
-  path: bosh-src/ci/pipelines/stemcell/tasks/deploy-director.sh
+  path: bosh-src/ci/pipelines/stemcells/tasks/deploy-director.sh
 
 params:
   BOSH_DIRECTOR_USERNAME:               ""
