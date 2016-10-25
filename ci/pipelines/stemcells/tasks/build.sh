@@ -82,8 +82,9 @@ if [ -e bosh-src/tmp/*-raw.tgz ] ; then
   raw_stemcell_filename="${stemcell_name}-raw.tgz"
   mv bosh-src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
 
+  raw_checksum="$(sha1sum "${output_dir}/${raw_stemcell_filename}" | awk '{print $1}')"
+  echo "$raw_stemcell_filename sha1=$raw_checksum"
   if [ -n "${BOSHIO_TOKEN}" ]; then
-    raw_checksum="$(sha1sum "${output_dir}/${raw_stemcell_filename}" | awk '{print $1}')"
     curl -X POST \
       --fail \
       -d "sha1=${raw_checksum}" \
@@ -95,8 +96,9 @@ fi
 stemcell_filename="${stemcell_name}.tgz"
 mv "bosh-src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
 
+checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
+echo "$stemcell_filename sha1=$checksum"
 if [ -n "${BOSHIO_TOKEN}" ]; then
-  checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
   curl -X POST \
     --fail \
     -d "sha1=${checksum}" \
