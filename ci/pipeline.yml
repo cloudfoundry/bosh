@@ -18,7 +18,6 @@ groups:
       - legacy-load-tests-mysql
       - fuzz-tests
       - publish-coverage
-      - promote-candidate
       - candidate-release
       - finalize-bosh-release
       - merge-master
@@ -29,7 +28,6 @@ groups:
       - unit-1.9-postgres
       - integration-1.9-postgres
       - publish-coverage
-      - promote-candidate
 
   - name: 2.3
     jobs:
@@ -39,14 +37,12 @@ groups:
       - integration-2.3-mysql
       - integration-2.3-postgres
       - publish-coverage
-      - promote-candidate
 
   - name: mysql
     jobs:
       - unit-2.3-mysql
       - integration-2.3-mysql
       - publish-coverage
-      - promote-candidate
 
   - name: postgres
     jobs:
@@ -55,7 +51,6 @@ groups:
       - integration-1.9-postgres
       - integration-2.3-postgres
       - publish-coverage
-      - promote-candidate
 
   - name: finalize
     jobs:
@@ -500,25 +495,6 @@ jobs:
         params:
           CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
-  - name: promote-candidate
-    public: true
-    serial: true
-    build_logs_to_retain: 1000
-    plan:
-      - trigger: true
-        passed:
-        - unit-1.9
-        - unit-1.9-postgres
-        - unit-2.3
-        - unit-2.3-mysql
-        - unit-2.3-postgres
-        - integration-1.9-postgres
-        - integration-2.3-mysql
-        - integration-2.3-postgres
-        - blobstore-client-integration
-        get: bosh-src
-      - {put: bosh-candidate, params: {repository: bosh-src}}
-
   - name: candidate-release
     plan:
     - get: bosh-src
@@ -548,12 +524,10 @@ jobs:
     serial: true
     plan:
       - aggregate:
-        - get: bosh-src-candidate
-          resource: bosh-candidate
-          passed:
-            - promote-candidate
         - get: bosh-src-develop
           resource: bosh-src
+          passed:
+            - candidate-release
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
           passed:
@@ -580,8 +554,6 @@ jobs:
     serial: true
     plan:
       - aggregate:
-        - get: bosh-src-candidate
-          resource: bosh-candidate
         - get: bosh-src-develop
           resource: bosh-src
         - get: bosh-src-master
@@ -591,9 +563,6 @@ jobs:
             - finalize-bosh-release
       - task: merge-master
         file: bosh-src-develop/ci/tasks/merge-master.yml
-      - put: bosh-candidate
-        params:
-          repository: bosh-src-candidate-merged
       - put: bosh-src
         params:
           repository: bosh-src-develop-merged
@@ -633,13 +602,6 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
       branch: master
-
-  - name: bosh-candidate
-    type: git
-    source:
-      uri: {{bosh_src_url}}
-      branch: candidate
-      private_key: {{github_deployment_key}}
 
   - name: bosh-master
     type: git

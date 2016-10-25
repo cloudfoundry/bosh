@@ -7,7 +7,6 @@ image_resource:
     repository: bosh/main-ruby-go
 
 inputs:
-  - name: bosh-src-candidate
   - name: bosh-src-develop
   - name: bosh-dev-release
   - name: bosh-cli
