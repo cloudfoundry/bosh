@@ -14,8 +14,6 @@ groups:
       - build-google-kvm-ubuntu-trusty
       - build-openstack-kvm-centos-7
       - build-openstack-kvm-ubuntu-trusty
-      - build-softlayer-xen-centos-7
-      - build-softlayer-xen-ubuntu-trusty
       - build-vsphere-esxi-centos-7
       - build-vsphere-esxi-ubuntu-trusty
       - build-vcloud-esxi-ubuntu-trusty
@@ -36,10 +34,6 @@ groups:
     jobs:
       - build-openstack-kvm-ubuntu-trusty
       - build-openstack-kvm-centos-7
-  - name: softlayer
-    jobs:
-      - build-softlayer-xen-ubuntu-trusty
-      - build-softlayer-xen-centos-7
   - name: vsphere
     jobs:
       - build-vsphere-esxi-ubuntu-trusty
@@ -53,7 +47,6 @@ groups:
       - build-azure-hyperv-ubuntu-trusty
       - build-google-kvm-ubuntu-trusty
       - build-openstack-kvm-ubuntu-trusty
-      - build-softlayer-xen-ubuntu-trusty
       - build-vsphere-esxi-ubuntu-trusty
       - build-vcloud-esxi-ubuntu-trusty
   - name: centos
@@ -61,7 +54,6 @@ groups:
       - build-aws-xen-centos-7
       - build-azure-hyperv-centos-7
       - build-openstack-kvm-centos-7
-      - build-softlayer-xen-centos-7
       - build-vsphere-esxi-centos-7
   - name: bats
     jobs:
@@ -142,7 +134,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -158,7 +149,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -245,7 +235,6 @@ jobs:
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
-            softlayer/bosh-stemcell-%s-softlayer-xen-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
@@ -479,52 +468,6 @@ jobs:
             file: stemcell/*-go_agent.tgz
 
   #
-  # SoftLayer
-  #
-
-  - name: build-softlayer-xen-ubuntu-trusty
-    plan:
-      - aggregate:
-          - get: version
-            trigger: true
-            passed: [build-stemcell]
-          - get: bosh-src
-            passed: [build-stemcell]
-      - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
-        privileged: true
-        params:
-          IAAS:         softlayer
-          HYPERVISOR:   xen
-          OS_NAME:      ubuntu
-          OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
-      - put: softlayer-xen-ubuntu-trusty
-        params:
-          file: stemcell/*-go_agent.tgz
-
-  - name: build-softlayer-xen-centos-7
-    plan:
-      - aggregate:
-          - get: version
-            trigger: true
-            passed: [build-stemcell]
-          - get: bosh-src
-            passed: [build-stemcell]
-      - task: create-stemcell
-        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
-        privileged: true
-        params:
-          IAAS:         softlayer
-          HYPERVISOR:   xen
-          OS_NAME:      centos
-          OS_VERSION:   7
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
-      - put: softlayer-xen-centos-7
-        params:
-          file: stemcell/*-go_agent.tgz
-
-  #
   # vSphere
   #
 
@@ -618,7 +561,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -634,7 +576,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -687,7 +628,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -703,7 +643,6 @@ jobs:
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-openstack-kvm-ubuntu-trusty
-#            - build-softlayer-xen-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
             - build-aws-xen-centos-7
@@ -874,26 +813,6 @@ resources:
     source:
       bucket: {{stemcell_bucket}}
       regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent-raw.tgz
-      access_key_id: {{stemcell_aws_access_key}}
-      secret_access_key: {{stemcell_aws_secret_key}}
-
-  #
-  # SoftLayer
-  #
-
-  - name: softlayer-xen-ubuntu-trusty
-    type: s3
-    source:
-      bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-xen-ubuntu-trusty-go_agent.tgz
-      access_key_id: {{stemcell_aws_access_key}}
-      secret_access_key: {{stemcell_aws_secret_key}}
-
-  - name: softlayer-xen-centos-7
-    type: s3
-    source:
-      bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/softlayer/bosh-stemcell-(.+)-softlayer-xen-centos-7-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
