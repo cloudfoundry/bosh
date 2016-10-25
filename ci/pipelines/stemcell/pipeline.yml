@@ -234,6 +234,7 @@ jobs:
         params:
           AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
           AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
+          AWS_DEFAULT_REGION: {{stemcell_aws_default_region}}
           BUCKET_NAME: {{stemcell_bucket}}
           CANDIDATE_PREFIX: bosh-stemcell-candidate/
           PUBLISHED_PREFIX: bosh-stemcell/
