@@ -49,7 +49,7 @@ cat > "./cloud-config.yml" <<EOF
 azs:
 - name: z1
   cloud_properties:
-    datacenters
+    datacenters:
     - name: ${BOSH_VSPHERE_VCENTER_DC}
       clusters:
         - ${BOSH_VSPHERE_VCENTER_CLUSTER}
