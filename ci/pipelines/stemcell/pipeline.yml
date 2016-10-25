@@ -19,6 +19,8 @@ groups:
       - build-vsphere-esxi-centos-7
       - build-vsphere-esxi-ubuntu-trusty
       - build-vcloud-esxi-ubuntu-trusty
+      - bats-centos
+      - bats-ubuntu
   - name: aws
     jobs:
       - build-aws-xen-ubuntu-trusty
@@ -61,6 +63,58 @@ groups:
       - build-openstack-kvm-centos-7
       - build-softlayer-xen-centos-7
       - build-vsphere-esxi-centos-7
+  - name: bats
+    jobs:
+      - bats-centos
+      - bats-ubuntu
+
+shared:
+  - &prepare-director
+    task: prepare-director
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-director.yml
+    params: &prepare-director-params
+      BOSH_USER:                            {{stemcell-test-director-username}}
+      BOSH_PASSWORD:                        {{stemcell-test-director-password}}
+      BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
+      BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
+      BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
+      BOSH_VSPHERE_VERSION:                 {{vsphere-version}}
+      BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
+      BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
+      BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
+      BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      SSLIP_IO_KEY:                         {{sslip_io_key}}
+
+
+  - &deploy-director
+    task: deploy-director
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/deploy-director.yml
+
+  - &prepare-bats
+    task: prepare-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-bats.yml
+    params: &prepare-bats-params
+      BAT_VCAP_PASSWORD:      {{bat-vcap-password}}
+      BOSH_USER:              {{stemcell-test-director-username}}
+      BOSH_PASSWORD:          {{stemcell-test-director-password}}
+
+  - &run-bats
+    task: run-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/run-bats.yml
+
+  - &teardown
+    task: teardown
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/teardown.yml
+    params:
+      DEPLOYMENT_NAME: certification
 
 jobs:
   - name: build-stemcell
@@ -80,7 +134,6 @@ jobs:
       - aggregate:
         - get: version
           trigger: true
-          tags: [vsphere-v5.1]
           passed:
             - build-stemcell
             - build-warden-boshlite-centos-7
@@ -167,9 +220,15 @@ jobs:
     plan:
       - aggregate:
         - get: version
-          passed: [test-stemcells]
+          passed:
+            - test-stemcells
+            - bats-centos
+            - bats-ubuntu
         - get: bosh-src
-          passed: [test-stemcells]
+          passed:
+            - test-stemcells
+            - bats-centos
+            - bats-ubuntu
       - task: copy-artifacts
         file: bosh-src/ci/pipelines/stemcell/tasks/publish.yml
         params:
@@ -538,6 +597,135 @@ jobs:
         - put: vcloud-esxi-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+
+  - name: bats-centos
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - {get: bosh-release, trigger: true}
+        - {get: cpi-release,  trigger: true}
+        - {get: stemcell,     trigger: true, resource: vsphere-esxi-centos-7, passed: [build-vsphere-esxi-centos-7]}
+        - {get: pipelines,    trigger: false}
+        - {get: bosh-cli,     trigger: false}
+        - {get: bats,         trigger: false}
+        - get: bosh-src
+          passed:
+            - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: version
+          passed:
+            - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+
+      - {put: environment, params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+            - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+
+  - name: bats-ubuntu
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - {get: bosh-release, trigger: true}
+        - {get: cpi-release,  trigger: true}
+        - {get: stemcell,     trigger: true, resource: vsphere-esxi-ubuntu-trusty, passed: [build-vsphere-esxi-ubuntu-trusty]}
+        - {get: pipelines,    trigger: false}
+        - {get: bosh-cli,     trigger: false}
+        - {get: bats,         trigger: false}
+        - get: bosh-src
+          passed:
+            - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: version
+          passed:
+            - build-stemcell
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+#            - build-softlayer-xen-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+
+      - {put: environment, params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+          - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
 
 resources:
   - name: bosh-src-push
