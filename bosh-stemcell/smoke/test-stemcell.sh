@@ -45,7 +45,7 @@ network=$(env_attr "${metadata}" "network1")
 : ${STEMCELL_TEST_GATEWAY:=$(                       env_attr "${network}" "vCenterGateway")}
 
 #Build Cloud config
-cat "./cloud-config.yml" <<EOF
+cat > "./cloud-config.yml" <<EOF
 azs:
 - name: z1
   cloud_properties:
