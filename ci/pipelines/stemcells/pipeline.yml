@@ -127,7 +127,6 @@ jobs:
         - get: version
           trigger: true
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
@@ -142,7 +141,6 @@ jobs:
             - build-vsphere-esxi-centos-7
         - get: bosh-src
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
@@ -554,7 +552,6 @@ jobs:
         - {get: bats,         trigger: false}
         - get: bosh-src
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
@@ -569,7 +566,6 @@ jobs:
             - build-vsphere-esxi-centos-7
         - get: version
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
@@ -621,7 +617,6 @@ jobs:
         - get: bats
         - get: bosh-src
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
@@ -636,7 +631,6 @@ jobs:
             - build-vsphere-esxi-centos-7
         - get: version
           passed:
-            - build-stemcell
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
             - build-aws-xen-ubuntu-trusty
