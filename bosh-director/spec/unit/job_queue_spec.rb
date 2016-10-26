@@ -52,11 +52,15 @@ module Bosh::Director
       end
 
       it 'should clean up old log dir' do
+        FileUtils.mkdir_p("#{tmpdir}/tasks/1")
+
+        File.open("#{tmpdir}/tasks/1/debug", 'w+') do |f|
+          f.write('STALE LOG')
+        end
+
         subject.enqueue('whoami', job_class, description, [], deployment)
-        first_line = File.open("#{tmpdir}/tasks/1/debug", &:readline)
-        Models::Task.last.delete
-        subject.enqueue('whoami', job_class, description, [], deployment)
-        expect(File.open("#{tmpdir}/tasks/1/debug", &:readline)).not_to eq(first_line)
+
+        expect(File.open("#{tmpdir}/tasks/1/debug").read).not_to match('STALE LOG')
       end
 
       it 'should create the task debug output file' do
