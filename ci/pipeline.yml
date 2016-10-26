@@ -570,7 +570,7 @@ jobs:
         file: "release/*.tgz"
 
   - name: bats-centos
-    serial: false
+    serial: true
     plan:
     - do:
       - aggregate:
@@ -612,7 +612,7 @@ jobs:
         - {put: environment, params: {release: environment}}
 
   - name: bats-ubuntu
-    serial: false
+    serial: true
     plan:
     - do:
       - aggregate:
@@ -660,11 +660,13 @@ jobs:
         - get: bosh-src-develop
           resource: bosh-src
           passed:
-            - candidate-release
+            - bats-centos
+            - bats-ubuntu
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
           passed:
-            - candidate-release
+            - bats-centos
+            - bats-ubuntu
         - get: bosh-cli
         - get: candidate-version
           params:
