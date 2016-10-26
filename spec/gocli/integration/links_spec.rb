@@ -698,7 +698,7 @@ Error: Unable to process links for deployment. Errors are:
         it 'raises error' do
           _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(director.vms('simple')).to eq([])
+          expect(director.vms).to eq([])
         end
 
       end
@@ -755,7 +755,7 @@ Error: Unable to process links for deployment. Errors are:
       it 'throws an error before deploying vms' do
         _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
-        expect(director.vms('simple')).to eq([])
+        expect(director.vms).to eq([])
       end
     end
 
@@ -861,7 +861,7 @@ Error: Unable to process links for deployment. Errors are:
       it 'catches broken link before updating vms' do
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
-        expect(director.vms('simple')).to eq([])
+        expect(director.vms).to eq([])
         expect(output).to include("Cannot resolve ambiguous link 'node1' (job: node, instance group: first_node). All of these match:")
         expect(output).to include("Cannot resolve ambiguous link 'alias2' (job: node, instance group: first_node). All of these match:")
         expect(output).to include("Can't find deployment broken")
@@ -1282,15 +1282,15 @@ Error: Unable to process links for deployment. Errors are:
 
         output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_1).to eq(0)
-        expect(output_1).to match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_1).to match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Creating missing vms: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_1).to match(/Creating missing vms: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_1).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_1).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_1).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Updating instance deployment-job: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_1).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_1).to match(/Updating instance postgres: postgres\/[a-z0-9\-]+ \(0\)/)
 
 
         # ####################################################################
@@ -1307,24 +1307,19 @@ Error: Unable to process links for deployment. Errors are:
 
         output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_2).to eq(0)
-        expect(output_2).to_not match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_2).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to_not match(/Creating missing vms: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to_not match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to_not match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_2).to_not match(/Creating missing vms: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_2).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_2).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_2).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Updating instance deployment-job: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_2).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_2).to match(/Updating instance postgres: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        current_deployments = bosh_runner.run("deployments")
-        expect(current_deployments).to match_output %(
-          +--------+------------------------------------+-------------------+--------------+
-          | Name   | Release(s)                         | Stemcell(s)       | Cloud Config |
-          +--------+------------------------------------+-------------------+--------------+
-          | simple | release_with_minimal_links/0+dev.2 | ubuntu-stemcell/1 | latest       |
-          +--------+------------------------------------+-------------------+--------------+
-        )
+        current_deployments = bosh_runner.run("deployments", json: true)
+        #THERE IS WHITESPACE AT THE END OF THE TABLE. DO NOT REMOVE IT
+        expect(table(current_deployments)).to eq([{"Name"=>"simple", "Release(s)"=>"release_with_minimal_links/0+dev.2", "Stemcell(s)"=>"ubuntu-stemcell/1", "Cloud Config"=>"latest"}])
 
 
         # ####################################################################
@@ -1338,15 +1333,15 @@ Error: Unable to process links for deployment. Errors are:
 
         output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_3).to eq(0)
-        expect(output_3).to_not match(/Started creating missing vms > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to_not match(/Started creating missing vms > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_3).to_not match(/Started creating missing vms > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to_not match(/Creating missing vms: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to_not match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to_not match(/Creating missing vms: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_3).to_not match(/Creating missing vms: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        expect(output_3).to match(/Started updating instance deployment-job > deployment-job\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(0\)/)
-        expect(output_3).to match(/Started updating instance mysql > mysql\/[a-z0-9\-]+ \(1\)/)
-        expect(output_3).to match(/Started updating instance postgres > postgres\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Updating instance deployment-job: deployment-job\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(0\)/)
+        expect(output_3).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(1\)/)
+        expect(output_3).to match(/Updating instance postgres: postgres\/[a-z0-9\-]+ \(0\)/)
       end
 
       it 'allows only the specified properties' do
