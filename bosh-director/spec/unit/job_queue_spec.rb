@@ -51,6 +51,14 @@ module Bosh::Director
         subject.enqueue('whoami', job_class, description, [], deployment)
       end
 
+      it 'should clean up old log dir' do
+        subject.enqueue('whoami', job_class, description, [], deployment)
+        first_line = File.open("#{tmpdir}/tasks/1/debug", &:readline)
+        Models::Task.last.delete
+        subject.enqueue('whoami', job_class, description, [], deployment)
+        expect(File.open("#{tmpdir}/tasks/1/debug", &:readline)).not_to eq(first_line)
+      end
+
       it 'should create the task debug output file' do
         task = subject.enqueue('fake-user', job_class, description, [], deployment)
 
