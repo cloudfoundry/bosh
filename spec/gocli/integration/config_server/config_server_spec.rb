@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, include_credentials: false, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to load placeholder keys from the config server: my_placeholder')
+        expect(output).to include('Failed to load placeholder names from the config server: my_placeholder')
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -450,7 +450,7 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, include_credentials: false,  env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Failed to load placeholder keys from the config server: /release_name')
+          expect(output).to include('Failed to load placeholder names from the config server: /release_name')
         end
 
         # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
@@ -491,7 +491,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to load placeholder keys from the config server: /placeholder_used_at_render_time')
+            expect(output).to include('Failed to load placeholder names from the config server: /placeholder_used_at_render_time')
           end
         end
       end
@@ -553,7 +553,7 @@ describe 'using director with config server', type: :integration do
 
           expect {
             upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-          }.to raise_error(RuntimeError, /Keys must be absolute path: addon_release_version_placeholder/)
+          }.to raise_error(RuntimeError, /Names must be absolute path: addon_release_version_placeholder/)
         end
       end
     end
@@ -932,7 +932,7 @@ describe 'using director with config server', type: :integration do
                 expect(exit_code).to_not eq(0)
                 expect(output).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:
-   - Failed to load placeholder keys from the config server: happy_level_placeholder
+   - Failed to load placeholder names from the config server: happy_level_placeholder
                 EOF
               end
             end
