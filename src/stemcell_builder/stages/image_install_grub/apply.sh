@@ -77,7 +77,7 @@ if ! is_ppc64le; then
     echo "(hd0) ${device}" > ${image_mount_point}/device.map
 
     # install bootsector into disk image file
-    run_in_chroot ${image_mount_point} "grub2-install -v --no-floppy --grub-mkdevicemap=/device.map ${device}"
+    run_in_chroot ${image_mount_point} "grub2-install -v --no-floppy --grub-mkdevicemap=/device.map --target=i386-pc ${device}"
 
     cat >${image_mount_point}/etc/default/grub <<EOF
 GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 crashkernel=auto selinux=0 plymouth.enable=0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1"
