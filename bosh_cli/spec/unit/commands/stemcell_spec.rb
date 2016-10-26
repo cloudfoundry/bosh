@@ -47,17 +47,18 @@ module Bosh::Cli
                 command.upload(stemcell_archive)
               }.to raise_error(Bosh::Cli::CliError, /Stemcell is invalid/)
             end
-
-            it 'should not upload the stemcell if already exist' do
-              expect(stemcell).to receive(:validate)
-              expect(stemcell).to receive(:valid?).and_return(true)
-              expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
-              expect(director).not_to receive(:upload_stemcell)
-
-              expect {
-                command.upload(stemcell_archive)
-              }.to raise_error(Bosh::Cli::CliError, /already exists/)
-            end
+##
+#            it 'should not upload the stemcell if already exist' do
+#              expect(stemcell).to receive(:validate)
+#              expect(stemcell).to receive(:valid?).and_return(true)
+#              expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
+#              expect(director).not_to receive(:upload_stemcell)
+#
+#              expect {
+#                command.upload(stemcell_archive)
+#              }.to raise_error(Bosh::Cli::CliError, /already exists/)
+#            end
+##
           end
 
           it 'should raise error when --sha1 is provided' do
@@ -356,12 +357,13 @@ module Bosh::Cli
                 expect(director).not_to receive(:upload_stemcell)
                 command.upload(stemcell_archive) rescue nil
               end
-
-              it 'raises an error' do
-                expect {
-                  command.upload(stemcell_archive)
-                }.to raise_error(Bosh::Cli::CliError, /already exists/)
-              end
+##
+#              it 'raises an error' do
+#                expect {
+#                  command.upload(stemcell_archive)
+#                }.to raise_error(Bosh::Cli::CliError, /already exists/)
+#              end
+##	    
             end
           end
 

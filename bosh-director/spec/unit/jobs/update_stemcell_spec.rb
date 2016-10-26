@@ -152,24 +152,25 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         before do
           Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5", :cid=>"old-stemcell-cid")
         end
+##
+#        it "should fail without --fix option set" do
+#          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+#          expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
+#        end
+##
+##
+#        it 'should upload stemcell and update db with --fix option set' do
+#          expect(cloud).to receive(:create_stemcell).and_return "new-stemcell-cid"
 
-        it "should fail without --fix option set" do
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
-        end
+#          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'fix' => true)
+#          expect { update_stemcell_job.perform }.to_not raise_error
 
-        it 'should upload stemcell and update db with --fix option set' do
-          expect(cloud).to receive(:create_stemcell).and_return "new-stemcell-cid"
-
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'fix' => true)
-          expect { update_stemcell_job.perform }.to_not raise_error
-
-          stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
-          expect(stemcell).not_to be_nil
-          expect(stemcell.cid).to eq("new-stemcell-cid")
-        end
+#          stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
+#          expect(stemcell).not_to be_nil
+#          expect(stemcell.cid).to eq("new-stemcell-cid")
+#        end
+##
       end
-
       it "should fail if cannot extract stemcell" do
         result = Bosh::Exec::Result.new("cmd", "output", 1)
         expect(Bosh::Exec).to receive(:sh).and_return(result)
