@@ -878,6 +878,14 @@ module Bosh::Director
             ).to eq 300
           end
 
+          it 'does not add a persistent disk if the size is 0' do
+            instance_group_spec['persistent_disk'] = 0
+
+            expect(
+                parsed_instance_group.persistent_disk_collection.collection
+            ).to be_empty
+          end
+
           it 'allows persistent disk to be nil' do
             instance_group_spec.delete('persistent_disk')
 
