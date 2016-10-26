@@ -35,11 +35,9 @@ module Bosh::Director
 
             logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
             result = agent.ssh(@command, @params)
-            if target.ids_provided?
-              result["id"] = instance.uuid
-            else
-              result["index"] = instance.index
-            end
+            result["id"] = instance.uuid
+            result["index"] = instance.index
+            result["job"] = instance.job
 
             if Config.default_ssh_options
               result["gateway_host"] = Config.default_ssh_options["gateway_host"]
