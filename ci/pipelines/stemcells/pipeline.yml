@@ -201,9 +201,13 @@ jobs:
             BOSH_VSPHERE_VCENTER_CLUSTER: {{vcenter-cluster}}
             BOSH_VSPHERE_VCENTER_DC:      {{vcenter-dc}}
         ensure:
-          task: teardown
-          tags: [vsphere-v5.1]
-          file: bosh-src/ci/pipelines/stemcells/tasks/teardown.yml
+          do:
+          - task: teardown
+            tags: [vsphere-v5.1]
+            file: bosh-src/ci/pipelines/stemcells/tasks/teardown.yml
+          - put: environment
+            params:
+              release: environment
 
   - name: publish-stemcells
     serial: true
