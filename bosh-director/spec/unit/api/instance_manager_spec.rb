@@ -93,7 +93,7 @@ module Bosh::Director
 
     describe '#filter_by' do
       it 'filters by given criteria' do
-        expect(subject.filter_by(deployment, uuid: instance.uuid)).to eq [instance]
+        expect(subject.filter_by(deployment, uuid: instance.uuid).all).to eq [instance]
       end
     end
 
