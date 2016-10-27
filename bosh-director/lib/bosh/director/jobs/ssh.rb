@@ -27,7 +27,7 @@ module Bosh::Director
         filter.merge!(target.id_filter)
 
         deployment = Models::Deployment[@deployment_id]
-        instances = @instance_manager.filter_by(deployment, filter)
+        instances = @instance_manager.filter_by(deployment, filter, vm_cid: nil)
 
         ssh_info = instances.map do |instance|
           begin
