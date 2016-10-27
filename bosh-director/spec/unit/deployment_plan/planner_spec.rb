@@ -161,7 +161,7 @@ module Bosh::Director
           end
         end
 
-        describe '#jobs_starting_on_deploy' do
+        describe '#instance_groups_starting_on_deploy' do
           before { subject.add_instance_group(job1) }
           let(:job1) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
@@ -195,7 +195,7 @@ module Bosh::Director
             end
 
             it 'returns both the regular job and keep-alive errand' do
-              expect(subject.jobs_starting_on_deploy).to eq([job1, job2])
+              expect(subject.instance_groups_starting_on_deploy).to eq([job1, job2])
             end
           end
 
@@ -211,7 +211,7 @@ module Bosh::Director
             end
 
             it 'returns only the regular job' do
-              expect(subject.jobs_starting_on_deploy).to eq([job1])
+              expect(subject.instance_groups_starting_on_deploy).to eq([job1])
             end
           end
         end

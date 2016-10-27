@@ -14,7 +14,7 @@ module Bosh::Director
       instance_double('Bosh::Director::DeploymentPlan::Planner',
         update_stemcell_references!: nil,
         persist_updates!: nil,
-        jobs_starting_on_deploy: [],
+        instance_groups_starting_on_deploy: [],
         instance_plans_with_missing_vms: [],
         ip_provider: ip_provider,
         skip_drain: skip_drain,
@@ -70,7 +70,7 @@ module Bosh::Director
       it 'runs deployment plan update stages in the correct order' do
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         allow(event_log_stage).to receive(:advance_and_track).and_yield
-        allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
+        allow(deployment_plan).to receive(:instance_groups_starting_on_deploy).with(no_args).and_return([job1, job2])
 
         it_deletes_unneeded_instances.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
