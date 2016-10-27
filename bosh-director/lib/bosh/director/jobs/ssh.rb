@@ -27,7 +27,12 @@ module Bosh::Director
         filter.merge!(target.id_filter)
 
         deployment = Models::Deployment[@deployment_id]
-        instances = @instance_manager.filter_by(deployment, filter)
+
+        instances = @instance_manager.filter_by(deployment, filter).exclude(vm_cid: nil)
+
+        if instances.empty?
+          raise "No instance with a VM in deployment '#{deployment.name}' matched filter #{filter}"
+        end
 
         ssh_info = instances.map do |instance|
           begin
