@@ -8,7 +8,7 @@
                 "s3:PutObjectAcl"
             ],
             "Resource": [
-                "arn:aws:s3:::bosh-core-stemcells-dev/*"
+                "arn:aws:s3:::bosh-core-stemcells/*"
             ]
         }
     ]
