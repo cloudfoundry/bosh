@@ -147,8 +147,8 @@ bosh -d ./deployment.yml ssh syslog_forwarder 0 'logger -t vcap some vcap messag
 download_destination=$(mktemp -d -t)
 bosh -d ./deployment.yml scp --download syslog_storer 0 /var/vcap/store/syslog_storer/syslog.log $download_destination
 
-grep 'COMMAND=/sbin/modprobe -r floppy' $download_destination/syslog.log.syslog_storer. || ( echo "Syslog did not contain 'audit'!" ; exit 1 )
-grep 'some vcap message' $download_destination/syslog.log.syslog_storer. || ( echo "Syslog did not contain 'vcap'!" ; exit 1 )
+grep 'COMMAND=/sbin/modprobe -r floppy' $download_destination/syslog.log.syslog_storer.0 || ( echo "Syslog did not contain 'audit'!" ; exit 1 )
+grep 'some vcap message' $download_destination/syslog.log.syslog_storer.0 || ( echo "Syslog did not contain 'vcap'!" ; exit 1 )
 
 
 #fill the syslog so it will need rotating and set cron to run logrotate every min
