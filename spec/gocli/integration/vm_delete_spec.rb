@@ -5,7 +5,6 @@ describe 'vm delete', type: :integration do
   with_reset_sandbox_before_each
 
   it 'delete the vm by its vm_cid' do
-    pending('cli2: #125443461: backport delete vm command')
     deploy_from_scratch
 
     #reference to instance
