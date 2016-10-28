@@ -121,7 +121,7 @@ describe 'start job', type: :integration do
     #all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
-    output = bosh_runner.run('start --max-in-flight 2', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME, json: true)
+    output = bosh_runner.run('start --max-in-flight 1', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME, json: true)
     lines = parse_blocks(output)
 
     foobar_update_regex = /Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\)/
