@@ -244,8 +244,9 @@ jobs:
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
       - put: bosh-src-push
         params:
-          repository: bosh-src-tagged
+          repository: bosh-src
           tag: version-tag/tag
+          only_tag: true
 
   #
   # WARDEN
