@@ -26,7 +26,7 @@ describe 'orphaned disks', type: :integration do
     result = scrub_random_cids(result)
     result = scrub_event_time(result)
 
-    expect(result).to eq([
+    expect(result).to contain_exactly(
       {
         'Disk CID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'Size' => '129 MB',
@@ -43,7 +43,7 @@ describe 'orphaned disks', type: :integration do
         'AZ' => '',
         'Orphaned At' => 'xxx xxx xx xx:xx:xx UTC xxxx',
       },
-    ])
+    )
   end
 
   context 'when there are no orphaned disks' do

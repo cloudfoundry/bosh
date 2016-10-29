@@ -83,14 +83,14 @@ describe 'start job', type: :integration do
     #all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
-    output = bosh_runner.run('start --canaries 2', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
-    expect(output).to include('(0) (canary)')
-    expect(output).to include('(1) (canary)')
-    expect(output).to_not include('(2) (canary)')
-    expect(output).to_not include('(3) (canary)')
-    expect(output).to_not include('(4) (canary)')
-    expect(output).to include('Updating instance foobar')
-    expect(output).to include('Updating instance another-job')
+    output = bosh_runner.run('start --canaries 2', json: true, deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
+    lines = parse_blocks(output)
+
+    foobar_canary_regex = /Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\) \(canary\)/
+
+    foobar_canary_lines = lines.select { |line| foobar_canary_regex.match(line) }
+    expect(foobar_canary_lines.size).to eq(2)
+
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
   end
 
