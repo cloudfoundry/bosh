@@ -13,7 +13,6 @@ gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
 gem 'bosh-monitor', path: 'bosh-monitor'
 gem 'bosh-template', path: 'bosh-template'
-gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 
 gem 'rake', '~>10.0'
 

@@ -148,13 +148,6 @@ PATH
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
 
-PATH
-  remote: simple_blobstore_server
-  specs:
-    simple_blobstore_server (1.3262.9.0)
-      sinatra (~> 1.4.2)
-      thin (~> 1.5.0)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -396,7 +389,6 @@ DEPENDENCIES
   rspec-its
   rugged
   serverspec (= 0.15.4)
-  simple_blobstore_server!
   simplecov (~> 0.9.0)
   sinatra
   sinatra-contrib

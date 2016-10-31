@@ -18,7 +18,6 @@ module Bosh::Dev
       bosh-director
       bosh-director-core
       bosh-monitor
-      simple_blobstore_server
     )
 
     def initialize(build_number)
