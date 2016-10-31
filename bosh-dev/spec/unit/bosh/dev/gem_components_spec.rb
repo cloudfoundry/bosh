@@ -26,7 +26,6 @@ module Bosh::Dev
         bosh-director
         bosh-director-core
         bosh-monitor
-        bosh-release
         simple_blobstore_server
       )
     end

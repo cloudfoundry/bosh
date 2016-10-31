@@ -2,10 +2,6 @@ davcli/davcli-0.0.6-linux-amd64:
   size: 8705864
   object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
   sha: 6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
-genisoimage/cdrkit-1.1.11.tar.gz:
-  size: 1445133
-  object_id: bb61a16c-6078-4e18-9c1f-9c2d6f056cd6
-  sha: 3f7ddc06db0272942e1a4cd98c3c96462df77387
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   size: 519628
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668

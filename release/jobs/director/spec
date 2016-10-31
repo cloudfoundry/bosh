@@ -22,7 +22,6 @@ templates:
 packages:
 - director
 - nginx
-- genisoimage
 - libpq
 - postgres
 - mysql
