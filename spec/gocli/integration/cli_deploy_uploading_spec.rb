@@ -51,21 +51,10 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'fails when the sha1 does not match' do
-      pending('cli2: #130881395: deploy of manifest with invalid release sha1 should fail')
-
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'abcd1234', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /Release SHA1 '#{release_sha}' does not match the expected SHA1 'abcd1234'/
-      expect(output).not_to match /Succeeded/
-    end
-
-    it 'fails to deploy when the url is provided, but sha is not' do
-      pending('cli2: #130881395: deploy of manifest with invalid release sha1 should fail')
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, '', 1))
-
-      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Expected SHA1 when specifying remote URL for release 'test_release'/
       expect(output).not_to match /Succeeded/
     end
   end
