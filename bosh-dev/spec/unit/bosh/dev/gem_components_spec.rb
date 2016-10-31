@@ -14,7 +14,6 @@ module Bosh::Dev
 
     let(:expected_gems) do
       %w(
-        agent_client
         blobstore_client
         bosh-core
         bosh-stemcell

@@ -6,7 +6,6 @@ module Bosh::Dev
   class GemComponents
     include Enumerable
     COMPONENTS = %w(
-      agent_client
       blobstore_client
       bosh-core
       bosh-stemcell
