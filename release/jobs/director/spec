@@ -434,51 +434,6 @@ properties:
     description: When true the HTTP handler validate server certificates for HTTPS requests
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
-  openstack.auth_url:
-    description: URL of the OpenStack Identity endpoint to connect to
-  openstack.username:
-    description: OpenStack user name
-  openstack.api_key:
-    description: OpenStack API key
-  openstack.tenant:
-    description: OpenStack tenant name (required for Keystone API version 2)
-  openstack.project:
-    description: OpenStack project name (required for Keystone API version 3)
-  openstack.domain:
-    description: OpenStack domain (required for Keystone API version 3)
-  openstack.region:
-    description: OpenStack region (optional)
-  openstack.endpoint_type:
-    description: OpenStack endpoint type (optional, by default publicURL)
-    default: publicURL
-  openstack.state_timeout:
-    description: Timeout (in seconds) for OpenStack resources desired state (optional, by default 300)
-    default: 300
-  openstack.boot_from_volume:
-    description: Boot from volume (optional, false by default)
-    default: false
-  openstack.boot_volume_cloud_properties.type:
-    description: Volume type for the boot volume (optional)
-  openstack.stemcell_public_visibility:
-    description: Set public visibility for stemcells (optional, false by default)
-    default: false
-  openstack.connection_options:
-    description: Hash containing optional connection parameters to the OpenStack API
-  openstack.default_key_name:
-    description: Default OpenStack keypair to use when spinning up new vms
-  openstack.default_security_groups:
-    description: Default OpenStack security groups to use when spinning up new vms
-  openstack.wait_resource_poll_interval:
-    description: Changes the delay (in seconds) between each status check to OpenStack when creating a resource (optional, by default 5)
-    default: 5
-  openstack.config_drive:
-    description: Config drive device (cdrom or disk) to use as metadata service on OpenStack (optional, nil by default)
-  openstack.use_dhcp:
-    description: Whether to use DHCP when configuring networking on VM (for both manual and dynamic)
-    default: true
-  openstack.ignore_server_availability_zone:
-    description: When creating disks do not use the servers AZ, default to openstack default
-    default: false
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:
