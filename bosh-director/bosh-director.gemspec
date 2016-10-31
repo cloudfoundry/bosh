@@ -40,7 +40,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bosh_vsphere_cpi',   '=2.1.1'
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.12.1'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'

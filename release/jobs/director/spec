@@ -398,14 +398,6 @@ properties:
     description: User to access the Registry
   registry.http.password:
     description: Password to access the Registry
-  vcenter.address:
-    description: Address of vCenter server used by vsphere cpi
-  vcenter.user:
-    description: User to connect to vCenter server used by vsphere cpi
-  vcenter.password:
-    description: Password to connect to vCenter server used by vspher cpi
-  vcenter.datacenters:
-    description: Datacenters in vCenter to use (value is an array of Hashes representing datacenters and clusters, See director.yml.erb.erb)
   vcd.url:
     description: The endpoint of the target vCloud Director
   vcd.user:

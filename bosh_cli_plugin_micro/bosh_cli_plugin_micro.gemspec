@@ -38,7 +38,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-stemcell',      "~>#{version}"
 
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.12.1'
-  spec.add_dependency 'bosh_vsphere_cpi',   '=2.1.1'
   spec.add_dependency 'fog-google',         '=0.1.0'
 
   spec.add_development_dependency 'rake'

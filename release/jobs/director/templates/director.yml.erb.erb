@@ -301,36 +301,6 @@ if_p('director.cpi_job') do |cpi_job_name|
 end.else do
   plugin = nil
 
-  if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters|
-    plugin = {
-      'plugin' => 'vsphere',
-      'properties' => {
-        'mem_overcommit_ratio' => 0.7,
-        'cpi_log' => "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.cpi.log",
-        'vcenters' => [{
-          'host' => address,
-          'user' => user,
-          'password' => password,
-          'datacenters' => []
-        }],
-      }
-    }
-
-    datacenters.each do |dc|
-      plugin['properties']['vcenters'][0]['datacenters'] << {
-        name: dc['name'],
-        vm_folder: dc['vm_folder'] || "BOSH_VMs",
-        template_folder: dc['template_folder'] || "BOSH_Templates",
-        disk_path: dc['disk_path'] || "BOSH_Disks",
-        datastore_pattern: dc['datastore_pattern'],
-        persistent_datastore_pattern: dc['persistent_datastore_pattern'],
-        allow_mixed_datastores: dc.fetch('allow_mixed_datastores', true),
-        clusters: dc['clusters']
-      }
-    end
-
-  end
-
   if_p('vcd.url', 'vcd.user', 'vcd.password',
           'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
           'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
