@@ -1,11 +1,4 @@
 PATH
-  remote: agent_client
-  specs:
-    agent_client (1.3262.9.0)
-      httpclient (= 2.7.1)
-      yajl-ruby (~> 1.2.0)
-
-PATH
   remote: blobstore_client
   specs:
     blobstore_client (1.3262.9.0)
@@ -352,7 +345,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  agent_client!
   blobstore_client!
   blue-shell
   bosh-core!

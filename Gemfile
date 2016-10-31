@@ -2,7 +2,6 @@
 
 source 'https://rubygems.org'
 
-gem 'agent_client', path: 'agent_client'
 gem 'blobstore_client', path: 'blobstore_client'
 gem 'bosh_common', path: 'bosh_common'
 gem 'bosh-core', path: 'bosh-core'
