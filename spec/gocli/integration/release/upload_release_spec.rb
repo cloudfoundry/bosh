@@ -150,7 +150,6 @@ describe 'upload release', type: :integration do
   end
 
   it 'raises an error when --sha1 is used when uploading a local release' do
-    pending('cli2: #132688541')
     target_and_login
     expect {
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')} --sha1 abcd1234")
