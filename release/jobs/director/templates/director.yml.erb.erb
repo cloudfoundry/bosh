@@ -289,75 +289,14 @@ if_p('director.default_ssh_options.gateway_host',
   }
 end
 
-
-if_p('director.cpi_job') do |cpi_job_name|
-  params['cloud'] = {
+cpi_job_name = p('director.cpi_job')
+params['cloud'] = {
     'provider' => {
       'name' => cpi_job_name,
       'path' => "/var/vcap/jobs/#{cpi_job_name}/bin/cpi",
   },
   'properties' => {}
 }
-end.else do
-  plugin = nil
-
-  if_p('vcd.url', 'vcd.user', 'vcd.password',
-          'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
-          'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
-          'vcd.entities.vm_metadata_key', 'vcd.entities.description') do |url, user, password,
-                                                                          organization, datacenter,
-                                                                          vapp_catalog, media_catalog,
-                                                                          vm_metadata_key, description|
-    plugin = {
-      'plugin' => 'vcloud',
-      'properties' => {
-        'vcds' => [{
-          'url' => url,
-            'user' => user,
-            'password' => password,
-            'entities' => {
-              'organization' => organization,
-              'virtual_datacenter' => datacenter,
-              'vapp_catalog' => vapp_catalog,
-              'media_catalog' => media_catalog,
-              'vm_metadata_key' => vm_metadata_key,
-              'description' => description
-            }
-        }]
-      }
-    }
-
-    if_p('vcd.entities.control') do |control|
-      plugin['properties']['vcds'][0]['entities']['control'] = {}
-
-      control = plugin['properties']['vcds'][0]['entities']['control']
-
-      if_p('vcd.entities.control.wait_max') do |wait_max|
-        control['wait_max'] = wait_max.to_i
-      end
-
-      if_p('vcd.entities.control.wait_delay') do |wait_delay|
-        control['wait_delay'] = wait_delay.to_i
-      end
-
-      if_p('vcd.entities.control.cookie_timeout') do |cookie_timeout|
-        control['cookie_timeout'] = cookie_timeout.to_i
-      end
-
-      if_p('vcd.entities.control.retry_max') do |retry_max|
-        control['retry_max'] = retry_max.to_i
-      end
-
-      if_p('vcd.entities.control.retry_delay') do |retry_delay|
-        control['retry_delay'] = retry_delay.to_i
-      end
-    end
-
-  end
-
-  params['cloud'] = plugin
-
-end
 
 params['cloud']['properties']['agent'] = {
  'ntp' => p('ntp'),

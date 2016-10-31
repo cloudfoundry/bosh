@@ -34,7 +34,6 @@ PATH
       fog-aws
       logging
       peach
-      ruby_vcloud_sdk (= 0.7.4)
 
 PATH
   remote: bosh-director-core
@@ -55,7 +54,6 @@ PATH
       bosh-template (~> 1.3262.9.0)
       bosh_common (~> 1.3262.9.0)
       bosh_cpi (~> 1.3262.9.0)
-      bosh_vcloud_cpi (= 0.12.1)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -181,15 +179,6 @@ GEM
     beefcake (1.0.0)
     blue-shell (0.3.0)
       rspec
-    bosh_vcloud_cpi (0.12.1)
-      bosh_common
-      bosh_cpi
-      builder (~> 3.1.4)
-      httpclient (= 2.7.1)
-      membrane
-      nokogiri (~> 1.6.6)
-      rest-client (~> 1.6.7)
-      yajl-ruby (>= 0.8.2)
     builder (3.1.4)
     cf-uaa-lib (3.2.5)
       multi_json
@@ -311,12 +300,6 @@ GEM
     rspec-mocks (3.0.4)
       rspec-support (~> 3.0.0)
     rspec-support (3.0.4)
-    ruby_vcloud_sdk (0.7.4)
-      builder (>= 3.1)
-      httpclient (>= 2.4.0)
-      netaddr
-      nokogiri (>= 1.5.6)
-      rest-client (>= 1.6.7)
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
     rugged (0.19.0)

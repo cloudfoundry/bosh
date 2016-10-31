@@ -25,6 +25,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bundler'
   spec.add_dependency 'fog-aws'
   spec.add_dependency 'logging'
-
-  spec.add_dependency('ruby_vcloud_sdk', '=0.7.4')
 end

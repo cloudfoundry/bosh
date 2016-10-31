@@ -398,23 +398,3 @@ properties:
     description: User to access the Registry
   registry.http.password:
     description: Password to access the Registry
-  vcd.url:
-    description: The endpoint of the target vCloud Director
-  vcd.user:
-    description: The user name of the target vCloud Director
-  vcd.password:
-    description: The password of the target vCloud Director
-  vcd.entities.organization:
-    description: The organization name
-  vcd.entities.virtual_datacenter:
-    description: The virtual data center name in vCloud Director
-  vcd.entities.vapp_catalog:
-    description: The name of the calalog for vapp template
-  vcd.entities.media_catalog:
-    description: The name of the calalog for media files
-  vcd.entities.vm_metadata_key:
-    description: The key name of VM metadata
-    default: vcd-cf
-  vcd.entities.description:
-    description: Text associated with the VMs
-    default: vcd-cf
