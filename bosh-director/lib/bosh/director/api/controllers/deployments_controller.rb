@@ -80,6 +80,7 @@ module Bosh::Director
         options['canaries'] = params[:canaries] if !!params['canaries']
         options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
         options['fix'] = true if params['fix'] == 'true'
+        options['dry_run'] = true if params['dry_run'] == 'true'
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest = deployment.manifest
@@ -112,6 +113,7 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
         options['fix'] = true if params['fix'] == 'true'
+        options['dry_run'] = true if params['dry_run'] == 'true'
 
         if request.content_length.nil? || request.content_length.to_i == 0
           manifest = deployment.manifest

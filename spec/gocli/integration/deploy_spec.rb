@@ -7,8 +7,6 @@ describe 'deploy', type: :integration do
 
     context 'when there are template errors' do
       it 'prints all template evaluation errors and does not register an event' do
-        pending('cli2: waiting on #129897853: Backport --dry-run flag to deploy')
-
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         manifest_hash['jobs'] = [
           {
@@ -33,14 +31,12 @@ Error: Unable to render instance groups for deployment. Errors are:
        - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
-        expect(bosh_runner.run('events')).not_to include 'create'
+        expect(director.vms.length).to eq(0)
       end
     end
 
     context 'when there are no errors' do
       it 'returns some encouraging message but does not alter deployment' do
-        pending('cli2: waiting on #129897853: Backport --dry-run flag to deploy')
-
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
 
         deploy_from_scratch(manifest_hash: manifest_hash, dry_run: true)
