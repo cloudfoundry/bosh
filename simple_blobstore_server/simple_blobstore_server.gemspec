@@ -20,8 +20,4 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'thin',    '~>1.5.0'
   spec.add_dependency 'sinatra', '~> 1.4.2'
-
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'rack-test'
 end

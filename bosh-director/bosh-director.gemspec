@@ -60,13 +60,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.1.0'
   spec.add_dependency 'unix-crypt',       '~>1.3.0'
-
-  spec.add_development_dependency 'timecop'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'minitar'
-  spec.add_development_dependency 'machinist'
-  spec.add_development_dependency 'sqlite3'
-  spec.add_development_dependency 'fakefs'
-  spec.add_development_dependency 'pg'
 end

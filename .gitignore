@@ -27,10 +27,6 @@ aws_vpc_receipt.yml
 
 /bin/
 
-bosh_cli_plugin_aws/director.key
-bosh_cli_plugin_aws/director.pem
-bosh_cli_plugin_aws/spec/assets/private.yml
-
 create-rds-output*.yml
 create-vpc-output*.yml
 

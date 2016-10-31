@@ -1,7 +1,6 @@
 require 'rspec'
 require 'yaml'
 require 'bosh/template/evaluation_context'
-require 'bosh/deployer/microbosh_job_instance'
 require 'json'
 
 describe 'director.yml.erb.erb' do
@@ -83,28 +82,10 @@ describe 'director.yml.erb.erb' do
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 
-  it 'raises an error when no cloud provider is configured' do
-    expect { parsed_yaml }.to raise_error('Could not find cloud plugin')
-  end
 
   context 'given a generally valid manifest' do
     before do
-      deployment_manifest_fragment['properties']['aws'] = {
-        'credentials_source' => 'static',
-        'access_key_id' => 'key',
-        'secret_access_key' => 'secret',
-        'default_key_name' => 'default_key_name',
-        'default_security_groups' => 'default_security_groups',
-        'region' => 'region',
-      }
-      deployment_manifest_fragment['properties']['registry'] = {
-        'address' => 'address',
-        'http' => {
-          'port' => 'port',
-          'user' => 'user',
-          'password' => 'password'
-        }
-      }
+      deployment_manifest_fragment['properties']['director']['cpi_job'] = 'vsphere'
     end
 
     context 'when using web dav blobstore' do
