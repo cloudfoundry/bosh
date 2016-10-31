@@ -170,11 +170,6 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 The stemcell should be rebuilt when you are making and testing BOSH-specific changes on top of the base-OS Image such as new bosh-agent versions, or updating security configuration, or changing user settings.
 
-*Note:* to speed stemcell building during development, disable the old, bosh-micro-building steps before running `bundle` to avoid the time required to compile the bosh release...
-
-    $ export BOSH_MICRO_ENABLED=no
-
-
 #### with published OS image
 
 The last two arguments to the rake command are the S3 bucket and key of the OS image to use (i.e. in the example below, the .tgz will be downloaded from [http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz](http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz)). More info at OS\_IMAGES.
@@ -294,5 +289,3 @@ Then run the following:
 * If the Stemcell has been built and so long as you only make test case modifications you can rerun the tests (without rebuilding Stemcell. Details in section `How to run tests for Stemcell`
 
 * It's possible to verify OS/Stemcell changes without making adeployment using the stemcell. For an AWS specific ubuntu stemcell, the filesytem is available at `/mnt/stemcells/aws/xen/ubuntu/work/work/chroot`
-
-* DO NOT forget to: ` $ export BOSH_MICRO_ENABLED=no` before building stemcell against an OS image. Cuts down the build time a LOT

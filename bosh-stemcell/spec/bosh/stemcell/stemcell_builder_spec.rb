@@ -39,7 +39,6 @@ describe Bosh::Stemcell::StemcellBuilder do
   end
 
   let(:version) { 1234 }
-  let(:release_tarball_path) { '/path/to/release.tgz' }
   let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
   let(:gem_components) { double('Bosh::Dev::GemComponents', build_release_gems: nil) }
   let(:environment) do
@@ -47,7 +46,6 @@ describe Bosh::Stemcell::StemcellBuilder do
       env,
       definition,
       version,
-      release_tarball_path,
       os_image_tarball_path
     )
   end
@@ -71,11 +69,6 @@ describe Bosh::Stemcell::StemcellBuilder do
 
   describe '#build' do
     before { allow(packager).to receive(:package) }
-
-    it 'builds the gem components' do
-      expect(gem_components).to receive(:build_release_gems)
-      builder.build
-    end
 
     it 'prepares the build environment' do
       expect(environment).to receive(:prepare_build)

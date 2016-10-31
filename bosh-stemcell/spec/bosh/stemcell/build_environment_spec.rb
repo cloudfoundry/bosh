@@ -9,7 +9,7 @@ module Bosh::Stemcell
   describe BuildEnvironment do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(env, definition, version, release_tarball_path, os_image_tarball_path) }
+    subject { described_class.new(env, definition, version, os_image_tarball_path) }
 
     let(:env) { {} }
 
@@ -23,7 +23,6 @@ module Bosh::Stemcell
     end
 
     let(:version) { '1234' }
-    let(:release_tarball_path) { '1234.tgz' }
     let(:os_image_tarball_path) { '/some/os_image.tgz' }
 
     let(:stemcell_builder_source_dir) { '/fake/path/to/stemcell_builder' }
@@ -35,7 +34,6 @@ module Bosh::Stemcell
       )
     end
 
-    let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
     let(:version) { '007' }
 
     let(:root_dir) do
@@ -87,7 +85,6 @@ module Bosh::Stemcell
         env: env,
         definition: definition,
         version: version,
-        release_tarball: release_tarball_path,
         os_image_tarball: os_image_tarball_path,
       )
 

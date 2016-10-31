@@ -34,8 +34,6 @@ bosh_cli_plugin_aws/spec/assets/private.yml
 create-rds-output*.yml
 create-vpc-output*.yml
 
-micro/tmp
-
 /go/bin/
 /go/gobin/
 /go/src/code.google.com/p/go.tools
@@ -55,9 +53,6 @@ pkg/
 /release/config/private.yml
 /release/dev-releases
 /release/dev_releases
-/release/jobs/micro_*/monit
-/release/jobs/micro_*/spec
-/release/jobs/micro_*/templates/
 /release/releases/*.tgz
 /release/src/bosh/*
 

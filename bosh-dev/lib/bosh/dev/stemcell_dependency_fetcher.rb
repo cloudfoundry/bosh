@@ -25,15 +25,5 @@ module Bosh::Dev
 
       @downloader.download(os_image_uri, output_path)
     end
-
-    def download_bosh_micro_release(opts)
-      bosh_version = opts[:bosh_version]
-      output_path = opts[:output_path]
-
-      os_image_uri = URI.join('https://bosh.io/d/github.com/cloudfoundry/bosh')
-      os_image_uri.query = URI.encode_www_form([['v', bosh_version]])
-
-      @downloader.download(os_image_uri, output_path)
-    end
   end
 end

@@ -68,8 +68,6 @@ sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
 
   cd bosh-src
 
-  export BOSH_MICRO_ENABLED=no
-
   bundle install --local
   bundle exec rake stemcell:build[$IAAS,$HYPERVISOR,$OS_NAME,$OS_VERSION,go,bosh-os-images,bosh-$OS_NAME-$OS_VERSION-os-image.tgz]
   rm -f ./tmp/base_os_image.tgz

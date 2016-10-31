@@ -32,9 +32,7 @@ module Bosh::Stemcell
     def agent_stages
       [
         :bosh_libyaml,
-        :bosh_ruby,
         :bosh_go_agent,
-        :bosh_micro_go,
         :aws_cli,
         :logrotate_config,
         :dev_tools_config,
