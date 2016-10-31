@@ -1,6 +1,5 @@
 require 'bosh/dev/build'
 require 'bosh/stemcell/archive'
-require 'bosh/stemcell/aws/light_stemcell'
 
 module Bosh::Dev
   class StemcellPublisher
