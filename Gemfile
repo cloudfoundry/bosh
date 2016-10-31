@@ -18,7 +18,6 @@ gem 'bosh-release', path: 'bosh-release'
 gem 'bosh-template', path: 'bosh-template'
 gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 
-gem 'bosh_aws_cpi', '~>2.1'
 gem 'rake', '~>10.0'
 
 # json version is hardcoded in release director, health_monitor and registry packages

@@ -20,7 +20,6 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
-  spec.add_dependency 'bosh_aws_cpi', "=2.1.2"
   spec.add_dependency 'bosh-core', "~>#{version}"
 
   spec.add_development_dependency 'fakefs'

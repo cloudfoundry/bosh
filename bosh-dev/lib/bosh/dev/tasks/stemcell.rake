@@ -1,21 +1,6 @@
 require 'json'
 
 namespace :stemcell do
-  desc 'Create light stemcell from existing stemcell'
-  task :build_light, [:stemcell_path, :virtualization_type] do |_, args|
-    begin
-      require 'bosh/stemcell/aws/light_stemcell'
-      require 'bosh/stemcell/archive'
-      stemcell = Bosh::Stemcell::Archive.new(args.stemcell_path)
-      regions = Array(ENV.fetch('BOSH_AWS_REGION', Bosh::Stemcell::Aws::Region::REGIONS))
-      light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell, args.virtualization_type, regions)
-      light_stemcell.write_archive
-    rescue RuntimeError => e
-      print_help
-      raise e
-    end
-  end
-
   desc 'Build a base OS image for use in stemcells'
   task :build_os_image, [:operating_system_name, :operating_system_version, :os_image_path] do |_, args|
     begin

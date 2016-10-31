@@ -32,6 +32,7 @@ PATH
       bosh_cli_plugin_aws
       bosh_common
       bundler
+      fog-aws
       logging
       peach
       ruby_vcloud_sdk (= 0.7.4)
@@ -53,14 +54,12 @@ PATH
       bosh-director-core (~> 1.3262.9.0)
       bosh-registry (~> 1.3262.9.0)
       bosh-template (~> 1.3262.9.0)
-      bosh_aws_cpi (= 2.1.2)
       bosh_common (~> 1.3262.9.0)
       bosh_cpi (~> 1.3262.9.0)
       bosh_vcloud_cpi (= 0.12.1)
       bosh_vsphere_cpi (= 2.1.1)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
-      fog-aws (~> 0.7.6)
       httpclient (= 2.7.1)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
@@ -122,7 +121,6 @@ PATH
   specs:
     bosh-stemcell (1.3262.9.0)
       bosh-core (~> 1.3262.9.0)
-      bosh_aws_cpi (= 2.1.2)
 
 PATH
   remote: bosh-template
@@ -150,7 +148,6 @@ PATH
       bosh-director-core (~> 1.3262.9.0)
       bosh-registry (~> 1.3262.9.0)
       bosh-stemcell (~> 1.3262.9.0)
-      bosh_aws_cpi (= 2.1.2)
       bosh_cli (~> 1.3262.9.0)
       bosh_common (~> 1.3262.9.0)
       bosh_cpi (~> 1.3262.9.0)
@@ -452,7 +449,6 @@ DEPENDENCIES
   bosh-release!
   bosh-stemcell!
   bosh-template!
-  bosh_aws_cpi (~> 2.1)
   bosh_cli!
   bosh_cli_plugin_aws!
   bosh_cli_plugin_micro!
