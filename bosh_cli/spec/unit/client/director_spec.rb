@@ -160,6 +160,19 @@ describe Bosh::Cli::Client::Director do
           status = @director.get_status
           expect(status['version']).to eq(258)
         end
+
+        context 'when no credentials are specified' do
+          let(:credentials) { nil }
+
+          it 'should not attempt to refresh the token and raise an error' do
+            stub_request(:get, 'https://target.example.com:8080/info').
+              to_return(body: '', status: 401)
+
+            expect {
+              @director.get_status
+            }.to raise_error(Bosh::Cli::AuthError)
+          end
+        end
       end
     end
 
@@ -176,6 +189,18 @@ describe Bosh::Cli::Client::Director do
     end
 
     context 'performing a http post with a request body' do
+      context 'without a token credential' do
+        let(:credentials) { nil }
+
+        it 'should not refresh the token before making a request with a body' do
+          stub_request(:post, 'https://target.example.com:8080/path').
+            with(headers: { 'Content-Type' => 'application/json' }).
+            to_return(body: '{"version":258}', status: 401)
+
+          expect { @director.post('/path', 'application/json', 'binary data') }.to raise_error(Bosh::Cli::AuthError)
+        end
+      end
+
       context 'using token credentials' do
         let(:token_provider) {
           token_provider = instance_double(Bosh::Cli::Client::Uaa::TokenProvider)
@@ -192,6 +217,16 @@ describe Bosh::Cli::Client::Director do
           expect(credentials).to receive(:refresh)
 
           @director.post('/path', 'application/json', 'binary data')
+        end
+
+        it 'should not refresh the token if the initial request returns a 401' do
+          stub_request(:post, 'https://target.example.com:8080/path').
+            with(headers: { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' }).
+            to_return(body: '{"version":258}', status: 401)
+
+          expect(credentials).to receive(:refresh).once
+
+          expect {@director.post('/path', 'application/json', 'binary data')}.to raise_error(Bosh::Cli::AuthError)
         end
 
         it 'should not refresh the token before making a request without a body' do
