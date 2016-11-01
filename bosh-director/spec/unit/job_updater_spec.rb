@@ -328,6 +328,43 @@ describe Bosh::Director::JobUpdater do
           end
         end
       end
+
+      context 'when max_in_flight and canaries are specified as percents' do
+        let (:canaries) { '50%' }
+        let (:max_in_flight) { '100%' }
+
+        it 'should understand it' do
+          expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+
+          job_updater.update
+
+          check_event_log do |events|
+            [
+                updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+                updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
+                updating_stage_event(index: 2, total: 4, task: 'job_name/fake_uuid (2)', state: 'started'),
+                updating_stage_event(index: 2, total: 4, task: 'job_name/fake_uuid (2)', state: 'finished'),
+            ].each_with_index do |expected_event, index|
+              expect(events[index]).to include(expected_event)
+            end
+
+            # blocked until next az...
+            last_events = events[3..-1]
+            expected_events = [
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (3)', state: 'started'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (4)', state: 'started'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (3)', state: 'finished'),
+                updating_stage_event(total: 4, task: 'job_name/fake_uuid (4)', state: 'finished'),
+            ]
+            expected_events.map do |expected_event|
+              expect(last_events.select { |event| same_event?(event, expected_event) }).not_to be_empty
+            end
+          end
+        end
+      end
     end
   end
 
