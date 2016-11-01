@@ -18,7 +18,6 @@ describe 'cli: package compilation', type: :integration do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
     deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
 
-    target_and_login
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
     bosh_runner.run("upload-release #{release_filename}")
@@ -68,8 +67,6 @@ describe 'cli: package compilation', type: :integration do
     manifest_hash['releases'].first['version'] = 'latest'
 
     cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
-
-    target_and_login
 
     bosh_runner.run_in_dir("create-release", TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
     bosh_runner.run_in_dir('upload-release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)

@@ -5,7 +5,6 @@ describe 'availability zones', type: :integration do
 
   context 'when job is placed in an availability zone that has cloud properties.' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end

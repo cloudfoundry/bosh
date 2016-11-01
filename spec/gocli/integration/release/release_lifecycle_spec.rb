@@ -6,8 +6,6 @@ describe 'release lifecycle', type: :integration do
   with_reset_sandbox_before_each
 
   it 'creates and deploys a new final release with a user defined version' do
-    target_and_login
-
     commit_hash = ''
 
     Dir.chdir(ClientSandbox.test_release_dir) do
@@ -77,7 +75,6 @@ describe 'release lifecycle', type: :integration do
       out = bosh_runner.run_in_current_dir('create-release')
       expect(parse_release_version(out)).to eq('0+dev.1')
 
-      target_and_login
       bosh_runner.run_in_current_dir('upload-release')
 
       with_changed_release do

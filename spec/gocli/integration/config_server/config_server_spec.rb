@@ -25,7 +25,7 @@ describe 'using director with config server', type: :integration do
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -60,10 +60,6 @@ describe 'using director with config server', type: :integration do
 
   context 'when config server certificates are trusted' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
-
-    before do
-      bosh_runner.run("environment #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
-    end
 
     context 'when deployment manifest has placeholders' do
       it 'raises an error when config server does not have values for placeholders' do
@@ -888,7 +884,8 @@ describe 'using director with config server', type: :integration do
                   cloud_config_hash: cloud_config,
                   failure_expected: true,
                   return_exit_code: true,
-                  include_credentials: false,  env: client_env
+                  include_credentials: false,
+                  env: client_env
                 )
 
                 expect(exit_code).to_not eq(0)

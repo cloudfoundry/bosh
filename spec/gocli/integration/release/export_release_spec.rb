@@ -5,8 +5,6 @@ describe 'export-release', type: :integration do
 
   context 'with a classic manifest' do
     before{
-      target_and_login
-
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
       deploy_simple_manifest({manifest_hash: Bosh::Spec::Deployments.minimal_legacy_manifest})
@@ -23,8 +21,6 @@ describe 'export-release', type: :integration do
 
   context 'with no source packages and no compiled packages against the targeted stemcell' do
     before {
-      target_and_login
-
       cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
       cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
@@ -52,8 +48,6 @@ Can't use release 'test_release/1'. It references packages without source code a
 
   context 'when there are two versions of the same release uploaded' do
     before {
-      target_and_login
-
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
       cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
@@ -128,7 +122,6 @@ Can't use release 'test_release/1'. It references packages without source code a
     let(:manifest_hash) { Bosh::Spec::Deployments.multiple_release_manifest }
 
     before{
-      target_and_login
       upload_cloud_config(cloud_config_hash: cloud_config)
 
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
@@ -313,7 +306,6 @@ Can't use release 'test_release/1'. It references packages without source code a
   context 'when there is an existing deployment with running VMs' do
     context 'with global networking' do
       before do
-        target_and_login
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
         bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
@@ -329,7 +321,6 @@ Can't use release 'test_release/1'. It references packages without source code a
 
     context 'before global networking' do
       before do
-        target_and_login
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
         bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
         legacy_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(

@@ -6,8 +6,6 @@ describe 'deploy job with addons', type: :integration do
   it 'allows addons to be added to specific deployments' do
     pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
 
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon_includes))
@@ -46,8 +44,6 @@ describe 'deploy job with addons', type: :integration do
   it 'allows addons to be added for specific stemcell operating systems' do
     pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
 
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon_includes_stemcell_os))
@@ -81,8 +77,6 @@ describe 'deploy job with addons', type: :integration do
   it 'collocates addon jobs with deployment jobs and evaluates addon properties' do
     pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
 
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon))
@@ -111,8 +105,6 @@ describe 'deploy job with addons', type: :integration do
   it 'raises an error if the addon job has the same name as an existing job in an instance group' do
     pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
 
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon))
@@ -135,8 +127,6 @@ describe 'deploy job with addons', type: :integration do
 
   it 'ensures that addon job properties are assigned' do
     pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
-    target_and_login
 
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
@@ -165,8 +155,6 @@ describe 'deploy job with addons', type: :integration do
   end
 
   it 'succeeds when deployment and runtime config both have the same release with the same version' do
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config))
@@ -189,8 +177,6 @@ describe 'deploy job with addons', type: :integration do
 
   context 'when version of uploaded release is same as one used in addon and one is an integer' do
     it 'deploys it after comparing both versions as a string' do
-      target_and_login
-
       bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
 
       Dir.mktmpdir do |tmpdir|

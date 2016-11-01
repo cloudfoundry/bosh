@@ -47,6 +47,13 @@ module Bosh::Spec
       FileUtils.rm_rf(@bosh_config)
     end
 
+    def current_sandbox
+      sandbox = Thread.current[:sandbox]
+      raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
+      sandbox
+    end
+
+
     def run_in_current_dir(cmd, options={})
       run_in_dir(cmd, Dir.pwd, options)
     end
@@ -57,7 +64,9 @@ module Bosh::Spec
       user = options[:user] || 'test'
       password = options[:password] || 'test'
       config = options.fetch(:config, @bosh_config)
+      environment = options.fetch(:environment, current_sandbox.director_url)
       cli_options = ''
+      cli_options += "-e #{environment}"
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'

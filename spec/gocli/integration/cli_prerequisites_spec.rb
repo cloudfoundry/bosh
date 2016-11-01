@@ -15,7 +15,6 @@ describe 'cli: deployment prerequisites', type: :integration do
   end
 
   it 'requires deployment path to be provided' do
-    target_and_login
     expect(bosh_runner.run('deploy', :failure_expected => true)).to match(/the required argument `PATH` was not provided/)
   end
 end

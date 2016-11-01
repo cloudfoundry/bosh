@@ -397,8 +397,6 @@ describe 'create-release', type: :integration do
         bosh_runner.run_in_current_dir('create-release')
       end
 
-      target_and_login
-
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('upload-release')
       end

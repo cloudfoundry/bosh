@@ -21,7 +21,6 @@ describe 'global networking', type: :integration do
 
   context 'when allocating static IPs' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end
@@ -377,7 +376,6 @@ describe 'global networking', type: :integration do
 
   context 'when allocating dynamic IPs' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end

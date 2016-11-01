@@ -8,7 +8,6 @@ describe 'local DNS', type: :integration do
   let(:network_name) { 'local_dns' }
 
   before do
-    target_and_login
     cloud_config['networks'][0]['name'] = network_name
     cloud_config['compilation']['network'] = network_name
     upload_cloud_config({:cloud_config_hash => cloud_config})

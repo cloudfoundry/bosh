@@ -7,12 +7,11 @@ describe 'cli: stemcell', type: :integration do
   # "image" file. If that file changes, update the value here using:
   # `shasum image`
   let(:expected_id) { '68aab7c44c857217641784806e2eeac4a3a99d1c' }
-  
+
   # ~65s (possibly includes sandbox start)
   it 'can upload a stemcell and capture its metadata' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
-    target_and_login
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
     expect(out).to match /Save stemcell/
     expect(out).to match /Succeeded/
@@ -35,7 +34,6 @@ describe 'cli: stemcell', type: :integration do
   it 'can delete a stemcell' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
-    target_and_login
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
     expect(out).to match /Save stemcell/
     expect(out).to match /Succeeded/
@@ -49,7 +47,6 @@ describe 'cli: stemcell', type: :integration do
   end
 
   it 'allows --sha1 even when used during upload of a local stemcell' do
-    target_and_login
     out = bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')} --sha1 shawone")
     expect(out).to match /Save stemcell/
     expect(out).to match /Succeeded/
@@ -64,7 +61,6 @@ describe 'cli: stemcell', type: :integration do
   end
 
   describe 'uploading a stemcell that already exists' do
-    before { target_and_login }
 
     context 'when the stemcell is local' do
       let(:local_stemcell_path) { spec_asset('valid_stemcell.tgz') }

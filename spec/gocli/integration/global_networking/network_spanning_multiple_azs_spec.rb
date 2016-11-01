@@ -3,7 +3,6 @@ require_relative '../../spec_helper'
 describe 'networks spanning multiple azs', type: :integration do
   with_reset_sandbox_before_each
   before do
-    target_and_login
     create_and_upload_test_release
     upload_stemcell
     upload_cloud_config(cloud_config_hash: cloud_config_hash)

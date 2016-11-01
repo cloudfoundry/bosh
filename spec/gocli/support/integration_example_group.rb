@@ -48,10 +48,6 @@ module IntegrationExampleGroup
     @waiter ||= Bosh::Spec::Waiter.new(logger)
   end
 
-  def target_and_login
-    bosh_runner.run("env #{current_sandbox.director_url}")
-  end
-
   def upload_cloud_config(options={})
     cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
@@ -131,8 +127,6 @@ module IntegrationExampleGroup
   end
 
   def prepare_for_deploy(options={})
-    target_and_login unless options.fetch(:no_login, false)
-
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]

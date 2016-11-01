@@ -48,7 +48,6 @@ describe 'orphaned disks', type: :integration do
 
   context 'when there are no orphaned disks' do
     it 'should indicated that there are no orphaned disks' do
-      target_and_login
       result = bosh_runner.run('disks --orphaned')
 
       expect(result).to include '0 disks'

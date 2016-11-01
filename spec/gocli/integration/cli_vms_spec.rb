@@ -23,7 +23,6 @@ describe 'cli: vms', type: :integration do
 
   it 'should return az with vms' do
     pending('cli2: #131396949: instances/vms --details should include ignore')
-    target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [

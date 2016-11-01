@@ -86,7 +86,6 @@ describe 'multiple persistent disks', type: :integration do
   end
 
   before do
-    target_and_login
     upload_multidisk_release
     upload_stemcell
 

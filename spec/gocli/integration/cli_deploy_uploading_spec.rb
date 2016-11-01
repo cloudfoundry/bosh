@@ -8,7 +8,6 @@ describe 'cli: deploy uploading', type: :integration do
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config) }
 
   before do
-    target_and_login
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
   end

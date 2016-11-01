@@ -4,7 +4,6 @@ describe 'vip networks', type: :integration do
   with_reset_sandbox_before_each
 
   before do
-    target_and_login
     create_and_upload_test_release
     upload_stemcell
   end

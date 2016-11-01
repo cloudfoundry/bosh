@@ -42,7 +42,6 @@ describe 'Links', type: :integration do
   end
 
   before do
-    target_and_login
     upload_links_release
     upload_stemcell
 

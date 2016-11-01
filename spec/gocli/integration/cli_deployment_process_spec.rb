@@ -16,7 +16,6 @@ describe 'cli: deployment process', type: :integration do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
     deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
 
-    target_and_login
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
     bosh_runner.run("upload-release #{release_filename}")
@@ -36,7 +35,6 @@ describe 'cli: deployment process', type: :integration do
         cloud_config['resource_pools'][0].delete('size')
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
 
-        target_and_login
         bosh_runner.run("upload-release #{release_filename}")
         bosh_runner.run("upload-stemcell #{stemcell_filename}")
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -211,7 +209,6 @@ lines'}
       deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
-      target_and_login
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")
       bosh_runner.run("upload-release #{release_filename}")
@@ -229,7 +226,6 @@ lines'}
       deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
-      target_and_login
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")
       bosh_runner.run("upload-release #{release_filename}")
@@ -240,7 +236,6 @@ lines'}
     end
 
     it 'can idempotently delete a non-existent deployment' do
-      target_and_login
       bosh_runner.run('delete-deployment', deployment_name: 'non-existent-deployment')
       bosh_runner.run('delete-deployment', deployment_name: 'non-existent-deployment')
     end

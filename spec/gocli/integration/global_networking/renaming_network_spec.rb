@@ -16,7 +16,6 @@ describe 'migrating networks', type: :integration do
 
   context 'when network was renamed' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end

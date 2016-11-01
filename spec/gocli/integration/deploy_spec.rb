@@ -66,7 +66,6 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'when stemcell is specified with an OS' do
       it 'deploys with the stemcell with specified OS and version' do
-        target_and_login
         create_and_upload_test_release
 
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -102,7 +101,6 @@ Error: Unable to render instance groups for deployment. Errors are:
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         manifest_hash['jobs'].first['instances'] = 1
 
-        target_and_login
         create_and_upload_test_release
         upload_cloud_config(cloud_config_hash: cloud_config)
 
@@ -142,7 +140,6 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       before do
-        target_and_login
         create_and_upload_test_release
         upload_stemcell
       end
@@ -207,7 +204,6 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'it supports running pre-start scripts' do
       before do
-        target_and_login
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
         upload_stemcell
       end
@@ -333,7 +329,6 @@ Error: Unable to render instance groups for deployment. Errors are:
     context 'it supports running post-deploy scripts' do
       with_reset_sandbox_before_each(enable_post_deploy: true)
       before do
-        target_and_login
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
         upload_stemcell
       end
@@ -541,7 +536,6 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       before do
-        target_and_login
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
         upload_stemcell
 
@@ -596,7 +590,6 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       before do
-        target_and_login
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
         upload_stemcell
         create_and_upload_test_release
@@ -927,7 +920,6 @@ Error: Unable to render instance groups for deployment. Errors are:
     context 'it supports compiled releases' do
       context 'release and stemcell have been uploaded' do
         before {
-          target_and_login
           bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
           bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
         }
@@ -1074,7 +1066,6 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
 
         it 'exports, deletes deployment & stemcell, uploads compiled, uploads patch-level stemcell, deploys' do
-          target_and_login
           cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config_hash['resource_pools'][0]['stemcell']['version'] = 'latest'
           upload_cloud_config({:cloud_config_hash => cloud_config_hash})
@@ -1125,7 +1116,6 @@ Error: Unable to render instance groups for deployment. Errors are:
         release_filename = spec_asset('test_release.tgz')
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
-        target_and_login
         bosh_runner.run("upload-release #{release_filename}")
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
@@ -1340,7 +1330,6 @@ Error: Unable to render instance groups for deployment. Errors are:
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
 
-        target_and_login
         bosh_runner.run("upload-release #{release_filename}")
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")

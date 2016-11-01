@@ -13,7 +13,6 @@ describe 'simultaneous deploys', type: :integration do
   end
 
   before do
-    target_and_login
     create_and_upload_test_release
     upload_stemcell
   end

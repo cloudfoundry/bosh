@@ -53,7 +53,6 @@ describe 'package dependencies', type: :integration do
 
     it 'survives removal of a transitive dependency' do
       Dir.chdir(temp_release_dir) do
-        target_and_login
         bosh_runner.run_in_current_dir('create-release')
         bosh_runner.run_in_current_dir('upload-release')
         upload_stemcell

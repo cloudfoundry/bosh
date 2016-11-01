@@ -24,7 +24,6 @@ describe 'Managed persistent disk', type: :integration do
   end
 
   before do
-    target_and_login
     upload_stemcell
 
     create_and_upload_test_release

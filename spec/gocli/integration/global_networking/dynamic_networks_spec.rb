@@ -6,7 +6,6 @@ describe 'dynamic networks', type: :integration do
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
   before do
-    target_and_login
     create_and_upload_test_release
     upload_stemcell
   end

@@ -14,7 +14,6 @@ describe 'director_scheduler', type: :integration do
   end
 
   before do
-    target_and_login
     runner = bosh_runner_in_work_dir(ClientSandbox.test_release_dir)
     runner.run('create-release --force')
     runner.run('upload-release')
