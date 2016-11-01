@@ -8,7 +8,7 @@ module Bosh::Director
       end
 
       def find_cpi_by_name(name)
-        @cpis.select{|cpi|cpi.name == name}.first
+        @cpis.find{|cpi|cpi.name == name}
       end
     end
   end
