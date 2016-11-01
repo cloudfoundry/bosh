@@ -506,6 +506,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `gzVOkWfR76VNQH8k6uE0IQMnYbDhmXpc`
+  - Dirty COW (CVE-2016-5195)
+  - built from 257.x-3263.x (0c333f73313b595d0ee77b33fbfa4dd5b7b1b3f1)
+
 * `7gR0.9jpw3hOIr_Jfdeu7WiysSiN8BxP`
   - USN-3106-2: Linux kernel (Xenial HWE) vulnerability
   - built from 257.x-3263.x (13d27cdcecad3930b4f2f0ce524daa05de78d53f)
