@@ -31,6 +31,7 @@ module Bosh::Spec
         cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
         cli_options += " --user=#{user} --password=#{password}" if log_in
         cli_options += " -d #{deployment_name}" if deployment_name
+        cli_options += " -e #{options[:environment_name]}" if options[:environment_name]
         cli_options += " --no-color" if no_color
         cli_options += " --config #{config}"
         command="gobosh --tty #{cli_options} #{cmd}"
