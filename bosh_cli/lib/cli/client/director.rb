@@ -886,9 +886,8 @@ module Bosh
             http_client.ssl_config.cert_store = cert_store
           end
 
-          @credentials.refresh unless payload.nil?
-
           if @credentials
+            @credentials.refresh unless payload.nil?
             headers['Authorization'] = @credentials.authorization_header
           end
 
@@ -898,12 +897,11 @@ module Bosh
           }, &block)
 
           if !response.nil? && response.code == 401
-            raise e unless @credentials
-
-            raise e unless @credentials.refresh
+            if @credentials.nil? || !payload.nil? || !@credentials.refresh
+              raise AuthError
+            end
 
             headers['Authorization'] = @credentials.authorization_header
-
             response = http_client.request(method, uri, {
                 :body => payload,
                 :header => headers,
