@@ -212,11 +212,8 @@ describe 'cli: stemcell', type: :integration do
 
         context 'when NOT using the --skip-if-exists flag' do
           it 'tells the user and does exit as a failure' do
-            _, exit_code = bosh_runner.run("upload stemcell #{stemcell_url}", {
-              failure_expected: true,
-              return_exit_code: true,
-            })
-            expect(exit_code).to eq(1)
+            output = bosh_runner.run("upload stemcell #{stemcell_url}")
+            expect(output).to_not include("Uploading stemcell")
           end
         end
 
