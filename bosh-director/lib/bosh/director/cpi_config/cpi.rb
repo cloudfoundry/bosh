@@ -10,7 +10,6 @@ module Bosh::Director
         @type = type
         @exec_path = exec_path
         @properties = properties
-        validate
       end
 
       def self.parse(cpi_hash)
@@ -23,13 +22,6 @@ module Bosh::Director
 
       def exec_path
         @exec_path || "/var/vcap/jobs/#{type}_cpi/bin/cpi"
-      end
-
-      private
-
-      def validate
-        # add further validation in future here (raise exceptions)
-        true
       end
     end
   end
