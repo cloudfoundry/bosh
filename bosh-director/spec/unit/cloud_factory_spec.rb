@@ -2,8 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CloudFactory do
-    subject(:cloud_factory) { described_class.new(cloud_planner, parsed_cpi_config, default_cloud) }
-    let(:default_cloud) { instance_double(Bosh::Cloud) }
+    subject(:cloud_factory) { described_class.new(cloud_planner, parsed_cpi_config) }
+    let(:default_cloud) { Config.cloud }
     let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) {[]}
@@ -27,24 +27,24 @@ module Bosh::Director
       }
 
       it 'constructs a cloud factory with all its dependencies from a deployment' do
-        expect(described_class).to receive(:new).with(planner, parsed_cpi_config, Config.cloud)
+        expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
         described_class.create_from_deployment(deployment, cpi_config)
       end
 
       it 'constructs a cloud factory without planner if no deployment is given' do
-        expect(described_class).to receive(:new).with(nil, parsed_cpi_config, Config.cloud)
+        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
         deployment = nil
         described_class.create_from_deployment(deployment, cpi_config)
       end
 
       it 'constructs a cloud factory without planner if no cloud config is used' do
-        expect(described_class).to receive(:new).with(nil, parsed_cpi_config, Config.cloud)
+        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
         expect(deployment).to receive(:cloud_config).and_return(nil)
         described_class.create_from_deployment(deployment, cpi_config)
       end
 
       it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
-          expect(described_class).to receive(:new).with(planner, nil, Config.cloud)
+          expect(described_class).to receive(:new).with(planner, nil)
           described_class.create_from_deployment(deployment, nil)
       end
     end

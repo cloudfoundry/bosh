@@ -4,13 +4,12 @@
 module Bosh::Director
   class CloudFactory
     def self.create_from_deployment(deployment,
-        cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest,
-        default_cloud = Config.cloud)
+        cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
 
       planner = nil
       planner = create_cloud_planner(deployment.cloud_config) unless deployment.nil?
 
-      new(planner, parse_cpi_config(cpi_config), default_cloud)
+      new(planner, parse_cpi_config(cpi_config))
     end
     
     def self.parse_cpi_config(cpi_config)
@@ -26,10 +25,10 @@ module Bosh::Director
       parser.parse(cloud_config.manifest, global_network_resolver, nil)
     end
 
-    def initialize(cloud_planner, parsed_cpi_config, default_cloud)
+    def initialize(cloud_planner, parsed_cpi_config)
       @cloud_planner = cloud_planner
       @parsed_cpi_config = parsed_cpi_config
-      @default_cloud = default_cloud
+      @default_cloud = Config.cloud
     end
 
     def uses_cpi_config?
