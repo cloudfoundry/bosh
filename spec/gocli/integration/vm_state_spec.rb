@@ -69,7 +69,6 @@ describe 'vm state', type: :integration do
       deploy_simple_manifest(manifest_hash: second_manifest_hash)
       expect(director.vms.map(&:ips)).to eq([['192.168.1.2']])
 
-      set_deployment(manifest_hash: first_manifest_hash)
       bosh_runner.run('start foobar/0 --force', deployment_name: deployment_name)
       vms = director.vms
       expect(vms.size).to eq(2)

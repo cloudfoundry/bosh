@@ -60,6 +60,7 @@ module Bosh::Spec
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
+      cli_options += " -e #{options[:environment_name]}" if options[:environment_name]
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 
