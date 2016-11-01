@@ -172,9 +172,8 @@ describe 'cli: stemcell', type: :integration do
         before { bosh_runner.run("upload-stemcell #{stemcell_url}") }
 
         it 'tells the user and does not exit as a failure' do
-          pending('cli2: #130570721 : should not error on remote upload of existing stemcell')
           output = bosh_runner.run("upload-stemcell #{stemcell_url}")
-          expect(output).to include("Stemcell at #{stemcell_url} already exists")
+          expect(output).to_not include("Uploading stemcell")
         end
 
         context 'when using the --fix flag' do

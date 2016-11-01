@@ -9,10 +9,6 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   describe '#perform' do
-    let!(:tmp_dir) { Dir.mktmpdir("base_dir") }
-    before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
-    after { FileUtils.rm_rf(tmp_dir) }
-
     let(:cloud) { Bosh::Director::Config.cloud }
 
     context 'when the stemcell tarball is valid' do
@@ -27,6 +23,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         stemcell_contents = create_stemcell(manifest, "image contents")
         @stemcell_file = Tempfile.new("stemcell_contents")
         File.open(@stemcell_file.path, "w") { |f| f.write(stemcell_contents) }
+        @stemcell_url = "file://#{@stemcell_file.path}"
       end
       after { FileUtils.rm_rf(@stemcell_file.path) }
 
@@ -148,14 +145,23 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         expect(File.exist?(@stemcell_file.path)).to be(false)
       end
 
-      context 'when stemcell exists' do
+      context 'when stemcell already exists' do
         before do
           Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5", :cid=>"old-stemcell-cid")
         end
 
-        it "should fail without --fix option set" do
+        it "should quietly ignore duplicate upload and not create a stemcell in the cloud" do
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
+          expect(update_stemcell_job.perform).to eq('/stemcells/jeos/5')
+        end
+
+        it "should quietly ignore duplicate remote uploads and not create a stemcell in the cloud" do
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_url, {'remote' => true})
+          expect(update_stemcell_job).to receive(:download_remote_file) do |_, remote_file, local_file|
+            uri = URI.parse(remote_file)
+            FileUtils.cp(uri.path, local_file)
+          end
+          expect(update_stemcell_job.perform).to eq('/stemcells/jeos/5')
         end
 
         it 'should upload stemcell and update db with --fix option set' do
