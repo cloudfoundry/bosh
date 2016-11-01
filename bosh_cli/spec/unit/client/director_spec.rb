@@ -197,7 +197,7 @@ describe Bosh::Cli::Client::Director do
             with(headers: { 'Content-Type' => 'application/json' }).
             to_return(body: '{"version":258}', status: 401)
 
-          expect { @director.post('/path', 'application/json', 'binary data') }.to raise_error(Bosh::Cli::AuthError)
+          expect { @director.post('/path', 'application/json', 'binary data') }.to raise_error(Bosh::Cli::DirectorError, /HTTP 401/)
         end
       end
 
@@ -226,7 +226,7 @@ describe Bosh::Cli::Client::Director do
 
           expect(credentials).to receive(:refresh).once
 
-          expect {@director.post('/path', 'application/json', 'binary data')}.to raise_error(Bosh::Cli::AuthError)
+          expect {@director.post('/path', 'application/json', 'binary data')}.to raise_error(Bosh::Cli::DirectorError, /HTTP 401/)
         end
 
         it 'should not refresh the token before making a request without a body' do
