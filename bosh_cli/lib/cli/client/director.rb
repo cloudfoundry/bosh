@@ -875,7 +875,11 @@ module Bosh
           }, &block)
 
           if !response.nil? && response.code == 401
-            if @credentials.nil? || !payload.nil? || !@credentials.refresh
+            if !payload.nil?
+              return response
+            end
+
+            if @credentials.nil? || !@credentials.refresh
               raise AuthError
             end
 
