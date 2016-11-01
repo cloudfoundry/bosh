@@ -164,6 +164,7 @@ module Bosh::Director
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
             expect(Config.cloud).not_to receive(:snapshot_disk)
+            expect(cloud_factory).to receive(:for_availability_zone).with(@instance2.availability_zone).and_return(cloud)
 
             expect {
               described_class.take_snapshot(@instance2, {})
