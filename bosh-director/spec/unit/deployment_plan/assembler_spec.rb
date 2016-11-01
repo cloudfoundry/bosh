@@ -15,8 +15,6 @@ module Bosh::Director
     let(:dns_manager) { DnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
-    let(:cloud) { Config.cloud }
-
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
       let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
