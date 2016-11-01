@@ -149,13 +149,6 @@ describe 'upload release', type: :integration do
     expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.1', 'Commit Hash'=> "#{commit_hash}+"})
   end
 
-  it 'raises an error when --sha1 is used when uploading a local release' do
-    target_and_login
-    expect {
-      bosh_runner.run("upload-release #{spec_asset('test_release.tgz')} --sha1 abcd1234")
-    }.to raise_error(RuntimeError, /Option '--sha1' is not supported for uploading local release/)
-  end
-
   describe 'uploading a release that already exists' do
     before { target_and_login }
 
@@ -220,7 +213,6 @@ describe 'upload release', type: :integration do
     end
 
     it 'rejects the release when the sha1 does not match' do
-      pending('cli2: #130881395')
       expect {
         bosh_runner.run("upload-release #{release_url} --sha1 abcd1234")
       }.to raise_error(RuntimeError, /Error: Release SHA1 '#{sha1}' does not match the expected SHA1 'abcd1234'/)
