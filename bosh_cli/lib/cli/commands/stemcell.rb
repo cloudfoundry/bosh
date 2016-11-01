@@ -121,7 +121,7 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
       stemcells_table = table do |t|
         headings = ['Name', 'OS', 'Version', 'CID' ]
-        with_cpi = stemcells.any?{|stemcell|!stemcell['cpi'].nil?}
+        with_cpi = stemcells.any?{|stemcell|!stemcell['cpi'].blank?}
         headings << 'CPI' if with_cpi
 
         t.headings = headings

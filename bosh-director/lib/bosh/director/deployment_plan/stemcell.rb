@@ -106,7 +106,7 @@ module Bosh::Director
 
       private
       def model_for_default_cpi
-        stemcell = @models.find{|sc|sc.cpi.nil?}
+        stemcell = @models.find{|sc|sc.cpi.blank?}
         raise StemcellNotFound, "Required stemcell #{spec} not found for default cpi, please upload again" if stemcell.nil?
         stemcell
       end

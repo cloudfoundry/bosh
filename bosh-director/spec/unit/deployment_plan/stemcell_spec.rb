@@ -210,10 +210,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
     context 'if not using cpi config' do
       it 'can not create multiple stemcells with same name and version' do
-        make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => nil)
+        make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => '')
         expect {
-          make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => nil)
-        }.to raise_error Sequel::ValidationFailed, "name and version unique"
+          make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => '')
+        }.to raise_error Sequel::ValidationFailed, "name and version and cpi unique"
       end
 
       it 'raises an error if no stemcell for the default cpi exists' do
@@ -230,7 +230,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       it 'returns the cid of the default stemcell when not using AZs' do
         deployment = make_deployment('mycloud')
 
-        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 
@@ -243,7 +243,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       it 'returns the cid of the default stemcell when using AZs without CPI' do
         deployment = make_deployment('mycloud')
 
-        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 
@@ -286,7 +286,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       it 'returns the cid of the stemcell of the given az' do
         deployment = make_deployment('mycloud')
 
-        make_stemcell('foo', '42-dev', 'os1', 'cpi' => nil, 'cid' => 'cid1') # stemcell without cpi config
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 

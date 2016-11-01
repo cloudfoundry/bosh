@@ -107,7 +107,7 @@ module Bosh::Director
       }
 
       context 'if no cpi is set on stemcell' do
-        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: nil) }
+        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: '') }
 
         it 'calls the default cloud' do
           cloud = instance_double(Bosh::Cloud)

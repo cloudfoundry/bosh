@@ -116,7 +116,7 @@ module Bosh::Director
       it 'returns the default cloud from director config when asking for all configured clouds' do
         all_clouds = cloud_factory.all_configured_clouds
         expect(all_clouds.count).to eq(1)
-        expect(all_clouds.first[:name]).to be_nil
+        expect(all_clouds.first[:name]).to eq('')
         expect(all_clouds.first[:cpi]).to eq(default_cloud)
       end
 

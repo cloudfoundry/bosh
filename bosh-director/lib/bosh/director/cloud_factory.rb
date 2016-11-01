@@ -41,7 +41,7 @@ module Bosh::Director
       if uses_cpi_config?
         all_from_cpi_config
       else
-        [ {name: nil, cpi: default_from_director_config } ]
+        [ {name: '', cpi: default_from_director_config } ]
       end
     end
 

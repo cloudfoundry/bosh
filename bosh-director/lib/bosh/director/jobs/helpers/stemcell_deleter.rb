@@ -32,7 +32,7 @@ module Bosh::Director::Jobs
 
       private
       def cloud_for_stemcell(stemcell)
-        if stemcell.cpi.nil?
+        if stemcell.cpi.blank?
           cloud_factory(nil).default_from_director_config
         else
           cloud = cloud_factory(nil).for_cpi(stemcell.cpi)

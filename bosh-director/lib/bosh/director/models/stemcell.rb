@@ -6,7 +6,6 @@ module Bosh::Director::Models
     def validate
       validates_presence [:name, :version, :cid]
       validates_unique [:name, :version, :cpi]
-      validates_unique [:name, :version] if cpi.nil? # needed because uniqueness check above does not work with nils
       validates_format VALID_ID, [:name, :version]
     end
 

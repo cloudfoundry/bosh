@@ -226,7 +226,7 @@ module Bosh::Director
                 'operating_system' => 'stemcell_os-1',
                 'version' => 'stemcell_version-1',
                 'cid' => 'cloud-id-1',
-                'cpi' => nil,
+                'cpi' => "",
                 'deployments' => [{name: 'first'}, {name: 'second'}]
               },
               {
