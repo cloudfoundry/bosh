@@ -31,7 +31,7 @@ module Bosh::Spec
         cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
         cli_options += " --user=#{user} --password=#{password}" if log_in
         cli_options += " -d #{deployment_name}" if deployment_name
-        cli_options += " -e #{options[:environment_name]}" if options[:environment_name]
+        cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
         cli_options += " --no-color" if no_color
         cli_options += " --config #{config}"
         command="gobosh --tty #{cli_options} #{cmd}"
@@ -68,7 +68,7 @@ module Bosh::Spec
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
-      cli_options += " -e #{options.fetch(:environment_name, current_sandbox.director_url)}"
+      cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 

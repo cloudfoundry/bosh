@@ -7,7 +7,7 @@ describe 'cli: env', type: :integration do
 
   it 'outputs status' do
     out = bosh_runner.run('env')
-    expect(out).to include("Using environment 'https://127.0.0.1:61004'")
+    expect(out).to include("Using environment '#{current_sandbox.director_url}'")
     expect(out).to include("Succeeded")
   end
 end

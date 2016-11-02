@@ -31,9 +31,14 @@ describe 'Changing cloud config', type: :integration do
       errand_succeeded = nil
       errand_thread = Thread.new do
         thread_config_path = File.join(ClientSandbox.base_dir, 'bosh_config_errand.yml')
-        bosh_runner.run("env #{current_target}", config: thread_config_path)
-        bosh_runner.run('log-in', config: thread_config_path, log_in: true)
-        _, errand_succeeded = run_errand('errand_job', config: thread_config_path, manifest_hash: manifest_with_errand, deployment_name: 'errand', failure_expected: false)
+        bosh_runner.run('log-in', config: thread_config_path, log_in: true, environment_name: current_target)
+        _, errand_succeeded = run_errand('errand_job', {
+          config: thread_config_path,
+          manifest_hash: manifest_with_errand,
+          deployment_name: 'errand',
+          failure_expected: false,
+          environment_name: current_target
+        })
       end
 
       upload_a_different_cloud_config

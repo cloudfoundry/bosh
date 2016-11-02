@@ -8,7 +8,6 @@ describe 'cli: deployment prerequisites', type: :integration do
   it 'requires target and login' do
     pending('#130953231')
     expect(bosh_runner.run('deploy', :failure_expected => true)).to match(/the required argument `PATH` was not provided/)
-    bosh_runner.run("env #{current_sandbox.director_url}")
 
     output = deploy(include_credentials: false, failure_expected: true)
     expect(output).to match(/Please log in first/)

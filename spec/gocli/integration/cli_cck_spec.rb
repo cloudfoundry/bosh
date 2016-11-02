@@ -199,7 +199,6 @@ describe 'cli: cloudcheck', type: :integration do
 
     before do
       pending('cli2: #131927867 gocli drops the context path from director.info.auth uaa url')
-      bosh_runner.run("env #{current_sandbox.director_url}", ca_cert: current_sandbox.certificate_path)
       bosh_runner.run('log-out')
 
       config_server_helper.put_value(prepend_namespace('test_property'), 'cats are happy')

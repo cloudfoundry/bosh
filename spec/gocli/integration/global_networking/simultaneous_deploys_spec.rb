@@ -149,8 +149,9 @@ describe 'simultaneous deploys', type: :integration do
 
     def run_errand_in_thread(errand_manifest, errand_runner)
       errand_result = {}
+      current_target = current_sandbox.director_url
       errand_thread = Thread.new do
-        output, exit_code = errand_runner.run("run-errand errand_job", deployment_name: errand_manifest['name'], return_exit_code: true, failure_expected: true)
+        output, exit_code = errand_runner.run("run-errand errand_job", deployment_name: errand_manifest['name'], return_exit_code: true, failure_expected: true, environment_name: current_target)
         errand_result.merge!(
           output: output,
           exit_code: exit_code
@@ -160,6 +161,7 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     def make_independent_bosh_runners
+      FileUtils.touch(ClientSandbox.bosh_config)
       first_config_path = File.join(ClientSandbox.base_dir, 'first_config.yml')
       FileUtils.copy(ClientSandbox.bosh_config, first_config_path)
       second_config_path = File.join(ClientSandbox.base_dir, 'second_config.yml')

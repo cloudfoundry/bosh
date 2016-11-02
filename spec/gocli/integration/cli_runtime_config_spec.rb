@@ -13,7 +13,6 @@ describe 'cli runtime config', type: :integration do
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
     pending 'QUESTION Discuss correct behavior with Dmitriy on non-logged-in users and files that are not present'
-    bosh_runner.run("env #{current_sandbox.director_url}")
 
     # not logged in
     expect(bosh_runner.run("update-runtime-config #{__FILE__}", failure_expected: true)).to include('Please log in first')
