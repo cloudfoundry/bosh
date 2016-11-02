@@ -64,13 +64,11 @@ module Bosh::Spec
       user = options[:user] || 'test'
       password = options[:password] || 'test'
       config = options.fetch(:config, @bosh_config)
-      environment = options.fetch(:environment, current_sandbox.director_url)
       cli_options = ''
-      cli_options += "-e #{environment}"
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
-      cli_options += " -e #{options[:environment_name]}" if options[:environment_name]
+      cli_options += " -e #{options.fetch(:environment_name, current_sandbox.director_url)}"
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 

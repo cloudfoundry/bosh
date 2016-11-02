@@ -44,10 +44,6 @@ describe 'using director with config server', type: :integration do
   context 'when config server certificates are not trusted' do
     with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-    before do
-      bosh_runner.run("environment #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
-    end
-
     it 'throws certificate validator error' do
       output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
                                               cloud_config_hash: cloud_config, failure_expected: true,
@@ -392,8 +388,6 @@ describe 'using director with config server', type: :integration do
           end
 
           before do
-            bosh_runner.run("env #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
-
             config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
             config_server_helper.put_value(prepend_namespace('color_placeholder'), 'blue')
           end
