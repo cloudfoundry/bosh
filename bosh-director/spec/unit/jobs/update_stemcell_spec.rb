@@ -15,6 +15,15 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     let(:cloud) { Bosh::Director::Config.cloud }
 
+    let(:event_log){ Bosh::Director::EventLog::Log.new }
+    let(:event_log_stage){instance_double(Bosh::Director::EventLog::Stage)}
+
+    before do
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
+      allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
+    end
+
     context 'when the stemcell tarball is valid' do
       before do
         manifest = {
@@ -37,6 +46,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(contents).to eq("image contents")
             "stemcell-cid"
           end
+
+          expected_steps = 5
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           update_stemcell_job.perform
@@ -64,6 +77,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
               "stemcell-cid"
             end
 
+            expected_steps = 6
+            expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+            expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+
             update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' })
             update_stemcell_job.perform
 
@@ -83,6 +100,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(contents).to eql("image contents")
             "stemcell-cid"
           end
+
+          expected_steps = 6
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new('fake-stemcell-url', {'remote' => true})
           expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|
@@ -118,6 +139,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
               expect(contents).to eql("image contents")
               "stemcell-cid"
             end
+
+            expected_steps = 7
+            expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+            expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
             update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new('fake-stemcell-url', {'remote' => true, 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757'})
             expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|
@@ -196,11 +221,15 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud2).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid2')
           expect(cloud3).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid3')
 
-          expect(cloud_factory).to receive(:all_configured_clouds).and_return([
-                                                                                  {name: 'cloud1', cpi: cloud1},
-                                                                                  {name: 'cloud2', cpi: cloud2},
-                                                                                  {name: 'cloud3', cpi: cloud3},
-                                                                              ])
+          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([
+                                                                                        {name: 'cloud1', cpi: cloud1},
+                                                                                        {name: 'cloud2', cpi: cloud2},
+                                                                                        {name: 'cloud3', cpi: cloud3},
+                                                                                    ])
+
+          expected_steps = 11
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           update_stemcell_job.perform
@@ -231,7 +260,11 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           cloud = instance_double(Bosh::Cloud)
           expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid')
 
-          expect(cloud_factory).to receive(:all_configured_clouds).and_return([{name: nil, cpi: cloud}])
+          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([{name: '', cpi: cloud}])
+
+          expected_steps = 5
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           update_stemcell_job.perform
@@ -242,7 +275,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcells[0]).not_to be_nil
           expect(stemcells[0].sha1).to eq("shawone")
           expect(stemcells[0].operating_system).to eq("jeos-5")
-          expect(stemcells[0].cpi).to be_nil
+          expect(stemcells[0].cpi).to eq('')
         end
       end
     end

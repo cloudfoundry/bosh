@@ -7,8 +7,6 @@ module Bosh::Director
       include DownloadHelper
       include CloudFactoryHelper
 
-      UPDATE_STEPS = 5
-
       @queue = :normal
       @local_fs = true
 
@@ -40,7 +38,8 @@ module Bosh::Director
       def perform
         logger.info("Processing update stemcell")
 
-        begin_stage("Update stemcell", @stemcell_url ? UPDATE_STEPS + 1 : UPDATE_STEPS)
+        # adjust numbers in update_steps if you change how many times `track_and_log` are invoked below.
+        begin_stage("Update stemcell", update_steps)
 
         track_and_log("Downloading remote stemcell") { download_remote_stemcell } if @stemcell_url
 
@@ -121,6 +120,13 @@ module Bosh::Director
 
       def download_remote_stemcell
         download_remote_file('stemcell', @stemcell_url, @stemcell_path)
+      end
+
+      def update_steps
+        steps = 2 # extract & verify manifest
+        steps += 1 if @stemcell_url # also download remote stemcell
+        steps += 1 if @stemcell_sha1 # also verify remote stemcell
+        steps + cloud_factory(nil).all_configured_clouds.count * 3 # check, upload and save for each cloud
       end
     end
   end
