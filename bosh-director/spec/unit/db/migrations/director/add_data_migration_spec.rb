@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20160803151600_add_name_to_persistent_disks.rb')
+      expect(latest_db_migration_file).to eq('20161031204534_populate_lifecycle_on_instance_spec.rb')
     end
   end
 end
