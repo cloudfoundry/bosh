@@ -125,8 +125,8 @@ module Bosh::Director
           Bosh::Director::Models::CpiConfig.make(:properties => '{}')
         }
 
-        it 'allows access' do
-          expect(get('/?limit=2').status).to eq(200)
+        it 'denies access' do
+          expect(get('/?limit=2').status).to eq(401)
         end
       end
     end
