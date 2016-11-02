@@ -79,10 +79,12 @@ module Bosh::Director
 
         stemcell = nil
         cloud_factory(nil).all_configured_clouds.each do |cloud|
-          track_and_log("Checking if this stemcell already exists on cloud #{cloud[:name]}") do
+          cpi_suffix = " (cpi: #{cloud[:name]})" unless cloud[:name].blank?
+
+          track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
             begin
               stemcell = @stemcell_manager.find_by_name_and_version_and_cpi @name, @version, cloud[:name]
-              raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists on cloud #{cloud[:name]}" unless @fix
+              raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists#{cpi_suffix}" unless @fix
             rescue StemcellNotFound => e
               stemcell = Models::Stemcell.new
               stemcell.name = @name
@@ -93,12 +95,12 @@ module Bosh::Director
             end
           end
 
-          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud #{cloud[:name]}") do
+          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}") do
             stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
-            logger.info("Cloud created stemcell for cloud #{cloud[:name]}: #{stemcell.cid}")
+            logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
           end
 
-          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid}) for cloud #{cloud[:name]}") do
+          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}") do
             stemcell.save
           end
         end

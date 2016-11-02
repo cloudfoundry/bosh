@@ -229,7 +229,24 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expected_steps = 11
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
-          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+
+          step_messages = [
+              'Checking if this stemcell already exists (cpi: cloud1)',
+              'Checking if this stemcell already exists (cpi: cloud2)',
+              'Checking if this stemcell already exists (cpi: cloud3)',
+              'Uploading stemcell jeos/5 to the cloud (cpi: cloud1)',
+              'Uploading stemcell jeos/5 to the cloud (cpi: cloud2)',
+              'Uploading stemcell jeos/5 to the cloud (cpi: cloud3)',
+              'Save stemcell jeos/5 (stemcell-cid1) (cpi: cloud1)',
+              'Save stemcell jeos/5 (stemcell-cid2) (cpi: cloud2)',
+              'Save stemcell jeos/5 (stemcell-cid3) (cpi: cloud3)',
+          ]
+
+          step_messages.each do |msg|
+            expect(event_log_stage).to receive(:advance_and_track).with(msg)
+          end
+          # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - step_messages.count).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           update_stemcell_job.perform
@@ -264,7 +281,11 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expected_steps = 5
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
-          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+          expect(event_log_stage).to receive(:advance_and_track).with('Checking if this stemcell already exists')
+          expect(event_log_stage).to receive(:advance_and_track).with('Uploading stemcell jeos/5 to the cloud')
+          expect(event_log_stage).to receive(:advance_and_track).with('Save stemcell jeos/5 (stemcell-cid)')
+          # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - 3).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           update_stemcell_job.perform
