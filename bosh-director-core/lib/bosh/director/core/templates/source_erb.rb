@@ -8,7 +8,7 @@ module Bosh::Director::Core::Templates
     def initialize(src_name, dest_name, erb_contents, template_name)
       @src_name = src_name
       @dest_name = dest_name
-      erb = ERB.new(erb_contents)
+      erb = ERB.new(erb_contents, safe_level = nil, trim_mode = "-")
       erb.filename = File.join(template_name, src_name)
       @erb = erb
     end
