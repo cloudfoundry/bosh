@@ -6,7 +6,7 @@ module Bosh::Director
     subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger) }
 
     let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
-    let(:deployment_model) { Models::Deployment.make(name:'dep') }
+    let(:deployment_model) { Models::Deployment.make(name: 'dep') }
     let(:local_dns_repo) { LocalDnsRepo.new(logger) }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
     let(:dns_config) { {} }
@@ -174,7 +174,7 @@ module Bosh::Director
 
       describe '#delete_dns_for_instance' do
         before do
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         it 'deletes dns records from dns provider' do
@@ -186,7 +186,7 @@ module Bosh::Director
         end
 
         it 'deletes dns records from local repo' do
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
+          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
           dns_manager.delete_dns_for_instance(instance_model)
           expect(local_dns_repo.find(instance_model)).to eq([])
         end
@@ -238,18 +238,18 @@ module Bosh::Director
 
       describe '#update_dns_record_for_instance' do
         before do
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         it 'updates dns records for instance in local repo' do
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
+          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
           dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2', 'fake-dns-name-3'])
+          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'fake-dns-name-3'])
         end
 
         it 'appends the records to the model' do
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
@@ -259,7 +259,7 @@ module Bosh::Director
 
         it 'it keeps old record names pointing at their original ips' do
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.5','another-dns-name-2' => '5.6.7.9'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.5', 'another-dns-name-2' => '5.6.7.9'})
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
@@ -285,7 +285,7 @@ module Bosh::Director
 
         it 'does not update local dns' do
           expect(dns_manager).to_not receive(:create_or_delete_local_dns_record)
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
         end
 
         context 'local dns is enabled' do
@@ -295,7 +295,7 @@ module Bosh::Director
 
           it 'deletes old records and creates a new dns record' do
             expect(dns_manager).to receive(:create_or_delete_local_dns_record)
-            dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
+            dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
           end
         end
       end
@@ -312,11 +312,11 @@ module Bosh::Director
           dns_manager.migrate_legacy_records(instance_model)
 
           expect(local_dns_repo.find(instance_model)).to match_array([
-                '0.job-a.network-a.dep.bosh',
-                'fake-uuid.job-a.network-a.dep.bosh',
-                '0.job-a.network-b.dep.bosh',
-                'fake-uuid.job-a.network-b.dep.bosh'
-              ])
+            '0.job-a.network-a.dep.bosh',
+            'fake-uuid.job-a.network-a.dep.bosh',
+            '0.job-a.network-b.dep.bosh',
+            'fake-uuid.job-a.network-b.dep.bosh'
+          ])
         end
 
         context 'when local repo has dns records' do
@@ -395,14 +395,14 @@ module Bosh::Director
 
       describe '#update_dns_record_for_instance' do
         before do
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         context 'when IPs/hosts change' do
           it 'updates dns records for instance in local repo' do
-            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
+            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
             dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '11.22.33.44', 'new-fake-dns-name' => '99.88.77.66'})
-            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2', 'new-fake-dns-name'])
+            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'new-fake-dns-name'])
             expect(Models::Dns::Record.all.count).to eq(0)
           end
         end
@@ -448,16 +448,16 @@ module Bosh::Director
 
           subject.create_or_delete_local_dns_record(instance_model)
 
-          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
+          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
 
           expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
           expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job-name.*"))
         end
         context 'when an instance is created with a new ip' do
           before do
-            Models::LocalDnsRecord.make(name: "fake-uuid.job-name.network-1.bosh1.bosh", instance_id: instance_model.id)
-            Models::LocalDnsRecord.make(name: "0.job-name.network-1.bosh1.bosh", instance_id: instance_model.id)
+            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '987', instance_id: instance_model.id)
+            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '987', instance_id: instance_model.id)
           end
 
           it 'only deletes stale dns records' do
@@ -499,13 +499,14 @@ module Bosh::Director
 
           subject.create_or_delete_local_dns_record(instance_model)
 
-          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
           expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
         end
+
         context 'when an instance is created with a new ip' do
           before do
-            Models::LocalDnsRecord.make(name: "fake-uuid.job-name.network-1.bosh1.bosh", instance_id: instance_model.id)
-            Models::LocalDnsRecord.make(name: "0.job-name.network-1.bosh1.bosh", instance_id: instance_model.id, ip: "1234")
+            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', instance_id: instance_model.id, ip: '987')
+            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', instance_id: instance_model.id, ip: '1234')
           end
 
           it 'only deletes stale dns records' do
@@ -601,8 +602,8 @@ module Bosh::Director
 
       it 'should search for canonicalized records' do
         expect(Models::LocalDnsRecord).to receive(:where).
-            with(instance_id: instance_model.id).
-            and_return(record)
+          with(instance_id: instance_model.id).
+          and_return(record)
 
         subject.delete_local_dns_record(instance_model)
       end
@@ -656,8 +657,8 @@ module Bosh::Director
         it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
           expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
-          local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
+          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
 
           expect(subject.find_local_dns_record(instance_model)).
             to include(local_dns_record_first, local_dns_record_second)

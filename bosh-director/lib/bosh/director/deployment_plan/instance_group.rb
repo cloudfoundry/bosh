@@ -120,7 +120,7 @@ module Bosh::Director
       end
 
       def self.is_legacy_spec?(instance_group_spec)
-        !instance_group_spec.has_key?("templates")
+        !instance_group_spec.has_key?('templates')
       end
 
       def add_instance_plans(instance_plans)
@@ -151,10 +151,10 @@ module Bosh::Director
       def self.convert_from_legacy_spec(job_spec)
         return job_spec if !self.is_legacy_spec?(job_spec)
         job = {
-          "name" => job_spec["template"],
-          "version" => job_spec["version"],
-          "sha1" => job_spec["sha1"],
-          "blobstore_id" => job_spec["blobstore_id"]
+          'name' => job_spec['template'],
+          'version' => job_spec['version'],
+          'sha1' => job_spec['sha1'],
+          'blobstore_id' => job_spec['blobstore_id']
         }
 
         # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
