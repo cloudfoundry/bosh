@@ -211,6 +211,7 @@ module Bosh::Director
           before do
             allow(Config).to receive(:local_dns_enabled?).and_return(true)
           end
+
           it 'calls the local dns methods' do
             expect(dns_manager).to receive(:delete_local_dns_record)
             dns_manager.delete_dns_for_instance(instance_model)
@@ -466,8 +467,24 @@ module Bosh::Director
 
             all_records = Models::LocalDnsRecord.all
             expect(all_records.size).to eq(4)
-            expect(all_records.map(&:name).sort).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-2.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
-            expect(all_records.map(&:ip).sort).to contain_exactly('1234', '1234', '5678', '5678')
+            expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-2.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
+            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234', '5678', '5678')
+          end
+        end
+
+        context 'when an instance is re-created with the same ip' do
+          it 'should not create a duplicate dns record' do
+            dns_index_id = Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            dns_uuid_id = Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+
+            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
+
+            all_records = Models::LocalDnsRecord.all
+            expect(all_records.size).to eq(2)
+            expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh')
+            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234')
+            expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
           end
         end
       end
@@ -502,6 +519,23 @@ module Bosh::Director
             expect(all_records.size).to eq(3)
             expect(all_records.map(&:name).sort).to contain_exactly('fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
             expect(all_records.map(&:ip).sort).to contain_exactly('1234', '1234', '5678')
+          end
+        end
+
+        context 'when an instance is re-created with the same ip' do
+          it 'should not create a duplicate dns record' do
+            dns_uuid_id = Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            dns_index_id = Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+
+            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
+
+            all_records = Models::LocalDnsRecord.all
+            expect(all_records.size).to eq(2)
+            expect(all_records.map(&:name)).to contain_exactly('fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-1.bosh1.bosh')
+            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234')
+            expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
+
           end
         end
       end

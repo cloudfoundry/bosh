@@ -185,35 +185,36 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
+        result = { 'name' => @name }
+
         if @jobs.size >= 1
           first_job = @jobs[0]
-          result = {
-            "name" => @name,
-            "templates" => [],
+          result.merge!({
+            'templates' => [],
             # --- Legacy ---
-            "template" => first_job.name,
-            "version" => first_job.version,
-            "sha1" => first_job.sha1,
-            "blobstore_id" => first_job.blobstore_id
-          }
+            'template' => first_job.name,
+            'version' => first_job.version,
+            'sha1' => first_job.sha1,
+            'blobstore_id' => first_job.blobstore_id
+          })
 
           if first_job.logs
-            result["logs"] = first_job.logs
+            result['logs'] = first_job.logs
           end
           # --- /Legacy ---
 
           @jobs.each do |job|
             job_entry = {
-              "name" => job.name,
-              "version" => job.version,
-              "sha1" => job.sha1,
-              "blobstore_id" => job.blobstore_id
+              'name' => job.name,
+              'version' => job.version,
+              'sha1' => job.sha1,
+              'blobstore_id' => job.blobstore_id
             }
 
             if job.logs
-              job_entry["logs"] = job.logs
+              job_entry['logs'] = job.logs
             end
-            result["templates"] << job_entry
+            result['templates'] << job_entry
           end
           result
         end
