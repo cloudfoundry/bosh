@@ -201,7 +201,7 @@ module Bosh::Director
 
       with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
-        Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude_where(:ip => ip).delete
+        Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
         begin
           Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
         rescue Sequel::UniqueConstraintViolation
@@ -209,7 +209,7 @@ module Bosh::Director
         end
         if Config.local_dns_include_index?
           @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-          Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude_where(:ip => ip).delete
+          Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
           begin
             Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id)
           rescue Sequel::UniqueConstraintViolation
