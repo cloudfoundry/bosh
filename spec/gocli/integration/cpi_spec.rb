@@ -246,6 +246,25 @@ describe 'CPI calls', type: :integration do
         disk_cid = first_deploy_invocations[4].inputs['disk_id']
 
         manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11']
+
+        # add tags
+        manifest_hash.merge!({
+          'tags' => {
+            'tag1' => 'value1',
+          },
+        })
+
+        # upload runtime config with tags
+        runtime_config_hash = {
+          'releases' => [{'name' => 'test_release_2', 'version' => '2'}],
+          'tags' => {
+            'tag2' => 'value2',
+          },
+        }
+
+        bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+        upload_runtime_config(runtime_config_hash: runtime_config_hash)
+
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
@@ -297,7 +316,9 @@ describe 'CPI calls', type: :integration do
             'job' => 'first-job',
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
+            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+            'tag2' => 'value2'
           }
         })
 
