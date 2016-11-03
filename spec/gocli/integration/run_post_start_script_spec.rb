@@ -77,8 +77,6 @@ describe 'post start script', type: :integration do
 
   context 'when vm is recreated with cck --auto' do
     it 'skips running post-start script' do
-      pending('cli2: #130690913: fix cck --auto interface')
-
       deploy_from_scratch(manifest_hash: manifest)
       current_sandbox.cpi.vm_cids.each do |vm_cid|
         current_sandbox.cpi.delete_vm(vm_cid)

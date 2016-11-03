@@ -95,7 +95,6 @@ describe 'local DNS', type: :integration do
       let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
       it 'automatically recreates missing VMs when cck --auto is used' do
-        pending("cli2 #130690913: fix cck --auto interface")
         manifest_deployment = initial_deployment(5)
 
         current_sandbox.cpi.vm_cids.each do |vm_cid|
@@ -104,8 +103,8 @@ describe 'local DNS', type: :integration do
 
         cloudcheck_response = bosh_run_cck_with_auto
         expect(cloudcheck_response).to match(regexp('missing.'))
-        expect(cloudcheck_response).to match(regexp('Applying resolutions...'))
-        expect(cloudcheck_response).to match(regexp('Cloudcheck is finished'))
+        expect(cloudcheck_response).to match(regexp('Applying problem resolutions'))
+        expect(cloudcheck_response).to match(regexp('Succeeded'))
         expect(cloudcheck_response).to_not match(regexp('0 problems'))
         expect(cloudcheck_response).to_not match(regexp('1. Skip for now
   2. Reboot VM
@@ -113,7 +112,7 @@ describe 'local DNS', type: :integration do
   4. Delete VM
   5. Delete VM reference (DANGEROUS!)'))
 
-        expect(runner.run('cloud-check --report')).to match(regexp('0 problems'))
+        expect(runner.run('cloud-check --report', deployment_name: deployment_name)).to match(regexp('0 problems'))
 
         check_agent_etc_hosts(5, 5)
       end
