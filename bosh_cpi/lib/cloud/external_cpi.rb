@@ -72,16 +72,13 @@ module Bosh::Clouds
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
-      request = JSON.dump({
-          'method' => method_name.gsub(/\?$/,''),
-          'arguments' => arguments,
-          'context' => context
-        })
+      request = request_json(method_name, arguments, context)
+      redacted_request = request_json(method_name, arguments, redact_context(context))
 
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
 
-      @logger.debug("External CPI sending request: #{request} with command: #{cpi_exec_path}")
+      @logger.debug("External CPI sending request: #{redacted_request} with command: #{cpi_exec_path}")
       cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
       @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
@@ -103,6 +100,19 @@ module Bosh::Clouds
         raise NonExecutable, "Failed to run cpi: '#{@cpi_path}' is not executable"
       end
       @cpi_path
+    end
+
+    def redact_context(context)
+      return context if @properties_from_cpi_config.nil?
+      Hash[context.map{|k,v|[k,@properties_from_cpi_config.keys.include?(k) ? '<redacted>' : v]}]
+    end
+
+    def request_json(method_name, arguments, context)
+      JSON.dump({
+                    'method' => method_name.gsub(/\?$/,''),
+                    'arguments' => arguments,
+                    'context' => context
+                })
     end
 
     def handle_error(error_response, method_name)
