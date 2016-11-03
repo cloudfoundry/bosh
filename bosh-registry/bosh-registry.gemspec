@@ -27,12 +27,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'fog-openstack'
   spec.add_dependency 'aws-sdk'
   spec.add_dependency 'bosh_cpi', "~>#{version}"
-
-  spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'mono_logger'
-  spec.add_development_dependency 'rack-test'
-  spec.add_development_dependency 'sqlite3'
-  spec.add_development_dependency 'httpclient'
 end

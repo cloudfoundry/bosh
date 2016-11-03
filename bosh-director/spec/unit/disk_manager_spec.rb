@@ -18,9 +18,7 @@ module Bosh::Director
       job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
       job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-      unless job_persistent_disk_size == 0
-        job.persistent_disk_collection.add_by_disk_type(disk_type)
-      end
+      job.persistent_disk_collection.add_by_disk_type(disk_type)
       job
     end
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}) }
@@ -401,7 +399,12 @@ module Bosh::Director
         end
 
         context 'when we no longer need disk' do
-          let(:job_persistent_disk_size) { 0 }
+          let(:job) do
+            job = DeploymentPlan::InstanceGroup.new(logger)
+            job.name = 'job-name'
+            job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+            job
+          end
 
           it 'orphans disk' do
             expect(Models::PersistentDisk.all.size).to eq(1)
@@ -509,7 +512,12 @@ module Bosh::Director
       end
 
       context 'when instance desired job does not have disk' do
-        let(:job_persistent_disk_size) { 0 }
+        let(:job) do
+          job = DeploymentPlan::InstanceGroup.new(logger)
+          job.name = 'job-name'
+          job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+          job
+        end
 
         it 'does not attach current instance disk' do
           expect(cloud).to_not receive(:attach_disk)

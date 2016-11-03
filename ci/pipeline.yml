@@ -2,13 +2,10 @@
 groups:
   - name: bosh
     jobs:
-      - unit-1.9
-      - unit-1.9-postgres
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
       - blobstore-client-integration
-      - integration-1.9-postgres
       - integration-2.3-postgres-gocli
       - integration-2.3-mysql
       - integration-2.3-postgres
@@ -18,16 +15,11 @@ groups:
       - legacy-load-tests-mysql
       - fuzz-tests
       - publish-coverage
-      - promote-candidate
       - candidate-release
-
-  - name: 1.9
-    jobs:
-      - unit-1.9
-      - unit-1.9-postgres
-      - integration-1.9-postgres
-      - publish-coverage
-      - promote-candidate
+      - finalize-bosh-release
+      - merge-master
+      - bats-centos
+      - bats-ubuntu
 
   - name: 2.3
     jobs:
@@ -37,64 +29,72 @@ groups:
       - integration-2.3-mysql
       - integration-2.3-postgres
       - publish-coverage
-      - promote-candidate
 
   - name: mysql
     jobs:
       - unit-2.3-mysql
       - integration-2.3-mysql
       - publish-coverage
-      - promote-candidate
 
   - name: postgres
     jobs:
-      - unit-1.9-postgres
       - unit-2.3-postgres
-      - integration-1.9-postgres
       - integration-2.3-postgres
       - publish-coverage
-      - promote-candidate
+
+  - name: finalize
+    jobs:
+      - finalize-bosh-release
+      - merge-master
+
+shared:
+  - &prepare-director
+    task: prepare-director
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-director.yml
+    params: &prepare-director-params
+      BOSH_USER:                            {{stemcell-test-director-username}}
+      BOSH_PASSWORD:                        {{stemcell-test-director-password}}
+      BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
+      BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
+      BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
+      BOSH_VSPHERE_VERSION:                 {{vsphere-version}}
+      BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
+      BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
+      BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
+      BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      SSLIP_IO_KEY:                         {{sslip_io_key}}
+
+  - &deploy-director
+    task: deploy-director
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/deploy-director.yml
+
+  - &prepare-bats
+    task: prepare-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-bats.yml
+    params: &prepare-bats-params
+      BAT_VCAP_PASSWORD:      {{bat-vcap-password}}
+      BOSH_USER:              {{stemcell-test-director-username}}
+      BOSH_PASSWORD:          {{stemcell-test-director-password}}
+
+  - &run-bats
+    task: run-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/run-bats.yml
+
+  - &teardown
+    task: teardown
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/teardown.yml
+    params:
+      DEPLOYMENT_NAME: certification
 
 jobs:
-  - name: unit-1.9
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - { get: bosh-src, trigger: true }
-
-      - task: test
-        file: bosh-src/ci/tasks/test-unit.yml
-        params:
-          RUBY_VERSION: 1.9.3
-          DB: sqlite
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
-
-  - name: unit-1.9-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - { get: bosh-src, trigger: true }
-
-      - task: test
-        file: bosh-src/ci/tasks/test-unit.yml
-        privileged: true
-        params:
-          RUBY_VERSION: 1.9.3
-          DB: postgresql
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
-
   - name: unit-2.3
     public: true
     serial: true
@@ -226,50 +226,6 @@ jobs:
               channel: {{slack_channel_name}}
               icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
               text: {{slack_failure_message}}
-
-  - name: integration-1.9-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - { get: bosh-src, trigger: true }
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-1"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-2"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-3"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
-
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
 
   - name: integration-2.3-mysql
     public: true
@@ -481,9 +437,7 @@ jobs:
     plan:
       - trigger: true
         passed:
-        - unit-1.9
         - unit-2.3
-        - integration-1.9-postgres
         - integration-2.3-mysql
         - integration-2.3-postgres
         - blobstore-client-integration
@@ -493,52 +447,168 @@ jobs:
         params:
           CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
-  - name: promote-candidate
-    public: true
-    serial: true
-    build_logs_to_retain: 1000
-    plan:
-      - trigger: true
-        passed:
-        - unit-1.9
-        - unit-1.9-postgres
-        - unit-2.3
-        - unit-2.3-mysql
-        - unit-2.3-postgres
-        - integration-1.9-postgres
-        - integration-2.3-mysql
-        - integration-2.3-postgres
-        - blobstore-client-integration
-        get: bosh-src
-      - {put: bosh-candidate, params: {repository: bosh-src}}
-
   - name: candidate-release
     plan:
     - get: bosh-src
       trigger: true
       passed:
-      - unit-1.9
-      - unit-1.9-postgres
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
-      - integration-1.9-postgres
       - integration-2.3-mysql
       - integration-2.3-postgres
       - blobstore-client-integration
     - get: candidate-version
+    - get: candidate-gem-version
+      resource: candidate-version
+      params:
+        bump: major
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
       params:
         file: "release/*.tgz"
 
+  - name: bats-centos
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+          passed:
+          - candidate-release
+        - get: cpi-release
+        - get: stemcell
+          resource: vsphere-esxi-centos-7
+        - get: pipelines
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-src
+          passed:
+          - candidate-release
+
+      - put: environment
+        params:
+          acquire: true
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+            - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+  - name: bats-ubuntu
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+          passed:
+            - candidate-release
+        - get: cpi-release
+        - get: stemcell
+          resource: vsphere-esxi-ubuntu-trusty
+        - get: pipelines
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-src
+          passed:
+            - candidate-release
+
+      - put: environment
+        params:
+          acquire: true
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+          - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+  - name: finalize-bosh-release
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-develop
+          resource: bosh-src
+          passed:
+            - bats-centos
+            - bats-ubuntu
+        - get: bosh-dev-release
+          resource: bosh-candidate-release-tarballs
+          passed:
+            - bats-centos
+            - bats-ubuntu
+        - get: bosh-cli
+        - get: candidate-version
+          params:
+            bump: major
+      - task: promote-release
+        file: bosh-src-develop/ci/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
+      - put: candidate-version
+        params:
+          file: bumped-candidate-version/number
+      - put: bosh-master
+        params:
+          repository: bosh-src-with-final
+          tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
+
+  - name: merge-master
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src-develop
+          resource: bosh-src
+        - get: bosh-src-master
+          resource: bosh-master
+          trigger: true
+          passed:
+            - finalize-bosh-release
+      - task: merge-master
+        file: bosh-src-develop/ci/tasks/merge-master.yml
+      - put: bosh-src
+        params:
+          repository: bosh-src-develop-merged
+
 resources:
   - name: bosh-src
     type: git
     source:
-      uri: https://github.com/cloudfoundry/bosh.git
-      branch: {{branch}}
+      uri: {{bosh_src_url}}
+      branch: develop
+      private_key: {{github_deployment_key}}
 
   - name: candidate-version
     type: semver
@@ -568,11 +638,11 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
       branch: master
 
-  - name: bosh-candidate
+  - name: bosh-master
     type: git
     source:
-      uri: git@github.com:cloudfoundry/bosh.git
-      branch: candidate
+      uri: {{bosh_src_url}}
+      branch: master
       private_key: {{github_deployment_key}}
 
   - name: fuzz-interval-trigger
@@ -590,3 +660,49 @@ resources:
     source:
       regexp: bosh-cli-(.*)-linux-amd64
       bucket: bosh-cli-artifacts
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+
+  #
+  # BATS
+  #
+
+  - name: pipelines
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
+      branch: master
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: environment
+    type: pool
+    source:
+      pool: vsphere
+      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+      branch: master
+      private_key: {{github_deployment_key__bosh-cpi-environments}}
+
+  - name: vsphere-esxi-ubuntu-trusty
+    type: bosh-io-stemcell
+    source:
+      name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+  - name: vsphere-esxi-centos-7
+    type: bosh-io-stemcell
+    source:
+      name: bosh-vsphere-esxi-centos-7-go_agent
+
+  - name: cpi-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-incubator/bosh-vsphere-cpi-release

@@ -904,14 +904,32 @@ module Bosh
           end
 
           if @credentials
+            @credentials.refresh unless payload.nil?
             headers['Authorization'] = @credentials.authorization_header
           end
 
-          http_client.request(method, uri, {
+          response = http_client.request(method, uri, {
             :body => payload,
             :header => headers,
           }, &block)
 
+          if !response.nil? && response.code == 401
+            if !payload.nil?
+              return response
+            end
+
+            if @credentials.nil? || !@credentials.refresh
+              raise AuthError
+            end
+
+            headers['Authorization'] = @credentials.authorization_header
+            response = http_client.request(method, uri, {
+                :body => payload,
+                :header => headers,
+            }, &block)
+          end
+
+          response
         rescue URI::Error,
                SocketError,
                Errno::ECONNREFUSED,

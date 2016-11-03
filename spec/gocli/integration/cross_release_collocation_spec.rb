@@ -28,8 +28,6 @@ describe 'collocating templates from multiple releases', type: :integration do
     end
 
     it 'successfully deploys' do
-      target_and_login
-
       bosh_runner.run("upload-release #{spec_asset('dummy-release.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
@@ -65,8 +63,6 @@ describe 'collocating templates from multiple releases', type: :integration do
     end
 
     it 'refuses to deploy' do
-      target_and_login
-
       bosh_runner.run("upload-release #{spec_asset('dummy-release.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")

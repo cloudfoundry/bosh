@@ -46,18 +46,18 @@ describe 'stop command', type: :integration do
           output = bosh_runner.run("stop foobar #{instance_uuid}")
           expect(output).to include("foobar/#{instance_uuid} stopped, VM(s) still running")
         }.to change { vm_states }
-                 .from({
-                           'another-job/0' => 'running',
-                           'foobar/0' => 'stopped',
-                           'foobar/1' => 'running',
-                           'foobar/2' => 'running'
-                       })
-                 .to({
-                         'another-job/0' => 'running',
-                         'foobar/0' => 'stopped',
-                         'foobar/1' => 'stopped',
-                         'foobar/2' => 'running'
-                     })
+          .from({
+              'another-job/0' => 'running',
+              'foobar/0' => 'stopped',
+              'foobar/1' => 'running',
+              'foobar/2' => 'running'
+            })
+          .to({
+              'another-job/0' => 'running',
+              'foobar/0' => 'stopped',
+              'foobar/1' => 'stopped',
+              'foobar/2' => 'running'
+          })
 
         output = bosh_runner.run('events')
         parser = Support::TableHelpers::Parser.new(scrub_event_time(scrub_random_cids(scrub_random_ids(output))))

@@ -141,7 +141,7 @@ The following instructures are for developing/testing your new plugin into a new
     rake release:create_dev_release
     ```
 
-8. Upload to your microbosh
+8. Upload to your director
 
     ```
     rake release:upload_dev_release

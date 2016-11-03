@@ -32,10 +32,10 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    describe '#extract_placeholder_key' do
-      context 'when key meets specs' do
+    describe '#extract_placeholder_name' do
+      context 'when name meets specs' do
         it 'should return the value passed in without brackets' do
-          keys = {
+          names = {
             '((smurf))' => 'smurf',
             '((smurf_))' => 'smurf_',
             '((1smurf))' => '1smurf',
@@ -50,90 +50,90 @@ module Bosh::Director::ConfigServer
             '((/smurf/gar_gamel))' => '/smurf/gar_gamel'
           }
 
-          keys.each do |k, v|
-            expect(@helper.extract_placeholder_key(k)).to eq(v)
+          names.each do |k, v|
+            expect(@helper.extract_placeholder_name(k)).to eq(v)
           end
         end
 
-        it 'should handle keys starting with bang' do
-          keys = {
+        it 'should handle names starting with bang' do
+          names = {
             '((!/smurf/gar_gamel))' => '/smurf/gar_gamel',
             '((!smurf))' => 'smurf',
             '((!smurf/cat))' => 'smurf/cat',
           }
 
-          keys.each do |k, v|
-            expect(@helper.extract_placeholder_key(k)).to eq(v)
+          names.each do |k, v|
+            expect(@helper.extract_placeholder_name(k)).to eq(v)
           end
         end
       end
 
-      context 'when key does NOT meet specs' do
-        context 'when key has invalid characters' do
-          it 'should raise a ConfigServerIncorrectKeySyntax error' do
-            invalid_placeholders_keys = [
+      context 'when name does NOT meet specs' do
+        context 'when name has invalid characters' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
               '(())', '(( ))', '((%))', '((  ))', '((123 345))', '((@bosh))',
               '((hello_)))', '((t*))', '(()))', '((())))', '((smurf cat))'
             ]
 
-            invalid_placeholders_keys.each do |invalid_entity|
+            invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_key(invalid_entity)
+                @helper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
-                     Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should include alphanumeric, underscores, dashes, or forward slash characters"
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
                    )
             end
           end
         end
 
-        context 'when key ends with a forward slash' do
-          it 'should raise a ConfigServerIncorrectKeySyntax error' do
-            invalid_placeholders_keys = [
+        context 'when name ends with a forward slash' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
               '((/))', '((hello/))', '((//))', '((/test/))', '((test//))', '((test///))'
             ]
 
-            invalid_placeholders_keys.each do |invalid_entity|
+            invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_key(invalid_entity)
+                @helper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
-                     Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should not end with a forward slash"
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not end with a forward slash"
                    )
             end
           end
         end
 
-        context 'when key has two consecutive forward slashes' do
-          it 'should raise a ConfigServerIncorrectKeySyntax error' do
-            invalid_placeholders_keys = [
+        context 'when name has two consecutive forward slashes' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
               '((//test))', '((test//test))', '((//test//test))'
             ]
 
-            invalid_placeholders_keys.each do |invalid_entity|
+            invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_key(invalid_entity)
+                @helper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
-                     Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' should not contain two consecutive forward slashes"
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not contain two consecutive forward slashes"
                    )
             end
           end
         end
 
-        context 'when key has an exclamation mark other than at the start of the key (for spiff)' do
-          it 'should raise a ConfigServerIncorrectKeySyntax error' do
-            invalid_placeholders_keys = [
+        context 'when name has an exclamation mark other than at the start of the name (for spiff)' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
               '((!!/test))', '((!test/test!))', '((/!/test/!/test))', '((!!/test))', '((!))', '((/!))', '((!_!))'
             ]
 
-            invalid_placeholders_keys.each do |invalid_entity|
+            invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_key(invalid_entity)
+                @helper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
-                     Bosh::Director::ConfigServerIncorrectKeySyntax,
-                     "Placeholder key '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' contains invalid character '!'. If it is included for spiff, " +
-                       'it should only be at the beginning of the key. Note: it will not be considered a part of the key'
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' contains invalid character '!'. If it is included for spiff, " +
+                       'it should only be at the beginning of the name. Note: it will not be considered a part of the name'
                    )
             end
           end
@@ -142,23 +142,23 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#add_prefix_if_not_absolute' do
-      context 'when key is absolute' do
-        it 'should return key as is' do
-          input_key = '/dir/dep/key'
-          expected_key = '/dir/dep/key'
-          expect(@helper.add_prefix_if_not_absolute(input_key, 'dir2', 'dep2')).to eq(expected_key)
+      context 'when name is absolute' do
+        it 'should return name as is' do
+          input_name = '/dir/dep/name'
+          expected_name = '/dir/dep/name'
+          expect(@helper.add_prefix_if_not_absolute(input_name, 'dir2', 'dep2')).to eq(expected_name)
         end
       end
 
-      context 'when key is not absolute' do
+      context 'when name is not absolute' do
         context 'and both director and deployment is specified' do
-          it 'should return key with director and deployment prefix' do
-            input_key = 'key'
+          it 'should return name with director and deployment prefix' do
+            input_name = 'name'
             director = 'dir'
             deployment = 'dep'
 
-            expected_key = '/dir/dep/key'
-            expect(@helper.add_prefix_if_not_absolute(input_key, director, deployment)).to eq(expected_key)
+            expected_name = '/dir/dep/name'
+            expect(@helper.add_prefix_if_not_absolute(input_name, director, deployment)).to eq(expected_name)
           end
         end
       end

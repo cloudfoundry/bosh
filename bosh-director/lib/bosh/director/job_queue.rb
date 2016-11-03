@@ -29,6 +29,7 @@ module Bosh::Director
         :teams => deployment ? deployment.teams : nil,
         :checkpoint_time => Time.now)
       log_dir = File.join(Config.base_dir, 'tasks', task.id.to_s)
+      FileUtils.rm_rf(log_dir)
       task_status_file = File.join(log_dir, 'debug')
       FileUtils.mkdir_p(log_dir)
 

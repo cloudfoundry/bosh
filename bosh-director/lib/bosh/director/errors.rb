@@ -294,12 +294,12 @@ module Bosh::Director
   RuntimeIncompleteIncludeStemcellSection = err(530005)
 
   # Config server errors
-  ConfigServerMissingKeys = err(540000)
+  ConfigServerMissingNames = err(540000)
   ConfigServerSSLError = err(540001)
   ConfigServerPasswordGenerationError = err(540002)
   ConfigServerUnknownError = err(540003)
   ConfigServerCertificateGenerationError = err(540004)
-  ConfigServerIncorrectKeySyntax = err(540005)
+  ConfigServerIncorrectNameSyntax = err(540005)
 
   # CPI config
   CpiDuplicateName = err(550000)

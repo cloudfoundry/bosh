@@ -26,7 +26,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:candidate_existing_instances).and_return([])
         allow(deployment_plan).to receive(:resource_pools).and_return(nil)
         allow(deployment_plan).to receive(:stemcells).and_return({})
-        allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
+        allow(deployment_plan).to receive(:instance_groups_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
         allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
         allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)

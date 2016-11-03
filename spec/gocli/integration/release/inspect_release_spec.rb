@@ -4,13 +4,9 @@ describe 'inspect release', type: :integration do
   with_reset_sandbox_before_each
 
   context 'with a director targeted' do
-    before{
-      target_and_login
-    }
-
     it 'prints an error when version is not specified' do
       out, exit_code = bosh_runner.run("inspect-release name-without-version", { return_exit_code: true, failure_expected: true })
-      expect(out).to include('the required argument `NAME/VERSION` was not provided')
+      expect(out).to include("release 'name-without-version' to be in format 'name/version'")
       expect(exit_code).to eq(1)
     end
 

@@ -7,7 +7,7 @@ module Bosh::Spec
 
     def self.start_deploy(manifest)
       output = deploy_simple_manifest(manifest_hash: manifest, no_track: true)
-      return Bosh::Spec::OutputParser.new(output).task_id('running')
+      return Bosh::Spec::OutputParser.new(output).task_id('*')
     end
 
     def self.wait_for_task(task_id)

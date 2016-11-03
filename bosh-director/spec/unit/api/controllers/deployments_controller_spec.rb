@@ -660,6 +660,7 @@ module Bosh::Director
                     'state' => 'started',
                     'uuid' => "instance-#{i}",
                     'agent_id' => "agent-#{i}",
+                    'spec_json' => '{ "lifecycle": "service" }',
                 }
 
                 Models::Instance.create(instance_params)
@@ -694,13 +695,15 @@ module Bosh::Director
                                           'state' => job_state,
                                           'uuid' => 'instance-1',
                                           'agent_id' => 'agent-1',
+                                          'spec_json' => "{ \"lifecycle\": \"#{instance_lifecycle}\" }",
                                       })
             end
 
             context 'is "service"' do
               let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.test_release_job)) }
-              context 'and state is either "started" or "stopped"' do
+              let(:instance_lifecycle) { 'service' }
 
+              context 'and state is either "started" or "stopped"' do
                 it 'sets "expects_vm" to "true"' do
 
                   get '/test_deployment/instances'
@@ -743,11 +746,8 @@ module Bosh::Director
             end
 
             context 'is "errand"' do
-              let(:manifest) {
-                manifest = default_manifest.merge(Bosh::Spec::Deployments.test_release_job)
-                manifest['jobs'][0]['lifecycle'] = 'errand'
-                YAML.dump(manifest)
-              }
+              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.test_release_job)) }
+              let(:instance_lifecycle) { 'errand' }
 
               it 'sets "expects_vm" to "false"' do
                 get '/test_deployment/instances'

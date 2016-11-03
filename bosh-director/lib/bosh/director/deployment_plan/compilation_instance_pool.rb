@@ -243,7 +243,7 @@ module Bosh::Director
         {}
       end
 
-      def link_spec
+      def resolved_links
         {}
       end
 

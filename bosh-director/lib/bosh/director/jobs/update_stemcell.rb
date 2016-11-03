@@ -84,7 +84,6 @@ module Bosh::Director
           track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
             begin
               stemcell = @stemcell_manager.find_by_name_and_version_and_cpi @name, @version, cloud[:name]
-              raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists#{cpi_suffix}" unless @fix
             rescue StemcellNotFound => e
               stemcell = Models::Stemcell.new
               stemcell.name = @name
@@ -95,6 +94,7 @@ module Bosh::Director
             end
           end
 
+          if @fix or !stemcell.cid
           track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}") do
             stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
             logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
@@ -102,6 +102,9 @@ module Bosh::Director
 
           track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}") do
             stemcell.save
+          end
+          else
+            logger.info("Skipping stemcell upload (stemcell already exists)")
           end
         end
 

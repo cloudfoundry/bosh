@@ -1,0 +1,24 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/os-image-stemcell-builder
+
+inputs:
+  - name: bosh-src
+  - name: version
+
+outputs:
+  - name: stemcell
+
+run:
+  path: bosh-src/ci/pipelines/stemcells/tasks/build.sh
+
+params:
+  IAAS:         replace-me
+  HYPERVISOR:   replace-me
+  OS_NAME:      replace-me
+  OS_VERSION:   replace-me
+  BOSHIO_TOKEN: ""

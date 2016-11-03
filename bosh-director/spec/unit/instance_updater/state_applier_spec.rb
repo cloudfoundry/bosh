@@ -34,7 +34,7 @@ module Bosh::Director
         package_spec: {},
         persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
         is_errand?: false,
-        link_spec: {},
+        resolved_links: {},
         compilation?: false,
         jobs: [],
         update_spec: update_config.to_hash,

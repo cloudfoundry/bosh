@@ -7,8 +7,8 @@ module Bosh::Director::ConfigServer
     let(:deployment_name) {'deployment_name'}
     let(:logger) { double('Logging::Logger') }
 
-    def prepend_namespace(key)
-      "/#{director_name}/#{deployment_name}/#{key}"
+    def prepend_namespace(name)
+      "/#{director_name}/#{deployment_name}/#{name}"
     end
 
     before do
@@ -33,7 +33,7 @@ module Bosh::Director::ConfigServer
         {
           'name' => '((name_placeholder))',
           'properties' => {
-            'key' => '((integer_placeholder))'
+            'name' => '((integer_placeholder))'
           },
           'instance_groups' =>           {
             'name' => 'bla',
@@ -52,16 +52,16 @@ module Bosh::Director::ConfigServer
       end
 
       before do
-        mock_config_store.each do |key, value|
-          allow(http_client).to receive(:get).with(key).and_return(value)
+        mock_config_store.each do |name, value|
+          allow(http_client).to receive(:get).with(name).and_return(value)
         end
       end
 
       context 'when absolute path is required' do
-        it 'should raise error when key is not absolute' do
+        it 'should raise error when name is not absolute' do
           expect{
             client.interpolate(manifest_hash, ignored_subtrees , true)
-          }.to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
+          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
 
@@ -73,7 +73,7 @@ module Bosh::Director::ConfigServer
         expected_result = {
           'name' => 'test4',
           'properties' => {
-            'key' => 123
+            'name' => 123
           },
           'instance_groups' =>           {
             'name' => 'bla',
@@ -96,21 +96,21 @@ module Bosh::Director::ConfigServer
         expect(interpolated_manifest).to eq(expected_result)
       end
 
-      it 'should raise a missing key error message when key is not found in the config_server' do
+      it 'should raise a missing name error message when name is not found in the config_server' do
         allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleNotFoundResponse.new)
 
-        manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
+        manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
           interpolated_manifest
         }.to raise_error(
-               Bosh::Director::ConfigServerMissingKeys,
-               'Failed to find keys in the config server: missing_placeholder')
+               Bosh::Director::ConfigServerMissingNames,
+               'Failed to load placeholder names from the config server: missing_placeholder')
       end
 
       it 'should raise an unknown error when config_server returns any error other than a 404' do
         allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleErrorResponse.new)
 
-        manifest_hash['properties'] = { 'key' => '((missing_placeholder))' }
+        manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
           interpolated_manifest
         }.to raise_error(Bosh::Director::ConfigServerUnknownError)
@@ -144,7 +144,7 @@ module Bosh::Director::ConfigServer
                     'name' => '((job_name))'
                   }
                 ],
-                'properties' => {'a' => ['123', 45, '((secret_key))']}
+                'properties' => {'a' => ['123', 45, '((secret_name))']}
               }
             ],
             'properties' => {
@@ -180,7 +180,7 @@ module Bosh::Director::ConfigServer
                     'name' => 'spring_server'
                   }
                 ],
-                'properties' => {'a' => ['123', 45, '((secret_key))']}
+                'properties' => {'a' => ['123', 45, '((secret_name))']}
               }
             ],
             'properties' => {
@@ -239,11 +239,11 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      context 'when some placeholders have invalid key syntax' do
+      context 'when some placeholders have invalid name syntax' do
         let(:manifest_hash) do
           {
             'properties' => {
-              'age' => '((I am an invalid key &%^))'
+              'age' => '((I am an invalid name &%^))'
             }
           }
         end
@@ -251,7 +251,7 @@ module Bosh::Director::ConfigServer
         it 'raises an error' do
           expect{
             interpolated_manifest
-          }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
+          }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
     end
@@ -332,8 +332,8 @@ module Bosh::Director::ConfigServer
           context 'when placeholder syntax is invalid' do
             it 'raises an error' do
               expect{
-                client.prepare_and_get_property('((invalid key $%$^))', 'my_default_value', nil)
-              }. to raise_error(Bosh::Director::ConfigServerIncorrectKeySyntax)
+                client.prepare_and_get_property('((invalid name $%$^))', 'my_default_value', nil)
+              }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
             end
           end
 
@@ -341,7 +341,7 @@ module Bosh::Director::ConfigServer
             let(:the_placeholder) { '((my_smurf))' }
             let(:bang_placeholder) { '((!my_smurf))' }
 
-            context 'when config server returns an error while checking for key' do
+            context 'when config server returns an error while checking for name' do
               it 'raises an error' do
                 expect(http_client).to receive(:get).with(prepend_namespace('my_smurf')).and_return(SampleErrorResponse.new)
                 expect{

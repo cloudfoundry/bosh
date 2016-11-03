@@ -2,23 +2,17 @@
 
 source 'https://rubygems.org'
 
-gem 'agent_client', path: 'agent_client'
 gem 'blobstore_client', path: 'blobstore_client'
 gem 'bosh_common', path: 'bosh_common'
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh_cpi', path: 'bosh_cpi'
 gem 'bosh_cli', path: 'bosh_cli'
-gem 'bosh_cli_plugin_aws', path: 'bosh_cli_plugin_aws'
-gem 'bosh_cli_plugin_micro', path: 'bosh_cli_plugin_micro'
 gem 'bosh-registry', path: 'bosh-registry'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
 gem 'bosh-monitor', path: 'bosh-monitor'
-gem 'bosh-release', path: 'bosh-release'
 gem 'bosh-template', path: 'bosh-template'
-gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 
-gem 'bosh_aws_cpi', '~>2.1'
 gem 'rake', '~>10.0'
 
 # json version is hardcoded in release director, health_monitor and registry packages
@@ -83,4 +77,7 @@ group :development, :test do
   gem 'blue-shell'
 
   gem 'unix-crypt'
+
+  # for registry
+  gem 'mono_logger'
 end

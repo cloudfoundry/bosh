@@ -53,6 +53,15 @@ module Bosh::Director
             post '/', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
             expect(last_response.status).to eq(404)
           end
+
+          context 'sha1s' do
+            context 'sha1 is provided as both a query param and a body content' do
+              it 'returns an error' do
+                post '/?sha1=0xABAD1DEA', JSON.generate('location' => 'http://release_url', 'sha1' => '0xABAD1DEA'), { 'CONTENT_TYPE' => 'application/json' }
+                expect(last_response.status).to eq(400)
+              end
+            end
+          end
         end
 
         context 'when user has readonly permissions' do

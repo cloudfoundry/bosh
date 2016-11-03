@@ -6,7 +6,6 @@ describe 'cli: deployment process', type: :integration do
 
   it 'displays instances in a deployment' do
     pending('cli2: #131396949: instances --details should include ignore')
-    target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [

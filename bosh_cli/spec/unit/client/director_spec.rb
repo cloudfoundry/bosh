@@ -137,6 +137,43 @@ describe Bosh::Cli::Client::Director do
 
         @director.get_status
       end
+
+      context 'when server gives 401' do
+        let(:token_provider) {
+          token_provider = instance_double(Bosh::Cli::Client::Uaa::TokenProvider)
+          expect(token_provider).to receive(:token).and_return('bearer token')
+          expect(token_provider).to receive(:token).and_return('bearer new-token')
+          expect(token_provider).to receive(:refresh)
+          token_provider
+        }
+        let(:new_token_request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'bearer new-token' } }
+
+        it 'attempts to refresh token' do
+          stub_request(:get, 'https://target.example.com:8080/info').
+              with(headers: request_headers).
+              to_return(body: '', status: 401)
+
+          stub_request(:get, 'https://target.example.com:8080/info').
+              with(headers: new_token_request_headers).
+              to_return(body: '{"version":258}', status: 200)
+
+          status = @director.get_status
+          expect(status['version']).to eq(258)
+        end
+
+        context 'when no credentials are specified' do
+          let(:credentials) { nil }
+
+          it 'should not attempt to refresh the token and raise an error' do
+            stub_request(:get, 'https://target.example.com:8080/info').
+              to_return(body: '', status: 401)
+
+            expect {
+              @director.get_status
+            }.to raise_error(Bosh::Cli::AuthError)
+          end
+        end
+      end
     end
 
     context 'when credentials are not provided' do
@@ -148,6 +185,59 @@ describe Bosh::Cli::Client::Director do
           with(headers: request_headers).to_return(body: '{}', status: 200)
 
         @director.get_status
+      end
+    end
+
+    context 'performing a http post with a request body' do
+      context 'without a token credential' do
+        let(:credentials) { nil }
+
+        it 'should not refresh the token before making a request with a body' do
+          stub_request(:post, 'https://target.example.com:8080/path').
+            with(headers: { 'Content-Type' => 'application/json' }).
+            to_return(body: '{"version":258}', status: 401)
+
+          expect { @director.post('/path', 'application/json', 'binary data') }.to raise_error(Bosh::Cli::DirectorError, /HTTP 401/)
+        end
+      end
+
+      context 'using token credentials' do
+        let(:token_provider) {
+          token_provider = instance_double(Bosh::Cli::Client::Uaa::TokenProvider)
+          allow(token_provider).to receive(:token).and_return('bearer token')
+          token_provider
+        }
+        let(:credentials) { Bosh::Cli::Client::UaaCredentials.new(token_provider) }
+
+        it 'should refresh the token before making a request with a body' do
+          stub_request(:post, 'https://target.example.com:8080/path').
+              with(headers: { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' }).
+              to_return(body: '{"version":258}', status: 200)
+
+          expect(credentials).to receive(:refresh)
+
+          @director.post('/path', 'application/json', 'binary data')
+        end
+
+        it 'should not refresh the token if the initial request returns a 401' do
+          stub_request(:post, 'https://target.example.com:8080/path').
+            with(headers: { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' }).
+            to_return(body: '{"version":258}', status: 401)
+
+          expect(credentials).to receive(:refresh).once
+
+          expect {@director.post('/path', 'application/json', 'binary data')}.to raise_error(Bosh::Cli::DirectorError, /HTTP 401/)
+        end
+
+        it 'should not refresh the token before making a request without a body' do
+          stub_request(:get, 'https://target.example.com:8080/path').
+              with(headers: { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' }).
+              to_return(body: '{"version":258}', status: 200)
+
+          expect(credentials).to_not receive(:refresh)
+
+          @director.get('/path', 'application/json')
+        end
       end
     end
   end

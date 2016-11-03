@@ -12,7 +12,6 @@ module Bosh::Stemcell
 
       @stemcell_version = dependencies.fetch(:version)
       @image_create_disk_size = dependencies.fetch(:disk_size, infrastructure.default_disk_size)
-      @bosh_micro_release_tgz_path = dependencies.fetch(:release_tarball)
       @os_image_tgz_path = dependencies.fetch(:os_image_tarball)
     end
 
@@ -25,11 +24,10 @@ module Bosh::Stemcell
         'stemcell_operating_system' => operating_system.name,
         'stemcell_operating_system_version' => operating_system.version,
         'ruby_bin' => ruby_bin,
-        'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'agent_src_dir' => File.join(source_root, 'go/src/github.com/cloudfoundry/bosh-agent'),
         'image_create_disk_size' => image_create_disk_size,
         'os_image_tgz' => os_image_tgz_path,
-      }.merge(bosh_micro_options).merge(environment_variables).merge(ovf_options)
+      }.merge(environment_variables).merge(ovf_options)
     end
 
     attr_reader(
@@ -49,7 +47,6 @@ module Bosh::Stemcell
     attr_reader(
       :environment,
       :definition,
-      :bosh_micro_release_tgz_path,
       :os_image_tgz_path,
     )
 
@@ -67,15 +64,6 @@ module Bosh::Stemcell
         'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
         'RHN_USERNAME' => environment['RHN_USERNAME'],
         'RHN_PASSWORD' => environment['RHN_PASSWORD'],
-      }
-    end
-
-    def bosh_micro_options
-      {
-        'bosh_micro_enabled' => environment.fetch('BOSH_MICRO_ENABLED', 'yes'),
-        'bosh_micro_package_compiler_path' => File.join(source_root, 'bosh-release'),
-        'bosh_micro_manifest_yml_path' => File.join(source_root, 'release', 'micro', "#{infrastructure.name}.yml"),
-        'bosh_micro_release_tgz_path' => bosh_micro_release_tgz_path,
       }
     end
 

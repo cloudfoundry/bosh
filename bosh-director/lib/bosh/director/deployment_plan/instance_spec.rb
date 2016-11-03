@@ -33,7 +33,7 @@ module Bosh::Director
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
-          'links' => instance_group.link_spec,
+          'links' => instance_group.resolved_links,
           'address' => instance_plan.network_settings.network_address,
           'update' => instance_group.update_spec
         }
@@ -49,12 +49,11 @@ module Bosh::Director
         @full_spec = full_spec
         @instance = instance
 
-        config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
-        @config_server_client = config_server_client_factory.create_client(full_spec['deployment'])
+        @config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @config_server_client).spec
+        TemplateSpec.new(full_spec, @config_server_client_factory).spec
       end
 
       def as_apply_spec
@@ -94,10 +93,10 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, config_server_client)
+      def initialize(full_spec, config_server_client_factory)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
-        @config_server_client = config_server_client
+        @config_server_client_factory = config_server_client_factory
       end
 
       def spec
@@ -118,8 +117,12 @@ module Bosh::Director
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
-        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['properties'])
-        template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
+        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['deployment'], @full_spec['properties'])
+        template_hash['links'] = {}
+
+        @full_spec.fetch('links', {}).each do |link_name, link_info|
+          template_hash['links'][link_name] = resolve_uninterpolated_values(link_info.deployment_name, link_info.spec)
+        end
 
         networks_hash = template_hash['networks']
 
@@ -154,8 +157,9 @@ module Bosh::Director
 
       private
 
-      def resolve_uninterpolated_values(to_be_resolved_hash)
-        @config_server_client.interpolate(to_be_resolved_hash)
+      def resolve_uninterpolated_values(director_name, to_be_resolved_hash)
+        config_server_client = @config_server_client_factory.create_client(director_name)
+        config_server_client.interpolate(to_be_resolved_hash)
       end
     end
 

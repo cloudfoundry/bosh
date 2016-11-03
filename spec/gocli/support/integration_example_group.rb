@@ -48,10 +48,6 @@ module IntegrationExampleGroup
     @waiter ||= Bosh::Spec::Waiter.new(logger)
   end
 
-  def target_and_login
-    bosh_runner.run("env #{current_sandbox.director_url}")
-  end
-
   def upload_cloud_config(options={})
     cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
@@ -96,8 +92,7 @@ module IntegrationExampleGroup
   end
 
   def deploy(options={})
-    cmd = options.fetch(:no_track, false) ? '--no-track ' : ''
-    cmd += options.fetch(:no_color, false) ? '--no-color ' : ''
+    cmd = options.fetch(:no_color, false) ? '--no-color ' : ''
 
     deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
     cmd += " -d #{deployment_hash['name']}"
@@ -132,8 +127,6 @@ module IntegrationExampleGroup
   end
 
   def prepare_for_deploy(options={})
-    target_and_login unless options.fetch(:no_login, false)
-
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
@@ -155,9 +148,10 @@ module IntegrationExampleGroup
   end
 
   def run_errand(errand_job_name, options={})
+    failure_expected = options.fetch(:failure_expected, true)
     output, exit_code = bosh_runner.run(
       "run-errand #{errand_job_name}",
-      options.merge({return_exit_code: true, failure_expected: true})
+      options.merge({return_exit_code: true, failure_expected: failure_expected})
     )
     return output, exit_code == 0
   end
@@ -256,10 +250,16 @@ module IntegrationExampleGroup
 
   def sub_in_records(output, regex_pattern, replace_pattern)
     output.map do |record|
-      record.each do |key, value|
-        record[key] = value.gsub(regex_pattern, replace_pattern)
+      if record.kind_of?(Hash)
+        record.each do |key, value|
+          record[key] = value.gsub(regex_pattern, replace_pattern)
+        end
+        record
+      elsif record.kind_of?(String)
+        record.gsub(regex_pattern, replace_pattern)
+      else
+        raise 'Unknown record type'
       end
-      record
     end
   end
 end

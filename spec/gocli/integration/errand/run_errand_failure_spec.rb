@@ -70,12 +70,10 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     end
 
     it 'successfully cancels the errand and returns exit code' do
-      pending('cli2: #130119251: backport --no-track flag')
-
       deploy_from_scratch(manifest_hash: manifest_hash)
 
-      errand_result = bosh_runner.run('--no-track run-errand fake-errand-name', deployment_name: deployment_name)
-      task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
+      errand_result = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
+      task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('*')
 
       vm = director.wait_for_vm('fake-errand-name', '0', 10)
       expect(vm).to_not be_nil
@@ -90,15 +88,14 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
         end
       end
 
-      cancel_output = bosh_runner.run("cancel-task #{task_id}")
-      expect(cancel_output).to match(/Task #{task_id} is getting canceled/)
+      bosh_runner.run("cancel-task #{task_id}")
 
-      errand_output = bosh_runner.run("task #{task_id}")
-      expect(errand_output).to include("Error 10001: Task #{task_id} cancelled")
+      errand_output = bosh_runner.run("task #{task_id}", failure_expected: true)
+      expect(errand_output).to include("Error: Task #{task_id} cancelled")
 
       # Cannot assert on output because there is no guarantee
       # that process will be cancelled after output is echoed
-      result_output = bosh_runner.run("task #{task_id} --result")
+      result_output = bosh_runner.run("task #{task_id} --result", failure_expected: true)
       # can be either terminated or killed
       expect(result_output).to  match /"exit_code":(143|137)/
     end

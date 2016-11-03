@@ -77,7 +77,7 @@ module Bosh::Director
           next_releases, next_stemcells  = get_stemcells_and_releases
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
-          render_job_templates(deployment_plan.jobs_starting_on_deploy)
+          render_job_templates(deployment_plan.instance_groups_starting_on_deploy)
 
           if dry_run?
             return "/deployments/#{deployment_plan.name}"

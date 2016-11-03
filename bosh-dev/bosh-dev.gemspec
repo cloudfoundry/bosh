@@ -22,18 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-stemcell'
   spec.add_dependency 'peach'
   spec.add_dependency 'bosh_cli'
-  spec.add_dependency 'bosh_cli_plugin_aws'
   spec.add_dependency 'bundler'
+  spec.add_dependency 'fog-aws'
   spec.add_dependency 'logging'
-
-  spec.add_dependency('ruby_vcloud_sdk', '=0.7.4')
-
-  spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec', '~> 3.0.0'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'fakefs'
-  spec.add_development_dependency 'rugged'
-  spec.add_development_dependency 'webmock'
-  spec.add_development_dependency 'dogapi'
-  spec.add_development_dependency 'timecop'
 end

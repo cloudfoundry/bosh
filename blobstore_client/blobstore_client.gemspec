@@ -24,10 +24,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'httpclient',      '=2.7.1'
   spec.add_dependency 'multi_json',      '~> 1.1'
   spec.add_dependency 'bosh_common',     "~>#{version}"
-
-  spec.add_development_dependency 'rspec', '~> 3.0'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'rspec-instafail'
-  spec.add_development_dependency 'thin'
-  spec.add_development_dependency 'simple_blobstore_server'
 end

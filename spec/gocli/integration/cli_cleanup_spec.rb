@@ -5,8 +5,6 @@ describe 'cli: cleanup', type: :integration do
 
   shared_examples_for 'removing an ephemeral blob' do
     before {
-      target_and_login
-
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")

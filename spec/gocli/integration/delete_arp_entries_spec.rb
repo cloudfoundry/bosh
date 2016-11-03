@@ -5,7 +5,6 @@ describe 'delete arp entries', type: :integration do
   with_reset_sandbox_before_each
 
   before do
-    target_and_login
     upload_cloud_config({:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config})
     upload_stemcell
     create_and_upload_test_release

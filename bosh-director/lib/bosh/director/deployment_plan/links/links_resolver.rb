@@ -30,7 +30,7 @@ module Bosh::Director
               raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in instance group '#{instance_group.name}'"
             end
           elsif !link_path.manual_spec.nil?
-            instance_group.add_resolved_link(link_name, link_path.manual_spec)
+            instance_group.add_resolved_link(link_name, LinkInfo.new(instance_group.deployment_name, link_path.manual_spec))
           else
             link_network = job.consumes_link_info(instance_group.name, link_name)['network']
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network)
@@ -44,7 +44,7 @@ module Bosh::Director
               instance.delete('addresses')
             end
 
-            instance_group.add_resolved_link(link_name, link_spec)
+            instance_group.add_resolved_link(link_name, LinkInfo.new(link_path.deployment, link_spec))
           end
         end
       end

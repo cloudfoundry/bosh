@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: concourse/git-resource
+
+inputs:
+  - name: bosh-src-develop
+  - name: bosh-src-master
+
+outputs:
+  - name: bosh-src-develop-merged
+
+run:
+  path: bosh-src-develop/ci/tasks/merge-master.sh

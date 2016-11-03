@@ -70,4 +70,37 @@ describe 'recreate instance', type: :integration do
     expect(output).to match /Updating instance another-job: another-job.* \(0\)/
     expect(director.vms).not_to match_array(initial_vms.map(&:cid))
   end
+
+  context 'with dry run flag' do
+    context 'when a vm has been deleted' do
+      it 'does not try to recreate that vm' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+        deploy_from_scratch(manifest_hash: manifest_hash)
+
+        vm_cid = director.vms.first.cid
+        prior_vms = director.vms.length
+
+        bosh_runner.run("delete-vm #{vm_cid}", deployment_name: 'simple')
+        output = bosh_runner.run('recreate --dry-run foobar', deployment_name: 'simple')
+
+        expect(director.vms.length).to be < prior_vms
+      end
+    end
+
+    context 'when there are no errors' do
+      it 'returns some encouraging message but does not recreate vms' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+        deploy_from_scratch(manifest_hash: manifest_hash)
+
+        initial_vms = director.vms
+        bosh_runner.run('recreate --dry-run foobar', deployment_name: 'simple')
+        vms_after_job_recreate = director.vms
+
+        expect(director.find_vm(initial_vms, 'foobar', '0').cid).to eq(director.find_vm(vms_after_job_recreate, 'foobar', '0').cid)
+        expect(director.find_vm(initial_vms, 'foobar', '1').cid).to eq(director.find_vm(vms_after_job_recreate, 'foobar', '1').cid)
+      end
+    end
+  end
 end

@@ -6,12 +6,11 @@ describe 'cli: locks', type: :integration do
 
   context 'when a deployment is in progress' do
     it 'lists a deployment lock' do
-      pending('cli2: #130119251: backport --no-track flag')
       prepare_for_deploy
 
       with_blocking_deploy do
-        output = bosh_runner.run_until_succeeds('locks', number_of_retries: 30)
-        expect(output).to match(/\s*\|\s*deployment\s*\|\s*blocking\s*\|/)
+        locks_json = JSON.parse(bosh_runner.run_until_succeeds('locks --json', number_of_retries: 30))
+        expect(locks_json['Tables'][0]['Rows']).to include(['deployment', 'blocking', anything])
       end
     end
   end
