@@ -176,11 +176,19 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it "should quietly ignore duplicate upload and not create a stemcell in the cloud" do
+          expected_steps = 5
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
           expect(update_stemcell_job.perform).to eq('/stemcells/jeos/5')
         end
 
         it "should quietly ignore duplicate remote uploads and not create a stemcell in the cloud" do
+          expected_steps = 6
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_url, {'remote' => true})
           expect(update_stemcell_job).to receive(:download_remote_file) do |_, remote_file, local_file|
             uri = URI.parse(remote_file)
@@ -191,6 +199,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'should upload stemcell and update db with --fix option set' do
           expect(cloud).to receive(:create_stemcell).and_return "new-stemcell-cid"
+          expected_steps = 5
+          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'fix' => true)
           expect { update_stemcell_job.perform }.to_not raise_error
