@@ -169,7 +169,7 @@ describe 'cli: stemcell', type: :integration do
 
         it 'tells the user and does not exit as a failure' do
           output = bosh_runner.run("upload-stemcell #{stemcell_url}")
-          expect(output).to_not include("Uploading stemcell")
+          expect(output).to include("already exists, skipped")
         end
 
         context 'when using the --fix flag' do

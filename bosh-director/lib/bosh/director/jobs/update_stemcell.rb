@@ -95,7 +95,8 @@ module Bosh::Director
           end
 
           needs_upload = @fix || !stemcell.cid
-          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}") do
+          upload_suffix = " (already exists, skipped)" unless needs_upload
+          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
             if needs_upload
               stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
               logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
@@ -104,7 +105,7 @@ module Bosh::Director
             end
           end
 
-          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}") do
+          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}#{upload_suffix}") do
             if needs_upload
               stemcell.save
             else
