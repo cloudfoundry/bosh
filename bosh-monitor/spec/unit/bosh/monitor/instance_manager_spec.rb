@@ -48,6 +48,26 @@ describe Bhm::InstanceManager do
 
           expect(manager.agents_count).to eq(2)
         end
+
+        it 'processes a valid populated heartbeat message' do
+          instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
+          cloud1 = [instance1]
+          manager.sync_deployments([{'name' => 'mycloud'}])
+          manager.sync_deployment_state("mycloud", cloud1)
+
+          expect(event_processor).to receive(:process).with(
+            :heartbeat,
+            {
+              'timestamp' => Integer,
+              'agent_id' => '007',
+              'deployment' => 'mycloud',
+              'node_id' => 'iuuid1',
+              'job' => 'mutator'
+            }
+          )
+
+          manager.process_event(:heartbeat, "hm.agent.heartbeat.007")
+        end
       end
 
       context 'bad alert' do
