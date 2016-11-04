@@ -115,10 +115,29 @@ LOGMESSAGE
               expect(planner.model.name).to eq('simple')
             end
 
-            it 'sets tag values from manifest' do
-              hybrid_manifest_hash['tags'] = {'mytag' => 'sears'}
+            describe 'tags' do
+              context 'when runtime config is not present' do
+                let(:runtime_config_model) { nil }
+                it 'only uses the tags from the deployment manifest' do
+                  hybrid_manifest_hash['tags'] = {'deployment_tag' => 'sears'}
 
-              expect(planner.tags).to eq({'mytag' => 'sears'})
+                  expect(planner.tags).to eq({'deployment_tag' => 'sears'})
+                end
+              end
+
+              it 'sets tag values from manifest and from runtime_config' do
+                hybrid_manifest_hash['tags'] = {'deployment_tag' => 'sears'}
+                runtime_config_hash['tags'] = {'runtime_tag' => 'dryer'}
+
+                expect(planner.tags).to eq({'deployment_tag' => 'sears' ,'runtime_tag' => 'dryer'})
+              end
+
+              it 'gives deployment manifest tags precedence over runtime_config tags' do
+                hybrid_manifest_hash['tags'] = {'tag_key' => 'sears'}
+                runtime_config_hash['tags'] = {'tag_key' => 'dryer'}
+
+                expect(planner.tags).to eq({'tag_key' => 'sears'})
+              end
             end
 
             describe 'properties' do

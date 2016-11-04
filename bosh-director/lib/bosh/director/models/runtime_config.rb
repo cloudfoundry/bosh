@@ -19,6 +19,10 @@ module Bosh
         def raw_manifest
           YAML.load(properties)
         end
+
+        def tags
+          manifest['tags'] ? manifest['tags']: {}
+        end
       end
     end
   end

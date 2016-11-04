@@ -69,7 +69,7 @@ module Bosh
             'job_states' => options['job_states'] || {},
             'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
             'canaries' => validate_and_get_argument(options['canaries'], 'canaries'),
-            'tags' => parse_tags(migrated_hybrid_manifest_hash),
+            'tags' => parse_tags(migrated_hybrid_manifest_hash, runtime_config),
           }
 
           @logger.info('Creating deployment plan')
@@ -101,7 +101,7 @@ module Bosh
           deployment
         end
 
-        def parse_tags(manifest_hash)
+        def parse_tags(manifest_hash, runtime_config)
           tags = {}
 
           if manifest_hash.has_key?('tags')
@@ -110,7 +110,7 @@ module Bosh
             end
           end
 
-          tags
+          runtime_config.nil? ? tags : runtime_config.tags.merge!(tags)
         end
 
         def process_links(deployment)
