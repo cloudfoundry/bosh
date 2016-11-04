@@ -125,8 +125,7 @@ describe 'local DNS', type: :integration do
 
         expect(runner.run('cloud-check --report', deployment_name: deployment_name)).to match(regexp('0 problems'))
 
-        etc_hosts = parse_agent_etc_hosts(5)
-        expect(etc_hosts.size).to eq(5)
+        etc_hosts = parse_agent_etc_hosts(4)
         expect(etc_hosts).to match_array(generate_vms_dns)
       end
     end
