@@ -115,13 +115,21 @@ module Bosh::Director
           'address',
           'ip'
         ]
+
+        whitelisted_link_spec_keys = [
+          'networks',
+          'instances',
+          'properties'
+        ]
+
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
         template_hash['properties'] = resolve_uninterpolated_values(@full_spec['deployment'], @full_spec['properties'])
         template_hash['links'] = {}
 
-        @full_spec.fetch('links', {}).each do |link_name, link_info|
-          template_hash['links'][link_name] = resolve_uninterpolated_values(link_info.deployment_name, link_info.spec)
+        @full_spec.fetch('links', {}).each do |link_name, link_spec|
+          interpolated_values = resolve_uninterpolated_values(link_spec['deployment_name'], link_spec)
+          template_hash['links'][link_name] = interpolated_values.select {|k,v| whitelisted_link_spec_keys.include?(k) }
         end
 
         networks_hash = template_hash['networks']
@@ -157,8 +165,9 @@ module Bosh::Director
 
       private
 
-      def resolve_uninterpolated_values(director_name, to_be_resolved_hash)
-        config_server_client = @config_server_client_factory.create_client(director_name)
+      def resolve_uninterpolated_values(deployment_name, to_be_resolved_hash)
+        # TODO: Don't Create a client every single time! refactor!!!
+        config_server_client = @config_server_client_factory.create_client(deployment_name)
         config_server_client.interpolate(to_be_resolved_hash)
       end
     end

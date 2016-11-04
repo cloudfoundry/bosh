@@ -336,7 +336,7 @@ module Bosh::Director
       end
 
       def add_resolved_link(link_name, link_info)
-        @resolved_links[link_name] = link_info
+        @resolved_links[link_name] = link_info.spec
       end
 
       def link_path(job_name, link_name)

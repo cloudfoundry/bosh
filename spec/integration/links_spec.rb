@@ -1349,6 +1349,84 @@ Error 100: Unable to process links for deployment. Errors are:
         expect{ deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
       end
     end
+
+    context 'when resurrector tries to resurrect an VM with jobs that consume links', hm: true do
+      before { current_sandbox.health_monitor_process.start }
+      after { current_sandbox.health_monitor_process.stop }
+
+      let(:links) do
+        {
+          'db' => {'from' => 'db'},
+          'backup_db' => {'from' => 'backup_db'}
+        }
+      end
+
+      it 'resurrects the VM and resolves links correctly', hm: true do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        vms = director.vms
+        api_vm = find_vm(vms, 'my_api', '0')
+        mysql_0_vm = find_vm(vms, 'mysql', '0')
+        mysql_1_vm = find_vm(vms, 'mysql', '1')
+
+        template = YAML.load(api_vm.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main'].size).to eq(2)
+        expect(template['databases']['main']).to contain_exactly(
+           {
+             'id' => "#{mysql_0_vm.instance_uuid}",
+             'name' => 'mysql',
+             'index' => 0,
+             'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
+           },
+           {
+             'id' => "#{mysql_1_vm.instance_uuid}",
+             'name' => 'mysql',
+             'index' => 1,
+             'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
+           }
+         )
+
+        expect(template['databases']['backup']).to contain_exactly(
+           {
+             'name' => 'postgres',
+             'az' => 'z1',
+             'index' => 0,
+             'address' => '192.168.1.12'
+           }
+         )
+
+
+        # ===========================================
+        # After resurrection
+        new_api_vm = director.kill_vm_and_wait_for_resurrection(api_vm)
+        new_template = YAML.load(new_api_vm.read_job_template('api_server', 'config.yml'))
+        expect(new_template['databases']['main'].size).to eq(2)
+        expect(new_template['databases']['main']).to contain_exactly(
+           {
+             'id' => "#{mysql_0_vm.instance_uuid}",
+             'name' => 'mysql',
+             'index' => 0,
+             'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
+           },
+           {
+             'id' => "#{mysql_1_vm.instance_uuid}",
+             'name' => 'mysql',
+             'index' => 1,
+             'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
+           }
+         )
+
+        expect(new_template['databases']['backup']).to contain_exactly(
+           {
+             'name' => 'postgres',
+             'az' => 'z1',
+             'index' => 0,
+             'address' => '192.168.1.12'
+           }
+         )
+      end
+    end
   end
 
   context 'when addon job requires link' do
