@@ -3,8 +3,8 @@
 set -eux
 
 GOPATH=/home/vagrant/go
-GO_ARCHIVE_URL=https://storage.googleapis.com/golang/go1.6.1.linux-amd64.tar.gz
-GO_ARCHIVE_SHA256=6d894da8b4ad3f7f6c295db0d73ccc3646bce630e1c43e662a0120681d47e988
+GO_ARCHIVE_URL=https://storage.googleapis.com/golang/go1.7.1.linux-amd64.tar.gz
+GO_ARCHIVE_SHA256=43ad621c9b014cde8db17393dc108378d37bc853aa351a6c74bf6432c1bbd182
 GO_ARCHIVE=/tmp/$(basename $GO_ARCHIVE_URL)
 
 echo "Downloading go..."
