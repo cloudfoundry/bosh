@@ -3,7 +3,8 @@ require 'json'
 
 module Bosh::Spec
   class ConfigServerHelper
-    def initialize(sandbox)
+    def initialize(sandbox, logger)
+      @logger = logger
       @port = sandbox.port_provider.get_port(:config_server_port)
       @uaa_config_hash = {
           'client_id' => sandbox.director_config.config_server_uaa_client_id,
@@ -32,13 +33,9 @@ module Bosh::Spec
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.ca_file = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
-      auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
+      auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, @logger)
       auth_header = auth_provider.auth_header
       http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header, 'Content-Type' => 'application/json'})
-    end
-
-    def logger
-      @logger ||= Bosh::Director::Config.logger
     end
 
     def build_uri(name)

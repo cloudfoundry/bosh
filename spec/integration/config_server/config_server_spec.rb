@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
   let(:job_properties) do
     {
