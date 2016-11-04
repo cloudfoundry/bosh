@@ -117,7 +117,6 @@ module Bosh::Director
         ]
 
         whitelisted_link_spec_keys = [
-          'networks',
           'instances',
           'properties'
         ]

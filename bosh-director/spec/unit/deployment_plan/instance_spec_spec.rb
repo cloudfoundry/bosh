@@ -26,24 +26,6 @@ module Bosh::Director::DeploymentPlan
           ]}
       }
     end
-    let(:expected_links) do
-      {'link_name' =>
-         {
-          "networks"=> ["default"],
-          "properties"=> {
-            "listen_port"=> "Kittens"
-          },
-          "instances"=> [{
-                           "name"=> "provider",
-                           "index"=> 0,
-                           "bootstrap"=> true,
-                           "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
-                           "az"=> "z1",
-                           "address"=> "10.244.0.4"
-                         }
-          ]}
-      }
-    end
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
@@ -138,6 +120,25 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
+
+      let(:expected_links) do
+        {'link_name' =>
+           {
+             "properties"=> {
+               "listen_port"=> "Kittens"
+             },
+             "instances"=> [{
+                              "name"=> "provider",
+                              "index"=> 0,
+                              "bootstrap"=> true,
+                              "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
+                              "az"=> "z1",
+                              "address"=> "10.244.0.4"
+                            }
+             ]}
+        }
+      end
+
       context 'properties interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
@@ -149,19 +150,19 @@ module Bosh::Director::DeploymentPlan
           }
         end
 
+        let(:first_link) do
+          {'deployment_name' => 'dep1', 'instances' => [{'name' => 'v1'}], 'networks' => 'foo', 'properties' => {'smurf' => '((smurf_val1))'}}
+        end
+
+        let(:second_link) do
+          {'deployment_name' => 'dep2', 'instances' => [{'name' => 'v2'}], 'networks' => 'foo2', 'properties' => {'smurf' => '((smurf_val2))'}}
+        end
+
         let(:links) do
           {
             'link_1' => first_link,
             'link_2' => second_link
           }
-        end
-
-        let(:first_link) do
-          {'deployment_name' => 'dep1', 'networks' => 'foo', 'properties' => {'smurf' => '((smurf_val1))'}}
-        end
-
-        let(:second_link) do
-          {'deployment_name' => 'dep2', 'networks' => 'foo2', 'properties' => {'smurf' => '((smurf_val2))'}}
         end
 
         let(:resolved_properties) do
@@ -172,11 +173,11 @@ module Bosh::Director::DeploymentPlan
         end
 
         let(:resolved_first_link) do
-          {'networks' => 'foo', 'properties' => {'smurf' => 'strong smurf'}}
+          {'instances' => [{'name' => 'v1'}], 'properties' => {'smurf' => 'strong smurf'}}
         end
 
         let(:resolved_second_link) do
-          {'networks' => 'foo2', 'properties' => {'smurf' => 'sleepy smurf'}}
+          {'instances' => [{'name' => 'v2'}], 'properties' => {'smurf' => 'sleepy smurf'}}
         end
 
         let(:resolved_links) do
