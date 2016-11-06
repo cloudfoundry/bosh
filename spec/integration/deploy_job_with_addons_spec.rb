@@ -8,7 +8,12 @@ describe 'deploy job with addons', type: :integration do
 
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon_includes))
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
+      runtime_config['addons'][0]['include'] = {'jobs' => [
+          {'name'=> 'foobar', 'release' => 'bosh-release'}
+      ]}
+      runtime_config['addons'][0]['exclude'] = {'deployments' => ['dep2']}
+      File.write(runtime_config_filename, Psych.dump(runtime_config))
       expect(bosh_runner.run("update runtime-config #{runtime_config_filename}")).to include("Successfully updated runtime config")
     end
 

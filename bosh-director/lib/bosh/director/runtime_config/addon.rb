@@ -5,11 +5,12 @@ module Bosh::Director
 
       attr_reader :name
 
-      def initialize(name, job_hashes, addon_level_properties, addon_include)
+      def initialize(name, job_hashes, addon_level_properties, addon_include, addon_exclude)
         @name = name
         @addon_job_hashes = job_hashes
         @addon_level_properties = addon_level_properties
         @addon_include = addon_include
+        @addon_exclude = addon_exclude
       end
 
       def jobs
@@ -28,13 +29,14 @@ module Bosh::Director
           parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
         end
         addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        addon_include = AddonInclude.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true))
+        addon_include = AddonFilter.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true), :include)
+        addon_exclude = AddonFilter.parse(safe_property(addon_hash, 'exclude', :class => Hash, :optional => true), :exclude)
 
-        new(name, parsed_addon_jobs, addon_level_properties, addon_include)
+        new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
       end
 
       def applies?(deployment_name, deployment_instance_group)
-        @addon_include.applies?(deployment_name, deployment_instance_group)
+        @addon_include.applies?(deployment_name, deployment_instance_group) && !@addon_exclude.applies?(deployment_name, deployment_instance_group)
       end
 
       def add_to_deployment(deployment)
