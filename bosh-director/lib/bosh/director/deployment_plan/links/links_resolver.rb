@@ -12,7 +12,7 @@ module Bosh::Director
         instance_group.jobs.each do |job|
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
-          save_provided_links(instance_group, job)
+          add_shared_provided_links_to_deployment_plan(instance_group, job)
         end
       end
 
@@ -49,7 +49,7 @@ module Bosh::Director
         end
       end
 
-      def save_provided_links(instance_group, job)
+      def add_shared_provided_links_to_deployment_plan(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
           if provided_link.shared
             link_spec = Link.new(provided_link.name, instance_group, job).spec
