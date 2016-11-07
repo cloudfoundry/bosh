@@ -6,7 +6,9 @@ module Bosh::Dev::Sandbox
 
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
 
-    LOCAL_CONFIG_SERVER_FILE_NAME = 'bosh-config-server-executable.latest'
+    CONFIG_SERVER_VERSION = "0.0.79"
+
+    LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'integration-config-server')
@@ -41,24 +43,9 @@ module Bosh::Dev::Sandbox
 
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
-
-      config_server_version_url = "#{S3_BUCKET_BASE_URL}/current-version"
-      retryable.retryer do
-        `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
-        $? == 0
-      end
-
-      file_name_to_download = self.generate_file_name_to_download(self.read_current_version)
-
-      unless File.exist?(File.join(INSTALL_DIR, file_name_to_download))
-        retryable.retryer do
-          `curl --output #{File.join(INSTALL_DIR, file_name_to_download)} -L #{S3_BUCKET_BASE_URL}/#{file_name_to_download}`
-          $? == 0
-        end
-      end
-
+      downloaded_file_name = download(CONFIG_SERVER_VERSION)
       executable_file_path = File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
-      FileUtils.copy(File.join(INSTALL_DIR, file_name_to_download), executable_file_path)
+      FileUtils.copy(File.join(INSTALL_DIR, downloaded_file_name), executable_file_path)
       File.chmod(0777, executable_file_path)
     end
 
@@ -85,8 +72,30 @@ module Bosh::Dev::Sandbox
 
     private
 
+    def self.download(version)
+      file_name_to_download = self.generate_file_name_to_download(version)
+
+      unless File.exist?(File.join(INSTALL_DIR, file_name_to_download))
+        retryable.retryer do
+          `curl --output #{File.join(INSTALL_DIR, file_name_to_download)} -L #{S3_BUCKET_BASE_URL}/#{file_name_to_download}`
+          $? == 0
+        end
+      end
+
+      file_name_to_download
+    end
+
     def self.retryable
       Bosh::Retryable.new({tries: 6})
+    end
+
+    def self.latest_version
+      config_server_version_url = "#{S3_BUCKET_BASE_URL}/current-version"
+      retryable.retryer do
+        `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
+        $? == 0
+      end
+      read_current_version
     end
 
     def self.read_current_version
