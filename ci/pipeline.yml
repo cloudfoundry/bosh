@@ -188,12 +188,6 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      1,4,7,10,13,16,19,22
-          on_failure:
-            put: slack-alert
-            params:
-              channel: {{slack_channel_name}}
-              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-              text: {{slack_failure_message}}
 
         - task: test-group-2
           privileged: true
@@ -204,12 +198,6 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      2,5,8,11,14,17,20,23
-          on_failure:
-            put: slack-alert
-            params:
-              channel: {{slack_channel_name}}
-              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-              text: {{slack_failure_message}}
 
         - task: test-group-3
           privileged: true
@@ -220,12 +208,13 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
-          on_failure:
-            put: slack-alert
-            params:
-              channel: {{slack_channel_name}}
-              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-              text: {{slack_failure_message}}
+
+        on_failure:
+          put: slack-alert
+          params:
+            channel: {{slack_channel_name}}
+            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+            text: {{slack_failure_message}}
 
   - name: integration-2.3-mysql
     public: true
