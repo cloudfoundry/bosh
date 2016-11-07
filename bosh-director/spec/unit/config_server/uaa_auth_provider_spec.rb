@@ -59,7 +59,7 @@ describe Bosh::Director::UAAAuthProvider do
     end
 
     it 'logs an error' do
-      expect(logger).to receive(:error).with(/Failed to obtain valid token from UAA: failed/)
+      expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
       expect {
         token_provider.auth_header
       }.to raise_error
@@ -68,7 +68,7 @@ describe Bosh::Director::UAAAuthProvider do
     it 'raises UAAAuthorizationError' do
       expect {
         token_provider.auth_header
-      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error}")
+      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
     end
   end
 
@@ -82,7 +82,7 @@ describe Bosh::Director::UAAAuthProvider do
     end
 
     it 'logs an error' do
-      expect(logger).to receive(:error).with(/Failed to obtain valid token from UAA: failed/)
+      expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{decode_error.inspect}")
       expect {
         token_provider.auth_header
       }.to raise_error
@@ -91,7 +91,7 @@ describe Bosh::Director::UAAAuthProvider do
     it 'raises UAAAuthorizationError' do
       expect {
         token_provider.auth_header
-      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{decode_error}")
+      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{decode_error.inspect}")
     end
   end
 

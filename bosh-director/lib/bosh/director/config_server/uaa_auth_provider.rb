@@ -64,7 +64,7 @@ module Bosh::Director
       @uaa_token = @uaa_token_issuer.client_credentials_grant
       @token_data = decode
     rescue => e
-      error_message = "Failed to obtain valid token from UAA: #{e}"
+      error_message = "Failed to obtain valid token from UAA: #{e.inspect}"
       @logger.error(error_message)
       raise UAAAuthorizationError, error_message
     end
