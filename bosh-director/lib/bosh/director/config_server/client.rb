@@ -69,7 +69,11 @@ module Bosh::Director::ConfigServer
         result = default_prop
       else
         if is_placeholder?(provided_prop)
-          extracted_name = extract_placeholder_name(provided_prop)
+          extracted_name = add_prefix_if_not_absolute(
+            extract_placeholder_name(provided_prop),
+            @director_name,
+            @deployment_name
+          )
 
           if name_exists?(extracted_name)
             result = provided_prop
@@ -96,7 +100,6 @@ module Bosh::Director::ConfigServer
     private
 
     def get_value_for_name(name)
-      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
       response = @config_server_http_client.get(name)
 
       if response.kind_of? Net::HTTPOK
@@ -121,17 +124,15 @@ module Bosh::Director::ConfigServer
       missing_names = []
       config_values = {}
 
-      if must_be_absolute_name
-        non_absolute_names = placeholders.inject([]) do |memo, placeholder|
-          name = extract_placeholder_name(placeholder)
-          memo << name unless name.start_with?('/')
-          memo
-        end
-        raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + non_absolute_names.join(',') unless non_absolute_names.empty?
-      end
+      validate_absolute_names(placeholders) if must_be_absolute_name
 
       placeholders.each do |placeholder|
-        name = extract_placeholder_name(placeholder)
+        name = add_prefix_if_not_absolute(
+          extract_placeholder_name(placeholder),
+          @director_name,
+          @deployment_name
+        )
+
         begin
           config_values[placeholder] = get_value_for_name(name)
         rescue Bosh::Director::ConfigServerMissingNames
@@ -143,7 +144,6 @@ module Bosh::Director::ConfigServer
     end
 
     def generate_password(name)
-      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
       request_body = {
         'type' => 'password'
       }
@@ -157,7 +157,6 @@ module Bosh::Director::ConfigServer
     end
 
     def generate_certificate(name, options)
-      name = add_prefix_if_not_absolute(name, @director_name, @deployment_name)
       dns_record_names = options[:dns_record_names]
       request_body = {
         'type' => 'certificate',
@@ -173,6 +172,15 @@ module Bosh::Director::ConfigServer
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerCertificateGenerationError, 'Config Server failed to generate certificate'
       end
+    end
+
+    def validate_absolute_names(placeholders)
+      non_absolute_names = placeholders.inject([]) do |memo, placeholder|
+        name = extract_placeholder_name(placeholder)
+        memo << name unless name.start_with?('/')
+        memo
+      end
+      raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + non_absolute_names.join(',') unless non_absolute_names.empty?
     end
   end
 

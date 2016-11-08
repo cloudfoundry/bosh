@@ -3,8 +3,8 @@ require 'spec_helper'
 module Bosh::Director::ConfigServer
   describe EnabledClient do
     subject(:client) { EnabledClient.new(http_client, director_name, deployment_name, logger) }
-    let(:director_name) {'director_name'}
-    let(:deployment_name) {'deployment_name'}
+    let(:director_name) {'smurf_director_name'}
+    let(:deployment_name) {'smurf_deployment_name'}
     let(:logger) { double('Logging::Logger') }
 
     def prepend_namespace(name)
@@ -104,7 +104,7 @@ module Bosh::Director::ConfigServer
           interpolated_manifest
         }.to raise_error(
                Bosh::Director::ConfigServerMissingNames,
-               'Failed to load placeholder names from the config server: missing_placeholder')
+               "Failed to load placeholder names from the config server: #{prepend_namespace('missing_placeholder')}")
       end
 
       it 'should raise an unknown error when config_server returns any error other than a 404' do
