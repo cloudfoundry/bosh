@@ -5,8 +5,6 @@ describe 'cli: deployment process', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays instances in a deployment' do
-    pending('cli2: #131396949: instances --details should include ignore')
-
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [
       {'name' => 'zone-1', 'cloud_properties' => {}},
