@@ -45,10 +45,24 @@ module Bosh::Director
       end
     end
 
+    context 'when the manifest is empty string' do
+      let(:manifest_yml) { "" }
+      it 'does not update the spec_json' do
+        expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq({})
+      end
+    end
+
     context 'when the manifest contains a jobs section (and not instance_groups)' do
       let(:manifest_yml) { JSON.dump({'jobs' => [{'name' => 'normal_job'}]}) }
       it 'sets the spec_json lifecycle to service' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq('lifecycle' => 'service')
+      end
+    end
+
+    context 'when the manifest does not contain either jobs or instance_groups' do
+      let(:manifest_yml) { JSON.dump({}) }
+      it 'does not update the spec_json' do
+        expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq({})
       end
     end
 
@@ -65,6 +79,14 @@ module Bosh::Director
       let(:spec_json) { nil }
       it 'does not update the spec_json' do
         expect(db[:instances].where(id: 1).first[:spec_json]).to eq(nil)
+      end
+    end
+
+    context 'when the instance has "" spec_json' do
+      let(:instance_group_hash) { {'name' => 'normal_job'} }
+      let(:spec_json) { "" }
+      it 'does not update the spec_json' do
+        expect(db[:instances].where(id: 1).first[:spec_json]).to eq("")
       end
     end
 
