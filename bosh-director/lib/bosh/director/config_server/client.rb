@@ -4,23 +4,25 @@ module Bosh::Director::ConfigServer
   class EnabledClient
     include ConfigServerHelper
 
-    def initialize(http_client, director_name, deployment_name, logger)
+    def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
       @director_name = director_name
-      @deployment_name = deployment_name
       @deep_hash_replacer = DeepHashReplacement.new
       @logger = logger
     end
 
     # @param [Hash] src Hash to be interpolated
+    # @param [String] deployment_name The deployment context in-which the interpolation
+    # will occur (used mostly for links properties interpolation since they will be interpolated in
+    # the context of the deployment providing these links)
     # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
     # @param [Boolean] must_be_absolute_name Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_name = false)
+    def interpolate(src, deployment_name, subtrees_to_ignore = [], must_be_absolute_name = false)
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
 
-      retrieved_config_server_values, missing_names = fetch_names_values(placeholders_list, must_be_absolute_name)
+      retrieved_config_server_values, missing_names = fetch_names_values(placeholders_list, deployment_name, must_be_absolute_name)
       if missing_names.length > 0
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder names from the config server: #{missing_names.join(', ')}"
       end
@@ -44,7 +46,7 @@ module Bosh::Director::ConfigServer
         ['resource_pools', Integer, 'env'],
       ]
 
-      interpolate(deployment_manifest, ignored_subtrees, false)
+      interpolate(deployment_manifest, deployment_manifest['name'], ignored_subtrees, false)
     end
 
     # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
@@ -56,15 +58,18 @@ module Bosh::Director::ConfigServer
         ['addons', Integer, 'jobs', Integer, 'consumes', String, 'properties'],
       ]
 
-      interpolate(runtime_manifest, ignored_subtrees, true)
+      # Deployment name is passed here as nil because we required all placeholders
+      # in the runtime config to be absolute, except for the properties in addons
+      interpolate(runtime_manifest, nil, ignored_subtrees, true)
     end
 
     # @param [Object] provided_prop property value
     # @param [Object] default_prop property value
     # @param [String] type of property
+    # @param [String] deployment_name
     # @param [Hash] options hash containing extra options when needed
     # @return [Object] either the provided_prop or the default_prop
-    def prepare_and_get_property(provided_prop, default_prop, type, options = {})
+    def prepare_and_get_property(provided_prop, default_prop, type, deployment_name, options = {})
       if provided_prop.nil?
         result = default_prop
       else
@@ -72,7 +77,7 @@ module Bosh::Director::ConfigServer
           extracted_name = add_prefix_if_not_absolute(
             extract_placeholder_name(provided_prop),
             @director_name,
-            @deployment_name
+            deployment_name
           )
 
           if name_exists?(extracted_name)
@@ -120,7 +125,7 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def fetch_names_values(placeholders, must_be_absolute_name)
+    def fetch_names_values(placeholders, deployment_name, must_be_absolute_name)
       missing_names = []
       config_values = {}
 
@@ -130,7 +135,7 @@ module Bosh::Director::ConfigServer
         name = add_prefix_if_not_absolute(
           extract_placeholder_name(placeholder),
           @director_name,
-          @deployment_name
+          deployment_name
         )
 
         begin
@@ -185,7 +190,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, subtrees_to_ignore = [], must_be_absolute_name = false)
+    def interpolate(src, deployment_name, subtrees_to_ignore = [], must_be_absolute_name = false)
       Bosh::Common::DeepCopy.copy(src)
     end
 
@@ -197,7 +202,7 @@ module Bosh::Director::ConfigServer
       Bosh::Common::DeepCopy.copy(manifest)
     end
 
-    def prepare_and_get_property(manifest_provided_prop, default_prop, type, options = {})
+    def prepare_and_get_property(manifest_provided_prop, default_prop, type, deployment_name, options = {})
       manifest_provided_prop.nil? ? default_prop : manifest_provided_prop
     end
   end

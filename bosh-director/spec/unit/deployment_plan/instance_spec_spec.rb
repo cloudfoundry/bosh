@@ -193,9 +193,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'resolves properties and links properties' do
-          expect(config_server_client).to receive(:interpolate).with(properties).and_return(resolved_properties)
-          expect(config_server_client).to receive(:interpolate).with(first_link).and_return(resolved_first_link)
-          expect(config_server_client).to receive(:interpolate).with(second_link).and_return(resolved_second_link)
+          expect(config_server_client).to receive(:interpolate).with(properties, 'fake-deployment').and_return(resolved_properties)
+          expect(config_server_client).to receive(:interpolate).with(first_link, 'dep1').and_return(resolved_first_link)
+          expect(config_server_client).to receive(:interpolate).with(second_link, 'dep2').and_return(resolved_second_link)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)

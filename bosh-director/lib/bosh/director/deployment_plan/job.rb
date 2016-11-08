@@ -24,6 +24,7 @@ module Bosh::Director
         @package_models = []
         @logger = Config.logger
         @link_infos = {}
+        @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
 
         # This hash will contain the properties specific to this job,
         # it will be a hash where the keys are the deployment instance groups name, and
@@ -192,8 +193,6 @@ module Bosh::Director
       end
 
       def bind_properties(instance_group_name, deployment_name, options = {})
-        @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client(deployment_name)
-
         bound_properties = {}
         @properties[instance_group_name] ||= {}
 
@@ -205,6 +204,7 @@ module Bosh::Director
             provided_property_value,
             definition['default'],
             definition['type'],
+            deployment_name,
             options
           )
 
