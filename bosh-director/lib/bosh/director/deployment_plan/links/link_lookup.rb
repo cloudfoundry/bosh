@@ -32,7 +32,7 @@ module Bosh::Director
         return nil unless instance_group
 
         if @link_path.disk?
-          DiskLink.new(@link_path.name).spec
+          DiskLink.new(@link_path.deployment, @link_path.name).spec
         else
           job = instance_group.jobs.find { |job| job.name == @link_path.template }
           return nil unless job
@@ -40,7 +40,7 @@ module Bosh::Director
           found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
           return nil unless found
 
-          Link.new(@link_path.name, instance_group, job, @link_network).spec
+          Link.new(@link_path.deployment, @link_path.name, instance_group, job, @link_network).spec
         end
       end
     end

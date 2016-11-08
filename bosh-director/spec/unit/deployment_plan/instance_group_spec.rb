@@ -574,22 +574,20 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe '#add_resolved_link' do
     subject { described_class.new(logger) }
 
-    let(:dep_name_1) { 'my_dep_name_1' }
-    let(:dep_name_2) { 'my_dep_name_2' }
-
     let(:link_spec_1) do
       {
-        "networks"=> ["default_1"],
-        "properties"=> {
-           "listen_port"=> "Kittens"
+        'deployment_name' => 'my_dep_name_1',
+        'networks' => ['default_1'],
+        'properties' => {
+          'listen_port' => 'Kittens'
          },
-         "instances"=> [{
-                          "name"=> "provider_1",
-                          "index"=> 0,
-                          "bootstrap"=> true,
-                          "id"=> "vroom",
-                          "az"=> "z1",
-                          "address"=> "10.244.0.4"
+        'instances' => [{
+                          'name'=> 'provider_1',
+                          'index'=> 0,
+                          'bootstrap'=> true,
+                          'id'=> 'vroom',
+                          'az'=> 'z1',
+                          'address'=> '10.244.0.4'
                         }
         ]
       }
@@ -597,17 +595,18 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     let(:link_spec_2) do
       {
-        "networks"=> ["default_2"],
-        "properties"=> {
-          "listen_port"=> "Dogs"
+        'deployment_name' => 'my_dep_name_2',
+        'networks'=> ['default_2'],
+        'properties'=> {
+          'listen_port'=> 'Dogs'
         },
-        "instances"=> [{
-                         "name"=> "provider_2",
-                         "index"=> 0,
-                         "bootstrap"=> false,
-                         "id"=> "hello",
-                         "az"=> "z2",
-                         "address"=> "10.244.0.5"
+        'instances'=> [{
+                         'name'=> 'provider_2',
+                         'index'=> 0,
+                         'bootstrap'=> false,
+                         'id'=> 'hello',
+                         'az'=> 'z2',
+                         'address'=> '10.244.0.5'
                        }
         ]
       }
@@ -616,46 +615,43 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:expected_resolved_links) do
       {
         'my_link_name_1' => {
-          "deployment_name" => "my_dep_name_1",
-          "networks"=> ["default_1"],
-          "properties"=> {
-            "listen_port"=> "Kittens"
+          'deployment_name' => 'my_dep_name_1',
+          'networks'=> ['default_1'],
+          'properties'=> {
+            'listen_port'=> 'Kittens'
           },
-          "instances"=> [{
-                           "name"=> "provider_1",
-                           "index"=> 0,
-                           "bootstrap"=> true,
-                           "id"=> "vroom",
-                           "az"=> "z1",
-                           "address"=> "10.244.0.4"
+          'instances'=> [{
+                           'name'=> 'provider_1',
+                           'index'=> 0,
+                           'bootstrap'=> true,
+                           'id'=> 'vroom',
+                           'az'=> 'z1',
+                           'address'=> '10.244.0.4'
                          }
           ]
         },
         'my_link_name_2' => {
-          "deployment_name" => "my_dep_name_2",
-          "networks"=> ["default_2"],
-          "properties"=> {
-            "listen_port"=> "Dogs"
+          'deployment_name' => 'my_dep_name_2',
+          'networks'=> ['default_2'],
+          'properties'=> {
+            'listen_port'=> 'Dogs'
           },
-          "instances"=> [{
-                           "name"=> "provider_2",
-                           "index"=> 0,
-                           "bootstrap"=> false,
-                           "id"=> "hello",
-                           "az"=> "z2",
-                           "address"=> "10.244.0.5"
+          'instances'=> [{
+                           'name'=> 'provider_2',
+                           'index'=> 0,
+                           'bootstrap'=> false,
+                           'id'=> 'hello',
+                           'az'=> 'z2',
+                           'address'=> '10.244.0.5'
                          }
           ]
         }
       }
     end
 
-    let(:link_info_1) { Bosh::Director::DeploymentPlan::LinkInfo.new(dep_name_1, link_spec_1) }
-    let(:link_info_2) { Bosh::Director::DeploymentPlan::LinkInfo.new(dep_name_2, link_spec_2) }
-
     it 'stores resolved links correctly' do
-      subject.add_resolved_link('my_link_name_1', link_info_1)
-      subject.add_resolved_link('my_link_name_2', link_info_2)
+      subject.add_resolved_link('my_link_name_1', link_spec_1)
+      subject.add_resolved_link('my_link_name_2', link_spec_2)
 
       expect(subject.resolved_links).to eq(expected_resolved_links)
     end

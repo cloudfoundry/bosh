@@ -3,8 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Link do
-      subject { described_class.new(link_name, source_instance_group, job, network_name) }
+      subject { described_class.new(deployment_name, link_name, source_instance_group, job, network_name) }
 
+      let(:deployment_name) { 'smurf_deployment' }
       let(:link_name) { 'smurf_link' }
       let(:source_instance_group_name) { 'my_source_instance_group_name' }
       let(:source_instance_group) { instance_double(Bosh::Director::DeploymentPlan::InstanceGroup) }
@@ -52,6 +53,7 @@ module Bosh::Director
           result_spec = subject.spec
 
           expect(result_spec).to eq({
+            'deployment_name' => 'smurf_deployment',
             'networks' => ['instance_group_network_name'],
             'properties' => { 'a' => 'b' },
             'instances' => [

@@ -148,7 +148,11 @@ module Bosh::Director
             expect(link_path.job).to be_nil
             expect(link_path.template).to be_nil
             expect(link_path.name).to be_nil
-            expect(link_path.manual_spec).to eq({"properties"=>"yay", "instances"=>"yay"})
+            expect(link_path.manual_spec).to eq({
+                                                  'deployment_name' => 'deployment_name',
+                                                  'properties' => 'yay',
+                                                  'instances' => 'yay'
+                                                })
           end
         end
       end

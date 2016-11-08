@@ -5,7 +5,8 @@ module Bosh::Director
     class Link
       attr_reader :name
 
-      def initialize(name, source_instance_group, job, network_name = nil)
+      def initialize(deployment_name, name, source_instance_group, job, network_name = nil)
+        @deployment_name = deployment_name # Provider Deployment Name
         @name = name
         @source_instance_group = source_instance_group
         @network_name = network_name
@@ -14,6 +15,7 @@ module Bosh::Director
 
       def spec
         {
+          'deployment_name' => @deployment_name,
           'networks' => @source_instance_group.networks.map { |network| network.name },
           'properties' => @job.provides_link_info(@source_instance_group.name, @name)['mapped_properties'],
           'instances' => @source_instance_group.needed_instance_plans.map do |instance_plan|
