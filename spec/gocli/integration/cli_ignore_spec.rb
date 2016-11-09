@@ -11,10 +11,6 @@ describe 'ignore/unignore-instance', type: :integration do
     end
   end
 
-  before do
-    pending('cli2: #125441581: backport ignore/unignore-instance commands')
-  end
-
   it 'changes the ignore value of vms correctly' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
@@ -30,13 +26,13 @@ describe 'ignore/unignore-instance', type: :integration do
     vm2 = initial_vms[1]
     vm3 = initial_vms[2]
 
-    bosh_runner.run("ignore-instance #{vm1.job_name}/#{vm1.instance_uuid}", deployment_name: 'simple')
-    bosh_runner.run("ignore-instance #{vm2.job_name}/#{vm2.instance_uuid}", deployment_name: 'simple')
+    bosh_runner.run("ignore #{vm1.job_name}/#{vm1.instance_uuid}", deployment_name: 'simple')
+    bosh_runner.run("ignore #{vm2.job_name}/#{vm2.instance_uuid}", deployment_name: 'simple')
     expect(director.vm(vm1.job_name, vm1.instance_uuid).ignore).to eq('true')
     expect(director.vm(vm2.job_name, vm2.instance_uuid).ignore).to eq('true')
     expect(director.vm(vm3.job_name, vm3.instance_uuid).ignore).to eq('false')
 
-    bosh_runner.run("unignore-instance #{vm2.job_name}/#{vm2.instance_uuid}")
+    bosh_runner.run("unignore #{vm2.job_name}/#{vm2.instance_uuid}", deployment_name: 'simple')
     expect(director.vm(vm1.job_name, vm1.instance_uuid).ignore).to eq('true')
     expect(director.vm(vm2.job_name, vm2.instance_uuid).ignore).to eq('false')
     expect(director.vm(vm3.job_name, vm3.instance_uuid).ignore).to eq('false')
@@ -52,18 +48,19 @@ describe 'ignore/unignore-instance', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
     foobar1_vm1 = director.vms.first
-    bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+    bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
     output, exit_code = bosh_runner.run("delete-deployment", deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
+    expect(output).to include("You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
 
     output, exit_code = bosh_runner.run("delete-deployment --force", deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
+    expect(output).to include("You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
+    skip "#130492155 Backport attach-disk command"
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -75,7 +72,7 @@ describe 'ignore/unignore-instance', type: :integration do
     foobar1_vm1 = director.vms.first
     bosh_runner.run("stop #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid} --hard", deployment_name: 'simple')
 
-    bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+    bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
     output, exit_code = bosh_runner.run("attach-disk #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid} smurf-disk", deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
@@ -148,9 +145,9 @@ describe 'ignore/unignore-instance', type: :integration do
         ).to eq(1)
 
         # ==========================================================
-        # ignore-instance
+        # ignore
         # ==========================================================
-        bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
         bosh_runner.run("restart", deployment_name: 'simple')
 
         # ==========================================================
@@ -194,6 +191,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when the number of instances in an instance group did not change between deployments' do
       it 'leaves ignored instances alone when instance count is 1' do
+        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -211,9 +209,9 @@ describe 'ignore/unignore-instance', type: :integration do
 
         # ignore first VM
         initial_vms = director.vms
-        foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}.first
+        foobar1_vm1 = initial_vms.find{ |vm| vm.job_name == 'foobar1'}
 
-        bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
@@ -251,6 +249,8 @@ describe 'ignore/unignore-instance', type: :integration do
 
 
       it 'leaves ignored instances alone when count of the instance groups is larger than 1' do
+        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
+
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -265,7 +265,7 @@ describe 'ignore/unignore-instance', type: :integration do
         # ignore first VM
         initial_vms = director.vms
         vm1 = initial_vms[0]
-        bosh_runner.run("ignore-instance #{vm1.job_name}/#{vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{vm1.job_name}/#{vm1.instance_uuid}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
@@ -297,6 +297,7 @@ describe 'ignore/unignore-instance', type: :integration do
     context 'when the existing instances is less than the desired ones' do
 
       it 'should handle ignored instances' do
+        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -312,7 +313,7 @@ describe 'ignore/unignore-instance', type: :integration do
         initial_vms = director.vms
         foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}.first
         foobar2_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}.first
-        bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
         # redeploy with different foobar1 templates
         manifest_hash['jobs'].clear
@@ -346,8 +347,8 @@ describe 'ignore/unignore-instance', type: :integration do
         # ======================================================
         # switch ignored instances
 
-        bosh_runner.run("unignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
-        bosh_runner.run("ignore-instance #{foobar2_vm1.job_name}/#{foobar2_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("unignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{foobar2_vm1.job_name}/#{foobar2_vm1.instance_uuid}", deployment_name: 'simple')
 
         # Redeploy with different numbers
         manifest_hash['jobs'].clear
@@ -411,6 +412,8 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when the ignored instances is larger than the desired ones' do
         it "should fail to deploy" do
+          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
+
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -429,9 +432,9 @@ describe 'ignore/unignore-instance', type: :integration do
           foobar1_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[1]
           foobar1_vm3 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[2]
 
-          bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
-          bosh_runner.run("ignore-instance #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
-          bosh_runner.run("ignore-instance #{foobar1_vm3.job_name}/#{foobar1_vm3.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm3.job_name}/#{foobar1_vm3.instance_uuid}", deployment_name: 'simple')
 
           # redeploy with different foobar1 templates
           manifest_hash['jobs'].clear
@@ -445,12 +448,14 @@ describe 'ignore/unignore-instance', type: :integration do
           output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
           expect(exit_code).to_not eq(0)
-          expect(output).to include("Error 190020: Instance Group 'foobar1' has 3 ignored instance(s). 2 instance(s) of that instance group were requested. Deleting ignored instances is not allowed.")
+          expect(output).to include("Instance Group 'foobar1' has 3 ignored instance(s). 2 instance(s) of that instance group were requested. Deleting ignored instances is not allowed.")
         end
       end
 
       context 'when the ignored instances is equal to desired ones' do
         it 'deletes all non-ignored vms and leaves the ignored alone without updating them' do
+          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
+
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -469,8 +474,8 @@ describe 'ignore/unignore-instance', type: :integration do
           foobar1_vm3 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[2]
           foobar1_vm4 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[3]
 
-          bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
-          bosh_runner.run("ignore-instance #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
 
           # ===================================================
           # redeploy with different foobar1 templates
@@ -506,6 +511,8 @@ describe 'ignore/unignore-instance', type: :integration do
       context 'when the ignored instances are fewer than the desired ones' do
 
         it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
+          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
+
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -521,8 +528,8 @@ describe 'ignore/unignore-instance', type: :integration do
           foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
           foobar1_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[1]
 
-          bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
-          bosh_runner.run("ignore-instance #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
 
           # ===================================================
           # redeploy with different foobar1 templates
@@ -591,6 +598,8 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when --recreate flag is passed' do
       it 'should recreate needed vms but leave the ignored ones alone' do
+        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
+
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -610,7 +619,7 @@ describe 'ignore/unignore-instance', type: :integration do
         foobar2_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}[1]
         foobar2_vm3 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}[2]
 
-        bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
@@ -671,7 +680,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         initial_vms = director.vms
         foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1' && vm.index == '0'}.first
-        bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+        bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
@@ -679,7 +688,7 @@ describe 'ignore/unignore-instance', type: :integration do
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190021: You are trying to delete instance group 'foobar1', which contains ignored instance(s). Operation not allowed.")
+        expect(output).to include("You are trying to delete instance group 'foobar1', which contains ignored instance(s). Operation not allowed.")
       end
     end
 
@@ -696,7 +705,7 @@ describe 'ignore/unignore-instance', type: :integration do
           initial_vms = director.vms
           foobar1_vm1 = initial_vms[0]
           foobar1_vm2 = initial_vms[1]
-          bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
           foobar1_vm1.kill_agent
 
@@ -732,7 +741,7 @@ describe 'ignore/unignore-instance', type: :integration do
           initial_vms = director.vms
           foobar1_vm1 = initial_vms[0]
           foobar1_vm2 = initial_vms[1]
-          bosh_runner.run("ignore-instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
 
           foobar1_vm1.kill_agent
 
@@ -744,8 +753,8 @@ describe 'ignore/unignore-instance', type: :integration do
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           expect(output).to include("Warning: You have ignored instances. They will not be changed.")
-          expect(output).to_not include("Started updating instance foobar1 > foobar1/#{foobar1_vm1.instance_uuid} (#{foobar1_vm1.index})")
-          expect(output).to include("Started updating instance foobar1 > foobar1/#{foobar1_vm2.instance_uuid} (#{foobar1_vm2.index})")
+          expect(output).to_not include("Updating instance foobar1: foobar1/#{foobar1_vm1.instance_uuid} (#{foobar1_vm1.index})")
+          expect(output).to include("Updating instance foobar1: foobar1/#{foobar1_vm2.instance_uuid} (#{foobar1_vm2.index})")
 
           modified_vms = director.vms
           modified_foobar1_vm1 = modified_vms.select{|i| i.instance_uuid == foobar1_vm1.instance_uuid}.first
@@ -771,153 +780,160 @@ describe 'ignore/unignore-instance', type: :integration do
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
+        def findVmByIndexAndName(vm, index, name)
+          vm.find  do |vm|
+            vm.index == index && vm.job_name == name
+          end
+        end
+
         vms_first_state = director.vms
-        ignored_vm = vms_first_state[0]
-        foobar1_vm_2 = vms_first_state[1]
-        foobar1_vm_3 = vms_first_state[2]
-        foobar2_vm_1 = vms_first_state[3]
 
-        bosh_runner.run("ignore-instance #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}")
+        ignored_vm = findVmByIndexAndName(vms_first_state, '0', 'foobar1')
+        foobar1_vm_2 = findVmByIndexAndName(vms_first_state, '1', 'foobar1')
+        foobar1_vm_3 = findVmByIndexAndName(vms_first_state, '2', 'foobar1')
+        foobar2_vm_1 = findVmByIndexAndName(vms_first_state, '0', 'foobar2')
+
+        bosh_runner.run("ignore #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", deployment_name: 'simple')
 
         # ===========================================
-        start_output = bosh_runner.run("start")
+        start_output = bosh_runner.run("start", deployment_name: 'simple')
         expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(start_output).to_not include('Started updating instance')
+        expect(start_output).to_not include('Updating instance')
 
         # ===========================================
-        stop_output = bosh_runner.run("stop")
+        stop_output = bosh_runner.run("stop", deployment_name: 'simple')
         expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(stop_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(stop_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(stop_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(stop_output).to match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_stop = director.vms
-        expect(vms_after_stop[0].last_known_state).to eq('running')
-        expect(vms_after_stop[1].last_known_state).to eq('stopped')
-        expect(vms_after_stop[2].last_known_state).to eq('stopped')
-        expect(vms_after_stop[3].last_known_state).to eq('stopped')
+        expect(findVmByIndexAndName(vms_after_stop, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_stop, '1', 'foobar1').last_known_state).to eq('stopped')
+        expect(findVmByIndexAndName(vms_after_stop, '2', 'foobar1').last_known_state).to eq('stopped')
+        expect(findVmByIndexAndName(vms_after_stop, '0', 'foobar2').last_known_state).to eq('stopped')
 
 
         # ===========================================
-        restart_output = bosh_runner.run("restart")
+        restart_output = bosh_runner.run("restart", deployment_name: 'simple')
         expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(restart_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(restart_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(restart_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(restart_output).to match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_restart = director.vms
-        expect(vms_after_restart[0].last_known_state).to eq('running')
-        expect(vms_after_restart[1].last_known_state).to eq('running')
-        expect(vms_after_restart[2].last_known_state).to eq('running')
-        expect(vms_after_restart[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '1', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '2', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '0', 'foobar2').last_known_state).to eq('running')
 
 
         # ===========================================
-        recreate_output = bosh_runner.run("recreate")
+        recreate_output = bosh_runner.run("recreate", deployment_name: 'simple')
         expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(recreate_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(recreate_output).to match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(recreate_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(recreate_output).to match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_recreate = director.vms
-        expect(vms_after_recreate[0].last_known_state).to eq('running')
-        expect(vms_after_recreate[1].last_known_state).to eq('running')
-        expect(vms_after_recreate[2].last_known_state).to eq('running')
-        expect(vms_after_recreate[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '1', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '2', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar2').last_known_state).to eq('running')
 
-        expect(vms_after_recreate[0].agent_id).to eq(ignored_vm.agent_id)
-        expect(vms_after_recreate[1].agent_id).to_not eq(foobar1_vm_2.agent_id)
-        expect(vms_after_recreate[2].agent_id).to_not eq(foobar1_vm_3.agent_id)
-        expect(vms_after_recreate[3].agent_id).to_not eq(foobar2_vm_1.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar1').agent_id).to eq(ignored_vm.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '1', 'foobar1').agent_id).to_not eq(foobar1_vm_2.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '2', 'foobar1').agent_id).to_not eq(foobar1_vm_3.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar2').agent_id).to_not eq(foobar2_vm_1.agent_id)
 
         # ========================================================================================
         # Targeting an instance group
         # ========================================================================================
 
-        stop_output = bosh_runner.run("stop foobar1")
+        stop_output = bosh_runner.run("stop foobar1", deployment_name: 'simple')
         expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(stop_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(stop_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(stop_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(stop_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(stop_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(stop_output).to_not match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_stop = director.vms
-        expect(vms_after_stop[0].last_known_state).to eq('running')
-        expect(vms_after_stop[1].last_known_state).to eq('stopped')
-        expect(vms_after_stop[2].last_known_state).to eq('stopped')
-        expect(vms_after_stop[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_stop, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_stop, '1', 'foobar1').last_known_state).to eq('stopped')
+        expect(findVmByIndexAndName(vms_after_stop, '2', 'foobar1').last_known_state).to eq('stopped')
+        expect(findVmByIndexAndName(vms_after_stop, '0', 'foobar2').last_known_state).to eq('running')
 
         # ===========================================
-        start_output = bosh_runner.run("start foobar1")
+        start_output = bosh_runner.run("start foobar1", deployment_name: 'simple')
         expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(start_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(start_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(start_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(start_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(start_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(start_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(start_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(start_output).to_not match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_start = director.vms
-        expect(vms_after_start[0].last_known_state).to eq('running')
-        expect(vms_after_start[1].last_known_state).to eq('running')
-        expect(vms_after_start[2].last_known_state).to eq('running')
-        expect(vms_after_start[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_start, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_start, '1', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_start, '2', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_start, '0', 'foobar2').last_known_state).to eq('running')
 
         # ===========================================
-        restart_output = bosh_runner.run("restart foobar1")
+        restart_output = bosh_runner.run("restart foobar1", deployment_name: 'simple')
         expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(restart_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(restart_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(restart_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(restart_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(restart_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(restart_output).to_not match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_restart = director.vms
         foobar1_vm_2 = vms_after_restart[1]
         foobar1_vm_3 = vms_after_restart[2]
         foobar2_vm_1 = vms_after_restart[3]
 
-        expect(vms_after_restart[0].last_known_state).to eq('running')
-        expect(vms_after_restart[1].last_known_state).to eq('running')
-        expect(vms_after_restart[2].last_known_state).to eq('running')
-        expect(vms_after_restart[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '1', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '2', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_restart, '0', 'foobar2').last_known_state).to eq('running')
 
         # ===========================================
-        recreate_output = bosh_runner.run("recreate foobar1")
+        recreate_output = bosh_runner.run("recreate foobar1", deployment_name: 'simple')
         expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
-        expect(recreate_output).to_not match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(0\)/)
-        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(1\)/)
-        expect(recreate_output).to match(/Started updating instance foobar1 > foobar1\/[a-z0-9\-]+ \(2\)/)
-        expect(recreate_output).to_not match(/Started updating instance foobar2 > foobar2\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to_not match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(0\)/)
+        expect(recreate_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(1\)/)
+        expect(recreate_output).to match(/Updating instance foobar1: foobar1\/[a-z0-9\-]+ \(2\)/)
+        expect(recreate_output).to_not match(/Updating instance foobar2: foobar2\/[a-z0-9\-]+ \(0\)/)
 
         vms_after_recreate = director.vms
-        expect(vms_after_recreate[0].last_known_state).to eq('running')
-        expect(vms_after_recreate[1].last_known_state).to eq('running')
-        expect(vms_after_recreate[2].last_known_state).to eq('running')
-        expect(vms_after_recreate[3].last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '1', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '2', 'foobar1').last_known_state).to eq('running')
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar2').last_known_state).to eq('running')
 
-        expect(vms_after_recreate[0].agent_id).to eq(ignored_vm.agent_id)
-        expect(vms_after_recreate[1].agent_id).to_not eq(foobar1_vm_2.agent_id)
-        expect(vms_after_recreate[2].agent_id).to_not eq(foobar1_vm_3.agent_id)
-        expect(vms_after_recreate[3].agent_id).to eq(foobar2_vm_1.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar1').agent_id).to eq(ignored_vm.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '1', 'foobar1').agent_id).to_not eq(foobar1_vm_2.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '2', 'foobar1').agent_id).to_not eq(foobar1_vm_3.agent_id)
+        expect(findVmByIndexAndName(vms_after_recreate, '0', 'foobar2').agent_id).to eq(foobar2_vm_1.agent_id)
 
         # ========================================================================================
         # Targeting a specific ignored instance
         # ========================================================================================
-        stop_output, stop_exit_code = bosh_runner.run("stop #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
-        expect(stop_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        stop_output, stop_exit_code = bosh_runner.run("stop #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true, deployment_name: 'simple')
+        expect(stop_output).to include("You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
         expect(stop_exit_code).to_not eq(0)
 
-        start_output, start_exit_code = bosh_runner.run("start #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
-        expect(start_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        start_output, start_exit_code = bosh_runner.run("start #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true, deployment_name: 'simple')
+        expect(start_output).to include("You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
         expect(start_exit_code).to_not eq(0)
 
-        restart_output, restart_exit_code = bosh_runner.run("restart #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
-        expect(restart_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        restart_output, restart_exit_code = bosh_runner.run("restart #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true, deployment_name: 'simple')
+        expect(restart_output).to include("You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
         expect(restart_exit_code).to_not eq(0)
 
-        recreate_output, recreate_exit_code = bosh_runner.run("recreate #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
-        expect(recreate_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        recreate_output, recreate_exit_code = bosh_runner.run("recreate #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true, deployment_name: 'simple')
+        expect(recreate_output).to include("You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
         expect(recreate_exit_code).to_not eq(0)
 
       end
@@ -945,7 +961,7 @@ describe 'ignore/unignore-instance', type: :integration do
       foobar2_vm_1_orig = orig_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '0'}.first
       foobar2_vm_2_orig = orig_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '1'}.first
 
-      bosh_runner.run("ignore-instance #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}")
+      bosh_runner.run("ignore #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}", deployment_name: 'simple')
 
       ignored_vm.kill_agent
       foobar2_vm_1_orig.kill_agent
@@ -1014,8 +1030,8 @@ describe 'ignore/unignore-instance', type: :integration do
         expect(orig_instances.select(&:bootstrap).count).to eq(1)
 
         az2_instances = orig_instances.select{|i| i.az == 'my-az2'}
-        bosh_runner.run("ignore-instance #{az2_instances[0].job_name}/#{az2_instances[0].id}", deployment_name: 'simple')
-        bosh_runner.run("ignore-instance #{az2_instances[1].job_name}/#{az2_instances[1].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{az2_instances[0].job_name}/#{az2_instances[0].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{az2_instances[1].job_name}/#{az2_instances[1].id}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1', 'my-az2']})
@@ -1034,7 +1050,7 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
+        expect(output).to include("Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
 
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
@@ -1044,7 +1060,7 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1']})
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
+        expect(output).to include("Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
       end
     end
 
@@ -1100,8 +1116,8 @@ describe 'ignore/unignore-instance', type: :integration do
 
         # =======================================================
         # ignore az2 vms
-        bosh_runner.run("ignore-instance #{az2_instances[0].job_name}/#{az2_instances[0].id}", deployment_name: 'simple')
-        bosh_runner.run("ignore-instance #{az2_instances[1].job_name}/#{az2_instances[1].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{az2_instances[0].job_name}/#{az2_instances[0].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{az2_instances[1].job_name}/#{az2_instances[1].id}", deployment_name: 'simple')
 
         # =======================================================
         # remove IPs used by non-ignored vms, should be good
@@ -1110,9 +1126,9 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.2.10', '192.168.2.11']}]
 
         output_2 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        expect(output_2).to_not include('Started updating instance')
-        expect(output_2).to include("Started deleting unneeded instances foobar1 > foobar1/#{az1_instances[0].id} (#{az1_instances[0].index}). Done")
-        expect(output_2).to include("Started deleting unneeded instances foobar1 > foobar1/#{az1_instances[1].id} (#{az1_instances[1].index}). Done")
+        expect(output_2).to_not include('Updating instance')
+        expect(output_2).to include("Deleting unneeded instances foobar1: foobar1/#{az1_instances[0].id} (#{az1_instances[0].index})")
+        expect(output_2).to include("Deleting unneeded instances foobar1: foobar1/#{az1_instances[1].id} (#{az1_instances[1].index})")
 
         instances_state_2 = director.instances
         expect(instances_state_2.count).to eq(2)
@@ -1128,7 +1144,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output_3, exit_code_3 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code_3).to_not eq(0)
-        expect(output_3).to include("Error 190020: In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
+        expect(output_3).to include("In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
 
         # =======================================================
         # remove an az that has ignored VMs, should error
@@ -1143,7 +1159,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output_4, exit_code_4 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code_4).to_not eq(0)
-        expect(output_4).to include("Error 190020: In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
+        expect(output_4).to include("In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
       end
     end
   end
@@ -1175,7 +1191,7 @@ describe 'ignore/unignore-instance', type: :integration do
         orig_instances = director.instances
         expect(orig_instances.count).to eq(2)
 
-        bosh_runner.run("ignore-instance #{orig_instances[0].job_name}/#{orig_instances[0].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{orig_instances[0].job_name}/#{orig_instances[0].id}", deployment_name: 'simple')
 
         # =================================================
         # add new network to the instance group that has ignored VM, should fail
@@ -1200,7 +1216,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+        expect(output).to include("In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
 
         # =================================================
         # remove a network from the instance group that has ignored VM, should fail
@@ -1210,7 +1226,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+        expect(output).to include("In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
       end
     end
 
@@ -1256,8 +1272,8 @@ describe 'ignore/unignore-instance', type: :integration do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         orig_instances = director.instances
-        bosh_runner.run("ignore-instance #{orig_instances[0].job_name}/#{orig_instances[0].id}", deployment_name: 'simple')
-        bosh_runner.run("ignore-instance #{orig_instances[1].job_name}/#{orig_instances[1].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{orig_instances[0].job_name}/#{orig_instances[0].id}", deployment_name: 'simple')
+        bosh_runner.run("ignore #{orig_instances[1].job_name}/#{orig_instances[1].id}", deployment_name: 'simple')
 
         # =================================================
         # switch a static IP address used by an ignored VM, should fail
@@ -1268,7 +1284,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
+        expect(output).to include("In instance group 'foobar1', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed.")
 
         # =================================================
         # add new network to the instance group that has ignored VM, should fail
@@ -1294,7 +1310,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+        expect(output).to include("In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
 
         # =================================================
         # remove a network from the instance group that has ignored VM, should fail
@@ -1304,7 +1320,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190020: In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
+        expect(output).to include("In instance group 'foobar1', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed.")
       end
     end
   end
