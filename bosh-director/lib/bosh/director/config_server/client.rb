@@ -15,10 +15,15 @@ module Bosh::Director::ConfigServer
     # @param [String] deployment_name The deployment context in-which the interpolation
     # will occur (used mostly for links properties interpolation since they will be interpolated in
     # the context of the deployment providing these links)
-    # @param [Array] subtrees_to_ignore Array of paths that should not be interpolated in src
-    # @param [Boolean] must_be_absolute_name Flag to check if all the placeholders start with '/'
+    # @param [Hash] options Additional options
+    #   Options include:
+    #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
+    #   - 'must_be_absolute_name': [Boolean] Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, deployment_name, subtrees_to_ignore = [], must_be_absolute_name = false)
+    def interpolate(src, deployment_name, options = {})
+      subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
+      must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
+
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
 
@@ -46,7 +51,11 @@ module Bosh::Director::ConfigServer
         ['resource_pools', Integer, 'env'],
       ]
 
-      interpolate(deployment_manifest, deployment_manifest['name'], ignored_subtrees, false)
+      interpolate(
+        deployment_manifest,
+        deployment_manifest['name'],
+        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false }
+      )
     end
 
     # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
@@ -60,7 +69,11 @@ module Bosh::Director::ConfigServer
 
       # Deployment name is passed here as nil because we required all placeholders
       # in the runtime config to be absolute, except for the properties in addons
-      interpolate(runtime_manifest, nil, ignored_subtrees, true)
+      interpolate(
+        runtime_manifest,
+        nil,
+        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
+      )
     end
 
     # @param [Object] provided_prop property value
@@ -190,7 +203,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, deployment_name, subtrees_to_ignore = [], must_be_absolute_name = false)
+    def interpolate(src, deployment_name, options={})
       Bosh::Common::DeepCopy.copy(src)
     end
 

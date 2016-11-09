@@ -16,7 +16,12 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#interpolate' do
-      let(:interpolated_manifest) { client.interpolate(manifest_hash, deployment_name, ignored_subtrees) }
+      let(:interpolated_manifest) { client.interpolate(manifest_hash, deployment_name, interpolate_options) }
+      let(:interpolate_options) do
+        {
+          :subtrees_to_ignore => ignored_subtrees
+        }
+      end
       let(:ignored_subtrees) {[]}
       let(:mock_config_store) do
         {
@@ -60,13 +65,13 @@ module Bosh::Director::ConfigServer
       context 'when absolute path is required' do
         it 'should raise error when name is not absolute' do
           expect{
-            client.interpolate(manifest_hash, deployment_name, ignored_subtrees , true)
+            client.interpolate(manifest_hash, deployment_name, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true})
           }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
 
       it 'should return a new copy of the original manifest' do
-        expect(client.interpolate(manifest_hash, deployment_name, ignored_subtrees)).to_not equal(manifest_hash)
+        expect(client.interpolate(manifest_hash, deployment_name, {subtrees_to_ignore: ignored_subtrees})).to_not equal(manifest_hash)
       end
 
       it 'replaces all placeholders it finds in the hash passed' do
@@ -278,7 +283,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should call interpolate with the correct arguments' do
-        expect(subject).to receive(:interpolate).with({'name' => 'smurf', 'properties' => { 'a' => '{{placeholder}}' }}, 'smurf', ignored_subtrees, false).and_return({'name' => 'smurf'})
+        expect(subject).to receive(:interpolate).with({'name' => 'smurf', 'properties' => { 'a' => '{{placeholder}}' }}, 'smurf', {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}).and_return({'name' => 'smurf'})
         result = subject.interpolate_deployment_manifest({'name' => 'smurf', 'properties' => { 'a' => '{{placeholder}}' } })
         expect(result).to eq({'name' => 'smurf'})
       end
@@ -299,7 +304,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'should call interpolate with the correct arguments' do
-        expect(subject).to receive(:interpolate).with({'name' => '{{placeholder}}'}, nil, ignored_subtrees, true).and_return({'name' => 'smurf'})
+        expect(subject).to receive(:interpolate).with({'name' => '{{placeholder}}'}, nil, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
         result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'})
         expect(result).to eq({'name' => 'smurf'})
       end
