@@ -485,7 +485,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when lowering instance count to below the number of ignored instances and no az has been provided' do
+        describe 'when lowering instance count to above the number of ignored instances and no az has been provided' do
           let(:desired_azs) { nil }
 
           it 'should not delete ignored instances' do
