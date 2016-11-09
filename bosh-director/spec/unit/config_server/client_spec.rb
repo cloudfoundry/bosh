@@ -401,34 +401,36 @@ module Bosh::Director::ConfigServer
               end
 
               context 'when default is NOT defined i.e nil' do
-                let(:default_value){ nil }
+                let(:full_key) { prepend_namespace('my_smurf') }
+                let(:default_value) { nil }
                 context 'when type is generatable' do
                   context 'when type is password' do
                     let(:type){ 'password'}
                     it 'generates a password and returns the user provided value' do
-                      expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                      expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
                     end
 
                     it 'throws an error if generation of password errors' do
-                      expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), {'type' => 'password'}).and_return(SampleErrorResponse.new)
+                      expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleErrorResponse.new)
                       expect(logger).to receive(:error)
 
                       expect{
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
-                      }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError)
+                      }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError, "Config Server failed to generate password for '#{full_key}'")
                     end
 
                     context 'when placeholder starts with exclamation mark' do
                       it 'generates a password and returns the user provided value' do
-                        expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                        expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleSuccessResponse.new)
                         expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name)).to eq(bang_placeholder)
                       end
                     end
                   end
 
                   context 'when type is certificate' do
-                    let(:type){ 'certificate'}
+                    let(:full_key) {prepend_namespace('my_smurf')}
+                    let(:type){'certificate'}
                     let(:dns_record_names) do
                       %w(*.fake-name1.network-a.simple.bosh *.fake-name1.network-b.simple.bosh)
                     end
@@ -450,22 +452,22 @@ module Bosh::Director::ConfigServer
                     end
 
                     it 'generates a certificate and returns the user provided placeholder' do
-                      expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), post_body).and_return(SampleSuccessResponse.new)
+                      expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)).to eq(the_placeholder)
                     end
 
                     it 'throws an error if generation of certficate errors' do
-                      expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), post_body).and_return(SampleErrorResponse.new)
+                      expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleErrorResponse.new)
                       expect(logger).to receive(:error)
 
                       expect{
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)
-                      }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError)
+                      }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError, "Config Server failed to generate certificate for '#{full_key}'")
                     end
 
                     context 'when placeholder starts with exclamation mark' do
                       it 'generates a certificate and returns the user provided placeholder' do
-                        expect(http_client).to receive(:post).with(prepend_namespace('my_smurf'), post_body).and_return(SampleSuccessResponse.new)
+                        expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleSuccessResponse.new)
                         expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name, options)).to eq(bang_placeholder)
                       end
                     end

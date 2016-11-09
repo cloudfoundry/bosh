@@ -170,7 +170,7 @@ module Bosh::Director::ConfigServer
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerPasswordGenerationError, 'Config Server failed to generate password'
+        raise Bosh::Director::ConfigServerPasswordGenerationError, "Config Server failed to generate password for '#{name}'"
       end
     end
 
@@ -188,7 +188,7 @@ module Bosh::Director::ConfigServer
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerCertificateGenerationError, 'Config Server failed to generate certificate'
+        raise Bosh::Director::ConfigServerCertificateGenerationError, "Config Server failed to generate certificate for '#{name}'"
       end
     end
 
