@@ -191,7 +191,6 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when the number of instances in an instance group did not change between deployments' do
       it 'leaves ignored instances alone when instance count is 1' do
-        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -200,11 +199,10 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar3', :instances => 1})
 
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        event_list_1 = director.raw_task_events('last')
-        expect(event_list_1.select do |e|
-          safe_include(e['stage'], 'Updating instance') &&
-          safe_include(e['state'], 'started')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        expect(output.split("\n").select do |e|
+          e =~ /Updating instance/
         end.count).to eq(3)
 
         # ignore first VM
@@ -224,33 +222,17 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar3', :instances => 1})
 
-        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-        event_list_2 = director.raw_task_events('last')
-        expect(
-            event_list_2.none? do |e|
-              safe_include(e['stage'], 'Updating instance') &&
-              safe_include(e['task'], foobar1_vm1.instance_uuid)
-            end
-        ).to eq(true)
+        expect(output).to_not match(/Updating instance foobar1: foobar1\/#{foobar1_vm1.instance_uuid}/)
 
-        expect(
-            event_list_2.select { |e|
-              safe_include(e['stage'], 'Updating instance') &&
-              safe_include(e['state'], 'started') &&
-              (
-                safe_include(e['tags'], 'foobar1') ||
-                safe_include(e['tags'], 'foobar2') ||
-                safe_include(e['tags'], 'foobar3')
-              )
-            }.count
-        ).to eq(0)
+        expect(output).to_not match(/Updating instance foobar1/)
+        expect(output).to_not match(/Updating instance foobar2/)
+        expect(output).to_not match(/Updating instance foobar3/)
       end
 
 
       it 'leaves ignored instances alone when count of the instance groups is larger than 1' do
-        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
-
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -258,13 +240,15 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 3})
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
 
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        before_event_list = director.raw_task_events('last')
-        expect(before_event_list.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(6)
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(6)
 
         # ignore first VM
         initial_vms = director.vms
         vm1 = initial_vms[0]
+        vm2 = initial_vms[1]
+        vm3 = initial_vms[2]
         bosh_runner.run("ignore #{vm1.job_name}/#{vm1.instance_uuid}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
@@ -277,27 +261,17 @@ describe 'ignore/unignore-instance', type: :integration do
             instances: 3)
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
 
-        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-        after_event_list = director.raw_task_events('last')
-        expect(
-            after_event_list.none? do |e|
-              (e['stage'] == 'Updating instance') && (safe_include(e['task'], vm1.instance_uuid))
-            end
-        ).to eq(true)
-
-        expect(
-            after_event_list.select { |e|
-              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
-            }.count
-        ).to eq(2)
+        expect(output).to_not match(/Updating instance foobar1: foobar1\/#{vm1.instance_uuid}/)
+        expect(output).to match(/Updating instance foobar1: foobar1\/#{vm2.instance_uuid}/)
+        expect(output).to match(/Updating instance foobar1: foobar1\/#{vm3.instance_uuid}/)
       end
     end
 
     context 'when the existing instances is less than the desired ones' do
 
       it 'should handle ignored instances' do
-        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -305,9 +279,8 @@ describe 'ignore/unignore-instance', type: :integration do
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 1})
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-        event_list_1 = director.raw_task_events('last')
-        expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(2)
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(2)
 
         # ignore first VM
         initial_vms = director.vms
@@ -323,26 +296,12 @@ describe 'ignore/unignore-instance', type: :integration do
             instances: 2)
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-        event_list_2 = director.raw_task_events('last')
-        expect(
-            event_list_2.none? do |e|
-              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
-            end
-        ).to eq(true)
+        expect(output).to_not match(/Updating instance foobar1: foobar1\/#{foobar1_vm1.instance_uuid}/)
+        expect(output).to match(/Creating missing vms/)
+        expect(output).to match(/Updating instance foobar1/)
 
-        expect(
-            event_list_2.select { |e|
-              (e['stage'] == 'Creating missing vms') && (e['state'] == 'started')
-            }.count
-        ).to eq(1)
-
-        expect(
-            event_list_2.select { |e|
-              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
-            }.count
-        ).to eq(1)
 
         # ======================================================
         # switch ignored instances
@@ -361,49 +320,35 @@ describe 'ignore/unignore-instance', type: :integration do
             templates: [ {'name' => 'job_1_with_pre_start_script'} ],
             instances: 3)
 
-        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-
-        event_list_3 = director.raw_task_events('last')
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         expect(
-            event_list_3.select { |e|
-              (e['stage'] == 'Creating missing vms') && (e['state'] == 'started') && (safe_include(e['task'], 'foobar1'))
-            }.count
-        ).to eq(2)
-
-        expect(
-            event_list_3.select { |e|
-              (e['stage'] == 'Creating missing vms') && (e['state'] == 'started') && (safe_include(e['task'], 'foobar2'))
-            }.count
-        ).to eq(2)
-
-        expect(
-            event_list_3.select { |e|
-              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+            output.split("\n").select { |e|
+              /Creating missing vms: foobar1/ =~ e
             }.count
         ).to eq(4)
 
         expect(
-            event_list_3.select { |e|
-              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar2'))
+          output.split("\n").select { |e|
+              /Creating missing vms: foobar2/ =~ e
+            }.count
+        ).to eq(4)
+
+        expect(
+          output.split("\n").select { |e|
+              /Updating instance foobar1/ =~ e
+            }.count
+        ).to eq(4)
+
+        expect(
+            output.split("\n").select { |e|
+              /Updating instance foobar2/ =~ e
             }.count
         ).to eq(2)
 
-        expect(
-            event_list_3.select { |e|
-              (e['stage'] == 'Updating instance') &&
-              (e['state'] == 'started') &&
-              (safe_include(e['tags'], 'foobar1')) &&
-              (safe_include(e['task'], foobar1_vm1.instance_uuid))
-            }.count
-        ).to eq(1)
+        expect(output).to match(/Updating instance foobar1: foobar1\/#{foobar1_vm1.instance_uuid}/)
 
-        expect(
-            event_list_3.none? do |e|
-              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar2_vm1.instance_uuid))
-            end
-        ).to eq(true)
-
+        expect(output).to_not match(/Updating instance foobar1: foobar1\/#{foobar2_vm1.instance_uuid}/)
       end
 
     end
@@ -412,8 +357,6 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when the ignored instances is larger than the desired ones' do
         it "should fail to deploy" do
-          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
-
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -421,9 +364,9 @@ describe 'ignore/unignore-instance', type: :integration do
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4})
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-          event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(5)
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+          expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(5)
 
           # ignore first VM
           initial_vms = director.vms
@@ -454,8 +397,6 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when the ignored instances is equal to desired ones' do
         it 'deletes all non-ignored vms and leaves the ignored alone without updating them' do
-          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
-
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -463,9 +404,8 @@ describe 'ignore/unignore-instance', type: :integration do
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4})
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-          event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(5)
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(5)
 
           initial_vms = director.vms
 
@@ -488,16 +428,15 @@ describe 'ignore/unignore-instance', type: :integration do
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
           output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-          expect(output).to include("Started deleting unneeded instances foobar1 > foobar1/#{foobar1_vm3.instance_uuid} (2). Done")
-          expect(output).to include("Started deleting unneeded instances foobar1 > foobar1/#{foobar1_vm4.instance_uuid} (3). Done")
+          expect(output).to include("Deleting unneeded instances foobar1: foobar1/#{foobar1_vm3.instance_uuid}")
+          expect(output).to include("Deleting unneeded instances foobar1: foobar1/#{foobar1_vm4.instance_uuid}")
 
-          event_list_2 = director.raw_task_events('last')
-          expect(event_list_2.none? {|e| (e['stage'] == 'Updating instance')}).to eq(true)
-          expect(event_list_2.none? {|e| (e['stage'] == 'Creating missing vms')}).to eq(true)
+          expect(output).to_not match(/Updating instance/)
+          expect(output).to_not match(/Creating missing vms/)
 
           expect(
-              event_list_2.select { |e|
-                (e['stage'] == 'Deleting unneeded instances') && (e['state'] == 'started')
+              output.split("\n").select { |e|
+                /Deleting unneeded instances/ =~ e
               }.count
           ).to eq(2)
 
@@ -511,7 +450,6 @@ describe 'ignore/unignore-instance', type: :integration do
       context 'when the ignored instances are fewer than the desired ones' do
 
         it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
-          skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
 
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
@@ -520,16 +458,16 @@ describe 'ignore/unignore-instance', type: :integration do
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 5})
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-          event_list_1 = director.raw_task_events('last')
-          expect(event_list_1.select { |e| e['stage'] == 'Updating instance' && e['state'] == 'started' }.count).to eq(6)
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-          initial_vms = director.vms
-          foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
-          foobar1_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[1]
+          expect(output.split("\n").select { |e| /Updating instance/ =~ e  }.count).to eq(6)
 
-          bosh_runner.run("ignore #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}", deployment_name: 'simple')
-          bosh_runner.run("ignore #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}", deployment_name: 'simple')
+          foobar1_vms = director.vms.select{ |vm| vm.job_name == 'foobar1'}
+          ignored_vm1 = foobar1_vms[0]
+          ignored_vm2 = foobar1_vms[1]
+
+          bosh_runner.run("ignore #{ignored_vm1.job_name}/#{ignored_vm1.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{ignored_vm2.job_name}/#{ignored_vm2.instance_uuid}", deployment_name: 'simple')
 
           # ===================================================
           # redeploy with different foobar1 templates
@@ -541,46 +479,15 @@ describe 'ignore/unignore-instance', type: :integration do
           )
           manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
 
-          deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-          event_list_2 = director.raw_task_events('last')
+          expect(output.split("\n").select { |e| /Deleting unneeded instances/ =~ e && /foobar1/ =~ e }.count).to eq(2)
+          expect(output.split("\n").select { |e| /Deleting unneeded instances/ =~ e }.count).to eq(2)
 
-          expect(
-              event_list_2.select { |e|
-                (e['stage'] == 'Deleting unneeded instances') &&
-                (e['state'] == 'started') &&
-                (safe_include(e['tags'], 'foobar1'))
-              }.count
-          ).to eq(2)
-
-          expect(
-              event_list_2.select { |e|
-                (e['stage'] == 'Deleting unneeded instances') &&
-                    (e['state'] == 'started')
-              }.count
-          ).to eq(2)
-
-          expect(
-              event_list_2.select { |e|
-                (e['stage'] == 'Updating instance') &&
-                (e['state'] == 'started') &&
-                (safe_include(e['tags'], 'foobar1'))
-              }.count
-          ).to eq(1)
-
-          expect(
-              event_list_2.select { |e|
-                (e['stage'] == 'Updating instance') &&
-                (e['state'] == 'started')
-              }.count
-          ).to eq(1)
-
-          expect(
-              event_list_2.none? do |e|
-                (safe_include(e['task'], foobar1_vm1.instance_uuid)) ||
-                (safe_include(e['task'], foobar1_vm2.instance_uuid))
-              end
-          ).to eq(true)
+          expect(output.split("\n").select { |e| /Updating instance foobar1:/ =~ e }.count).to eq(1)
+          expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(1)
+          expect(output).to_not match(ignored_vm1.instance_uuid)
+          expect(output).to_not match(ignored_vm2.instance_uuid)
 
           modified_vms = director.vms
 
@@ -590,15 +497,14 @@ describe 'ignore/unignore-instance', type: :integration do
           expect(modified_vms.select{ |vm| vm.ignore == 'true' && vm.job_name == 'foobar1' }.count).to eq(2)
           expect(modified_vms.select{ |vm| vm.job_name == 'foobar1' }.count).to eq(3)
           expect(modified_vms.select{ |vm| vm.job_name == 'foobar2' }.count).to eq(1)
-          expect(modified_vms.select{ |vm| vm.instance_uuid == foobar1_vm1.instance_uuid }.count).to eq(1)
-          expect(modified_vms.select{ |vm| vm.instance_uuid == foobar1_vm2.instance_uuid }.count).to eq(1)
+          expect(modified_vms.select{ |vm| vm.instance_uuid == ignored_vm1.instance_uuid }.count).to eq(1)
+          expect(modified_vms.select{ |vm| vm.instance_uuid == ignored_vm2.instance_uuid }.count).to eq(1)
         end
       end
     end
 
     context 'when --recreate flag is passed' do
       it 'should recreate needed vms but leave the ignored ones alone' do
-        skip '#130127863 `bosh task` should show the last task to run, not just the latest running task'
 
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         cloud_config = Bosh::Spec::Deployments.simple_cloud_config
@@ -631,21 +537,15 @@ describe 'ignore/unignore-instance', type: :integration do
             instances: 3)
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
 
-        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, recreate: true)
-
-        after_event_list = director.raw_task_events('last')
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, recreate: true)
 
         modified_vms = director.vms
 
-        expect(
-            after_event_list.none? do |e|
-              (e['stage'] == 'Updating instance') && (safe_include(e['task'], foobar1_vm1.instance_uuid))
-            end
-        ).to eq(true)
+        expect(output).to_not match("Updating instance foobar1: foobar1/#{foobar1_vm1.instance_uuid}")
 
         expect(
-            after_event_list.select { |e|
-              (e['stage'] == 'Updating instance') && (e['state'] == 'started') && (safe_include(e['tags'], 'foobar1'))
+            output.split("\n").select { |e|
+              /Updating instance/ =~ e && /foobar1/ =~ e
             }.count
         ).to eq(2)
 
