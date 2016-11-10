@@ -166,7 +166,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'agent_id' => vm.agent_id,
           'job' => vm.job_name,
           'index' => vm.index,
-          'node_id' => vm.instance_uuid,
+          'instance_id' => vm.instance_uuid,
           'job_state' => 'running',
           'vitals' => anything
       }
