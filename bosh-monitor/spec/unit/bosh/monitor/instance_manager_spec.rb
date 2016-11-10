@@ -62,7 +62,7 @@ module Bhm
                     'timestamp' => Integer,
                     'agent_id' => '007',
                     'deployment' => 'mycloud',
-                    'node_id' => 'iuuid1',
+                    'instance_id' => 'iuuid1',
                     'job' => 'mutator'
                 }
             )
@@ -70,7 +70,7 @@ module Bhm
             manager.process_event(:heartbeat, "hm.agent.heartbeat.007")
           end
 
-          context 'when heartbeat information cannot be completed for node_id, job, or deployment' do
+          context 'when heartbeat information cannot be completed for instance_id, job, or deployment' do
             it 'does not process the heartbeat' do
               expect(event_processor).not_to receive(:process)
 

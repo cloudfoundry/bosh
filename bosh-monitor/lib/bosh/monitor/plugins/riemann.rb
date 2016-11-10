@@ -25,7 +25,7 @@ module Bosh::Monitor
       def process(event)
         case event
         when Bosh::Monitor::Events::Heartbeat
-          if event.node_id
+          if event.instance_id
             process_heartbeat(event)
           end
         when Bosh::Monitor::Events::Alert

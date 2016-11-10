@@ -27,7 +27,7 @@ module Bosh::Monitor
       def process(event)
         case event
           when Bosh::Monitor::Events::Heartbeat
-            if event.node_id
+            if event.instance_id
               EM.defer { process_heartbeat(event) }
             end
           when Bosh::Monitor::Events::Alert
@@ -43,7 +43,7 @@ module Bosh::Monitor
         tags = %W[
           job:#{heartbeat.job}
           index:#{heartbeat.index}
-          id:#{heartbeat.node_id}
+          id:#{heartbeat.instance_id}
           deployment:#{heartbeat.deployment}
           agent:#{heartbeat.agent_id}
         ]

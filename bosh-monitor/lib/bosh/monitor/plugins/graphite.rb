@@ -17,7 +17,7 @@ module Bosh::Monitor
       end
 
       def process(event)
-        if (event.is_a? Bosh::Monitor::Events::Heartbeat) && event.node_id
+        if (event.is_a? Bosh::Monitor::Events::Heartbeat) && event.instance_id
 
           metrics = event.metrics
 
@@ -43,7 +43,7 @@ module Bosh::Monitor
       def get_metric_prefix(heartbeat)
         deployment = heartbeat.deployment
         job = heartbeat.job
-        id = heartbeat.node_id
+        id = heartbeat.instance_id
         agent_id = heartbeat.agent_id
         if options["prefix"]
           [options["prefix"], deployment, job, id, agent_id].join '.'

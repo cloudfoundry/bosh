@@ -258,9 +258,9 @@ module Bosh::Monitor
         message["agent_id"] = agent.id
         message["deployment"] = agent.deployment
         message["job"] = agent.job
-        message["node_id"] = agent.instance_id
+        message["instance_id"] = agent.instance_id
 
-        if message["node_id"].nil? || message["job"].nil? || message["deployment"].nil?
+        if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
           return
         end
       end

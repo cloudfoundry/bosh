@@ -46,13 +46,13 @@ describe Bhm::Plugins::Tsdb do
   end
 
   it "does not send empty tags to TSDB" do
-    heartbeat = make_heartbeat({:timestamp => Time.now.to_i, :node_id => ""})
+    heartbeat = make_heartbeat({:timestamp => Time.now.to_i, :instance_id => ""})
 
     EM.run do
       plugin.run
 
       heartbeat.metrics.each do |metric|
-        expect(connection).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, hash_excluding("node_id"))
+        expect(connection).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, hash_excluding("instance_id"))
       end
 
       plugin.process(heartbeat)

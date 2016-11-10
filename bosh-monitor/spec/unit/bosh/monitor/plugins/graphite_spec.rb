@@ -62,7 +62,7 @@ describe Bhm::Plugins::Graphite do
           plugin.run
 
           event.metrics.each do |metric|
-            metric_name = "#{event.deployment}.#{event.job}.#{event.node_id}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
+            metric_name = "#{event.deployment}.#{event.job}.#{event.instance_id}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
             expect(connection).to receive(:send_metric).with(metric_name, metric.value, metric.timestamp)
           end
 
@@ -72,8 +72,8 @@ describe Bhm::Plugins::Graphite do
         end
       end
 
-      it "skips sending metrics if node_id is missing" do
-        event = make_heartbeat(timestamp: Time.now.to_i, node_id: nil)
+      it "skips sending metrics if instance_id is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
         EM.run do
           plugin.run
 
