@@ -60,7 +60,6 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
-    skip "#130492155 Backport attach-disk command"
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -76,7 +75,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
     output, exit_code = bosh_runner.run("attach-disk #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid} smurf-disk", deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 520003: Instance '#{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}' in deployment 'simple' is in 'ignore' state. " +
+    expect(output).to include("Error: Instance '#{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}' in deployment 'simple' is in 'ignore' state. " +
                                   'Attaching disks to ignored instances is not allowed.')
   end
 
