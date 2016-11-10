@@ -2,14 +2,6 @@ module Bosh::Monitor
   module Events
     class Heartbeat < Base
 
-      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router routerv2 stager uaa))
-
-      SERVICE_JOBS_PREFIXES = %w(mysql mongodb rabbit postgresql vblob).join("|")
-      SERVICE_JOBS_GATEWAY_REGEX = /(#{SERVICE_JOBS_PREFIXES})_gateway$/i
-      SERVICE_JOBS_NODE_REGEX = /(#{SERVICE_JOBS_PREFIXES})_node(.*)/i
-
-      SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
-
       attr_reader :agent_id, :deployment, :job, :index, :metrics, :instance_id
 
       def initialize(attributes = {})
@@ -31,7 +23,6 @@ module Bosh::Monitor
         @tags["job"] = @job if @job
         @tags["index"] = @index if @index
         @tags["id"] = @instance_id if @instance_id
-        @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
         @load = @vitals["load"] || []
@@ -114,33 +105,6 @@ module Bosh::Monitor
         add_metric("system.disk.persistent.percent", @persistent_disk["percent"])
         add_metric("system.disk.persistent.inode_percent", @persistent_disk["inode_percent"])
         add_metric("system.healthy", @job_state == "running" ? 1 : 0)
-      end
-
-      def guess_role
-        # Dashboard might want to partition jobs
-        # into several buckets, so let's help it
-        # by applying a couple of heuristics
-
-        return "core" if CORE_JOBS.include?(@job.to_s.downcase)
-
-        return "service" if SERVICE_AUXILIARY_JOBS.include?(@job.to_s.downcase)
-
-        # job name prefixed by "service"
-        if @job.to_s.downcase =~ /^service/i
-          return "service"
-        end
-
-        # job name suffixed by "_gateway"
-        if @job.to_s.downcase =~ SERVICE_JOBS_GATEWAY_REGEX
-          return "service"
-        end
-
-        # job name contains "_node"
-        if @job.to_s.downcase =~ SERVICE_JOBS_NODE_REGEX
-          return "service"
-        end
-
-        return "unknown"
       end
 
     end

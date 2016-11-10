@@ -79,7 +79,7 @@ describe Bhm::Events::Heartbeat do
     hb = heartbeat
     metrics = hb.metrics.inject({}) do |h, m|
       expect(m).to be_kind_of(Bhm::Metric)
-      expect(m.tags).to eq({ "job" => "mysql_node", "index" => "0", "role" => "service", "id" => "instance_id_abc" })
+      expect(m.tags).to eq({ "job" => "mysql_node", "index" => "0", "id" => "instance_id_abc" })
       h[m.name] = m.value; h
     end
 
