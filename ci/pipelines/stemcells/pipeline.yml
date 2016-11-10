@@ -236,6 +236,8 @@ jobs:
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
+            warden/bosh-stemcell-%s-warden-boshlite-ubuntu-trusty-go_agent.tgz
+            warden/bosh-stemcell-%s-warden-boshlite-centos-7-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
