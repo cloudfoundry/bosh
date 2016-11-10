@@ -27,18 +27,6 @@ module Bosh::Monitor
       deployment ? deployment.agent_id_to_agent : {}
     end
 
-    def lookup_plugin(name, options = {})
-      plugin_class = nil
-      begin
-        class_name = name.to_s.split("_").map(&:capitalize).join
-        plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
-      rescue NameError => e
-        raise PluginError, "Cannot find '#{name}' plugin"
-      end
-
-      plugin_class.new(options)
-    end
-
     def setup_events
       @processor.enable_pruning(Bhm.intervals.prune_events)
       Bhm.plugins.each do |plugin|
@@ -94,18 +82,6 @@ module Bosh::Monitor
       active_agent_ids = sync_active_agents(deployment, instances)
       remove_inactive_agents(active_agent_ids, deployment)
       update_rogue_agents(active_agent_ids)
-    end
-
-    def remove_deployment(name)
-      deployment = @deployment_name_to_deployments[name]
-      deployment.agent_ids.each { |agent_id| @rogue_agents.delete(agent_id) }
-      @deployment_name_to_deployments.delete(name)
-    end
-
-    def remove_agent(agent_id)
-      @logger.info("Removing agent #{agent_id} from all deployments...")
-      @rogue_agents.delete(agent_id)
-      @deployment_name_to_deployments.values.each { |deployment| deployment.remove_agent(agent_id) }
     end
 
     def get_instances_for_deployment(deployment_name)
@@ -230,6 +206,36 @@ module Bosh::Monitor
       @logger.error("Invalid event: #{e}")
     end
 
+    def instances_count
+      @deployment_name_to_deployments.values.inject(0) { |count, deployment| count + deployment.instances.size }
+    end
+
+    private
+
+    def lookup_plugin(name, options = {})
+      plugin_class = nil
+      begin
+        class_name = name.to_s.split("_").map(&:capitalize).join
+        plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
+      rescue NameError => e
+        raise PluginError, "Cannot find '#{name}' plugin"
+      end
+
+      plugin_class.new(options)
+    end
+
+    def remove_agent(agent_id)
+      @logger.info("Removing agent #{agent_id} from all deployments...")
+      @rogue_agents.delete(agent_id)
+      @deployment_name_to_deployments.values.each { |deployment| deployment.remove_agent(agent_id) }
+    end
+
+    def remove_deployment(name)
+      deployment = @deployment_name_to_deployments[name]
+      deployment.agent_ids.each { |agent_id| @rogue_agents.delete(agent_id) }
+      @deployment_name_to_deployments.delete(name)
+    end
+
     def on_alert(agent, message)
       if message.is_a?(Hash) && !message.has_key?("source")
         message["source"] = agent.name
@@ -243,12 +249,6 @@ module Bosh::Monitor
       @logger.info("Agent '#{agent.id}' shutting down...")
       remove_agent(agent.id)
     end
-
-    def instances_count
-      @deployment_name_to_deployments.values.inject(0) { |count, deployment| count + deployment.instances.size }
-    end
-
-    private
 
     def on_heartbeat(agent, message)
       agent.updated_at = Time.now
