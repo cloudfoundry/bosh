@@ -1,0 +1,34 @@
+---
+http:
+  port: <%= hm_port %>
+
+mbus:
+  endpoint: nats://localhost:<%= nats_port %>
+  user:
+  password:
+
+director: &director
+  endpoint: <%= director_url %>
+  user: hm
+  password: pass
+  client_id: hm
+  client_secret: secret
+  ca_cert: <%= certificate_path %>
+
+intervals:
+  poll_director: 5
+  poll_grace_period: 5
+  log_stats: 10
+  analyze_agents: 10
+  agent_timeout: 10
+  rogue_agent_alert: 20
+
+loglevel: debug
+
+plugins:
+  - name: logger
+    events:
+      - alert
+      - heartbeat
+    options:
+      format: json

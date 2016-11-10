@@ -9,9 +9,9 @@ module Bosh::Monitor
 
     def initialize(event_processor)
       # hash of agent_id to agent for all rogue agents
-      @rogue_agents = { }
+      @rogue_agents = {}
       # hash of deployment_name to deployment for all managed deployments
-      @deployment_name_to_deployments = { }
+      @deployment_name_to_deployments = {}
 
       @logger = Bhm.logger
       @heartbeats_received = 0
@@ -84,9 +84,9 @@ module Bosh::Monitor
     end
 
     def sync_instances(deployment_name, instances_data)
-       deployment = @deployment_name_to_deployments[deployment_name]
-       active_instance_ids = sync_active_instances(deployment, instances_data)
-       remove_inactive_instances(active_instance_ids, deployment)
+      deployment = @deployment_name_to_deployments[deployment_name]
+      active_instance_ids = sync_active_instances(deployment, instances_data)
+      remove_inactive_instances(active_instance_ids, deployment)
     end
 
     def sync_agents(deployment_name, instances)
@@ -116,7 +116,7 @@ module Bosh::Monitor
       @logger.info("Analyzing agents...")
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
-      @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "agent"), Time.now - started ])
+      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "agent"), Time.now - started])
       count
     end
 
@@ -133,21 +133,21 @@ module Bosh::Monitor
 
       if agent.timed_out?
         @processor.process(:alert,
-          severity: 2,
-          source: agent.name,
-          title: "#{agent.id} has timed out",
-          created_at: ts,
-          deployment: agent.deployment,
-          job: agent.job,
-          instance_id: agent.instance_id)
+                           severity: 2,
+                           source: agent.name,
+                           title: "#{agent.id} has timed out",
+                           created_at: ts,
+                           deployment: agent.deployment,
+                           job: agent.job,
+                           instance_id: agent.instance_id)
       end
 
       if agent.rogue?
         @processor.process(:alert,
-          :severity => 2,
-          :source => agent.name,
-          :title => "#{agent.id} is not a part of any deployment",
-          :created_at => ts)
+                           :severity => 2,
+                           :source => agent.name,
+                           :title => "#{agent.id} is not a part of any deployment",
+                           :created_at => ts)
       end
 
       true
@@ -165,7 +165,7 @@ module Bosh::Monitor
         end
       end
 
-      @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "instance"), Time.now - started ])
+      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "instance"), Time.now - started])
       count
     end
 
@@ -173,13 +173,13 @@ module Bosh::Monitor
       unless instance.has_vm?
         ts = Time.now.to_i
         @processor.process(:alert,
-          severity: 2,
-          source: instance.name,
-          title: "#{instance.id} has no VM",
-          created_at: ts,
-          deployment: instance.deployment,
-          job: instance.job,
-          instance_id: instance.id)
+                           severity: 2,
+                           source: instance.name,
+                           title: "#{instance.id} has no VM",
+                           created_at: ts,
+                           deployment: instance.deployment,
+                           job: instance.job,
+                           instance_id: instance.id)
       end
 
       true
@@ -207,21 +207,21 @@ module Bosh::Monitor
       end
 
       case payload
-      when String
-        message = Yajl::Parser.parse(payload)
-      when Hash
-        message = payload
+        when String
+          message = Yajl::Parser.parse(payload)
+        when Hash
+          message = payload
       end
 
       case kind.to_s
-      when "alert"
-        on_alert(agent, message)
-      when "heartbeat"
-        on_heartbeat(agent, message)
-      when "shutdown"
-        on_shutdown(agent)
-      else
-        @logger.warn("No handler found for '#{kind}' event")
+        when "alert"
+          on_alert(agent, message)
+        when "heartbeat"
+          on_heartbeat(agent, message)
+        when "shutdown"
+          on_shutdown(agent)
+        else
+          @logger.warn("No handler found for '#{kind}' event")
       end
 
     rescue Yajl::ParseError => e
@@ -239,21 +239,6 @@ module Bosh::Monitor
       @alerts_processed += 1
     end
 
-    def on_heartbeat(agent, message)
-      agent.updated_at = Time.now
-
-      if message.is_a?(Hash)
-        message["timestamp"] = Time.now.to_i if message["timestamp"].nil?
-        message["agent_id"] = agent.id
-        message["deployment"] = agent.deployment
-        message["job"] = agent.job
-        message["node_id"] = agent.instance_id
-      end
-
-      @processor.process(:heartbeat, message)
-      @heartbeats_received += 1
-    end
-
     def on_shutdown(agent)
       @logger.info("Agent '#{agent.id}' shutting down...")
       remove_agent(agent.id)
@@ -264,6 +249,25 @@ module Bosh::Monitor
     end
 
     private
+
+    def on_heartbeat(agent, message)
+      agent.updated_at = Time.now
+
+      if message.is_a?(Hash)
+        message["timestamp"] = Time.now.to_i if message["timestamp"].nil?
+        message["agent_id"] = agent.id
+        message["deployment"] = agent.deployment
+        message["job"] = agent.job
+        message["node_id"] = agent.instance_id
+
+        if message["node_id"].nil? || message["job"].nil? || message["deployment"].nil?
+          return
+        end
+      end
+
+      @processor.process(:heartbeat, message)
+      @heartbeats_received += 1
+    end
 
     def analyze_rogue_agents
       count = 0
