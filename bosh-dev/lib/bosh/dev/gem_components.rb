@@ -6,22 +6,17 @@ module Bosh::Dev
   class GemComponents
     include Enumerable
     COMPONENTS = %w(
-      agent_client
       blobstore_client
       bosh-core
       bosh-stemcell
       bosh-template
       bosh_cli
-      bosh_cli_plugin_aws
-      bosh_cli_plugin_micro
       bosh_common
       bosh_cpi
       bosh-registry
       bosh-director
       bosh-director-core
       bosh-monitor
-      bosh-release
-      simple_blobstore_server
     )
 
     def initialize(build_number)

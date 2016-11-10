@@ -5,7 +5,7 @@ namespace :release do
     require 'bosh/dev/gem_components'
 
     build = Bosh::Dev::Build.candidate
-    gem_components = Bosh::Dev::GemComponents.new(build.number)
+    gem_components = Bosh::Dev::GemComponents.new(build.gem_number)
     gem_components.build_release_gems
     create_release
   end

@@ -33,7 +33,7 @@ module Bosh::Director
       end
 
       def by_filter(filter)
-        instances = Models::Instance.filter(filter).all
+        instances = Models::Instance.filter(filter)
         if instances.empty?
           raise InstanceNotFound, "No instances matched #{filter.inspect}"
         end

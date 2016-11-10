@@ -83,8 +83,8 @@ module Bosh::Spec
     end
 
     def unblock_package
+      package_dir = package_path('blocking_package')
       @waiter.wait(300) do
-        package_dir = package_path('blocking_package')
         raise('Must find package dir') unless File.exists?(package_dir)
         FileUtils.touch(File.join(package_dir, 'unblock_packaging'))
       end
@@ -98,8 +98,10 @@ module Bosh::Spec
       job_dir_path = job_path(job_name)
       @logger.debug("Unblocking package at #{job_dir_path}")
 
-      raise('Failed to get errand dir') unless File.exists?(job_dir_path)
-      FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
+      @waiter.wait(15) do
+        raise('Must find errand dir') unless File.exists?(job_dir_path)
+        FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
+      end
     end
 
     def job_path(job_name)

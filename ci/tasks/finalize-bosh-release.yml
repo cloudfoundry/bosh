@@ -1,0 +1,25 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-ruby-go
+
+inputs:
+  - name: bosh-src-develop
+  - name: bosh-dev-release
+  - name: bosh-cli
+  - name: candidate-version
+
+outputs:
+  - name: bumped-candidate-version
+  - name: bosh-src-with-final
+  - name: bosh-src-with-final-tag
+
+params:
+  BLOBSTORE_ACCESS_KEY_ID: replace-me
+  BLOBSTORE_SECRET_ACCESS_KEY: replace-me
+
+run:
+  path: bosh-src-develop/ci/tasks/finalize-bosh-release.sh

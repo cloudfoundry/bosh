@@ -10,7 +10,7 @@ module Bosh::Stemcell
     STEMCELL_BUILDER_SOURCE_DIR = File.join(File.expand_path('../../../../..', __FILE__), 'stemcell_builder')
     STEMCELL_SPECS_DIR = File.expand_path('../../..', File.dirname(__FILE__))
 
-    def initialize(env, definition, version, release_tarball_path, os_image_tarball_path)
+    def initialize(env, definition, version, os_image_tarball_path)
       @environment = env
       @definition = definition
       @os_image_tarball_path = os_image_tarball_path
@@ -19,7 +19,6 @@ module Bosh::Stemcell
         env: env,
         definition: definition,
         version: version,
-        release_tarball: release_tarball_path,
         os_image_tarball: os_image_tarball_path,
       )
       @shell = Bosh::Core::Shell.new

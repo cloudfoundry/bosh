@@ -24,11 +24,6 @@ module Bosh::Director
 
       attr_accessor :properties
 
-      # Hash of resolved links spec provided by deployment
-      # in format job_name > template_name > link_name > link_type
-      # used by LinksResolver
-      attr_accessor :link_spec
-
       # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
       #   Default job update configuration
       attr_accessor :update
@@ -205,8 +200,8 @@ module Bosh::Director
       end
 
       def instance_plans_with_missing_vms
-        jobs_starting_on_deploy.collect_concat do |job|
-          job.instance_plans_with_missing_vms
+        instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          instance_group.instance_plans_with_missing_vms
         end
       end
 
@@ -238,7 +233,7 @@ module Bosh::Director
         @instance_groups_name_index[name]
       end
 
-      def jobs_starting_on_deploy
+      def instance_groups_starting_on_deploy
         instance_groups = []
 
         @instance_groups.each do |instance_group|

@@ -24,6 +24,10 @@ chmod 600 ssh_tunnel_key
 
 bosh-init deploy bosh-init.yml
 
+# occasionally we get a race where director process hasn't finished starting
+# before nginx is reachable causing "Cannot talk to director..." messages.
+sleep 10
+
 bosh -n target "https://$BOSH_TARGET_IP:25555"
 bosh login "$BOSH_USERNAME" "$BOSH_PASSWORD"
 

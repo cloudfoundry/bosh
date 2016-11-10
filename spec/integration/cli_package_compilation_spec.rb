@@ -43,6 +43,42 @@ describe 'cli: package compilation', type: :integration do
     expect(event_log).to_not match(/Compiling packages/)
   end
 
+  RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(ASSETS_DIR, 'release_compilation_test_release')
+  TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(ClientSandbox.base_dir, 'release_compilation_test_release')
+  before do
+    FileUtils.rm_rf(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+    FileUtils.cp_r(RELEASE_COMPILATION_TEMPLATE_ASSETS, TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX, :preserve => true)
+
+    Dir.chdir(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX) do
+      ignore = %w(
+        blobs
+        dev-releases
+        config/dev.yml
+        config/private.yml
+        releases/*.tgz
+        dev_releases
+        .dev_builds
+        .final_builds/jobs/**/*.tgz
+        .final_builds/packages/**/*.tgz
+        blobs
+        .blobs
+        .DS_Store
+      )
+
+      File.open('.gitignore', 'w+') do |f|
+        f.write(ignore.join("\n") + "\n")
+      end
+
+      `git init;
+       git config user.name "John Doe";
+       git config user.email "john.doe@example.org";
+       git add .;
+       git commit -m "Initial Test Commit"`
+    end
+
+  end
+
+
   # This should be a unit test. Need to figure out best placement.
   it "includes only immediate dependencies of the job's templates in the apply_spec" do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -52,13 +88,16 @@ describe 'cli: package compilation', type: :integration do
     manifest_hash['jobs'][0]['templates'] = [{'name' => 'foobar'}, {'name' => 'goobaz'}]
     manifest_hash['jobs'][0]['instances'] = 1
 
-    manifest_hash['releases'].first['name'] = 'compilation-test'
+    manifest_hash['releases'].first['name'] = 'release_compilation_test'
+    manifest_hash['releases'].first['version'] = 'latest'
 
     cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
     deployment_manifest = yaml_file('whatevs_manifest', manifest_hash)
 
     target_and_login
-    bosh_runner.run("upload release #{spec_asset('release_compilation_test.tgz')}")
+    puts bosh_runner.run_in_dir("create release", TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+    puts bosh_runner.run_in_dir('upload release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+
 
     bosh_runner.run("update cloud-config #{cloud_manifest.path}")
     bosh_runner.run("deployment #{deployment_manifest.path}")
@@ -68,11 +107,6 @@ describe 'cli: package compilation', type: :integration do
     foobar_vm = director.vm('foobar', '0')
     apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.cid)
     packages = apply_spec['packages']
-    packages.each do |key, value|
-      expect(value['name']).to eq(key)
-      expect(value['version']).to eq('0.1-dev.1')
-      expect(value.keys).to match_array(%w(name version sha1 blobstore_id))
-    end
     expect(packages.keys).to match_array(%w(foo bar baz))
   end
 

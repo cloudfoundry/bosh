@@ -21,6 +21,36 @@ describe 'cli: vms', type: :integration do
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
   end
 
+  it 'should return ips for legacy deployments' do
+    target_and_login
+
+    manifest = Bosh::Spec::Deployments.legacy_manifest
+    manifest['networks'] << {
+          'name' => 'b',
+          'subnets' => [{
+              'range' => '192.168.2.0/24',
+              'gateway' => '192.168.2.1',
+              'dns' => ['192.168.2.1', '192.168.2.2'],
+              'static' => ['192.168.2.10'],
+              'reserved' => [],
+              'cloud_properties' => {},
+          }],
+      }
+    manifest['jobs'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
+    manifest['jobs'].first['instances'] = 1
+
+    deploy_from_scratch(manifest_hash: manifest)
+
+    expect(scrub_random_ids(bosh_runner.run('vms'))).to match_output %(
+        +-------------------------------------------------+---------+-----+---------+-------------+
+        | VM                                              | State   | AZ  | VM Type | IPs         |
+        +-------------------------------------------------+---------+-----+---------+-------------+
+        | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | n/a | a       | 192.168.1.2 |
+        |                                                 |         |     |         | 192.168.2.2 |
+        +-------------------------------------------------+---------+-----+---------+-------------+
+        )
+  end
+
   it 'should return az with vms' do
     target_and_login
 

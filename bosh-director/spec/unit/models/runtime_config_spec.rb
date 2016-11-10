@@ -3,13 +3,13 @@ require 'spec_helper'
 module Bosh::Director::Models
   describe RuntimeConfig do
     let(:runtime_config_model) { RuntimeConfig.make(manifest: mock_manifest) }
-    let(:mock_manifest) { { name: '((manifest_name))' } }
-    let(:new_runtime_config) { { name: 'runtime manifest' } }
+    let(:mock_manifest) { {name: '((manifest_name))'} }
+    let(:new_runtime_config) { {name: 'runtime manifest'} }
 
     describe "#manifest" do
-      let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory)}
-      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient)}
-      let(:logger) { instance_double(Logging::Logger)}
+      let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+      let(:logger) { instance_double(Logging::Logger) }
 
       before do
         allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
@@ -26,6 +26,22 @@ module Bosh::Director::Models
     describe "#raw_manifest" do
       it 'returns raw result' do
         expect(runtime_config_model.raw_manifest).to eq(mock_manifest)
+      end
+    end
+
+    describe '#tags' do
+      context 'when there are no tags' do
+        it 'returns an empty hash' do
+          expect(runtime_config_model.tags).to eq({})
+        end
+      end
+
+      context 'when there are tags' do
+        let(:mock_manifest) { {'tags' => {'my-tag' => 'best-value'}} }
+
+        it 'returns the tags from the manifest' do
+          expect(runtime_config_model.tags).to eq({'my-tag' => 'best-value'})
+        end
       end
     end
   end

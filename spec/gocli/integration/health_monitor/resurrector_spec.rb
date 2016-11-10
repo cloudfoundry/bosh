@@ -6,7 +6,6 @@ describe 'resurrector', type: :integration, hm: true do
   before do
     current_sandbox.health_monitor_process.start
 
-    target_and_login
     create_and_upload_test_release
     upload_stemcell
   end

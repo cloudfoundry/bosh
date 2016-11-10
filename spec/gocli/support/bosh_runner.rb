@@ -17,13 +17,27 @@ module Bosh::Spec
       run_in_dir(cmd, @bosh_work_dir, options)
     end
 
-    def run_interactively(cmd, env = {})
+    def run_interactively(cmd, options = {})
       Dir.chdir(@bosh_work_dir) do
-        cli_options = ''
+        config = options.fetch(:config, @bosh_config)
+        log_in = options.fetch(:include_credentials, true)
+        user = options[:user] || 'test'
+        password = options[:password] || 'test'
+        no_color = options.fetch(:no_color, false)
+        deployment_name = options.fetch(:deployment_name, nil)
         default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
-        cli_options += " --ca-cert #{default_ca_cert}"
 
-        BlueShell::Runner.run env, "gobosh --tty #{cli_options} #{cmd}" do |runner|
+        cli_options = ''
+        cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
+        cli_options += " --user=#{user} --password=#{password}" if log_in
+        cli_options += " -d #{deployment_name}" if deployment_name
+        cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
+        cli_options += " --no-color" if no_color
+        cli_options += " --config #{config}"
+        command="gobosh --tty #{cli_options} #{cmd}"
+        @logger.info("Running ... `#{command}`")
+
+        BlueShell::Runner.run({}, "#{command}") do |runner|
           yield runner
         end
       end
@@ -32,6 +46,13 @@ module Bosh::Spec
     def reset
       FileUtils.rm_rf(@bosh_config)
     end
+
+    def current_sandbox
+      sandbox = Thread.current[:sandbox]
+      raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
+      sandbox
+    end
+
 
     def run_in_current_dir(cmd, options={})
       run_in_dir(cmd, Dir.pwd, options)
@@ -42,11 +63,14 @@ module Bosh::Spec
       log_in = options.fetch(:include_credentials, true)
       user = options[:user] || 'test'
       password = options[:password] || 'test'
+      config = options.fetch(:config, @bosh_config)
       cli_options = ''
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
       cli_options += " --user=#{user} --password=#{password}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
+      cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
+      cli_options += " --config #{config}"
 
       default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
@@ -59,8 +83,27 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, process_status = Open3.capture2e(env, command, chdir: working_dir)
-        exit_code = process_status.exitstatus
+        Open3.popen2e(env, command, chdir: working_dir) do |stdin, stdout_and_stderr, wait_thr|
+          if options.fetch(:no_track, false)
+            line = "negative-ghostrider"
+            start = Time.now
+            loop do
+              line = stdout_and_stderr.gets
+              break if line =~ /Task (\d+)/
+              raise 'Failed to parse task id from output within timeout' if (Time.now - start) > 20
+            end
+            output = line
+            exit_code = 0
+            begin
+              Process.kill('INT', wait_thr.pid)
+            rescue
+              @logger.info("Failed to kill the cli in a :no-track scenario")
+            end
+          else
+            output = stdout_and_stderr.read
+            exit_code = wait_thr.value.exitstatus
+          end
+        end
       end
 
       @logger.info "Exit code is #{exit_code}"

@@ -1,0 +1,3 @@
+name: bar
+files:
+  - bar/run.sh

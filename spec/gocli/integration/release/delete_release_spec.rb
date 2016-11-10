@@ -3,9 +3,6 @@ require_relative '../../spec_helper'
 describe 'delete release', type: :integration do
   with_reset_sandbox_before_each
 
-  before do
-    target_and_login
-  end
   # ~25s
   it 'allows deleting a whole release' do
     release_filename = spec_asset('test_release.tgz')
@@ -18,8 +15,6 @@ describe 'delete release', type: :integration do
   end
 
   it 'can delete an uploaded compiled release (no source)' do
-    target_and_login
-
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
     bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 

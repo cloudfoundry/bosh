@@ -188,7 +188,7 @@ module Bosh::Cli::Command::Release
 
 
               output = Bosh::Cli::Config.output.string
-              expect(output).to match(/^Generated .*\.tgz$/)
+              expect(output).to match(/Generated .*\.tgz$/)
               expect(output).to match(/^Release size: \d/)
               expect(output).to match(/^Release tarball \(\d.*\): .*\.tgz$/)
             end

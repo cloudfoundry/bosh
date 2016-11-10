@@ -51,6 +51,18 @@ module Bosh::Director
         subject.enqueue('whoami', job_class, description, [], deployment)
       end
 
+      it 'should clean up old log dir' do
+        FileUtils.mkdir_p("#{tmpdir}/tasks/1")
+
+        File.open("#{tmpdir}/tasks/1/debug", 'w+') do |f|
+          f.write('STALE LOG')
+        end
+
+        subject.enqueue('whoami', job_class, description, [], deployment)
+
+        expect(File.open("#{tmpdir}/tasks/1/debug").read).not_to match('STALE LOG')
+      end
+
       it 'should create the task debug output file' do
         task = subject.enqueue('fake-user', job_class, description, [], deployment)
 

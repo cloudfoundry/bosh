@@ -116,6 +116,7 @@ An OS image is a tarball that contains a snapshot of an entire OS filesystem tha
 
 The OS Image should be rebuilt when you are making changes to which packages we install in the operating system, or when making changes to how we configure those packages, or if you need to pull in and test an updated package from upstream.
 
+    $ mkdir -p $PWD/tmp
     $ bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz]
 
 The arguments to `stemcell:build_os_image` are:
@@ -169,11 +170,6 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 ### Building a stemcell
 
 The stemcell should be rebuilt when you are making and testing BOSH-specific changes on top of the base-OS Image such as new bosh-agent versions, or updating security configuration, or changing user settings.
-
-*Note:* to speed stemcell building during development, disable the old, bosh-micro-building steps before running `bundle` to avoid the time required to compile the bosh release...
-
-    $ export BOSH_MICRO_ENABLED=no
-
 
 #### with published OS image
 
@@ -294,5 +290,3 @@ Then run the following:
 * If the Stemcell has been built and so long as you only make test case modifications you can rerun the tests (without rebuilding Stemcell. Details in section `How to run tests for Stemcell`
 
 * It's possible to verify OS/Stemcell changes without making adeployment using the stemcell. For an AWS specific ubuntu stemcell, the filesytem is available at `/mnt/stemcells/aws/xen/ubuntu/work/work/chroot`
-
-* DO NOT forget to: ` $ export BOSH_MICRO_ENABLED=no` before building stemcell against an OS image. Cuts down the build time a LOT

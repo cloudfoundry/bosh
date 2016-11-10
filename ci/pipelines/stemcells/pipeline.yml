@@ -1,0 +1,917 @@
+---
+groups:
+  - name: all
+    jobs:
+      - build-stemcell
+      - publish-stemcells
+      - test-stemcells
+      - build-warden-boshlite-centos-7
+      - build-warden-boshlite-ubuntu-trusty
+      - build-aws-xen-centos-7
+      - build-aws-xen-ubuntu-trusty
+      - build-azure-hyperv-centos-7
+      - build-azure-hyperv-ubuntu-trusty
+      - build-google-kvm-ubuntu-trusty
+      - build-google-kvm-centos-7
+      - build-openstack-kvm-centos-7
+      - build-openstack-kvm-ubuntu-trusty
+      - build-vsphere-esxi-centos-7
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vcloud-esxi-ubuntu-trusty
+      - bats-centos
+      - bats-ubuntu
+  - name: aws
+    jobs:
+      - build-aws-xen-ubuntu-trusty
+      - build-aws-xen-centos-7
+  - name: azure
+    jobs:
+      - build-azure-hyperv-ubuntu-trusty
+      - build-azure-hyperv-centos-7
+  - name: google
+    jobs:
+      - build-google-kvm-ubuntu-trusty
+      - build-google-kvm-centos-7
+  - name: openstack
+    jobs:
+      - build-openstack-kvm-ubuntu-trusty
+      - build-openstack-kvm-centos-7
+  - name: vsphere
+    jobs:
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vsphere-esxi-centos-7
+  - name: vcloud
+    jobs:
+      - build-vcloud-esxi-ubuntu-trusty
+  - name: ubuntu
+    jobs:
+      - build-aws-xen-ubuntu-trusty
+      - build-azure-hyperv-ubuntu-trusty
+      - build-google-kvm-ubuntu-trusty
+      - build-openstack-kvm-ubuntu-trusty
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vcloud-esxi-ubuntu-trusty
+  - name: centos
+    jobs:
+      - build-aws-xen-centos-7
+      - build-azure-hyperv-centos-7
+      - build-openstack-kvm-centos-7
+      - build-vsphere-esxi-centos-7
+  - name: bats
+    jobs:
+      - bats-centos
+      - bats-ubuntu
+
+shared:
+  - &prepare-director
+    task: prepare-director
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-director.yml
+    params: &prepare-director-params
+      BOSH_USER:                            {{stemcell-test-director-username}}
+      BOSH_PASSWORD:                        {{stemcell-test-director-password}}
+      BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
+      BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
+      BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
+      BOSH_VSPHERE_VERSION:                 {{vsphere-version}}
+      BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
+      BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
+      BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
+      BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      SSLIP_IO_KEY:                         {{sslip_io_key}}
+
+
+  - &deploy-director
+    task: deploy-director
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/deploy-director.yml
+
+  - &prepare-bats
+    task: prepare-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-bats.yml
+    params: &prepare-bats-params
+      BAT_VCAP_PASSWORD:      {{bat-vcap-password}}
+      BOSH_USER:              {{stemcell-test-director-username}}
+      BOSH_PASSWORD:          {{stemcell-test-director-password}}
+
+  - &run-bats
+    task: run-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/run-bats.yml
+
+  - &teardown
+    task: teardown
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/teardown.yml
+    params:
+      DEPLOYMENT_NAME: certification
+
+jobs:
+  - name: build-stemcell
+    serial: true
+    plan:
+      - get: bosh-src
+      - get: version
+        params:
+          bump: {{stemcell_version_semver_bump}}
+      - put: version
+        params:
+          file: version/number
+
+  - name: test-stemcells
+    serial: true
+    plan:
+      - aggregate:
+        - get: version
+          trigger: true
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: bosh-src
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: bosh-cli
+        - get: syslog-release
+        - get: bosh-release
+        - get: cpi-release
+        - get: vsphere-esxi-ubuntu-trusty
+          passed: [build-vsphere-esxi-ubuntu-trusty]
+          tags:
+          - vsphere-v5.1
+        - put: environment
+          params:
+            acquire: true
+
+      - do:
+        - task: deploy-director
+          tags: [vsphere-v5.1]
+          file: bosh-src/ci/pipelines/stemcells/tasks/deploy-director.yml
+          input_mapping:
+            stemcell: vsphere-esxi-ubuntu-trusty
+          params:
+            DIRECTOR_IP:                          {{stemcell-test-director-address}}
+            BOSH_VSPHERE_VCENTER_CIDR:            {{bosh-director-vcenter-cidr}}
+            BOSH_VSPHERE_VCENTER_GATEWAY:         {{bosh-director-vcenter-gateway}}
+            BOSH_VSPHERE_DNS:                     {{bosh-director-vcenter-dns}}
+            BOSH_DIRECTOR_USERNAME:               {{stemcell-test-director-username}}
+            BOSH_DIRECTOR_PASSWORD:               {{stemcell-test-director-password}}
+            BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
+            BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
+            BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
+            BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
+            BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
+            BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
+            BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
+            BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
+            BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
+            BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+
+        - task: test-stemcell
+          tags: [vsphere-v5.1]
+          file: bosh-src/bosh-stemcell/smoke/test-stemcell.yml
+          input_mapping:
+            stemcell: vsphere-esxi-ubuntu-trusty
+          params:
+            BOSH_DIRECTOR_ADDRESS:        {{stemcell-test-director-address}}
+            BOSH_DIRECTOR_USERNAME:       {{stemcell-test-director-username}}
+            BOSH_DIRECTOR_PASSWORD:       {{stemcell-test-director-password}}
+            BOSH_VSPHERE_VCENTER_CLUSTER: {{vcenter-cluster}}
+            BOSH_VSPHERE_VCENTER_DC:      {{vcenter-dc}}
+        ensure:
+          do:
+          - task: teardown
+            tags: [vsphere-v5.1]
+            file: bosh-src/ci/pipelines/stemcells/tasks/teardown.yml
+          - put: environment
+            params:
+              release: environment
+
+  - name: publish-stemcells
+    serial: true
+    plan:
+      - aggregate:
+        - get: version
+          passed:
+            - test-stemcells
+            - bats-centos
+            - bats-ubuntu
+        - get: bosh-src
+      - task: copy-artifacts
+        file: bosh-src/ci/pipelines/stemcells/tasks/publish.yml
+        params:
+          AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
+          AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
+          CANDIDATE_BUCKET_NAME: {{candidate_stemcell_bucket}}
+          PUBLISHED_BUCKET_NAME: {{published_stemcell_bucket}}
+          COPY_KEYS: |
+            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
+            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
+            google/bosh-stemcell-%s-google-kvm-ubuntu-trusty-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
+            vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+            azure/bosh-stemcell-%s-azure-hyperv-centos-7-go_agent.tgz
+            azure/bosh-stemcell-%s-azure-hyperv-ubuntu-trusty-go_agent.tgz
+      - put: bosh-src-push
+        params:
+          repository: bosh-src
+          tag: version-tag/tag
+          only_tag: true
+
+  #
+  # WARDEN
+  #
+
+  - name: build-warden-boshlite-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         warden
+          HYPERVISOR:   boshlite
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: warden-boshlite-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+
+  - name: build-warden-boshlite-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         warden
+          HYPERVISOR:   boshlite
+          OS_NAME:      centos
+          OS_VERSION:   '7'
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: warden-boshlite-centos-7
+          params:
+            file: stemcell/*.tgz
+
+  #
+  # AWS
+  #
+
+  - name: build-aws-xen-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         aws
+          HYPERVISOR:   xen
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: aws-xen-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+
+  - name: build-aws-xen-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         aws
+          HYPERVISOR:   xen
+          OS_NAME:      centos
+          OS_VERSION:   7
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: aws-xen-centos-7
+          params:
+            file: stemcell/*.tgz
+
+  #
+  # Azure
+  #
+
+  - name: build-azure-hyperv-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         azure
+          HYPERVISOR:   hyperv
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: azure-hyperv-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+
+  - name: build-azure-hyperv-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         azure
+          HYPERVISOR:   hyperv
+          OS_NAME:      centos
+          OS_VERSION:   7
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: azure-hyperv-centos-7
+          params:
+            file: stemcell/*.tgz
+
+  #
+  # Google
+  #
+
+  - name: build-google-kvm-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         google
+          HYPERVISOR:   kvm
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: google-kvm-ubuntu-trusty
+          params:
+            file: stemcell/*-go_agent.tgz
+
+  - name: build-google-kvm-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         google
+          HYPERVISOR:   kvm
+          OS_NAME:      centos
+          OS_VERSION:   7
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: google-kvm-centos-7
+          params:
+            file: stemcell/*-go_agent.tgz
+
+  #
+  # OpenStack
+  #
+
+  - name: build-openstack-kvm-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         openstack
+          HYPERVISOR:   kvm
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: openstack-kvm-ubuntu-trusty-raw
+          params:
+            file: stemcell/*-raw.tgz
+        - put: openstack-kvm-ubuntu-trusty
+          params:
+            file: stemcell/*-go_agent.tgz
+
+  - name: build-openstack-kvm-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         openstack
+          HYPERVISOR:   kvm
+          OS_NAME:      centos
+          OS_VERSION:   7
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: openstack-kvm-centos-7-raw
+          params:
+            file: stemcell/*-raw.tgz
+        - put: openstack-kvm-centos-7
+          params:
+            file: stemcell/*-go_agent.tgz
+
+  #
+  # vSphere
+  #
+
+  - name: build-vsphere-esxi-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         vsphere
+          HYPERVISOR:   esxi
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: vsphere-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+
+  - name: build-vsphere-esxi-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         vsphere
+          HYPERVISOR:   esxi
+          OS_NAME:      centos
+          OS_VERSION:   7
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: vsphere-esxi-centos-7
+          params:
+            file: stemcell/*.tgz
+
+  #
+  # vCloud
+  #
+
+  - name: build-vcloud-esxi-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:         vcloud
+          HYPERVISOR:   esxi
+          OS_NAME:      ubuntu
+          OS_VERSION:   trusty
+          BOSHIO_TOKEN: {{boshio_checksum_token}}
+      - aggregate:
+        - put: vcloud-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+
+  - name: bats-centos
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+        - get: cpi-release
+        - get: stemcell
+          trigger: true
+          tags:
+          - vsphere-v5.1
+          resource: vsphere-esxi-centos-7
+          passed:
+          - build-vsphere-esxi-centos-7
+        - get: pipelines
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-src
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: version
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+
+      - {put: environment, params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+            - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+
+  - name: bats-ubuntu
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+        - get: cpi-release
+        - get: stemcell
+          trigger: true
+          tags:
+          - vsphere-v5.1
+          resource: vsphere-esxi-ubuntu-trusty
+          passed:
+            - build-vsphere-esxi-ubuntu-trusty
+        - get: pipelines
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-src
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+        - get: version
+          passed:
+            - build-warden-boshlite-centos-7
+            - build-warden-boshlite-ubuntu-trusty
+            - build-aws-xen-ubuntu-trusty
+            - build-azure-hyperv-ubuntu-trusty
+            - build-google-kvm-ubuntu-trusty
+            - build-openstack-kvm-ubuntu-trusty
+            - build-vsphere-esxi-ubuntu-trusty
+            - build-vcloud-esxi-ubuntu-trusty
+            - build-aws-xen-centos-7
+            - build-azure-hyperv-centos-7
+            - build-openstack-kvm-centos-7
+            - build-vsphere-esxi-centos-7
+
+      - {put: environment, params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+          - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+resources:
+  - name: bosh-src-push
+    type: git
+    source:
+      uri: {{bosh_src_push_url}}
+      branch: {{stemcell-branch}}
+      private_key: {{bosh_src_key}}
+
+  - name: bosh-src
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: {{stemcell-branch}}
+
+  - name: version
+    type: semver
+    source:
+      driver: s3
+      key: {{stemcell_version_key}}
+      bucket: {{candidate_stemcell_bucket}}
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: syslog-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/syslog-release
+
+  - name: bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+
+  - name: cpi-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-incubator/bosh-vsphere-cpi-release
+
+  #
+  # WARDEN
+  #
+
+  - name: warden-boshlite-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: warden-boshlite-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # AWS
+  #
+
+  - name: aws-xen-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: aws/bosh-stemcell-(.+)-aws-xen-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: aws-xen-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: aws/bosh-stemcell-(.+)-aws-xen-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # Azure
+  #
+
+  - name: azure-hyperv-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: azure/bosh-stemcell-(.+)-azure-hyperv-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: azure-hyperv-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: azure/bosh-stemcell-(.+)-azure-hyperv-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # Google
+  #
+
+  - name: google-kvm-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: google/bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: google-kvm-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: google/bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # OpenStack
+  #
+
+  - name: openstack-kvm-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-ubuntu-trusty-raw
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-raw
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent-raw.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # vSphere
+  #
+
+  - name: vsphere-esxi-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vsphere-esxi-centos-7
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: vsphere/bosh-stemcell-(.+)-vsphere-esxi-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+  #
+  # vCloud
+  #
+
+  - name: vcloud-esxi-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # BATs
+  #
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-([0-9.]+)-linux-amd64
+      bucket: bosh-cli-artifacts
+      region_name: us-east-1
+
+  - name: pipelines
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
+      branch: master
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: environment
+    type: pool
+    source:
+      pool: vsphere
+      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+      branch: master
+      private_key: {{github_deployment_key__bosh-cpi-environments}}

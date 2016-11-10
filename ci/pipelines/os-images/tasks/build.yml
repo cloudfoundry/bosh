@@ -13,7 +13,7 @@ outputs:
 - name: os-image
 
 run:
-  path: bosh-src/ci/pipelines/os-images-new/tasks/build.sh
+  path: bosh-src/ci/pipelines/os-images/tasks/build.sh
 
 params:
   OPERATING_SYSTEM_NAME:      replace-me

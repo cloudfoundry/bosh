@@ -97,7 +97,6 @@ describe 'deploy job update', type: :integration do
 
       context 'when previous deployment was in the legacy style' do
         before do
-          target_and_login
           create_and_upload_test_release
           upload_stemcell
           deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
@@ -120,7 +119,6 @@ describe 'deploy job update', type: :integration do
 
       context 'when previous deployment was in the legacy style and there is no cloud config in the system' do
         before do
-          target_and_login
           create_and_upload_test_release
           upload_stemcell
           deploy_simple_manifest(manifest_hash: legacy_manifest_hash)

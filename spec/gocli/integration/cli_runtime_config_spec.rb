@@ -4,7 +4,6 @@ describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can upload a runtime config' do
-    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config))
@@ -14,7 +13,6 @@ describe 'cli runtime config', type: :integration do
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
     pending 'QUESTION Discuss correct behavior with Dmitriy on non-logged-in users and files that are not present'
-    bosh_runner.run("env #{current_sandbox.director_url}")
 
     # not logged in
     expect(bosh_runner.run("update-runtime-config #{__FILE__}", failure_expected: true)).to include('Please log in first')
@@ -40,7 +38,6 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'can download a runtime config' do
-    target_and_login
 
     # none present yet
     expect(bosh_runner.run('runtime-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
@@ -56,7 +53,6 @@ describe 'cli runtime config', type: :integration do
   end
 
   it "gives an error when release version is 'latest'" do
-    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release))
@@ -66,7 +62,6 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'gives an error when release for addon does not exist in releases section' do
-    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing))
@@ -76,8 +71,6 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'does not fail when runtime config is very large' do
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)

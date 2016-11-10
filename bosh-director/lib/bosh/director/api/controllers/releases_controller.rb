@@ -5,11 +5,19 @@ module Bosh::Director
     class ReleasesController < BaseController
       post '/', :consumes => :json do
         payload = json_decode(request.body.read)
+        if payload['sha1'] && params['sha1']
+          message = 'Sha1 provided in multiple places'
+          throw(:halt, [400, message])
+        end
+
+        sha1 = payload['sha1'] || params['sha1']
+
         options = {
           rebase: params['rebase'] == 'true',
           fix:    params['fix'] == 'true',
-          sha1:   params['sha1']
+          sha1:   sha1
         }
+
         task = @release_manager.create_release_from_url(current_user, payload['location'], options)
         redirect "/tasks/#{task.id}"
       end

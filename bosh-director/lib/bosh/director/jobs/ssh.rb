@@ -27,7 +27,12 @@ module Bosh::Director
         filter.merge!(target.id_filter)
 
         deployment = Models::Deployment[@deployment_id]
-        instances = @instance_manager.filter_by(deployment, filter)
+
+        instances = @instance_manager.filter_by(deployment, filter).exclude(vm_cid: nil)
+
+        if instances.empty?
+          raise "No instance with a VM in deployment '#{deployment.name}' matched filter #{filter}"
+        end
 
         ssh_info = instances.map do |instance|
           begin
@@ -35,11 +40,9 @@ module Bosh::Director
 
             logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
             result = agent.ssh(@command, @params)
-            if target.ids_provided?
-              result["id"] = instance.uuid
-            else
-              result["index"] = instance.index
-            end
+            result["id"] = instance.uuid
+            result["index"] = instance.index
+            result["job"] = instance.job
 
             if Config.default_ssh_options
               result["gateway_host"] = Config.default_ssh_options["gateway_host"]

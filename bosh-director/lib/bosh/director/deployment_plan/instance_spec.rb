@@ -33,7 +33,7 @@ module Bosh::Director
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => dns_manager.dns_domain_name,
-          'links' => instance_group.link_spec,
+          'links' => instance_group.resolved_links,
           'address' => instance_plan.network_settings.network_address,
           'update' => instance_group.update_spec
         }
@@ -48,9 +48,7 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-
-        config_server_client_factory = ConfigServer::ClientFactory.create(Config.logger)
-        @config_server_client = config_server_client_factory.create_client(full_spec['deployment'])
+        @config_server_client = ConfigServer::ClientFactory.create(Config.logger).create_client
       end
 
       def as_template_spec
@@ -116,10 +114,22 @@ module Bosh::Director
           'address',
           'ip'
         ]
+
+        whitelisted_link_spec_keys = [
+          'instances',
+          'properties'
+        ]
+
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
-        template_hash['properties'] = resolve_uninterpolated_values(@full_spec['properties'])
-        template_hash['links'] = resolve_uninterpolated_values(@full_spec['links'])
+        template_hash['properties'] =  @config_server_client.interpolate(@full_spec['properties'], @full_spec['deployment'])
+        template_hash['links'] = {}
+
+        # TODO: Only interpolate the properties of the links, no need to interpolate the whole Hash
+        @full_spec.fetch('links', {}).each do |link_name, link_spec|
+          interpolated_values = @config_server_client.interpolate(link_spec, link_spec['deployment_name'])
+          template_hash['links'][link_name] = interpolated_values.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+        end
 
         networks_hash = template_hash['networks']
 
@@ -150,12 +160,6 @@ module Bosh::Director
         'resource_pool' => @full_spec['vm_type']['name'],
         'networks' => modified_networks_hash
         })
-      end
-
-      private
-
-      def resolve_uninterpolated_values(to_be_resolved_hash)
-        @config_server_client.interpolate(to_be_resolved_hash)
       end
     end
 

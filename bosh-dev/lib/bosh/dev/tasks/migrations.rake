@@ -30,16 +30,4 @@ namespace :migrations do
       FileUtils.touch(new_migration_path)
     end
   end
-
-  namespace :bosh_cli_plugin_aws do
-    desc 'Generate a new AWS migration with NAME'
-    task :new, :name do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-
-      require 'bosh_cli_plugin_aws/migration_helper'
-
-      Bosh::AwsCliPlugin::MigrationHelper.generate_migration_file(name)
-    end
-  end
 end

@@ -36,14 +36,5 @@ module Bosh::Dev
         end
       end
     end
-
-    describe '#download_bosh_micro_release' do
-      it 'downloads the a bosh release from a fixed URL' do
-        expected_uri = URI('https://bosh.io/d/github.com/cloudfoundry/bosh?v=123.4')
-        output_path = 'fake-path'
-        expect(downloader).to receive(:download).with(expected_uri, output_path)
-        subject.download_bosh_micro_release(bosh_version: '123.4', output_path: output_path)
-      end
-    end
   end
 end

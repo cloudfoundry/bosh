@@ -80,9 +80,11 @@ module Bosh::Director
 
       attr_accessor :desired_instances
 
+      attr_accessor :did_change
+
       attr_reader :link_paths
 
-      attr_accessor :did_change
+      attr_reader :resolved_links
 
       def self.parse(plan, instance_group_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
@@ -118,7 +120,7 @@ module Bosh::Director
       end
 
       def self.is_legacy_spec?(instance_group_spec)
-        !instance_group_spec.has_key?("templates")
+        !instance_group_spec.has_key?('templates')
       end
 
       def add_instance_plans(instance_plans)
@@ -149,10 +151,10 @@ module Bosh::Director
       def self.convert_from_legacy_spec(job_spec)
         return job_spec if !self.is_legacy_spec?(job_spec)
         job = {
-          "name" => job_spec["template"],
-          "version" => job_spec["version"],
-          "sha1" => job_spec["sha1"],
-          "blobstore_id" => job_spec["blobstore_id"]
+          'name' => job_spec['template'],
+          'version' => job_spec['version'],
+          'sha1' => job_spec['sha1'],
+          'blobstore_id' => job_spec['blobstore_id']
         }
 
         # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
@@ -183,35 +185,36 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
+        result = { 'name' => @name }
+
         if @jobs.size >= 1
           first_job = @jobs[0]
-          result = {
-            "name" => @name,
-            "templates" => [],
+          result.merge!({
+            'templates' => [],
             # --- Legacy ---
-            "template" => first_job.name,
-            "version" => first_job.version,
-            "sha1" => first_job.sha1,
-            "blobstore_id" => first_job.blobstore_id
-          }
+            'template' => first_job.name,
+            'version' => first_job.version,
+            'sha1' => first_job.sha1,
+            'blobstore_id' => first_job.blobstore_id
+          })
 
           if first_job.logs
-            result["logs"] = first_job.logs
+            result['logs'] = first_job.logs
           end
           # --- /Legacy ---
 
           @jobs.each do |job|
             job_entry = {
-              "name" => job.name,
-              "version" => job.version,
-              "sha1" => job.sha1,
-              "blobstore_id" => job.blobstore_id
+              'name' => job.name,
+              'version' => job.version,
+              'sha1' => job.sha1,
+              'blobstore_id' => job.blobstore_id
             }
 
             if job.logs
-              job_entry["logs"] = job.logs
+              job_entry['logs'] = job.logs
             end
-            result["templates"] << job_entry
+            result['templates'] << job_entry
           end
           result
         end
@@ -334,10 +337,6 @@ module Bosh::Director
 
       def add_resolved_link(link_name, link_spec)
         @resolved_links[link_name] = link_spec
-      end
-
-      def link_spec
-        @resolved_links
       end
 
       def link_path(job_name, link_name)

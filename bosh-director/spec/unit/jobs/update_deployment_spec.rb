@@ -31,7 +31,7 @@ module Bosh::Director::Jobs
         )
       end
       let(:planner) do
-        instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
+        instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', instance_groups_starting_on_deploy: [deployment_job])
       end
 
       let(:mock_manifest) do

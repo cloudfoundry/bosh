@@ -13,6 +13,11 @@ module Bosh
         def authorization_header
           @token_provider.token
         end
+
+        def refresh
+          @token_provider.refresh
+          true
+        end
       end
 
       class BasicCredentials
@@ -27,6 +32,10 @@ module Bosh
 
         def authorization_header
           'Basic ' + Base64.encode64("#{@username}:#{@password}").strip
+        end
+
+        def refresh
+          false
         end
       end
     end

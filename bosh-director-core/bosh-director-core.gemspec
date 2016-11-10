@@ -22,10 +22,4 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'bosh_common', "~>#{version}"
   spec.add_dependency 'bosh-template', "~>#{version}"
-
-  spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-its'
-  spec.add_development_dependency 'fakefs'
-  spec.add_development_dependency 'minitar'
 end

@@ -1,0 +1,170 @@
+---
+groups:
+  - name: vsphere-bats
+    jobs:
+      - bats-centos
+      - bats-ubuntu
+
+shared:
+  - &prepare-director
+    task: prepare-director
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-director.yml
+    params: &prepare-director-params
+      BOSH_USER:                            {{BOSH_DIRECTOR_USERNAME}}
+      BOSH_PASSWORD:                        {{BOSH_DIRECTOR_PASSWORD}}
+      BOSH_VSPHERE_VCENTER:                 {{VCENTER_IP}}
+      BOSH_VSPHERE_VCENTER_USER:            {{VCENTER_USER}}
+      BOSH_VSPHERE_VCENTER_PASSWORD:        {{VCENTER_PASSWORD}}
+      BOSH_VSPHERE_VERSION:                 {{VSPHERE_VERSION}}
+      BOSH_VSPHERE_VCENTER_DC:              {{VCENTER_DC}}
+      BOSH_VSPHERE_VCENTER_CLUSTER:         {{VCENTER_CLUSTER}}
+      BOSH_VSPHERE_VCENTER_DATASTORE:       {{VCENTER_DATASTORE}}
+      BOSH_VSPHERE_VCENTER_VLAN:            {{VCENTER_VLAN}}
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{VCENTER_VM_FOLDER}}
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{VCENTER_TEMPLATE_FOLDER}}
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{VCENTER_DISK_PATH}}
+      SSLIP_IO_KEY:                         {{sslip_io_key}}
+
+  - &deploy-director
+    task: deploy-director
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/deploy-director.yml
+
+  - &prepare-bats
+    task: prepare-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/vsphere/tasks/prepare-bats.yml
+    params: &prepare-bats-params
+      BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
+      BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
+      BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
+
+  - &run-bats
+    task: run-bats
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/run-bats.yml
+
+  - &teardown
+    task: teardown
+    tags: [vsphere-v5.1]
+    file: pipelines/shared/tasks/teardown.yml
+    params:
+      DEPLOYMENT_NAME: certification
+
+jobs:
+  - name: bats-centos
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - {get: bosh-release,   tags: [vsphere-v5.1], trigger: true, resource: bosh-candidate-release-tarballs}
+        - {get: cpi-release,    tags: [vsphere-v5.1], trigger: true}
+        - {get: stemcell,       tags: [vsphere-v5.1], trigger: true, resource: candidate-centos-stemcell}
+        - {get: pipelines,      tags: [vsphere-v5.1], trigger: false}
+        - {get: bosh-cli,       tags: [vsphere-v5.1], trigger: false}
+        - {get: bats,           tags: [vsphere-v5.1], trigger: false}
+
+      - {put: environment, tags: [vsphere-v5.1], params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+            - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
+
+
+  - name: bats-ubuntu
+    serial: false
+    plan:
+    - do:
+      - aggregate:
+        - {get: bosh-release,   tags: [vsphere-v5.1], trigger: true, resource: bosh-candidate-release-tarballs}
+        - {get: cpi-release,    tags: [vsphere-v5.1], trigger: true}
+        - {get: stemcell,       tags: [vsphere-v5.1], trigger: true, resource: candidate-ubuntu-stemcell}
+        - {get: pipelines,      tags: [vsphere-v5.1], trigger: false}
+        - {get: bosh-cli,       tags: [vsphere-v5.1], trigger: false}
+        - {get: bats,           tags: [vsphere-v5.1], trigger: false}
+
+      - {put: environment, tags: [vsphere-v5.1], params: {acquire: true}}
+
+      - <<: *prepare-director
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats
+          params:
+            <<: *prepare-bats-params
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+          - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, tags: [vsphere-v5.1], params: {release: environment}}
+
+resources:
+  - name: pipelines
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
+      branch: master
+
+  - name: cpi-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-incubator/bosh-vsphere-cpi-release
+
+  - name: bosh-candidate-release-tarballs
+    type: s3
+    source:
+      bucket: {{candidate_release_bucket}}
+      regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" #e.g. bosh-257.9+dev.1472844900.tgz
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: candidate-ubuntu-stemcell
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+
+  - name: candidate-centos-stemcell
+    type: s3
+    source:
+      bucket: {{candidate_stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-centos-7-go_agent.tgz
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-([0-9.]+)-linux-amd64
+      bucket: bosh-cli-artifacts
+      region_name: us-east-1
+
+  - name: environment
+    type: pool
+    source:
+      pool: vsphere
+      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+      branch: master
+      private_key: {{github_deployment_key__bosh-cpi-environments}}

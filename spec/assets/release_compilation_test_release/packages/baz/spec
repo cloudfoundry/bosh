@@ -1,0 +1,4 @@
+name: baz
+files:
+  - baz/run.sh
+

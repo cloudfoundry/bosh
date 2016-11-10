@@ -13,7 +13,7 @@ jobs:
         passed:
           - start-job
       - task: build
-        file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        file: bosh-src/ci/pipelines/os-images/tasks/build.yml
         privileged: true
         params:
           OPERATING_SYSTEM_NAME:      ubuntu
@@ -30,7 +30,7 @@ jobs:
         passed:
           - start-job
       - task: build
-        file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        file: bosh-src/ci/pipelines/os-images/tasks/build.yml
         privileged: true
         params:
           OPERATING_SYSTEM_NAME:      centos

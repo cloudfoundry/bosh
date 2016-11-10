@@ -1,0 +1,5 @@
+check process goobaz
+  with pidfile /var/vcap/sys/run/goobaz.pid
+  start program "/var/vcap/jobs/goobaz/bin/goobaz_ctl start"
+  stop program "/var/vcap/jobs/goobaz/bin/goobaz_ctl stop"
+  group vcap

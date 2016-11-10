@@ -25,6 +25,7 @@ namespace :fly do
     })
   end
 
+  desc 'Fly integration parallel specs'
   task :integration_parallel do
 
     num_workers = 3

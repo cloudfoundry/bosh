@@ -59,8 +59,7 @@ module Bosh::Director
       dns_records = (current_dns_records + new_dns_records).uniq
       @local_dns_repo.create_or_update(instance_model, dns_records)
       if Config.local_dns_enabled?
-        delete_local_dns_record(instance_model)
-        create_local_dns_record(instance_model)
+        create_or_delete_local_dns_record(instance_model)
       end
     end
 
@@ -193,27 +192,29 @@ module Bosh::Director
     def delete_local_dns_record(instance_model)
       @logger.debug('Deleting local dns records')
 
-      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
-        @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
-        Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).delete
-
-        if Config.local_dns_include_index?
-          @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
-          Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
-        end
-      end
+      @logger.debug("Removing local dns record for instance #{instance_model.id}")
+      Models::LocalDnsRecord.where(:instance_id => instance_model.id ).delete
     end
 
-    def create_local_dns_record(instance_model)
+    def create_or_delete_local_dns_record(instance_model)
       @logger.debug('Creating local dns records')
 
       with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
-        Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
-
+        Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
+        begin
+          Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
+        rescue Sequel::UniqueConstraintViolation
+          @logger.info('Ignoring duplicate DNS record for performance reason')
+        end
         if Config.local_dns_include_index?
           @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-          Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id )
+          Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
+          begin
+            Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id)
+          rescue Sequel::UniqueConstraintViolation
+            @logger.info('Ignoring duplicate DNS record for performance reason')
+          end
         end
       end
     end
@@ -225,7 +226,7 @@ module Bosh::Director
       unless spec.nil? || spec['networks'].nil?
         @logger.debug("Found #{spec['networks'].length} networks")
         spec['networks'].each do |network_name, network|
-          unless network['ip'].nil? or spec['job'].nil?
+          unless network['ip'].nil? || spec['job'].nil?
             ip = network['ip']
             name_rest = '.' + Canonicalizer.canonicalize(spec['job']['name']) + '.' + network_name + '.' + Canonicalizer.canonicalize(spec['deployment']) + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest

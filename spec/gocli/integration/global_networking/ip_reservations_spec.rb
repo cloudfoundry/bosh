@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-xdescribe 'global networking', type: :integration do
+describe 'global networking', type: :integration do
   before do
     # pending doesn't work in before, but keeping it here so it's greppable
     # pending('cli2: #125442231: switch bosh vms to be per deployment like instances cmd')
@@ -21,7 +21,6 @@ xdescribe 'global networking', type: :integration do
 
   context 'when allocating static IPs' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end
@@ -58,7 +57,7 @@ xdescribe 'global networking', type: :integration do
       expect(first_deployment_vms.first.ips).to eq(['192.168.1.2'])
 
       deploy_simple_manifest(manifest_hash: second_deployment_manifest)
-      second_deployment_vms = director.vms('-d second_deployment')
+      second_deployment_vms = director.vms(deployment_name: 'second_deployment')
       expect(second_deployment_vms.size).to eq(1)
       expect(second_deployment_vms.first.ips).to eq(['192.168.1.3'])
     end
@@ -87,10 +86,10 @@ xdescribe 'global networking', type: :integration do
       expect(first_deployment_vms.size).to eq(1)
       expect(first_deployment_vms.first.ips).to eq(['192.168.1.10'])
 
-      bosh_runner.run('delete deployment simple')
+      bosh_runner.run('delete-deployment', deployment_name: 'simple')
 
       deploy_with_ip(second_deployment_manifest, '192.168.1.10')
-      second_deployment_vms = director.vms('second_deployment')
+      second_deployment_vms = director.vms(deployment_name: 'second_deployment')
       expect(second_deployment_vms.size).to eq(1)
       expect(second_deployment_vms.first.ips).to eq(['192.168.1.10'])
     end
@@ -104,8 +103,8 @@ xdescribe 'global networking', type: :integration do
       expect(first_deployment_vms.first.ips).to eq(['192.168.1.10'])
 
       current_sandbox.cpi.commands.pause_delete_vms
-      output = bosh_runner.run('--no-track delete deployment simple')
-      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('running')
+      output = bosh_runner.run('delete-deployment -d simple', no_track: true)
+      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('*')
       current_sandbox.cpi.commands.wait_for_delete_vms
 
       begin
@@ -128,14 +127,14 @@ xdescribe 'global networking', type: :integration do
       deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(2)
-      expect(first_deployment_vms.first.ips).to eq(['192.168.1.10'])
-      expect(first_deployment_vms[1].ips).to eq(['192.168.1.11'])
+      expect(first_deployment_vms.map(&:ips).flatten).to contain_exactly('192.168.1.10', '192.168.1.11')
 
       simple_manifest['jobs'].first['instances'] = 0
       simple_manifest['jobs'].first['networks'].first['static_ips'] = []
 
       current_sandbox.cpi.commands.pause_delete_vms
-      deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
+      output = deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
+      scale_down_task = Bosh::Spec::OutputParser.new(output).task_id('*')
 
       current_sandbox.cpi.commands.wait_for_delete_vms
 
@@ -149,11 +148,12 @@ xdescribe 'global networking', type: :integration do
 
       current_sandbox.cpi.commands.unpause_delete_vms
 
+      bosh_runner.run("task #{scale_down_task}")
+
       deploy_with_ips(second_deployment_manifest, ['192.168.1.10', '192.168.1.11'])
-      second_deployment_vms = director.vms('second_deployment')
+      second_deployment_vms = director.vms(deployment_name: 'second_deployment')
       expect(second_deployment_vms.size).to eq(2)
-      expect(second_deployment_vms.first.ips).to eq(['192.168.1.10'])
-      expect(second_deployment_vms[1].ips).to eq(['192.168.1.11'])
+      expect(second_deployment_vms.map(&:ips).flatten).to contain_exactly('192.168.1.10', '192.168.1.11')
     end
 
     it 'IPs released by one deployment via changing IP can be used by another deployment' do
@@ -170,7 +170,7 @@ xdescribe 'global networking', type: :integration do
       expect(first_deployment_vms.first.ips).to eq(['192.168.1.11'])
 
       deploy_with_ip(second_deployment_manifest, '192.168.1.10')
-      second_deployment_vms = director.vms('second_deployment')
+      second_deployment_vms = director.vms(deployment_name: 'second_deployment')
       expect(second_deployment_vms.size).to eq(1)
       expect(second_deployment_vms.first.ips).to eq(['192.168.1.10'])
     end
@@ -287,13 +287,13 @@ xdescribe 'global networking', type: :integration do
 
     it 'releases IP when subnet range is changed to no longer include it' do
       deploy_with_static_ip('my-deploy', '192.168.1.2', '192.168.1.0/24')
-      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      expect(director.vms(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
 
       deploy_with_static_ip('my-deploy', '192.168.2.2', '192.168.2.0/24')
-      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
+      expect(director.vms(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
 
       deploy_with_static_ip('other-deploy', '192.168.1.2', '192.168.1.0/24')
-      expect(director.vms('other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      expect(director.vms(deployment_name: 'other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
     context 'using legacy network configuration (no cloud config)' do
@@ -304,12 +304,12 @@ xdescribe 'global networking', type: :integration do
         )
 
         deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.11'])
-        original_first_instance = director.vms.find { |vm| vm.include? '192.168.1.10'}
-        original_second_instance = director.vms.find { |vm| vm.include? '192.168.1.11'}
+        original_first_instance = director.vms.find { |vm| vm.ips.include? '192.168.1.10'}
+        original_second_instance = director.vms.find { |vm| vm.ips.include? '192.168.1.11'}
 
         deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.12'])
-        new_first_instance = director.vms.find { |vm| vm.include? '192.168.1.10'}
-        new_second_instance = director.vms.find { |vm| vm.include? '192.168.1.12'}
+        new_first_instance = director.vms.find { |vm| vm.ips.include? '192.168.1.10'}
+        new_second_instance = director.vms.find { |vm| vm.ips.include? '192.168.1.12'}
 
         expect(new_first_instance.cid).to eq(original_first_instance.cid)
         expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
@@ -376,7 +376,6 @@ xdescribe 'global networking', type: :integration do
 
   context 'when allocating dynamic IPs' do
     before do
-      target_and_login
       create_and_upload_test_release
       upload_stemcell
     end
@@ -400,7 +399,7 @@ xdescribe 'global networking', type: :integration do
       update_release
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      expect(director.vms(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
     it 'gives VMs the same IP on redeploy' do
@@ -409,12 +408,12 @@ xdescribe 'global networking', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      original_ips = director.vms('my-deploy').map(&:ips).flatten
+      original_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
 
       manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
       output = deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(output).to include('Started updating job foobar') # actually re-deployed
-      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      expect(output).to include('Updating instance foobar') # actually re-deployed
+      new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
 
       expect(new_ips).to eq(original_ips)
     end
@@ -425,12 +424,12 @@ xdescribe 'global networking', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      original_ips = director.vms('my-deploy').map(&:ips).flatten
-      original_cids = director.vms('my-deploy').map(&:cid)
+      original_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
+      original_cids = director.vms(deployment_name: 'my-deploy').map(&:cid)
 
       deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
-      new_ips = director.vms('my-deploy').map(&:ips).flatten
-      new_cids = director.vms('my-deploy').map(&:cid)
+      new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
+      new_cids = director.vms(deployment_name: 'my-deploy').map(&:cid)
 
       expect(new_cids).to_not match_array(original_cids)
       expect(new_ips).to match_array(original_ips)
@@ -493,14 +492,14 @@ xdescribe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      original_ips = director.vms('my-deploy').map(&:ips).flatten
+      original_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(original_ips).to eq(['192.168.1.2'])
 
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, shift_ip_range_by: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(new_ips).to eq(['192.168.1.3'])
     end
 
@@ -510,7 +509,7 @@ xdescribe 'global networking', type: :integration do
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(new_ips).to eq(['192.168.1.3'])
 
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
@@ -518,7 +517,7 @@ xdescribe 'global networking', type: :integration do
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(new_ips).to match_array(['192.168.1.2', '192.168.1.3'])
     end
 
@@ -532,13 +531,13 @@ xdescribe 'global networking', type: :integration do
 
     it 'releases IP when subnet range is changed to no longer include it' do
       deploy_with_range('my-deploy', '192.168.1.0/24')
-      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      expect(director.vms(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
 
       deploy_with_range('my-deploy', '192.168.2.0/24')
-      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
+      expect(director.vms(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
 
       deploy_with_range('other-deploy', '192.168.1.0/24')
-      expect(director.vms('other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      expect(director.vms(deployment_name: 'other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
     context 'when using two networks' do
@@ -616,12 +615,13 @@ xdescribe 'global networking', type: :integration do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
-        original_ips = director.vms('my-deploy').map(&:ips).flatten
+        original_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
 
         manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
-        expect(output).to include('Started updating job foobar') # actually re-deployed
-        new_ips = director.vms('my-deploy').map(&:ips).flatten
+        expect(output).to include('Updating instance foobar') # actually re-deployed
+        expect(output).to include('Succeeded') # actually re-deployed
+        new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
 
         expect(new_ips).to eq(original_ips)
       end
@@ -630,12 +630,12 @@ xdescribe 'global networking', type: :integration do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
-        vms = director.vms('my-deploy')
+        vms = director.vms(deployment_name: 'my-deploy')
         original_ips = vms.map(&:ips).flatten
         original_cids = vms.map(&:cid)
 
         deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
-        vms = director.vms('my-deploy')
+        vms = director.vms(deployment_name: 'my-deploy')
         new_ips = vms.map(&:ips).flatten
         new_cids = vms.map(&:cid)
 
@@ -647,7 +647,7 @@ xdescribe 'global networking', type: :integration do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 2)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
-        original_ips = director.vms('my-deploy').map(&:ips).flatten
+        original_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
         expect(original_ips).to eq(['192.168.1.2'])
 
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
@@ -658,7 +658,7 @@ xdescribe 'global networking', type: :integration do
         )
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
-        new_ips = director.vms('my-deploy').map(&:ips).flatten
+        new_ips = director.vms(deployment_name: 'my-deploy').map(&:ips).flatten
         expect(new_ips).to eq(['192.168.1.3'])
       end
     end
@@ -671,7 +671,7 @@ xdescribe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: simple_manifest)
       first_deploy_vms = director.vms
       expect(first_deploy_vms.size).to eq(1)
-      expect(first_deploy_vms.first.ips).to eq('192.168.1.2')
+      expect(first_deploy_vms.first.ips).to eq(['192.168.1.2'])
 
       cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.2']
       upload_cloud_config(cloud_config_hash: cloud_config_hash)

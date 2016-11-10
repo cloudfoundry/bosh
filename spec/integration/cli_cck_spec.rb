@@ -6,8 +6,8 @@ describe 'cli: cloudcheck', type: :integration do
   let(:deployment_name) {manifest['name']}
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
-  def prepend_namespace(key)
-    "/#{director_name}/#{deployment_name}/#{key}"
+  def prepend_namespace(name)
+    "/#{director_name}/#{deployment_name}/#{name}"
   end
 
   context 'with dns enabled' do
@@ -197,7 +197,7 @@ describe 'cli: cloudcheck', type: :integration do
   context 'with config server enabled' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox) }
+    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
     let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
 
     before do
@@ -235,17 +235,17 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   def bosh_run_cck_with_resolution(num_errors, option=1, env={})
-    resolution_selections = "#{option}\n"*num_errors + "yes"
-
-    env.each do |key, value|
-      ENV[key] = value
+    cck_runner = runner.run_interactively('cloudcheck', env) do |runner|
+      num_errors.times do
+        expect(runner).to have_output 'Please choose a resolution'
+        runner.send_keys option
+      end
+      expect(runner).to have_output 'Apply resolutions?'
+      runner.send_keys 'yes'
+      expect(runner).to have_output 'done'
     end
 
-    output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
-    if $?.exitstatus != 0
-      fail("Cloud check failed, output: #{output}")
-    end
-    output
+    cck_runner.output
   end
 
   def bosh_run_cck_with_auto

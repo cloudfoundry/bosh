@@ -4,8 +4,6 @@ describe 'cli cloud config', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can upload a cloud config' do
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
       File.write(cloud_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_cloud_config))
@@ -15,8 +13,6 @@ describe 'cli cloud config', type: :integration do
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
     pending 'QUESTION Discuss correct behavior with Dmitriy on non-logged-in users and files that are not present'
-
-    target_and_login
 
     # not logged in
     expect(bosh_runner.run("update-cloud-config #{__FILE__}", include_credentials: false, failure_expected: true)).to include('Please log in first')
@@ -40,8 +36,6 @@ describe 'cli cloud config', type: :integration do
   end
 
   it 'can download a cloud config' do
-    target_and_login
-
     # none present yet
     expect(bosh_runner.run('cloud-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
 
@@ -56,8 +50,6 @@ describe 'cli cloud config', type: :integration do
   end
 
   it 'does not fail if the uploaded cloud config is a large file' do
-    target_and_login
-
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
       cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)

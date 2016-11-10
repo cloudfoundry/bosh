@@ -20,14 +20,12 @@ module Bosh::Monitor
       end
 
       def process(event)
-        started = Time.now
-
         payload = {
-          :service_key  => options["service_key"],
-          :event_type   => "trigger",
+          :service_key => options["service_key"],
+          :event_type => "trigger",
           :incident_key => event.id,
-          :description  => event.short_description,
-          :details      => event.to_hash
+          :description => event.short_description,
+          :details => event.to_hash
         }
 
         request = {
@@ -35,13 +33,16 @@ module Bosh::Monitor
         }
 
         if options["http_proxy"]
-          proxy = URI.parse(options["http_proxy"])
-          request[:proxy] = { :host => proxy.host, :port => proxy.port }
+          request[:proxy] = options["http_proxy"]
         end
 
-        send_http_post_request(API_URI, request)
-      rescue => e
-        logger.error("Error sending pagerduty event: #{e}")
+        EventMachine.defer do
+          begin
+            send_http_post_sync_request(API_URI, request)
+          rescue => e
+            logger.error("Error sending pagerduty event: #{e}")
+          end
+        end
       end
     end
   end

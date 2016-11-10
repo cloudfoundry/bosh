@@ -36,7 +36,7 @@ describe Bhm::Plugins::Pagerduty do
     heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
 
     alert_request = {
-      :proxy => { :host => "nowhere.com", :port => 3128 },
+      :proxy => "http://nowhere.com:3128",
       :body => Yajl::Encoder.encode({
         :service_key  => "zbzb",
         :event_type   => "trigger",
@@ -47,7 +47,7 @@ describe Bhm::Plugins::Pagerduty do
     }
 
     heartbeat_request = {
-      :proxy => { :host => "nowhere.com", :port => 3128 },
+      :proxy => "http://nowhere.com:3128",
       :body => Yajl::Encoder.encode({
         :service_key  => "zbzb",
         :event_type   => "trigger",
@@ -60,8 +60,10 @@ describe Bhm::Plugins::Pagerduty do
     EM.run do
       @plugin.run
 
-      expect(@plugin).to receive(:send_http_post_request).with(uri, alert_request)
-      expect(@plugin).to receive(:send_http_post_request).with(uri, heartbeat_request)
+      allow(EventMachine).to receive(:defer) { |&arg| arg.call }
+
+      expect(@plugin).to receive(:send_http_post_sync_request).with(uri, alert_request)
+      expect(@plugin).to receive(:send_http_post_sync_request).with(uri, heartbeat_request)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)

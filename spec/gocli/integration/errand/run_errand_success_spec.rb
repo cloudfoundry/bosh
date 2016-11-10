@@ -18,16 +18,14 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'creates a deployment lock' do
-      pending('cli2: #130119251: backport --no-track flag')
-
       deploy_from_scratch(manifest_hash: manifest_hash_errand)
 
-      output = bosh_runner.run('--no-track run-errand fake-errand-name', deployment_name: deployment_name)
-      task_id = Bosh::Spec::OutputParser.new(output).task_id('running')
+      output = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
+      task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
       director.wait_for_first_available_vm
 
-      output = bosh_runner.run_until_succeeds('locks')
-      expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
+      output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
+      expect(output['Tables'][0]['Rows']).to include(['deployment', 'errand', anything])
 
       errand_vm = director.vms.find { |vm| vm.job_name == 'fake-errand-name' && vm.index == '0' }
       expect(errand_vm).to_not be_nil
@@ -331,19 +329,18 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       vm = director.vm('fake-errand-name', '0')
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{vm.agent_id}.log")
 
-      # executed once each, but is echoed in the logs twice
-      expect(agent_log.scan('{"protocol":3,"method":"drain"').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"stop"').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["pre-start",').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"start"').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["post-start",').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"run_errand",').size).to eq(2)
-      expect(agent_log.scan('{"protocol":3,"method":"fetch_logs",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":3,"method":"drain"').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"stop"').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["pre-start",').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"start"').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["post-start",').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"run_errand",').size).to eq(1)
+      expect(agent_log.scan('{"protocol":3,"method":"fetch_logs",').size).to eq(1)
     end
   end
 
   def expect_errands(*expected_errands)
-    output, _ = bosh_runner.run('errands', deployment_name: 'errand')
+    output,  _ = bosh_runner.run('errands', deployment_name: 'errand')
     expected_errands.each do |errand|
       expect(output).to include(errand)
     end

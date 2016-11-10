@@ -54,22 +54,6 @@ describe 'finalize release', type: :integration do
         end
       end
 
-      it 'updates the latest release pointer in config/dev.yml' do
-        pending('cli2: #131576589: Go CLI should update config/dev.yml when creating dev releases')
-
-        Dir.chdir(ClientSandbox.test_release_dir) do
-          out = bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
-          expect(out).to match("Added final release 'dummy/0'")
-          dev_config = Psych.load_file(File.join('config', 'dev.yml'))
-          expect(dev_config['latest_release_filename']).to eq(File.absolute_path(File.join('releases', 'dummy', 'dummy-0.yml')))
-
-          out = bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
-          expect(out).to match("Added final release 'dummy/1'")
-          dev_config = Psych.load_file(File.join('config', 'dev.yml'))
-          expect(dev_config['latest_release_filename']).to eq(File.absolute_path(File.join('releases', 'dummy', 'dummy-1.yml')))
-        end
-      end
-
       it 'cannot create a final release without the blobstore configured' do
         Dir.chdir(ClientSandbox.test_release_dir) do
           FileUtils.cp(spec_asset('empty_blobstore_config.yml'), 'config/final.yml')
@@ -96,7 +80,7 @@ describe 'finalize release', type: :integration do
             expect(Dir).to_not exist(ClientSandbox.blobstore_dir)
 
             bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
-            expect(File).to exist('releases/dummy/dummy-0.yml')
+            expect(File).to exist('releases/dummy/dummy-1.yml')
             expect(File).to exist('.final_builds/jobs/dummy/index.yml')
             expect(File).to exist('.final_builds/packages/bad_package/index.yml')
             uploaded_blob_count = Dir[File.join(ClientSandbox.blobstore_dir, '**', '*')].length
@@ -111,7 +95,7 @@ describe 'finalize release', type: :integration do
         Dir.chdir(ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("create-release --force --tarball --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize-release dev_releases/test-release/test-release-0+dev.1.tgz --force")
-          expect(out).to match("Added final release 'test-release/0'")
+          expect(out).to match("Added final release 'test-release/1'")
         end
       end
 

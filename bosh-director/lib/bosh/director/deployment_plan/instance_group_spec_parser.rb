@@ -251,7 +251,7 @@ module Bosh::Director
               "Instance group '#{@instance_group.name}' references an invalid persistent disk size '#{disk_size}'"
           end
 
-          persistent_disk_collection.add_by_disk_size(disk_size)
+          persistent_disk_collection.add_by_disk_size(disk_size) unless disk_size == 0
         end
 
         if disk_name

@@ -16,19 +16,7 @@ module Bosh::Director
     def create_vm(i, options = {})
       options = {state: 'started', lifecycle: 'service', ignore: false, vm_cid: "vm-cid-#{i}"}.merge(options)
       job_name = "job-#{i}"
-      instance = Models::Instance.make(vm_cid: options[:vm_cid], agent_id: "agent-#{i}", deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore])
-      instance_groups[job_name] = double(name: job_name, lifecycle: options[:lifecycle])
-      instance
-    end
-
-    let(:instance_groups) {
-      {}
-    }
-
-    before(:each) do
-      deployment_plan = instance_double(Bosh::Director::DeploymentPlan::Planner)
-      allow_any_instance_of(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create_from_model).and_return(deployment_plan)
-      allow(deployment_plan).to receive(:instance_group) { |name| instance_groups[name] }
+      Models::Instance.make(vm_cid: options[:vm_cid], agent_id: "agent-#{i}", deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
     end
 
     let(:instance_manager) { instance_double(Api::InstanceManager) }
