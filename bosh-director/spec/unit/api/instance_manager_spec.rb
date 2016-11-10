@@ -58,7 +58,7 @@ module Bosh::Director
           expect(job_queue).to receive(:enqueue).with(
               username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id, instance_2.id], options], deployment).and_return(task)
 
-          expect(subject.fetch_logs(username, deployment, '*', nil, options)).to eq(task)
+          expect(subject.fetch_logs(username, deployment, nil, nil, options)).to eq(task)
         end
       end
     end

@@ -49,9 +49,9 @@ module Bosh::Director
       end
 
       def fetch_logs(username, deployment, job, index_or_id, options = {})
-        if deployment.nil? || job.nil?
+        if deployment.nil?
           raise DirectorError,
-                'deployment, instance group parameters are required'
+                'deployment parameter is required'
         end
 
         instance_ids = []
@@ -63,7 +63,7 @@ module Bosh::Director
             instance = filter_by(deployment, uuid: index_or_id).first
           end
           instance_ids << instance.id
-        elsif job == '*'
+        elsif job.nil?
           instance_ids = find_instances_by_deployment(deployment).map(&:id)
         else
           instance_ids = filter_by(deployment, job: job).map(&:id)
