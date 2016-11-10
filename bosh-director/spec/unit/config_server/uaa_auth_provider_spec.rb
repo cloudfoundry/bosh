@@ -50,16 +50,49 @@ describe Bosh::Director::UAAAuthProvider do
   end
 
   context 'when getting token fails' do
+
+    let(:client_credentials_grant_error) {RuntimeError.new('failed')}
+
     before do
-      allow(token_issuer).to receive(:client_credentials_grant).and_raise(RuntimeError.new('failed'))
+      allow(token_issuer).to receive(:client_credentials_grant).and_raise(client_credentials_grant_error)
+      allow(logger).to receive(:error)
     end
 
     it 'logs an error' do
-      expect(logger).to receive(:error).with(/failed/)
-
+      expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
       expect {
         token_provider.auth_header
-      }.to_not raise_error
+      }.to raise_error
+    end
+
+    it 'raises UAAAuthorizationError' do
+      expect {
+        token_provider.auth_header
+      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
     end
   end
+
+  context 'when decoding token fails' do
+
+    let(:decode_error) {RuntimeError.new('failed')}
+
+    before do
+      allow(CF::UAA::TokenCoder).to receive(:decode).and_raise(decode_error)
+      allow(logger).to receive(:error)
+    end
+
+    it 'logs an error' do
+      expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{decode_error.inspect}")
+      expect {
+        token_provider.auth_header
+      }.to raise_error
+    end
+
+    it 'raises UAAAuthorizationError' do
+      expect {
+        token_provider.auth_header
+      }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{decode_error.inspect}")
+    end
+  end
+
 end

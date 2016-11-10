@@ -7,15 +7,32 @@ module Bosh::Director::DeploymentPlan
     let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
-    let(:links) { {'link_name' => LinkInfo.new('dep1', {'stuff' => 'foo'})} }
-    let(:expected_links) {{'link_name' => {'stuff' => 'foo'}}}
+    let(:links) do
+      {'link_name' =>
+         {'deployment_name' => 'dep1',
+          'some_key' => 'some_value',
+          "networks"=> ["default"],
+          "properties"=> {
+            "listen_port"=> "Kittens"
+          },
+          "instances"=> [{
+                           "name"=> "provider",
+                           "index"=> 0,
+                           "bootstrap"=> true,
+                           "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
+                           "az"=> "z1",
+                           "address"=> "10.244.0.4"
+                         }
+          ]}
+      }
+    end
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
-    let(:job) {
-      job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+    let(:instance_group) {
+      instance_group = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: job_spec,
         canonical_name: 'job',
@@ -37,7 +54,7 @@ module Bosh::Director::DeploymentPlan
     }
     let(:index) { 0 }
     let(:instance_state) { {} }
-    let(:instance) { Instance.create_from_job(job, index, 'started', plan, instance_state, availability_zone, logger) }
+    let(:instance) { Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger) }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
@@ -50,7 +67,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
-    let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
+    let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance) }
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
@@ -103,6 +120,25 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
+
+      let(:expected_links) do
+        {'link_name' =>
+           {
+             "properties"=> {
+               "listen_port"=> "Kittens"
+             },
+             "instances"=> [{
+                              "name"=> "provider",
+                              "index"=> 0,
+                              "bootstrap"=> true,
+                              "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
+                              "az"=> "z1",
+                              "address"=> "10.244.0.4"
+                            }
+             ]}
+        }
+      end
+
       context 'properties interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
@@ -114,19 +150,19 @@ module Bosh::Director::DeploymentPlan
           }
         end
 
-        let(:links) do
-          {
-            'link_1' => LinkInfo.new('dep1', first_link),
-            'link_2' => LinkInfo.new('dep2', second_link)
-          }
-        end
-
         let(:first_link) do
-          {'networks' => 'foo', 'properties' => {'smurf' => '((smurf_val1))'}}
+          {'deployment_name' => 'dep1', 'instances' => [{'name' => 'v1'}], 'networks' => 'foo', 'properties' => {'smurf' => '((smurf_val1))'}}
         end
 
         let(:second_link) do
-          {'netwroks' => 'foo2', 'properties' => {'smurf' => '((smurf_val2))'}}
+          {'deployment_name' => 'dep2', 'instances' => [{'name' => 'v2'}], 'networks' => 'foo2', 'properties' => {'smurf' => '((smurf_val2))'}}
+        end
+
+        let(:links) do
+          {
+            'link_1' => first_link,
+            'link_2' => second_link
+          }
         end
 
         let(:resolved_properties) do
@@ -137,11 +173,11 @@ module Bosh::Director::DeploymentPlan
         end
 
         let(:resolved_first_link) do
-          {'networks' => 'foo', 'properties' => {'smurf' => 'strong smurf'}}
+          {'instances' => [{'name' => 'v1'}], 'properties' => {'smurf' => 'strong smurf'}}
         end
 
         let(:resolved_second_link) do
-          {'netwroks' => 'foo2', 'properties' => {'smurf' => 'sleepy smurf'}}
+          {'instances' => [{'name' => 'v2'}], 'properties' => {'smurf' => 'sleepy smurf'}}
         end
 
         let(:resolved_links) do
@@ -157,9 +193,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'resolves properties and links properties' do
-          expect(config_server_client).to receive(:interpolate).with(properties).and_return(resolved_properties)
-          expect(config_server_client).to receive(:interpolate).with(first_link).and_return(resolved_first_link)
-          expect(config_server_client).to receive(:interpolate).with(second_link).and_return(resolved_second_link)
+          expect(config_server_client).to receive(:interpolate).with(properties, 'fake-deployment').and_return(resolved_properties)
+          expect(config_server_client).to receive(:interpolate).with(first_link, 'dep1').and_return(resolved_first_link)
+          expect(config_server_client).to receive(:interpolate).with(second_link, 'dep2').and_return(resolved_second_link)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)
@@ -167,7 +203,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when job has a manual network' do
+      context 'when instance_group has a manual network' do
         let(:subnet_spec) do
           {
             'range' => '192.168.0.0/24',
@@ -210,7 +246,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when job has dynamic network' do
+      context 'when instance_group has dynamic network' do
         context 'when vm does not have network ip assigned' do
           it 'returns a valid instance template_spec' do
             network_name = network_spec['name']
@@ -289,7 +325,14 @@ module Bosh::Director::DeploymentPlan
         end
       end
     end
+
     describe '#full_spec' do
+      it 'return correct json format' do
+        full_spec = instance_spec.full_spec
+
+        expect(full_spec['links']).to eq(links)
+      end
+
       context 'when CompilationJobs' do
         let(:lifecycle) { nil }
         context 'lifecycle is not set' do

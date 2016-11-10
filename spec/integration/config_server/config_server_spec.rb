@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox)}
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
   let(:job_properties) do
     {
@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include('Failed to load placeholder names from the config server: my_placeholder')
+        expect(output).to include("Failed to load placeholder names from the config server: #{prepend_namespace('my_placeholder')}")
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -938,7 +938,7 @@ describe 'using director with config server', type: :integration do
                 expect(exit_code).to_not eq(0)
                 expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Failed to load placeholder names from the config server: happy_level_placeholder
+   - Failed to load placeholder names from the config server: /TestDirector/simple/happy_level_placeholder
                 EOF
               end
             end

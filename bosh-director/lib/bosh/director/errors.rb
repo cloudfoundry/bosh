@@ -306,4 +306,8 @@ module Bosh::Director
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
+
+  # UAA
+  UAAAuthorizationError = err(610000)
+
 end

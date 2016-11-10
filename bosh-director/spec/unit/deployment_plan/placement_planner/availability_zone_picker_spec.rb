@@ -484,6 +484,37 @@ module Bosh::Director::DeploymentPlan
             expect(obsoletes.map(&:existing_instance)).to match_array([existing_zone2_2, existing_zone2_3])
           end
         end
+
+        describe 'when lowering instance count to above the number of ignored instances and no az has been provided' do
+          let(:desired_azs) { nil }
+
+          it 'should not delete ignored instances' do
+            ignored_existing_zone1_0 = existing_instance_with_az(0, nil)
+            existing_zone1_1 = existing_instance_with_az(1, nil)
+            existing_zone1_2 = existing_instance_with_az(2, nil)
+            existing_zone1_3 = existing_instance_with_az(3, nil)
+            ignored_existing_zone1_4 = existing_instance_with_az(4, nil)
+
+            Bosh::Director::Models::IpAddress.make(instance_id: ignored_existing_zone1_0.id, task_id: "my-ip-address-task-id", address: 1234567890, network_name: "network_A")
+            Bosh::Director::Models::IpAddress.make(instance_id: ignored_existing_zone1_4.id, task_id: "my-ip-address-task-id", address: 1234567891, network_name: "network_A")
+
+            ignored_existing_zone1_0.update(ignore: true)
+            ignored_existing_zone1_4.update(ignore: true)
+
+            existing_instances = [ignored_existing_zone1_0, existing_zone1_1, existing_zone1_2, existing_zone1_3, ignored_existing_zone1_4]
+
+            results = zone_picker.place_and_match_in([desired_instance, desired_instance, desired_instance], existing_instances)
+            existing = results.select(&:existing?)
+
+            expect(results.size).to eq(5)
+            expect(existing.size).to eq(3)
+            expect(existing.map(&:existing_instance)).to match_array([ignored_existing_zone1_0, existing_zone1_1, ignored_existing_zone1_4])
+
+            obsoletes = results.select(&:obsolete?)
+            expect(obsoletes.map(&:existing_instance)).to match_array([existing_zone1_3, existing_zone1_2])
+          end
+        end
+
       end
     end
   end

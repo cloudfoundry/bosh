@@ -167,7 +167,6 @@ lines'}
 
     context 'when cloud config is updated during deploy' do
       it 'deploys with cloud config shown in diff' do
-        pending("cli2: #132773055 gocli deploy diff should show changes to cloud-config")
         prepare_for_deploy
         deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
         bosh_runner.run_interactively("deploy #{deployment_manifest.path}", deployment_name: 'simple', no_color: true) do |runner|

@@ -16,6 +16,12 @@ module Bosh::Monitor::Plugins
       sync_client.get(uri)
     end
 
+    def send_http_post_sync_request(uri, request)
+      cli = sync_client
+      cli.proxy = request[:proxy] if request[:proxy]
+      cli.post(uri, request[:body])
+    end
+
     def send_http_request(method, uri, request)
       name = self.class.name
       logger.debug("sending HTTP #{method.to_s.upcase} to: #{uri}")

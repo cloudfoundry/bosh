@@ -21,9 +21,9 @@ describe Bosh::Director::ConfigServer::ClientFactory do
 
       it 'returns an instance of ConfigServer::EnabledClient' do
         expect(Bosh::Director::ConfigServer::HTTPClient).to receive(:new).and_return(mock_http_client)
-        expect(Bosh::Director::ConfigServer::EnabledClient).to receive(:new).with(mock_http_client, 'my-director-name', 'deployment', anything).and_return(mock_enabled_client)
+        expect(Bosh::Director::ConfigServer::EnabledClient).to receive(:new).with(mock_http_client, 'my-director-name', anything).and_return(mock_enabled_client)
         expect(Bosh::Director::ConfigServer::DisabledClient).to_not receive(:new)
-        expect(subject.create_client('deployment')).to eq(mock_enabled_client)
+        expect(subject.create_client).to eq(mock_enabled_client)
       end
     end
 

@@ -125,9 +125,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should drop user provided properties not specified in the release job spec properties' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, deployment_name, options).and_return(1024)
 
             subject.bind_properties('instance_group_name', deployment_name)
 
@@ -143,9 +143,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should include properties that are in the release job spec but not provided by a user' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, options).and_return(2048)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, deployment_name, options).and_return(2048)
 
             user_defined_prop.delete('dea_max_memory')
             subject.bind_properties('instance_group_name', deployment_name)
@@ -162,9 +162,9 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           it 'should not override user provided properties with release job spec defaults' do
-            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, options).and_return('www.cc.com')
-            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
-            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, options).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
+            expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
+            expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, deployment_name, options).and_return(1024)
 
             subject.bind_properties('instance_group_name', deployment_name)
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
@@ -174,8 +174,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             let(:user_defined_prop) { {'deep_property' => false} }
 
             before do
-              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 'cloudfoundry.com', nil, options)
-              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, options)
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 'cloudfoundry.com', nil, deployment_name, options)
+              allow(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, deployment_name, options)
             end
 
             it 'raises an exception explaining which property is the wrong type' do
@@ -206,10 +206,11 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                 '((secret_url_password_placeholder))',
                 'cloudfoundry.com',
                 'password',
+                deployment_name,
                 options
               ).and_return('generated secret')
-              expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, options).and_return('def')
-              expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom', options).and_return(1024)
+              expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
+              expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom', deployment_name, options).and_return(1024)
               subject.bind_properties('instance_group_name', deployment_name, options)
 
               expect(subject.properties).to eq({

@@ -34,12 +34,9 @@ module Bosh
 
           def place_instances_that_have_ignore_flag_as_true(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
             return desired_instances if unplaced_existing_instances.ignored_instances.empty?
-
             desired_instances = desired_instances.dup
-            return desired_instances if desired_azs.nil?
             unplaced_existing_instances.ignored_instances.each do |existing_instance|
-              az = desired_azs.find { |az| az.name == existing_instance.availability_zone }
-              next if az.nil?
+              az = desired_azs.nil? ? nil : desired_azs.find { |az| az.name == existing_instance.availability_zone }
               desired_instance = desired_instances.pop
               unplaced_existing_instances.claim_instance(existing_instance)
               placed_instances.record_placement(az, desired_instance, existing_instance)

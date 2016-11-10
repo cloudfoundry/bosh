@@ -246,6 +246,8 @@ module Bosh::Monitor
         message["timestamp"] = Time.now.to_i if message["timestamp"].nil?
         message["agent_id"] = agent.id
         message["deployment"] = agent.deployment
+        message["job"] = agent.job
+        message["node_id"] = agent.instance_id
       end
 
       @processor.process(:heartbeat, message)

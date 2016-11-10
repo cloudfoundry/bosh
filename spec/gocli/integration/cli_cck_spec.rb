@@ -74,21 +74,20 @@ describe 'cli: cloudcheck', type: :integration do
 
       context 'when there is an ignored vm' do
         before do
-          pending('cli2: #125441581 backport ignore/uningnore-instance commands')
           vm_to_ignore =director.vms.select{|vm| vm.job_name == 'foobar' && vm.index == '1'}.first
-          bosh_runner.run("ignore-instance #{vm_to_ignore.job_name}/#{vm_to_ignore.instance_uuid}", deployment_name: 'simple')
+          bosh_runner.run("ignore #{vm_to_ignore.job_name}/#{vm_to_ignore.instance_uuid}", deployment_name: 'simple')
         end
 
         it 'does not scan ignored vms and their disks' do
           report_output= runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true)
-          expect(report_output).to match(regexp('Started scanning 3 vms > 0 OK, 2 unresponsive, 0 missing, 0 unbound, 1 ignored. Done'))
-          expect(report_output).to match(regexp('Started scanning 2 persistent disks > 2 OK, 0 missing, 0 inactive, 0 mount-info mismatch. Done'))
-          expect(report_output).to match(regexp('Found 2 problems'))
+          expect(report_output).to match(regexp('Scanning 3 VMs: 0 OK, 2 unresponsive, 0 missing, 0 unbound, 1 ignored'))
+          expect(report_output).to match(regexp('Scanning 2 persistent disks: 2 OK, 0 missing, 0 inactive, 0 mount-info mismatch'))
+          expect(report_output).to match(regexp('2 problem'))
 
-          auto_output = runner.run('cloudcheck --auto')
-          expect(auto_output).to_not match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(1\)'/)
-          expect(auto_output).to match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(0\)'/)
-          expect(auto_output).to match(/Started applying problem resolutions > VM for 'foobar\/[a-z0-9\-]+ \(2\)'/)
+          auto_output = runner.run('cloudcheck --auto', deployment_name: 'simple')
+          expect(auto_output).to_not match(/Applying problem resolutions: VM for 'foobar\/[a-z0-9\-]+ \(1\)'/)
+          expect(auto_output).to match(/Applying problem resolutions: VM for 'foobar\/[a-z0-9\-]+ \(0\)'/)
+          expect(auto_output).to match(/Applying problem resolutions: VM for 'foobar\/[a-z0-9\-]+ \(2\)'/)
         end
       end
     end
@@ -193,7 +192,7 @@ describe 'cli: cloudcheck', type: :integration do
   context 'with config server enabled' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox) }
+    let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
     let(:client_env) { {'BOSH_LOG_LEVEL' => 'debug', 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
 
     before do

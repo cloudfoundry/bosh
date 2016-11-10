@@ -22,9 +22,9 @@ module Bosh::Director::ConfigServer
       @logger = logger
     end
 
-    def create_client(deployment_name = nil)
+    def create_client
       if @config_server_enabled
-        EnabledClient.new(HTTPClient.new, @director_name, deployment_name, @logger)
+        EnabledClient.new(HTTPClient.new, @director_name, @logger)
       else
         DisabledClient.new
       end
