@@ -27,7 +27,7 @@ module Bosh::Director
     def delete_vm(instance_model)
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
-        cloud = cloud_factory(instance_model.deployment).for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
         cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
       end
     end
@@ -36,8 +36,8 @@ module Bosh::Director
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         # if there are multiple cpis, it's too dangerous to try and delete just vm cid on every cloud.
-        unless cloud_factory(nil).uses_cpi_config?
-          cloud_factory(nil).default_from_director_config.delete_vm(cid) unless @enable_virtual_delete_vm
+        unless cloud_factory.uses_cpi_config?
+          cloud_factory.default_from_director_config.delete_vm(cid) unless @enable_virtual_delete_vm
         end
       end
     end

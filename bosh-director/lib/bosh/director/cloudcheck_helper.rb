@@ -15,7 +15,7 @@ module Bosh::Director
     DEFAULT_AGENT_TIMEOUT = 10
 
     def reboot_vm(instance)
-      cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
+      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
       cloud.reboot_vm(instance.vm_cid)
       begin
         agent_client(instance.credentials, instance.agent_id).wait_until_ready

@@ -217,6 +217,41 @@ lines'}
 
       expect_table('deployments', [{'Name' => 'minimal', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}])
     end
+
+    context 'when cloud config is updated and deploying has failed' do
+      it 'shows cloud config as still outdated' do
+        deployment_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        deployment_manifest = yaml_file('simple', deployment_manifest_hash)
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
+
+        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+
+        create_and_upload_test_release
+        upload_stemcell
+
+        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+
+        deployment_manifest_hash['jobs'].first['templates'].first['name'] = 'fails_with_too_much_output'
+        deployment_manifest = yaml_file('simple', deployment_manifest_hash)
+
+        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.20']
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
+        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+
+        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
+
+        expect_table('deployments', [
+            {
+                'Name' => 'simple',
+                'Release(s)' => 'bosh-release/0+dev.1',
+                'Stemcell(s)' => 'ubuntu-stemcell/1',
+                'Cloud Config' => 'outdated'
+            }
+        ])
+      end
+    end
+
   end
 
   describe 'bosh delete deployment' do

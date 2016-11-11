@@ -189,6 +189,31 @@ describe 'cli: cloudcheck', type: :integration do
     end
   end
 
+  context 'when cloud config is updated after deploying' do
+    with_reset_sandbox_before_each
+    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+
+    before do
+      manifest['jobs'][0]['instances'] = 1
+      manifest['jobs'][0]['networks'].first['static_ips'] = ['192.168.1.10']
+      create_and_upload_test_release
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
+    end
+
+    it 'recreates VMs with the non-updated cloud config' do
+      current_sandbox.cpi.delete_vm(current_sandbox.cpi.vm_cids.first)
+      cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.20']
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      bosh_run_cck_with_resolution(1, 3)
+      expect(director.vms.first.ips).to eq(['192.168.1.10'])
+    end
+  end
+
   context 'with config server enabled' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 

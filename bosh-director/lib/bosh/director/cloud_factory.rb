@@ -11,7 +11,7 @@ module Bosh::Director
 
       new(planner, parse_cpi_config(cpi_config))
     end
-    
+
     def self.parse_cpi_config(cpi_config)
       return nil if cpi_config.nil?
       Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.manifest)

@@ -94,7 +94,7 @@ module Bosh::Director
     end
 
     def has_vm?(instance)
-      cloud = cloud_factory(instance.deployment).for_availability_zone(instance.availability_zone)
+      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
       instance.vm_cid && cloud.has_vm?(instance.vm_cid)
     end
 

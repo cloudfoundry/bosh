@@ -78,7 +78,7 @@ module Bosh::Director
         end
 
         stemcell = nil
-        cloud_factory(nil).all_configured_clouds.each do |cloud|
+        cloud_factory.all_configured_clouds.each do |cloud|
           cpi_suffix = " (cpi: #{cloud[:name]})" unless cloud[:name].blank?
 
           track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
@@ -137,7 +137,7 @@ module Bosh::Director
         steps = 2 # extract & verify manifest
         steps += 1 if @stemcell_url # also download remote stemcell
         steps += 1 if @stemcell_sha1 # also verify remote stemcell
-        steps + cloud_factory(nil).all_configured_clouds.count * 3 # check, upload and save for each cloud
+        steps + cloud_factory.all_configured_clouds.count * 3 # check, upload and save for each cloud
       end
     end
   end
