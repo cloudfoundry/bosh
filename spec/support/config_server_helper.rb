@@ -43,9 +43,10 @@ module Bosh::Spec
       begin
         begin
           return auth_provider.auth_header
-        rescue => e
+        rescue
           sleep(5)
         end
+        max_tries -= 1
       end while max_tries > 0
       return nil
     end
