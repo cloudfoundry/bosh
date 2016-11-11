@@ -14,10 +14,10 @@ module Bosh::Director
 
       def self.parse(cpi_hash)
         name = safe_property(cpi_hash, 'name', :class => String)
-        version = safe_property(cpi_hash, 'type', :class => String)
+        type = safe_property(cpi_hash, 'type', :class => String)
         exec_path = safe_property(cpi_hash, 'exec_path', :class => String, :optional => true)
         properties = safe_property(cpi_hash, 'properties', :class => Hash, :optional => true, :default => {})
-        new(name, version, exec_path, properties)
+        new(name, type, exec_path, properties)
       end
 
       def exec_path

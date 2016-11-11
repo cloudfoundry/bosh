@@ -38,34 +38,6 @@ describe 'cli: stemcell', type: :integration do
     expect(File).to be_exists(stemcell_path)
   end
 
-  context 'if cpi config is used' do
-    it 'creates a stemcell for each configured cpi' do
-      stemcell_filename = spec_asset('valid_stemcell.tgz')
-
-      target_and_login
-
-      cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
-      bosh_runner.run("update cpi-config #{cpi_config_manifest.path}")
-
-      out = bosh_runner.run("upload stemcell #{stemcell_filename}")
-      expect(out).to match /Stemcell uploaded and created/
-
-      expect(bosh_runner.run('stemcells')).to include(<<-OUT)
-+-----------------+------------+---------+------------------------------------------+-----------+
-| Name            | OS         | Version | CID                                      | CPI       |
-+-----------------+------------+---------+------------------------------------------+-----------+
-| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c | cpi-name  |
-| ubuntu-stemcell | toronto-os | 1       | 68aab7c44c857217641784806e2eeac4a3a99d1c | cpi-name2 |
-+-----------------+------------+---------+------------------------------------------+-----------+
-
-(*) Currently in-use
-
-Stemcells total: 2
-OUT
-    end
-  end
-
   # ~40s
   it 'can delete a stemcell' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')

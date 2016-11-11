@@ -19,22 +19,9 @@ module Bosh::Spec
 
     def run_interactively(cmd, options = {})
       Dir.chdir(@bosh_work_dir) do
-        config = options.fetch(:config, @bosh_config)
-        log_in = options.fetch(:include_credentials, true)
-        user = options[:user] || 'test'
-        password = options[:password] || 'test'
-        no_color = options.fetch(:no_color, false)
-        deployment_name = options.fetch(:deployment_name, nil)
-        default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
-
-        cli_options = ''
-        cli_options += " --ca-cert #{default_ca_cert}" unless options[:no_ca_cert]
-        cli_options += " --user=#{user} --password=#{password}" if log_in
-        cli_options += " -d #{deployment_name}" if deployment_name
-        cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
-        cli_options += " --no-color" if no_color
-        cli_options += " --config #{config}"
-        command="gobosh --tty #{cli_options} #{cmd}"
+        options[:tty] = true
+        options[:interactive] = true
+        command = generate_command(cmd, options)
         @logger.info("Running ... `#{command}`")
 
         BlueShell::Runner.run({}, "#{command}") do |runner|
@@ -60,23 +47,7 @@ module Bosh::Spec
 
     def run_in_dir(cmd, working_dir, options = {})
       failure_expected = options.fetch(:failure_expected, false)
-      log_in = options.fetch(:include_credentials, true)
-      user = options[:user] || 'test'
-      password = options[:password] || 'test'
-      config = options.fetch(:config, @bosh_config)
-      cli_options = ''
-      cli_options += options.fetch(:tty, true) ? ' --tty' : ''
-      cli_options += " --user=#{user} --password=#{password}" if log_in
-      cli_options += options.fetch(:interactive, false) ? '' : ' -n'
-      cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
-      cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
-      cli_options += " --config #{config}"
-
-      default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
-      cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
-      cli_options += options.fetch(:json, false) ? ' --json' : ''
-
-      command   = "gobosh #{cli_options} #{cmd}"
+      command = generate_command(cmd, options)
       @logger.info("Running ... `#{command}`")
       output    = nil
       env = options.fetch(:env, {})
@@ -160,6 +131,28 @@ module Bosh::Spec
     end
 
     private
+
+    def generate_command(cmd, options)
+      no_color = options.fetch(:no_color, false)
+      log_in = options.fetch(:include_credentials, true)
+      user = options[:user] || 'test'
+      password = options[:password] || 'test'
+      config = options.fetch(:config, @bosh_config)
+      cli_options = ''
+      cli_options += options.fetch(:tty, true) ? ' --tty' : ''
+      cli_options += " --user=#{user} --password=#{password}" if log_in
+      cli_options += options.fetch(:interactive, false) ? '' : ' -n'
+      cli_options += " --no-color" if no_color
+      cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
+      cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
+      cli_options += " --config #{config}"
+
+      default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
+      cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
+      cli_options += options.fetch(:json, false) ? ' --json' : ''
+
+      "gobosh #{cli_options} #{cmd}"
+    end
 
     DEBUG_HEADER = '*' * 20
 

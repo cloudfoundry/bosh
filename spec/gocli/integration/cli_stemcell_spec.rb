@@ -22,12 +22,45 @@ describe 'cli: stemcell', type: :integration do
         'Name' => 'ubuntu-stemcell',
         'Version' => '1',
         'OS' => 'toronto-os',
+        'CPI' => '',
         'CID' => "#{expected_id}"
       }
     ])
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).to be_exists(stemcell_path)
+  end
+
+  context 'if cpi config is used' do
+    it 'creates a stemcell for each configured cpi' do
+      stemcell_filename = spec_asset('valid_stemcell.tgz')
+
+      cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
+      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
+      bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+      out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
+      expect(out).to include('Save stemcell')
+      expect(out).to include('Succeeded')
+
+      expect_table('stemcells', [
+          {
+              'Name' => 'ubuntu-stemcell',
+              'OS' => 'toronto-os',
+              'Version' => '1',
+              'CPI' => 'cpi-name',
+              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+          },
+          {
+              'Name' => 'ubuntu-stemcell',
+              'OS' => 'toronto-os',
+              'Version' => '1',
+              'CPI' => 'cpi-name2',
+              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+          },
+
+      ])
+    end
   end
 
   # ~40s
@@ -88,6 +121,7 @@ describe 'cli: stemcell', type: :integration do
               'Name' => 'ubuntu-stemcell',
               'Version' => '1',
               'OS' => 'toronto-os',
+              'CPI' => '',
               'CID' => "#{expected_id}"
             }
           ])
@@ -109,6 +143,7 @@ describe 'cli: stemcell', type: :integration do
               'Name' => 'ubuntu-stemcell',
               'Version' => '1',
               'OS' => 'toronto-os',
+              'CPI' => '',
               'CID' => "#{new_id}"
             }
           ])
@@ -143,6 +178,7 @@ describe 'cli: stemcell', type: :integration do
             'Name' => 'ubuntu-stemcell',
             'Version' => '1',
             'OS' => 'toronto-os',
+            'CPI' => '',
             'CID' => "#{expected_id}"
           }
         ])
@@ -181,6 +217,7 @@ describe 'cli: stemcell', type: :integration do
                 'Name' => 'ubuntu-stemcell',
                 'Version' => '1',
                 'OS' => 'toronto-os',
+                'CPI' => '',
                 'CID' => "#{expected_id}"
               }
             ])
@@ -203,6 +240,7 @@ describe 'cli: stemcell', type: :integration do
                 'Name' => 'ubuntu-stemcell',
                 'Version' => '1',
                 'OS' => 'toronto-os',
+                'CPI' => '',
                 'CID' => "#{new_id}"
               }
             ])
