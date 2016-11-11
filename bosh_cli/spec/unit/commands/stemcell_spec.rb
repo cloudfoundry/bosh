@@ -419,32 +419,6 @@ module Bosh::Cli
         end
       end
 
-      context 'when cpi config is used' do
-        let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012', 'deployments' => [], 'cpi' => 'cpi1' } }
-
-        it 'displays the cpi in the list output' do
-          command.list
-
-          buffer.rewind
-          output = buffer.read
-
-          expect(output).to include('CPI')
-          expect(output).to include('| fake stemcell 1 | fake-os-4 | 123     | 123456 |      |')
-          expect(output).to include('| fake stemcell 2 |           | 456     | 789012 | cpi1 |')
-        end
-      end
-
-      context 'when cpi config is not used' do
-        it 'does not display the cpi column' do
-          command.list
-
-          buffer.rewind
-          output = buffer.read
-
-          expect(output).to_not include('CPI')
-        end
-      end
-
       context 'when director does not return deployments for stemcells' do
         let(:stemcell1) { { 'name' => 'fake stemcell 1', 'version' => '123', 'cid' => '123456' } }
         let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012' } }

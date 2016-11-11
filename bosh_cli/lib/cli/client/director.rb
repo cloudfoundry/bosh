@@ -2,7 +2,6 @@ require 'cli/core_ext'
 require 'cli/errors'
 require 'cli/cloud_config'
 require 'cli/runtime_config'
-require 'cli/cpi_config'
 
 require 'json'
 require 'httpclient'
@@ -723,22 +722,6 @@ module Bosh
 
         def update_runtime_config(runtime_config_yaml)
           status, _ = post('/runtime_configs', 'text/yaml', runtime_config_yaml)
-          status == 201
-        end
-
-        def get_cpi_config
-          _, cpi_configs = get_json_with_status('/cpi_configs?limit=1')
-          latest = cpi_configs.first
-
-          if !latest.nil?
-            Bosh::Cli::CpiConfig.new(
-                properties: latest["properties"],
-                created_at: latest["created_at"])
-          end
-        end
-
-        def update_cpi_config(cpi_config_yaml)
-          status, _ = post('/cpi_configs', 'text/yaml', cpi_config_yaml)
           status == 201
         end
 

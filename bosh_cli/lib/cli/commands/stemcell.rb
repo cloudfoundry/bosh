@@ -120,13 +120,9 @@ If --name & --version are provided, they will be used for checking if stemcell e
       err('No stemcells') if stemcells.empty?
 
       stemcells_table = table do |t|
-        headings = ['Name', 'OS', 'Version', 'CID' ]
-        with_cpi = stemcells.any?{|stemcell|!stemcell['cpi'].blank?}
-        headings << 'CPI' if with_cpi
-
-        t.headings = headings
+        t.headings = 'Name', 'OS', 'Version', 'CID'
         stemcells.each do |sc|
-          t << get_stemcell_table_record(sc, with_cpi)
+          t << get_stemcell_table_record(sc)
         end
       end
 
@@ -211,12 +207,10 @@ If --name & --version are provided, they will be used for checking if stemcell e
       !existing.empty?
     end
 
-    def get_stemcell_table_record(sc, with_cpi)
+    def get_stemcell_table_record(sc)
       deployments = sc.fetch('deployments', [])
 
-      rows = [sc['name'], sc['operating_system'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
-      rows << sc['cpi'] if with_cpi
-      rows
+      [sc['name'], sc['operating_system'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
     end
   end
 end
