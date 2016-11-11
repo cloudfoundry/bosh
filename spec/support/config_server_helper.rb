@@ -33,9 +33,25 @@ module Bosh::Spec
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.ca_file = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
-      auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, @logger)
-      auth_header = auth_provider.auth_header
       http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header, 'Content-Type' => 'application/json'})
+    end
+
+    def auth_header
+      max_tries = 20
+      auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
+
+      begin
+        begin
+          return auth_provider.auth_header
+        rescue => e
+          sleep(5)
+        end
+      end while header.nil? && max_tries > 0
+      return nil
+    end
+
+    def logger
+      @logger ||= Bosh::Director::Config.logger
     end
 
     def build_uri(name)
