@@ -84,7 +84,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeExcludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
 
@@ -100,7 +100,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeExcludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
         end
@@ -142,7 +142,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeExcludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
 
@@ -158,7 +158,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeExcludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
         end

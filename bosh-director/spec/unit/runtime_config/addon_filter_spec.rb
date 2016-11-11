@@ -13,7 +13,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               addon_include.applies?('anything', instance_group)
-            }.to raise_error RuntimeIncompleteIncludeExcludeJobSection,
+            }.to raise_error RuntimeIncompleteFilterJobSection,
               "Job {\"name\"=>\"\", \"release\"=>\"release_name\"} in runtime config's #{type} section must have both name and release."
           end
         end
@@ -24,7 +24,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               addon_include.applies?('anything', instance_group)
-            }.to raise_error RuntimeIncompleteIncludeExcludeJobSection,
+            }.to raise_error RuntimeIncompleteFilterJobSection,
               "Job {\"name\"=>\"job-name\", \"release\"=>\"\"} in runtime config's #{type} section must have both name and release."
           end
         end
@@ -36,7 +36,7 @@ module Bosh::Director
             it 'raises' do
               expect {
                 addon_include.applies?('anything', instance_group)
-              }.to raise_error RuntimeIncompleteIncludeExcludeStemcellSection,
+              }.to raise_error RuntimeIncompleteFilterStemcellSection,
                 "Stemcell {\"os\"=>\"\"} in runtime config's #{type} section must have an os name."
             end
           end
