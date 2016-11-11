@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
   spec.require_path = 'lib'
 
-  spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'bosh_common', '~>1.3262.24.0'
   spec.add_dependency 'membrane',    '~>1.1.0'
   spec.add_dependency 'logging',     '~>1.8.2'
 end
