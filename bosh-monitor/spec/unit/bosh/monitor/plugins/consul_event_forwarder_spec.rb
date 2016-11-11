@@ -10,7 +10,7 @@ describe Bhm::Plugins::ConsulEventForwarder do
   let(:heartbeat_alert_uri){ URI.parse("http://fake-consul-cluster:8500/v1/event/fire/#{heartbeat_name}?") }
   let(:event_request) {{ :body => alert.to_json }}
   let(:heartbeat_request){ { :body => simplified_heartbeat.to_json } }
-  let(:heartbeat_name){ namespace + heartbeat.job + "_" + heartbeat.node_id }
+  let(:heartbeat_name){ namespace + heartbeat.job + "_" + heartbeat.instance_id }
   let(:namespace){ "ns_" }
   let(:new_port){ "9500" }
   let(:new_protocol){ "https" }
@@ -23,15 +23,15 @@ describe Bhm::Plugins::ConsulEventForwarder do
   let(:register_uri_with_port){ URI.parse("http://fake-consul-cluster:#{new_port}/v1/agent/check/register?")}
   let(:register_uri_with_protocol){ URI.parse("#{new_protocol}://fake-consul-cluster:8500/v1/agent/check/register?")}
   let(:register_uri_with_params){ URI.parse("http://fake-consul-cluster:8500/v1/agent/check/register?#{new_params}")}
-  let(:register_request){ { :body => { "name" => "#{namespace}mysql_node_node_id_abc", "notes" => "test", "ttl" => "120s"}.to_json } }
-  let(:register_request_with_namespace){ { :body => { "name" => "#{namespace}mysql_node_node_id_abc", "notes" => "test", "ttl" => "120s"}.to_json } }
+  let(:register_request){ { :body => { "name" => "#{namespace}mysql_node_instance_id_abc", "notes" => "test", "ttl" => "120s"}.to_json } }
+  let(:register_request_with_namespace){ { :body => { "name" => "#{namespace}mysql_node_instance_id_abc", "notes" => "test", "ttl" => "120s"}.to_json } }
 
   #we send a simplified version of a heartbeat to consul when sending as an event because consul has a 512byte limit for events
   let(:simplified_heartbeat) {
     {
         :agent => "deadbeef",
-        :name => "mysql_node/node_id_abc",
-        :id => "node_id_abc",
+        :name => "mysql_node/instance_id_abc",
+        :id => "instance_id_abc",
         :state => "running",
         :data => {"cpu" => [22.3, 23.4, 33.22],
                   "dsk" => {
@@ -230,14 +230,14 @@ describe Bhm::Plugins::ConsulEventForwarder do
       end
     end
 
-    describe "when node_id is missing from the heartbeat event" do
+    describe "when instance_id is missing from the heartbeat event" do
 
       it "should not forward the event when heartbeats_as_alerts is set" do
         options.merge({'heartbeats_as_alerts' => true, 'ttl' => nil})
         subject.run
 
         expect(subject).to_not receive(:notify_consul)
-        subject.process(make_heartbeat({time: Time.now, node_id: nil}))
+        subject.process(make_heartbeat({time: Time.now, instance_id: nil}))
       end
 
       it "should not forward the ttl for event when use_ttl is set" do
@@ -245,7 +245,7 @@ describe Bhm::Plugins::ConsulEventForwarder do
         subject.run
 
         expect(subject).to_not receive(:notify_consul)
-        subject.process(make_heartbeat({time: Time.now, node_id: nil}))
+        subject.process(make_heartbeat({time: Time.now, instance_id: nil}))
       end
     end
   end

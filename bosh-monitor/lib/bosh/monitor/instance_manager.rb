@@ -9,9 +9,9 @@ module Bosh::Monitor
 
     def initialize(event_processor)
       # hash of agent_id to agent for all rogue agents
-      @rogue_agents = { }
+      @rogue_agents = {}
       # hash of deployment_name to deployment for all managed deployments
-      @deployment_name_to_deployments = { }
+      @deployment_name_to_deployments = {}
 
       @logger = Bhm.logger
       @heartbeats_received = 0
@@ -25,18 +25,6 @@ module Bosh::Monitor
     def get_agents_for_deployment(deployment_name)
       deployment = @deployment_name_to_deployments[deployment_name]
       deployment ? deployment.agent_id_to_agent : {}
-    end
-
-    def lookup_plugin(name, options = {})
-      plugin_class = nil
-      begin
-        class_name = name.to_s.split("_").map(&:capitalize).join
-        plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
-      rescue NameError => e
-        raise PluginError, "Cannot find '#{name}' plugin"
-      end
-
-      plugin_class.new(options)
     end
 
     def setup_events
@@ -84,9 +72,9 @@ module Bosh::Monitor
     end
 
     def sync_instances(deployment_name, instances_data)
-       deployment = @deployment_name_to_deployments[deployment_name]
-       active_instance_ids = sync_active_instances(deployment, instances_data)
-       remove_inactive_instances(active_instance_ids, deployment)
+      deployment = @deployment_name_to_deployments[deployment_name]
+      active_instance_ids = sync_active_instances(deployment, instances_data)
+      remove_inactive_instances(active_instance_ids, deployment)
     end
 
     def sync_agents(deployment_name, instances)
@@ -94,18 +82,6 @@ module Bosh::Monitor
       active_agent_ids = sync_active_agents(deployment, instances)
       remove_inactive_agents(active_agent_ids, deployment)
       update_rogue_agents(active_agent_ids)
-    end
-
-    def remove_deployment(name)
-      deployment = @deployment_name_to_deployments[name]
-      deployment.agent_ids.each { |agent_id| @rogue_agents.delete(agent_id) }
-      @deployment_name_to_deployments.delete(name)
-    end
-
-    def remove_agent(agent_id)
-      @logger.info("Removing agent #{agent_id} from all deployments...")
-      @rogue_agents.delete(agent_id)
-      @deployment_name_to_deployments.values.each { |deployment| deployment.remove_agent(agent_id) }
     end
 
     def get_instances_for_deployment(deployment_name)
@@ -116,7 +92,7 @@ module Bosh::Monitor
       @logger.info("Analyzing agents...")
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
-      @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "agent"), Time.now - started ])
+      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "agent"), Time.now - started])
       count
     end
 
@@ -133,21 +109,21 @@ module Bosh::Monitor
 
       if agent.timed_out?
         @processor.process(:alert,
-          severity: 2,
-          source: agent.name,
-          title: "#{agent.id} has timed out",
-          created_at: ts,
-          deployment: agent.deployment,
-          job: agent.job,
-          instance_id: agent.instance_id)
+                           severity: 2,
+                           source: agent.name,
+                           title: "#{agent.id} has timed out",
+                           created_at: ts,
+                           deployment: agent.deployment,
+                           job: agent.job,
+                           instance_id: agent.instance_id)
       end
 
       if agent.rogue?
         @processor.process(:alert,
-          :severity => 2,
-          :source => agent.name,
-          :title => "#{agent.id} is not a part of any deployment",
-          :created_at => ts)
+                           :severity => 2,
+                           :source => agent.name,
+                           :title => "#{agent.id} is not a part of any deployment",
+                           :created_at => ts)
       end
 
       true
@@ -165,7 +141,7 @@ module Bosh::Monitor
         end
       end
 
-      @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "instance"), Time.now - started ])
+      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "instance"), Time.now - started])
       count
     end
 
@@ -173,13 +149,13 @@ module Bosh::Monitor
       unless instance.has_vm?
         ts = Time.now.to_i
         @processor.process(:alert,
-          severity: 2,
-          source: instance.name,
-          title: "#{instance.id} has no VM",
-          created_at: ts,
-          deployment: instance.deployment,
-          job: instance.job,
-          instance_id: instance.id)
+                           severity: 2,
+                           source: instance.name,
+                           title: "#{instance.id} has no VM",
+                           created_at: ts,
+                           deployment: instance.deployment,
+                           job: instance.job,
+                           instance_id: instance.id)
       end
 
       true
@@ -207,27 +183,57 @@ module Bosh::Monitor
       end
 
       case payload
-      when String
-        message = Yajl::Parser.parse(payload)
-      when Hash
-        message = payload
+        when String
+          message = Yajl::Parser.parse(payload)
+        when Hash
+          message = payload
       end
 
       case kind.to_s
-      when "alert"
-        on_alert(agent, message)
-      when "heartbeat"
-        on_heartbeat(agent, message)
-      when "shutdown"
-        on_shutdown(agent)
-      else
-        @logger.warn("No handler found for '#{kind}' event")
+        when "alert"
+          on_alert(agent, message)
+        when "heartbeat"
+          on_heartbeat(agent, message)
+        when "shutdown"
+          on_shutdown(agent)
+        else
+          @logger.warn("No handler found for '#{kind}' event")
       end
 
     rescue Yajl::ParseError => e
       @logger.error("Cannot parse incoming event: #{e}")
     rescue Bhm::InvalidEvent => e
       @logger.error("Invalid event: #{e}")
+    end
+
+    def instances_count
+      @deployment_name_to_deployments.values.inject(0) { |count, deployment| count + deployment.instances.size }
+    end
+
+    private
+
+    def lookup_plugin(name, options = {})
+      plugin_class = nil
+      begin
+        class_name = name.to_s.split("_").map(&:capitalize).join
+        plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
+      rescue NameError => e
+        raise PluginError, "Cannot find '#{name}' plugin"
+      end
+
+      plugin_class.new(options)
+    end
+
+    def remove_agent(agent_id)
+      @logger.info("Removing agent #{agent_id} from all deployments...")
+      @rogue_agents.delete(agent_id)
+      @deployment_name_to_deployments.values.each { |deployment| deployment.remove_agent(agent_id) }
+    end
+
+    def remove_deployment(name)
+      deployment = @deployment_name_to_deployments[name]
+      deployment.agent_ids.each { |agent_id| @rogue_agents.delete(agent_id) }
+      @deployment_name_to_deployments.delete(name)
     end
 
     def on_alert(agent, message)
@@ -239,6 +245,11 @@ module Bosh::Monitor
       @alerts_processed += 1
     end
 
+    def on_shutdown(agent)
+      @logger.info("Agent '#{agent.id}' shutting down...")
+      remove_agent(agent.id)
+    end
+
     def on_heartbeat(agent, message)
       agent.updated_at = Time.now
 
@@ -247,23 +258,16 @@ module Bosh::Monitor
         message["agent_id"] = agent.id
         message["deployment"] = agent.deployment
         message["job"] = agent.job
-        message["node_id"] = agent.instance_id
+        message["instance_id"] = agent.instance_id
+
+        if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
+          return
+        end
       end
 
       @processor.process(:heartbeat, message)
       @heartbeats_received += 1
     end
-
-    def on_shutdown(agent)
-      @logger.info("Agent '#{agent.id}' shutting down...")
-      remove_agent(agent.id)
-    end
-
-    def instances_count
-      @deployment_name_to_deployments.values.inject(0) { |count, deployment| count + deployment.instances.size }
-    end
-
-    private
 
     def analyze_rogue_agents
       count = 0

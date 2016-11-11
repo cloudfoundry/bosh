@@ -13,10 +13,6 @@ describe 'attach disk', type: :integration do
 
   let(:deployment_name) { simple_manifest['name'] }
 
-  before do
-    pending('cli2: #130492155: Backport attach-disk command')
-  end
-
   context 'deployment has disk that does not exist in an orphaned list attached to an instance' do
 
     before do

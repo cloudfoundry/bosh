@@ -1,4 +1,4 @@
-require_relative "../../spec_helper"
+require_relative '../../spec_helper'
 
 describe 'health_monitor: 1', type: :integration, hm: true do
   with_reset_sandbox_before_each
@@ -133,6 +133,49 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     expect(director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')).to_not be_nil
     expect(director.wait_for_vm('foobar', '1', 150, deployment_name: 'simple')).to_not be_nil
+  end
+
+  context 'when the vm is launching and has incomplete heartbeats' do
+    it 'only outputs complete heartbeats' do
+      current_sandbox.reconfigure_health_monitor('health_monitor_with_json_logging.yml.erb')
+
+      deployment_hash = Bosh::Spec::Deployments.simple_manifest
+      deployment_hash['jobs'][0]['instances'] = 1
+      deploy_from_scratch(manifest_hash: deployment_hash)
+
+      start_time = Time.now
+      while Time.now < start_time + 60
+        heartbeat_lines = []
+        health_monitor.read_log.split("\n").inject(heartbeat_lines) do |lines, line|
+          match_data = /I, \[.* \#\d*\]  INFO : (\{\"kind\"\:\"heartbeat\".*)/.match(line)
+          lines << match_data[1] if match_data
+          lines
+        end
+
+        break if !heartbeat_lines.empty?
+      end
+
+      heartbeat_hashes = heartbeat_lines.map {|json_line| JSON.parse(json_line) }
+
+      vm = director.vms.first
+      expected_hash = {
+          'kind' => 'heartbeat',
+          'id' => anything,
+          'timestamp' => anything,
+          'deployment' => deployment_hash['name'],
+          'agent_id' => vm.agent_id,
+          'job' => vm.job_name,
+          'index' => vm.index,
+          'instance_id' => vm.instance_uuid,
+          'job_state' => 'running',
+          'vitals' => anything
+      }
+
+      expect(heartbeat_hashes.length).to be > 0
+      heartbeat_hashes.each do |heartbeat_hash|
+        expect(heartbeat_hash).to match(expected_hash)
+      end
+    end
   end
 
   # ~50s

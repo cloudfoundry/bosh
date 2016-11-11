@@ -60,7 +60,6 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
-    skip "#130492155 Backport attach-disk command"
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
@@ -76,7 +75,7 @@ describe 'ignore/unignore-instance', type: :integration do
 
     output, exit_code = bosh_runner.run("attach-disk #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid} smurf-disk", deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 520003: Instance '#{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}' in deployment 'simple' is in 'ignore' state. " +
+    expect(output).to include("Error: Instance '#{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}' in deployment 'simple' is in 'ignore' state. " +
                                   'Attaching disks to ignored instances is not allowed.')
   end
 
@@ -322,32 +321,21 @@ describe 'ignore/unignore-instance', type: :integration do
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-        expect(
-            output.split("\n").select { |e|
-              /Creating missing vms: foobar1/ =~ e
-            }.count
-        ).to eq(4)
+        expect(output).to match(/Creating missing vms: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(2\)/)
+        expect(output).to match(/Creating missing vms: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(3\)/)
 
-        expect(
-          output.split("\n").select { |e|
-              /Creating missing vms: foobar2/ =~ e
-            }.count
-        ).to eq(4)
+        expect(output).to match(/Creating missing vms: foobar2\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(1\)/)
+        expect(output).to match(/Creating missing vms: foobar2\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(2\)/)
 
-        expect(
-          output.split("\n").select { |e|
-              /Updating instance foobar1/ =~ e
-            }.count
-        ).to eq(4)
+        expect(output).to match(/Updating instance foobar1: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(0\)/)
+        expect(output).to match(/Updating instance foobar1: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(1\)/)
+        expect(output).to match(/Updating instance foobar1: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(2\)/)
+        expect(output).to match(/Updating instance foobar1: foobar1\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(3\)/)
 
-        expect(
-            output.split("\n").select { |e|
-              /Updating instance foobar2/ =~ e
-            }.count
-        ).to eq(2)
+        expect(output).to match(/Updating instance foobar2: foobar2\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(1\)/)
+        expect(output).to match(/Updating instance foobar2: foobar2\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f-]{12} \(2\)/)
 
         expect(output).to match(/Updating instance foobar1: foobar1\/#{foobar1_vm1.instance_uuid}/)
-
         expect(output).to_not match(/Updating instance foobar1: foobar1\/#{foobar2_vm1.instance_uuid}/)
       end
 
