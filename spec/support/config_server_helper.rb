@@ -46,7 +46,7 @@ module Bosh::Spec
         rescue => e
           sleep(5)
         end
-      end while header.nil? && max_tries > 0
+      end while max_tries > 0
       return nil
     end
 
