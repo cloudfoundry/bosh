@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  = %w(bosh)
 
-  spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'bosh_common', '~>1.3262.24.0'
   spec.add_dependency 'bosh-template', "~>#{version}"
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'json_pure',   '~>1.7'

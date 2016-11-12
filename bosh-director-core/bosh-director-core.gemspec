@@ -20,6 +20,6 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
-  spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'bosh_common', '~>1.3262.24.0'
   spec.add_dependency 'bosh-template', "~>#{version}"
 end

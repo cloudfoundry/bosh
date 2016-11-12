@@ -23,5 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'aws-sdk-resources', '2.2.0'
   spec.add_dependency 'httpclient',      '=2.7.1'
   spec.add_dependency 'multi_json',      '~> 1.1'
-  spec.add_dependency 'bosh_common',     "~>#{version}"
+  spec.add_dependency 'bosh_common',     '~>1.3262.24.0'
 end

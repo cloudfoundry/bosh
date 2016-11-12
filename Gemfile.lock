@@ -3,7 +3,7 @@ PATH
   specs:
     blobstore_client (1.3262.9.0)
       aws-sdk-resources (= 2.2.0)
-      bosh_common (~> 1.3262.9.0)
+      bosh_common (~> 1.3262.24.0)
       httpclient (= 2.7.1)
       multi_json (~> 1.1)
 
@@ -33,7 +33,7 @@ PATH
   specs:
     bosh-director-core (1.3262.9.0)
       bosh-template (~> 1.3262.9.0)
-      bosh_common (~> 1.3262.9.0)
+      bosh_common (~> 1.3262.24.0)
 
 PATH
   remote: bosh-director
@@ -45,8 +45,8 @@ PATH
       bosh-director-core (~> 1.3262.9.0)
       bosh-registry (~> 1.3262.9.0)
       bosh-template (~> 1.3262.9.0)
-      bosh_common (~> 1.3262.9.0)
-      bosh_cpi (~> 1.3262.9.0)
+      bosh_common (~> 1.3262.24.0)
+      bosh_cpi (~> 2.0.1)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -87,7 +87,7 @@ PATH
   specs:
     bosh-registry (1.3262.9.0)
       aws-sdk
-      bosh_cpi (~> 1.3262.9.0)
+      bosh_cpi (~> 2.0.1)
       fog-openstack
       sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
@@ -112,7 +112,7 @@ PATH
     bosh_cli (1.3262.9.0)
       blobstore_client (~> 1.3262.9.0)
       bosh-template (~> 1.3262.9.0)
-      bosh_common (~> 1.3262.9.0)
+      bosh_common (~> 1.3262.24.0)
       cf-uaa-lib (~> 3.2.1)
       highline (~> 1.6.2)
       httpclient (= 2.7.1)
@@ -129,15 +129,15 @@ PATH
 PATH
   remote: bosh_common
   specs:
-    bosh_common (1.3262.9.0)
+    bosh_common (1.3262.24.0)
       logging (~> 1.8.2)
       semi_semantic (~> 1.2.0)
 
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.3262.9.0)
-      bosh_common (~> 1.3262.9.0)
+    bosh_cpi (2.0.1)
+      bosh_common (~> 1.3262.24.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
 
