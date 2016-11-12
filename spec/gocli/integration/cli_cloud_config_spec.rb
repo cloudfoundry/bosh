@@ -4,11 +4,8 @@ describe 'cli cloud config', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can upload a cloud config' do
-    Dir.mktmpdir do |tmpdir|
-      cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      File.write(cloud_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_cloud_config))
-      expect(bosh_runner.run("update-cloud-config #{cloud_config_filename}")).to include('Succeeded')
-    end
+    cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::Deployments.simple_cloud_config)
+    expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')
   end
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
@@ -39,31 +36,24 @@ describe 'cli cloud config', type: :integration do
     # none present yet
     expect(bosh_runner.run('cloud-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
 
-    Dir.mktmpdir do |tmpdir|
-      cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      cloud_config = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
-      File.write(cloud_config_filename, cloud_config)
-      bosh_runner.run("update-cloud-config #{cloud_config_filename}")
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_file = yaml_file('cloud_config.yml', cloud_config)
+    bosh_runner.run("update-cloud-config #{cloud_config_file.path}")
 
-      expect(YAML.load(bosh_runner.run('cloud-config', tty: false))).to eq(YAML.load(cloud_config))
-    end
+    expect(YAML.load(bosh_runner.run('cloud-config', tty: false))).to eq(cloud_config)
   end
 
   it 'does not fail if the uploaded cloud config is a large file' do
-    Dir.mktmpdir do |tmpdir|
-      cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
 
-      for i in 0..10001
-        cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
-      end
-
-      cloud_config = Psych.dump(cloud_config)
-      File.write(cloud_config_filename, cloud_config)
-
-      output, exit_code = bosh_runner.run("update-cloud-config #{cloud_config_filename}", return_exit_code: true)
-      expect(output).to include('Succeeded')
-      expect(exit_code).to eq(0)
+    for i in 0..10001
+      cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
     end
+
+    cloud_config_file = yaml_file('cloud_config.yml', cloud_config)
+
+    output, exit_code = bosh_runner.run("update-cloud-config #{cloud_config_file.path}", return_exit_code: true)
+    expect(output).to include('Succeeded')
+    expect(exit_code).to eq(0)
   end
 end

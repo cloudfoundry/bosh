@@ -5,11 +5,8 @@ describe "cli runtime config", type: :integration do
 
   it "can upload a runtime config" do
     target_and_login
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config))
-      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}")).to include("Successfully updated runtime config")
-    end
+    runtime_config = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.simple_runtime_config)
+    expect(bosh_runner.run("update runtime-config #{runtime_config.path}")).to include("Successfully updated runtime config")
   end
 
   it "gives nice errors for common problems when uploading", no_reset: true do
@@ -44,53 +41,39 @@ describe "cli runtime config", type: :integration do
     # none present yet
     expect(bosh_runner.run("runtime-config")).to include("Acting as user 'test' on '#{current_sandbox.director_name}'\n")
 
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      runtime_config = Psych.dump(Bosh::Spec::Deployments.simple_runtime_config)
-      File.write(runtime_config_filename, runtime_config)
-      bosh_runner.run("update runtime-config #{runtime_config_filename}")
+    runtime_config = Bosh::Spec::Deployments.simple_runtime_config
+    runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+    bosh_runner.run("update runtime-config #{runtime_config_file.path}")
 
-      expect(bosh_runner.run("runtime-config")).to include(runtime_config)
-    end
+    expect(bosh_runner.run("runtime-config")).to include(Psych.dump(runtime_config))
   end
 
   it "gives an error when release version is 'latest'" do
     target_and_login
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release))
-      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530001: Runtime " +
-        "manifest contains the release 'test_release_2' with version as 'latest'. Please specify the actual version string.")
-    end
+    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_latest_release)
+    expect(bosh_runner.run("update runtime-config #{runtime_config_file.path}", failure_expected: true)).to include("Error 530001: Runtime " +
+      "manifest contains the release 'test_release_2' with version as 'latest'. Please specify the actual version string.")
   end
 
   it "gives an error when release for addon does not exist in releases section" do
     target_and_login
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing))
-      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530002: Runtime " +
-        "manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
-    end
+    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_release_missing)
+    expect(bosh_runner.run("update runtime-config #{runtime_config_file.path}", failure_expected: true)).to include("Error 530002: Runtime " +
+      "manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
   end
 
   it 'does not fail when runtime config is very large' do
     target_and_login
 
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
 
-      for i in 0..10001
-        runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
-      end
-
-      runtime_config = Psych.dump(runtime_config)
-
-      File.write(runtime_config_filename, runtime_config)
-      output, exit_code = bosh_runner.run("update runtime-config #{runtime_config_filename}", return_exit_code: true)
-      expect(output).to include('Successfully updated runtime config')
-      expect(exit_code).to eq(0)
+    for i in 0..10001
+      runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
     end
+
+    runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+    output, exit_code = bosh_runner.run("update runtime-config #{runtime_config_file.path}", return_exit_code: true)
+    expect(output).to include('Successfully updated runtime config')
+    expect(exit_code).to eq(0)
   end
 end

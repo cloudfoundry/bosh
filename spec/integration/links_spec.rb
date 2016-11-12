@@ -1447,11 +1447,8 @@ Error 100: Unable to process links for deployment. Errors are:
     end
 
     before do
-      Dir.mktmpdir do |tmpdir|
-        runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-        File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_links))
-        bosh_runner.run("update runtime-config #{runtime_config_filename}")
-      end
+      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_links)
+      bosh_runner.run("update runtime-config #{runtime_config_file.path}")
     end
 
     it 'should resolve links for addons' do
