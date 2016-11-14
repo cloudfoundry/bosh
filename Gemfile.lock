@@ -46,7 +46,7 @@ PATH
       bosh-registry (~> 1.3262.9.0)
       bosh-template (~> 1.3262.9.0)
       bosh_common (~> 1.3262.9.0)
-      bosh_cpi (~> 1.3262.9.0)
+      bosh_cpi (~> 2.0.1)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -87,7 +87,7 @@ PATH
   specs:
     bosh-registry (1.3262.9.0)
       aws-sdk
-      bosh_cpi (~> 1.3262.9.0)
+      bosh_cpi (~> 2.0.1)
       fog-openstack
       sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
@@ -136,7 +136,7 @@ PATH
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.3262.9.0)
+    bosh_cpi (2.0.1)
       bosh_common (~> 1.3262.9.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
