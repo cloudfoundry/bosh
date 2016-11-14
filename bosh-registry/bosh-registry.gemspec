@@ -26,5 +26,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'yajl-ruby', '~>1.2.0'
   spec.add_dependency 'fog-openstack'
   spec.add_dependency 'aws-sdk'
-  spec.add_dependency 'bosh_cpi', "~>#{version}"
+  spec.add_dependency 'bosh_cpi', "~>2.0.1"
 end
