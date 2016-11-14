@@ -8,7 +8,7 @@ module Bosh::Director
 
     def recreate_vm(instance_plan, disk_cid, tags)
       instance_model = instance_plan.instance.model
-      @vm_deleter.delete_for_instance(instance_model)
+      @vm_deleter.delete_for_instance(instance_model, true, instance_plan.needs_to_fix?)
       active_disk_cids = instance_model.active_persistent_disks.collection.
         map(&:model).
         map(&:disk_cid)

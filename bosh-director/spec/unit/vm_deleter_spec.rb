@@ -106,6 +106,18 @@ module Bosh
           subject.delete_vm(instance_model)
         end
 
+        context 'when vm does not exist' do
+          before { expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid).and_raise(Bosh::Clouds::VMNotFound) }
+
+          it 'should not raise VMNotFound exception' do
+              expect { subject.delete_for_instance(instance_model, false, true) }.not_to raise_error
+          end
+
+          it 'should raise VMNotFound exception' do
+            expect { subject.delete_for_instance(instance_model, false, false) }.to raise_error(Bosh::Clouds::VMNotFound)
+          end
+        end
+
         context 'when virtual delete is enabled' do
           subject { VmDeleter.new(logger, false, true) }
 

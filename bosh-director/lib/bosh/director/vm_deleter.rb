@@ -8,7 +8,7 @@ module Bosh::Director
       @enable_virtual_delete_vm = enable_virtual_delete_vm
     end
 
-    def delete_for_instance(instance_model, store_event=true)
+    def delete_for_instance(instance_model, store_event=true, needs_to_fix=false)
       if instance_model.vm_cid
         begin
           vm_cid = instance_model.vm_cid
@@ -16,6 +16,13 @@ module Bosh::Director
           parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance_model)
           instance_model.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
+        rescue Bosh::Clouds::VMNotFound
+          instance_model.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
+          if needs_to_fix
+            @logger.info("vm #{vm_cid} does not exist")
+          else
+            raise Bosh::Clouds::VMNotFound
+          end
         rescue Exception => e
           raise e
         ensure
