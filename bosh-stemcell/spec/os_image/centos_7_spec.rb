@@ -197,6 +197,10 @@ describe 'CentOS 7 OS image', os_image: true do
   end
 
   context 'PAM configuration' do
+    describe file('/usr/lib64/security/pam_cracklib.so') do
+      it { should be_file }
+    end
+
     describe file('/etc/pam.d/system-auth') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
         should contain /password.*pam_unix\.so.*remember=24/

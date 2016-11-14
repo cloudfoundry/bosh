@@ -30,7 +30,6 @@ if [ "$(get_os_type)" == "centos" ]; then
 
   strip_trailing_whitespace_from $chroot/etc/pam.d/system-auth
   patch $chroot/etc/pam.d/system-auth < $assets_dir/centos/system-auth.patch
-  cat $chroot/etc/pam.d/system-auth
 elif [ "$(get_os_type)" == "ubuntu" ]; then
   strip_trailing_whitespace_from $chroot/etc/pam.d/common-account
   patch $chroot/etc/pam.d/common-account < $assets_dir/ubuntu/common-account.patch
@@ -40,7 +39,6 @@ elif [ "$(get_os_type)" == "ubuntu" ]; then
 
   strip_trailing_whitespace_from $chroot/etc/pam.d/common-password
   patch $chroot/etc/pam.d/common-password < $assets_dir/ubuntu/common-password.patch
-  cat $chroot/etc/pam.d/common-password
 fi
 
 

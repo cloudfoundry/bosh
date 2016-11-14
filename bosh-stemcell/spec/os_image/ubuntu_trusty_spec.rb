@@ -144,6 +144,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       libcurl4-openssl-dev
       libgcrypt11-dev
       libncurses5-dev
+      libpam-cracklib
       libreadline6-dev
       libssl-dev
       libxml2
@@ -302,6 +303,10 @@ EOF
   end
 
   context 'PAM configuration' do
+    describe file('/lib/x86_64-linux-gnu/security/pam_cracklib.so') do
+      it { should be_file }
+    end
+
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
         should contain /password.*pam_unix\.so.*remember=24/
