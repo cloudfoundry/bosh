@@ -74,8 +74,8 @@ describe 'cli: cloudcheck', type: :integration do
 
       context 'when there is an ignored vm' do
         before do
-          vm_to_ignore =director.vms.select{|vm| vm.job_name == 'foobar' && vm.index == '1'}.first
-          bosh_runner.run("ignore #{vm_to_ignore.job_name}/#{vm_to_ignore.instance_uuid}", deployment_name: 'simple')
+          vm_to_ignore =director.instances.select{|vm| vm.job_name == 'foobar' && vm.index == '1'}.first
+          bosh_runner.run("ignore #{vm_to_ignore.job_name}/#{vm_to_ignore.id}", deployment_name: 'simple')
         end
 
         it 'does not scan ignored vms and their disks' do
@@ -234,7 +234,7 @@ describe 'cli: cloudcheck', type: :integration do
     end
 
     it 'resolves issues correctly and gets values from config server' do
-      vm = director.vm('foobar', '0', env: client_env)
+      vm = director.instance('foobar', '0', env: client_env)
 
       template = vm.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('test_property=cats are happy')
@@ -247,7 +247,7 @@ describe 'cli: cloudcheck', type: :integration do
       bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process, client_env)
       expect(runner.run('cloud-check --report', deployment_name: 'simple', env: client_env)).to match(regexp('0 problems'))
 
-      vm = director.vm('foobar', '0', env: client_env)
+      vm = director.instance('foobar', '0', env: client_env)
 
       template = vm.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('test_property=smurfs are happy')

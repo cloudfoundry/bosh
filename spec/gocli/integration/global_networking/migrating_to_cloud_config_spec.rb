@@ -45,14 +45,14 @@ describe 'migrating to cloud config', type: :integration do
     it 'deployment after cloud config gets IP outside of range reserved by first deployment' do
       legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
       deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.vms
+      vms = director.instances
       expect(vms.size).to eq(1)
       expect(vms.first.ips).to eq(['192.168.1.2'])
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: second_deployment_manifest)
-      vms = director.vms(deployment_name: 'second_deployment')
+      vms = director.instances(deployment_name: 'second_deployment')
       expect(vms.size).to eq(1)
       expect(vms.first.ips).to eq(['192.168.1.16'])
     end
@@ -60,7 +60,7 @@ describe 'migrating to cloud config', type: :integration do
     it 'deployment after cloud config fails to get static IP in the range reserved by first deployment' do
       legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
       deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.vms
+      vms = director.instances
       expect(vms.size).to eq(1)
       expect(vms.first.ips).to eq(['192.168.1.2'])
 
@@ -77,7 +77,7 @@ describe 'migrating to cloud config', type: :integration do
     context 'when also adding azs (and no migrated from)' do
       it 'should not attempt to assign ips to new instances that obsolete instances hold' do
         deploy_simple_manifest(manifest_hash: legacy_manifest)
-        expect(director.vms.map(&:ips).flatten).to eq(['192.168.1.2'])
+        expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.2'])
 
         cloud_config_hash['azs'] = [{'name' => 'zone_1', 'cloud_properties' => {}}]
         cloud_config_hash['networks'].first['subnets'].first['azs'] = ['zone_1']
@@ -87,7 +87,7 @@ describe 'migrating to cloud config', type: :integration do
         simple_manifest['jobs'].first['azs'] = ['zone_1']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        expect(director.vms.map(&:ips).flatten).to eq(['192.168.1.3'])
+        expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.3'])
       end
     end
 

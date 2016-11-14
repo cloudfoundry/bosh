@@ -1,41 +1,29 @@
 module Bosh::Spec
-  class Instance
-    attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id, :job_name, :index, :ignore, :bootstrap, :disk_cids
+  class Vm
+    attr_reader :last_known_state, :cid, :ips, :availability_zone, :instance_uuid, :job_name
 
     def initialize(
       waiter,
       job_state,
-      vm_cid,
-      agent_id,
-      resurrection,
+      cid,
       ips,
       availability_zone,
       instance_uuid,
       job_name,
-      index,
-      ignore,
-      bootstrap,
-      disk_cids,
-      agent_base_dir,
       nats_port,
-      logger
+      logger,
+      agent_base_dir
     )
       @waiter = waiter
       @last_known_state = job_state
-      @vm_cid = vm_cid
-      @agent_id = agent_id
-      @resurrection = resurrection
+      @cid = cid
       @ips = ips
       @availability_zone = availability_zone
-      @id = instance_uuid
+      @instance_uuid = instance_uuid
       @job_name = job_name
-      @index = index
-      @ignore = ignore
-      @bootstrap = bootstrap
-      @disk_cids = disk_cids
-      @agent_base_dir = agent_base_dir
       @nats_port = nats_port
       @logger = logger
+      @agent_base_dir = agent_base_dir
     end
 
     def read_job_template(template_name, template_path)
@@ -63,7 +51,7 @@ module Bosh::Spec
     end
 
     def fail_job
-      @logger.info("Failing job #{@vm_cid}")
+      @logger.info("Failing job #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
         msg = Yajl::Encoder.encode(
           method: 'set_dummy_status',
@@ -75,7 +63,7 @@ module Bosh::Spec
     end
 
     def fail_start_task
-      @logger.info("Failing task #{@vm_cid}")
+      @logger.info("Failing task #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
         msg = Yajl::Encoder.encode(
           method: 'set_task_fail',
@@ -88,9 +76,10 @@ module Bosh::Spec
 
     def unblock_package
       package_dir = package_path('blocking_package')
+      puts package_dir
       @waiter.wait(300) do
-        raise('Must find package dir') unless File.exists?(package_dir)
-        FileUtils.touch(File.join(package_dir, 'unblock_packaging'))
+        raise('Must find package dir') unless Dir.glob(package_dir).any?
+        FileUtils.touch(File.join(Dir.glob(package_dir).first, 'unblock_packaging'))
       end
     end
 
@@ -113,8 +102,8 @@ module Bosh::Spec
     end
 
     def kill_agent
-      @logger.info("Killing agent #{@vm_cid}")
-      Process.kill('INT', @vm_cid.to_i)
+      @logger.info("Killing agent #{@cid}")
+      Process.kill('INT', @cid.to_i)
     end
 
     def get_state

@@ -171,7 +171,7 @@ describe 'multiple persistent disks', type: :integration do
   end
 
   it 'provides links for the persistent disks' do
-    vm = director.vms.first
+    vm = director.instances.first
     template_content = vm.read_job_template('disk_using_job', 'disknames.json')
     expect(JSON.parse(template_content)).to eq({
       'slow-disk' => {'name' => 'low-iops-persistent-disk-name'},
@@ -212,7 +212,7 @@ describe 'multiple persistent disks', type: :integration do
     File.open("#{agent_dir}/bosh/formatted_disks.json", 'w') { |f| f.write("[{\"DiskCid\":\"#{first_disk_cid}\"}]") }
 
     agent_id = /agent-base-dir-(.*)/.match(current_sandbox.cpi.agent_dir_for_vm_cid(vm_cid))[1]
-    director.vms.first.kill_agent
+    director.instances.first.kill_agent
     current_sandbox.cpi.spawn_agent_process(agent_id)
     agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(vm_cid)
     # Allow restarted agent process time to start

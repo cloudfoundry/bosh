@@ -10,10 +10,10 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   it 'resurrects stateless nodes if agent is not responding' do
     deploy_from_scratch
 
-    original_vm = director.vm('foobar', '0', deployment_name: 'simple')
+    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
     original_vm.kill_agent
     resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
   end
 
   # ~5m
@@ -22,7 +22,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    original_vm = director.vm('foobar', '0', deployment_name: 'simple')
+    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
     original_vm.kill_agent
 
     resurrected_vm = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
@@ -30,7 +30,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
     resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
   end
 
 
@@ -47,10 +47,10 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     deploy_from_scratch({:manifest_hash => manifest_hash})
 
-    original_vm = director.vm('job_with_templates_having_prestart_scripts', '0', deployment_name: 'simple')
+    original_vm = director.instance('job_with_templates_having_prestart_scripts', '0', deployment_name: 'simple')
     original_vm.kill_agent
     resurrected_vm = director.wait_for_vm('job_with_templates_having_prestart_scripts', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
 
     waiter = Bosh::Spec::Waiter.new(logger)
     waiter.wait(50) do
@@ -79,8 +79,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     bosh_runner.run('vm resurrection off', deployment_name: 'simple')
     bosh_runner.run('vm resurrection foobar/1 on', deployment_name: 'simple')
 
-    director.vm('foobar', '0', deployment_name: 'simple').kill_agent
-    director.vm('foobar', '1', deployment_name: 'simple').kill_agent
+    director.instance('foobar', '0', deployment_name: 'simple').kill_agent
+    director.instance('foobar', '1', deployment_name: 'simple').kill_agent
 
     expect(director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')).to be_nil
     expect(director.wait_for_vm('foobar', '1', 10, deployment_name: 'simple')).to be_nil
@@ -96,15 +96,15 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     bosh_runner.run('vm resurrection foobar/1 off', deployment_name: 'simple')
 
-    original_0_vm = director.vm('foobar', '0', deployment_name: 'simple')
-    original_1_vm = director.vm('foobar', '1', deployment_name: 'simple')
+    original_0_vm = director.instance('foobar', '0', deployment_name: 'simple')
+    original_1_vm = director.instance('foobar', '1', deployment_name: 'simple')
 
     # Kill VMs as close as possible
     original_0_vm.kill_agent
     original_1_vm.kill_agent
 
     new_0_vm = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
-    expect(new_0_vm.cid).to_not eq(original_0_vm.cid)
+    expect(new_0_vm.vm_cid).to_not eq(original_0_vm.vm_cid)
 
     # Since at this point 0th VM is back up, assume that
     # if 1st VM would be resurrected it would've already happened
@@ -122,8 +122,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_from_scratch(manifest_hash: deployment_hash)
 
-    director.vm('foobar', '0', deployment_name: 'simple').kill_agent
-    director.vm('foobar', '1', deployment_name: 'simple').kill_agent
+    director.instance('foobar', '0', deployment_name: 'simple').kill_agent
+    director.instance('foobar', '1', deployment_name: 'simple').kill_agent
 
     _, exit_code = bosh_runner.run('cck --report', deployment_name: 'simple', failure_expected: true, return_exit_code: true)
     expect(exit_code).to eq(1)
@@ -157,7 +157,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       heartbeat_hashes = heartbeat_lines.map {|json_line| JSON.parse(json_line) }
 
-      vm = director.vms.first
+      vm = director.instances.first
       expected_hash = {
           'kind' => 'heartbeat',
           'id' => anything,
@@ -166,7 +166,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'agent_id' => vm.agent_id,
           'job' => vm.job_name,
           'index' => vm.index,
-          'instance_id' => vm.instance_uuid,
+          'instance_id' => vm.id,
           'job_state' => 'running',
           'vitals' => anything
       }
@@ -184,7 +184,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_from_scratch(manifest_hash: deployment_hash)
 
-    director.vm('foobar', '0').fail_job
+    director.instance('foobar', '0').fail_job
     waiter.wait(20) { expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* fake-monit-description/) }
   end
 
@@ -204,7 +204,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-    original_vm = director.vm('foobar', '0', deployment_name: 'simple')
+    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
     template = original_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
     expect(template).to include('b_ip=127.0.0.101')

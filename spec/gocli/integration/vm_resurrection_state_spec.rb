@@ -7,14 +7,14 @@ describe 'vm resurrection', type: :integration do
     skip("gobosh cannot turn off resurrection for specific vms - ask DK")
     deploy_from_scratch
 
-    vms_before_state_switch = director.vms
+    vms_before_state_switch = director.instances
     vm_before_with_index_0 = vms_before_state_switch.find{ |vm| vm.index == '0'}
     vm_before_with_index_1 = vms_before_state_switch.find{ |vm| vm.index == '1'}
 
     bosh_runner.run("vm resurrection #{vm_before_with_index_0.job_name} #{vm_before_with_index_0.index} disable")
-    bosh_runner.run("vm resurrection #{vm_before_with_index_1.job_name} #{vm_before_with_index_1.instance_uuid} disable")
+    bosh_runner.run("vm resurrection #{vm_before_with_index_1.job_name} #{vm_before_with_index_1.id} disable")
 
-    vms_after_state_switch = director.vms
+    vms_after_state_switch = director.instances
     vm_after_with_index_0 = vms_after_state_switch.find{ |vm| vm.index == '0'}
     vm_after_with_index_1 = vms_after_state_switch.find{ |vm| vm.index == '1'}
     vm_after_with_index_2 = vms_after_state_switch.find{ |vm| vm.index == '2'}

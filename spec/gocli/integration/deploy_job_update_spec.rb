@@ -137,7 +137,7 @@ describe 'deploy job update', type: :integration do
   it 'stops deployment when a job update fails' do
     deploy_from_scratch
 
-    director.vm('foobar', '0').fail_job
+    director.instance('foobar', '0').fail_job
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['resource_pools'][0]['size'] = 2

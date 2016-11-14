@@ -21,7 +21,7 @@ describe 'deploy job with addons', type: :integration do
     manifest_hash['name'] = 'dep1'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar', '0', deployment: 'dep1')
+    foobar_vm = director.instance('foobar', '0', deployment_name: 'dep1')
 
     expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
     template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
@@ -31,7 +31,7 @@ describe 'deploy job with addons', type: :integration do
     manifest_hash['name'] = 'dep2'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar', '0', deployment: 'dep2')
+    foobar_vm = director.instance('foobar', '0', deployment_name: 'dep2')
 
     expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(false)
 
@@ -57,7 +57,7 @@ describe 'deploy job with addons', type: :integration do
 
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    vms = director.vms
+    vms = director.instances
 
     addon_vm = vms.detect { |vm| vm.job_name == 'has-addon-vm' }
     expect(File.exist?(addon_vm.job_path('foobar'))).to eq(true)
@@ -84,7 +84,7 @@ describe 'deploy job with addons', type: :integration do
     upload_cloud_config(manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar', '0')
+    foobar_vm = director.instance('foobar', '0')
 
     expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
     expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
@@ -130,7 +130,7 @@ describe 'deploy job with addons', type: :integration do
     upload_cloud_config(manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar', '0')
+    foobar_vm = director.instance('foobar', '0')
 
     expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
     expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)

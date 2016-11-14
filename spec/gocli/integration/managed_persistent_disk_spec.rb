@@ -42,7 +42,7 @@ describe 'Managed persistent disk', type: :integration do
   context 'when the agent is restarted' do
     before do
       agent_id = /agent-base-dir-(.*)/.match(current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid))[1]
-      director.vms.first.kill_agent
+      director.instances.first.kill_agent
       current_sandbox.cpi.spawn_agent_process(agent_id)
       sleep 1
     end
@@ -62,7 +62,7 @@ describe 'Managed persistent disk', type: :integration do
       File.delete("#{agent_dir}/bosh/mounts.json")
 
       agent_id = /agent-base-dir-(.*)/.match(current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid))[1]
-      director.vms.first.kill_agent
+      director.instances.first.kill_agent
       current_sandbox.cpi.spawn_agent_process(agent_id)
       sleep 1
     end

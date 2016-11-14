@@ -64,30 +64,17 @@ describe 'cli: vms', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a'},
     )
-    output = bosh_runner.run('vms --details', json: true, deployment_name: 'simple')
 
-    output = scrub_random_ids(table(output))
-    first_row = output.first
-
-    expect(first_row).to have_key('Instance')
-    expect(first_row).to have_key('Process State')
-    expect(first_row).to include('AZ')
-    expect(first_row).to include('IPs')
-    expect(first_row).to have_key('Disk CIDs')
-    expect(first_row).to have_key('Agent ID')
-    expect(first_row).to have_key("Resurrection\nPaused")
-    expect(first_row).to have_key('Ignore')
-    expect(output.length).to eq(3)
 
     output = bosh_runner.run('vms --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
     )
 
     output = bosh_runner.run('vms --vitals', json: true, deployment_name: 'simple')

@@ -52,13 +52,13 @@ describe 'migrating networks', type: :integration do
     it 'it is reusing IP from old instance' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
-      vms = director.vms
+      vms = director.instances
       expect(vms.size).to eq(2)
       expect(vms.map(&:ips).flatten).to match_array(['192.168.1.10', '192.168.1.11'])
 
       upload_cloud_config(cloud_config_hash: renamed_network_cloud_config_hash)
       deploy_simple_manifest(manifest_hash: renamed_network_simple_manifest)
-      vms = director.vms
+      vms = director.instances
       expect(vms.size).to eq(2)
       expect(vms.map(&:ips).flatten).to match_array(['192.168.1.10', '192.168.1.11'])
     end

@@ -126,7 +126,7 @@ CERT
         deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, include_credentials: false, env: client_env)
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-        vms = director.vms(environment_name: current_sandbox.director_url, include_credentials: false, env: client_env)
+        vms = director.instances(deployment_name: 'simple', environment_name: current_sandbox.director_url, include_credentials: false, env: client_env)
         expect(vms.size).to eq(3)
       end
 
@@ -183,14 +183,14 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
 
-        bosh_runner.run('vms --details', environment_name: current_sandbox.director_url, no_login: true, include_credentials: false, json: true, env: client_env)
+        bosh_runner.run('vms', environment_name: current_sandbox.director_url, no_login: true, include_credentials: false, json: true, env: client_env)
 
-        original_vm = director.vm('foobar', '0', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
+        original_vm = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         original_vm.kill_agent
-        resurrected_vm = director.wait_for_vm('foobar', '0', 300, environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
+        resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         expect(resurrected_vm).to_not eq(nil)
 
-        expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+        expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
       end
     end
   end

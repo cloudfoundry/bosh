@@ -11,18 +11,24 @@ describe 'vm state', type: :integration do
       manifest_hash['jobs'].first['persistent_disk'] = 3000
       deploy_from_scratch(manifest_hash: manifest_hash)
 
-      vms = director.vms
+      vms = director.instances.select { |instance|
+        !instance.vm_cid.empty?
+      }
       vm_with_index_0 = vms.find{ |vm| vm.index == '0'}
       disks_before_detaching = current_sandbox.cpi.disk_cids
 
       expect(bosh_runner.run('stop foobar/0 --hard', deployment_name: deployment_name)).to match %r{Updating instance foobar}
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
 
-      expect(director.vms.map(&:instance_uuid)).to eq(vms.map(&:instance_uuid) - [vm_with_index_0.instance_uuid])
+      expect(director.instances.select { |instance|
+        !instance.vm_cid.empty?
+      }.map(&:id)).to eq(vms.map(&:id) - [vm_with_index_0.id])
 
       bosh_runner.run('start foobar/0', deployment_name: deployment_name)
 
-      expect(director.vms.map(&:instance_uuid)).to eq(vms.map(&:instance_uuid))
+      expect(director.instances.select { |instance|
+        !instance.vm_cid.empty?
+      }.map(&:id)).to eq(vms.map(&:id))
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
     end
 
@@ -113,50 +119,50 @@ describe 'vm state', type: :integration do
       simple_manifest['jobs'].first['azs'] = ['my-az2']
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      vms = director.vms
-      prev_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      prev_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      vms = director.instances
+      prev_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      prev_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
 
       bosh_runner.run('recreate foobar/1', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
-      expect(prev_foobar_1_vm.cid).to_not eq(new_foobar_1_vm.cid)
-      expect(prev_foobar_2_vm.cid).to eq(new_foobar_2_vm.cid)
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
+      expect(prev_foobar_1_vm.vm_cid).to_not eq(new_foobar_1_vm.vm_cid)
+      expect(prev_foobar_2_vm.vm_cid).to eq(new_foobar_2_vm.vm_cid)
       prev_foobar_1_vm, prev_foobar_2_vm = new_foobar_1_vm, new_foobar_2_vm
 
       bosh_runner.run('recreate foobar/2', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
-      expect(prev_foobar_1_vm.cid).to eq(new_foobar_1_vm.cid)
-      expect(prev_foobar_2_vm.cid).to_not eq(new_foobar_2_vm.cid)
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
+      expect(prev_foobar_1_vm.vm_cid).to eq(new_foobar_1_vm.vm_cid)
+      expect(prev_foobar_2_vm.vm_cid).to_not eq(new_foobar_2_vm.vm_cid)
 
       bosh_runner.run('stop foobar/1', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
       expect(new_foobar_1_vm.last_known_state).to eq('stopped')
       expect(new_foobar_2_vm.last_known_state).to eq('running')
 
       bosh_runner.run('start foobar/1', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
       expect(new_foobar_1_vm.last_known_state).to eq('running')
       expect(new_foobar_2_vm.last_known_state).to eq('running')
 
       bosh_runner.run('stop foobar/2', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
       expect(new_foobar_1_vm.last_known_state).to eq('running')
       expect(new_foobar_2_vm.last_known_state).to eq('stopped')
 
       bosh_runner.run('start foobar/2', deployment_name: deployment_name)
-      vms = director.vms
-      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
-      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      vms = director.instances
+      new_foobar_1_vm = director.find_instance(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_instance(vms, 'foobar', '2')
       expect(new_foobar_1_vm.last_known_state).to eq('running')
       expect(new_foobar_2_vm.last_known_state).to eq('running')
 
@@ -190,29 +196,29 @@ describe 'vm state', type: :integration do
 
   it 'changes a single job instance state when referenced by id' do
     deploy_from_scratch
-    expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
+    expect(director.instances.map(&:last_known_state).uniq).to match_array(['running'])
     bosh_runner.run('stop', deployment_name: deployment_name)
-    expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
+    expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
 
-    test_vm = director.vms[1]
-    instance_id = test_vm.instance_uuid
+    test_vm = director.instances[1]
+    instance_id = test_vm.id
      expect(bosh_runner.run("start foobar/#{instance_id}", deployment_name: deployment_name)).to match %r{Updating instance foobar: foobar/#{instance_id}}
 
-    vms = director.vms
-    test_vm = director.find_vm(vms, 'foobar', instance_id)
+    vms = director.instances
+    test_vm = director.find_instance(vms, 'foobar', instance_id)
     expect(test_vm.last_known_state).to eq('running')
-    other_vms = vms.select { |vm| vm.instance_uuid != instance_id }
+    other_vms = vms.select { |vm| vm.id != instance_id }
     expect(other_vms.map(&:last_known_state).uniq).to eq(['stopped'])
 
     expect(bosh_runner.run("stop foobar/#{instance_id}", deployment_name: deployment_name)).to match %r{Updating instance foobar: foobar/#{instance_id}}
-    expect(director.vm('foobar', instance_id).last_known_state).to eq('stopped')
+    expect(director.instance('foobar', instance_id).last_known_state).to eq('stopped')
 
     expect(bosh_runner.run("recreate foobar/#{instance_id}", deployment_name: deployment_name)).to match %r{Updating instance foobar: foobar/#{instance_id}}
-    vms = director.vms
-    recreated_vm = director.find_vm(vms, 'foobar', instance_id)
-    expect(recreated_vm.cid).to_not eq(test_vm.cid)
-    new_other_vms = vms.select { |vm| vm.instance_uuid != instance_id }
-    expect(new_other_vms.map(&:cid)).to match_array(other_vms.map(&:cid))
+    vms = director.instances
+    recreated_vm = director.find_instance(vms, 'foobar', instance_id)
+    expect(recreated_vm.vm_cid).to_not eq(test_vm.vm_cid)
+    new_other_vms = vms.select { |vm| vm.id != instance_id }
+    expect(new_other_vms.map(&:vm_cid)).to match_array(other_vms.map(&:vm_cid))
 
     expect(bosh_runner.run("restart foobar/#{instance_id}", deployment_name: deployment_name)).to match %r{Updating instance foobar: foobar/#{instance_id}}
   end

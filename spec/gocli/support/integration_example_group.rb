@@ -231,12 +231,14 @@ module IntegrationExampleGroup
     end
   end
 
-  def expect_running_vms_with_names_and_count(job_names_to_vm_counts)
-    vms = director.vms
+  def expect_running_vms_with_names_and_count(job_names_to_vm_counts, options={deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME})
+    vms = director.instances(options)
     check_for_unknowns(vms)
     names = vms.map(&:job_name)
     total_expected_vms = job_names_to_vm_counts.values.inject(0) {|sum, count| sum + count}
-    expect(vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{vms.size}. Present were VMs with job name: #{names}"
+    updated_vms = vms.select { |instance| !instance.vm_cid.empty? }
+
+    expect(updated_vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{updated_vms.size}. Present were VMs with job name: #{names}"
 
     job_names_to_vm_counts.each do |job_name, expected_count|
       actual_count = names.select { |name| name == job_name }.size

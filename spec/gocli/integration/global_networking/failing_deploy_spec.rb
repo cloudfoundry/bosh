@@ -20,11 +20,11 @@ describe 'failing deploy', type: :integration do
     second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
     deploy_simple_manifest(manifest_hash: second_manifest_hash)
 
-    expect(director.vms(deployment_name: 'second').map(&:ips).flatten).to eq(['192.168.1.3'])
+    expect(director.instances(deployment_name: 'second').map(&:ips).flatten).to eq(['192.168.1.3'])
 
     deploy_simple_manifest(manifest_hash: first_manifest_hash)
-    puts director.vms.inspect
-    expect(director.vms(deployment_name: 'first').map(&:ips).flatten).to eq(['192.168.1.2'])
+
+    expect(director.instances(deployment_name: 'first').map(&:ips).flatten).to eq(['192.168.1.2'])
   end
 
   it 'keeps static IP address when vm creation fails' do
@@ -46,7 +46,7 @@ describe 'failing deploy', type: :integration do
     expect(second_deploy_output).to match(/Failed to reserve IP '192.168.1.10' for instance 'foobar\/[a-z0-9\-]+ \(0\)': already reserved by instance 'foobar\/[a-z0-9\-]+' from deployment 'first'/)
 
     deploy_simple_manifest(manifest_hash: first_manifest_hash)
-    expect(director.vms(deployment_name: 'first').map(&:ips).flatten).to eq(['192.168.1.10'])
+    expect(director.instances(deployment_name: 'first').map(&:ips).flatten).to eq(['192.168.1.10'])
   end
 
   it 'releases unneeded IP addresses when deploy is no longer failing' do
@@ -65,11 +65,11 @@ describe 'failing deploy', type: :integration do
     manifest_hash['jobs'].first['networks'].first.delete('static_ips')
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    expect(director.vms.map(&:ips).flatten).to eq(['192.168.1.2'])
+    expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.2'])
 
     second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages', static_ips: ['192.168.1.10'])
     deploy_simple_manifest(manifest_hash: second_manifest_hash)
-    expect(director.vms(deployment_name: 'second').map(&:ips).flatten).to eq(['192.168.1.10'])
+    expect(director.instances(deployment_name: 'second').map(&:ips).flatten).to eq(['192.168.1.10'])
   end
 
   it 'releases IP when subsequent deploy does not need failing instance' do
@@ -90,6 +90,6 @@ describe 'failing deploy', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_hash)
     # IPs are not released within single deployment
     # see https://www.pivotaltracker.com/story/show/98057020
-    expect(director.vms.map(&:ips).flatten).to eq(['192.168.1.3'])
+    expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.3'])
   end
 end

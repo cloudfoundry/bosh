@@ -32,7 +32,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
         expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(exit_code).to_not eq(0)
 
-        expect_running_vms_with_names_and_count('fake-errand-name' => 1, 'foobar' => 1)
+        expect_running_vms_with_names_and_count({'fake-errand-name' => 1, 'foobar' => 1}, {deployment_name: deployment_name})
       end
     end
 
@@ -43,9 +43,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
       )
       expect(exit_code).to eq(1)
 
-      expect_running_vms_with_names_and_count('foobar' => 1)
-
-      print output
+      expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
 
       expect(output).to_not include("[stdout]")
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
@@ -75,7 +73,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
       errand_result = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('*')
 
-      vm = director.wait_for_vm('fake-errand-name', '0', 10)
+      vm = director.wait_for_vm('fake-errand-name', '0', 10, deployment_name: deployment_name)
       expect(vm).to_not be_nil
 
       attempts = 0

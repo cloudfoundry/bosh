@@ -59,7 +59,7 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.vm('foobar', '0')
+      original_vm = director.instance('foobar', '0')
       original_vms_output = bosh_runner.run('vms', deployment_name: 'simple')
 
       upload_a_different_cloud_config
@@ -79,7 +79,7 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.vm('foobar', '0')
+      original_vm = director.instance('foobar', '0')
 
       upload_a_different_cloud_config
 
@@ -93,8 +93,8 @@ describe 'Changing cloud config', type: :integration do
         expect(runner).to have_output 'Succeeded'
       end
 
-      recreated_vm = director.vm('foobar', '0')
-      expect(recreated_vm.cid).to_not eq(original_vm.cid)
+      recreated_vm = director.instance('foobar', '0')
+      expect(recreated_vm.vm_cid).to_not eq(original_vm.vm_cid)
 
       expect(original_vm.ips).to eq(recreated_vm.ips)
     end

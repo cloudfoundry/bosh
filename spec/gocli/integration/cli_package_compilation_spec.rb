@@ -75,8 +75,8 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar', '0')
-    apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.cid)
+    foobar_vm = director.instance('foobar', '0')
+    apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.vm_cid)
     packages = apply_spec['packages']
 
     expect(packages.keys).to match_array(%w(foo bar baz))

@@ -39,7 +39,7 @@ describe 'cli: cleanup', type: :integration do
       upload_new_release_version('file-1.txt')
       upload_new_release_version('file-2.txt')
 
-      disk_cid = director.instances('deployment-a')[0].disk_cids[0]
+      disk_cid = director.instances(deployment_name: 'deployment-a')[0].disk_cids[0]
 
       bosh_runner.run('delete-deployment', deployment_name: 'deployment-a')
 

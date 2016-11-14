@@ -31,7 +31,7 @@ Error: Unable to render instance groups for deployment. Errors are:
        - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
-        expect(director.vms.length).to eq(0)
+        expect(director.instances.length).to eq(0)
       end
     end
 
@@ -41,7 +41,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         deploy_from_scratch(manifest_hash: manifest_hash, dry_run: true)
 
-        expect(director.vms).to eq ([])
+        expect(director.instances).to eq ([])
       end
     end
   end
@@ -127,7 +127,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     it 'deployment fails when starting task fails' do
       deploy_from_scratch
-      director.vm('foobar', '0').fail_start_task
+      director.instance('foobar', '0').fail_start_task
       _, exit_code = deploy(failure_expected: true, return_exit_code: true)
       expect(exit_code).to_not eq(0)
     end
@@ -227,7 +227,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'runs the pre-start scripts on the agent vm, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
           deploy(manifest_hash: manifest)
 
-          agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
+          agent_id = director.instance('job_with_templates_having_prestart_scripts', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
@@ -267,7 +267,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         bosh_runner.run("upload-release #{spec_asset('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
         deploy(manifest_hash: manifest)
 
-        agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
+        agent_id = director.instance('job_with_templates_having_prestart_scripts', '0').agent_id
         job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
         job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
 
@@ -308,7 +308,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             deploy(manifest_hash: manifest)
           }.to raise_error(RuntimeError, /result: 1 of 2 pre-start scripts failed. Failed Jobs: job_with_corrupted_pre_start_script. Successful Jobs: job_with_valid_pre_start_script./)
 
-          agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
+          agent_id = director.instance('job_with_templates_having_prestart_scripts', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log).to include("/jobs/job_with_valid_pre_start_script/bin/pre-start' script has successfully executed")
@@ -359,7 +359,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
           deploy(manifest_hash: manifest)
 
-          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
@@ -378,8 +378,8 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'runs does not run post-deploy scripts on stopped vms' do
           deploy(manifest_hash: manifest)
 
-          agent_id_1 = director.vm('job_with_post_deploy_script', '0').agent_id
-          agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
+          agent_id_1 = director.instance('job_with_post_deploy_script', '0').agent_id
+          agent_id_2 = director.instance('another_job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
           expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
@@ -391,8 +391,8 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           stop_job('another_job_with_post_deploy_script/0')
 
-          agent_id_1 = director.vm('job_with_post_deploy_script', '0').agent_id
-          agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
+          agent_id_1 = director.instance('job_with_post_deploy_script', '0').agent_id
+          agent_id_2 = director.instance('another_job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
           expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(2)
@@ -407,11 +407,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           current_sandbox.with_health_monitor_running do
             deploy(manifest_hash: manifest)
 
-            agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+            agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
             agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
             expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
-            resurected_vm = director.kill_vm_and_wait_for_resurrection(director.vm('job_with_post_deploy_script', '0'))
+            resurected_vm = director.kill_vm_and_wait_for_resurrection(director.instance('job_with_post_deploy_script', '0'))
 
             agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurected_vm.agent_id}.log")
             expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
@@ -438,7 +438,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'exits with error if post-deploy errors, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
           expect { deploy(manifest_hash: manifest) }.to raise_error(RuntimeError, /result: 1 of 2 post-deploy scripts failed. Failed Jobs: job_3_with_broken_post_deploy_script. Successful Jobs: job_1_with_post_deploy_script./)
 
-          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
@@ -483,7 +483,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         it 'should not run the post deploy script if no changes have been made in deployment' do
           deploy(manifest_hash: manifest)
-          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
@@ -497,7 +497,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         it 'should not run post deploy script on jobs with no vm_cid' do
           deploy(manifest_hash: manifest)
-          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
           expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
@@ -545,7 +545,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
         deploy(manifest_hash: manifest)
 
-        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+        agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
         expect(agent_log).to_not include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
@@ -597,7 +597,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       it 'these templates should use the properties defined in their scope' do
         deploy(manifest_hash: manifest)
-        target_vm = director.vm('job_with_templates_having_properties', '0')
+        target_vm = director.instance('job_with_templates_having_properties', '0')
         template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
         template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
@@ -736,7 +736,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         it 'should not cross reference them' do
           deploy(manifest_hash: manifest)
-          target_vm = director.vm('job_with_templates_having_properties', '0')
+          target_vm = director.instance('job_with_templates_having_properties', '0')
           template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
@@ -812,11 +812,11 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'should not expose the local properties across deployment jobs' do
           deploy(manifest_hash: manifest)
 
-          target_vm_1 = director.vm('worker_1', '0')
+          target_vm_1 = director.instance('worker_1', '0')
           template_1_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           template_2_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
-          target_vm_2 = director.vm('worker_2', '0')
+          target_vm_2 = director.instance('worker_2', '0')
           template_1_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           template_2_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
@@ -1158,10 +1158,10 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           bosh_runner.run('run-errand -d simple alive-errand --keep-alive')
 
-          job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+          job_with_post_deploy_script_vm = director.instance('job_with_post_deploy_script', '0')
           expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_falsey
 
-          job_with_errand_vm = director.vm('alive-errand', '0')
+          job_with_errand_vm = director.instance('alive-errand', '0')
           expect(File.exists?(job_with_errand_vm.file_path('jobs/errand1/bin/run'))).to be_truthy
           expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_falsey
 
@@ -1171,15 +1171,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           new_manifest['jobs'][2]['templates'] << {'name' => 'foobar'}
           deploy_simple_manifest(manifest_hash: new_manifest)
 
-          job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+          job_with_post_deploy_script_vm = director.instance('job_with_post_deploy_script', '0')
           expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_truthy
 
-          job_with_errand_vm = director.vm('alive-errand', '0')
+          job_with_errand_vm = director.instance('alive-errand', '0')
           expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_truthy
-
-          expect {
-            director.vm('dead-errand', '0')
-          }.to raise_error(RuntimeError, 'Failed to find vm dead-errand/0')
         end
       end
     end
@@ -1339,7 +1335,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         deployment_name = Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME
         bosh_runner.run("deploy -d #{deployment_name} #{deployment_manifest.path}")
 
-        target_vm = director.vm('test_group', '0')
+        target_vm = director.instance('test_group', '0')
 
         ctl_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/job_that_modifies_properties_ctl')
 

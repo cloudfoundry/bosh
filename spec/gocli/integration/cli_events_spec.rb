@@ -17,7 +17,7 @@ describe 'cli: events', type: :integration do
         'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}]
     })
 
-    director.vm('foobar', '0').fail_job
+    director.instance('foobar', '0').fail_job
     deploy(manifest_hash: manifest_hash, deployment_name: 'simple', failure_expected: true)
 
     bosh_runner.run('delete-deployment', deployment_name: 'simple')

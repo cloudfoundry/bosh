@@ -19,8 +19,8 @@ describe 'restart job', type: :integration do
   it 'restarts a job instance / job / all jobs' do
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    vm_before_with_index_1 = director.vms.find{ |vm| vm.index == '1' }
-    instance_uuid = vm_before_with_index_1.instance_uuid
+    vm_before_with_index_1 = director.instances.find{ |vm| vm.index == '1' }
+    instance_uuid = vm_before_with_index_1.id
 
     expect(bosh_runner.run('restart foobar/0', deployment_name: 'simple')).to match /Updating instance foobar: foobar.* \(0\)/
     expect(bosh_runner.run("restart foobar/#{instance_uuid}", deployment_name: 'simple')).to match /Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/

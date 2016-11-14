@@ -21,7 +21,7 @@ describe 'delete arp entries', type: :integration do
         })
       deploy_simple_manifest(manifest_hash: manifest_deployment_1)
 
-      agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
+      agent_id_0 = director.instance('job_to_test_forceful_arp', '0').agent_id
 
       manifest_deployment_2 = Bosh::Spec::Deployments.test_release_manifest
       manifest_deployment_2.merge!(

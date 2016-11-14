@@ -9,8 +9,8 @@ describe 'cli: logs', type: :integration do
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-    vms = director.vms
-    id = vms.first.instance_uuid
+    vms = director.instances
+    id = vms.first.id
     index = vms.first.index
 
     deployment_name = manifest_hash['name']

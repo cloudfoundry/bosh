@@ -30,8 +30,8 @@ describe 'simultaneous deploys', type: :integration do
       Bosh::Spec::DeployHelper.wait_for_task_to_succeed(first_task_id)
       Bosh::Spec::DeployHelper.wait_for_task_to_succeed(second_task_id)
 
-      first_deployment_ips = director.vms(deployment_name: 'first').map(&:ips).flatten
-      second_deployment_ips = director.vms(deployment_name: 'second').map(&:ips).flatten
+      first_deployment_ips = director.instances(deployment_name: 'first').map(&:ips).flatten
+      second_deployment_ips = director.instances(deployment_name: 'second').map(&:ips).flatten
       expect(first_deployment_ips + second_deployment_ips).to match_array(
           ['192.168.1.2', '192.168.1.3']
         )
@@ -82,7 +82,7 @@ describe 'simultaneous deploys', type: :integration do
       run_errand('errand_job', manifest_hash: manifest_with_errand)
       Bosh::Spec::DeployHelper.wait_for_task_to_succeed(deploy_task_id)
 
-      job_deployment_ips = director.vms(deployment_name: 'second').map(&:ips).flatten
+      job_deployment_ips = director.instances(deployment_name: 'second').map(&:ips).flatten
       expect(job_deployment_ips.count).to eq(1)
       expect(['192.168.1.2', '192.168.1.3']).to include(job_deployment_ips.first)
     end

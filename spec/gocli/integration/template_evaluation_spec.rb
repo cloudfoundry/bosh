@@ -19,7 +19,7 @@ describe 'template', type: :integration do
     ]
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    id_vm = director.vm('id_job', '0')
+    id_vm = director.instance('id_job', '0')
     template = YAML.load(id_vm.read_job_template('id_job', 'config.yml'))
     expect(template['id']).to match /[a-f0-9\-]/
     expect(template['resource_pool']).to eq 'a'
@@ -43,13 +43,13 @@ describe 'template', type: :integration do
 
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    id_vm = director.vm('id_job', '0')
+    id_vm = director.instance('id_job', '0')
     template = YAML.load(id_vm.read_job_template('id_job', 'config.yml'))
     original_id = template['id']
     expect(original_id).to match /[a-f0-9\-]/
 
     deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
-    id_vm = director.vm('id_job', '0')
+    id_vm = director.instance('id_job', '0')
     template = YAML.load(id_vm.read_job_template('id_job', 'config.yml'))
     new_id = template['id']
     expect(new_id).to match /[a-f0-9\-]/

@@ -119,7 +119,7 @@ describe 'global networking', type: :integration do
       current_sandbox.cpi.commands.allow_create_vm_to_succeed
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(director.vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
+      expect(director.instances.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
     end
   end
 
@@ -137,7 +137,7 @@ describe 'global networking', type: :integration do
 
       another_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'another', instances: 1)
       deploy_simple_manifest(manifest_hash: another_deployment_manifest)
-      expect(director.vms.map(&:ips).flatten).to contain_exactly('192.168.1.3') # 192.168.1.2 is reserved by first deployment
+      expect(director.instances(deployment_name: 'another').map(&:ips).flatten).to contain_exactly('192.168.1.3') # 192.168.1.2 is reserved by first deployment
     end
   end
 
@@ -158,11 +158,11 @@ describe 'global networking', type: :integration do
 
         deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
-        expect(director.vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.4')
+        expect(director.instances(deployment_name: 'blocking').map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.4')
 
         deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 3)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
-        expect(director.vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3', '192.168.1.4')
+        expect(director.instances(deployment_name: 'blocking').map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3', '192.168.1.4')
       end
     end
   end

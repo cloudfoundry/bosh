@@ -46,16 +46,16 @@ describe 'availability zones', type: :integration do
       current_sandbox.cpi.commands.allow_create_vm_to_succeed
       deploy_simple_manifest(manifest_hash: manifest)
 
-      expect(director.vms.count).to eq(1)
+      expect(director.instances.count).to eq(1)
     end
 
     it 'creates VM with properties from both availability zone and resource pool' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      vms = director.vms
+      vms = director.instances
       expect(vms.count).to eq(1)
-      vm_cid = vms[0].cid
+      vm_cid = vms[0].vm_cid
 
       expect(current_sandbox.cpi.read_cloud_properties(vm_cid)).to eq({
             'a' => 'rp_value_for_a',
@@ -69,7 +69,7 @@ describe 'availability zones', type: :integration do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(1)
         original_vm = vms.first
         expected_cloud_properties = {
@@ -79,11 +79,11 @@ describe 'availability zones', type: :integration do
         }
 
         expect(original_vm.availability_zone).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(original_vm.cid)).to eq(expected_cloud_properties)
+        expect(current_sandbox.cpi.read_cloud_properties(original_vm.vm_cid)).to eq(expected_cloud_properties)
 
         resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
-        expect(current_sandbox.cpi.read_cloud_properties(resurrected_vm.cid)).to eq(expected_cloud_properties)
+        expect(current_sandbox.cpi.read_cloud_properties(resurrected_vm.vm_cid)).to eq(expected_cloud_properties)
         expect(resurrected_vm.availability_zone).to eq(original_vm.availability_zone)
       end
     end
@@ -91,7 +91,7 @@ describe 'availability zones', type: :integration do
     it 'exposes an availability zone for within the template spec for the instance' do
       deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config_hash)
 
-      foobar_vm = director.vm('foobar', '0')
+      foobar_vm = director.instance('foobar', '0')
       template = foobar_vm.read_job_template('foobar', 'bin/foobar_ctl')
 
       expect(template).to include('az=my-az')
@@ -132,7 +132,7 @@ describe 'availability zones', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      vms = director.vms
+      vms = director.instances
       expect(vms.count).to eq(2)
       expect(vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.2.2')
     end
@@ -184,7 +184,7 @@ describe 'availability zones', type: :integration do
         {'second-subnet-key' => 'second-subnet-value'}
       )
 
-      expect(director.vms.count).to eq(2)
+      expect(director.instances.count).to eq(2)
 
       expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
         {'Instance' => String, 'Process State' => 'running', 'AZ' => 'my-az', 'IPs' => '192.168.1.1', 'VM CID' => String, 'VM Type' => 'a'},
@@ -238,11 +238,11 @@ describe 'availability zones', type: :integration do
 
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
-        vm_cid_that_should_be_reused = vms.select { |vm| vm.ips[0] == '192.168.1.51' }[0].cid
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].vm_cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].vm_cid)['availability_zone']).to eq('my-az')
+        vm_cid_that_should_be_reused = vms.select { |vm| vm.ips[0] == '192.168.1.51' }[0].vm_cid
         expect(vms.map(&:ips).flatten).to contain_exactly('192.168.1.51','192.168.1.52')
 
         cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.51', '192.168.2.52']
@@ -251,12 +251,12 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
-        vm_with_unchanged_az = vms.select { |vm| vm.cid == vm_cid_that_should_be_reused }[0]
-        vm_with_new_az = vms.select { |vm| vm.cid != vm_cid_that_should_be_reused }[0]
+        vms = director.instances
+        vm_with_unchanged_az = vms.select { |vm| vm.vm_cid == vm_cid_that_should_be_reused }[0]
+        vm_with_new_az = vms.select { |vm| vm.vm_cid != vm_cid_that_should_be_reused }[0]
         expect(vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(vm_with_unchanged_az.cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(vm_with_new_az.cid)['availability_zone']).to eq('my-az2')
+        expect(current_sandbox.cpi.read_cloud_properties(vm_with_unchanged_az.vm_cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vm_with_new_az.vm_cid)['availability_zone']).to eq('my-az2')
         expect(vm_with_unchanged_az.ips).to contain_exactly('192.168.1.51')
         expect(vm_with_new_az.ips).to contain_exactly('192.168.2.52')
       end
@@ -270,16 +270,16 @@ describe 'availability zones', type: :integration do
           simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
-          vms = director.vms
+          vms = director.instances
           vm_that_should_remain = vms.find { |vm| vm.ips.include?('192.168.2.52') }
 
           simple_manifest['jobs'].first['instances'] = 1
           simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
           simple_manifest['jobs'].first['azs'] = ['my-az2']
           deploy_simple_manifest(manifest_hash: simple_manifest)
-          vms = director.vms
+          vms = director.instances
           expect(vms.size).to eq(1)
-          expect(vms[0].cid).to eq(vm_that_should_remain.cid)
+          expect(vms[0].vm_cid).to eq(vm_that_should_remain.vm_cid)
           expect(vms[0].ips).to contain_exactly('192.168.2.52')
           expect(vms[0].availability_zone).to eq('my-az2')
         end
@@ -294,18 +294,18 @@ describe 'availability zones', type: :integration do
           simple_manifest['jobs'].first['azs'] = ['my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
-          vms = director.vms
+          vms = director.instances
           vm_that_should_remain = vms[0]
 
           simple_manifest['jobs'].first['instances'] = 2
           simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.52', '192.168.2.52']
           simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
           deploy_simple_manifest(manifest_hash: simple_manifest)
-          vms = director.vms
+          vms = director.instances
           expect(vms.size).to eq(2)
 
-          preserved_vm = vms.find { |vm| vm.cid == vm_that_should_remain.cid}
-          new_vm = vms.find { |vm| vm.cid != vm_that_should_remain.cid }
+          preserved_vm = vms.find { |vm| vm.vm_cid == vm_that_should_remain.vm_cid}
+          new_vm = vms.find { |vm| vm.vm_cid != vm_that_should_remain.vm_cid }
 
           expect(preserved_vm.ips).to contain_exactly('192.168.2.52')
           expect(preserved_vm.availability_zone).to eq('my-az2')
@@ -326,7 +326,7 @@ describe 'availability zones', type: :integration do
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
 
-          original_vm = director.vms[0]
+          original_vm = director.instances[0]
           expect(original_vm.availability_zone).to eq('my-az2')
 
           simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51']
@@ -334,11 +334,11 @@ describe 'availability zones', type: :integration do
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
           deploy_simple_manifest(manifest_hash: simple_manifest)
 
-          new_vm = director.vms[0]
+          new_vm = director.instances[0]
           expect(new_vm.ips).to contain_exactly('192.168.1.51')
           expect(new_vm.availability_zone).to eq('my-az')
-          expect(new_vm.cid).to_not eq(original_vm.cid)
-          expect(new_vm.instance_uuid).to_not eq(original_vm.instance_uuid)
+          expect(new_vm.vm_cid).to_not eq(original_vm.vm_cid)
+          expect(new_vm.id).to_not eq(original_vm.id)
         end
       end
     end
@@ -366,12 +366,12 @@ describe 'availability zones', type: :integration do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(1)
         expect(vms[0].ips).to contain_exactly('192.168.1.2')
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(3)
 
-        vm_cid = vms[0].cid
+        vm_cid = vms[0].vm_cid
 
         cloud_config_hash['azs'].push({
             'name' => 'my-az2',
@@ -396,10 +396,10 @@ describe 'availability zones', type: :integration do
 
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(5)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(3)
 
-        reused_vm = vms.find { |vm| vm.cid == vm_cid }
+        reused_vm = vms.find { |vm| vm.vm_cid == vm_cid }
         expect(reused_vm.ips).to contain_exactly('192.168.1.2')
 
         expect(vms.map(&:ips).flatten).to match_array(['192.168.2.51', '192.168.2.52', '192.168.1.2'])
@@ -449,18 +449,18 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].vm_cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].vm_cid)['availability_zone']).to eq('my-az')
 
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].vm_cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].vm_cid)['availability_zone']).to eq('my-az')
       end
 
       it 'adds new jobs in the new az when scaling up job count' do
@@ -506,21 +506,21 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
-        original_vm_cids = vms.map(&:cid)
+        vms = director.instances
+        original_vm_cids = vms.map(&:vm_cid)
         expect(vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].vm_cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].vm_cid)['availability_zone']).to eq('my-az')
 
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
         simple_manifest['jobs'].first['instances'] = 3
         deploy_simple_manifest(manifest_hash: simple_manifest)
-        vms = director.vms
-        original_vms = vms.select { |vm| original_vm_cids.include?(vm.cid) }
-        new_vm = vms.select { |vm| !original_vm_cids.include?(vm.cid) }[0]
+        vms = director.instances
+        original_vms = vms.select { |vm| original_vm_cids.include?(vm.vm_cid) }
+        new_vm = vms.select { |vm| !original_vm_cids.include?(vm.vm_cid) }[0]
 
         expect(vms.count).to eq(3)
-        expect(current_sandbox.cpi.read_cloud_properties(new_vm.cid)['availability_zone']).to eq('my-az2')
+        expect(current_sandbox.cpi.read_cloud_properties(new_vm.vm_cid)['availability_zone']).to eq('my-az2')
         expect(original_vms.map(&:availability_zone)).to contain_exactly('my-az', 'my-az')
       end
 
@@ -554,7 +554,7 @@ describe 'availability zones', type: :integration do
 
         deploy_simple_manifest(manifest_hash: manifest)
 
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)).to eq({
+        expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
               'availability_zone' => 'my-az',
               'b' => 'cp_value_for_b',
               'a' => 'rp_value_for_a',
@@ -575,7 +575,7 @@ describe 'availability zones', type: :integration do
 
         deploy_simple_manifest(manifest_hash: manifest)
 
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)).to eq({
+        expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
           'availability_zone' => 'my-az',
           'a' => 'rp_value_for_a',
           'e' => 'rp_value_for_e',
@@ -630,7 +630,7 @@ describe 'availability zones', type: :integration do
         deploy_simple_manifest(manifest_hash: simple_manifest)
         bootstrap_node = director.instances.find { |instance| instance.bootstrap }
 
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2'] - [bootstrap_node.az]
+        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2'] - [bootstrap_node.availability_zone]
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         new_bootstrap_node = director.instances.find { |instance| instance.bootstrap }
@@ -675,14 +675,14 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['instances'] = 2
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
-        expect(director.vms.map(&:ips).flatten).to match_array(['192.168.1.2', '192.168.1.3'])
+        expect(director.instances.map(&:ips).flatten).to match_array(['192.168.1.2', '192.168.1.3'])
 
         cloud_config_hash['networks'].first['subnets'].first['azs'] = ['my-az']
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        vms = director.vms
+        vms = director.instances
         expect(vms.map(&:availability_zone)).to match_array(['my-az', 'my-az2'])
         expect(vms.map(&:ips).flatten).to match_array(['192.168.1.2', '192.168.2.2'])
       end

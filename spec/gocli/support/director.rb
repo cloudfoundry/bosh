@@ -17,61 +17,81 @@ module Bosh::Spec
       @nats_recording = []
     end
 
-    def vms(options={})
-      vms_details(options).map do |vm_data|
-        Bosh::Spec::Vm.new(
+    def instances(options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+      instances_details(options).map do |instance_data|
+        Bosh::Spec::Instance.new(
           @waiter,
-          vm_data[:process_state],
-          vm_data[:vm_cid],
-          vm_data[:agent_id],
-          vm_data[:resurrection],
-          vm_data[:ips],
-          vm_data[:az],
-          vm_data[:id],
-          vm_data[:job_name],
-          vm_data[:index],
-          vm_data[:ignore],
-          File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
+          instance_data[:process_state],
+          instance_data[:vm_cid],
+          instance_data[:agent_id],
+          instance_data[:resurrection],
+          instance_data[:ips],
+          instance_data[:az],
+          instance_data[:id],
+          instance_data[:job_name],
+          instance_data[:index],
+          instance_data[:ignore],
+          instance_data[:bootstrap] == 'true',
+          instance_data[:disk_cids],
+          File.join(@agents_base_dir, "agent-base-dir-#{instance_data[:agent_id]}"),
           @director_nats_port,
           @logger,
         )
       end
     end
 
-    def instances(deployment_name=Deployments::DEFAULT_DEPLOYMENT_NAME)
-      options = {json: true}
-      instances_output = @runner.run("instances -d #{deployment_name} --details", options)
-      instances = parse_table_with_ips(instances_output)
-
-      instances.map do |instance_data|
-        Bosh::Spec::Instance.new(
-          instance_data[:id],
-          instance_data[:job_name],
-          instance_data[:index],
-          !instance_data[:bootstrap].empty?,
-          instance_data[:az],
-          instance_data[:disk_cids],
-          instance_data[:vm_cid]
+    def vms(options={})
+      parse_table_with_ips(@runner.run('vms', options.merge(json: true))).map do |vm_data|
+        Bosh::Spec::Vm.new(
+          @waiter,
+          vm_data[:process_state],
+          vm_data[:vm_cid],
+          vm_data[:ips],
+          vm_data[:az],
+          vm_data[:id],
+          vm_data[:job_name],
+          @director_nats_port,
+          @logger,
+          File.join(@agents_base_dir, "agent-base-dir-*"),
         )
       end
     end
 
+    # def instances(deployment_name=Deployments::DEFAULT_DEPLOYMENT_NAME)
+    #    options = {json: true}
+    #    instances_output = @runner.run("instances -d #{deployment_name} --details", options)
+    #    instances = parse_table_with_ips(instances_output)
+    #
+    #    instances.map do |instance_data|
+    #      Bosh::Spec::Instance.new(
+    #        instance_data[:id],
+    #        instance_data[:job_name],
+    #        instance_data[:index],
+    #        instance_data[:bootstrap],
+    #        instance_data[:az],
+    #        instance_data[:disk_cids],
+    #        instance_data[:vm_cid]
+    #      )
+    #    end
+    #   instances(deployment_name: deployment_name)
+    # end
+
     # vm always returns a vm
-    def vm(job_name, index_or_id, options={})
-      find_vm(vms(options), job_name, index_or_id)
+    def instance(job_name, index_or_id, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+      find_instance(instances(options), job_name, index_or_id)
     end
 
-    def find_vm(vms, job_name, index_or_id)
-      vm = vms.detect { |vm| vm.job_name == job_name && (vm.index == index_or_id || vm.instance_uuid == index_or_id)}
-      vm || raise("Failed to find vm #{job_name}/#{index_or_id}")
+    def find_instance(instances, job_name, index_or_id)
+      instance = instances.detect { |instance| instance.job_name == job_name && (instance.index == index_or_id || instance.id == index_or_id)}
+      instance || raise("Failed to find instance #{job_name}/#{index_or_id}")
     end
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds
     # (Do not add default timeout value to be more explicit in tests)
-    def wait_for_vm(job_name, index, timeout_seconds, options = {})
+    def wait_for_vm(job_name, index, timeout_seconds, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
       start_time = Time.now
       loop do
-        vm = vms(options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.last_known_state != 'unresponsive agent' && vm.last_known_state != nil }
+        vm = instances(options).detect { |vm| !vm.vm_cid.empty? && vm.job_name == job_name && vm.index == index && vm.last_known_state != 'unresponsive agent' && vm.last_known_state != nil }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
@@ -79,6 +99,10 @@ module Bosh::Spec
 
       @logger.info("Did not find VM after waiting for #{timeout_seconds}")
       nil
+    end
+
+    def wait_for_first_available_instance(timeout = 60, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+      @waiter.wait(timeout) { instances(options).first || raise('Must have at least 1 VM') }
     end
 
     def wait_for_first_available_vm(timeout = 60)
@@ -156,7 +180,7 @@ module Bosh::Spec
 
       wait_for_resurrection_to_finish
 
-      if vm.cid == resurrected_vm.cid
+      if vm.vm_cid == resurrected_vm.vm_cid
         raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
       end
 
@@ -190,8 +214,8 @@ module Bosh::Spec
       options
     end
 
-    def vms_details(options = {})
-      parse_table_with_ips(@runner.run('vms --details', options.merge(json: true)))
+    def instances_details(options = {})
+      parse_table_with_ips(@runner.run("instances --details", options.merge(json: true)))
     end
 
     def parse_table(output)
@@ -209,28 +233,24 @@ module Bosh::Spec
     end
 
     def parse_table_with_ips(output)
-      vms = parse_table(output)
+      instances = parse_table(output)
 
       job_name_match_index = 1
       instance_id_match_index = 2
-      bootstrap_match_index = 3
-      index_match_index = 4
 
-      vms.map do |vm|
-        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})(\*?)\s\((\d+)\)/.match(vm[:instance])
+      instances.map do |instance|
+        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})/.match(instance[:instance])
         if match_data
-          vm[:job_name] = match_data[job_name_match_index]
-          vm[:id] = match_data[instance_id_match_index]
-          vm[:bootstrap] = match_data[bootstrap_match_index]
-          vm[:index] = match_data[index_match_index]
+          instance[:job_name] = match_data[job_name_match_index]
+          instance[:id] = match_data[instance_id_match_index]
 
-          vm[:ips] = vm[:ips].split("\n")
-          vm['IPs'] = vm[:ips]
+          instance[:ips] = instance[:ips].split("\n")
+          instance['IPs'] = instance[:ips]
 
-          vm[:disk_cids] = vm[:disk_cids].split("\n") if vm[:disk_cids]
-          vm['Disk CIDs'] = vm[:disk_cids]
+          instance[:disk_cids] = instance[:disk_cids].split("\n") if instance[:disk_cids]
+          instance['Disk CIDs'] = instance[:disk_cids]
         end
-        vm
+        instance
       end
     end
   end

@@ -18,7 +18,7 @@ describe 'post start script', type: :integration do
   context 'when post start script is provided' do
     it 'successful runs post start script' do
       deploy_from_scratch(manifest_hash: manifest)
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       expect(agent_log).to include("/jobs/job_with_post_start_script/bin/post-start' script has successfully executed")
@@ -40,13 +40,13 @@ describe 'post start script', type: :integration do
                              properties: {'exit_code' => 1})]
           })
       expect{deploy_from_scratch(manifest_hash: manifest)}.to raise_error(RuntimeError, /result: 1 of 1 post-start scripts failed. Failed Jobs: job_with_post_start_script./)
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       expect(agent_log.scan("/jobs/job_with_post_start_script/bin/post-start' script has failed with error").size).to eq(1)
 
       expect{deploy_from_scratch(manifest_hash: manifest)}.to raise_error(RuntimeError, /result: 1 of 1 post-start scripts failed. Failed Jobs: job_with_post_start_script./)
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       # We expect the script to run again, even though nothing has changed, just because it failed last time
@@ -61,13 +61,13 @@ describe 'post start script', type: :integration do
                              properties: {'exit_code' => 0})]
           })
       deploy_from_scratch(manifest_hash: manifest)
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       expect(agent_log.scan("/jobs/job_with_post_start_script/bin/post-start' script has successfully executed").size).to eq(1)
 
       deploy_from_scratch(manifest_hash: manifest)
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       # We expect the script to not run again because nothing has changed.
@@ -83,7 +83,7 @@ describe 'post start script', type: :integration do
       end
 
       bosh_runner.run('cloud-check --auto', deployment_name: 'simple')
-      agent_id = director.vms.first.agent_id
+      agent_id = director.instances.first.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       expect(agent_log).to_not include("/jobs/job_with_post_start_script/bin/post-start' script has successfully executed")

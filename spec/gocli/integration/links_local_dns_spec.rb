@@ -76,14 +76,14 @@ describe 'Links', type: :integration do
       context 'when network is manual and local_dns is enabled' do
         it 'uses UUID dns names in templates' do
           deploy_simple_manifest(manifest_hash: manifest)
-          vms = director.vms
+          vms = director.instances
           api_vm = find_vm(vms, 'my_api', '0')
           mysql_0_vm = find_vm(vms, 'mysql', '0')
           template = YAML.load(api_vm.read_job_template('api_server', 'config.yml'))
           addresses = template['databases']['main'].map do |elem|
             elem['address']
           end
-          expect(addresses).to eq(["#{mysql_0_vm.instance_uuid}.mysql.manual-network.simple.bosh"])
+          expect(addresses).to eq(["#{mysql_0_vm.id}.mysql.manual-network.simple.bosh"])
         end
       end
     end

@@ -49,6 +49,12 @@ describe 'cli: deployment process', type: :integration do
     output = bosh_runner.run('instances --details', json: true, deployment_name: 'simple')
 
     output = scrub_random_ids(table(output))
+    expect(output).to contain_exactly(
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '0', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'true', 'Ignore' => 'false'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '1', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'false', 'Ignore' => 'false'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '2', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'false', 'Ignore' => 'false'},
+    )
+
     first_row = output.first
     expect(first_row).to have_key('VM CID')
     expect(first_row).to have_key('Disk CIDs')
@@ -59,35 +65,35 @@ describe 'cli: deployment process', type: :integration do
 
     output = bosh_runner.run('instances --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
     )
 
     output = bosh_runner.run('instances --ps', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => 'process-1', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => 'process-2', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => 'process-1', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => 'process-2', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => 'process-1', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => 'process-2', 'Process State' => "running", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
     )
 
     output = bosh_runner.run('instances --ps --failing', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => '', 'Process State' => "running", 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)', 'Process' => 'process-3', 'Process State' => "failing", 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
+      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
     )
   end
 
@@ -109,6 +115,6 @@ describe 'cli: deployment process', type: :integration do
     expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
 
     # persistent disk was not deployed
-    expect(vitals[:persistent_disk_usage]).to eq("")
+    expect(vitals[:persistent_disk_usage]).to eq('')
   end
 end

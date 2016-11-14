@@ -156,7 +156,7 @@ describe 'local DNS', type: :integration do
   end
 
   def parse_agent_etc_hosts(instance_index)
-    vm = director.vm('job_to_test_local_dns', instance_index.to_s)
+    vm = director.instance('job_to_test_local_dns', instance_index.to_s, deployment_name: deployment_name)
 
     vm.read_etc_hosts.lines.map do |line|
       words = line.strip.split(' ')
@@ -165,9 +165,9 @@ describe 'local DNS', type: :integration do
   end
 
   def generate_vms_dns
-    director.vms.map do |vm|
+    director.instances(deployment_name: deployment_name).map do |vm|
       {
-        'hostname' => "#{vm.instance_uuid}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh",
+        'hostname' => "#{vm.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh",
         'ip' => vm.ips[0],
       }
     end

@@ -22,7 +22,7 @@ describe 'disk types', type: :integration do
   it 'allows specifying a disk_type' do
     deploy_with_disk_type(3000)
 
-    director.vms.each do |vm|
+    director.instances.each do |vm|
       expect(vm.get_state['persistent_disk']).to eq(3000)
     end
   end
@@ -33,7 +33,7 @@ describe 'disk types', type: :integration do
 
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    director.vms.each do |vm|
+    director.instances.each do |vm|
       expect(vm.get_state['persistent_disk']).to eq(3000)
     end
   end
@@ -43,7 +43,7 @@ describe 'disk types', type: :integration do
     manifest_hash['jobs'].first.delete('persistent_disk')
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    director.vms.each do |vm|
+    director.instances.each do |vm|
       expect(vm.get_state['persistent_disk']).to eq(0)
     end
   end
@@ -64,7 +64,7 @@ describe 'disk types', type: :integration do
             expect(old_disk_cids).to include(instance.disk_cids)
           end
 
-          director.vms.each do |vm|
+          director.instances.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
           end
         end
@@ -80,7 +80,7 @@ describe 'disk types', type: :integration do
           director.instances.each do |instance|
             expect(old_disk_cids).to include(instance.disk_cids)
           end
-          director.vms.each do |vm|
+          director.instances.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
           end
         end
@@ -99,7 +99,7 @@ describe 'disk types', type: :integration do
             expect(old_disk_cids).to include(instance.disk_cids)
           end
 
-          director.vms.each do |vm|
+          director.instances.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
           end
         end
@@ -116,7 +116,7 @@ describe 'disk types', type: :integration do
           director.instances.each do |instance|
             expect(old_disk_cids).to_not include(instance.disk_cids)
           end
-          director.vms.each do |vm|
+          director.instances.each do |vm|
             expect(vm.get_state['persistent_disk']).to eq(disk_size)
           end
         end
