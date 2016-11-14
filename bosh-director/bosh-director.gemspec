@@ -30,8 +30,8 @@ Gem::Specification.new do |spec|
   # Also do the same in bosh_cli_plugin_micro.gemspec
   # Review this once CPIs are completely externalized and "micro" goes away.
   # ----------------------------------------------------------------------------
-  spec.add_dependency 'bosh_common',        '~>1.3262.24.0'
-  spec.add_dependency 'bosh_cpi',           '~>2.0.1'
+  spec.add_dependency 'bosh_common',        "~>#{version}"
+  spec.add_dependency 'bosh_cpi',           "~>#{version}"
   spec.add_dependency 'bosh-registry',      "~>#{version}"
   # ----------------------------------------------------------------------------
 
