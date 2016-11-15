@@ -245,7 +245,7 @@ module IntegrationExampleGroup
       expect(actual_count).to eq(expected_count), "Expected job #{job_name} to have #{expected_count} VMs, got #{actual_count}"
     end
 
-    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
+    expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 
   private
