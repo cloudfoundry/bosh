@@ -128,6 +128,9 @@ instance_groups:
   jobs:
   - name: syslog_forwarder
     release: syslog
+    properties:
+      syslog:
+        forward_files: true
     consumes:
       syslog_storer: { from: syslog_storer }
 EOF
@@ -174,3 +177,31 @@ bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo cp /var/log/auth.log /tmp/
 bosh -d ./deployment.yml scp --download syslog_forwarder 0 /tmp/auth.log $download_destination
 [[ "0" == "$( grep -v /var/log/btmp $download_destination/auth.log.* | grep -c "No such file or directory" )" ]] \
   || ( echo 'Expected to not find "No such file or directory" in /var/log/auth.log' ; exit 1 )
+
+# testing log forwarding #133776519
+DOWNLOAD_DESTINATION=$(mktemp -d -t)
+
+bosh -d ./deployment.yml ssh syslog_forwarder 0 "logger syslog-forwarder-test-msg"
+bosh -d ./deployment.yml scp --download syslog_storer 0 /var/vcap/store/syslog_storer/syslog.log ${DOWNLOAD_DESTINATION}
+
+grep 'syslog-forwarder-test-msg' ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get logs from syslog" ; exit 1 )
+
+# testing deep log forwarding #133776519
+DOWNLOAD_DESTINATION=$(mktemp -d -t)
+LOGPATH=/var/vcap/sys/log/deep/path
+LOGFILE=${LOGPATH}/deepfile.log
+EXPECTED_VALUE="test-blackbox-message"
+
+cat > "./script.sh" <<EOF
+#!/bin/bash
+mkdir -p /var/vcap/sys/log/deep/path
+touch ${LOGFILE}
+sleep 35
+echo "${EXPECTED_VALUE}" >> ${LOGFILE}
+EOF
+
+bosh -d ./deployment.yml scp --upload syslog_forwarder 0 ./script.sh /tmp/script.sh
+bosh -d ./deployment.yml ssh syslog_forwarder 0 "echo c1oudc0w | sudo -S bash /tmp/script.sh"
+bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
+
+grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get message forwarded from BlackBox" ; exit 1 )
