@@ -27,7 +27,7 @@ describe 'network configuration', type: :integration do
 
       # Available dynamic ips - 192.168.1.15 - 192.168.1.19
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
-      expect(output.map { |vm| vm['IPs'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
+      expect(output.map { |instance| instance['IPs'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
       # expect(output).to include(/foobar.* 192\.168\.1\.15/)
       # expect(output).to match(/foobar.* 192\.168\.1\.16/)
       # expect(output).to match(/foobar.* 192\.168\.1\.17/)
@@ -59,8 +59,8 @@ describe 'network configuration', type: :integration do
 
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-        director.instances.each do |vm|
-          expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8'])
+        director.instances.each do |instance|
+          expect(instance.get_state['networks']['a']['dns']).to match_array(['8.8.8.8'])
         end
 
         cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8', '127.0.0.5']
@@ -68,8 +68,8 @@ describe 'network configuration', type: :integration do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        director.instances.each do |vm|
-          expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8', '127.0.0.5'])
+        director.instances.each do |instance|
+          expect(instance.get_state['networks']['a']['dns']).to match_array(['8.8.8.8', '127.0.0.5'])
         end
       end
 
@@ -81,8 +81,8 @@ describe 'network configuration', type: :integration do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        director.instances.each do |vm|
-          expect(vm.get_state['networks']['a']['gateway']).to eq '192.168.1.254'
+        director.instances.each do |instance|
+          expect(instance.get_state['networks']['a']['gateway']).to eq '192.168.1.254'
         end
       end
     end
@@ -258,8 +258,8 @@ describe 'network configuration', type: :integration do
 
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-          vm = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          instance = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('spec.ip=192.168.1.10')
         end
 
@@ -278,8 +278,8 @@ describe 'network configuration', type: :integration do
 
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-          vm = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          instance = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('spec.ip=192.168.2.10')
         end
 
@@ -317,8 +317,8 @@ describe 'network configuration', type: :integration do
 
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-          vm = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
-          template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+          instance = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('spec.ip=192.168.1.10')
         end
       end
@@ -336,8 +336,8 @@ describe 'network configuration', type: :integration do
 
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-        vm = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
-        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
+        instance = director.instance('foobar', '0', deployment_name: 'simple', env: client_env)
+        template = instance.read_job_template('foobar', 'bin/foobar_ctl')
         expect(template).to include('spec.ip=192.168.1.100')
       end
     end
@@ -360,15 +360,15 @@ describe 'network configuration', type: :integration do
         manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
 
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-        vm = director.instance('foobar','0', deployment_name: 'simple', env: client_env)
-        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-        expect(template).to include('spec.ip=' + vm.ips[0])
+        instance = director.instance('foobar','0', deployment_name: 'simple', env: client_env)
+        template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + instance.ips[0])
 
-        director.kill_vm_and_wait_for_resurrection(vm)
+        director.kill_vm_and_wait_for_resurrection(instance)
 
-        vm = director.instance('foobar','0', deployment_name: 'simple', env: client_env)
-        template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-        expect(template).to include('spec.ip=' + vm.ips[0])
+        instance = director.instance('foobar','0', deployment_name: 'simple', env: client_env)
+        template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.ip=' + instance.ips[0])
       end
     end
   end

@@ -411,9 +411,9 @@ Error: Unable to render instance groups for deployment. Errors are:
             agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
             expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
-            resurected_vm = director.kill_vm_and_wait_for_resurrection(director.instance('job_with_post_deploy_script', '0'))
+            resurrected_instance = director.kill_vm_and_wait_for_resurrection(director.instance('job_with_post_deploy_script', '0'))
 
-            agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurected_vm.agent_id}.log")
+            agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurrected_instance.agent_id}.log")
             expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
           end
         end
@@ -597,9 +597,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       it 'these templates should use the properties defined in their scope' do
         deploy(manifest_hash: manifest)
-        target_vm = director.instance('job_with_templates_having_properties', '0')
-        template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-        template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+        target_instance = director.instance('job_with_templates_having_properties', '0')
+        template_1 = YAML.load(target_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2 = YAML.load(target_instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
         expect(template_1['properties_list']['smurfs_color']).to eq('red')
         expect(template_1['properties_list']['gargamel_color']).to eq('black')
@@ -736,9 +736,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         it 'should not cross reference them' do
           deploy(manifest_hash: manifest)
-          target_vm = director.instance('job_with_templates_having_properties', '0')
-          template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          target_instance = director.instance('job_with_templates_having_properties', '0')
+          template_1 = YAML.load(target_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          template_2 = YAML.load(target_instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
 
           expect(template_1['properties_list']['smurfs_color']).to eq('pink')
           expect(template_1['properties_list']['gargamel_color']).to eq('orange')
@@ -1158,12 +1158,12 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           bosh_runner.run('run-errand -d simple alive-errand --keep-alive')
 
-          job_with_post_deploy_script_vm = director.instance('job_with_post_deploy_script', '0')
-          expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_falsey
+          job_with_post_deploy_script_instance = director.instance('job_with_post_deploy_script', '0')
+          expect(File.exists?(job_with_post_deploy_script_instance.file_path('jobs/foobar/monit'))).to be_falsey
 
-          job_with_errand_vm = director.instance('alive-errand', '0')
-          expect(File.exists?(job_with_errand_vm.file_path('jobs/errand1/bin/run'))).to be_truthy
-          expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_falsey
+          job_with_errand_instance = director.instance('alive-errand', '0')
+          expect(File.exists?(job_with_errand_instance.file_path('jobs/errand1/bin/run'))).to be_truthy
+          expect(File.exists?(job_with_errand_instance.file_path('jobs/foobar/monit'))).to be_falsey
 
           new_manifest = manifest
           new_manifest['jobs'][0]['templates'] << {'name' => 'foobar'}
@@ -1171,11 +1171,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           new_manifest['jobs'][2]['templates'] << {'name' => 'foobar'}
           deploy_simple_manifest(manifest_hash: new_manifest)
 
-          job_with_post_deploy_script_vm = director.instance('job_with_post_deploy_script', '0')
-          expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_truthy
+          job_with_post_deploy_script_instance = director.instance('job_with_post_deploy_script', '0')
+          expect(File.exists?(job_with_post_deploy_script_instance.file_path('jobs/foobar/monit'))).to be_truthy
 
-          job_with_errand_vm = director.instance('alive-errand', '0')
-          expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_truthy
+          job_with_errand_instance = director.instance('alive-errand', '0')
+          expect(File.exists?(job_with_errand_instance.file_path('jobs/foobar/monit'))).to be_truthy
         end
       end
     end
@@ -1335,13 +1335,13 @@ Error: Unable to render instance groups for deployment. Errors are:
         deployment_name = Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME
         bosh_runner.run("deploy -d #{deployment_name} #{deployment_manifest.path}")
 
-        target_vm = director.instance('test_group', '0')
+        target_instance = director.instance('test_group', '0')
 
-        ctl_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/job_that_modifies_properties_ctl')
+        ctl_script = target_instance.read_job_template('job_that_modifies_properties', 'bin/job_that_modifies_properties_ctl')
 
         expect(ctl_script).to include('test_property initially was initial value')
 
-        other_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/another_script')
+        other_script = target_instance.read_job_template('job_that_modifies_properties', 'bin/another_script')
 
         expect(other_script).to include('test_property initially was initial value')
       end

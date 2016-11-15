@@ -41,16 +41,16 @@ describe 'vip networks', type: :integration do
   it 'reuses instance vip network IP on subsequent deploy' do
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: simple_manifest)
-    original_vms = director.instances
-    expect(original_vms.size).to eq(1)
-    expect(original_vms.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+    original_instances = director.instances
+    expect(original_instances.size).to eq(1)
+    expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
 
     cloud_config_hash['networks'][1]['static_ips'] = ['68.68.68.68', '69.69.69.69']
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: updated_simple_manifest)
-    new_vms = director.instances
-    expect(new_vms.size).to eq(2)
-    vm_with_original_vip_ip = new_vms.find { |new_vm| new_vm.ips.include?('69.69.69.69') }
-    expect(vm_with_original_vip_ip.id).to eq(original_vms.first.id)
+    new_instances = director.instances
+    expect(new_instances.size).to eq(2)
+    instance_with_original_vip_ip = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
+    expect(instance_with_original_vip_ip.id).to eq(original_instances.first.id)
   end
 end

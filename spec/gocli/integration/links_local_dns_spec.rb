@@ -9,12 +9,6 @@ describe 'Links', type: :integration do
     bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
   end
 
-  def find_vm(vms, job_name, index)
-    vms.find do |vm|
-      vm.job_name == job_name && vm.index == index
-    end
-  end
-
   let(:cloud_config) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
@@ -76,14 +70,14 @@ describe 'Links', type: :integration do
       context 'when network is manual and local_dns is enabled' do
         it 'uses UUID dns names in templates' do
           deploy_simple_manifest(manifest_hash: manifest)
-          vms = director.instances
-          api_vm = find_vm(vms, 'my_api', '0')
-          mysql_0_vm = find_vm(vms, 'mysql', '0')
-          template = YAML.load(api_vm.read_job_template('api_server', 'config.yml'))
+          instances = director.instances
+          api_instance = director.find_instance(instances, 'my_api', '0')
+          mysql_0_instance = director.find_instance(instances, 'mysql', '0')
+          template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
           addresses = template['databases']['main'].map do |elem|
             elem['address']
           end
-          expect(addresses).to eq(["#{mysql_0_vm.id}.mysql.manual-network.simple.bosh"])
+          expect(addresses).to eq(["#{mysql_0_instance.id}.mysql.manual-network.simple.bosh"])
         end
       end
     end

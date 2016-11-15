@@ -9,7 +9,7 @@ module Bosh::Spec
       first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 1, template: 'job_with_blocking_compilation')
       task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
 
-      director.wait_for_first_available_vms
+      director.wait_for_first_available_vm
 
       compilation_vm = director.vms.first
       expect(compilation_vm).to_not be_nil

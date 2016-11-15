@@ -21,21 +21,21 @@ describe 'deploy job with addons', type: :integration do
     manifest_hash['name'] = 'dep1'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.instance('foobar', '0', deployment_name: 'dep1')
+    foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
 
-    expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
-    template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+    expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+    template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
     expect(template).to include("echo 'prop_value'")
 
     # deploy Deployement2
     manifest_hash['name'] = 'dep2'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.instance('foobar', '0', deployment_name: 'dep2')
+    foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
 
-    expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(false)
+    expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
 
-    expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
+    expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
   end
 
   it 'allows addons to be added for specific stemcell operating systems' do
@@ -57,15 +57,15 @@ describe 'deploy job with addons', type: :integration do
 
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    vms = director.instances
+    instances = director.instances
 
-    addon_vm = vms.detect { |vm| vm.job_name == 'has-addon-vm' }
-    expect(File.exist?(addon_vm.job_path('foobar'))).to eq(true)
-    expect(File.exist?(addon_vm.job_path('dummy'))).to eq(true)
+    addon_instance = instances.detect { |instance| instance.job_name == 'has-addon-vm' }
+    expect(File.exist?(addon_instance.job_path('foobar'))).to eq(true)
+    expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
 
-    no_addon_vm = vms.detect { |vm| vm.job_name == 'no-addon-vm' }
-    expect(File.exist?(no_addon_vm.job_path('foobar'))).to eq(true)
-    expect(File.exist?(no_addon_vm.job_path('dummy'))).to eq(false)
+    no_addon_instance = instances.detect { |instance| instance.job_name == 'no-addon-vm' }
+    expect(File.exist?(no_addon_instance.job_path('foobar'))).to eq(true)
+    expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
   end
 
   it 'collocates addon jobs with deployment jobs and evaluates addon properties' do
@@ -84,12 +84,12 @@ describe 'deploy job with addons', type: :integration do
     upload_cloud_config(manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.instance('foobar', '0')
+    foobar_instance = director.instance('foobar', '0')
 
-    expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
-    expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
+    expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+    expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
 
-    template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+    template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
     expect(template).to include("echo 'addon_prop_value'")
   end
 
@@ -130,12 +130,12 @@ describe 'deploy job with addons', type: :integration do
     upload_cloud_config(manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    foobar_vm = director.instance('foobar', '0')
+    foobar_instance = director.instance('foobar', '0')
 
-    expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
-    expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
+    expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+    expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
 
-    template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+    template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
     expect(template).to include("echo 'new_prop_value'")
   end
 

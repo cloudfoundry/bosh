@@ -14,14 +14,14 @@ describe 'deploy_fix', type: :integration do
     manifest_hash['jobs'][0]['persistent_disk'] = 10
     deploy(manifest_hash: manifest_hash, fix: true)
 
-    vms = director.instances
-    expect(vms.size).to eq(2)
-    expect(vms.map(&:last_known_state).uniq).to match_array(['running'])
+    instances = director.instances
+    expect(instances.size).to eq(2)
+    expect(instances.map(&:last_known_state).uniq).to match_array(['running'])
 
-    vm_to_recreate = director.find_instance(vms, 'foobar', '0')
-    vm_to_recreate.kill_agent
+    instance_to_recreate = director.find_instance(instances, 'foobar', '0')
+    instance_to_recreate.kill_agent
     expect(bosh_runner.run('recreate foobar/0 --fix', deployment_name: 'simple')).to match /Updating instance foobar: foobar\/0 /
-    vm_was_recreated = director.find_instance(director.instances, 'foobar', '0')
-    expect(vm_was_recreated.vm_cid).to_not eq(vm_to_recreate.vm_cid)
+    instance_was_recreated = director.find_instance(director.instances, 'foobar', '0')
+    expect(instance_was_recreated.vm_cid).to_not eq(instance_to_recreate.vm_cid)
   end
 end

@@ -10,8 +10,8 @@ describe 'Links', type: :integration do
   end
 
   def should_contain_network_for_job(job, template, pattern)
-    my_api_vm = director.instance(job, '0', deployment_name: 'simple')
-    template = YAML.load(my_api_vm.read_job_template(template, 'config.yml'))
+    my_api_instance = director.instance(job, '0', deployment_name: 'simple')
+    template = YAML.load(my_api_instance.read_job_template(template, 'config.yml'))
 
     template['databases'].each do |_, database|
       database.each do |instance|
@@ -168,13 +168,13 @@ describe 'Links', type: :integration do
 
       it 'is able to pick the right value for the property from global, job, template and default values' do
         deploy_simple_manifest(manifest_hash: manifest)
-        vms = director.instances
-        link_vm = director.find_instance(vms, 'other2', '0')
-        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        instances = director.instances
+        link_instance = director.find_instance(instances, 'other2', '0')
+        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
         expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}, "fibonacci"=>1}])
 
-        link_vm = director.find_instance(vms, 'new_job', '0')
-        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        link_instance = director.find_instance(instances, 'new_job', '0')
+        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
         expect(template['links']).to contain_exactly(["address", "192.168.1.4"], ["properties", {"listen_port"=>9999, "name_space"=>{"prop_a"=>"default"}}])
       end
     end
@@ -214,26 +214,26 @@ describe 'Links', type: :integration do
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        vms = director.instances
-        link_vm = director.find_instance(vms, 'my_api', '0')
-        mysql_0_vm = director.find_instance(vms, 'mysql', '0')
-        mysql_1_vm = director.find_instance(vms, 'mysql', '1')
+        instances = director.instances
+        link_instance = director.find_instance(instances, 'my_api', '0')
+        mysql_0_instance = director.find_instance(instances, 'mysql', '0')
+        mysql_1_instance = director.find_instance(instances, 'mysql', '1')
 
-        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(2)
         expect(template['databases']['main']).to contain_exactly(
             {
-              'id' => "#{mysql_0_vm.id}",
+              'id' => "#{mysql_0_instance.id}",
               'name' => 'mysql',
               'index' => 0,
-              'address' => "#{mysql_0_vm.id}.mysql.dynamic-network.simple.bosh"
+              'address' => "#{mysql_0_instance.id}.mysql.dynamic-network.simple.bosh"
             },
             {
-              'id' => "#{mysql_1_vm.id}",
+              'id' => "#{mysql_1_instance.id}",
               'name' => 'mysql',
               'index' => 1,
-              'address' => "#{mysql_1_vm.id}.mysql.dynamic-network.simple.bosh"
+              'address' => "#{mysql_1_instance.id}.mysql.dynamic-network.simple.bosh"
             }
           )
 
@@ -328,8 +328,8 @@ describe 'Links', type: :integration do
           it 'should not render link data in job template' do
             deploy_simple_manifest(manifest_hash: manifest)
 
-            link_vm = director.instance('my_api', '0')
-            template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_1', 'config.yml'))
+            link_instance = director.instance('my_api', '0')
+            template = YAML.load(link_instance.read_job_template('api_server_with_optional_links_1', 'config.yml'))
 
             expect(template['optional_key']).to eq(nil)
           end
@@ -352,8 +352,8 @@ describe 'Links', type: :integration do
           it 'should not render link data in job template' do
             deploy_simple_manifest(manifest_hash: manifest)
 
-            link_vm = director.instance('my_api', '0')
-            template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+            link_instance = director.instance('my_api', '0')
+            template = YAML.load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
 
             expect(template['databases']['backup']).to eq(nil)
           end
@@ -393,8 +393,8 @@ describe 'Links', type: :integration do
         it 'should respect their behavior' do
           deploy_simple_manifest(manifest_hash: manifest)
 
-          link_vm = director.instance('my_api', '0')
-          template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+          link_instance = director.instance('my_api', '0')
+          template = YAML.load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
 
           expect(template['databases']['backup2'][0]['name']).to eq('postgres')
           expect(template['databases']['backup2'][0]['az']).to eq('z1')
@@ -530,8 +530,8 @@ Error: Unable to process links for deployment. Errors are:
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.instance('my_api', '0')
-        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        link_instance = director.instance('my_api', '0')
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['backup'].size).to eq(1)
         expect(template['databases']['backup']).to contain_exactly(
@@ -627,15 +627,15 @@ Error: Unable to process links for deployment. Errors are:
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.instance('my_api', '0')
-        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        link_instance = director.instance('my_api', '0')
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
 
-        postgres_vm = director.instance('postgres', '0')
+        postgres_instance = director.instance('postgres', '0')
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
              {
-                 'id' => "#{postgres_vm.id}",
+                 'id' => "#{postgres_instance.id}",
                  'name' => 'postgres',
                  'index' => 0,
                  'address' => '192.168.1.12'
@@ -714,15 +714,15 @@ Error: Unable to process links for deployment. Errors are:
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.instance('my_api', '0')
-        aliased_postgres_vm = director.instance('aliased_postgres', '0')
+        link_instance = director.instance('my_api', '0')
+        aliased_postgres_instance = director.instance('aliased_postgres', '0')
 
-        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
            {
-               'id' => "#{aliased_postgres_vm.id}",
+               'id' => "#{aliased_postgres_instance.id}",
                'name' => 'aliased_postgres',
                'index' => 0,
                'address' => '192.168.1.3'
@@ -792,15 +792,15 @@ Error: Unable to process links for deployment. Errors are:
         manifest['jobs'] = [new_api_job_spec, new_aliased_job_spec]
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.instance('new_api_job', '0')
-        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        link_instance = director.instance('new_api_job', '0')
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
 
-        new_aliased_job_vm = director.instance('new_aliased_job', '0')
+        new_aliased_job_instance = director.instance('new_aliased_job', '0')
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
            {
-               'id' => "#{new_aliased_job_vm.id}",
+               'id' => "#{new_aliased_job_instance.id}",
                'name' => 'new_aliased_job',
                'index' => 0,
                'address' => '192.168.1.5'
@@ -931,8 +931,8 @@ Error: Unable to process links for deployment. Errors are:
        it 'allows access to bootstrap node' do
          deploy_simple_manifest(manifest_hash: first_manifest)
 
-         first_deployment_vm = director.instance('first_deployment_node', '0', deployment_name: 'first')
-         first_deployment_template = YAML.load(first_deployment_vm.read_job_template('node', 'config.yml'))
+         first_deployment_instance = director.instance('first_deployment_node', '0', deployment_name: 'first')
+         first_deployment_template = YAML.load(first_deployment_instance.read_job_template('node', 'config.yml'))
 
          second_manifest['jobs'][0]['instances'] = 2
          second_manifest['jobs'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
@@ -940,8 +940,8 @@ Error: Unable to process links for deployment. Errors are:
 
          deploy_simple_manifest(manifest_hash: second_manifest)
 
-         second_deployment_vm = director.instance('second_deployment_node', '0', deployment_name: 'second')
-         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+         second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+         second_deployment_template = YAML.load(second_deployment_instance.read_job_template('node', 'config.yml'))
          expect(second_deployment_template['instances']['node1_bootstrap_address']).to eq(first_deployment_template['instances']['node1_bootstrap_address'])
        end
 
@@ -950,8 +950,8 @@ Error: Unable to process links for deployment. Errors are:
            deploy_simple_manifest(manifest_hash: first_manifest)
            deploy_simple_manifest(manifest_hash: second_manifest)
 
-           second_deployment_vm = director.instance('second_deployment_node', '0', deployment_name: 'second')
-           second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+           second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+           second_deployment_template = YAML.load(second_deployment_instance.read_job_template('node', 'config.yml'))
 
            expect(second_deployment_template['instances']['node1_ips']).to eq(['192.168.1.10'])
            expect(second_deployment_template['instances']['node2_ips']).to eq(['192.168.1.11'])
@@ -990,8 +990,8 @@ Error: Unable to process links for deployment. Errors are:
            deploy_simple_manifest(manifest_hash: first_manifest)
            deploy_simple_manifest(manifest_hash: second_manifest)
 
-           second_deployment_vm = director.instance('second_deployment_node', '0', deployment_name: 'second')
-           second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+           second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+           second_deployment_template = YAML.load(second_deployment_instance.read_job_template('node', 'config.yml'))
 
            expect(second_deployment_template['instances']['node1_ips'].first).to match(/.test./)
            expect(second_deployment_template['instances']['node2_ips'].first).to eq('192.168.1.11')
@@ -1356,26 +1356,26 @@ Error: Unable to process links for deployment. Errors are:
       it 'resurrects the VM and resolves links correctly', hm: true do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        vms = director.instances
-        api_vm = director.find_instance(vms, 'my_api', '0')
-        mysql_0_vm = director.find_instance(vms, 'mysql', '0')
-        mysql_1_vm = director.find_instance(vms, 'mysql', '1')
+        instances = director.instances
+        api_instance = director.find_instance(instances, 'my_api', '0')
+        mysql_0_instance = director.find_instance(instances, 'mysql', '0')
+        mysql_1_instance = director.find_instance(instances, 'mysql', '1')
 
-        template = YAML.load(api_vm.read_job_template('api_server', 'config.yml'))
+        template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(2)
         expect(template['databases']['main']).to contain_exactly(
            {
-             'id' => "#{mysql_0_vm.id}",
+             'id' => "#{mysql_0_instance.id}",
              'name' => 'mysql',
              'index' => 0,
-             'address' => "#{mysql_0_vm.id}.mysql.dynamic-network.simple.bosh"
+             'address' => "#{mysql_0_instance.id}.mysql.dynamic-network.simple.bosh"
            },
            {
-             'id' => "#{mysql_1_vm.id}",
+             'id' => "#{mysql_1_instance.id}",
              'name' => 'mysql',
              'index' => 1,
-             'address' => "#{mysql_1_vm.id}.mysql.dynamic-network.simple.bosh"
+             'address' => "#{mysql_1_instance.id}.mysql.dynamic-network.simple.bosh"
            }
          )
 
@@ -1391,21 +1391,21 @@ Error: Unable to process links for deployment. Errors are:
 
         # ===========================================
         # After resurrection
-        new_api_vm = director.kill_vm_and_wait_for_resurrection(api_vm)
-        new_template = YAML.load(new_api_vm.read_job_template('api_server', 'config.yml'))
+        new_api_instance = director.kill_vm_and_wait_for_resurrection(api_instance)
+        new_template = YAML.load(new_api_instance.read_job_template('api_server', 'config.yml'))
         expect(new_template['databases']['main'].size).to eq(2)
         expect(new_template['databases']['main']).to contain_exactly(
            {
-             'id' => "#{mysql_0_vm.id}",
+             'id' => "#{mysql_0_instance.id}",
              'name' => 'mysql',
              'index' => 0,
-             'address' => "#{mysql_0_vm.id}.mysql.dynamic-network.simple.bosh"
+             'address' => "#{mysql_0_instance.id}.mysql.dynamic-network.simple.bosh"
            },
            {
-             'id' => "#{mysql_1_vm.id}",
+             'id' => "#{mysql_1_instance.id}",
              'name' => 'mysql',
              'index' => 1,
-             'address' => "#{mysql_1_vm.id}.mysql.dynamic-network.simple.bosh"
+             'address' => "#{mysql_1_instance.id}.mysql.dynamic-network.simple.bosh"
            }
          )
 
@@ -1451,8 +1451,8 @@ Error: Unable to process links for deployment. Errors are:
 
       deploy_simple_manifest(manifest_hash: manifest)
 
-      my_sql_vm = director.instance("mysql", '0', deployment_name: 'simple')
-      template = YAML.load(my_sql_vm.read_job_template("addon", 'config.yml'))
+      my_sql_instance = director.instance("mysql", '0', deployment_name: 'simple')
+      template = YAML.load(my_sql_instance.read_job_template("addon", 'config.yml'))
 
       template['databases'].each do |_, database|
         database.each do |instance|
@@ -1538,9 +1538,9 @@ Error: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
       expect(exit_code).to eq(0)
 
-      link_vm = director.instance('property_job', '0')
+      link_instance = director.instance('property_job', '0')
 
-      template = YAML.load(link_vm.read_job_template('consumer', 'config.yml'))
+      template = YAML.load(link_instance.read_job_template('consumer', 'config.yml'))
 
       expect(template['a']).to eq(2)
       expect(template['b']).to eq(3)

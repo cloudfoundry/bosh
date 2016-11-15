@@ -6,28 +6,28 @@ describe 'recreate instance', type: :integration do
   it 'recreates an instance only when using index' do
     deploy_from_scratch
 
-    initial_vms = director.instances
-    vm_to_be_recreated = director.find_instance(initial_vms, 'foobar', '0')
+    initial_instances = director.instances
+    instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
     expect(bosh_runner.run('recreate foobar/0', deployment_name: 'simple')).to match /Updating instance foobar: foobar.* \(0\)/
 
-    vms_after_instance_recreate = director.instances
-    vm_was_recreated = director.find_instance(vms_after_instance_recreate, 'foobar', '0')
-    expect(vm_to_be_recreated.vm_cid).not_to eq(vm_was_recreated.vm_cid)
-    expect((initial_vms-[vm_to_be_recreated]).map(&:vm_cid)).to match_array((vms_after_instance_recreate-[vm_was_recreated]).map(&:vm_cid))
+    instances_after_instance_recreate = director.instances
+    instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
+    expect(instance_to_be_recreated.vm_cid).not_to eq(instance_was_recreated.vm_cid)
+    expect((initial_instances-[instance_to_be_recreated]).map(&:vm_cid)).to match_array((instances_after_instance_recreate-[instance_was_recreated]).map(&:vm_cid))
   end
 
   it 'recreates an instance only when using instance uuid' do
     deploy_from_scratch
 
-    initial_vms = director.instances
-    vm_to_be_recreated = director.find_instance(initial_vms, 'foobar', '0')
-    instance_uuid = vm_to_be_recreated.id
+    initial_instances = director.instances
+    instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
+    instance_uuid = instance_to_be_recreated.id
     expect(bosh_runner.run("recreate foobar/#{instance_uuid}", deployment_name: 'simple')).to include("Updating instance foobar: foobar/#{instance_uuid}")
 
-    vms_after_instance_recreate = director.instances
-    vm_was_recreated = director.find_instance(vms_after_instance_recreate, 'foobar', '0')
-    expect(vm_to_be_recreated.vm_cid).not_to eq(vm_was_recreated.vm_cid)
-    expect((initial_vms-[vm_to_be_recreated]).map(&:vm_cid)).to match_array((vms_after_instance_recreate-[vm_was_recreated]).map(&:vm_cid))
+    instances_after_instance_recreate = director.instances
+    instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
+    expect(instance_to_be_recreated.vm_cid).not_to eq(instance_was_recreated.vm_cid)
+    expect((initial_instances-[instance_to_be_recreated]).map(&:vm_cid)).to match_array((instances_after_instance_recreate-[instance_was_recreated]).map(&:vm_cid))
 
     output = bosh_runner.run('events', deployment_name: 'simple', json: true)
 
@@ -53,22 +53,22 @@ describe 'recreate instance', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash)
 
     #only vms for one job should be recreated
-    initial_vms = director.instances
+    initial_instances = director.instances
     output = bosh_runner.run('recreate foobar', deployment_name: 'simple')
     expect(output).to match /Updating instance foobar: foobar.* \(0\)/
     expect(output).to match /Updating instance foobar: foobar.* \(1\)/
-    vms_after_job_recreate = director.instances
-    expect(director.find_instance(initial_vms, 'foobar', '0').vm_cid).not_to eq(director.find_instance(vms_after_job_recreate, 'foobar', '0').vm_cid)
-    expect(director.find_instance(initial_vms, 'foobar', '1').vm_cid).not_to eq(director.find_instance(vms_after_job_recreate, 'foobar', '1').vm_cid)
-    expect(director.find_instance(initial_vms, 'another-job', '0').vm_cid).to eq(director.find_instance(vms_after_job_recreate, 'another-job', '0').vm_cid)
+    instances_after_job_recreate = director.instances
+    expect(director.find_instance(initial_instances, 'foobar', '0').vm_cid).not_to eq(director.find_instance(instances_after_job_recreate, 'foobar', '0').vm_cid)
+    expect(director.find_instance(initial_instances, 'foobar', '1').vm_cid).not_to eq(director.find_instance(instances_after_job_recreate, 'foobar', '1').vm_cid)
+    expect(director.find_instance(initial_instances, 'another-job', '0').vm_cid).to eq(director.find_instance(instances_after_job_recreate, 'another-job', '0').vm_cid)
 
     #all vms should be recreated
-    initial_vms = vms_after_job_recreate
+    initial_instances = instances_after_job_recreate
     output = bosh_runner.run('recreate', deployment_name: 'simple')
     expect(output).to match /Updating instance foobar: foobar.* \(0\)/
     expect(output).to match /Updating instance foobar: foobar.* \(1\)/
     expect(output).to match /Updating instance another-job: another-job.* \(0\)/
-    expect(director.instances).not_to match_array(initial_vms.map(&:vm_cid))
+    expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 
   context 'with dry run flag' do
@@ -94,12 +94,12 @@ describe 'recreate instance', type: :integration do
 
         deploy_from_scratch(manifest_hash: manifest_hash)
 
-        initial_vms = director.instances
+        initial_instances = director.instances
         bosh_runner.run('recreate --dry-run foobar', deployment_name: 'simple')
-        vms_after_job_recreate = director.instances
+        instances_after_job_recreate = director.instances
 
-        expect(director.find_instance(initial_vms, 'foobar', '0').vm_cid).to eq(director.find_instance(vms_after_job_recreate, 'foobar', '0').vm_cid)
-        expect(director.find_instance(initial_vms, 'foobar', '1').vm_cid).to eq(director.find_instance(vms_after_job_recreate, 'foobar', '1').vm_cid)
+        expect(director.find_instance(initial_instances, 'foobar', '0').vm_cid).to eq(director.find_instance(instances_after_job_recreate, 'foobar', '0').vm_cid)
+        expect(director.find_instance(initial_instances, 'foobar', '1').vm_cid).to eq(director.find_instance(instances_after_job_recreate, 'foobar', '1').vm_cid)
       end
     end
   end

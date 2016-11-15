@@ -9,10 +9,10 @@ describe 'health_monitor with legacy manifest', type: :integration, hm: true do
     it 'resurrects stateless nodes' do
       deploy_from_scratch({legacy: true, manifest_hash: Bosh::Spec::Deployments.legacy_manifest})
 
-      original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-      original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-      expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
+      original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+      original_instance.kill_agent
+      resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+      expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
     end
   end
 end

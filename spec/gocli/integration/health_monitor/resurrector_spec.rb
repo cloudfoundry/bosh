@@ -34,20 +34,20 @@ describe 'resurrector', type: :integration, hm: true do
 
     it 'resurrects vms with old deployment ignoring cloud config' do
       deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.instances(deployment_name: 'simple')
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq(['192.168.1.2'])
+      instances = director.instances(deployment_name: 'simple')
+      expect(instances.size).to eq(1)
+      expect(instances.first.ips).to eq(['192.168.1.2'])
 
       cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.2']
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-      original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-      expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
-      vms = director.instances(deployment_name: 'simple')
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq(['192.168.1.2'])
+      original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+      original_instance.kill_agent
+      resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+      expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
+      instances = director.instances(deployment_name: 'simple')
+      expect(instances.size).to eq(1)
+      expect(instances.first.ips).to eq(['192.168.1.2'])
     end
   end
 end

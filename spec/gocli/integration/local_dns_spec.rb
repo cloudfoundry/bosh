@@ -38,7 +38,7 @@ describe 'local DNS', type: :integration do
 
         etc_hosts = parse_agent_etc_hosts(9)
         expect(etc_hosts.size).to eq(10)
-        expect(etc_hosts).to match_array(generate_vms_dns)
+        expect(etc_hosts).to match_array(generate_instance_dns)
       end
     end
 
@@ -51,13 +51,13 @@ describe 'local DNS', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(4)
         expect(etc_hosts.size).to eq(5)
-        expect(etc_hosts).to match_array(generate_vms_dns)
+        expect(etc_hosts).to match_array(generate_instance_dns)
 
         manifest_deployment['jobs'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(5)
         expect(etc_hosts.size).to eq(6)
-        expect(etc_hosts).to match_array(generate_vms_dns)
+        expect(etc_hosts).to match_array(generate_instance_dns)
       end
     end
   end
@@ -71,7 +71,7 @@ describe 'local DNS', type: :integration do
           deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
           etc_hosts = parse_agent_etc_hosts(4)
           expect(etc_hosts.size).to eq(5)
-          expect(etc_hosts).to match_array(generate_vms_dns)
+          expect(etc_hosts).to match_array(generate_instance_dns)
         end
       end
 
@@ -97,7 +97,7 @@ describe 'local DNS', type: :integration do
 
           etc_hosts = parse_agent_etc_hosts(4)
           expect(etc_hosts.size).to eq(5)
-          expect(etc_hosts).to match_array(generate_vms_dns)
+          expect(etc_hosts).to match_array(generate_instance_dns)
         end
       end
     end
@@ -126,7 +126,7 @@ describe 'local DNS', type: :integration do
         expect(runner.run('cloud-check --report', deployment_name: deployment_name)).to match(regexp('0 problems'))
 
         etc_hosts = parse_agent_etc_hosts(4)
-        expect(etc_hosts).to match_array(generate_vms_dns)
+        expect(etc_hosts).to match_array(generate_instance_dns)
       end
     end
   end
@@ -156,19 +156,19 @@ describe 'local DNS', type: :integration do
   end
 
   def parse_agent_etc_hosts(instance_index)
-    vm = director.instance('job_to_test_local_dns', instance_index.to_s, deployment_name: deployment_name)
+    instance = director.instance('job_to_test_local_dns', instance_index.to_s, deployment_name: deployment_name)
 
-    vm.read_etc_hosts.lines.map do |line|
+    instance.read_etc_hosts.lines.map do |line|
       words = line.strip.split(' ')
       { 'hostname' => words[1], 'ip' => words[0]}
     end
   end
 
-  def generate_vms_dns
-    director.instances(deployment_name: deployment_name).map do |vm|
+  def generate_instance_dns
+    director.instances(deployment_name: deployment_name).map do |instance|
       {
-        'hostname' => "#{vm.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh",
-        'ip' => vm.ips[0],
+        'hostname' => "#{instance.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh",
+        'ip' => instance.ips[0],
       }
     end
   end

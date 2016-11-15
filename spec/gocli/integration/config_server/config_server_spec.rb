@@ -83,9 +83,9 @@ describe 'using director with config server', type: :integration do
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-        vm = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
 
-        template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
 
@@ -131,9 +131,9 @@ describe 'using director with config server', type: :integration do
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are very happy')
         end
       end
@@ -146,17 +146,17 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
 
-          vm.kill_agent
+          instance.kill_agent
           director.wait_for_vm('our_instance_group', '0', 300, deployment_name: 'simple', include_credentials: false, env: client_env)
 
-          new_vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
         end
       end
@@ -168,8 +168,8 @@ describe 'using director with config server', type: :integration do
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
@@ -178,8 +178,8 @@ describe 'using director with config server', type: :integration do
 
           expect(output).to match /Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/
 
-          new_vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          new_template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          new_template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
         end
 
@@ -189,19 +189,18 @@ describe 'using director with config server', type: :integration do
           manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           # ============================================
           # Restart
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
           output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
-          puts output
           expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
 
           # ============================================
@@ -210,8 +209,8 @@ describe 'using director with config server', type: :integration do
           output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
           expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
 
           # ============================================
@@ -221,8 +220,8 @@ describe 'using director with config server', type: :integration do
           output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
           expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
         end
       end
@@ -518,8 +517,8 @@ describe 'using director with config server', type: :integration do
         it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
 
           config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
@@ -533,8 +532,8 @@ describe 'using director with config server', type: :integration do
           expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
           expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
 
-          vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
         end
 
@@ -606,12 +605,12 @@ describe 'using director with config server', type: :integration do
                 it 'uses the default values defined' do
                   deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                  vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                  instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
-                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                  template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                   expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
 
-                  hardcoded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+                  hardcoded_cert = instance.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
                   expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
                 end
               end
@@ -620,10 +619,10 @@ describe 'using director with config server', type: :integration do
                 it 'generates values for these properties' do
                   deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                  vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                  instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
                   # Passwords generation
-                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                  template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                   expect(
                     template_hash['properties_list']['smurfs_phone_password']
                   ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
@@ -632,9 +631,9 @@ describe 'using director with config server', type: :integration do
                   ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
                   # Certificate generation
-                  generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                  generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                  root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+                  generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+                  generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+                  root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
 
                   generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
@@ -715,12 +714,12 @@ describe 'using director with config server', type: :integration do
 
                     generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
-                    vms = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |vm|  vm.job_name == 'our_instance_group' }
+                    instances = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |instance|  instance.job_name == 'our_instance_group' }
 
-                    vms.each do |vm|
-                      generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                      generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                      root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+                    instances.each do |instance|
+                      generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+                      generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+                      root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
 
                       expect(generated_cert).to eq(generated_cert_response['certificate'])
                       expect(generated_private_key).to eq(generated_cert_response['private_key'])
@@ -753,9 +752,9 @@ describe 'using director with config server', type: :integration do
                   it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
                     deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                    vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                    instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
-                    template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                    template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                     expect(
                       template_hash['properties_list']['smurfs_phone_password']
                     ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
@@ -763,9 +762,9 @@ describe 'using director with config server', type: :integration do
                       template_hash['properties_list']['gargamel_secret_recipe']
                     ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
-                    generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                    generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                    root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+                    generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+                    generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+                    root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
 
                     generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
@@ -806,15 +805,15 @@ describe 'using director with config server', type: :integration do
 
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
-                template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                 expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
                 expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
 
-                generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+                generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+                generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+                root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
 
                 expect(generated_cert).to eq('cert123')
                 expect(generated_private_key).to eq('adb123')
@@ -849,11 +848,11 @@ describe 'using director with config server', type: :integration do
               it 'does not ask config server to generate values and uses default values to deploy' do
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                vm = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-                template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+                instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
                 expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
 
-                hard_coded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+                hard_coded_cert = instance.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
                 expect(hard_coded_cert).to eq('good luck hardcoding certs and private keys')
               end
             end
@@ -980,8 +979,8 @@ Error: Unable to render instance groups for deployment. Errors are:
         config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
         deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
 
-        link_vm = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        link_instance = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
         expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
       end
 
@@ -1002,8 +1001,8 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'replaces the placeholder values of properties consumed through links' do
           deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
 
-          link_vm = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          link_instance = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+          template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
           expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
         end
       end
@@ -1047,9 +1046,9 @@ Error: Unable to render instance groups for deployment. Errors are:
         it 'resolves the properties defined inside the links section of the deployment manifest' do
           deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
 
-          link_vm = director.instance('property_job', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+          link_instance = director.instance('property_job', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
-          template = YAML.load(link_vm.read_job_template('consumer', 'config.yml'))
+          template = YAML.load(link_instance.read_job_template('consumer', 'config.yml'))
 
           expect(template['a']).to eq('a_value')
           expect(template['b']).to eq('b_value')
@@ -1146,8 +1145,8 @@ Error: Unable to render instance groups for deployment. Errors are:
             deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
           }.to_not raise_error
 
-          link_vm = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
-          template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
+          template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
           expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
         end
 
@@ -1161,8 +1160,8 @@ Error: Unable to render instance groups for deployment. Errors are:
               deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
             }.to_not raise_error
 
-            link_vm = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
-            template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
+            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
             expect(
               template['links']['properties']['fibonacci']
             ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
@@ -1216,9 +1215,9 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
             deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
 
-            link_vm = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
+            link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
 
-            template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
             expect(
               template['links']['properties']['fibonacci']
             ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))

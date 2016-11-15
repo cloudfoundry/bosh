@@ -45,24 +45,24 @@ describe 'migrating to cloud config', type: :integration do
     it 'deployment after cloud config gets IP outside of range reserved by first deployment' do
       legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
       deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.instances
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq(['192.168.1.2'])
+      instances = director.instances
+      expect(instances.size).to eq(1)
+      expect(instances.first.ips).to eq(['192.168.1.2'])
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: second_deployment_manifest)
-      vms = director.instances(deployment_name: 'second_deployment')
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq(['192.168.1.16'])
+      instances = director.instances(deployment_name: 'second_deployment')
+      expect(instances.size).to eq(1)
+      expect(instances.first.ips).to eq(['192.168.1.16'])
     end
 
     it 'deployment after cloud config fails to get static IP in the range reserved by first deployment' do
       legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
       deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.instances
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq(['192.168.1.2'])
+      instances = director.instances
+      expect(instances.size).to eq(1)
+      expect(instances.first.ips).to eq(['192.168.1.2'])
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 

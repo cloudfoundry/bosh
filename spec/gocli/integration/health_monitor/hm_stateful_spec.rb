@@ -31,10 +31,10 @@ describe 'health_monitor: 2', type: :integration, hm: true do
       deployment_hash['jobs'][0]['persistent_disk'] = 20_480
       deploy_from_scratch(manifest_hash: deployment_hash)
 
-      original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-      original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
-      expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
+      original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+      original_instance.kill_agent
+      resurrected_instance = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
+      expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
     end
   end
 end

@@ -63,8 +63,8 @@ describe 'drain', type: :integration do
   context 'when skip-drain flag is not provided' do
     before do
       deploy_from_scratch
-      director.instances.each do |vm|
-        expect(File).not_to exist( vm.file_path('drain-test.log'))
+      director.instances.each do |instance|
+        expect(File).not_to exist( instance.file_path('drain-test.log'))
       end
     end
 
@@ -90,15 +90,15 @@ describe 'drain', type: :integration do
 
     it 'runs drain scripts for change state of the deployment' do
       bosh_runner.run('stop', deployment_name: deployment_name)
-      director.instances.each do |vm|
-        expect(File).to exist( vm.file_path('drain-test.log'))
+      director.instances.each do |instance|
+        expect(File).to exist( instance.file_path('drain-test.log'))
       end
     end
 
     it 'runs drain scripts for change state of the job' do
       bosh_runner.run('restart foobar', deployment_name: deployment_name)
-      director.instances.each do |vm|
-        expect(File).to exist( vm.file_path('drain-test.log'))
+      director.instances.each do |instance|
+        expect(File).to exist( instance.file_path('drain-test.log'))
       end
     end
   end
@@ -182,8 +182,8 @@ describe 'drain', type: :integration do
         pending('cli2: #130417399: skip-drain all functionality does not appear to work')
 
         bosh_runner.run('stop --skip-drain', deployment_name: deployment_name)
-        director.instances.each do |vm|
-          expect(File).not_to exist( vm.file_path('drain-test.log'))
+        director.instances.each do |instance|
+          expect(File).not_to exist( instance.file_path('drain-test.log'))
         end
       end
     end

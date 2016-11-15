@@ -30,9 +30,9 @@ describe 'dynamic networks', type: :integration do
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: simple_manifest)
 
-    original_vms = director.instances
-    expect(original_vms.size).to eq(1)
-    original_ip = original_vms.first.ips[0]
+    original_instances = director.instances
+    expect(original_instances.size).to eq(1)
+    original_ip = original_instances.first.ips[0]
     expect(original_ip).to be_truthy
 
     invocations = current_sandbox.cpi.invocations
@@ -45,7 +45,7 @@ describe 'dynamic networks', type: :integration do
     expect(invocations[12].method_name).to eq('create_vm')
     expect(invocations[12].inputs['networks']['a']['ip']).to match(original_ip)
 
-    new_vms = director.instances
-    expect(new_vms.size).to eq(1)
+    new_instances = director.instances
+    expect(new_instances.size).to eq(1)
   end
 end

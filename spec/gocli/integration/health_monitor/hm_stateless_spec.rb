@@ -10,10 +10,10 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   it 'resurrects stateless nodes if agent is not responding' do
     deploy_from_scratch
 
-    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-    original_vm.kill_agent
-    resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
+    original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+    original_instance.kill_agent
+    resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+    expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
   end
 
   # ~5m
@@ -22,15 +22,15 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-    original_vm.kill_agent
+    original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+    original_instance.kill_agent
 
-    resurrected_vm = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
-    expect(resurrected_vm).to be_nil
+    resurrected_instance = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
+    expect(resurrected_instance).to be_nil
 
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
-    resurrected_vm = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
+    resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+    expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
   end
 
 
@@ -47,14 +47,14 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     deploy_from_scratch({:manifest_hash => manifest_hash})
 
-    original_vm = director.instance('job_with_templates_having_prestart_scripts', '0', deployment_name: 'simple')
-    original_vm.kill_agent
-    resurrected_vm = director.wait_for_vm('job_with_templates_having_prestart_scripts', '0', 300, deployment_name: 'simple')
-    expect(resurrected_vm.vm_cid).to_not eq(original_vm.vm_cid)
+    original_instance = director.instance('job_with_templates_having_prestart_scripts', '0', deployment_name: 'simple')
+    original_instance.kill_agent
+    resurrected_instance = director.wait_for_vm('job_with_templates_having_prestart_scripts', '0', 300, deployment_name: 'simple')
+    expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
 
     waiter = Bosh::Spec::Waiter.new(logger)
     waiter.wait(50) do
-      agent_id = resurrected_vm.agent_id
+      agent_id = resurrected_instance.agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
       expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
@@ -96,21 +96,21 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
     bosh_runner.run('vm resurrection foobar/1 off', deployment_name: 'simple')
 
-    original_0_vm = director.instance('foobar', '0', deployment_name: 'simple')
-    original_1_vm = director.instance('foobar', '1', deployment_name: 'simple')
+    original_0_instance = director.instance('foobar', '0', deployment_name: 'simple')
+    original_1_instance = director.instance('foobar', '1', deployment_name: 'simple')
 
     # Kill VMs as close as possible
-    original_0_vm.kill_agent
-    original_1_vm.kill_agent
+    original_0_instance.kill_agent
+    original_1_instance.kill_agent
 
-    new_0_vm = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
-    expect(new_0_vm.vm_cid).to_not eq(original_0_vm.vm_cid)
+    new_0_instance = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
+    expect(new_0_instance.vm_cid).to_not eq(original_0_instance.vm_cid)
 
     # Since at this point 0th VM is back up, assume that
     # if 1st VM would be resurrected it would've already happened
     # (i.e do not wait for long time)
-    new_1_vm = director.wait_for_vm('foobar', '1', 10, deployment_name: 'simple')
-    expect(new_1_vm).to be_nil
+    new_1_instance = director.wait_for_vm('foobar', '1', 10, deployment_name: 'simple')
+    expect(new_1_instance).to be_nil
   end
 
   # ~3m
@@ -157,16 +157,16 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       heartbeat_hashes = heartbeat_lines.map {|json_line| JSON.parse(json_line) }
 
-      vm = director.instances.first
+      instance = director.instances.first
       expected_hash = {
           'kind' => 'heartbeat',
           'id' => anything,
           'timestamp' => anything,
           'deployment' => deployment_hash['name'],
-          'agent_id' => vm.agent_id,
-          'job' => vm.job_name,
-          'index' => vm.index,
-          'instance_id' => vm.id,
+          'agent_id' => instance.agent_id,
+          'job' => instance.job_name,
+          'index' => instance.index,
+          'instance_id' => instance.id,
           'job_state' => 'running',
           'vitals' => anything
       }
@@ -204,15 +204,15 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-    original_vm = director.instance('foobar', '0', deployment_name: 'simple')
-    template = original_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    original_instance = director.instance('foobar', '0', deployment_name: 'simple')
+    template = original_instance.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
     expect(template).to include('b_ip=127.0.0.101')
 
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
-    resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
+    resurrected_instance = director.kill_vm_and_wait_for_resurrection(original_instance)
 
-    template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    template = resurrected_instance.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
     expect(template).to include('b_ip=127.0.0.102')
   end

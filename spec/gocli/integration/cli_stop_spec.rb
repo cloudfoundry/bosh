@@ -39,8 +39,8 @@ describe 'stop command', type: :integration do
               'foobar/2' => 'running'
           })
 
-        vm_before_with_index_1 = director.instances.find{ |vm| vm.index == '1'}
-        instance_uuid = vm_before_with_index_1.id
+        instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1'}
+        instance_uuid = instance_before_with_index_1.id
 
         expect {
           output = bosh_runner.run("stop foobar/#{instance_uuid}", deployment_name: 'simple')
@@ -148,8 +148,8 @@ describe 'stop command', type: :integration do
   end
 
   def vm_states
-    director.instances.inject({}) do |result, vm|
-      result["#{vm.job_name}/#{vm.index}"] = vm.last_known_state unless vm.last_known_state.empty?
+    director.instances.inject({}) do |result, instance|
+      result["#{instance.job_name}/#{instance.index}"] = instance.last_known_state unless instance.last_known_state.empty?
       result
     end
   end

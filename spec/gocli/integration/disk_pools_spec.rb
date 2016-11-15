@@ -22,8 +22,8 @@ describe 'disk pools', type: :integration do
   it 'allows specifying a disk_pool' do
     deploy_with_disk_pool(3000)
 
-    director.instances.each do |vm|
-      expect(vm.get_state['persistent_disk']).to eq(3000)
+    director.instances.each do |instance|
+      expect(instance.get_state['persistent_disk']).to eq(3000)
     end
   end
 
@@ -33,8 +33,8 @@ describe 'disk pools', type: :integration do
 
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    director.instances.each do |vm|
-      expect(vm.get_state['persistent_disk']).to eq(3000)
+    director.instances.each do |instance|
+      expect(instance.get_state['persistent_disk']).to eq(3000)
     end
   end
 
@@ -43,8 +43,8 @@ describe 'disk pools', type: :integration do
     manifest_hash['jobs'].first.delete('persistent_disk')
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    director.instances.each do |vm|
-      expect(vm.get_state['persistent_disk']).to eq(0)
+    director.instances.each do |instance|
+      expect(instance.get_state['persistent_disk']).to eq(0)
     end
   end
 
@@ -59,8 +59,8 @@ describe 'disk pools', type: :integration do
         it 'does not update the job' do
           expect(deploy_with_disk_pool(disk_size, cloud_properties)).to_not include('Updating instance foobar: ')
 
-          director.instances.each do |vm|
-            expect(vm.get_state['persistent_disk']).to eq(disk_size)
+          director.instances.each do |instance|
+            expect(instance.get_state['persistent_disk']).to eq(disk_size)
           end
         end
       end
@@ -71,8 +71,8 @@ describe 'disk pools', type: :integration do
         it 'does not update the job' do
           expect(deploy_with_disk_pool(disk_size, cloud_properties)).to_not include('Updating instance foobar: ')
 
-          director.instances.each do |vm|
-            expect(vm.get_state['persistent_disk']).to eq(disk_size)
+          director.instances.each do |instance|
+            expect(instance.get_state['persistent_disk']).to eq(disk_size)
           end
         end
       end
@@ -85,8 +85,8 @@ describe 'disk pools', type: :integration do
         it 'does not update the job' do
           expect(deploy_with_disk_pool(disk_size, cloud_properties)).to_not include('Updating instance foobar: ')
 
-          director.instances.each do |vm|
-            expect(vm.get_state['persistent_disk']).to eq(disk_size)
+          director.instances.each do |instance|
+            expect(instance.get_state['persistent_disk']).to eq(disk_size)
           end
         end
       end
@@ -95,8 +95,8 @@ describe 'disk pools', type: :integration do
         it 'does update the job' do
           expect(deploy_with_disk_pool(disk_size, {'type' => 'ssd'})).to include('Updating instance foobar: ')
 
-          director.instances.each do |vm|
-            expect(vm.get_state['persistent_disk']).to eq(disk_size)
+          director.instances.each do |instance|
+            expect(instance.get_state['persistent_disk']).to eq(disk_size)
           end
         end
       end

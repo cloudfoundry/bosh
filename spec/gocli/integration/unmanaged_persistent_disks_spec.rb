@@ -171,8 +171,8 @@ describe 'multiple persistent disks', type: :integration do
   end
 
   it 'provides links for the persistent disks' do
-    vm = director.instances.first
-    template_content = vm.read_job_template('disk_using_job', 'disknames.json')
+    instance = director.instances.first
+    template_content = instance.read_job_template('disk_using_job', 'disknames.json')
     expect(JSON.parse(template_content)).to eq({
       'slow-disk' => {'name' => 'low-iops-persistent-disk-name'},
       'fast-disk' => {'name' => 'high-iops-persistent-disk-name'}

@@ -6,22 +6,22 @@ describe 'start job', type: :integration do
   it 'starts a job instance only' do
     deploy_from_scratch
 
-    vm_before_with_index_1 = director.instances.find{ |vm| vm.index == '1'}
-    instance_uuid = vm_before_with_index_1.id
+    instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1'}
+    instance_uuid = instance_before_with_index_1.id
 
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['running'])
     bosh_runner.run("stop", deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
 
     expect(bosh_runner.run('start foobar/0', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar:')
-    vms_after_instance_started = director.instances
-    vm_was_started = director.find_instance(vms_after_instance_started, 'foobar', '0')
+    instances_after_instance_started = director.instances
+    vm_was_started = director.find_instance(instances_after_instance_started, 'foobar', '0')
     expect(vm_was_started.last_known_state).to eq ('running')
     expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(['stopped'])
 
     expect(bosh_runner.run("start foobar/#{instance_uuid}", deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar')
-    vms_after_instance_started = director.instances
-    vm_was_started = director.find_instance(vms_after_instance_started, 'foobar', instance_uuid)
+    instances_after_instance_started = director.instances
+    vm_was_started = director.find_instance(instances_after_instance_started, 'foobar', instance_uuid)
     expect(vm_was_started.last_known_state).to eq ('running')
     expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(["running", "stopped"])
   end
@@ -43,10 +43,10 @@ describe 'start job', type: :integration do
 
     #only vms for one job should be started
     expect(bosh_runner.run('start foobar', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar:')
-    vms_after_job_start = director.instances
-    expect(director.find_instance(vms_after_job_start, 'foobar', '0').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'foobar', '1').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
+    instances_after_job_start = director.instances
+    expect(director.find_instance(instances_after_job_start, 'foobar', '0').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'foobar', '1').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
 
     #all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
@@ -75,10 +75,10 @@ describe 'start job', type: :integration do
 
     #only vms for one job should be started
     expect(bosh_runner.run('start foobar', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar:')
-    vms_after_job_start = director.instances
-    expect(director.find_instance(vms_after_job_start, 'foobar', '0').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'foobar', '1').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
+    instances_after_job_start = director.instances
+    expect(director.find_instance(instances_after_job_start, 'foobar', '0').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'foobar', '1').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
 
     #all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
@@ -113,10 +113,10 @@ describe 'start job', type: :integration do
 
     #only vms for one job should be started
     expect(bosh_runner.run('start foobar', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar:')
-    vms_after_job_start = director.instances
-    expect(director.find_instance(vms_after_job_start, 'foobar', '0').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'foobar', '1').last_known_state).to eq('running')
-    expect(director.find_instance(vms_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
+    instances_after_job_start = director.instances
+    expect(director.find_instance(instances_after_job_start, 'foobar', '0').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'foobar', '1').last_known_state).to eq('running')
+    expect(director.find_instance(instances_after_job_start, 'another-job', '0').last_known_state).to eq('stopped')
 
     #all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)

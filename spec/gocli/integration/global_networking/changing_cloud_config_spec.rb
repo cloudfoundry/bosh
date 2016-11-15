@@ -59,15 +59,15 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.instance('foobar', '0')
+      original_instance = director.instance('foobar', '0')
       original_vms_output = bosh_runner.run('vms', deployment_name: 'simple')
 
       upload_a_different_cloud_config
 
-      resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
+      resurrected_instance = director.kill_vm_and_wait_for_resurrection(original_instance)
       resurrected_vms_output = bosh_runner.run('vms', deployment_name: 'simple')
 
-      expect(original_vm.ips).to eq(resurrected_vm.ips), "Original vm IPs '#{original_vm.ips}' do not match resurrected vm IPs '#{resurrected_vm.ips}', original output: #{original_vms_output}, resurrected output: #{resurrected_vms_output}"
+      expect(original_instance.ips).to eq(resurrected_instance.ips), "Original vm IPs '#{original_instance.ips}' do not match resurrected vm IPs '#{resurrected_instance.ips}', original output: #{original_vms_output}, resurrected output: #{resurrected_vms_output}"
     end
   end
 
@@ -79,11 +79,11 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.instance('foobar', '0')
+      original_instance = director.instance('foobar', '0')
 
       upload_a_different_cloud_config
 
-      original_vm.kill_agent
+      original_instance.kill_agent
 
       bosh_runner.run_interactively('cck', deployment_name: 'simple') do |runner|
         expect(runner).to have_output '3: Recreate VM without waiting for processes to start'
@@ -93,10 +93,10 @@ describe 'Changing cloud config', type: :integration do
         expect(runner).to have_output 'Succeeded'
       end
 
-      recreated_vm = director.instance('foobar', '0')
-      expect(recreated_vm.vm_cid).to_not eq(original_vm.vm_cid)
+      recreated_instance = director.instance('foobar', '0')
+      expect(recreated_instance.vm_cid).to_not eq(original_instance.vm_cid)
 
-      expect(original_vm.ips).to eq(recreated_vm.ips)
+      expect(original_instance.ips).to eq(recreated_instance.ips)
     end
   end
 

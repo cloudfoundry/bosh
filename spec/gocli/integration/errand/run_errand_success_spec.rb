@@ -27,10 +27,10 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
       expect(output['Tables'][0]['Rows']).to include(['deployment', 'errand', anything])
 
-      errand_vm = director.instances(deployment_name: deployment_name).find { |vm| vm.job_name == 'fake-errand-name' && vm.index == '0' }
-      expect(errand_vm).to_not be_nil
+      errand_instance = director.instances(deployment_name: deployment_name).find { |instance| instance.job_name == 'fake-errand-name' && instance.index == '0' }
+      expect(errand_instance).to_not be_nil
 
-      errand_vm.unblock_errand('errand1')
+      errand_instance.unblock_errand('errand1')
       bosh_runner.run("task #{task_id}")
     end
   end
@@ -326,8 +326,8 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       _, exit_code = bosh_runner.run("run-errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}",{return_exit_code: true, deployment_name: deployment_name})
       expect(exit_code).to eq(0)
 
-      vm = director.instance('fake-errand-name', '0', deployment_name: deployment_name)
-      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{vm.agent_id}.log")
+      instance = director.instance('fake-errand-name', '0', deployment_name: deployment_name)
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{instance.agent_id}.log")
 
       expect(agent_log.scan('{"protocol":3,"method":"drain"').size).to eq(1)
       expect(agent_log.scan('{"protocol":3,"method":"stop"').size).to eq(1)

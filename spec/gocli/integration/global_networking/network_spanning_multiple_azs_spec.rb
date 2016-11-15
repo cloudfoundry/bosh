@@ -45,10 +45,10 @@ describe 'networks spanning multiple azs', type: :integration do
     end
 
     it 'should deploy the vms to the azs, with ips from the single subnet' do
-      vms = director.instances
+      instances = director.instances
 
-      expect(vms.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
-      expect(vms.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
+      expect(instances.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
+      expect(instances.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
     end
   end
 
@@ -75,8 +75,8 @@ describe 'networks spanning multiple azs', type: :integration do
         expect(invocation.inputs['networks']['a']['cloud_properties']).to eq({'dynamic' => 'property'})
       end
 
-      vms = director.instances
-      expect(vms.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
+      instances = director.instances
+      expect(instances.map(&:availability_zone)).to contain_exactly('my-az', 'my-az2')
     end
   end
 end
