@@ -35,8 +35,7 @@ describe Bosh::Registry::InstanceManager do
 
     expect(compute).to receive(:servers).and_return(servers)
     expect(servers).to receive(:find).and_return(instance)
-    expect(instance).to receive(:private_ip_addresses).and_return([private_ip])
-    expect(instance).to receive(:floating_ip_addresses).and_return([floating_ip])
+    expect(instance).to receive(:ip_addresses).and_return([private_ip, floating_ip])
   end
 
   describe :openstack do
