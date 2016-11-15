@@ -4,7 +4,6 @@ describe 'deploy_fix', type: :integration do
   with_reset_sandbox_before_each
 
   it 'fix unresponsive vms' do
-    pending("cli2: #131667933: backport --fix flag for recreate")
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'][0]['persistent_disk'] = 1
     deploy_from_scratch({manifest_hash: manifest_hash})
@@ -20,7 +19,7 @@ describe 'deploy_fix', type: :integration do
 
     instance_to_recreate = director.find_instance(instances, 'foobar', '0')
     instance_to_recreate.kill_agent
-    expect(bosh_runner.run('recreate foobar/0 --fix', deployment_name: 'simple')).to match /Updating instance foobar: foobar\/0 /
+    expect(bosh_runner.run('recreate foobar/0 --fix', deployment_name: 'simple')).to match /Updating instance foobar: foobar\/[a-z0-9-]+ \(0\) /
     instance_was_recreated = director.find_instance(director.instances, 'foobar', '0')
     expect(instance_was_recreated.vm_cid).to_not eq(instance_to_recreate.vm_cid)
   end
