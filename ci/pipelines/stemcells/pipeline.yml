@@ -134,6 +134,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
@@ -148,6 +149,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
@@ -593,6 +595,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
@@ -607,6 +610,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
@@ -660,6 +664,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
@@ -674,6 +679,7 @@ jobs:
             - build-aws-xen-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
+            - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
