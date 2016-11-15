@@ -18,7 +18,6 @@ describe 'Google Stemcell', stemcell_image: true do
   end
 
   context 'installed by system_google_packages' do
-    let(:mode) { '644' }
     let(:owner) { 'root' }
     let(:group) { 'root' }
 
@@ -33,18 +32,18 @@ describe 'Google Stemcell', stemcell_image: true do
     case ENV['OS_NAME']
       when 'ubuntu'
         [
-          '/etc/init/google-accounts-daemon.conf',
-          '/etc/init/google-clock-skew-daemon.conf',
-          '/etc/init/google-instance-setup.conf',
-          '/etc/init/google-ip-forwarding-daemon.conf',
-          '/etc/init/google-network-setup.conf',
-          '/etc/init/google-shutdown-scripts.conf',
-          '/etc/init/google-startup-scripts.conf',
-          '/usr/bin/google_instance_setup',
-          '/usr/bin/google_ip_forwarding_daemon',
-          '/usr/bin/google_accounts_daemon',
-          '/usr/bin/google_clock_skew_daemon',
-          '/usr/bin/google_metadata_script_runner',
+            '/etc/init/google-accounts-daemon.conf',
+            '/etc/init/google-clock-skew-daemon.conf',
+            '/etc/init/google-instance-setup.conf',
+            '/etc/init/google-ip-forwarding-daemon.conf',
+            '/etc/init/google-network-setup.conf',
+            '/etc/init/google-shutdown-scripts.conf',
+            '/etc/init/google-startup-scripts.conf',
+            '/usr/bin/google_instance_setup',
+            '/usr/bin/google_ip_forwarding_daemon',
+            '/usr/bin/google_accounts_daemon',
+            '/usr/bin/google_clock_skew_daemon',
+            '/usr/bin/google_metadata_script_runner',
         ].each do |conf_file|
           describe file(conf_file) do
             it { should be_file }
@@ -54,13 +53,21 @@ describe 'Google Stemcell', stemcell_image: true do
         end
       when 'centos', 'rhel'
         [
-          '/usr/lib/systemd/system/google-accounts-manager.service',
-          '/usr/lib/systemd/system/google-accounts-manager.service',
-          '/usr/lib/systemd/system/google-clock-sync-manager.service'
+            '/usr/lib/systemd/system/google-accounts-daemon.service',
+            '/usr/lib/systemd/system/google-clock-skew-daemon.service',
+            '/usr/lib/systemd/system/google-instance-setup.service',
+            '/usr/lib/systemd/system/google-ip-forwarding-daemon.service',
+            '/usr/lib/systemd/system/google-network-setup.service',
+            '/usr/lib/systemd/system/google-shutdown-scripts.service',
+            '/usr/lib/systemd/system/google-startup-scripts.service',
+            '/usr/bin/google_instance_setup',
+            '/usr/bin/google_ip_forwarding_daemon',
+            '/usr/bin/google_accounts_daemon',
+            '/usr/bin/google_clock_skew_daemon',
+            '/usr/bin/google_metadata_script_runner',
         ].each do |conf_file|
           describe file(conf_file) do
             it { should be_file }
-            it { should be_mode(mode) }
             it { should be_owned_by(owner) }
             it { should be_grouped_into(group) }
           end
