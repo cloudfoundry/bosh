@@ -57,25 +57,6 @@ module Bosh::Spec
       end
     end
 
-    # def instances(deployment_name=Deployments::DEFAULT_DEPLOYMENT_NAME)
-    #    options = {json: true}
-    #    instances_output = @runner.run("instances -d #{deployment_name} --details", options)
-    #    instances = parse_table_with_ips(instances_output)
-    #
-    #    instances.map do |instance_data|
-    #      Bosh::Spec::Instance.new(
-    #        instance_data[:id],
-    #        instance_data[:job_name],
-    #        instance_data[:index],
-    #        instance_data[:bootstrap],
-    #        instance_data[:az],
-    #        instance_data[:disk_cids],
-    #        instance_data[:vm_cid]
-    #      )
-    #    end
-    #   instances(deployment_name: deployment_name)
-    # end
-
     # vm always returns a vm
     def instance(job_name, index_or_id, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
       find_instance(instances(options), job_name, index_or_id)
