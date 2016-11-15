@@ -15,15 +15,15 @@ describe 'start job', type: :integration do
 
     expect(bosh_runner.run('start foobar/0', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar:')
     instances_after_instance_started = director.instances
-    vm_was_started = director.find_instance(instances_after_instance_started, 'foobar', '0')
-    expect(vm_was_started.last_known_state).to eq ('running')
-    expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(['stopped'])
+    instance_was_started = director.find_instance(instances_after_instance_started, 'foobar', '0')
+    expect(instance_was_started.last_known_state).to eq ('running')
+    expect((instances_after_instance_started -[instance_was_started]).map(&:last_known_state).uniq).to match_array(['stopped'])
 
     expect(bosh_runner.run("start foobar/#{instance_uuid}", deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)).to include('Updating instance foobar')
     instances_after_instance_started = director.instances
-    vm_was_started = director.find_instance(instances_after_instance_started, 'foobar', instance_uuid)
-    expect(vm_was_started.last_known_state).to eq ('running')
-    expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(["running", "stopped"])
+    instance_was_started = director.find_instance(instances_after_instance_started, 'foobar', instance_uuid)
+    expect(instance_was_started.last_known_state).to eq ('running')
+    expect((instances_after_instance_started -[instance_was_started]).map(&:last_known_state).uniq).to match_array(["running", "stopped"])
   end
 
   it 'starts vms for a given job / the whole deployment' do
