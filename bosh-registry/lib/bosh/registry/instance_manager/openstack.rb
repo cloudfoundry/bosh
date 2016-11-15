@@ -76,7 +76,7 @@ module Bosh::Registry
           raise ConnectionError, "Unable to connect to OpenStack API: #{e.message}"
         end
         raise InstanceNotFound, "Instance '#{instance_id}' not found" unless instance
-        return (instance.private_ip_addresses + instance.floating_ip_addresses).compact
+        return instance.ip_addresses
       end
 
       private
