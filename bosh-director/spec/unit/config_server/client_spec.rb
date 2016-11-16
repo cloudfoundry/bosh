@@ -4,9 +4,8 @@ module Bosh::Director::ConfigServer
   describe EnabledClient do
     subject(:client) { EnabledClient.new(http_client, director_name, logger) }
     let(:director_name) {'smurf_director_name'}
-    let(:deployment_name) {'deployment_name'}
+    let(:deployment_name) {'smurf_deployment_name'}
     let(:logger) { double('Logging::Logger') }
-    let!(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
 
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"
@@ -17,32 +16,27 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#interpolate' do
-      subject { client.interpolate(manifest_hash, deployment_name, interpolate_options) }
+      let(:interpolated_manifest) { client.interpolate(manifest_hash, deployment_name, interpolate_options) }
       let(:interpolate_options) do
         {
           :subtrees_to_ignore => ignored_subtrees
         }
       end
       let(:ignored_subtrees) {[]}
-      let(:integer_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'} }
-      let(:instance_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'} }
-      let(:job_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'} }
-      let(:env_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'} }
-      let(:cert_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'} }
       let(:mock_config_store) do
         {
-          prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
-          prepend_namespace('instance_placeholder') => generate_success_response(instance_placeholder.to_json),
-          prepend_namespace('job_placeholder') => generate_success_response(job_placeholder.to_json),
-          prepend_namespace('env_placeholder') => generate_success_response(env_placeholder.to_json),
-          prepend_namespace('cert_placeholder') => generate_success_response(cert_placeholder.to_json),
+          prepend_namespace('integer_placeholder') => generate_success_response({'value' => 123}.to_json),
+          prepend_namespace('instance_placeholder') => generate_success_response({'value' => 'test1'}.to_json),
+          prepend_namespace('job_placeholder') => generate_success_response({'value' => 'test2'}.to_json),
+          prepend_namespace('env_placeholder') => generate_success_response({'value' => 'test3'}.to_json),
+          prepend_namespace('name_placeholder') => generate_success_response({'value' => 'test4'}.to_json),
+          prepend_namespace('cert_placeholder') => generate_success_response({'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}}.to_json),
         }
       end
-
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
       let(:manifest_hash)  do
         {
-          'name' => deployment_name,
+          'name' => '((name_placeholder))',
           'properties' => {
             'name' => '((integer_placeholder))'
           },
@@ -82,7 +76,7 @@ module Bosh::Director::ConfigServer
 
       it 'replaces all placeholders it finds in the hash passed' do
         expected_result = {
-          'name' => 'deployment_name',
+          'name' => 'test4',
           'properties' => {
             'name' => 123
           },
@@ -104,7 +98,7 @@ module Bosh::Director::ConfigServer
           }
         }
 
-        expect(subject).to eq(expected_result)
+        expect(interpolated_manifest).to eq(expected_result)
       end
 
       it 'should raise a missing name error message when name is not found in the config_server' do
@@ -112,7 +106,7 @@ module Bosh::Director::ConfigServer
 
         manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
-          subject
+          interpolated_manifest
         }.to raise_error(
                Bosh::Director::ConfigServerMissingNames,
                "Failed to load placeholder names from the config server: #{prepend_namespace('missing_placeholder')}")
@@ -123,17 +117,16 @@ module Bosh::Director::ConfigServer
 
         manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
-          subject
+          interpolated_manifest
         }.to raise_error(Bosh::Director::ConfigServerUnknownError)
       end
 
       context 'ignored subtrees' do
-        #TODO pull out config server mocks into their own lets
         let(:mock_config_store) do
           {
-            prepend_namespace('release_1_placeholder') => generate_success_response({'value' => 'release_1', 'id' => 1}.to_json),
-            prepend_namespace('release_2_version_placeholder') => generate_success_response({'value' => 'v2', 'id' => 2}.to_json),
-            prepend_namespace('job_name') => generate_success_response({'value' => 'spring_server', 'id' => 3}.to_json)
+            prepend_namespace('release_1_placeholder') => generate_success_response({'value' => 'release_1'}.to_json),
+            prepend_namespace('release_2_version_placeholder') => generate_success_response({'value' => 'v2'}.to_json),
+            prepend_namespace('job_name') => generate_success_response({'value' => 'spring_server'}.to_json)
           }
         end
 
@@ -224,19 +217,18 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index_type, 'env']
           ignored_subtrees << ['jobs', index_type, 'env']
           ignored_subtrees << ['resource_pools', index_type, 'env']
-          ignored_subtrees << ['name']
           ignored_subtrees
         end
 
         it 'should not replace values in ignored subtrees' do
-          expect(subject).to eq(interpolated_manifest_hash)
+          expect(interpolated_manifest).to eq(interpolated_manifest_hash)
         end
       end
 
       context 'when placeholders begin with !' do
         let(:manifest_hash) do
           {
-            'name' => 'deployment_name',
+            'name' => '((!name_placeholder))',
             'properties' => {
               'age' => '((!integer_placeholder))'
             }
@@ -245,10 +237,10 @@ module Bosh::Director::ConfigServer
 
         it 'should strip the exclamation mark' do
           expected_result = {
-            'name' => 'deployment_name',
+            'name' => 'test4',
             'properties' => {'age' => 123 }
           }
-          expect(subject).to eq(expected_result)
+          expect(interpolated_manifest).to eq(expected_result)
         end
       end
 
@@ -263,7 +255,7 @@ module Bosh::Director::ConfigServer
 
         it 'raises an error' do
           expect{
-            subject
+            interpolated_manifest
           }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
