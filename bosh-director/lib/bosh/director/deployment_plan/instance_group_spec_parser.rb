@@ -437,7 +437,7 @@ module Bosh::Director
 
         if [template_property, templates_property, jobs_property].compact.empty?
           raise ValidationMissingField,
-                "Instance group '#{@instance_group.name}' does not specify template, templates, or jobs keys, one is required"
+                "Instance group '#{@instance_group.name}' does not specify jobs key"
         end
       end
 

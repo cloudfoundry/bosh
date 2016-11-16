@@ -863,7 +863,7 @@ module Bosh::Director
             it 'raises' do
               expect { parsed_instance_group }.to raise_error(
                 ValidationMissingField,
-                "Instance group 'instance-group-name' does not specify template, templates, or jobs keys, one is required"
+                "Instance group 'instance-group-name' does not specify jobs key"
               )
             end
           end
