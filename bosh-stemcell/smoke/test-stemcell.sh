@@ -171,11 +171,10 @@ grep 'new syslog content' $download_destination/syslog.* || ( echo "logrotate di
 grep -vl 'old syslog content' $download_destination/syslog.* || ( echo "syslog contains content that should have been rotated" ; exit 1 )
 
 # test #134136191 - pam_cracklib.so is missing from the stemcell even though pam is configured
-# grep -v /var/log/btmp - pending #134319413 - lastlog on stemcell should properly track authentications
 download_destination=$(mktemp -d -t)
 bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo cp /var/log/auth.log /tmp/ && sudo chmod 777 /tmp/auth.log'
 bosh -d ./deployment.yml scp --download syslog_forwarder 0 /tmp/auth.log $download_destination
-[[ "0" == "$( grep -v /var/log/btmp $download_destination/auth.log.* | grep -c "No such file or directory" )" ]] \
+[[ "0" == "$( grep -c "No such file or directory" $download_destination/auth.log.* )" ]] \
   || ( echo 'Expected to not find "No such file or directory" in /var/log/auth.log' ; exit 1 )
 
 # testing log forwarding #133776519
