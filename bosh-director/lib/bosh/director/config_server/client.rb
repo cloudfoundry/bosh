@@ -117,12 +117,12 @@ module Bosh::Director::ConfigServer
 
     private
 
-    def get_id_value_for_name(name)
+    def get_value_for_name(name)
       response = @config_server_http_client.get(name)
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        return [response_body['id'], response_body['value']]
+        return response_body['value']
       elsif response.kind_of? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
       else
@@ -132,7 +132,7 @@ module Bosh::Director::ConfigServer
 
     def name_exists?(name)
       begin
-        _, returned_name = get_id_value_for_name(name)
+        returned_name = get_value_for_name(name)
         !!returned_name
       rescue Bosh::Director::ConfigServerMissingNames
         false
@@ -145,8 +145,6 @@ module Bosh::Director::ConfigServer
 
       validate_absolute_names(placeholders) if must_be_absolute_name
 
-      deployment = Bosh::Director::Models::Deployment.where(name: deployment_name).first
-
       placeholders.each do |placeholder|
         name = add_prefix_if_not_absolute(
           extract_placeholder_name(placeholder),
@@ -155,8 +153,7 @@ module Bosh::Director::ConfigServer
         )
 
         begin
-          placeholder_id, config_values[placeholder] = get_id_value_for_name(name)
-          Bosh::Director::Models::PlaceholderMapping.create(placeholder_name: name, placeholder_id: placeholder_id, deployment: deployment)
+          config_values[placeholder] = get_value_for_name(name)
         rescue Bosh::Director::ConfigServerMissingNames
           missing_names << name
         end

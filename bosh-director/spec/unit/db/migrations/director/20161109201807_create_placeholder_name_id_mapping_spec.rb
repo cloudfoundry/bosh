@@ -14,12 +14,12 @@ module Bosh::Director
     context 'on upgrade' do
 
       before do
-        expect(db.table_exists?(:placeholder_name_id_mapping)).to be_falsey
+        expect(db.table_exists?(:placeholder_mappings)).to be_falsey
         DBSpecHelper.migrate(migration_file)
       end
 
       it 'should create table' do
-        expect(db.table_exists?(:placeholder_name_id_mapping)).to be_truthy
+        expect(db.table_exists?(:placeholder_mappings)).to be_truthy
       end
     end
   end

@@ -107,19 +107,6 @@ module Bosh::Director::ConfigServer
         expect(subject).to eq(expected_result)
       end
 
-      it 'creates placeholder_mapping entries for each placeholder in the manifest' do
-        subject
-
-        mappings = Bosh::Director::Models::PlaceholderMapping.all
-
-        expect(mappings.count).to eq(4)
-
-        [integer_placeholder, job_placeholder, env_placeholder, cert_placeholder].each do |placeholder|
-          mapping = mappings.select { |mapping| mapping.placeholder_id == placeholder['id'] }.first
-          expect(mapping.placeholder_name).to eq(placeholder['name'])
-        end
-      end
-
       it 'should raise a missing name error message when name is not found in the config_server' do
         allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleNotFoundResponse.new)
 
