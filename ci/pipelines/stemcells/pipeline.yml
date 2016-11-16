@@ -234,6 +234,7 @@ jobs:
             aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
             aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
             google/bosh-stemcell-%s-google-kvm-ubuntu-trusty-go_agent.tgz
+            google/bosh-stemcell-%s-google-kvm-centos-7-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
