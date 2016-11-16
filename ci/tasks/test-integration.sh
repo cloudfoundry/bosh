@@ -41,4 +41,4 @@ bundle install --local
 
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
-bundle exec rake --trace go spec:integration
+bundle exec rake --trace spec:integration
