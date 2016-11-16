@@ -61,10 +61,10 @@ describe 'template', type: :integration do
     output = scrub_random_cids(output)
     output = scrub_event_time(output)
     expect(output).to include(
-      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /.*/},
-      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /.*/},
-      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /.*/},
-      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /.*/},
+      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /.*/, 'Error' => ''},
+      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /.*/, 'Error' => ''},
+      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object Type' => 'instance', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /.*/, 'Error' => ''},
+      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object Type' => 'deployment', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /.*/, 'Error' => ''},
     )
   end
 
