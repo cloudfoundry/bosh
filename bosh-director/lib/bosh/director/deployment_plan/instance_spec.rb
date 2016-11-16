@@ -48,7 +48,7 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-        @config_server_client = ConfigServer::ClientFactory.create(Config.logger).create_client
+        @config_server_client = ConfigServer::ClientFactory.create(Config.logger).create_client(@instance.deployment_model.name)
       end
 
       def as_template_spec
