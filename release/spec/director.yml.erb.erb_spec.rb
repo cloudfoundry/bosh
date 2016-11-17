@@ -36,7 +36,6 @@ describe 'director.yml.erb.erb' do
           'max_threads' => 32,
           'enable_snapshots' => true,
           'enable_post_deploy' => false,
-          'enable_nats_delivered_templates' => false,
           'generate_vm_passwords' => false,
           'remove_dev_tools' => false,
           'log_access_events_to_syslog' => false,
@@ -180,7 +179,7 @@ describe 'director.yml.erb.erb' do
       end
     end
 
-    describe 'config server' do
+    context 'config server' do
       context 'when turned on' do
         before do
           deployment_manifest_fragment['properties']['director']['config_server'] = {
@@ -195,7 +194,7 @@ describe 'director.yml.erb.erb' do
           }
         end
 
-        it 'parses correctly' do
+        it 'configures the cpi correctly' do
           expect(parsed_yaml['config_server']['enabled']).to eq(true)
 
           expect(parsed_yaml['config_server']['url']).to eq('https://config-server-host')
@@ -276,30 +275,8 @@ describe 'director.yml.erb.erb' do
           deployment_manifest_fragment['properties']['director']['config_server']['enabled'] = false
         end
 
-        it 'parses correctly' do
+        it 'configures the cpi correctly' do
           expect(parsed_yaml['config_server']).to eq({"enabled"=>false})
-        end
-      end
-    end
-
-    describe 'enable_nats_delivered_templates' do
-      context 'when set to true' do
-        before do
-          deployment_manifest_fragment['properties']['director']['enable_nats_delivered_templates'] = true
-        end
-
-        it 'parses correctly' do
-          expect(parsed_yaml['enable_nats_delivered_templates']).to be_truthy
-        end
-      end
-
-      context 'when set to false' do
-        before do
-          deployment_manifest_fragment['properties']['director']['enable_nats_delivered_templates'] = false
-        end
-
-        it 'parses correctly' do
-          expect(parsed_yaml['enable_nats_delivered_templates']).to be_falsey
         end
       end
     end
