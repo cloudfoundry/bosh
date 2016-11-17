@@ -106,9 +106,9 @@ module IntegrationExampleGroup
 
     if options[:skip_drain]
       if options[:skip_drain].is_a?(Array)
-        cmd += " --skip-drain #{options[:skip_drain].join(',')}"
+        cmd += options[:skip_drain].map { |skip| " --skip-drain=#{skip}" }.join('')
       else
-        cmd += ' --skip-drain'
+        cmd += " --skip-drain"
       end
     end
 

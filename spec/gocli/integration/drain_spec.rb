@@ -120,23 +120,17 @@ describe 'drain', type: :integration do
     end
 
     it 'does not run drain script for recreate' do
-      pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
       drain_path_before_recreate = drain_file
       bosh_runner.run('recreate foobar/0 --skip-drain', deployment_name: deployment_name)
       expect(File).not_to exist(drain_path_before_recreate)
     end
 
     it 'does not run drain script for stop' do
-      pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
       bosh_runner.run('stop foobar/0 --skip-drain', deployment_name: deployment_name)
       expect(File).not_to exist(drain_file)
     end
 
     it 'does not run drain script for restart' do
-      pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
       bosh_runner.run('restart foobar/0 --skip-drain', deployment_name: deployment_name)
       expect(File).not_to exist(drain_file)
     end
@@ -147,21 +141,22 @@ describe 'drain', type: :integration do
         manifest_hash['jobs'][0]['instances'] = 1
         manifest_hash['properties'] = { 'test_property' => 'drained' }
         manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job(name: 'second', instances: 1)
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job(name: 'third', instances: 1)
         manifest_hash
       end
 
       it 'skips drain for specified jobs' do
         foobar_drain_file = director.instance('foobar', '0').file_path('drain-test.log')
         second_drain_file = director.instance('second', '0').file_path('drain-test.log')
+        third_drain_file = director.instance('third', '0').file_path('drain-test.log')
 
-        deploy_simple_manifest(manifest_hash: manifest_with_drain, recreate: true, skip_drain: ['second'])
+        deploy_simple_manifest(manifest_hash: manifest_with_drain, recreate: true, skip_drain: ['second', 'third'])
         expect(File).not_to exist(second_drain_file)
+        expect(File).not_to exist(third_drain_file)
         expect(File.read(foobar_drain_file)).to include('drained')
       end
 
       it 'skips drain for all jobs' do
-        pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
         foobar_drain_file = director.instance('foobar', '0').file_path('drain-test.log')
         second_drain_file = director.instance('second', '0').file_path('drain-test.log')
 
@@ -171,16 +166,12 @@ describe 'drain', type: :integration do
       end
 
       it 'does not run drain scripts for change state of the specified job' do
-        pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
-        bosh_runner.run('stop foobar --skip-drain', deployment_name: deployment_name)
+        bosh_runner.run('stop --skip-drain foobar', deployment_name: deployment_name)
         foobar_drain_file = director.instance('foobar', '0').file_path('drain-test.log')
         expect(File).not_to exist(foobar_drain_file)
       end
 
       it 'does not run drain scripts for change state of the deployment' do
-        pending('cli2: #130417399: skip-drain all functionality does not appear to work')
-
         bosh_runner.run('stop --skip-drain', deployment_name: deployment_name)
         director.instances.each do |instance|
           expect(File).not_to exist( instance.file_path('drain-test.log'))
