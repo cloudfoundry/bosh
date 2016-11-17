@@ -183,8 +183,6 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
 
-        bosh_runner.run('vms', environment_name: current_sandbox.director_url, no_login: true, include_credentials: false, json: true, env: client_env)
-
         original_instance = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         original_instance.kill_agent
         resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
