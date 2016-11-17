@@ -62,7 +62,7 @@ module Bosh::Director::Jobs
 
         it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
           expect(planner).to receive(:bind_models)
-          expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans, { dry_run: nil })
+          expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
           expect(planner).to receive(:compile_packages)
           expect(job).to_not receive(:run_post_deploys)
 

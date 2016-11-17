@@ -91,7 +91,12 @@ module Bosh::Director
       dns_manager.flush_dns_cache
 
       cloud_check_procedure = lambda do
-        cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
+        blobstore_client = App.instance.blobstores.blobstore
+
+        cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
+        templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
+
+        templates_persister.persist(instance_plan_to_create)
 
         # for backwards compatibility with instances that don't have update config
         update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])

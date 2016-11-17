@@ -375,7 +375,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(job_2_stdout).to match('message on stdout of job 2 post-deploy script')
         end
 
-        it 'runs does not run post-deploy scripts on stopped vms' do
+        it 'does not run post-deploy scripts on stopped vms' do
           deploy(manifest_hash: manifest)
 
           agent_id_1 = director.instance('job_with_post_deploy_script', '0').agent_id

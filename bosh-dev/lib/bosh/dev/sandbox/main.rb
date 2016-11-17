@@ -173,6 +173,7 @@ module Bosh::Dev::Sandbox
         trusted_certs: @trusted_certs,
         users_in_manifest: @users_in_manifest,
         enable_post_deploy: @enable_post_deploy,
+        enable_nats_delivered_templates: @enable_nats_delivered_templates,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
         director_ips: @director_ips
@@ -281,6 +282,7 @@ module Bosh::Dev::Sandbox
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
+      @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])

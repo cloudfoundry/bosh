@@ -49,6 +49,7 @@ module Bosh::Director
         :director_ips,
         :config_server_enabled,
         :config_server,
+        :enable_nats_delivered_templates
       )
 
       def clear
@@ -162,6 +163,7 @@ module Bosh::Director
 
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
         @enable_post_deploy = config.fetch('enable_post_deploy', false)
+        @enable_nats_delivered_templates = config.fetch('enable_nats_delivered_templates', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)

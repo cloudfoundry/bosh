@@ -40,12 +40,14 @@ module Bosh::Director
     let(:event_manager) { Api::EventManager.new(true) }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:dns_manager) { instance_double(DnsManager) }
+    let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
 
     before do
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persister)
       fake_app
     end
 
@@ -178,6 +180,8 @@ module Bosh::Director
               expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
               expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
             end
+
+            expect(rendered_templates_persister).to receive(:persist)
 
             expect(fake_new_agent).to receive(:apply).with({'networks' => {'ip' => '192.1.3.4'}}).ordered
             expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered

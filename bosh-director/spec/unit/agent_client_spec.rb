@@ -197,6 +197,42 @@ module Bosh::Director
           end
         end
 
+        describe 'upload_blob' do
+          it 'sends payload, payload_sha1, and blob_id to the agent' do
+            expect(client).to receive(:send_message).with(:upload_blob, {
+              'blob_id' => 'blob_id',
+              'sha1' =>'payload_sha1',
+              'payload' => 'base64_encoded_payload'
+            })
+            allow(client).to receive(:get_task)
+            client.upload_blob('blob_id', 'payload_sha1', 'base64_encoded_payload')
+          end
+
+          it 'periodically polls the upload_blob task while it is running' do
+            allow(client).to receive(:handle_message_with_retry).and_return task
+            allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+            expect(client).to receive(:get_task).with('fake-agent_task_id')
+            client.upload_blob('blob_id', 'payload_sha1', 'base64_encoded_payload')
+          end
+
+          context 'when the agent does not implement upload_blob' do
+            it 'raises an undefined action exception' do
+              allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message')
+
+              expect {
+                client.upload_blob('blob_id', 'payload_sha1', 'base64_encoded_payload')
+              }.to raise_error(Bosh::Director::AgentUnsupportedAction, 'Unsupported action: upload_blob')
+            end
+          end
+
+          it 'raises an exception for other RPC failures' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'failure has been found')
+
+            expect(client).to_not receive(:warning)
+            expect { client.upload_blob('blob_id', 'payload_sha1', 'base64_encoded_payload') }.to raise_error
+          end
+        end
+
         context 'task can time out' do
           it_acts_as_message_with_timeout :stop
         end

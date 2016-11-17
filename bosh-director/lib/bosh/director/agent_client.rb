@@ -20,6 +20,8 @@ module Bosh::Director
     # will probably be received because agent came back up.
     GET_STATE_MAX_RETRIES = 2
 
+    UPLOAD_BLOB_MAX_RETRIES = 3
+
     attr_accessor :id
 
     def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
@@ -27,6 +29,7 @@ module Bosh::Director
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
           get_task: GET_TASK_MAX_RETRIES,
+          upload_blob: UPLOAD_BLOB_MAX_RETRIES,
         }
       }
 
@@ -113,6 +116,23 @@ module Bosh::Director
 
     def sync_dns(*args, &blk)
       send_nats_request(:sync_dns, args, &blk)
+    end
+
+    def upload_blob(blob_id, payload_sha1, encoded_payload)
+      begin
+        send_message(:upload_blob, {
+          'blob_id' => blob_id,
+          'sha1' => payload_sha1,
+          'payload' => encoded_payload,
+        })
+      rescue RpcRemoteException => e
+        if e.message =~ /unknown message/
+          @logger.warn("'upload_blob' 'unknown message' error from the agent: #{e.inspect}")
+          raise Bosh::Director::AgentUnsupportedAction, 'Unsupported action: upload_blob'
+        else
+          raise
+        end
+      end
     end
 
     def update_settings(certs, disk_associations)

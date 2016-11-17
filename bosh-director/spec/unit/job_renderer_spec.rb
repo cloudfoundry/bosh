@@ -2,9 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { described_class.new(blobstore, logger) }
+    subject(:renderer) { described_class.new(logger) }
     let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before do
       job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
@@ -27,11 +26,9 @@ module Bosh::Director
       let(:instance_plan1) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
       let(:instance_plan2) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
 
-      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-
       it 'renders each jobs instance' do
-        expect(renderer).to receive(:render_job_instance).with(instance_plan1, {})
-        expect(renderer).to receive(:render_job_instance).with(instance_plan2, {})
+        expect(renderer).to receive(:render_job_instance).with(instance_plan1)
+        expect(renderer).to receive(:render_job_instance).with(instance_plan2)
         renderer.render_job_instances([instance_plan1, instance_plan2])
       end
     end
@@ -54,10 +51,7 @@ module Bosh::Director
       before do
         allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return({'template' => 'spec'})
         allow(instance_plan).to receive(:templates).and_return([template_1, template_2])
-        instance.bind_existing_instance_model(instance_model)
       end
-
-      let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
       let(:instance_model) do
         Models::Instance.make(deployment: deployment_model)
@@ -68,14 +62,6 @@ module Bosh::Director
         instance_double('Bosh::Director::Core::Templates::RenderedJobInstance', {
           configuration_hash: configuration_hash,
           template_hashes: { 'job-template-name' => 'rendered-job-template-hash' },
-          persist: rendered_templates_archive,
-        })
-      end
-
-      let(:rendered_templates_archive) do
-        instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive', {
-          blobstore_id: 'fake-new-blob-id',
-          sha1: 'fake-new-sha1',
         })
       end
 
@@ -89,34 +75,6 @@ module Bosh::Director
         perform
       end
 
-      context 'when instance does not have a latest archive' do
-        before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(nil) }
-
-        it 'persists new archive' do
-          expect(rendered_job_instance).to receive(:persist).with(blobstore)
-          perform
-        end
-
-        it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
-          expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
-          perform
-        end
-
-        it 'persists blob record in the database' do
-          current_time = Time.now
-          allow(Time).to receive(:now).and_return(current_time)
-
-          expect(instance_model).to receive(:add_rendered_templates_archive).with(
-            blobstore_id: 'fake-new-blob-id',
-            sha1: 'fake-new-sha1',
-            content_sha1: configuration_hash,
-            created_at: current_time,
-          )
-
-          perform
-        end
-      end
-
       context 'when instance plan does not have templates' do
         before do
           allow(instance_plan).to receive(:templates).and_return([])
@@ -128,101 +86,18 @@ module Bosh::Director
         end
       end
 
-      context 'when instance has rendered job templates archives' do
-        before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(latest_archive) }
-        let(:latest_archive) do
-          # Not using an instance double since Sequel Model classes are a bit meta
-          double('Bosh::Directore::Models::RenderedTemplatesArchive', {
-            instance: instance_model,
-            blobstore_id: 'fake-latest-blob-id',
-            sha1: 'fake-latest-sha1',
-            content_sha1: 'fake-latest-content-sha1',
-            created_at: Time.new(2013, 02, 01),
-          })
-        end
-
-        before { allow(Core::Templates::RenderedTemplatesArchive).to receive(:new).and_return(latest_rendered_templates_archive) }
-        let(:latest_rendered_templates_archive) do
-          instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive', {
-            blobstore_id: 'fake-latest-blob-id',
-            sha1: 'fake-latest-sha1',
-          })
-        end
-
-        context 'when the dry_run flag is set to true' do
-          it 'does not persist rendered templates in the blobstore' do
-            expect(latest_archive).to_not receive(:update)
-            expect(rendered_job_instance).to_not receive(:persist)
-            expect(instance_model).to_not receive(:add_rendered_templates_archive)
-            expect(instance).to_not receive(:rendered_templates_archive=)
-            renderer.render_job_instance(instance_plan, dry_run: true)
-          end
-        end
-
-        context 'when latest archive has matching content_sha1' do
-          let(:configuration_hash) { 'fake-latest-content-sha1' }
-
-          context 'when rendered template exists in blobstore' do
-            before { allow(blobstore).to receive(:exists?).with('fake-latest-blob-id').and_return(true) }
-
-            it 'does not persist new archive' do
-              expect(rendered_job_instance).to_not receive(:persist)
-              perform
-            end
-
-            it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
-              expect(instance).to receive(:rendered_templates_archive=).with(latest_rendered_templates_archive)
-              expect(Core::Templates::RenderedTemplatesArchive).to receive(:new).
-                with('fake-latest-blob-id', 'fake-latest-sha1')
-              perform
-            end
-          end
-
-          context 'when rendered template is missing in blobstore' do
-            before do
-              allow(blobstore).to receive(:exists?).with('fake-latest-blob-id').and_return(false)
-              allow(Core::Templates::RenderedTemplatesArchive).to receive(:new).and_return(latest_archive)
-            end
-
-            it 'uploads the new archive and updates the record in db' do
-              expect(latest_archive).to receive(:update).with({:blobstore_id => 'fake-new-blob-id', :sha1 => 'fake-new-sha1'})
-              expect(rendered_job_instance).to receive(:persist).with(blobstore)
-              expect(instance).to receive(:rendered_templates_archive=).with(latest_archive)
-              perform
-            end
-          end
-        end
-
-        context 'when latest archive does not have matching content_sha1' do
-          let(:configuration_hash) { 'fake-latest-non-matching-content-sha1' }
-
-          it 'persists new archive' do
-            expect(rendered_job_instance).to receive(:persist).with(blobstore)
-            perform
-          end
-
-          it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
-            expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
-            perform
-          end
-
-          it 'persists blob record in the database' do
-            current_time = Time.now
-            allow(Time).to receive(:now).and_return(current_time)
-            expect(instance_model).to receive(:add_rendered_templates_archive).with(
-                blobstore_id: 'fake-new-blob-id',
-                sha1: 'fake-new-sha1',
-                content_sha1: configuration_hash,
-                created_at: current_time,
-              )
-            perform
-          end
-        end
-      end
-
       it 'renders all templates for all instances of a job' do
         expect(job_instance_renderer).to receive(:render).with({'template' => 'spec'})
         perform
+      end
+
+      it 'sets the rendered_job_instance on the instance_plan' do
+        expect(job_instance_renderer).to receive(:render).and_return(rendered_job_instance)
+
+        perform
+
+        expect(instance_plan.rendered_templates).to eq(rendered_job_instance)
+
       end
 
       it 'updates each instance with configuration and templates hashses' do
@@ -231,11 +106,8 @@ module Bosh::Director
         perform
       end
 
-      it 'uploads all the rendered templates for instance that has configuration_hash' do
-        expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
-        expect(rendered_job_instance).to receive(:persist).with(blobstore)
-        perform
-      end
+
+
     end
   end
 end
