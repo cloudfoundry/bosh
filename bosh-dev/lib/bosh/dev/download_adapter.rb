@@ -32,7 +32,7 @@ module Bosh::Dev
         http = Timeout.timeout(60) do
           http_opts = {read_timeout: 300}
           if uri.scheme == 'https'
-            http_opts = http_opts.merge({use_ssl: true, verify_mode: OpenSSL::SSL::VERIFY_NONE})
+            http_opts = http_opts.merge({use_ssl: true})
           end
           Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port, proxy.user, proxy.password, http_opts)
         end
