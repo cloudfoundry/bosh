@@ -11,11 +11,10 @@ describe Bosh::Director::DownloadHelper do
   let(:http_500) { Net::HTTPInternalServerError.new('1.1', '500', 'Internal Server Error') }
   let(:remote_file) { 'http://example.com/file.tgz' }
   let(:local_file) { File.join(Dir.tmpdir, 'resource.tgz') }
-  let(:verify_mode) { OpenSSL::SSL::VERIFY_NONE }
 
   describe 'download_remote_file' do
     it 'should download a remote file' do
-      expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http).once
+      expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http).once
       expect(http).to receive(:request_get).and_yield(http_200)
       expect(http_200).to receive(:read_body) do |&block|
         block.call("contents 1\n")
@@ -26,14 +25,31 @@ describe Bosh::Director::DownloadHelper do
       expect(File.read(local_file)).to eq("contents 1\ncontents 2\n")
     end
 
+    context 'when the remote file uri uses https' do
+      let(:remote_file) { 'https://example.com/file.tgz' }
+
+      it 'should use ssl' do
+        expect(Net::HTTP).to receive(:start).with('example.com', 443, :ENV, use_ssl: true).and_yield(http).once
+
+        expect(http).to receive(:request_get).and_yield(http_200)
+        expect(http_200).to receive(:read_body) do |&block|
+          block.call("contents 1\n")
+          block.call("contents 2\n")
+        end
+
+        download_remote_file('resource', remote_file, local_file)
+        expect(File.read(local_file)).to eq("contents 1\ncontents 2\n")
+      end
+    end
+
     context 'when the server redirects' do
       let(:http_302) { Net::HTTPFound.new('1.1', '302', 'Found').tap { |response| response.header['location'] = redirect_location } }
       let(:redirect_url) { 'http://redirector.example.com/redirect/to/file' }
       let(:redirect_location) { remote_file }
 
       it 'should follow the redirect' do
-        expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http).once
-        expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http).once
+        expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).once
+        expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http).once
         expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_302)
         expect(http).to receive(:request_get).with(URI.parse(remote_file).request_uri).and_yield(http_200)
         expect(http_200).to receive(:read_body)
@@ -45,7 +61,7 @@ describe Bosh::Director::DownloadHelper do
         let(:redirect_location) { '/file.tgz' }
 
         it 'should evaluate the location relative to the server and follow the redirect' do
-          expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http).twice
+          expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).twice
           expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_302)
           expect(http).to receive(:request_get).with('/file.tgz').and_yield(http_200)
           expect(http_200).to receive(:read_body)
@@ -57,7 +73,7 @@ describe Bosh::Director::DownloadHelper do
           let(:redirect_location) { 'file.tgz' }
 
           it 'should evaulate the location relative to the server and path and follow the redirect' do
-            expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http).twice
+            expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).twice
             expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_302)
             expect(http).to receive(:request_get).with('/redirect/to/file.tgz').and_yield(http_200)
             expect(http_200).to receive(:read_body)
@@ -71,7 +87,7 @@ describe Bosh::Director::DownloadHelper do
         let(:http_302) { Net::HTTPFound.new('1.1', '302', 'Found') }
 
         it 'should raise an error if no location is specified in a 302' do
-          allow(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http)
+          allow(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http)
           expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_302)
 
           expect {
@@ -91,7 +107,7 @@ describe Bosh::Director::DownloadHelper do
     end
 
     it 'should return a ResourceNotFound exception if remote server returns a NotFound error' do
-      expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false, verify_mode: verify_mode).and_yield(http)
+      expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http)
       expect(http).to receive(:request_get).and_yield(http_404)
 
       expect {
