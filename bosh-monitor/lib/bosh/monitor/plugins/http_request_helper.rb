@@ -2,31 +2,12 @@ require 'httpclient'
 
 module Bosh::Monitor::Plugins
   module HttpRequestHelper
-    def send_http_post_request(uri, request)
-      send_http_request(:post, uri, request)
-    end
-
     def send_http_put_request(uri, request)
-      send_http_request(:put, uri, request)
-    end
+      logger.debug("sending HTTP PUT to: #{uri}")
 
-    def send_http_get_request(uri)
-      # we are interested in response, so send sync request
-      logger.debug("Sending GET request to #{uri}")
-      sync_client.get(uri)
-    end
-
-    def send_http_post_sync_request(uri, request)
-      cli = sync_client
-      cli.proxy = request[:proxy] if request[:proxy]
-      cli.post(uri, request[:body])
-    end
-
-    def send_http_request(method, uri, request)
       name = self.class.name
-      logger.debug("sending HTTP #{method.to_s.upcase} to: #{uri}")
       started = Time.now
-      http = EM::HttpRequest.new(uri).send(method, request)
+      http = EM::HttpRequest.new(uri).send(:put, request)
       http.callback do
         logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{http.response_header.status}")
       end
@@ -36,11 +17,23 @@ module Bosh::Monitor::Plugins
       end
     end
 
+    def send_http_get_request(uri)
+      # we are interested in response, so send sync request
+      logger.debug("Sending GET request to #{uri}")
+      sync_client(OpenSSL::SSL::VERIFY_NONE).get(uri)
+    end
+
+    def send_http_post_sync_request(uri, request)
+      cli = sync_client
+      cli.proxy = request[:proxy] if request[:proxy]
+      cli.post(uri, request[:body])
+    end
+
     private
 
-    def sync_client
+    def sync_client(ssl_verify_mode = OpenSSL::SSL::VERIFY_PEER)
       client = HTTPClient.new
-      client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      client.ssl_config.verify_mode = ssl_verify_mode
       client
     end
   end

@@ -157,7 +157,7 @@ module Bosh::Dev
 
       context 'when URI uses HTTPS' do
         let(:string_uri) { 'https://a.sample.uri/requesting/a/test.yml' }
-        let(:http_options) { {:use_ssl => true, verify_mode: OpenSSL::SSL::VERIFY_NONE, :read_timeout=>300} }
+        let(:http_options) { {:use_ssl => true, :read_timeout=>300} }
 
         it 'passes HTTPS options when opening the connection' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
