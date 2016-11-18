@@ -20,6 +20,12 @@ shared_examples_for 'All Stemcells' do
     end
   end
 
+  context 'grub does not install an EFI bootloader' do
+    describe file('/boot/efi') do
+      it { should_not be_directory }
+    end
+  end
+
   context 'disable remote host login (stig: V-38491)' do
     describe command('find /home -name .rhosts') do
       its (:stdout) { should eq('') }
