@@ -113,7 +113,29 @@ module Bosh::Dev
         it 'raises an error' do
           expect {
             subject.download(uri, write_path)
-          }.to raise_error(%r{error 500 while downloading 'http://a.sample.uri/requesting/a/test.yml'})
+          }.to raise_error(%r{error 500 Internal Server Error while downloading 'http://a.sample.uri/requesting/a/test.yml'})
+        end
+
+        context 'and the response has a body' do
+          before { stub_request(:get, string_uri).to_return(status: [400, 'Bad Request'], body: 'Missing param foo') }
+
+          it 'raises an error containing the body' do
+            expect {
+              subject.download(uri, write_path)
+            }.to raise_error(%r{error 400 Bad Request while downloading 'http://a.sample.uri/requesting/a/test.yml': Missing param foo})
+          end
+        end
+      end
+
+      context 'when URI uses HTTPS' do
+        let(:string_uri) { 'https://a.sample.uri/requesting/a/test.yml' }
+        let(:http_options) { {:use_ssl => true, :read_timeout=>300} }
+
+        it 'passes HTTPS options when opening the connection' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 443, nil, nil, nil, nil, http_options) { mock_http }
+          subject.download(uri, write_path)
         end
       end
 
