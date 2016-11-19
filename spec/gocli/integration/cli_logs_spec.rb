@@ -15,9 +15,9 @@ describe 'cli: logs', type: :integration do
 
     deployment_name = manifest_hash['name']
 
-    expect(bosh_runner.run("-d #{deployment_name} logs first-job/#{index}")).to match /first-job-.*\.tgz/
+    expect(bosh_runner.run("-d #{deployment_name} logs first-job/#{index}")).to match /first-job\..*\.tgz/
 
-    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{id}'")).to match /first-job-.*\.tgz/
+    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{id}'")).to match /first-job\..*\.tgz/
     expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{id}'")).to include "Fetching logs for first-job/#{id} (#{index})"
   end
 end
