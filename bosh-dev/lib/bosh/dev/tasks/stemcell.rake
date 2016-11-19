@@ -84,7 +84,7 @@ namespace :stemcell do
       os_image_version = os_image_versions[args.os_image_key]
       puts "Using OS image #{args.os_image_key}, version #{os_image_version}"
 
-      os_image_uri = URI.join('http://s3.amazonaws.com/', "#{args.os_image_s3_bucket_name}/", args.os_image_key)
+      os_image_uri = URI.join('https://s3.amazonaws.com/', "#{args.os_image_s3_bucket_name}/", args.os_image_key)
       os_image_uri.query = URI.encode_www_form([['versionId', os_image_version]])
 
       Dir.mktmpdir('os-image') do |download_path|
