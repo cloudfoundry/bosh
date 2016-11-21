@@ -105,8 +105,8 @@ module Bosh::Director
       end
       let(:release_version) { '42+dev.6' }
       let(:release) { Models::Release.make(name: 'appcloud') }
-      let(:manifest_packages) { [] }
-      let(:manifest_jobs) { [] }
+      let(:manifest_packages) { nil }
+      let(:manifest_jobs) { nil }
       before { allow(job).to receive(:with_release_lock).and_yield }
 
       context 'when release is local' do

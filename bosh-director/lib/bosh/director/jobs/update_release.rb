@@ -535,8 +535,9 @@ module Bosh::Director
 
         new_jobs = []
         existing_jobs = []
+        manifest_jobs = @manifest['jobs'] || []
 
-        @manifest["jobs"].each do |job_meta|
+        manifest_jobs.each do |job_meta|
           # Checking whether we might have the same bits somewhere
           @release_version_model.templates.select { |t| t.name == job_meta["name"] }.each do |tmpl|
             if tmpl.fingerprint != job_meta["fingerprint"]
@@ -640,7 +641,7 @@ module Bosh::Director
       end
 
       def manifest_jobs
-        @manifest['jobs']
+        @manifest['jobs'] || []
       end
 
       # Returns the next release version (to be used for rebased release)

@@ -20,7 +20,8 @@ module Bosh::Director::Test
       FileUtils.mkdir(jobs_dir)
       FileUtils.mkdir(packages_dir)
 
-      manifest["jobs"].each do |job|
+      jobs = manifest['jobs'] || []
+      jobs.each do |job|
         job_dir = File.join(jobs_dir, job["name"])
         FileUtils.mkdir(job_dir)
         spec = {
