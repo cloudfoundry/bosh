@@ -336,10 +336,17 @@ module Bosh::Director
 
             # Lock before read to avoid director/worker race condition
             file.flock(File::LOCK_EX)
-            state = JSON.parse(file.read) || {}
 
             # Empty state file to prevent blocked processes from attempting to set UUID
+            contents = file.read
+            begin
+              state = JSON.parse(contents)
+            rescue
+              state = {}
+            end
+
             file.truncate(0)
+            file.flush
 
             if state['uuid']
               Bosh::Director::Models::DirectorAttribute.update_or_create_uuid(state['uuid'], @logger)
