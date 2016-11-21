@@ -69,7 +69,7 @@ module Bosh::Director
           deployment_release_version = deployment.release(addon_job_hash['release'])
           deployment_release_version.bind_model
 
-          addon_job_object = DeploymentPlan::Job.new(deployment_release_version, addon_job_hash['name'])
+          addon_job_object = DeploymentPlan::Job.new(deployment_release_version, addon_job_hash['name'], deployment.name)
           addon_job_object.bind_models
           deployment_jobs = fetch_deployment_jobs(deployment, addon_job_hash['name'])
 

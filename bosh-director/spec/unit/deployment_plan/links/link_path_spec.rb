@@ -6,7 +6,7 @@ module Bosh::Director
       let(:logger) { Logging::Logger.new('TestLogger') }
 
       let(:job) do
-        job = Job.new(nil, 'provider_job')
+        job = Job.new(nil, 'provider_job', deployment_name)
         job.add_link_from_release('provider_instance_group', 'provides', 'link_name', {'name' => 'link_name', 'type' => 'link_type'})
         job
       end
@@ -231,7 +231,7 @@ module Bosh::Director
       context 'when there are multiple links with the same type' do
         let(:path) { {"name" => 'link_name', 'type' => 'link_type'} }
         let(:additional_job) do
-          job = Job.new(nil, 'provider_job')
+          job = Job.new(nil, 'provider_job', deployment_name)
           job.add_link_from_release('additional_provider_instance_group', 'provides', 'link_name', {'name' => 'link_name', 'type' => 'link_type'})
           job
         end

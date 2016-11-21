@@ -83,8 +83,9 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   describe 'looking up/adding templates' do
     it 'registers templates used in the release' do
       spec = {'name' => 'foo', 'version' => '42.1-dev'}
+      deployment = make_deployment('mycloud')
 
-      release = make(nil, spec)
+      release = make(deployment, spec)
       expect(release.templates).to eq([])
       release.get_or_create_template('foobar')
       expect(release.templates.size).to eq(1)

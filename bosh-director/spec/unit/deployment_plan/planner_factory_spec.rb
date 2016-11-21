@@ -274,8 +274,9 @@ LOGMESSAGE
                  ])
                 end
 
+                let(:deployment_name) { 'deployment_name' }
                 let(:job1) do
-                  job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_template')
+                  job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_template', deployment_name)
                   job.add_link_from_release('job1-name', 'consumes', 'link_name', {'name' => 'link_name', 'type' => 'link_type'})
                   job.add_link_from_release('job1-name', 'provides', 'link_name_2', {'properties' => ['a']})
                   job

@@ -19,7 +19,7 @@ module Bosh
       let(:env) { DeploymentPlan::Env.new({}) }
       let(:job) do
         template_model = BD::Models::Template.make
-        job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
+        job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name', deployment.name)
         job.bind_existing_model(template_model)
 
         instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
