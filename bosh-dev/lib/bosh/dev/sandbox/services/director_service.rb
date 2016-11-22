@@ -5,7 +5,6 @@ module Bosh::Dev::Sandbox
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
-    DIRECTOR_UUID = 'deadbeef'
 
     DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'
     DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
@@ -188,9 +187,6 @@ module Bosh::Dev::Sandbox
     def reset
       FileUtils.rm_rf(@director_tmp_path)
       FileUtils.mkdir_p(@director_tmp_path)
-      File.open(File.join(@director_tmp_path, 'state.json'), 'w') do |f|
-        f.write(Yajl::Encoder.encode('uuid' => DIRECTOR_UUID))
-      end
     end
 
     def write_config(config)

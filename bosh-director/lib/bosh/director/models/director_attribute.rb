@@ -30,15 +30,5 @@ module Bosh::Director::Models
       uuid = first(name: 'uuid')
       return uuid.value if uuid
     end
-
-    def self.update_or_create_uuid(value, logger)
-      if where(name: 'uuid').update(value: value) == 0
-        create(name: 'uuid', value: value)
-        logger.info("Created uuid director attribute with value=#{value.inspect}")
-      else
-        logger.info("Updated uuid director attribute with value=#{value.inspect}")
-      end
-      value
-    end
   end
 end

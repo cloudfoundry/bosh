@@ -41,52 +41,6 @@ module Bosh::Director::Models
       end
     end
 
-    describe '.update_or_create_uuid' do
-      context 'when uuid is found' do
-        context 'when old uuid is same as new' do
-          before { described_class.create(name: 'uuid', value: 'fake-uuid') }
-
-          it 'keeps uuid value the same' do
-            described_class.update_or_create_uuid('fake-uuid', logger)
-            expect(described_class.first(name: 'uuid').value).to eq('fake-uuid')
-          end
-
-          it 'returns uuid value' do
-            described_class.update_or_create_uuid('fake-uuid', logger)
-            expect(described_class.first(name: 'uuid').value).to eq('fake-uuid')
-          end
-        end
-
-        context 'when old uuid is different from old uuid' do
-          before { described_class.create(name: 'uuid', value: 'fake-old-uuid') }
-
-          it 'updates uuid value' do
-            described_class.update_or_create_uuid('fake-uuid', logger)
-            expect(described_class.first(name: 'uuid').value).to eq('fake-uuid')
-          end
-
-          it 'returns uuid value' do
-            uuid = described_class.update_or_create_uuid('fake-uuid', logger)
-            expect(uuid).to eq('fake-uuid')
-          end
-        end
-      end
-
-      context 'when uuid cannot be found' do
-        before { described_class.dataset.delete }
-
-        it 'creates uuid with given value' do
-          described_class.update_or_create_uuid('fake-uuid', logger)
-          expect(described_class.first(name: 'uuid').value).to eq('fake-uuid')
-        end
-
-        it 'returns uuid value' do
-          uuid = described_class.update_or_create_uuid('fake-uuid', logger)
-          expect(uuid).to eq('fake-uuid')
-        end
-      end
-    end
-
     describe 'validations' do
       [nil, ''].each do |invalid_name|
         it "does not allow name with #{invalid_name.inspect}" do

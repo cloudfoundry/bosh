@@ -165,31 +165,6 @@ describe Bosh::Director::Config do
       end
     end
 
-    describe '.override_uuid' do
-      context 'when the state.json file exists' do
-        before { open(state_json, 'w') { |f| f.write("{\"uuid\":\"testuuid\"}") } }
-        let(:state_json) { File.join(test_config['dir'], 'state.json') }
-
-        it 'inserts the uuid from state.json into the database' do
-          described_class.configure(test_config)
-          uuid = Bosh::Director::Models::DirectorAttribute.first(name: 'uuid')
-          expect(uuid.value).to eq('testuuid')
-        end
-
-        it 'deletes state.json' do
-          described_class.configure(test_config)
-          expect(File.exist?(state_json)).to be(false)
-        end
-      end
-
-      context 'when the state.json file does not exist' do
-        it 'returns nil' do
-          described_class.configure(test_config)
-          expect(described_class.override_uuid).to be_nil
-        end
-      end
-    end
-
     context 'database backup' do
       it 'configured a database backup adapter' do
         described_class.configure_db(database_options)

@@ -149,7 +149,8 @@ module Bosh::Director
         @local_dns_enabled = config.fetch('local_dns', {}).fetch('enabled', false)
         @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
 
-        @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
+        # UUID in config *must* only be used for tests
+        @uuid = config['uuid'] || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
         @encryption = config['encryption']
@@ -325,46 +326,6 @@ module Bosh::Director
           end
         end
         temp_dir
-      end
-
-      def override_uuid
-        new_uuid = nil
-        state_file = File.join(base_dir, 'state.json')
-
-        begin
-          open(state_file, 'r+') do |file|
-
-            # Lock before read to avoid director/worker race condition
-            file.flock(File::LOCK_EX)
-
-            # Empty state file to prevent blocked processes from attempting to set UUID
-            contents = file.read
-            begin
-              state = JSON.parse(contents)
-            rescue
-              state = {}
-            end
-
-            file.truncate(0)
-            file.flush
-
-            if state['uuid']
-              Bosh::Director::Models::DirectorAttribute.update_or_create_uuid(state['uuid'], @logger)
-              @logger.info("Using director UUID #{state['uuid']} from #{state_file}")
-              new_uuid = state['uuid']
-            end
-
-            # Unlock after storing UUID
-            file.flock(File::LOCK_UN)
-          end
-
-          FileUtils.rm_f(state_file)
-
-        rescue Errno::ENOENT
-          # Catch race condition since another process (director/worker) might migrated the state
-        end
-
-        new_uuid
       end
 
       def load_file(path)
