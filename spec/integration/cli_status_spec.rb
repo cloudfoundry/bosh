@@ -18,7 +18,7 @@ describe 'cli: status', type: :integration do
 
   it 'returns just uuid when `status --uuid` is called' do
     bosh_runner.run("target #{current_sandbox.director_url}")
-    expect(bosh_runner.run('status --uuid')).to match_output(Bosh::Dev::Sandbox::DirectorService::DIRECTOR_UUID)
+    expect(bosh_runner.run('status --uuid')).to match_output('deadbeef')
   end
 
   it 'continues to run when BOSH_USE_BUNDLER is true', no_reset: true do
