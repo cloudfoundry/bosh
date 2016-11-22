@@ -20,6 +20,9 @@ module Bosh
 
         attr_accessor :network_plans
 
+        # An instance of Bosh::Director::Core::Templates::RenderedJobInstance
+        attr_accessor :rendered_templates
+
         ##
         # @return [Boolean] returns true if the any of the expected specifications
         #   differ from the ones provided by the VM

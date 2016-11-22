@@ -113,7 +113,7 @@ module Bosh
             mbus: @options['nats'],
           })
 
-        agent_pid = spawn_agent_process(agent_id)
+        agent_pid = spawn_agent_process(agent_id, cloud_properties['legacy_agent_path'])
         vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
         @vm_repo.save(vm)
@@ -337,11 +337,11 @@ module Bosh
         end
       end
 
-      def spawn_agent_process(agent_id)
+      def spawn_agent_process(agent_id, legacy_agent_path = nil)
         root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
 
-        agent_cmd = agent_cmd(agent_id)
+        agent_cmd = agent_cmd(agent_id, legacy_agent_path)
         agent_log = agent_log_path(agent_id)
 
         agent_pid = Process.spawn(
@@ -410,7 +410,13 @@ module Bosh
         File.write(path, JSON.generate('ip' => ip_address))
       end
 
-      def agent_cmd(agent_id)
+      def agent_cmd(agent_id, legacy_agent_path)
+        if legacy_agent_path.nil?
+          go_agent_exe =  File.expand_path('../../../../go/src/github.com/cloudfoundry/bosh-agent/out/bosh-agent', __FILE__)
+        else
+          go_agent_exe = legacy_agent_path
+        end
+
         agent_config_file = File.join(agent_base_dir(agent_id), 'agent.json')
 
         agent_config = {
@@ -426,8 +432,6 @@ module Bosh
         }
 
         File.write(agent_config_file, JSON.generate(agent_config))
-
-        go_agent_exe = File.expand_path('../../../../go/src/github.com/cloudfoundry/bosh-agent/out/bosh-agent', __FILE__)
 
         %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -P dummy -M dummy-nats -C #{agent_config_file}]
       end

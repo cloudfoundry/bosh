@@ -70,6 +70,8 @@ require 'bosh/director/key_generator'
 require 'bosh/director/package_dependencies_manager'
 
 require 'bosh/director/job_renderer'
+require 'bosh/director/rendered_templates_persister'
+
 require 'bosh/director/cycle_helper'
 require 'bosh/director/encryption_helper'
 require 'bosh/director/worker'

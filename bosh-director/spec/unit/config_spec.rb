@@ -212,6 +212,33 @@ describe Bosh::Director::Config do
         end
       end
     end
+
+    describe 'enable_nats_delivered_templates' do
+      it 'defaults to false' do
+        described_class.configure(test_config)
+        expect(described_class.enable_nats_delivered_templates).to be_falsey
+      end
+
+      context 'when explicitly set' do
+        context 'when set to true' do
+          before { test_config['enable_nats_delivered_templates'] = true }
+
+          it 'resolves to true' do
+            described_class.configure(test_config)
+            expect(described_class.enable_nats_delivered_templates).to be_truthy
+          end
+        end
+
+        context 'when set to false' do
+          before { test_config['enable_nats_delivered_templates'] = false }
+
+          it 'resolves to false' do
+            described_class.configure(test_config)
+            expect(described_class.enable_nats_delivered_templates).to be_falsey
+          end
+        end
+      end
+    end
   end
 
   describe '#identity_provider' do

@@ -157,7 +157,7 @@ module Bosh::Director
         job_renderer = JobRenderer.create
         jobs.each do |job|
           begin
-            job_renderer.render_job_instances(job.needed_instance_plans, dry_run: @options['dry_run'])
+            job_renderer.render_job_instances(job.needed_instance_plans)
           rescue Exception => e
             errors.push e
           end

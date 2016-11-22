@@ -8,6 +8,7 @@ require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
+require 'bosh/dev/legacy_agent_manager'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -30,7 +31,7 @@ namespace :spec do
       run_integration_specs(tags: 'hm')
     end
 
-    desc 'Install BOSH integration test dependencies (currently Nginx)'
+    desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
       unless ENV['SKIP_DEPS'] == 'true'
         unless ENV['SKIP_NGINX'] == 'true'
@@ -49,6 +50,10 @@ namespace :spec do
 
         unless ENV['SKIP_CONFIG_SERVER'] == 'true'
           Bosh::Dev::Sandbox::ConfigServerService.install
+        end
+
+        unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
+          Bosh::Dev::LegacyAgentManager.install
         end
       end
     end

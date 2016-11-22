@@ -1,6 +1,7 @@
 require 'yaml'
 require 'yajl'
 require 'bosh/dev/sandbox/main'
+require 'bosh/dev/legacy_agent_manager'
 
 module IntegrationExampleGroup
   def logger
@@ -246,6 +247,10 @@ module IntegrationExampleGroup
     end
 
     expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])
+  end
+
+  def get_legacy_agent_path(legacy_agent_name)
+    Bosh::Dev::LegacyAgentManager.generate_executable_full_path(legacy_agent_name)
   end
 
   private

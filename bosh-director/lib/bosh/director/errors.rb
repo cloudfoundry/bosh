@@ -254,6 +254,7 @@ module Bosh::Director
   AgentUnexpectedDisk = err(400009)
   AgentDiskOutOfSync = err(400010)
   AgentInvalidTaskResult = err(400011)
+  AgentUnsupportedAction = err(400012)
 
   # Cloud check task errors
   CloudcheckTooManySimilarProblems = err(410001)
