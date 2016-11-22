@@ -44,4 +44,5 @@ fi
 
 # /etc/login.defs are only effective for new users
 sed -i -r 's/^PASS_MIN_DAYS.+/PASS_MIN_DAYS 1/' $chroot/etc/login.defs
+sed -i -r 's/^UMASK.+/UMASK 077/' $chroot/etc/login.defs
 run_in_chroot $chroot "chage --mindays 1 vcap"

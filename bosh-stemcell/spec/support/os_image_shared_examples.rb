@@ -58,7 +58,7 @@ shared_examples_for 'every OS image' do
     end
 
     describe command('stat -c %a ~vcap') do
-      it { should return_stdout('755') }
+      it { should return_stdout('700') }
     end
   end
 
@@ -381,6 +381,10 @@ shared_examples_for 'every OS image' do
   describe file('/etc/login.defs') do
     it('should not allow users to cycle passwords quickly (stig: V-38477)') do
       should contain /^PASS_MIN_DAYS[[:space:]]\+1/
+    end
+
+    it('should restrict permission on new user home directories') do
+      should contain /^UMASK[[:space:]]077/
     end
 
     it('should use an approved hashing algorithm to save the password (stig: V-38576)') do
