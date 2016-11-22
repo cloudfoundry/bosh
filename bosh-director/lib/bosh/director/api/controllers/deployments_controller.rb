@@ -298,6 +298,12 @@ module Bosh::Director
         status(204)
       end
 
+      # Config Vars
+      get '/:deployment/config_vars' do
+        mappings = Models::PlaceholderMapping.where(deployment_id: deployment.id)
+        JSON.generate(create_config_vars_response(mappings))
+      end
+
       # Cloud check
 
       # Initiate deployment scan
@@ -490,6 +496,15 @@ module Bosh::Director
             'index' => instance.index,
             'id' => instance.uuid
         }
+      end
+
+      def create_config_vars_response(vars)
+        vars.map do |var|
+        {
+          'placeholder_name' => var.placeholder_name,
+          'placeholder_id' => var.placeholder_id
+        }
+        end
       end
     end
   end
