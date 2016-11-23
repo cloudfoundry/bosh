@@ -13,6 +13,11 @@ describe Bosh::Director::Api::EventManager do
           Bosh::Director::Models::Event.count
         }.from(0).to(1)
       end
+      
+      it 'allows to save specified timestamp' do
+        manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep', :timestamp => 1479673560})
+        expect( Bosh::Director::Models::Event.first.timestamp.to_i).to eq(1479673560)
+      end
 
       it 'should write event to syslog' do
         pending("Syslog::Logger does not exist in ruby version '#{RUBY_VERSION}'") if RUBY_VERSION.to_i < 2
@@ -171,7 +176,5 @@ describe Bosh::Director::Api::EventManager do
         expect(Bosh::Director::Models::Event.order{Sequel.desc(:id)}.last.id).to eq(5)
       end
     end
-
-
   end
 end
