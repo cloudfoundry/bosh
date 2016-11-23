@@ -23,6 +23,7 @@ echo \"root:${bosh_users_password}\" | chpasswd
 usermod -G ${vcap_user_groups} vcap
 usermod -s /bin/bash vcap
 groupadd bosh_sudoers
+groupadd bosh_sshers
 "
 
 # Setup SUDO

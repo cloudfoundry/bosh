@@ -162,6 +162,10 @@ shared_examples_for 'every OS image' do
       it { should exist }
     end
 
+    describe group('bosh_sshers') do
+      it { should exist }
+    end
+
     describe command('rsyslogd -N 1'), exclude_on_ppc64le: true do
       it { should return_stdout /version 8/ }
       it { should return_exit_status(0) }
@@ -260,6 +264,10 @@ shared_examples_for 'every OS image' do
 
     it 'sets Protocol to 2 (stig: V-38607)' do
       expect(sshd_config).to contain(/^Protocol 2$/)
+      end
+
+    it 'sets AllowGroups to bosh_sshers (CIS 9.3.13)' do
+      expect(sshd_config).to contain(/^AllowGroups bosh_sshers$/)
     end
   end
 
