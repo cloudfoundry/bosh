@@ -17,6 +17,21 @@ module Bosh::Monitor::Plugins
       end
     end
 
+    def send_http_post_request(uri, request)
+      logger.debug("sending HTTP POST to: #{uri}")
+
+      name = self.class.name
+      started = Time.now
+      http = EM::HttpRequest.new(uri).send(:post, request)
+      http.callback do
+        logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{http.response_header.status}")
+      end
+
+      http.errback do |e|
+        logger.error("Failed to send #{name} event: #{e.error}")
+      end
+    end
+
     def send_http_get_request(uri)
       # we are interested in response, so send sync request
       logger.debug("Sending GET request to #{uri}")
