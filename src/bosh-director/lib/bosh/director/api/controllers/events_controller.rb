@@ -56,6 +56,37 @@ module Bosh::Director
         json_encode(events)
       end
 
+      post '/', :consumes => [:json] do
+        @permission_authorizer.granted_or_raise(:director, :admin, token_scopes)
+        payload = json_decode(request.body.read)
+        raise ValidationInvalidType, 'Action, object_type, object_name are required' if payload['action'].nil? || payload['object_type'].nil? || payload['object_name'].nil?
+
+        error = payload['error']
+        context = payload['context']
+        raise ValidationInvalidType, 'Context must be a hash' if !context.nil? && !context.kind_of?(Hash)
+
+        begin
+          timestamp = payload['timestamp'].nil? ? Time.new : timestamp_filter_value(payload['timestamp'])
+        rescue ArgumentError
+          status(400)
+          body("Invalid timestamp parameter: '#{payload['timestamp']}' ")
+          return
+        end
+
+        @event_manager.create_event(
+          {
+            timestamp:   timestamp,
+            user:        current_user,
+            action:      payload['action'],
+            object_type: payload['object_type'],
+            object_name: payload['object_name'],
+            deployment:  payload['deployment'],
+            instance:    payload['instance'],
+            error:       error,
+            context:     context
+          })
+      end
+
       private
 
       def timestamp_filter_value(value)
