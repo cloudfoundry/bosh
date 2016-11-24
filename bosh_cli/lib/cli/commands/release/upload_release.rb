@@ -135,7 +135,7 @@ If --name & --version are provided, they will be used for checking if release ex
             # have to upload everything
             if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack?
               tarball.validate(:allow_sparse => true, :validate_manifest => false)
-              err('Release is invalid, please fix, verify and upload again') unless tarball.valid?
+              err('Release is invalid or disk space is low, please fix, verify and upload again') unless tarball.valid?
             else
               tarball.validate_jobs(:allow_sparse => true, :validate_job_packages => false)
               tarball.print_manifest

@@ -267,7 +267,10 @@ module Bosh::Cli
 
     def validate_packages(options = {})
       allow_sparse = options.fetch(:allow_sparse, false)
-      unpack
+
+      step("Unpacking packages", "Unable to unpack packages", :fatal) do
+        unpack
+      end
 
       total_packages = manifest_yaml[@packages_folder].size
       @available_packages = {}
