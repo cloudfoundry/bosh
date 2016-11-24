@@ -10,6 +10,12 @@ module Bosh::Cli
       normalized = Bosh::Common::DeepCopy.copy(manifest_hash)
 
       # for backwards compatibility, new directors always convert stemcell and release versions to string
+      if normalized['stemcells']
+        normalized['stemcells'].each do |stemcell|
+          stemcell['version'] = stemcell['version'].to_s
+        end
+      end
+
       if normalized['resource_pools']
         normalized['resource_pools'].each do |rp|
           rp['stemcell']['version'] = rp['stemcell']['version'].to_s
