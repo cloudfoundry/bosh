@@ -78,6 +78,35 @@ describe Bhm::Plugins::Graphite do
           plugin.run
 
           expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from mysql_node. .agent_id=deadbeef index=0/)
+
+          plugin.process(event)
+
+          EM.stop
+        end
+      end
+
+      it "skips sending metrics if deployment is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, deployment: nil)
+        EM.run do
+          plugin.run
+
+          expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from mysql_node.node_id_abc .agent_id=deadbeef index=0/)
+
+          plugin.process(event)
+
+          EM.stop
+        end
+      end
+
+      it "skips sending metrics if job is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, job: nil)
+        EM.run do
+          plugin.run
+
+          expect(connection).not_to receive(:send_metric)
+          expect(plugin.logger).to receive(:warn).with(/Skipping.*from .node_id_abc .agent_id=deadbeef index=0/)
 
           plugin.process(event)
 
