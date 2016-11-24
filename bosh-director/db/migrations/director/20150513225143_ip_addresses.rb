@@ -4,7 +4,7 @@ Sequel.migration do
       primary_key :id
       String      :network_name
       Bignum      :address, unique: true
-      Boolean     :static
+      TrueClass     :static
       foreign_key :instance_id, :instances
     end
   end
