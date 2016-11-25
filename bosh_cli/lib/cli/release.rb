@@ -128,6 +128,7 @@ module Bosh::Cli
     def has_blobstore_secrets?(blobstore, name, *keys)
       return false unless blobstore
       return false unless blobstore[name]
+      return true if blobstore["s3"]["credentials_source"] == "env_or_profile"
       keys.each {|key| return false unless blobstore[name][key]}
       true
     end
