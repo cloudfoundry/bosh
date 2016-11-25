@@ -24,7 +24,7 @@ module Bosh::Director
                 end
               end
 
-            when Net::HTTPFound
+            when Net::HTTPFound, Net::HTTPMovedPermanently
               raise ResourceError, "Too many redirects at '#{remote_file}'." if num_redirects >= 9
               location = response.header['location']
               raise ResourceError, "No location header for redirect found at '#{remote_file}'." if location.nil?

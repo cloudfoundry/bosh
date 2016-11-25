@@ -44,13 +44,24 @@ describe Bosh::Director::DownloadHelper do
 
     context 'when the server redirects' do
       let(:http_302) { Net::HTTPFound.new('1.1', '302', 'Found').tap { |response| response.header['location'] = redirect_location } }
+      let(:http_301) { Net::HTTPMovedPermanently.new('1.1', '301', 'Moved Permanently').tap { |response| response.header['location'] = redirect_location } }
       let(:redirect_url) { 'http://redirector.example.com/redirect/to/file' }
       let(:redirect_location) { remote_file }
 
-      it 'should follow the redirect' do
+      it 'should follow the 302 redirect' do
         expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).once
         expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http).once
         expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_302)
+        expect(http).to receive(:request_get).with(URI.parse(remote_file).request_uri).and_yield(http_200)
+        expect(http_200).to receive(:read_body)
+
+        download_remote_file('resource', redirect_url, local_file)
+      end
+
+      it 'should follow the 301 redirect' do
+        expect(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http).once
+        expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http).once
+        expect(http).to receive(:request_get).with(URI.parse(redirect_url).request_uri).and_yield(http_301)
         expect(http).to receive(:request_get).with(URI.parse(remote_file).request_uri).and_yield(http_200)
         expect(http_200).to receive(:read_body)
 
