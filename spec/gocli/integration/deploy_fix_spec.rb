@@ -4,6 +4,17 @@ describe 'deploy_fix', type: :integration do
   with_reset_sandbox_before_each
 
   it 'fix unresponsive vms' do
+    doTest
+  end
+
+  context 'when sending templates over nats' do
+    with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
+    it 'fix unresponsive vms' do
+      doTest
+    end
+  end
+
+  def doTest
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'][0]['persistent_disk'] = 1
     deploy_from_scratch({manifest_hash: manifest_hash})

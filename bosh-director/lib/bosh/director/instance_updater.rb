@@ -55,10 +55,12 @@ module Bosh::Director
           return
         end
 
-        if !instance_plan.already_detached?
+        unless instance_plan.already_detached?
           # Rendered templates are persisted here, in the case where a vm is already soft stopped
           # It will update the rendered templates on the VM
-          @rendered_templates_persistor.persist(instance_plan)
+          unless needs_recreate?(instance_plan)
+            @rendered_templates_persistor.persist(instance_plan)
+          end
 
           Preparer.new(instance_plan, agent(instance), @logger).prepare
 
