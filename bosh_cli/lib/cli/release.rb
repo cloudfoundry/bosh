@@ -73,7 +73,8 @@ module Bosh::Cli
       has_legacy_secret? ||
         has_blobstore_secrets?(bs, "simple", "user", "password") ||
         has_blobstore_secrets?(bs, "dav", "user", "password") ||
-        has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
+        has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key") ||
+        has_blobstore_secrets?(bs, "s3", "credentials_source")
     end
 
     # final.yml
