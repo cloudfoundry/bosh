@@ -40,7 +40,7 @@ export AWS_ACCESS_KEY_ID=${access_key_id}
 export AWS_SECRET_ACCESS_KEY=${secret_access_key}
 export S3_HOST=${s3_host}
 
-pushd bosh-src
+pushd bosh-src/src
   bundle install
   pushd blobstore_client
 
