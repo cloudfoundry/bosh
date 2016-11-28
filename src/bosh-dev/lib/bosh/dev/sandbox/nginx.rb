@@ -4,7 +4,7 @@ require 'bosh/core/shell'
 module Bosh::Dev::Sandbox
   class Nginx
     REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
-    RELEASE_ROOT = File.join(REPO_ROOT, 'release')
+    RELEASE_ROOT = File.join(REPO_ROOT, '..')
 
     def initialize(runner = Bosh::Core::Shell.new)
       @runner = runner
