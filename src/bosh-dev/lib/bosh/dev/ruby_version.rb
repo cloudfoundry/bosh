@@ -9,7 +9,7 @@ module Bosh::Dev
 
       def release_version
         @release_version ||= begin
-          spec_path = '../../../../release/packages/ruby/spec'
+          spec_path = '../../../../../packages/ruby/spec'
           ruby_spec = YAML.load_file(File.join(File.dirname(__FILE__), spec_path))
           ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
           $1
