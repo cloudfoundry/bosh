@@ -551,7 +551,7 @@ module Bosh::Director
         context 'when instance.spec is not nil' do
           context 'when spec[networks] is nil' do
             it 'skips the instance' do
-              test_validate_spec('{"networks": nil}')
+              test_validate_spec('{"networks": null}')
             end
           end
 

@@ -112,11 +112,7 @@ module Bosh::Director::Models
       if spec.nil?
         self.spec_json = nil
       else
-        begin
-          self.spec_json = JSON.generate(spec)
-        rescue JSON::GeneratorError
-          self.spec_json = 'error'
-        end
+        self.spec_json = JSON.generate(spec)
       end
     end
 
