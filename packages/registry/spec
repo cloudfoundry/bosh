@@ -5,4 +5,7 @@ dependencies:
 - mysql
 - ruby
 files:
-- bosh/bosh-registry/**/*.gem
+- bosh_cpi/**/*
+- bosh_common/**/*
+- bosh-registry/**/*
+- vendor/cache/*.gem
