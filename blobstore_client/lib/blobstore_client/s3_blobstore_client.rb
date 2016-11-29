@@ -128,8 +128,12 @@ module Bosh
         raise BlobstoreError, "object id #{oid} is already in use" if object_exists?(oid)
 
         s3_object = Aws::S3::Object.new({:key => oid}.merge(@aws_options))
-        multipart_threshold = @options.fetch(:s3_multipart_threshold, 16_777_216)
-        s3_object.upload_file(path, {content_type: "application/octet-stream", multipart_threshold: multipart_threshold})
+        options = {
+          content_type: 'application/octet-stream',
+          multipart_threshold: @options.fetch(:s3_multipart_threshold, 16_777_216),
+        }
+        options.merge!(@options.fetch(:upload_options, {}))
+        s3_object.upload_file(path, options)
         nil
       end
 
