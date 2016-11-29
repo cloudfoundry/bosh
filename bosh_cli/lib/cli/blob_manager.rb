@@ -266,7 +266,7 @@ module Bosh::Cli
       checksum = file_checksum(blob_path)
 
       @progress_renderer.start(path, "uploading...")
-      object_id = @blobstore.create(File.open(blob_path, "r"))
+      object_id = @blobstore.create(File.open(blob_path, "rb"))
       @progress_renderer.finish(path, "uploaded")
 
       @index[path] = {
@@ -294,7 +294,7 @@ module Bosh::Cli
       blob = @index[path]
       size = blob["size"].to_i
       blob_path = path.gsub(File::SEPARATOR, '-')
-      tmp_file = File.open(File.join(Dir.mktmpdir, blob_path), "w")
+      tmp_file = File.open(File.join(Dir.mktmpdir, blob_path), "wb")
 
       download_label = "downloading"
       if size > 0
