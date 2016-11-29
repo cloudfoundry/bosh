@@ -1,11 +1,7 @@
 # coding: utf-8
-require File.expand_path('../lib/blobstore_client/version', __FILE__)
-
-version = Bosh::Blobstore::Client::VERSION
-
 Gem::Specification.new do |spec|
   spec.name         = 'blobstore_client'
-  spec.version      = version
+  spec.version      = '0.0.0.unpublished'
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH blobstore client'
   spec.description  = "BOSH blobstore client"
@@ -23,5 +19,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'aws-sdk-resources', '2.2.0'
   spec.add_dependency 'httpclient',      '=2.7.1'
   spec.add_dependency 'multi_json',      '~> 1.1'
-  spec.add_dependency 'bosh_common',     "~>#{version}"
+  spec.add_dependency 'bosh_common'
 end

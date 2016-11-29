@@ -1,11 +1,7 @@
 # coding: utf-8
-require File.expand_path('../lib/bosh/stemcell/version', __FILE__)
-
-version = Bosh::Stemcell::VERSION
-
 Gem::Specification.new do |spec|
   spec.name          = 'bosh-stemcell'
-  spec.version       = version
+  spec.version       = '0.0.0.unpublished'
   spec.authors       = 'Pivotal'
   spec.email         = 'support@cloudfoundry.com'
   spec.description   = 'Bosh::Stemcell provides tools to manage stemcells'
@@ -20,5 +16,5 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
-  spec.add_dependency 'bosh-core', "~>#{version}"
+  spec.add_dependency 'bosh-core'
 end

@@ -1,9 +1,7 @@
 # coding: utf-8
-require File.expand_path('../lib/bosh/template/version', __FILE__)
-
 Gem::Specification.new do |spec|
   spec.name         = 'bosh-template'
-  spec.version      = Bosh::Template::VERSION
+  spec.version      = '0.0.0.unpublished'
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'Renders bosh templates'
   spec.description  = "Renders bosh templates"

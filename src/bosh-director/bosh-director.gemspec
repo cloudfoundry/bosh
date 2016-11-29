@@ -1,12 +1,9 @@
 # coding: utf-8
-require File.expand_path('../lib/bosh/director/version', __FILE__)
-
-version = Bosh::Director::VERSION
 
 Gem::Specification.new do |spec|
   spec.name         = 'bosh-director'
-  spec.version      = version
   spec.platform     = Gem::Platform::RUBY
+  spec.version      = '0.0.0.unpublished'
   spec.summary      = 'BOSH Director'
   spec.description  = 'BOSH Director'
   spec.author       = 'VMware'
@@ -30,15 +27,15 @@ Gem::Specification.new do |spec|
   # Also do the same in bosh_cli_plugin_micro.gemspec
   # Review this once CPIs are completely externalized and "micro" goes away.
   # ----------------------------------------------------------------------------
-  spec.add_dependency 'bosh_common',        "~>#{version}"
-  spec.add_dependency 'bosh_cpi',           "~>#{version}"
-  spec.add_dependency 'bosh-registry',      "~>#{version}"
-  # ----------------------------------------------------------------------------
+  spec.add_dependency 'bosh_common'
+  spec.add_dependency 'bosh_cpi'
+  spec.add_dependency 'bosh-registry'
+  # ---------------------------------------------------------------
 
-  spec.add_dependency 'blobstore_client',   "~>#{version}"
-  spec.add_dependency 'bosh-core',          "~>#{version}"
-  spec.add_dependency 'bosh-director-core', "~>#{version}"
-  spec.add_dependency 'bosh-template',      "~>#{version}"
+  spec.add_dependency 'blobstore_client'
+  spec.add_dependency 'bosh-core'
+  spec.add_dependency 'bosh-director-core'
+  spec.add_dependency 'bosh-template'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'
   spec.add_dependency 'eventmachine',     '~>1.0.0'

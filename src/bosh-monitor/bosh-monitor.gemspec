@@ -1,9 +1,7 @@
 # coding: utf-8
-require File.expand_path('../lib/bosh/monitor/version', __FILE__)
-
 Gem::Specification.new do |spec|
   spec.name         = 'bosh-monitor'
-  spec.version      = Bosh::Monitor::VERSION
+  spec.version      = '0.0.0.unpublished'
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH Health Monitor'
   spec.description  = "BOSH Health Monitor"

@@ -2,17 +2,12 @@
 
 set -e
 
-export CANDIDATE_BUILD_NUMBER=$(cat candidate-version/version)
-export CANDIDATE_BUILD_GEM_NUMBER=$(cat candidate-gem-version/version || cat candidate-version/version)
-
-source /etc/profile.d/chruby.sh
-chruby 2.1.2
+export version=$(cat candidate-version/version)
 
 cd bosh-src
-bundle install
-bundle exec rake release:create_dev_release
 
-cd release
-bundle exec bosh create release --force  --with-tarball --timestamp-version
+sed -i -E "s/VERSION = .+/VERSION = '$version'/" $( find src -name version.rb )
+
+bosh create-release --version="$version" --tarball --timestamp --force
 
 mv dev_releases/bosh/*.tgz ../../release/
