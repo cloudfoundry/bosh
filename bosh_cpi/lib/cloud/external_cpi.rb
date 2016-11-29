@@ -85,12 +85,12 @@ module Bosh::Clouds
       parsed_response = parsed_response(cpi_response)
       validate_response(parsed_response)
 
+      save_cpi_log(parsed_response['log'])
+      save_cpi_log(stderr)
+
       if parsed_response['error']
         handle_error(parsed_response['error'], method_name)
       end
-
-      save_cpi_log(parsed_response['log'])
-      save_cpi_log(stderr)
 
       parsed_response['result']
     end
