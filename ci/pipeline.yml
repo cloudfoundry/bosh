@@ -449,9 +449,8 @@ jobs:
       - integration-2.3-postgres
       - integration-2.3-postgres-gocli
       - blobstore-client-integration
+    - get: bosh-cli
     - get: candidate-version
-    - get: candidate-gem-version
-      resource: candidate-version
       params:
         bump: major
     - task: make

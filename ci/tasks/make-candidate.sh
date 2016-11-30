@@ -2,12 +2,17 @@
 
 set -e
 
-export version=$(cat candidate-version/version)
+export gem_version=$(cat candidate-version/version)
+export ROOT_PATH=$PWD
+
+mv bosh-cli/bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
+export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
+chmod +x $GO_CLI_PATH
 
 cd bosh-src
 
-sed -i -E "s/VERSION = .+/VERSION = '$version'/" $( find src -name version.rb )
+sed -i -E "s/VERSION = .+/VERSION = '$gem_version'/" $( find src -name version.rb )
 
-bosh create-release --version="$version" --tarball --timestamp --force
+$GO_CLI_PATH create-release --tarball --timestamp-version --force
 
-mv dev_releases/bosh/*.tgz ../../release/
+mv dev_releases/bosh/*.tgz ../release/
