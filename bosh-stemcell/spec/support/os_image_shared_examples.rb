@@ -60,6 +60,18 @@ shared_examples_for 'every OS image' do
     describe command('stat -c %a ~vcap') do
       it { should return_stdout('700') }
     end
+
+    describe user('vcap') do
+      it { should belong_to_group 'admin' }
+      it { should belong_to_group 'adm' }
+      it { should belong_to_group 'audio' }
+      it { should belong_to_group 'cdrom' }
+      it { should belong_to_group 'dialout' }
+      it { should belong_to_group 'floppy' }
+      it { should belong_to_group 'video' }
+      it { should belong_to_group 'dip' }
+      it { should belong_to_group 'bosh_sshers' }
+    end
   end
 
   describe cron do

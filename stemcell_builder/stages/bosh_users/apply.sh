@@ -7,7 +7,7 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
 # Set up users/groups
-vcap_user_groups='admin,adm,audio,cdrom,dialout,floppy,video,dip'
+vcap_user_groups='admin,adm,audio,cdrom,dialout,floppy,video,dip,bosh_sshers'
 
 if [ -f $chroot/etc/debian_version ] # Ubuntu
 then
@@ -20,10 +20,10 @@ useradd -m --comment 'BOSH System User' vcap --uid 1000
 chmod 700 ~vcap
 echo \"vcap:${bosh_users_password}\" | chpasswd
 echo \"root:${bosh_users_password}\" | chpasswd
+groupadd bosh_sshers
 usermod -G ${vcap_user_groups} vcap
 usermod -s /bin/bash vcap
 groupadd bosh_sudoers
-groupadd bosh_sshers
 "
 
 # Setup SUDO
