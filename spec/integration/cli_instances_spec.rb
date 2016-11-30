@@ -113,6 +113,26 @@ describe 'cli: deployment process', type: :integration do
     '
   end
 
+  it 'should show job name and id in case of unresponsive agent' do
+    deploy_from_scratch
+
+    current_sandbox.cpi.kill_agents
+
+    expect(scrub_random_ids(bosh_runner.run('vms'))).to include(<<VMS)
++-------------------------------------------------+--------------------+-----+---------+-----+
+| VM                                              | State              | AZ  | VM Type | IPs |
++-------------------------------------------------+--------------------+-----+---------+-----+
+| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | unresponsive agent | n/a | a       |     |
+| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | unresponsive agent | n/a | a       |     |
+| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) | unresponsive agent | n/a | a       |     |
++-------------------------------------------------+--------------------+-----+---------+-----+
+VMS
+    output = bosh_runner.run('vms')
+
+    output = scrub_random_ids(output)
+
+  end
+
   it 'should return instances --vitals' do
     deploy_from_scratch
     vitals = director.instances_ps_vitals[0]
