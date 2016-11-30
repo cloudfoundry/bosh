@@ -14,11 +14,18 @@ module Bosh::Director::ConfigServer
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
 
-        Bosh::Director::Models::PlaceholderMapping.create(
+        mappings = Bosh::Director::Models::PlaceholderMapping.where(
           placeholder_name: response_body['name'],
           placeholder_id: response_body['id'],
-          deployment: @deployment_model
-        )
+          deployment_id: @deployment_model.id)
+
+        if mappings.empty?
+          Bosh::Director::Models::PlaceholderMapping.create(
+            placeholder_name: response_body['name'],
+            placeholder_id: response_body['id'],
+            deployment: @deployment_model
+          )
+        end
       end
 
       response
