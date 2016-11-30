@@ -3,7 +3,7 @@ require File.expand_path('../lib/bosh/core/version', __FILE__)
 
 Gem::Specification.new do |spec|
   spec.name        = 'bosh-core'
-  spec.version     = '0.0.0.unpublished'
+  spec.version     = Bosh::Core::VERSION
   spec.authors     = 'Pivotal'
   spec.email       = 'support@cloudfoundry.com'
   spec.description = 'Bosh::Core provides things BOSH needs to exist'

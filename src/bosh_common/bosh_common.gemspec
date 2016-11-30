@@ -1,7 +1,9 @@
 # coding: utf-8
+require File.expand_path('../lib/common/version', __FILE__)
+
 Gem::Specification.new do |spec|
   spec.name         = 'bosh_common'
-  spec.version      = '0.0.0.unpublished'
+  spec.version      = Bosh::Common::VERSION
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH common'
   spec.description  = "BOSH common"

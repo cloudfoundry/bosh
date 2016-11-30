@@ -1,7 +1,7 @@
 # coding: utf-8
 Gem::Specification.new do |spec|
   spec.name          = 'bosh-dev'
-  spec.version       = '0.0.0.unpublished'
+  spec.version       = '0.0.0'
   spec.authors       = 'Pivotal'
   spec.email         = 'support@cloudfoundry.com'
   spec.description   = 'Bosh::Dev makes development on BOSH easier'

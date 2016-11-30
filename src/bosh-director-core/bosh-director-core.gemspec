@@ -1,8 +1,11 @@
 # coding: utf-8
+require File.expand_path('../lib/bosh/director/core/version', __FILE__)
+
+version = Bosh::Director::Core::VERSION
 
 Gem::Specification.new do |spec|
   spec.name        = 'bosh-director-core'
-  spec.version     = '0.0.0.unpublished'
+  spec.version     = version
   spec.authors     = 'Pivotal'
   spec.email       = 'support@cloudfoundry.com'
   spec.description = 'Bosh::Director::Core provides common Director code for Director and Microbosh Deployer'
@@ -17,6 +20,6 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
-  spec.add_dependency 'bosh_common'
-  spec.add_dependency 'bosh-template'
+  spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'bosh-template', "~>#{version}"
 end
