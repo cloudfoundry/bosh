@@ -62,7 +62,7 @@ module Bosh::Director
       raise 'AZ name must not be nil' if az_name.nil?
 
       az = @cloud_planner.availability_zone(az_name)
-      raise "AZ #{az_name} not found in cloud config" if az.nil?
+      return nil if az.nil?
       az.cpi
     end
 

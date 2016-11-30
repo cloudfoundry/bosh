@@ -55,11 +55,11 @@ module Bosh::Director
         expect(cloud).to eq(default_cloud)
       end
 
-      it 'raises an error when asking for the cloud of a non-existing AZ' do
+      it 'returns the default cloud when asking for the cloud of a non-existing AZ' do
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(nil)
-        expect {
-          cloud_factory.for_availability_zone('some-az')
-        }.to raise_error /AZ some-az not found in cloud config/
+
+        cloud = cloud_factory.for_availability_zone('some-az')
+        expect(cloud).to eq(default_cloud)
       end
 
       it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
