@@ -8,6 +8,7 @@ source $base_dir/lib/prelude_bosh.bash
 
 # setup sudoers to use includedir, and make sure we don't break anything
 cp -p $chroot/etc/sudoers $chroot/etc/sudoers.save
+echo '' >> $chroot/etc/sudoers
 echo '#includedir /etc/sudoers.d' >> $chroot/etc/sudoers
 run_in_bosh_chroot $chroot "visudo -c"
 if [ $? -ne 0 ]; then
