@@ -31,8 +31,8 @@ module Bosh::Director::DeploymentPlan
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
     end
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
-    let(:instance_group) {
-      instance_group = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+    let(:instance_group) do
+      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: job_spec,
         canonical_name: 'job',
@@ -51,7 +51,7 @@ module Bosh::Director::DeploymentPlan
         properties: properties,
         lifecycle: lifecycle,
       )
-    }
+    end
     let(:index) { 0 }
     let(:instance_state) { {} }
     let(:instance) { Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger) }
@@ -65,7 +65,8 @@ module Bosh::Director::DeploymentPlan
           model: deployment,
         })
     end
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment_name) { 'fake-deployment' }
+    let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance) }
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
@@ -189,7 +190,7 @@ module Bosh::Director::DeploymentPlan
 
         before do
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+          allow(client_factory).to receive(:create_client).with(deployment_name).and_return(config_server_client)
         end
 
         it 'resolves properties and links properties' do

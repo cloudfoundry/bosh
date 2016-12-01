@@ -17,14 +17,15 @@ module Bosh::Director
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
-      def initialize(release, name)
+      # @param [String] deployment_name The name of the deployment
+      def initialize(release, name, deployment_name)
         @release = release
         @name = name
         @model = nil
         @package_models = []
         @logger = Config.logger
         @link_infos = {}
-        @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+        @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client(deployment_name)
 
         # This hash will contain the properties specific to this job,
         # it will be a hash where the keys are the deployment instance groups name, and

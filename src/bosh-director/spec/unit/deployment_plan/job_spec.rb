@@ -9,7 +9,7 @@ module Bosh
         # Currently this class is tested mostly in DeploymentPlan::ReleaseVersion spec.
         # In the future these tests can be migrated to here.
         describe '#add_link_from_manifest' do
-          let(:job) { described_class.new(nil, 'foo') }
+          let(:job) { described_class.new(nil, 'foo', deployment_name) }
 
 
           context 'given properly formated arguments' do
@@ -75,7 +75,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
         end
 
         describe '#bind_properties' do
-          subject { Job.new(release_version, 'foo') }
+          subject { Job.new(release_version, 'foo', deployment_name) }
 
           let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }

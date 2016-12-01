@@ -11,8 +11,8 @@ module Bosh::Director
       job.env = DeploymentPlan::Env.new({})
     end
 
-    let(:template_1) { DeploymentPlan::Job.new(release_version, 'fake-template-1') }
-    let(:template_2) { DeploymentPlan::Job.new(release_version, 'fake-template-2') }
+    let(:template_1) { DeploymentPlan::Job.new(release_version, 'fake-template-1', deployment_model.name) }
+    let(:template_2) { DeploymentPlan::Job.new(release_version, 'fake-template-2', deployment_model.name) }
     let(:release_version) { DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'}) }
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
 

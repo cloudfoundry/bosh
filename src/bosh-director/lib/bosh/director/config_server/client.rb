@@ -121,7 +121,8 @@ module Bosh::Director::ConfigServer
       response = @config_server_http_client.get(name)
 
       if response.kind_of? Net::HTTPOK
-        JSON.parse(response.body)['value']
+        response_body = JSON.parse(response.body)
+        return response_body['value']
       elsif response.kind_of? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
       else
@@ -131,8 +132,8 @@ module Bosh::Director::ConfigServer
 
     def name_exists?(name)
       begin
-        get_value_for_name(name)
-        true
+        returned_name = get_value_for_name(name)
+        !!returned_name
       rescue Bosh::Director::ConfigServerMissingNames
         false
       end

@@ -59,7 +59,7 @@ module Bosh::Spec
       cloud_config = simple_cloud_config_with_multiple_azs
 
       cloud_config['azs'].each_index do |i|
-        cloud_config['azs'][i]['cpi'] = "cpi_name#{i}"
+        cloud_config['azs'][i]['cpi'] = "cpi-name#{i+1}"
       end
 
       cloud_config
@@ -199,7 +199,7 @@ module Bosh::Spec
       cpi_config =  {
           'cpis' => [
               {
-                  'name' => 'cpi-name',
+                  'name' => 'cpi-name1',
                   'type' => 'cpi-type',
                   'properties' => {
                       'somekey' => 'someval'

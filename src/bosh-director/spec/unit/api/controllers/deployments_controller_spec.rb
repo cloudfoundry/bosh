@@ -1172,6 +1172,73 @@ module Bosh::Director
             end
           end
         end
+
+        describe 'config server variables' do
+          before { basic_authorize 'admin', 'admin' }
+
+          it 'should return a list of config server variables with ids only for the deployment to which it belongs' do
+            deployment = Models::Deployment.
+              create(:name => 'test_deployment',
+                     :manifest => YAML.dump({'foo' => '((bar-1))', 'bar' => '((bar-2))'}))
+
+            deployment2 = Models::Deployment.
+              create(:name => 'test_deployment2',
+                     :manifest => YAML.dump({'random' => '((random))'}))
+
+            Models::PlaceholderMapping.create(
+              placeholder_name: 'bar-1',
+              placeholder_id: "1",
+              deployment: deployment
+            )
+
+            Models::PlaceholderMapping.create(
+              placeholder_name: 'bar-2',
+              placeholder_id: "2",
+              deployment: deployment
+            )
+
+            Models::PlaceholderMapping.create(
+              placeholder_name: 'random',
+              placeholder_id: "3",
+              deployment: deployment2
+            )
+
+            get '/test_deployment/config_vars'
+
+            expect(last_response.status).to eq(200)
+            body = JSON.parse(last_response.body)
+            expect(body.size).to eq(2)
+
+            body.each_with_index do |config_var, i|
+              expect(config_var).to eq(
+                'placeholder_name' => "bar-#{i+1}",
+                'placeholder_id' => "#{i+1}"
+              )
+            end
+          end
+
+          it 'does not return config server variables for other deployments' do
+            deployment = Models::Deployment.
+              create(:name => 'test_deployment',
+                     :manifest => YAML.dump({'foo' => 'blah', 'bar' => 'blah2'}))
+
+            deployment2 = Models::Deployment.
+              create(:name => 'test_deployment2',
+                     :manifest => YAML.dump({'random' => '((random))'}))
+
+            Models::PlaceholderMapping.create(
+              placeholder_name: 'random',
+              placeholder_id: "3",
+              deployment: deployment2
+            )
+
+            get '/test_deployment/config_vars'
+
+            expect(last_response.status).to eq(200)
+            body = JSON.parse(last_response.body)
+            expect(body.size).to eq(0)
+          end
+        end
       end
 
       describe 'authorization' do
