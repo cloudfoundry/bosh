@@ -21,7 +21,15 @@ module Bosh::Dev
         end
       end
 
-      context 'when CANDIDATE_BUILD_NUMBER is not set' do
+      context 'when STEMCELL_BUILD_NUMBER is set' do
+        let(:environment) { { 'STEMCELL_BUILD_NUMBER' => 'candidate'} }
+
+        it 'returns the specified build number' do
+          expect(subject).to eq('candidate')
+        end
+      end
+
+      context 'when neither CANDIDATE_BUILD_NUMBER nor STEMCELL_BUILD_NUMBER are set' do
         let(:environment) { {} }
 
         it 'returns the default build number' do

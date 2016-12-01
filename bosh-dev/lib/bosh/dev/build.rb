@@ -43,7 +43,7 @@ module Bosh::Dev
     end
 
     def self.build_number
-      ENV.fetch('CANDIDATE_BUILD_NUMBER', '0000')
+      ENV['CANDIDATE_BUILD_NUMBER'] || ENV['STEMCELL_BUILD_NUMBER'] || '0000'
     end
 
     def initialize(number, gem_number, bucket_name, download_adapter, logger, skip_promote_artifacts, bearer_token)
