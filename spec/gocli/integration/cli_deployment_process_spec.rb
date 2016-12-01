@@ -225,7 +225,7 @@ lines'}
                 'Name' => 'ubuntu-stemcell',
                 'OS' => 'toronto-os',
                 'Version' => '1*',
-                'CPI' => 'cpi-name',
+                'CPI' => 'cpi-name1',
                 'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
             },
             {
@@ -299,7 +299,7 @@ lines'}
                 'Name' => 'ubuntu-stemcell',
                 'OS' => 'toronto-os',
                 'Version' => '1*',
-                'CPI' => 'cpi-name',
+                'CPI' => 'cpi-name1',
                 'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
             },
             {
