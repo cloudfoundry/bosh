@@ -49,7 +49,7 @@ module Bosh
           end
 
           @options[:bucket] ||= @options[:bucket_name]
-          @options[:endpoint] ||= S3BlobstoreClient::ENDPOINT
+          @options[:endpoint] ||= @aws_options[:endpoint] || S3BlobstoreClient::ENDPOINT
           @simple = SimpleBlobstoreClient.new(@options)
         end
 

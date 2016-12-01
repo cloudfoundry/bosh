@@ -4,13 +4,18 @@ module Bosh::Blobstore
   describe S3BlobstoreClient do
     subject(:client) { described_class.new(options) }
     let(:options) { {} }
-    let(:default_options) do
+    let(:default_options_read_only) do
       {
         bucket_name: 'test',
-        access_key_id: 'KEY',
-        secret_access_key: 'SECRET',
       }
     end
+    let(:default_options) do
+      default_options_read_only.merge({
+        access_key_id: 'KEY',
+        secret_access_key: 'SECRET',
+      })
+    end
+
 
     before { allow(Aws::S3::Client).to receive(:new).and_return(s3) }
     let(:s3) { instance_double('Aws::S3::Client') }
@@ -33,11 +38,14 @@ module Bosh::Blobstore
     describe 'options' do
       let(:blob) { instance_double(Aws::S3::Object) }
       let(:s3_client) { instance_double(Aws::S3::Client) }
+      let(:simple_blobstore) { instance_double(Bosh::Blobstore::SimpleBlobstoreClient) }
       before do
         allow(blob).to receive(:upload_file)
         allow(blob).to receive(:exists?)
         allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
         allow(s3_client).to receive(:list_objects)
+        allow(Bosh::Blobstore::SimpleBlobstoreClient).to receive(:new).and_return(simple_blobstore)
+        allow(simple_blobstore).to receive(:get_file)
       end
 
       context 'when advanced options are provided for customization' do
@@ -63,6 +71,25 @@ module Bosh::Blobstore
           )).twice.and_return(blob)
 
           client.create_file('foo', 'file')
+        end
+
+        context 'in read only mode' do
+          let(:options) do
+            default_options_read_only.merge({
+              use_ssl: false,
+              port: 8080,
+              host: 'our.userdefined.com',
+            })
+          end
+
+          it 'passes those options to SimpleBlobstoreClient' do
+            expect(Bosh::Blobstore::SimpleBlobstoreClient).to receive(:new).with(hash_including(
+              endpoint: 'http://our.userdefined.com:8080',
+              bucket: 'test'
+              ))
+
+            client.get_file('foo', 'file')
+          end
         end
       end
 
