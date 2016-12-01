@@ -141,9 +141,9 @@ module Bosh::Spec
       event_list
     end
 
-    def kill_vm_and_wait_for_resurrection(vm)
+    def kill_vm_and_wait_for_resurrection(vm, options={})
       vm.kill_agent
-      resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300)
+      resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300, options)
 
       wait_for_resurrection_to_finish
 

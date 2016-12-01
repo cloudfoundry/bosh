@@ -152,8 +152,7 @@ describe 'using director with config server', type: :integration do
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
 
-          instance.kill_agent
-          director.wait_for_vm('our_instance_group', '0', 300, deployment_name: 'simple', include_credentials: false, env: client_env)
+          director.kill_vm_and_wait_for_resurrection(instance, deployment_name: 'simple', include_credentials: false, env: client_env)
 
           new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
           template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
