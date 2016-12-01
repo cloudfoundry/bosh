@@ -56,6 +56,16 @@ module Bosh::Spec
     end
 
     def self.simple_cloud_config_with_multiple_azs_and_cpis
+      cloud_config = simple_cloud_config_with_multiple_azs
+
+      cloud_config['azs'].each_index do |i|
+        cloud_config['azs'][i]['cpi'] = "cpi_name#{i}"
+      end
+
+      cloud_config
+    end
+
+    def self.simple_cloud_config_with_multiple_azs
       networks = [
           {
               'name' => 'a',
@@ -75,12 +85,10 @@ module Bosh::Spec
       azs = [
           {
               'name' => 'z1',
-              'cpi' => 'cpi-name',
               'cloud_properties' => {'a' => 'b'}
           },
           {
               'name' => 'z2',
-              'cpi' => 'cpi-name2',
               'cloud_properties' => {'a' => 'b'}
           }
       ]

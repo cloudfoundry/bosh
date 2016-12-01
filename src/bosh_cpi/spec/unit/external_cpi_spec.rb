@@ -156,6 +156,16 @@ describe Bosh::Clouds::ExternalCpi do
         it 'raises an error constructed from error response' do
           expect { call_cpi_method }.to raise_error(error_class, "CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
         end
+
+        it 'saves log and stderr' do
+          begin
+            call_cpi_method
+          rescue
+            expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
+          else
+            fail 'It should throw exception'
+          end
+        end
       end
 
       def self.it_raises_an_error_with_ok_to_retry(error_class)

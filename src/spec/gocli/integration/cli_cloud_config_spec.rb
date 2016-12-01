@@ -32,6 +32,39 @@ describe 'cli cloud config', type: :integration do
     end
   end
 
+  context 'when an az is removed' do
+    let(:initial_cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
+
+    let(:new_cloud_config) do
+      cloud_config = initial_cloud_config
+      cloud_config['azs'].pop
+      cloud_config['networks'][0]['subnets'].pop
+      cloud_config
+    end
+
+    let(:initial_manifest) do
+      manifest = Bosh::Spec::Deployments::simple_manifest
+      manifest['jobs'][0]['azs'] = ['z1', 'z2']
+      manifest
+    end
+
+    let(:new_manifest) do
+      manifest = Bosh::Spec::Deployments::simple_manifest
+      manifest['jobs'][0]['azs'] = ['z1']
+      manifest
+    end
+
+    it 'successfully deploys' do
+      create_and_upload_test_release
+      upload_cloud_config(cloud_config_hash: initial_cloud_config)
+      upload_stemcell
+      deploy_simple_manifest(manifest_hash: initial_manifest)
+
+      upload_cloud_config(cloud_config_hash: new_cloud_config)
+      expect{ deploy_simple_manifest(manifest_hash: new_manifest) }.to_not raise_error
+    end
+  end
+
   it 'can download a cloud config' do
     # none present yet
     expect(bosh_runner.run('cloud-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
