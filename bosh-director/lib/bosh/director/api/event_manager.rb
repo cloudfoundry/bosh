@@ -28,8 +28,8 @@ module Bosh::Director
         unless @record_events
           return Models::Event.new
         end
-
         parent_id   = options.fetch(:parent_id, nil)
+        timestamp   = options.fetch(:timestamp, Time.now)
         user        = options[:user]
         action      = options[:action]
         object_type = options[:object_type]
@@ -42,7 +42,7 @@ module Bosh::Director
 
         event = Models::Event.create(
             parent_id:   parent_id,
-            timestamp:   Time.now,
+            timestamp:   timestamp,
             user:        user,
             action:      action,
             object_type: object_type,
