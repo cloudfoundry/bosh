@@ -48,11 +48,11 @@ module Bosh::Cli
     end
 
     def save_cursor_position
-      say("\033[s", "")
+      say("\033\067", "")
     end
 
     def restore_cursor_position
-      say("\033[u", "")
+      say("\033\070", "")
     end
 
     def up(count = 1)
