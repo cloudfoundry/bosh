@@ -127,6 +127,7 @@ module Bosh::Director::DeploymentPlan
               'dns' => '10.0.0.1',
             },
             'a' =>{
+              'type' => 'manual',
               'ip' => '192.168.1.3',
               'netmask' => '255.255.255.0',
               'cloud_properties' =>{},
@@ -517,6 +518,7 @@ module Bosh::Director::DeploymentPlan
       it 'generates network settings from the job and desired reservations' do
         expect(instance_plan.network_settings_hash).to eq({
               'a' => {
+                'type' => 'manual',
                 'ip' => '192.168.1.3',
                 'netmask' => '255.255.255.0',
                 'cloud_properties' => {},

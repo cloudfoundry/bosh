@@ -51,6 +51,7 @@ module Bosh::Director
         end
 
         config = {
+          "type" => "manual",
           "ip" => ip.ip,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
