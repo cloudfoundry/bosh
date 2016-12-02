@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `As9pUrx0ZDTXiaSjIwfzXzQZCzZ1wCGx`
+  - Periodic Bump
+  - built from 257.x-3263.x (1bb8e346f87ee488ad6482aad28a4310a0acebf7)
+
 * `bAUozYGz5QKDerLQxQk282GrXn6Oqr_7`
   - Periodic Bump
   - built from 257.x-3263.x (0c333f73313b595d0ee77b33fbfa4dd5b7b1b3f1)
@@ -509,6 +513,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `SaSjlGShbbnD6M05n4Z5FDKTxDfp0DjM`
+  - Periodic bump
+  - built from 257.x-3263.x (1bb8e346f87ee488ad6482aad28a4310a0acebf7)
 
 * `gzVOkWfR76VNQH8k6uE0IQMnYbDhmXpc`
   - Dirty COW (CVE-2016-5195)
