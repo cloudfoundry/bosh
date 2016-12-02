@@ -38,6 +38,8 @@ create-vpc-output*.yml
 
 pkg/
 
+**/*/private.yml
+
 .blobs
 .dev_builds
 .final_builds/jobs/**/*.tgz
