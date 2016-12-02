@@ -44,7 +44,7 @@ esac
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
-cd bosh-src
+cd bosh-src/src
 print_git_state
 
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH

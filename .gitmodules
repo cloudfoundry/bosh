@@ -1,6 +1,6 @@
-[submodule "go/src/github.com/cloudfoundry/bosh-agent"]
-	path = go/src/github.com/cloudfoundry/bosh-agent
+[submodule "src/go/src/github.com/cloudfoundry/bosh-agent"]
+	path = src/go/src/github.com/cloudfoundry/bosh-agent
 	url = https://github.com/cloudfoundry/bosh-agent.git
-[submodule "bat"]
-	path = bat
+[submodule "src/bat"]
+	path = src/bat
 	url = https://github.com/cloudfoundry/bosh-acceptance-tests.git

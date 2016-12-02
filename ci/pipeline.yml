@@ -318,6 +318,7 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
         RUBY_VERSION: 2.3.1
         LEGACY: false
@@ -341,6 +342,7 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
         RUBY_VERSION: 2.3.1
         LEGACY: true
@@ -364,6 +366,7 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
         RUBY_VERSION: 2.3.1
         LEGACY: false
@@ -388,6 +391,7 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
         RUBY_VERSION: 2.3.1
         LEGACY: true
@@ -412,6 +416,7 @@ jobs:
       file: bosh-fuzz-tests/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.3.1
       on_failure:
         put: slack-alert
@@ -449,9 +454,8 @@ jobs:
       - integration-2.3-postgres
       - integration-2.3-postgres-gocli
       - blobstore-client-integration
+    - get: bosh-cli
     - get: candidate-version
-    - get: candidate-gem-version
-      resource: candidate-version
       params:
         bump: major
     - task: make

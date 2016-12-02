@@ -9,7 +9,7 @@ image_resource:
 inputs:
 - name: bosh-src
 - name: candidate-version
-- name: candidate-gem-version
+- name: bosh-cli
 
 outputs:
 - name: release

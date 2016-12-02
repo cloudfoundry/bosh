@@ -2,17 +2,17 @@
 
 set -e
 
-export CANDIDATE_BUILD_NUMBER=$(cat candidate-version/version)
-export CANDIDATE_BUILD_GEM_NUMBER=$(cat candidate-gem-version/version || cat candidate-version/version)
+export gem_version=$(cat candidate-version/version)
+export ROOT_PATH=$PWD
 
-source /etc/profile.d/chruby.sh
-chruby 2.1.2
+mv bosh-cli/bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
+export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
+chmod +x $GO_CLI_PATH
 
 cd bosh-src
-bundle install
-bundle exec rake release:create_dev_release
 
-cd release
-bundle exec bosh create release --force  --with-tarball --timestamp-version
+sed -i -E "s/VERSION = .+/VERSION = '$gem_version'/" $( find src -name version.rb )
 
-mv dev_releases/bosh/*.tgz ../../release/
+$GO_CLI_PATH create-release --tarball --timestamp-version --force
+
+mv dev_releases/bosh/*.tgz ../release/
