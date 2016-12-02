@@ -18,8 +18,25 @@ module Bosh::Director
         DBSpecHelper.migrate(migration_file)
       end
 
-      it 'should create table' do
+      it 'should create placeholder_mappings table' do
         expect(db.table_exists?(:placeholder_mappings)).to be_truthy
+      end
+
+      it 'should set uniqueness constraint on placeholder_id and deployment_id pair' do
+
+        db[:cloud_configs] << {properties: 'fake-cloud-config', created_at: 0}
+        db[:runtime_configs] << {properties: 'fake-runtime-config', created_at: 0}
+        db[:deployments] << {name: 'deployment1', cloud_config_id: 1, runtime_config_id: 1}
+
+        db[:placeholder_mappings] << {placeholder_id: 1, placeholder_name: 'foo', deployment_id: 1}
+
+        expect {
+          db[:placeholder_mappings] << {placeholder_id: 1, placeholder_name: 'bar', deployment_id: 1}
+        }.to raise_error Sequel::UniqueConstraintViolation
+
+        expect {
+          db[:placeholder_mappings] << {placeholder_id: 2, placeholder_name: 'bar', deployment_id: 1}
+        }.to_not raise_error
       end
     end
   end
