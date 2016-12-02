@@ -16,17 +16,23 @@ namespace :release do
 
     rebase_arg = args[:rebase] ? '--rebase' : ''
 
-    sh("bosh -n upload release #{rebase_arg}")
+    Dir.chdir('release') do
+      sh("bosh -n upload release #{rebase_arg}")
+    end
   end
 
   def create_release(options={})
     name = options[:name] || 'bosh'
     final = options[:final] || false
-    if final
-      sh('bosh create release --final')
-    else
-      File.open('config/dev.yml', 'w+') { |f| f.write("---\ndev_name: #{name}\n") }
-      sh('bosh create release --force')
+    release_dir = options[:release_dir] || 'release'
+
+    Dir.chdir(release_dir) do
+      if final
+        sh('bosh create release --final')
+      else
+        File.open('config/dev.yml', 'w+') { |f| f.write("---\ndev_name: #{name}\n") }
+        sh('bosh create release --force')
+      end
     end
   end
 end
