@@ -109,6 +109,8 @@ namespace :spec do
 
   def unit_exec(build, log_file = nil)
     command = unit_cmd(build, log_file)
+    puts "*" * 80
+    puts command
 
     # inject command name so coverage results for each component don't clobber others
     if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file

@@ -37,7 +37,6 @@ def migrate(database, schema_table, dir, target = nil)
 end
 
 migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
-
 migrate(db, nil, migrations_dir)
 
 if config['dns'] && config['dns']['db']
@@ -45,16 +44,3 @@ if config['dns'] && config['dns']['db']
   dns_db = Bosh::Director::Config.configure_db(config['dns']['db'])
   migrate(dns_db, 'dns_schema', dns_migrations_dir)
 end
-
-cpi = config['cloud']['plugin']
-
-if cpi
-  require_path = File.join('cloud', cpi)
-  cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
-  migrations = File.expand_path('../db/migrations', cpi_path)
-
-  if File.directory?(migrations)
-    migrate(db, "#{cpi}_cpi_schema", migrations)
-  end
-end
-

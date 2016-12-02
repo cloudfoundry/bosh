@@ -1,0 +1,2320 @@
+{
+  "`cloud_configs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "properties",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`runtime_configs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "properties",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`cpi_configs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "properties",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`compiled_packages`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "dependency_key",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "build",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "package_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "dependency_key_sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "stemcell_os",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "stemcell_version",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`deployments`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "manifest",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "cloud_config_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "link_spec_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "runtime_config_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`deployment_problems`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "deployment_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "state",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "resource_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "type",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "data_json",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "last_seen_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "counter",
+      {
+        "allow_null": false,
+        "default": "0",
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": 0
+      }
+    ]
+  ],
+  "`deployment_properties`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "deployment_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "value",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`director_attributes`": [
+    [
+      "value",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`instances`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "job",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "index",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "deployment_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "vm_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "state",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "resurrection_paused",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "uuid",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "availability_zone",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "cloud_properties",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "compilation",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "bootstrap",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "dns_records",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "spec_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "vm_cid",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "agent_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "credentials_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "trusted_certs_sha1",
+      {
+        "allow_null": true,
+        "default": "'da39a3ee5e6b4b0d3255bfef95601890afd80709'",
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+        "max_length": 255
+      }
+    ],
+    [
+      "update_completed",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "ignore",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ]
+  ],
+  "`ip_addresses`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "network_name",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "address",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "bigint",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "static",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "Boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": null
+      }
+    ],
+    [
+      "instance_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "task_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`local_dns_blobs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "version",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`local_dns_records`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "ip",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "instance_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`log_bundles`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "timestamp",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`orphan_disks`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "disk_cid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "size",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "availability_zone",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "deployment_name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "instance_name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "cloud_properties_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`orphan_snapshots`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "orphan_disk_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "snapshot_cid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "clean",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "Boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "snapshot_created_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`packages`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "version",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "dependency_set_json",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "release_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "fingerprint",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`releases`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`release_versions`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "version",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "release_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "commit_hash",
+      {
+        "allow_null": true,
+        "default": "'unknown'",
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": "unknown",
+        "max_length": 255
+      }
+    ],
+    [
+      "uncommitted_changes",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ]
+  ],
+  "`stemcells`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "version",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "cid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "operating_system",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "cpi",
+      {
+        "allow_null": true,
+        "default": "''",
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": "",
+        "max_length": 255
+      }
+    ]
+  ],
+  "`snapshots`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "persistent_disk_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "clean",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "Boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "snapshot_cid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`tasks`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "state",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "timestamp",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "description",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "result",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "output",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "checkpoint_time",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "type",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "username",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "deployment_name",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "started_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`templates`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "version",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "package_names_json",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "release_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "logs_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "fingerprint",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "properties_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "consumes_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "provides_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`users`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "username",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "password",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`persistent_disks`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "instance_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "disk_cid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "size",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "active",
+      {
+        "allow_null": true,
+        "default": "0",
+        "db_type": "Boolean",
+        "primary_key": false,
+        "type": "boolean",
+        "ruby_default": false
+      }
+    ],
+    [
+      "cloud_properties_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": true,
+        "default": "''",
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": "",
+        "max_length": 255
+      }
+    ]
+  ],
+  "`rendered_templates_archives`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "instance_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "content_sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`locks`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "expired_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "uid",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`ephemeral_blobs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "blobstore_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "sha1",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "created_at",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`placeholder_mappings`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "placeholder_name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "placeholder_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "deployment_id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`events`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "parent_id",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "user",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "timestamp",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "action",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "object_type",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "object_name",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "error",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "task",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "deployment",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "instance",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "context_json",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ]
+  ],
+  "`teams`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "name",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ],
+  "`delayed_jobs`": [
+    [
+      "id",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "type": "integer",
+        "ruby_default": null
+      }
+    ],
+    [
+      "priority",
+      {
+        "allow_null": false,
+        "default": "0",
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": 0
+      }
+    ],
+    [
+      "attempts",
+      {
+        "allow_null": false,
+        "default": "0",
+        "db_type": "integer",
+        "primary_key": false,
+        "type": "integer",
+        "ruby_default": 0
+      }
+    ],
+    [
+      "handler",
+      {
+        "allow_null": false,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "last_error",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "text",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null
+      }
+    ],
+    [
+      "run_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "locked_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "failed_at",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "timestamp",
+        "primary_key": false,
+        "type": "datetime",
+        "ruby_default": null
+      }
+    ],
+    [
+      "locked_by",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ],
+    [
+      "queue",
+      {
+        "allow_null": true,
+        "default": null,
+        "db_type": "varchar(255)",
+        "primary_key": false,
+        "type": "string",
+        "ruby_default": null,
+        "max_length": 255
+      }
+    ]
+  ]
+}

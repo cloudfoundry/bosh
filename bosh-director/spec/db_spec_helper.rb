@@ -40,6 +40,17 @@ module DBSpecHelper
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       @db = Sequel.connect(@db_helper.connection_string, db_opts)
+      @db.extension :bosh_schema_caching
+
+      # /Users/pivotal/workspace/bosh/bosh-director/spec/db_spec_helper.rb
+      # /Users/pivotal/workspace/bosh/bosh-director/db/schema.dump
+
+      schema_file = File.expand_path('../../db/schema.dump', __FILE__)
+
+      puts 'schema_file'
+      puts schema_file
+      db.load_schema_cache?(schema_file)
+      @db
     end
 
     def disconnect_database
