@@ -77,7 +77,7 @@ The AWS_based environment files are located in this directory. The `Vagrantfile`
 
 Once you have prepared your environment and configuration, run `vagrant up`...
 
-    host$ cd bosh-stemcell
+    host$ cd src/bosh-stemcell
     host$ vagrant up remote --provider=aws
 
 You can then use `vagrant ssh` to connect...
@@ -88,7 +88,7 @@ You can then use `vagrant ssh` to connect...
 
 Whenever you make changes to your local `bosh` directory, you'll need to manually sync them to your existing VM...
 
-    host$ cd bosh-stemcell
+    host$ cd src/bosh-stemcell
     host$ vagrant provision remote
 
 Once the stemcell-building machine is up, you can run:
@@ -241,7 +241,7 @@ To run the `centos_7_spec.rb` tests for example you will need to:
 
 Then run the following:
 
-    cd /opt/bosh/bosh-stemcell; OS_IMAGE=/opt/bosh/tmp/centos_base_image.tgz bundle exec rspec -fd spec/os_image/centos_7_spec.rb
+    cd /opt/bosh/src/bosh-stemcell; OS_IMAGE=/opt/bosh/tmp/centos_base_image.tgz bundle exec rspec -fd spec/os_image/centos_7_spec.rb
 
 ##### AWS
 
@@ -255,7 +255,7 @@ Then run the following:
     export STEMCELL_IMAGE=/mnt/stemcells/aws/xen/centos/work/work/aws-xen-centos.raw
     export STEMCELL_WORKDIR=/mnt/stemcells/aws/xen/centos/work/work
     export OS_NAME=centos
-    cd bosh-stemcell/
+    cd src/bosh-stemcell/
     bundle exec rspec -fd --tag ~exclude_on_aws spec/os_image/centos_7_spec.rb
     
 #### How to run tests for Stemcell
@@ -270,7 +270,7 @@ To run the stemcell tests when building against local OS image you will need to:
 
 Then run the following:
 ```sh
-    $ cd /opt/bosh/bosh-stemcell; \ 
+    $ cd /opt/bosh/src/bosh-stemcell; \
     STEMCELL_IMAGE=/mnt/stemcells/aws/xen/ubuntu/work/work/aws-xen-ubuntu.raw \ 
     STEMCELL_WORKDIR=/mnt/stemcells/aws/xen/ubuntu/work/work/chroot \ 
     OS_NAME=ubuntu \ 
