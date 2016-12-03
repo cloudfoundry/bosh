@@ -5,23 +5,27 @@ describe 'cli: deployment process', type: :integration do
   with_reset_sandbox_before_each
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
 
-  it 'generates release and deploys it via simple manifest' do
-    # Test release created with bosh (see spec/assets/test_release_template)
-    release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
-      FileUtils.rm_rf('dev_releases')
-      output = bosh_runner.run_in_current_dir('create-release --tarball')
-      parse_release_tarball_path(output)
+  context 'when generating a tarball' do
+    let!(:release_file) { Tempfile.new('release.tgz') }
+    after { release_file.delete }
+
+    it 'generates release and deploys it via simple manifest' do
+      # Test release created with bosh (see spec/assets/test_release_template)
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        FileUtils.rm_rf('dev_releases')
+        bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
+      end
+
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
+
+      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload-stemcell #{stemcell_filename}")
+      bosh_runner.run("upload-release #{release_file.path}")
+
+      expect(bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')).to include("Using deployment 'simple'")
+      expect(bosh_runner.run('cloud-check --report', deployment_name: 'simple')).to match(/0 problems/)
     end
-
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
-
-    bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("upload-stemcell #{stemcell_filename}")
-    bosh_runner.run("upload-release #{release_filename}")
-
-    expect(bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')).to include("Using deployment 'simple'")
-    expect(bosh_runner.run('cloud-check --report', deployment_name: 'simple')).to match(/0 problems/)
   end
 
   describe 'bosh deploy' do

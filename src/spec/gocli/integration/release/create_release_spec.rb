@@ -8,65 +8,66 @@ describe 'create-release', type: :integration do
 
   before { setup_test_release_dir }
 
+  let!(:release_file) { Tempfile.new('release.tgz') }
+  after { release_file.delete }
+
   shared_examples :generates_tarball do
     it 'stashes release artifacts in a tarball' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
-        actual = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
-        expected = [
-          'LICENSE',
-          'jobs/errand1.tgz',
-          'jobs/errand_without_package.tgz',
-          'jobs/fails_with_too_much_output.tgz',
-          'jobs/foobar.tgz',
-          'jobs/foobar_with_bad_properties.tgz',
-          'jobs/foobar_with_bad_properties_2.tgz',
-          'jobs/job_with_many_packages.tgz',
-          'jobs/foobar_without_packages.tgz',
-          'jobs/has_drain_script.tgz',
-          'jobs/job_with_blocking_compilation.tgz',
-          'jobs/job_1_with_pre_start_script.tgz',
-          'jobs/job_1_with_post_deploy_script.tgz',
-          'jobs/job_2_with_pre_start_script.tgz',
-          'jobs/job_2_with_post_deploy_script.tgz',
-          'jobs/job_1_with_many_properties.tgz',
-          'jobs/job_2_with_many_properties.tgz',
-          'jobs/job_with_property_types.tgz',
-          'jobs/job_with_post_start_script.tgz',
-          'jobs/job_3_with_broken_post_deploy_script.tgz',
-          'jobs/job_that_modifies_properties.tgz',
-          'jobs/transitive_deps.tgz',
-          'jobs/id_job.tgz',
-          'packages/a.tgz',
-          'packages/b.tgz',
-          'packages/bar.tgz',
-          'packages/blocking_package.tgz',
-          'packages/c.tgz',
-          'packages/errand1.tgz',
-          'packages/fails_with_too_much_output.tgz',
-          'packages/foo.tgz',
-          'packages/foo_1.tgz',
-          'packages/foo_2.tgz',
-          'packages/foo_3.tgz',
-          'packages/foo_4.tgz',
-          'packages/foo_5.tgz',
-          'packages/foo_6.tgz',
-          'packages/foo_7.tgz',
-          'packages/foo_8.tgz',
-          'packages/foo_9.tgz',
-          'packages/foo_10.tgz',
-          'release.MF',
-          'license.tgz'
-        ]
+      actual = list_tar_files(release_file.path)
+      expected = [
+        'LICENSE',
+        'jobs/errand1.tgz',
+        'jobs/errand_without_package.tgz',
+        'jobs/fails_with_too_much_output.tgz',
+        'jobs/foobar.tgz',
+        'jobs/foobar_with_bad_properties.tgz',
+        'jobs/foobar_with_bad_properties_2.tgz',
+        'jobs/job_with_many_packages.tgz',
+        'jobs/foobar_without_packages.tgz',
+        'jobs/has_drain_script.tgz',
+        'jobs/job_with_blocking_compilation.tgz',
+        'jobs/job_1_with_pre_start_script.tgz',
+        'jobs/job_1_with_post_deploy_script.tgz',
+        'jobs/job_2_with_pre_start_script.tgz',
+        'jobs/job_2_with_post_deploy_script.tgz',
+        'jobs/job_1_with_many_properties.tgz',
+        'jobs/job_2_with_many_properties.tgz',
+        'jobs/job_with_property_types.tgz',
+        'jobs/job_with_post_start_script.tgz',
+        'jobs/job_3_with_broken_post_deploy_script.tgz',
+        'jobs/job_that_modifies_properties.tgz',
+        'jobs/transitive_deps.tgz',
+        'jobs/id_job.tgz',
+        'packages/a.tgz',
+        'packages/b.tgz',
+        'packages/bar.tgz',
+        'packages/blocking_package.tgz',
+        'packages/c.tgz',
+        'packages/errand1.tgz',
+        'packages/fails_with_too_much_output.tgz',
+        'packages/foo.tgz',
+        'packages/foo_1.tgz',
+        'packages/foo_2.tgz',
+        'packages/foo_3.tgz',
+        'packages/foo_4.tgz',
+        'packages/foo_5.tgz',
+        'packages/foo_6.tgz',
+        'packages/foo_7.tgz',
+        'packages/foo_8.tgz',
+        'packages/foo_9.tgz',
+        'packages/foo_10.tgz',
+        'release.MF',
+        'license.tgz'
+      ]
 
-        expect(actual).to contain_exactly(*expected)
-      end
+      expect(actual).to contain_exactly(*expected)
     end
   end
 
   describe 'release creation' do
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        bosh_runner.run_in_current_dir('create-release --final --tarball')
+        bosh_runner.run_in_current_dir("create-release --final --tarball=#{release_file.path}")
       end
     end
 
@@ -191,7 +192,7 @@ describe 'create-release', type: :integration do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create-release --final')
 
-        bosh_runner.run_in_current_dir("create-release #{latest_release_manifest} --tarball")
+        bosh_runner.run_in_current_dir("create-release #{latest_release_manifest} --tarball=#{release_file.path}")
       end
     end
 
@@ -369,11 +370,10 @@ describe 'create-release', type: :integration do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
-      out = bosh_runner.run_in_current_dir('create-release --tarball')
-      release_tarball = parse_release_tarball_path(out)
+      bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
 
       Dir.mktmpdir do |temp_dir|
-        `tar xzf #{release_tarball} -C #{temp_dir}`
+        `tar xzf #{release_file.path} -C #{temp_dir}`
         foo_package = File.join(temp_dir, 'packages', 'foo.tgz')
         release_file_list = `tar -tzf #{foo_package}`
         expect(release_file_list).to_not include('excluded_file')

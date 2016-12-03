@@ -5,6 +5,9 @@ describe 'upload release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
+  let!(:release_file) { Tempfile.new('release.tgz') }
+  after { release_file.delete }
+
   it 'can upload a release' do
     release_filename = spec_asset('test_release.tgz')
 
@@ -30,14 +33,13 @@ describe 'upload release', type: :integration do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
-      out = bosh_runner.run_in_current_dir('create-release --tarball')
-      release_tarball = parse_release_tarball_path(out)
+      bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
 
       # upload the release for the first time
-      bosh_runner.run("upload-release #{release_tarball}")
+      bosh_runner.run("upload-release #{release_file.path}")
 
       # upload the same release with --rebase option
-      bosh_runner.run("upload-release #{release_tarball} --rebase")
+      bosh_runner.run("upload-release #{release_file.path} --rebase")
 
       # bosh should be able to generate the next version of the release
       table_output = table(bosh_runner.run('releases', json: true))
@@ -74,36 +76,39 @@ describe 'upload release', type: :integration do
     expect(table_output.length).to eq(1)
   end
 
-  it 'sparsely uploads the release' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
-      FileUtils.rm_rf('dev_releases')
+  context 'sparsely uploading releases' do
+    let!(:release_file2) { Tempfile.new('release2.tgz') }
+    after { release_file2.delete }
 
-      out = bosh_runner.run_in_current_dir('create-release --tarball')
-      release_tarball_1 = parse_release_tarball_path(out)
-      expect(File).to exist(release_tarball_1)
+    it 'reuses existing jobs/packages release' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        FileUtils.rm_rf('dev_releases')
 
-      bosh_runner.run("upload-release #{release_tarball_1}")
+        out = bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
+        expect(File).to exist(release_file.path)
 
-      new_file = File.join('src', 'bar', 'bla')
-      begin
-        FileUtils.touch(new_file)
+        bosh_runner.run("upload-release #{release_file.path}")
 
-        out = bosh_runner.run_in_current_dir('create-release --force --tarball')
-        release_tarball_2 = parse_release_tarball_path(out)
-        expect(File).to exist(release_tarball_2)
-      ensure
-        FileUtils.rm_rf(new_file)
+        new_file = File.join('src', 'bar', 'bla')
+        begin
+          FileUtils.touch(new_file)
+
+          out = bosh_runner.run_in_current_dir("create-release --force --tarball=#{release_file2.path}")
+          expect(File).to exist(release_file2.path)
+        ensure
+          FileUtils.rm_rf(new_file)
+        end
+
+        out = bosh_runner.run("upload-release #{release_file2.path}")
+        expect(out).to match /Creating new packages: bar\//
+        expect(out).to match /Processing 17 existing packages/
+        expect(out).to match /Processing 22 existing jobs/
+
+        table_output = table(bosh_runner.run('releases', json: true))
+        expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.2', 'Commit Hash'=> String})
+        expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.1', 'Commit Hash'=> String})
+        expect(table_output.length).to eq(2)
       end
-
-      out = bosh_runner.run("upload-release #{release_tarball_2}")
-      expect(out).to match /Creating new packages: bar\//
-      expect(out).to match /Processing 17 existing packages/
-      expect(out).to match /Processing 22 existing jobs/
-
-      table_output = table(bosh_runner.run('releases', json: true))
-      expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.2', 'Commit Hash'=> String})
-      expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.1', 'Commit Hash'=> String})
-      expect(table_output.length).to eq(2)
     end
   end
 
