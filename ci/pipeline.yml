@@ -620,7 +620,7 @@ resources:
       bucket: {{candidate_release_bucket}}
       access_key_id: {{candidate_release_access_key_id}}
       secret_access_key: {{candidate_release_secret_access_key}}
-      regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" # bosh-257.9+dev.1472844900.tgz
+      versioned_file: "bosh-dev-release.tgz"
 
   - name: bosh-fuzz-tests
     type: git
