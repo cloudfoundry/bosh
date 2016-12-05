@@ -299,7 +299,7 @@ module Bosh::Director
       end
 
       # Config Vars
-      get '/:deployment/vars' do
+      get '/:deployment/config_vars' do
         mappings = Models::PlaceholderMapping.where(deployment_id: deployment.id)
         JSON.generate(create_config_vars_response(mappings))
       end
@@ -501,8 +501,8 @@ module Bosh::Director
       def create_config_vars_response(vars)
         vars.map do |var|
         {
-          'id' => var.placeholder_id,
-          'name' => var.placeholder_name
+          'placeholder_name' => var.placeholder_name,
+          'placeholder_id' => var.placeholder_id
         }
         end
       end
