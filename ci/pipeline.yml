@@ -463,7 +463,7 @@ jobs:
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
       params:
-        file: "release/*.tgz"
+        file: "release/bosh-dev-release.tgz"
 
   - name: bats-centos
     serial: true
