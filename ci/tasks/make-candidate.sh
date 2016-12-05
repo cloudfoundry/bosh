@@ -13,6 +13,4 @@ cd bosh-src
 
 sed -i -E "s/VERSION = .+/VERSION = '$gem_version'/" $( find src -name version.rb )
 
-$GO_CLI_PATH create-release --tarball --timestamp-version --force
-
-mv dev_releases/bosh/*.tgz ../release/
+$GO_CLI_PATH create-release --tarball=../release/dev-release.tgz --timestamp-version --force
