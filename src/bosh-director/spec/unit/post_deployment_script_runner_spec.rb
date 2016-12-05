@@ -12,7 +12,8 @@ module Bosh::Director
       let(:instance) { instance_double(
                            'Bosh::Director::Models::Instance',
                            credentials: "",
-                           agent_id: ""
+                           agent_id: "",
+                           name: ""
       )}
       let(:agent) { instance_double(
                         'Bosh::Director::AgentClient'

@@ -12,7 +12,7 @@ module Bosh::Director
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         instances.each do |instance|
           pool.process do
-            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, agent_options)
+            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, instance.name, agent_options)
             begin
               agent.run_script('post-deploy', {})
             rescue Bosh::Director::RpcTimeout

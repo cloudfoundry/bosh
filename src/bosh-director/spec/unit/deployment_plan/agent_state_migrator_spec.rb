@@ -11,7 +11,7 @@ module Bosh::Director
 
     describe '#get_state' do
       before do
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, 'agent-1').and_return(client)
+        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, 'agent-1', anything).and_return(client)
       end
 
       it 'should return the processed agent state' do

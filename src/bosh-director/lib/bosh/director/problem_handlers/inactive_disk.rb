@@ -85,7 +85,7 @@ module Bosh::Director
 
       def disk_mounted?
         return false unless @instance.vm_cid
-        agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
+        agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id, @instance.name) do |agent|
           agent.list_disk.include?(@disk.disk_cid)
         end
       end

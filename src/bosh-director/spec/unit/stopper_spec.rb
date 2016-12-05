@@ -7,7 +7,7 @@ module Bosh::Director
     let(:instance_model) { Models::Instance.make(vm_cid: 'vm-cid', spec: spec) }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
+    before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id, instance_model.name).and_return(agent_client) }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }

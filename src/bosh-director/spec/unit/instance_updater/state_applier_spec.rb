@@ -70,7 +70,7 @@ module Bosh::Director
       instance_plan.network_plans << DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
       instance.bind_existing_instance_model(instance_model)
 
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id, instance_model.name).and_return(agent_client)
       allow(agent_client).to receive(:apply)
       allow(agent_client).to receive(:run_script)
       allow(agent_client).to receive(:start)

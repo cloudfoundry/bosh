@@ -59,7 +59,7 @@ module Bosh::Director
 
       mounted_disk_cid = @problem_register.get_disk(instance)
 
-      agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, agent_options)
+      agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, instance.name, agent_options)
       begin
         agent.get_state
 
