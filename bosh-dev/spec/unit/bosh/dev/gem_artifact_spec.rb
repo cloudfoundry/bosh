@@ -72,7 +72,7 @@ module Bosh::Dev
         stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
 
         expect(Open3).to receive(:capture3).with(push_cmd, chdir: Dir.pwd) do
-          expect(ENV.keys.grep(/BUNDLE/)).to eq([])
+          expect(ENV.keys.grep(/^BUNDLE_/)).to eq([])
           [ nil, nil, instance_double('Process::Status', success?: true) ]
         end
 
@@ -135,7 +135,7 @@ EOS
         stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
 
         expect(Open3).to receive(:capture3).with(query_cmd, chdir: Dir.pwd) do
-          expect(ENV.keys.grep(/BUNDLE/)).to eq([])
+          expect(ENV.keys.grep(/^BUNDLE_/)).to eq([])
           [ '', nil, instance_double('Process::Status', success?: true) ]
         end
 
