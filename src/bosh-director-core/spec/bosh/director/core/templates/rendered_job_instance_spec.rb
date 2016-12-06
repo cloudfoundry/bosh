@@ -232,38 +232,36 @@ module Bosh::Director::Core::Templates
     end
 
     describe '#persist_through_agent' do
+      let(:rendered_file_template_1) do
+        Bosh::Director::Core::Templates::RenderedFileTemplate.new('myfiletemplate1.yml.erb', 'myfiletemplate1.yml', 'This is the first great file')
+      end
+
+      let(:rendered_file_template_2) do
+        Bosh::Director::Core::Templates::RenderedFileTemplate.new('myfiletemplate2.yml.erb', 'myfiletemplate2.yml', 'This is a second great file')
+      end
+
       let(:templates) {
         [
           instance_double(
             'Bosh::Director::Core::Templates::RenderedJobTemplate',
-            name: 'template-name1',
+            name: 'job-name1',
+            monit: 'monit content 1',
+            templates: [rendered_file_template_1],
             template_hash: 'hash1',
           ),
           instance_double(
             'Bosh::Director::Core::Templates::RenderedJobTemplate',
-            name: 'template-name2',
+            name: 'job-name2',
+            monit: 'monit content 2',
+            templates: [rendered_file_template_2],
             template_hash: 'hash2',
           ),
         ]
       }
       let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
-      let(:compressed_content) { instance_double("File")}
-      let(:compressed_archive) do
-        instance_double(
-          'Bosh::Director::Core::Templates::CompressedRenderedJobTemplates',
-          write: nil,
-          contents: compressed_content,
-          sha1: 'fake-blob-sha1',
-        )
-      end
-      let(:temp_file) { instance_double('Tempfile', path: '/temp/archive/path.tgz', close!: nil) }
 
       before do
-        allow(CompressedRenderedJobTemplates).to receive(:new).and_return(compressed_archive)
-        allow(Tempfile).to receive(:new).and_return(temp_file)
-        allow(compressed_content).to receive(:read).and_return("compressed-content")
-        allow(Base64).to receive(:encode64).and_return("base64-encoded-content")
-        allow(SecureRandom).to receive(:uuid).and_return("random-blob-id")
+        allow(SecureRandom).to receive(:uuid).and_return('random-blob-id')
         allow(agent_client).to receive(:upload_blob)
       end
 
@@ -271,13 +269,15 @@ module Bosh::Director::Core::Templates
         instance.persist_through_agent(agent_client)
       end
 
-      it 'compresses the provided RenderedJobTemplate objects' do
+      it 'compresses the provided RenderedJobTemplate objects in memory' do
+        expect(RenderedTemplatesInMemoryTarGzipper).to receive(:produce_gzipped_tarball).with(templates).and_return('')
         perform
-        expect(CompressedRenderedJobTemplates).to have_received(:new).with('/temp/archive/path.tgz')
-        expect(compressed_archive).to have_received(:write).with(templates)
       end
 
       it 'calls agent client upload_blob action' do
+        allow(Digest::SHA1).to receive(:hexdigest).and_return('fake-blob-sha1')
+        allow(Base64).to receive(:encode64).and_return('base64-encoded-content')
+
         expect(agent_client).to receive(:upload_blob).with(
           'random-blob-id',
           'fake-blob-sha1',
@@ -287,29 +287,10 @@ module Bosh::Director::Core::Templates
       end
 
       it 'returns a rendered template archive' do
-        rta = perform
-        expect(rta.blobstore_id).to eq('random-blob-id')
-        expect(rta.sha1).to eq('fake-blob-sha1')
-      end
-
-      it 'closes temporary file after the upload' do
-        expect(agent_client).to receive(:upload_blob).ordered
-        expect(temp_file).to receive(:close!).ordered
-        perform
-      end
-
-      it 'closes temporary file even when compression fails' do
-        error = Exception.new('error')
-        allow(compressed_archive).to receive(:write).and_raise(error)
-        expect(temp_file).to receive(:close!).ordered
-        expect { perform }.to raise_error(error)
-      end
-
-      it 'closes temporary file even when upload fails' do
-        error = Exception.new('error')
-        allow(agent_client).to receive(:upload_blob).and_raise(error)
-        expect(temp_file).to receive(:close!).ordered
-        expect { perform }.to raise_error(error)
+        expect(RenderedTemplatesInMemoryTarGzipper).to receive(:produce_gzipped_tarball).with(templates).and_return('I am a gzipped tarball')
+        rendered_templates_archive = perform
+        expect(rendered_templates_archive.blobstore_id).to eq('random-blob-id')
+        expect(rendered_templates_archive.sha1).to eq('391bd790a0fe025fc8ff01e337d1b8c9906c1394')
       end
     end
   end
