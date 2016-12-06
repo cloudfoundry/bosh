@@ -7,8 +7,8 @@ groups:
       - test-stemcells
       - build-warden-boshlite-centos-7
       - build-warden-boshlite-ubuntu-trusty
-      - build-aws-xen-centos-7
-      - build-aws-xen-ubuntu-trusty
+      - build-aws-xen-hvm-centos-7
+      - build-aws-xen-hvm-ubuntu-trusty
       - build-azure-hyperv-centos-7
       - build-azure-hyperv-ubuntu-trusty
       - build-google-kvm-ubuntu-trusty
@@ -22,8 +22,8 @@ groups:
       - bats-ubuntu
   - name: aws
     jobs:
-      - build-aws-xen-ubuntu-trusty
-      - build-aws-xen-centos-7
+      - build-aws-xen-hvm-ubuntu-trusty
+      - build-aws-xen-hvm-centos-7
   - name: azure
     jobs:
       - build-azure-hyperv-ubuntu-trusty
@@ -45,7 +45,7 @@ groups:
       - build-vcloud-esxi-ubuntu-trusty
   - name: ubuntu
     jobs:
-      - build-aws-xen-ubuntu-trusty
+      - build-aws-xen-hvm-ubuntu-trusty
       - build-azure-hyperv-ubuntu-trusty
       - build-google-kvm-ubuntu-trusty
       - build-openstack-kvm-ubuntu-trusty
@@ -53,7 +53,7 @@ groups:
       - build-vcloud-esxi-ubuntu-trusty
   - name: centos
     jobs:
-      - build-aws-xen-centos-7
+      - build-aws-xen-hvm-centos-7
       - build-azure-hyperv-centos-7
       - build-openstack-kvm-centos-7
       - build-vsphere-esxi-centos-7
@@ -131,14 +131,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -146,14 +146,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -231,8 +231,8 @@ jobs:
           CANDIDATE_BUCKET_NAME: {{candidate_stemcell_bucket}}
           PUBLISHED_BUCKET_NAME: {{published_stemcell_bucket}}
           COPY_KEYS: |
-            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
-            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
+            aws/bosh-stemcell-%s-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
+            aws/bosh-stemcell-%s-aws-xen-hvm-centos-7-go_agent.tgz
             google/bosh-stemcell-%s-google-kvm-ubuntu-trusty-go_agent.tgz
             google/bosh-stemcell-%s-google-kvm-centos-7-go_agent.tgz
             openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
@@ -304,7 +304,7 @@ jobs:
   # AWS
   #
 
-  - name: build-aws-xen-ubuntu-trusty
+  - name: build-aws-xen-hvm-ubuntu-trusty
     plan:
       - aggregate:
           - get: version
@@ -317,16 +317,16 @@ jobs:
         privileged: true
         params:
           IAAS:         aws
-          HYPERVISOR:   xen
+          HYPERVISOR:   xen-hvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
           BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
-        - put: aws-xen-ubuntu-trusty
+        - put: aws-xen-hvm-ubuntu-trusty
           params:
             file: stemcell/*.tgz
 
-  - name: build-aws-xen-centos-7
+  - name: build-aws-xen-hvm-centos-7
     plan:
       - aggregate:
           - get: version
@@ -339,12 +339,12 @@ jobs:
         privileged: true
         params:
           IAAS:         aws
-          HYPERVISOR:   xen
+          HYPERVISOR:   xen-hvm
           OS_NAME:      centos
           OS_VERSION:   7
           BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
-        - put: aws-xen-centos-7
+        - put: aws-xen-hvm-centos-7
           params:
             file: stemcell/*.tgz
 
@@ -593,14 +593,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -608,14 +608,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -662,14 +662,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -677,14 +677,14 @@ jobs:
           passed:
             - build-warden-boshlite-centos-7
             - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-ubuntu-trusty
+            - build-aws-xen-hvm-ubuntu-trusty
             - build-azure-hyperv-ubuntu-trusty
             - build-google-kvm-ubuntu-trusty
             - build-google-kvm-centos-7
             - build-openstack-kvm-ubuntu-trusty
             - build-vsphere-esxi-ubuntu-trusty
             - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-centos-7
+            - build-aws-xen-hvm-centos-7
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
@@ -771,19 +771,19 @@ resources:
   # AWS
   #
 
-  - name: aws-xen-ubuntu-trusty
+  - name: aws-xen-hvm-ubuntu-trusty
     type: s3
     source:
       bucket: {{candidate_stemcell_bucket}}
-      regexp: aws/bosh-stemcell-(.+)-aws-xen-ubuntu-trusty-go_agent.tgz
+      regexp: aws/bosh-stemcell-(.+)-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: aws-xen-centos-7
+  - name: aws-xen-hvm-centos-7
     type: s3
     source:
       bucket: {{candidate_stemcell_bucket}}
-      regexp: aws/bosh-stemcell-(.+)-aws-xen-centos-7-go_agent.tgz
+      regexp: aws/bosh-stemcell-(.+)-aws-xen-hvm-centos-7-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
