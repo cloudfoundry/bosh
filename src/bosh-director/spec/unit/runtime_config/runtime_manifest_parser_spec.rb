@@ -25,11 +25,12 @@ module Bosh::Director
         expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeReleaseNotListedInReleases)
       end
 
-      context 'when runtime manifest does not have an include section' do
+      context 'when runtime manifest does not have an include or exclude section' do
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(RuntimeConfig::AddonInclude).to receive(:new).with([], [], [])
+          expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :include)
+          expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :exclude)
 
           result = subject.parse(runtime_manifest)
 
@@ -55,15 +56,16 @@ module Bosh::Director
             runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
             runtime_manifest['addons'].first.merge!(
                 {
-                    'include' => {
-                        'deployments' => ['dep1']
-                    }
+                  'include' => {
+                    'deployments' => ['dep1']
+                  }
                 })
             runtime_manifest
           end
 
           it 'returns deployment associated with addon' do
-            expect(RuntimeConfig::AddonInclude).to receive(:new).with([], ['dep1'], [])
+            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], ['dep1'], [], :include)
+            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
@@ -75,14 +77,14 @@ module Bosh::Director
               runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
                   {
-                      'include' => {
-                          'jobs' => [{'name' => 'foobar'}]
-                      }
+                    'include' => {
+                      'jobs' => [{'name' => 'foobar'}]
+                    }
                   })
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
 
@@ -91,14 +93,72 @@ module Bosh::Director
               runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
                   {
-                      'include' => {
-                          'jobs' => [{'release' => 'foobar'}]
-                      }
+                    'include' => {
+                      'jobs' => [{'release' => 'foobar'}]
+                    }
                   })
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteIncludeJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
+            end
+          end
+        end
+      end
+
+      context 'when runtime manifest has an exclude section' do
+        let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon_excludes }
+
+        context 'when deployment name is in the includes.deployments section' do
+          let(:runtime_manifest) do
+            runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+            runtime_manifest['addons'].first.merge!(
+                {
+                  'exclude' => {
+                    'deployments' => ['dep1']
+                  }
+                })
+            runtime_manifest
+          end
+
+          it 'returns deployment associated with addon' do
+            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :include)
+            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], ['dep1'], [], :exclude)
+
+            subject.parse(runtime_manifest)
+          end
+        end
+
+        context 'when jobs section present' do
+          context 'when only job name is provided' do
+            let(:runtime_manifest) do
+              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+              runtime_manifest['addons'].first.merge!(
+                  {
+                    'exclude' => {
+                      'jobs' => [{'name' => 'foobar'}]
+                    }
+                  })
+              runtime_manifest
+            end
+            it 'throws an error' do
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
+            end
+          end
+
+          context 'when only release is provided' do
+            let(:runtime_manifest) do
+              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+              runtime_manifest['addons'].first.merge!(
+                  {
+                    'exclude' => {
+                      'jobs' => [{'release' => 'foobar'}]
+                    }
+                  })
+              runtime_manifest
+            end
+            it 'throws an error' do
+              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
             end
           end
         end

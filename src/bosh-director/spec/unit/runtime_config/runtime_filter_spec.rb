@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe RuntimeConfig::AddonInclude do
+  describe RuntimeConfig::AddonFilter do
 
-    subject(:addon_include) { RuntimeConfig::AddonInclude.parse(include_spec) }
+    subject(:addon_filter) { RuntimeConfig::AddonFilter.parse(filter_spec, filter_type) }
     let(:deployment_name) { 'dep1' }
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
@@ -39,19 +39,11 @@ module Bosh::Director
       DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
     end
 
-    describe '#applies?' do
-      context 'when RuntimeManifest does not have an include section' do
-        let(:include_spec) { nil }
+    shared_examples :addon_filters do
+      context 'when ONLY deployments key is present in the filter spec' do
+        let(:filter_spec) { {'jobs' => [], 'deployments' => deployments} }
 
-        it 'should return true' do
-          expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
-        end
-      end
-
-      context 'when ONLY deployments key is present in the include spec' do
-        let(:include_spec) { {'jobs' => [], 'deployments' => deployments} }
-
-        context 'if deployment name is in include section' do
+        context 'if deployment name is in filter section' do
           let(:deployments) { ['dep1'] }
 
           it 'should return true' do
@@ -59,7 +51,7 @@ module Bosh::Director
           end
         end
 
-        context 'if deployment name is NOT in include section' do
+        context 'if deployment name is NOT in filter section' do
           let(:deployments) { ['dep42'] }
 
           it 'should return false' do
@@ -68,8 +60,8 @@ module Bosh::Director
         end
       end
 
-      context 'when ONLY jobs key is present in the include spec' do
-        let(:include_spec) do
+      context 'when ONLY jobs key is present in the filter spec' do
+        let(:filter_spec) do
           {
             'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
             'deployments' => []
@@ -84,33 +76,71 @@ module Bosh::Director
 
         context 'when no instance groups contains corresponding job and release' do
           it 'returns false' do
-            include_spec['jobs'] = [{'name' => 'job1', 'release' => '2'}]
+            filter_spec['jobs'] = [{'name' => 'job1', 'release' => '2'}]
             expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
           end
         end
       end
 
-      context 'when BOTH deployments key and jobs key are present in the include spec' do
-        let(:include_spec) do
+      context 'when BOTH deployments key and jobs key are present in the filter spec' do
+        let(:filter_spec) do
           {
             'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
             'deployments' => ['dep1']
           }
         end
 
-        context 'when deployment name and job/releases corresponds to include spec' do
+        context 'when deployment name and job/releases corresponds to filter spec' do
           it 'should return instance groups that contain corresponding job and are in the corresponding deployments' do
             expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
           end
         end
       end
+    end
 
-      context 'when NEITHER deployments key nor jobs key are present' do
-        let(:include_spec) { {'jobs' => [], 'deployments' => []} }
+    describe '#applies?' do
+      context 'include' do
+        let (:filter_type) { :include }
 
-        it 'returns true' do
-          expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+        context 'when RuntimeManifest does not have an include section' do
+          let(:filter_spec) { nil }
+
+          it 'should return true' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+          end
         end
+
+        context 'when NEITHER deployments key nor jobs key are present' do
+          let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
+
+          it 'returns true' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+          end
+        end
+
+        it_behaves_like :addon_filters
+      end
+
+      context 'exclude' do
+        let (:filter_type) { :exclude }
+
+        context 'when RuntimeManifest does not have an include section' do
+          let(:filter_spec) { nil }
+
+          it 'should return true' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+          end
+        end
+
+        context 'when NEITHER deployments key nor jobs key are present' do
+          let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
+
+          it 'returns true' do
+            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+          end
+        end
+
+        it_behaves_like :addon_filters
       end
     end
   end

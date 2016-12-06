@@ -153,6 +153,23 @@ module Bosh::Spec
       })
     end
 
+    def self.runtime_config_with_addon_excludes
+      runtime_config_with_addon.merge({
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
+            'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+            'exclude' => {
+              'deployments' => ['dep1'],
+              'jobs' => [
+                {'name'=> 'foobar', 'release' => 'bosh-release'}
+              ]
+            }
+          }]
+        })
+    end
+
     def self.runtime_config_with_addon_includes_stemcell_os
       runtime_config_with_addon.merge({
         'addons' => [

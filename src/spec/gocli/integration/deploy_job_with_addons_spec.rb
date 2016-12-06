@@ -4,9 +4,13 @@ describe 'deploy job with addons', type: :integration do
   with_reset_sandbox_before_each
 
   it 'allows addons to be added to specific deployments' do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
+    runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
+    runtime_config['addons'][0]['include'] = {'jobs' => [
+        {'name'=> 'foobar', 'release' => 'bosh-release'}
+    ]}
+    runtime_config['addons'][0]['exclude'] = {'deployments' => ['dep2']}
 
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_includes)
+    runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
@@ -39,8 +43,6 @@ describe 'deploy job with addons', type: :integration do
   end
 
   it 'allows addons to be added for specific stemcell operating systems' do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_includes_stemcell_os)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
@@ -69,8 +71,6 @@ describe 'deploy job with addons', type: :integration do
   end
 
   it 'collocates addon jobs with deployment jobs and evaluates addon properties' do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
@@ -94,8 +94,6 @@ describe 'deploy job with addons', type: :integration do
   end
 
   it 'raises an error if the addon job has the same name as an existing job in an instance group' do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
@@ -114,8 +112,6 @@ describe 'deploy job with addons', type: :integration do
   end
 
   it 'ensures that addon job properties are assigned' do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
     runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.runtime_config_with_addon)
     runtime_config['addons'][0]['jobs'][0]['properties'] = {'dummy_with_properties' => {'echo_value' => 'new_prop_value'}}
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)

@@ -291,8 +291,8 @@ module Bosh::Director
   RuntimeInvalidReleaseVersion = err(530001)
   RuntimeReleaseNotListedInReleases = err(530002)
   RuntimeInvalidDeploymentRelease = err(530003)
-  RuntimeIncompleteIncludeJobSection = err(530004)
-  RuntimeIncompleteIncludeStemcellSection = err(530005)
+  RuntimeIncompleteFilterJobSection = err(530004)
+  RuntimeIncompleteFilterStemcellSection = err(530005)
 
   # Config server errors
   ConfigServerMissingNames = err(540000)
