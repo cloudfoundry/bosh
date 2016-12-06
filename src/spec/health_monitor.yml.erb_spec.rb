@@ -87,9 +87,12 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['loglevel']).to eq('INFO')
       expect(parsed_yaml['em_threadpool_size']).to eq(20)
 
-      expect(parsed_yaml['plugins'].length).to eq(1)
+      expect(parsed_yaml['plugins'].length).to eq(2)
       expect(parsed_yaml['plugins'].first['name']).to eq('logger')
       expect(parsed_yaml['plugins'].first['events']).to be_a(Array)
+      expect(parsed_yaml['plugins'][1]['name']).to eq('event_logger')
+      expect(parsed_yaml['plugins'][1]['events']).to be_a(Array)
+      expect(parsed_yaml['plugins'][1]['options']['director']).to eq(parsed_yaml['director'])
     end
 
     context 'plugin is enabled' do
@@ -105,9 +108,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'renders' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['endpoint']).to eq('nats://127.0.0.2:4222')
           expect(plugin['options']['user']).to eq('nats-user')
@@ -138,9 +141,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('email')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['recipients']).to eq(['nobody@example.com', 'somebody@example.com'])
@@ -167,9 +170,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('tsdb')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('127.0.0.91')
@@ -187,9 +190,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('cloud_watch')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['access_key_id']).to eq('my-key')
@@ -210,9 +213,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('resurrector')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['director']).to eq(parsed_yaml['director'])
@@ -234,9 +237,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('pagerduty')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['service_key']).to eq('abcde')
@@ -257,9 +260,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('data_dog')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['api_key']).to eq('abcdef')
@@ -280,9 +283,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('riemann')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('127.0.0.1')
@@ -303,9 +306,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('graphite')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('192.0.2.1')
@@ -322,9 +325,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('syslog_event_forwarder')
           expect(plugin['events']).to be_a(Array)
         end
@@ -349,9 +352,9 @@ describe 'health_monitor.yml.erb' do
         end
 
         it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(2)
+          expect(parsed_yaml['plugins'].length).to eq(3)
 
-          plugin = parsed_yaml['plugins'][1]
+          plugin = parsed_yaml['plugins'][2]
           expect(plugin['name']).to eq('consul_event_forwarder')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['name']).to eq('consul_event_forwarder')

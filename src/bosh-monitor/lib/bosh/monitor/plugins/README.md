@@ -56,3 +56,6 @@ Sends various events to PagerDuty.com using their API
 
 ## Resurrector
 Restarts VMs that have stopped heartbeating
+
+## EventLogger
+Stores events in Director DB

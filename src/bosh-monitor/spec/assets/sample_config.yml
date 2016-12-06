@@ -81,3 +81,9 @@ plugins:
       api_key: api_key
       application_key: application_key
       pagerduty_service_name: pagerduty_service_name
+
+  - name: event_logger
+    events:
+      - alerts
+    options:
+      director: *director

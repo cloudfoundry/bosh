@@ -48,6 +48,14 @@ describe 'resurrector', type: :integration, hm: true do
       instances = director.instances(deployment_name: 'simple')
       expect(instances.size).to eq(1)
       expect(instances.first.ips).to eq(['192.168.1.2'])
+
+      output = bosh_runner.run('events', json: true)
+      data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+
+      expect(data).to include(
+        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /message: 'Alert @ .* severity 2: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n  has timed out'/, 'Error' => ''},
+        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => '', 'Instance' => '', 'Context' => /message: 'Alert @ .* severity 4: Finish update deployment for\n  ''simple'' against Director ''deadbeef'''/, 'Error' => ''}
+      )
     end
   end
 end
