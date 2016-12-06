@@ -58,7 +58,7 @@ module Bosh::Director
         if reboot
           reboot_vm(@instance)
         else
-          agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id, @instance.name) do |agent|
+          agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
             agent.mount_disk(@disk_cid)
           end
         end

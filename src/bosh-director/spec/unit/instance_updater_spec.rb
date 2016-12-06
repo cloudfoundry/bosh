@@ -47,7 +47,7 @@ module Bosh::Director
 
     context 'when stopping instances' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool', anything).and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -96,7 +96,7 @@ module Bosh::Director
       let(:instance_desired_state) { 'started' }
 
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool', anything).and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -213,7 +213,7 @@ module Bosh::Director
 
     context 'when something goes wrong in the update procedure' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool', anything).and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(rendered_templates_persistor).to receive(:persist)
       end

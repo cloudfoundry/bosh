@@ -43,7 +43,7 @@ module Bosh::Director
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
 
     before do
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, instance.name, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(Config).to receive(:current_job).and_return(update_job)
@@ -158,8 +158,8 @@ module Bosh::Director
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, instance.name, anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, instance.name).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(fake_new_agent)
 
           allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
         end

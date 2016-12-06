@@ -18,7 +18,7 @@ module Bosh::Director
       cloud = cloud_factory.for_availability_zone(instance.availability_zone)
       cloud.reboot_vm(instance.vm_cid)
       begin
-        agent_client(instance.credentials, instance.agent_id, instance.name).wait_until_ready
+        agent_client(instance.credentials, instance.agent_id).wait_until_ready
       rescue Bosh::Director::RpcTimeout
         handler_error('Agent still unresponsive after reboot')
       rescue Bosh::Director::TaskCancelled
@@ -28,7 +28,7 @@ module Bosh::Director
 
     def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id, instance.name) { |agent| agent.list_disk }
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id) { |agent| agent.list_disk }
       if disk_list.size != 0
         handler_error('VM has persistent disk attached')
       end
@@ -103,7 +103,7 @@ module Bosh::Director
 
         InstanceUpdater::StateApplier.new(
           instance_plan_to_create,
-          agent_client(instance_model.credentials, instance_model.agent_id, instance_model.name),
+          agent_client(instance_model.credentials, instance_model.agent_id),
           cleaner,
           @logger,
           {}
@@ -155,17 +155,17 @@ module Bosh::Director
       raise Bosh::Director::ProblemHandlerError, message
     end
 
-    def agent_client(vm_credentials, agent_id, instance_name, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
+    def agent_client(vm_credentials, agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         :timeout => timeout,
         :retry_methods => { :get_state => retries }
       }
       @clients ||= {}
-      @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, instance_name, options)
+      @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options)
     end
 
-    def agent_timeout_guard(vm_cid, vm_credentials, agent_id, instance_name, &block)
-      yield agent_client(vm_credentials, agent_id, instance_name)
+    def agent_timeout_guard(vm_cid, vm_credentials, agent_id, &block)
+      yield agent_client(vm_credentials, agent_id)
     rescue Bosh::Director::RpcTimeout
       handler_error("VM '#{vm_cid}' is not responding")
     end
