@@ -1,4 +1,4 @@
-# BOSH [![Build Status](https://travis-ci.org/cloudfoundry/bosh.png?branch=master)](https://travis-ci.org/cloudfoundry/bosh)
+# BOSH
 
 * Documentation:
 	- [bosh.io/docs](https://bosh.io/docs) for installation & usage guide
@@ -34,4 +34,3 @@ Cloud Foundry BOSH is an open source tool for release engineering, deployment, l
 ## Contributions
 
 Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md)
-
