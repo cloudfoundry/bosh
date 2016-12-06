@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module RuntimeConfig
     describe Addon do
-      subject(:addon) { Addon.new(addon_name, jobs, properties, includes) }
+      subject(:addon) { Addon.new(addon_name, jobs, properties, includes, excludes) }
       let(:addon_name) { 'addon-name' }
       let(:jobs) {
         [
@@ -42,7 +42,10 @@ module Bosh::Director
         planner
       end
 
-      let(:includes) { AddonInclude.parse(include_spec) }
+      let(:includes) { AddonFilter.parse(include_spec, :include) }
+      let(:excludes) { AddonFilter.parse(exclude_spec, :exclude) }
+
+      let(:exclude_spec) { nil }
 
       describe '#add_to_deployment' do
         let(:include_spec) { {'deployments' => [deployment_name]} }
@@ -128,6 +131,17 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when the addon has deployments in include and jobs in exclude' do
+          let(:include_spec) { {'deployments' => [deployment_name]} }
+          let(:exclude_spec) { {'jobs' => [{'name' => 'dummy', 'release' => 'dummy'}]} }
+
+
+          it 'adds filtered jobs only' do
+            expect(instance_group).not_to receive(:add_job)
+            addon.add_to_deployment(deployment)
+          end
+        end
       end
 
       describe '#parse' do
@@ -141,7 +155,8 @@ module Bosh::Director
           } }
 
           it 'returns addon' do
-            expect(AddonInclude).to receive(:parse).with(include_hash)
+            expect(AddonFilter).to receive(:parse).with(include_hash, :include)
+            expect(AddonFilter).to receive(:parse).with(nil, :exclude)
             addon = Addon.parse(addon_hash)
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(2)
@@ -202,7 +217,7 @@ module Bosh::Director
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
           }
 
-          it 'does not applies' do
+          it 'does not apply' do
             expect(addon.applies?('blarg', nil)).to eq(false)
           end
         end
@@ -216,6 +231,62 @@ module Bosh::Director
 
           it 'applies' do
             expect(addon.applies?(deployment_name, nil)).to eq(true)
+          end
+        end
+
+        context 'when the addon has empty include and exclude' do
+          let(:include_spec) { {} }
+          let(:exclude_spec) { {} }
+          let(:deployment_instance_group) {
+            instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+            instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
+          }
+
+          it 'applies' do
+            expect(addon.applies?(deployment_name, nil)).to eq(true)
+          end
+        end
+
+        context 'when the addon has include and exclude' do
+          let(:include_spec) { {'deployments' => [deployment_name]} }
+          context 'when they are the same' do
+            let(:exclude_spec) { {'deployments' => [deployment_name]} }
+            let(:deployment_instance_group) {
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
+            }
+
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, nil)).to eq(false)
+            end
+          end
+
+          context 'when include is for deployment and exlude is for job' do
+            let(:exclude_spec) { {'jobs' => [{'name' => 'dummy', 'release' => 'dummy'}]}  }
+            let(:instance_group_parser) {DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)}
+            let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
+            let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
+
+            before do
+              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model))
+
+              release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
+              deployment.add_release(release)
+              deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
+                .parse(Bosh::Spec::Deployments.simple_cloud_config,
+                       DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
+                       DeploymentPlan::IpProviderFactory.new(true, logger))
+              instance_group1 = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: [{'name' => 'dummy', 'release' => 'dummy'}]), {})
+              deployment.add_instance_group(instance_group1)
+              instance_group2 = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: [{'name' => 'dummy_with_properties', 'release' => 'dummy'}], name: 'foobar1'), {})
+              deployment.add_instance_group(instance_group2)
+            end
+
+            it 'exludes specified job only' do
+              expect(addon.applies?(deployment_name, deployment.instance_group('foobar'))).to eq(false)
+              expect(addon.applies?(deployment_name, deployment.instance_group('foobar1'))).to eq(true)
+            end
           end
         end
       end

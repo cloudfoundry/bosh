@@ -1,26 +1,27 @@
 module Bosh::Director
   module RuntimeConfig
-    class AddonInclude
+    class AddonFilter
 
       extend ValidationHelper
 
-      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells)
+      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells, filter_type)
         @applicable_jobs = applicable_jobs
         @applicable_deployment_names = applicable_deployment_names
         @applicable_stemcells = applicable_stemcells
+        @filter_type = filter_type
       end
 
-      def self.parse(addon_include_hash)
-        applicable_deployment_names = safe_property(addon_include_hash, 'deployments', :class => Array, :default => [])
-        applicable_jobs = safe_property(addon_include_hash, 'jobs', :class => Array, :default => [])
-        applicable_stemcells = safe_property(addon_include_hash, 'stemcell', :class => Array, :default => [])
+      def self.parse(addon_filter_hash, filter_type)
+        applicable_deployment_names = safe_property(addon_filter_hash, 'deployments', :class => Array, :default => [])
+        applicable_jobs = safe_property(addon_filter_hash, 'jobs', :class => Array, :default => [])
+        applicable_stemcells = safe_property(addon_filter_hash, 'stemcell', :class => Array, :default => [])
 
         #TODO throw an exception with all wrong jobs
-        verify_jobs_section(applicable_jobs)
+        verify_jobs_section(applicable_jobs, filter_type)
 
-        verify_stemcells_section(applicable_stemcells)
+        verify_stemcells_section(applicable_stemcells, filter_type)
 
-        new(applicable_jobs, applicable_deployment_names, applicable_stemcells)
+        new(applicable_jobs, applicable_deployment_names, applicable_stemcells, filter_type)
       end
 
       def applies?(deployment_name, deployment_instance_group)
@@ -35,28 +36,29 @@ module Bosh::Director
           when {has_deployments: true, has_jobs: true}
             return @applicable_deployment_names.include?(deployment_name) && has_applicable_job(deployment_instance_group)
           else
-            return true
+            return true if @filter_type == :include
+            return ((@filter_type == :exclude) && (has_stemcells? && has_applicable_stemcell(deployment_instance_group))) ?  true : false
         end
       end
 
       private
 
-      def self.verify_jobs_section(applicable_jobs)
+      def self.verify_jobs_section(applicable_jobs, filter_type)
         applicable_jobs.each do |job|
           name = safe_property(job, 'name', :class => String, :default => '')
           release = safe_property(job, 'release', :class => String, :default => '')
           if name.empty? || release.empty?
-            raise RuntimeIncompleteIncludeJobSection.new("Job #{job} in runtime config's include section must " +
+            raise RuntimeIncompleteFilterJobSection.new("Job #{job} in runtime config's #{filter_type} section must " +
               'have both name and release.')
           end
         end
       end
 
-      def self.verify_stemcells_section(applicable_stemcells)
+      def self.verify_stemcells_section(applicable_stemcells, filter_type)
         applicable_stemcells.each do |stemcell|
           if safe_property(stemcell, 'os', :class => String, :default => '').empty?
-            raise RuntimeIncompleteIncludeStemcellSection.new("Stemcell #{stemcell} in runtime config's " +
-              'include section must have an os name.')
+            raise RuntimeIncompleteFilterStemcellSection.new("Stemcell #{stemcell} in runtime config's #{filter_type} " +
+              'section must have an os name.')
           end
         end
       end
