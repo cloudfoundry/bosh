@@ -139,6 +139,14 @@ module Bosh::Director
       it 'denies access when not authenticated' do
         expect(get('/').status).to eq(401)
       end
+
+      context 'when user is reader' do
+        before { basic_authorize('reader', 'reader') }
+
+        it 'permits access' do
+          expect(get('/?limit=1').status).to eq(200)
+        end
+      end
     end
   end
 end
