@@ -159,7 +159,7 @@ module Bosh::Director
 
       count = 0
       begin
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
         vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1

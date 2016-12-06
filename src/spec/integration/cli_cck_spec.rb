@@ -21,20 +21,18 @@ describe 'cli: cloudcheck', type: :integration do
     end
 
     context 'deployment has unresponsive agents' do
-      before {
-        current_sandbox.cpi.kill_agents
-      }
+      before { current_sandbox.cpi.kill_agents }
 
       it 'provides resolution options' do
         cloudcheck_response = scrub_random_ids(bosh_run_cck_with_resolution(3))
         expect(cloudcheck_response).to_not match(regexp('No problems found'))
         expect(cloudcheck_response).to match(regexp('3 unresponsive'))
-        expect(cloudcheck_response).to match(regexp("1. Skip for now
+        expect(cloudcheck_response).to match(regexp('1. Skip for now
   2. Reboot VM
   3. Recreate VM without waiting for processes to start
   4. Recreate VM and wait for processes to start
   5. Delete VM
-  6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)'))
       end
 
       it 'recreates unresponsive VMs without waiting for processes to start' do
@@ -75,7 +73,7 @@ describe 'cli: cloudcheck', type: :integration do
 
       context 'when there is an ignored vm' do
         before do
-          vm_to_ignore =director.vms.select{|vm| vm.job_name == 'foobar' && vm.index == '1'}.first
+          vm_to_ignore = director.vms.select { |vm| vm.job_name == 'foobar' && vm.index == '1' }.first
           bosh_runner.run("ignore instance #{vm_to_ignore.job_name}/#{vm_to_ignore.instance_uuid}")
         end
 
@@ -265,6 +263,6 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   def scrub_index(text)
-    text.gsub /\(\d+\)/, "(x)"
+    text.gsub /\(\d+\)/, '(x)'
   end
 end

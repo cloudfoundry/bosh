@@ -44,7 +44,7 @@ module Bosh::Director
       end
     end
 
-    def for_availability_zone(az_name)
+    def for_availability_zone!(az_name)
       # instance/disk can have no AZ, pick default CPI then
       return default_from_director_config if az_name.nil?
 
@@ -57,12 +57,20 @@ module Bosh::Director
       cloud
     end
 
-    def lookup_cpi_for_az(az_name)
-      raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
-      raise 'AZ name must not be nil' if az_name.nil?
+    def for_availability_zone(az_name)
+      return all_configured_clouds_with_default if az_name.nil?
 
-      az = @cloud_planner.availability_zone(az_name)
-      return nil if az.nil?
+      az = lookup_az(az_name)
+      return all_configured_clouds_with_default if az.nil? || az.cpi.nil?
+
+      cloud = for_cpi(az.cpi)
+      return all_configured_clouds_with_default if cloud.nil?
+      cloud
+    end
+
+    def lookup_cpi_for_az(az_name)
+      az = lookup_az(az_name)
+      raise "AZ #{az_name} not found in cloud config" if az.nil?
       az.cpi
     end
 
@@ -77,6 +85,25 @@ module Bosh::Director
     end
 
     private
+
+    def lookup_az(az_name)
+      raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
+      raise 'AZ name must not be nil' if az_name.nil?
+
+      @cloud_planner.availability_zone(az_name)
+    end
+
+    def all_configured_clouds_with_default
+      clouds = [{name: '', cpi: default_from_director_config }]
+
+      if uses_cpi_config?
+        all_from_cpi_config.each do |cpi|
+          clouds << cpi
+        end
+      end
+
+      CloudCollection.new(clouds)
+    end
 
     def all_from_cpi_config
       return [] unless uses_cpi_config?

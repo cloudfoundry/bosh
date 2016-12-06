@@ -12,7 +12,7 @@ module Bosh::Director
     end
 
     def update(instance, metadata)
-      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
+      cloud = cloud_factory.for_availability_zone!(instance.availability_zone)
 
       if cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)

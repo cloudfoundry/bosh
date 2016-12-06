@@ -26,7 +26,7 @@ describe Bosh::Director::VmMetadataUpdater do
 
     before do
       allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
-      expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+      expect(cloud_factory).to receive(:for_availability_zone!).with(instance.availability_zone).and_return(cloud)
     end
 
     context 'when CPI supports setting vm metadata' do

@@ -85,7 +85,7 @@ module Bosh::Director
             agent_id: instance.agent_id
         }
 
-        cloud = cloud_factory.for_availability_zone(instance.availability_zone)
+        cloud = cloud_factory.for_availability_zone!(instance.availability_zone)
         instance.persistent_disks.each do |disk|
           cid = cloud.snapshot_disk(disk.disk_cid, metadata)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)

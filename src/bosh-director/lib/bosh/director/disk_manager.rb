@@ -223,7 +223,7 @@ module Bosh::Director
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
         disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
         disk_model = Models::PersistentDisk.create(

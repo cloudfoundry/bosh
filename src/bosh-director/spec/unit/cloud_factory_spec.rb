@@ -7,6 +7,14 @@ module Bosh::Director
     let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) {[]}
+    let(:all_cpis) do
+      clouds = [{name: '', cpi: default_cloud}]
+      cpis.each do |cpi|
+        clouds << {name: cpi.name, cpi: Bosh::Clouds::ExternalCpi.new(cpi.exec_path, Config.uuid, cpi.properties)}
+      end
+
+      CloudCollection.new(clouds)
+    end
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::CpiConfig) }
@@ -51,21 +59,22 @@ module Bosh::Director
 
     shared_examples_for 'lookup for clouds' do
       it 'returns the default cloud from director config when asking for the cloud of a nil AZ' do
-        cloud = cloud_factory.for_availability_zone(nil)
+        cloud = cloud_factory.for_availability_zone!(nil)
         expect(cloud).to eq(default_cloud)
       end
 
       it 'returns the default cloud when asking for the cloud of a non-existing AZ' do
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(nil)
 
-        cloud = cloud_factory.for_availability_zone('some-az')
-        expect(cloud).to eq(default_cloud)
+        expect {
+          cloud_factory.for_availability_zone!('some-az')
+        }.to raise_error /AZ some-az not found in cloud config/
       end
 
       it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
         az = DeploymentPlan::AvailabilityZone.new('some-az', {}, nil)
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-        cloud = cloud_factory.for_availability_zone('some-az')
+        cloud = cloud_factory.for_availability_zone!('some-az')
         expect(cloud).to eq(default_cloud)
       end
 
@@ -73,7 +82,7 @@ module Bosh::Director
         az = DeploymentPlan::AvailabilityZone.new('some-az', {}, 'not-existing-cpi')
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
         expect {
-          cloud_factory.for_availability_zone('some-az')
+          cloud_factory.for_availability_zone!('some-az')
         }.to raise_error /CPI was defined for AZ some-az but not found in cpi-config/
       end
 
@@ -81,13 +90,13 @@ module Bosh::Director
         let(:cloud_planner) { nil }
 
         it 'returns the default cloud from director config when asking for the cloud of a nil AZ' do
-          cloud = cloud_factory.for_availability_zone(nil)
+          cloud = cloud_factory.for_availability_zone!(nil)
           expect(cloud).to eq(default_cloud)
         end
 
         it 'raises an error if lookup of an AZ is needed' do
           expect {
-            cloud_factory.for_availability_zone('some-az')
+            cloud_factory.for_availability_zone!('some-az')
           }.to raise_error /Deployment plan must be given to lookup cpis from AZ/
         end
       end
@@ -107,6 +116,50 @@ module Bosh::Director
       end
     end
 
+    shared_examples_for 'lookup for clouds with fallback' do
+      it 'returns all configured cpis when asking for the cloud of a nil AZ' do
+        cloud = cloud_factory.for_availability_zone(nil)
+        expect(cloud).to eq(all_cpis)
+      end
+
+      it 'returns all configured cpis when asking for the cloud of a non-existing AZ' do
+        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(nil)
+
+        cloud = cloud_factory.for_availability_zone('some-az')
+        expect(cloud).to eq(all_cpis)
+      end
+
+      it 'returns all configured cpis when asking for the cloud of an existing AZ without cpi' do
+        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, nil)
+        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
+        cloud = cloud_factory.for_availability_zone('some-az')
+        expect(cloud).to eq(all_cpis)
+      end
+
+      it 'returns all configured cpis when an AZ references a CPI that does not exist anymore' do
+        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, 'not-existing-cpi')
+        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
+
+        cloud = cloud_factory.for_availability_zone('some-az')
+        expect(cloud).to eq(all_cpis)
+      end
+
+      context 'without planner' do
+        let(:cloud_planner) { nil }
+
+        it 'returns all configured cpis when asking for the cloud of a nil AZ' do
+          cloud = cloud_factory.for_availability_zone(nil)
+          expect(cloud).to eq(all_cpis)
+        end
+
+        it 'raises an error if lookup of an AZ is needed' do
+          expect {
+            cloud_factory.for_availability_zone('some-az')
+          }.to raise_error /Deployment plan must be given to lookup cpis from AZ/
+        end
+      end
+    end
+
     context 'when not using cpi config' do
       let(:parsed_cpi_config) { nil }
       before {
@@ -121,6 +174,7 @@ module Bosh::Director
       end
 
       it_behaves_like 'lookup for clouds'
+      it_behaves_like 'lookup for clouds with fallback'
     end
 
     context 'when using cpi config' do
@@ -142,6 +196,9 @@ module Bosh::Director
 
       before {
         expect(cloud_factory.uses_cpi_config?).to be_truthy
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
       }
 
       it 'returns all clouds from cpi config when asking for all configured clouds' do
@@ -164,7 +221,7 @@ module Bosh::Director
         expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
         expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
 
-        cloud = cloud_factory.for_availability_zone('some-az')
+        cloud = cloud_factory.for_availability_zone!('some-az')
         expect(cloud).to eq(clouds[0])
       end
 
@@ -183,6 +240,7 @@ module Bosh::Director
       end
 
       it_behaves_like 'lookup for clouds'
+      it_behaves_like 'lookup for clouds with fallback'
     end
   end
 end

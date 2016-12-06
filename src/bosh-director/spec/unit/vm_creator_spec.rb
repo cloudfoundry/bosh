@@ -184,7 +184,7 @@ module Bosh
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
-        expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
+        expect(cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
       end
 
       it 'should create a vm' do
@@ -427,9 +427,13 @@ module Bosh
       end
 
       it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
+        cloud_collection = instance_double('Bosh::Director::CloudCollection')
+
+        expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud_collection)
+
         Config.keep_unreachable_vms = false
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-        expect(cloud).to receive(:delete_vm)
+        expect(cloud_collection).to receive(:delete_vm)
 
         expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 

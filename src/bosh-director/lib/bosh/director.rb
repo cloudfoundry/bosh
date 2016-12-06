@@ -182,6 +182,8 @@ require 'bosh/director/api/uaa_identity_provider'
 require 'bosh/director/api/event_manager'
 require 'bosh/director/app'
 
+require 'bosh/director/cloud_collection'
+
 module Bosh::Director
   autoload :Models, 'bosh/director/models' # Defining model classes relies on a database connection
 end

@@ -164,7 +164,7 @@ module Bosh::Director
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
             expect(Config.cloud).not_to receive(:snapshot_disk)
-            expect(cloud_factory).to receive(:for_availability_zone).with(@instance2.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance2.availability_zone).and_return(cloud)
 
             expect {
               described_class.take_snapshot(@instance2, {})
@@ -174,7 +174,7 @@ module Bosh::Director
 
         it 'takes the snapshot' do
           expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-          expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
 
           expect {
             expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
@@ -184,7 +184,7 @@ module Bosh::Director
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
             expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-            expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -203,7 +203,7 @@ module Bosh::Director
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
             allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
-            expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end
