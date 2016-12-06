@@ -13,9 +13,9 @@ describe Bosh::Director::Api::EventManager do
           Bosh::Director::Models::Event.count
         }.from(0).to(1)
       end
-      
+
       it 'allows to save specified timestamp' do
-        manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep', :timestamp => 1479673560})
+        manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep', :timestamp => Time.at(1479673560)})
         expect( Bosh::Director::Models::Event.first.timestamp.to_i).to eq(1479673560)
       end
 
