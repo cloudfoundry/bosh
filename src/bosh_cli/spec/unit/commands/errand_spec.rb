@@ -234,7 +234,7 @@ describe Bosh::Cli::Command::Errand do
 
                 it 'downloads the file and moves it to a timestamped file in a current directory' do
                   expect(logs_downloader).to receive(:build_destination_path).
-                    with('fake-dep-name', 'fake-errand-name', 0, Dir.pwd).
+                    with('fake-errand-name', 0, Dir.pwd).
                     and_return('fake-logs-destination-path')
 
                   expect(logs_downloader).to receive(:download).
@@ -247,7 +247,7 @@ describe Bosh::Cli::Command::Errand do
                   command.options[:logs_dir] = '/fake-path'
 
                   expect(logs_downloader).to receive(:build_destination_path).
-                    with('fake-dep-name', 'fake-errand-name', 0, '/fake-path').
+                    with('fake-errand-name', 0, '/fake-path').
                     and_return('fake-logs-destination-path')
 
                   expect(logs_downloader).to receive(:download).

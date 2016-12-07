@@ -10,18 +10,18 @@ describe Bosh::Cli::LogsDownloader do
     after { Timecop.return }
 
     it 'returns timestamped tgz file name in given directory' do
-      path = subject.build_destination_path('deployment', 'fake-job-name', 'fake-job-index', '/fake-dir')
-      expect(path).to eq('/fake-dir/deployment.fake-job-name.fake-job-index.2011-10-09-11-55-45.tgz')
+      path = subject.build_destination_path('fake-job-name', 'fake-job-index', '/fake-dir')
+      expect(path).to eq('/fake-dir/fake-job-name.fake-job-index.2011-10-09-11-55-45.tgz')
     end
 
     it 'returns tgz file name with deployment name' do
-      path = subject.build_destination_path('deployment', '*', '*', '/fake-dir')
-      expect(path).to eq('/fake-dir/deployment.2011-10-09-11-55-45.tgz')
+      path = subject.build_destination_path('*', '*', '/fake-dir')
+      expect(path).to eq('/fake-dir/*.*.2011-10-09-11-55-45.tgz')
     end
 
     it 'returns tgz file name with job name' do
-      path = subject.build_destination_path('deployment', 'fake-job', '*', '/fake-dir')
-      expect(path).to eq('/fake-dir/deployment.fake-job.2011-10-09-11-55-45.tgz')
+      path = subject.build_destination_path('fake-job', '*', '/fake-dir')
+      expect(path).to eq('/fake-dir/fake-job.*.2011-10-09-11-55-45.tgz')
     end
   end
 

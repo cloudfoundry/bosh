@@ -153,7 +153,7 @@ describe Bosh::Cli::Command::LogManagement do
 
               allow(director).to receive_messages(fetch_logs: 'resource-id')
               expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-              expect(FileUtils).to receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{deployment}.#{job}.#{index}.#{time}.tgz")
+              expect(FileUtils).to receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.#{index}.#{time}.tgz")
               command.fetch_logs(job, index)
             end
           end
@@ -165,7 +165,7 @@ describe Bosh::Cli::Command::LogManagement do
 
               allow(director).to receive_messages(fetch_logs: 'resource-id')
               expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-              expect(FileUtils).to receive(:mv).with('/wonderful/path', "/woah-now/#{deployment}.#{job}.#{index}.#{time}.tgz")
+              expect(FileUtils).to receive(:mv).with('/wonderful/path', "/woah-now/#{job}.#{index}.#{time}.tgz")
               command.fetch_logs(job, index)
             end
           end
