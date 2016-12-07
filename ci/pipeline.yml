@@ -455,6 +455,10 @@ jobs:
       - integration-2.3-postgres-gocli
       - blobstore-client-integration
       - fuzz-tests
+      - load-tests-postgres
+      - load-tests-mysql
+      - legacy-load-tests-postgres
+      - legacy-load-tests-mysql
     - get: bosh-cli
     - get: candidate-version
       params:
