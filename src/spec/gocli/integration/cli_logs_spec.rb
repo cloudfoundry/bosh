@@ -3,21 +3,50 @@ require_relative '../spec_helper'
 describe 'cli: logs', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'can fetch logs by id or index' do
+  it 'can fetch logs' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 3, name: 'first-job')]
+    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 2, name: 'first-job')]
+    manifest_hash['jobs']<< {
+        'name' => 'another-job',
+        'template' => 'foobar',
+        'resource_pool' => 'a',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+    }
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-    vms = director.instances
-    id = vms.first.id
-    index = vms.first.index
+    instances = director.instances
+    instance_0 = get_instance(instances, 'first-job', "0")
+    instance_1 = get_instance(instances, 'first-job', "1")
+    instance_2 = get_instance(instances, 'another-job', "0")
 
     deployment_name = manifest_hash['name']
 
-    expect(bosh_runner.run("-d #{deployment_name} logs first-job/#{index}")).to match /first-job\..*\.tgz/
+    expect(bosh_runner.run("-d #{deployment_name} logs first-job/1")).to match /#{deployment_name}.first-job.*\.tgz/
 
-    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{id}'")).to match /first-job\..*\.tgz/
-    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{id}'")).to include "Fetching logs for first-job/#{id} (#{index})"
+    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{instance_1.id}'")).to match /#{deployment_name}.first-job.*\.tgz/
+    expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{instance_1.id}'")).to include "Fetching logs for #{instance_0.job_name}/#{instance_1.id} (1)"
+
+    output_single_job = bosh_runner.run("-d #{deployment_name} logs first-job")
+    expect(output_single_job).to match /#{deployment_name}.first-job-.*\.tgz/
+
+    expect(output_single_job).to include "Fetching logs for #{instance_0.job_name}/#{instance_0.id} (#{instance_0.index})"
+    expect(output_single_job).to include "Fetching logs for #{instance_1.job_name}/#{instance_1.id} (#{instance_1.index})"
+    expect(output_single_job).to include "Fetching group of logs: Packing log files together"
+
+    output_deployment = bosh_runner.run("-d #{deployment_name} logs")
+    expect(output_deployment).to match /#{deployment_name}-.*\.tgz/
+
+    expect(output_deployment).to include "Fetching logs for #{instance_0.job_name}/#{instance_0.id} (#{instance_0.index})"
+    expect(output_deployment).to include "Fetching logs for #{instance_1.job_name}/#{instance_1.id} (#{instance_1.index})"
+    expect(output_deployment).to include "Fetching logs for #{instance_2.job_name}/#{instance_2.id} (#{instance_2.index})"
+    expect(output_deployment).to include "Fetching group of logs: Packing log files together"
+  end
+
+  private
+
+  def get_instance(instances, name, index)
+    instances.select{ |instance| instance.job_name == name && instance.index == index }.first
   end
 end

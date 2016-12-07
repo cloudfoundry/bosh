@@ -4,6 +4,7 @@ module Bosh::Director
   describe Api::InstanceManager do
     let(:deployment) { Models:: Deployment.make(name: deployment_name) }
     let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
+    let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
     let(:instance_lookup) { Api::InstanceLookup.new }
@@ -24,7 +25,7 @@ module Bosh::Director
           instance.update(index: index)
 
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [[instance.id], options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, index, options)).to eq(task)
         end
@@ -35,9 +36,29 @@ module Bosh::Director
 
         it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [[instance.id], options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, uuid, options)).to eq(task)
+        end
+      end
+
+      context 'when job is provided' do
+        it 'enqueues a job' do
+          expect(job_queue).to receive(:enqueue).with(
+              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id], options], deployment).and_return(task)
+
+          expect(subject.fetch_logs(username, deployment, job, nil, options)).to eq(task)
+        end
+      end
+
+      context 'when development is provided' do
+        let(:instance_2) { Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job_2) }
+        let(:job_2) { 'FAKE_JOB_2' }
+        it 'enqueues a job' do
+          expect(job_queue).to receive(:enqueue).with(
+              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id, instance_2.id], options], deployment).and_return(task)
+
+          expect(subject.fetch_logs(username, deployment, nil, nil, options)).to eq(task)
         end
       end
     end

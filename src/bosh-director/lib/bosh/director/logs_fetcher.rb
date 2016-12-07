@@ -12,7 +12,7 @@ module Bosh::Director
     # @param [Models::Instance] instance
     # @param [String] log_type
     # @param [Array] filters
-    def fetch(instance, log_type, filters)
+    def fetch(instance, log_type, filters, temporary = false)
       @logger.info("Fetching logs from agent with log_type=#{log_type} filters=#{filters}")
 
       @log_bundles_cleaner.clean
@@ -31,7 +31,7 @@ module Bosh::Director
               "Agent didn't return a blobstore object id for packaged logs"
       end
 
-      @log_bundles_cleaner.register_blobstore_id(blobstore_id)
+      @log_bundles_cleaner.register_blobstore_id(blobstore_id) unless temporary
 
       blobstore_id
     end

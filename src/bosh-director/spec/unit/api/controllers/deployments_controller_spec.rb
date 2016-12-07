@@ -478,6 +478,30 @@ module Bosh::Director
             expect_redirect_to_queued_task(last_response)
           end
 
+          it 'allows fetching logs from all instances of particular job' do
+            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
+            Models::Instance.create(
+                :deployment => deployment,
+                :job => 'nats',
+                :index => '0',
+                :state => 'started',
+            )
+            get '/foo/jobs/nats/*/logs', {}
+            expect_redirect_to_queued_task(last_response)
+          end
+
+          it 'allows fetching logs from all instances of particular deployment' do
+            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
+            Models::Instance.create(
+                :deployment => deployment,
+                :job => 'nats',
+                :index => '0',
+                :state => 'started',
+            )
+            get '/foo/jobs/*/*/logs', {}
+            expect_redirect_to_queued_task(last_response)
+          end
+
           it '404 if no instance' do
             get '/baz/jobs/nats/0/logs', {}
             expect(last_response.status).to eq(404)
