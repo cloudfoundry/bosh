@@ -52,9 +52,6 @@ describe 'deploy job update', type: :integration do
     let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
     it 'accurately reports deployment configuration changes, cloud configuration changes and runtime config changes' do
-      pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-
-
       deploy_from_scratch
 
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")

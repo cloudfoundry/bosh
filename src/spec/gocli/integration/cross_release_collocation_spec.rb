@@ -3,10 +3,6 @@ require_relative '../spec_helper'
 describe 'collocating templates from multiple releases', type: :integration do
   with_reset_sandbox_before_each
 
-  before do
-    pending('cli2: #130409493: Go CLI does not agree with Ruby CLI on Sha1 encoding in releases')
-  end
-
   context 'successfully collocating templates from different releases' do
     let(:manifest) do
       {
@@ -38,7 +34,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
       deployment_name = manifest_hash['name']
       deployment_manifest = yaml_file('simple', manifest_hash)
-      bosh_runner.run("deploy #{deployment_manifest}", deployment_name: deployment_name)
+      bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: deployment_name)
     end
   end
 
@@ -74,7 +70,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       deployment_name = manifest_hash['name']
       deployment_manifest = yaml_file('simple', manifest_hash)
 
-      output = bosh_runner.run("deploy #{deployment_manifest}", deployment_name: deployment_name, failure_expected: true)
+      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: deployment_name, failure_expected: true)
       expect(output).to match(%r[Package name collision detected in instance group 'foobar': job 'dummy/dummy_with_package' depends on package 'dummy/dummy_package',])
     end
   end
