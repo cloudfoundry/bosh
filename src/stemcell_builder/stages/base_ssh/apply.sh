@@ -56,6 +56,9 @@ echo 'PrintLastLog yes' >> $chroot/etc/ssh/sshd_config
 sed "/^ *AllowGroups/d" -i $chroot/etc/ssh/sshd_config
 echo 'AllowGroups bosh_sshers' >> $chroot/etc/ssh/sshd_config
 
+sed "/^ *DenyUsers/d" -i $chroot/etc/ssh/sshd_config
+echo 'DenyUsers root' >> $chroot/etc/ssh/sshd_config
+
 # OS Specifics
 if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" -o "$(get_os_type)" == "photonos" ]; then
   # Allow only 3DES and AES series ciphers

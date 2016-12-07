@@ -281,6 +281,10 @@ shared_examples_for 'every OS image' do
     it 'sets AllowGroups to bosh_sshers (CIS 9.3.13)' do
       expect(sshd_config).to contain(/^AllowGroups bosh_sshers$/)
     end
+
+    it 'sets DenyUsers to root' do
+      expect(sshd_config).to contain(/^DenyUsers root$/)
+    end
   end
 
   describe 'PAM configuration' do
