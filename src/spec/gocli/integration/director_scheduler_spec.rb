@@ -5,14 +5,6 @@ require 'zlib'
 describe 'director_scheduler', type: :integration do
   with_reset_sandbox_before_each
 
-  def self.pending_for_travis_mysql!
-    before do
-      if ENV['TRAVIS'] && ENV['DB'] == 'mysql'
-        skip 'Travis does not currently support mysqldump'
-      end
-    end
-  end
-
   before do
     runner = bosh_runner_in_work_dir(ClientSandbox.test_release_dir)
     runner.run('create-release --force')
@@ -48,8 +40,6 @@ describe 'director_scheduler', type: :integration do
   end
 
   describe 'scheduled backups' do
-    pending_for_travis_mysql!
-
     before { current_sandbox.scheduler_process.start }
     after { current_sandbox.scheduler_process.stop }
 
@@ -63,8 +53,6 @@ describe 'director_scheduler', type: :integration do
   end
 
   describe 'manual backup' do
-    pending_for_travis_mysql!
-
     after { FileUtils.rm_f(tmp_dir) }
     let(:tmp_dir) { Dir.mktmpdir('manual-backup') }
 
