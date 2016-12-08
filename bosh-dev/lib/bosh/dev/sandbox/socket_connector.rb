@@ -21,9 +21,7 @@ module Bosh::Dev::Sandbox
         @logger.info("Connected to #{@service_name} on #{@host}:#{@port} (logs at #{@log_location}*)")
       rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
         if remaining_attempts == 0
-          @logger.error(
-            "Failed to connect to #{@service_name}: #{e.inspect} " +
-              "host=#{@host} port=#{@port}")
+          @logger.error("Failed to connect to #{@service_name}: #{e.inspect} host=#{@host} port=#{@port}")
           raise
         end
 

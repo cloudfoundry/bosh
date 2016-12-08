@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @socket_connector = SocketConnector.new('director', 'localhost', options[:director_port], log_location, @logger)
+      @connector = HTTPEndpointConnector.new('director', 'localhost', options[:director_port], '/info', "\"uuid\"", log_location, @logger)
 
       @worker_processes = 3.times.map do |index|
         Service.new(
@@ -53,7 +53,7 @@ module Bosh::Dev::Sandbox
       begin
         # CI does not have enough time to start bosh-director
         # for some parallel tests; increasing to 60 secs (= 300 tries).
-        @socket_connector.try_to_connect(300)
+        @connector.try_to_connect(300)
       rescue
         output_service_log(@process)
         raise

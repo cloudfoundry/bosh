@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
       @build_mutex = Mutex.new
       @log_location = "#{base_log_path}.uaa.out"
 
-      @uaa_connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/info', @log_location, logger)
+      @connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/uaa/login', 'Reset password', @log_location, logger)
     end
 
     def self.install
@@ -49,7 +49,7 @@ module Bosh::Dev::Sandbox
       uaa_process.start
 
       begin
-        @uaa_connector.try_to_connect(3000)
+        @connector.try_to_connect(3000)
       rescue
         output_service_log(uaa_process.description, uaa_process.stdout_contents, uaa_process.stderr_contents)
         raise
