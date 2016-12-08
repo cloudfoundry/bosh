@@ -7,9 +7,9 @@ describe 'cli: login using the directors built-in user DB', type: :integration d
     context 'interactively' do
       it 'can log in' do
         bosh_runner.run_interactively('log-in', include_credentials: false) do |runner|
-          expect(runner).to have_output 'Username:'
+          expect(runner).to have_output 'Username'
           runner.send_keys 'test'
-          expect(runner).to have_output 'Password:'
+          expect(runner).to have_output 'Password'
           runner.send_keys 'test'
           expect(runner).to have_output 'Logged in'
         end

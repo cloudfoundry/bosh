@@ -6,9 +6,9 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
     it 'logs in successfully using password' do
       bosh_runner.run_interactively('log-in', environment_name: current_sandbox.director_url, include_credentials: false) do |runner|
-        expect(runner).to have_output 'Email:'
+        expect(runner).to have_output 'Email'
         runner.send_keys 'marissa'
-        expect(runner).to have_output 'Password:'
+        expect(runner).to have_output 'Password'
         runner.send_keys 'koala'
         expect(runner).to have_output 'Successfully authenticated with UAA'
       end
@@ -58,9 +58,9 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
     it 'fails to log in when incorrect credentials were provided' do
       bosh_runner.run_interactively('log-in', environment_name: current_sandbox.director_url, include_credentials: false) do |runner|
-        expect(runner).to have_output 'Email:'
+        expect(runner).to have_output 'Email'
         runner.send_keys 'fake'
-        expect(runner).to have_output 'Password:'
+        expect(runner).to have_output 'Password'
         runner.send_keys 'fake'
         expect(runner).to have_output 'Failed to authenticate with UAA'
       end
