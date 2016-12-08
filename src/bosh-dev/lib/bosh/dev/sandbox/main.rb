@@ -35,7 +35,6 @@ module Bosh::Dev::Sandbox
     attr_reader :scheduler_process
 
     attr_reader :director_service
-    attr_reader :director_name
     attr_reader :port_provider
 
     attr_reader :database_proxy
@@ -155,6 +154,10 @@ module Bosh::Dev::Sandbox
       @director_name = dir_config.director_name
 
       @director_service.start(dir_config)
+    end
+
+    def director_name
+      @director_name || raise("Test inconsistency: Director name is not set")
     end
 
     def director_config
