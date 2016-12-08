@@ -32,23 +32,22 @@ module Bosh::Spec
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       http.ca_file = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
-
       http.send_request(verb, url.request_uri, body, {'Authorization' => auth_header, 'Content-Type' => 'application/json'})
     end
 
     def auth_header
-      max_tries = 20
       auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
+      ex = nil
 
-      begin
+      20.times do
         begin
           return auth_provider.auth_header
-        rescue
+        rescue => ex
           sleep(5)
         end
-        max_tries -= 1
-      end while max_tries > 0
-      return nil
+      end
+
+      raise "Could not obtain UAA token: #{ex.inspect}"
     end
 
     def logger
