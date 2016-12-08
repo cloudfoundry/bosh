@@ -75,10 +75,10 @@ SUDO
 
 stemcell_name="bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent"
 
-if [ -e bosh-src/tmp/*-raw.tgz ] ; then
+if [ -e bosh-src/src/tmp/*-raw.tgz ] ; then
   # openstack currently publishes raw files
   raw_stemcell_filename="${stemcell_name}-raw.tgz"
-  mv bosh-src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
+  mv bosh-src/src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
 
   raw_checksum="$(sha1sum "${output_dir}/${raw_stemcell_filename}" | awk '{print $1}')"
   echo "$raw_stemcell_filename sha1=$raw_checksum"
@@ -92,7 +92,7 @@ if [ -e bosh-src/tmp/*-raw.tgz ] ; then
 fi
 
 stemcell_filename="${stemcell_name}.tgz"
-mv "bosh-src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
+mv "bosh-src/src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
 
 checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
 echo "$stemcell_filename sha1=$checksum"
