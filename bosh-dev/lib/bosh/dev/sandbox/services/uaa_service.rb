@@ -1,3 +1,5 @@
+require 'common/retryable'
+
 module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
@@ -24,18 +26,18 @@ module Bosh::Dev::Sandbox
 
     def self.install
       webapp_path = File.join(TOMCAT_DIR, 'webapps', UAA_FILENAME)
-      return if File.exist?(webapp_path)
 
       FileUtils.mkdir_p(TOMCAT_DIR)
 
-      tomcat_url = "https://s3.amazonaws.com/bosh-dependencies/#{TOMCAT_VERSIONED_FILENAME}.tar.gz"
-      out = `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
-      raise out unless $? == 0
+      retryable.retryer do
+        `#{File.dirname(__FILE__)}/install_tomcat.sh #{INSTALL_DIR} #{TOMCAT_VERSIONED_FILENAME} 957e88df8a9c3fc6b786321c4014b44c5c775773`
+        $? == 0
+      end
 
-      uaa_url = "https://s3.amazonaws.com/bosh-dependencies/#{UAA_VERSION}.war"
-
-      out = `curl --output #{webapp_path} -L #{uaa_url}`
-      raise out unless $? == 0
+      retryable.retryer do
+        `#{File.dirname(__FILE__)}/install_binary.sh #{UAA_VERSION}.war #{webapp_path} 6167d1b5afe3e12c26482fcb45c0056475cb3e1b9ca2996707d9ac9c22f60dc9 bosh-dependencies`
+        $? == 0
+      end
     end
 
     def start
@@ -58,6 +60,10 @@ module Bosh::Dev::Sandbox
     end
 
     private
+
+    def self.retryable
+      Bosh::Retryable.new({tries: 6})
+    end
 
     def uaa_process
       return @uaa_process if @uaa_process
