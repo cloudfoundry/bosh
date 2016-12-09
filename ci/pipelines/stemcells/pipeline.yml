@@ -195,7 +195,7 @@ jobs:
 
         - task: test-stemcell
           tags: [vsphere-v5.1]
-          file: bosh-src/bosh-stemcell/smoke/test-stemcell.yml
+          file: bosh-src/src/bosh-stemcell/smoke/test-stemcell.yml
           input_mapping:
             stemcell: vsphere-esxi-ubuntu-trusty
           params:
