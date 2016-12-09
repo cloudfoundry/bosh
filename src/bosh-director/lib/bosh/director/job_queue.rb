@@ -5,8 +5,8 @@ module Bosh::Director
   # Abstracts the delayed jobs system.
 
   class JobQueue
-    def enqueue(username, job_class, description, params, deployment = nil)
-      task = create_task(username, job_class.job_type, description, deployment)
+    def enqueue(username, job_class, description, params, deployment = nil, context_id = '')
+      task = create_task(username, job_class.job_type, description, deployment, context_id)
 
       Delayed::Worker.backend = :sequel
       db_job = Bosh::Director::Jobs::DBJob.new(job_class, task.id, params)
@@ -19,7 +19,7 @@ module Bosh::Director
 
     private
 
-    def create_task(username, type, description, deployment)
+    def create_task(username, type, description, deployment, context_id)
       task = Models::Task.create_with_teams(:username => username,
         :type => type,
         :description => description,
@@ -27,7 +27,8 @@ module Bosh::Director
         :deployment_name => deployment ? deployment.name : nil,
         :timestamp => Time.now,
         :teams => deployment ? deployment.teams : nil,
-        :checkpoint_time => Time.now)
+        :checkpoint_time => Time.now,
+        :context_id => context_id)
       log_dir = File.join(Config.base_dir, 'tasks', task.id.to_s)
       FileUtils.rm_rf(log_dir)
       task_status_file = File.join(log_dir, 'debug')

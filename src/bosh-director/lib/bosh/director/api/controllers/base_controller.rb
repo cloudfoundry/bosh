@@ -70,6 +70,8 @@ module Bosh::Director
               throw(:halt, [401, message])
             end
           end
+
+          @current_context_id = request.env.fetch('X-Bosh-Context-Id', '')
         end
 
         def requires_authentication?

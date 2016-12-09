@@ -15,18 +15,18 @@ module Bosh::Director
         Bosh::Director::Models::Deployment.order_by(Sequel.asc(:name)).all
       end
 
-      def create_deployment(username, manifest_text, cloud_config, runtime_config, deployment, options = {})
+      def create_deployment(username, manifest_text, cloud_config, runtime_config, deployment, options = {}, context_id = '')
         cloud_config_id = cloud_config.nil? ? nil : cloud_config.id
         runtime_config_id = runtime_config.nil? ? nil : runtime_config.id
 
         description = 'create deployment'
         description += ' (dry run)' if options['dry_run']
 
-        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_id, runtime_config_id, options], deployment)
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_id, runtime_config_id, options], deployment, context_id)
       end
 
-      def delete_deployment(username, deployment, options = {})
-        JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment)
+      def delete_deployment(username, deployment, options = {}, context_id = '')
+        JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment, context_id)
       end
 
       def deployment_instances_with_vms(deployment)
