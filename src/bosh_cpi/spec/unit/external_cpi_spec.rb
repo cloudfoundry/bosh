@@ -68,8 +68,14 @@ describe Bosh::Clouds::ExternalCpi do
             'key1' => '<redacted>',
             'key2' => '<redacted>'
         }
+
+        expected_arguments = arguments.clone
+        if cpi_method == :create_vm
+          expected_arguments[5] = '<redacted>' # redact env parameter
+        end
+
         expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %(External CPI sending request: {"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
+        expected_log = %(External CPI sending request: {"method":"#{cpi_method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method

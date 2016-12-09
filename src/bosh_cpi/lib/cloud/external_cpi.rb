@@ -73,7 +73,7 @@ module Bosh::Clouds
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
       request = request_json(method_name, arguments, context)
-      redacted_request = request_json(method_name, arguments, redact_context(context))
+      redacted_request = request_json(method_name, redact_arguments(method_name, arguments), redact_context(context))
 
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
@@ -105,6 +105,20 @@ module Bosh::Clouds
     def redact_context(context)
       return context if @properties_from_cpi_config.nil?
       Hash[context.map{|k,v|[k,@properties_from_cpi_config.keys.include?(k) ? '<redacted>' : v]}]
+    end
+
+    def redact_arguments(method_name, arguments)
+      if method_name == 'create_vm'
+        redact_env_from_create_vm_arguments(arguments)
+      else
+        arguments
+      end
+    end
+
+    def redact_env_from_create_vm_arguments(arguments)
+      redacted_arguments = arguments.clone
+      redacted_arguments[5] = '<redacted>'
+      redacted_arguments
     end
 
     def request_json(method_name, arguments, context)
