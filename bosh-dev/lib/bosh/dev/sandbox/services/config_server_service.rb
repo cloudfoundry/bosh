@@ -7,6 +7,8 @@ module Bosh::Dev::Sandbox
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
 
     CONFIG_SERVER_VERSION = "0.0.79"
+    DARWIN_CONFIG_SERVER_SHA256 = "4b76c6b2e4abfcf0fad127716b8b6e0de72b48ae7c634b008200bac0c0844f2f"
+    LINUX_CONFIG_SERVER_SHA256 = "dbf749c75bff7d6506b43249a4d9b9f5b3b7f1016d6cef5d2c9c966559c38109"
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
@@ -73,13 +75,20 @@ module Bosh::Dev::Sandbox
     private
 
     def self.download(version)
-      file_name_to_download = self.generate_file_name_to_download(version)
+      if RUBY_PLATFORM =~ /darwin/
+        platform = 'darwin'
+        sha256 = DARWIN_CONFIG_SERVER_SHA256
+      else
+        platform = 'linux'
+        sha256 = LINUX_CONFIG_SERVER_SHA256
+      end
 
-      unless File.exist?(File.join(INSTALL_DIR, file_name_to_download))
-        retryable.retryer do
-          `curl --output #{File.join(INSTALL_DIR, file_name_to_download)} -L #{S3_BUCKET_BASE_URL}/#{file_name_to_download}`
-          $? == 0
-        end
+      file_name_to_download = "config-server-#{version}-#{platform}-amd64"
+
+      retryable.retryer do
+        destination_path = File.join(INSTALL_DIR, file_name_to_download)
+        `#{File.dirname(__FILE__)}/install_binary.sh #{file_name_to_download} #{destination_path} #{sha256} config-server-releases`
+        $? == 0
       end
 
       file_name_to_download
@@ -89,29 +98,12 @@ module Bosh::Dev::Sandbox
       Bosh::Retryable.new({tries: 6})
     end
 
-    def self.latest_version
-      config_server_version_url = "#{S3_BUCKET_BASE_URL}/current-version"
-      retryable.retryer do
-        `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
-        $? == 0
-      end
-      read_current_version
-    end
-
     def self.read_current_version
       file = File.open(File.join(INSTALL_DIR, 'current-version'), 'r')
       version = file.read
       file.close
 
       version
-    end
-
-    def self.generate_file_name_to_download(config_server_current_version)
-      if RUBY_PLATFORM =~ /darwin/
-        "config-server-#{config_server_current_version}-darwin-amd64"
-      else
-        "config-server-#{config_server_current_version}-linux-amd64"
-      end
     end
 
     def executable_path
