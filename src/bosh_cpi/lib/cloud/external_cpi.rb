@@ -68,7 +68,8 @@ module Bosh::Clouds
 
     def invoke_cpi_method(method_name, *arguments)
       context = {
-          'director_uuid' => @director_uuid
+          'director_uuid' => @director_uuid,
+          'request_id' => "#{Random.rand(100000..999999)}"
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 

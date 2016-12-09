@@ -34,6 +34,7 @@ class Bosh::Cpi::Cli
     @cpi = cpi
     @logs_string_io = logs_string_io
     @result_io = result_io
+    @logger = Bosh::Cpi::Logger.new(STDERR)
   end
 
   def run(json)
@@ -62,12 +63,19 @@ class Bosh::Cpi::Cli
       return error_response(INVALID_CALL_ERROR_TYPE, "Request should include context with director uuid, got: '#{context.inspect}'", false)
     end
 
+    req_id = context['request_id']
+    @logger.set_request_id(req_id)
+
     configure_director(context['director_uuid'])
 
     ruby_method = RPC_METHOD_TO_RUBY_METHOD[method] || method
 
     begin
+      start_time = Time.now.utc
+      @logger.info("Starting #{method}...")
+
       cpi = @cpi.call(context)
+
       result = cpi.public_send(ruby_method, *arguments)
     rescue Bosh::Clouds::RetriableCloudError => e
       return error_response(error_name(e), e.message, e.ok_to_retry, e.backtrace)
@@ -77,6 +85,9 @@ class Bosh::Cpi::Cli
       return error_response(INVALID_CALL_ERROR_TYPE, "Arguments are not correct, details: '#{e.message}'", false, e.backtrace)
     rescue Exception => e
       return error_response(UNKNOWN_ERROR_TYPE, e.message, false, e.backtrace)
+    ensure
+      end_time = Time.now.utc
+      @logger.info("Finished #{method} in #{(end_time - start_time).round(2)} seconds")
     end
 
     result_response(result)
