@@ -1,6 +1,8 @@
 require_relative '../../spec_helper'
 
 describe 'using director with config server', type: :integration do
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+
   def upload_links_release
     FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
     bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
@@ -41,21 +43,7 @@ describe 'using director with config server', type: :integration do
     "/#{director_name}/#{deployment_name}/#{key}"
   end
 
-  context 'when config server certificates are not trusted' do
-    with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
-
-    it 'throws certificate validator error' do
-      output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
-                                              cloud_config_hash: cloud_config, failure_expected: true,
-                                              return_exit_code: true, include_credentials: false, env: client_env)
-
-      expect(exit_code).to_not eq(0)
-      expect(output).to include('Config Server SSL error')
-    end
-  end
-
   context 'when config server certificates are trusted' do
-    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
     context 'when deployment manifest has placeholders' do
       it 'raises an error when config server does not have values for placeholders' do
