@@ -18,4 +18,4 @@ params:
   BOSH_VSPHERE_VCENTER_DC:
 
 run:
-  path: bosh-src/bosh-stemcell/smoke/test-stemcell.sh
+  path: bosh-src/src/bosh-stemcell/smoke/test-stemcell.sh

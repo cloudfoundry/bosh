@@ -5,7 +5,7 @@ set -e -x
 source /etc/profile.d/chruby.sh
 chruby 2.1
 
-export BUNDLE_GEMFILE="${PWD}/bosh-src/Gemfile"
+export BUNDLE_GEMFILE="${PWD}/bosh-src/src/Gemfile"
 
 bundle install --local
 
