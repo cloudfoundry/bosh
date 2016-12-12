@@ -56,7 +56,7 @@ module Bosh::Director
 
         deployment.compile_packages
 
-        runner = Errand::Runner.new(job, result_file, @instance_manager, @logs_fetcher)
+        runner = Errand::Runner.new(job, task_result, @instance_manager, @logs_fetcher)
 
         cancel_blk = lambda {
           begin

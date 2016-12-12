@@ -1,13 +1,13 @@
 module Bosh::Director
   class Errand::Runner
     # @param [Bosh::Director::DeploymentPlan::Job] job
-    # @param [Bosh::Director::TaskResultFile] result_file
+    # @param [Bosh::Director::TaskDBWriter] task_result_writer
     # @param [Bosh::Director::Api::InstanceManager] instance_manager
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Bosh::Director::LogsFetcher] logs_fetcher
-    def initialize(job, result_file, instance_manager, logs_fetcher)
+    def initialize(job, task_result, instance_manager, logs_fetcher)
       @job = job
-      @result_file = result_file
+      @task_result = task_result
       @instance_manager = instance_manager
       @agent_task_id = nil
       @logs_fetcher = logs_fetcher
@@ -44,7 +44,7 @@ module Bosh::Director
 
       if agent_task_result
         errand_result = Errand::Result.from_agent_task_results(agent_task_result, logs_blobstore_id)
-        @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
+        @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
       end
 
       # Prefer to raise cancel error because

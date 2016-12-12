@@ -2,8 +2,11 @@ require 'spec_helper'
 require 'timecop'
 
 describe Bosh::Director::EventLog::Log do
-  subject(:event_log) { described_class.new(buf) }
-  let(:buf) { StringIO.new }
+  subject(:event_log) { described_class.new(task_db_writer) }
+
+  let(:task_db_writer) { Bosh::Director::TaskDBWriter.new(column_name, task) }
+  let(:task) { Bosh::Director::Models::Task.make(:id => 42) }
+  let(:column_name) { :event_output }
 
   it 'tracks stages and tasks, persists them using JSON' do
     stage1 = event_log.begin_stage(:stage1, 2)
@@ -105,7 +108,6 @@ describe Bosh::Director::EventLog::Log do
   end
 
   def sent_events
-    buf.rewind
-    buf.read.split("\n").map { |line| JSON.parse(line) }
+    task[:event_output].split("\n").map { |line| JSON.parse(line) }
   end
 end

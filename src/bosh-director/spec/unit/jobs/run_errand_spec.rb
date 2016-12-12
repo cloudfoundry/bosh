@@ -4,8 +4,15 @@ module Bosh::Director
   describe Jobs::RunErrand do
     subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive) }
     let(:keep_alive) { false }
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, 42)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
-    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before {
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(Config).to receive(:event_log).and_return(event_log)
+      allow(Config).to receive(:result).and_return(task_result)
+    }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -65,10 +72,6 @@ module Bosh::Director
             context 'when job has at least 1 instance' do
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-
-              before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
-              let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
-
               before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
@@ -108,7 +111,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(deployment_job, result_file, be_a(Api::InstanceManager), logs_fetcher).
+                  with(deployment_job, task_result, be_a(Api::InstanceManager), logs_fetcher).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }

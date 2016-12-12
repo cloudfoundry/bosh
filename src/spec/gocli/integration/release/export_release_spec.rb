@@ -231,9 +231,10 @@ Can't use release 'test_release/1'. It references packages without source code a
       out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
       task_id = bosh_runner.get_most_recent_task_id
 
-      result_file = File.open(current_sandbox.sandbox_path("boshdir/tasks/#{task_id}/result"), "r")
-      tarball_data = Yajl::Parser.parse(result_file.read)
+      result_data = bosh_runner.run("task #{task_id} --result")
 
+      regex = /^{"blobstore_id".*$/
+      tarball_data= JSON.parse(result_data.match(regex)[0])
       files = Dir.entries(current_sandbox.blobstore_storage_dir)
       expect(files).to include(tarball_data['blobstore_id'])
 

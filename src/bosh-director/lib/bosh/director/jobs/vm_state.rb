@@ -22,7 +22,7 @@ module Bosh::Director
           instances.each do |instance|
             pool.process do
               vm_state = process_instance(instance)
-              result_file.write(vm_state.to_json + "\n")
+              task_result.write(vm_state.to_json + "\n")
             end
           end
         end

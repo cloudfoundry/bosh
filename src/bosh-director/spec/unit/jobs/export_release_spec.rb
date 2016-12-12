@@ -5,16 +5,19 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::ExportRelease do
     include Support::FakeLocks
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task) }
     before do
       fake_locks
       Bosh::Director::Config.current_job = job
       allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
-      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      Bosh::Director::Config.current_job.task_id = task.id
       allow(job).to receive(:task_cancelled?) { false }
       blobstore = double(:blobstore)
       blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
       app = instance_double(App, blobstores: blobstores)
       allow(App).to receive(:instance).and_return(app)
+      allow(Config).to receive(:result).and_return(task_result)
     end
 
     subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1') }
@@ -118,7 +121,6 @@ module Bosh::Director
             create_stemcell
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
             allow(job).to receive(:create_tarball)
-            allow(job).to receive(:result_file).and_return(Tempfile.new('result'))
             allow(package_compile_step).to receive(:perform)
           end
 
@@ -285,7 +287,6 @@ module Bosh::Director
               stemcell_version: '1'
           )
 
-          result_file = double('result file')
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
@@ -293,8 +294,6 @@ module Bosh::Director
           allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
-          allow(job).to receive(:result_file).and_return(result_file)
-          allow(result_file).to receive(:write)
         }
 
         it 'should order the files in the tarball' do

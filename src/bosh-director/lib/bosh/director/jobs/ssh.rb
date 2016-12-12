@@ -57,8 +57,8 @@ module Bosh::Director
           end
         end
 
-        result_file.write(JSON.generate(ssh_info))
-        result_file.write("\n")
+        task_result.write(JSON.generate(ssh_info))
+        task_result.write("\n")
 
         # task result
         nil

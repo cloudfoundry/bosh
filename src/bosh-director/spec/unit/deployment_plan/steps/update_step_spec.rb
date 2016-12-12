@@ -27,6 +27,8 @@ module Bosh::Director
     let(:releases) { [] }
     let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     before do
       allow(base_job).to receive(:logger).and_return(logger)
       allow(base_job).to receive(:track_and_log).and_yield
@@ -34,6 +36,7 @@ module Bosh::Director
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       fake_app
     end
 

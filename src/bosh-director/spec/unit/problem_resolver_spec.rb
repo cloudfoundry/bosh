@@ -3,13 +3,16 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemResolver do
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
-    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: task.id, event_manager: event_manager)}
     let(:cloud) { Config.cloud }
-
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     before(:each) do
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
     end
 
     def make_resolver(deployment)

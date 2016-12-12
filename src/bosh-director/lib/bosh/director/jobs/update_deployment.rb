@@ -62,7 +62,6 @@ module Bosh::Director
           @notifier.send_start_event unless dry_run?
 
           deployment_plan = nil
-
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)

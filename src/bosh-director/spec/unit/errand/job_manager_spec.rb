@@ -12,7 +12,13 @@ module Bosh::Director
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-    before { fake_app }
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    before do
+      fake_app
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+    end
 
     describe '#update' do
       before { allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2]) }

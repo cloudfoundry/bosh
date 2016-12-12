@@ -117,6 +117,8 @@ module Bosh::Director::Models
     description { Sham.description }
     result      { nil }
     output      { nil }
+    result_output {""}
+    event_output {""}
   end
 
   User.blueprint do

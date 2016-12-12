@@ -51,7 +51,10 @@ module Bosh::Director
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
     let(:event_manager) {Api::EventManager.new(true)}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:job_task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: job_task.id, event_manager: event_manager)}
     let(:expected_groups) {
       [
         'fake-director-name',
@@ -81,6 +84,7 @@ module Bosh::Director
 
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       @all_packages = []
     end
 
