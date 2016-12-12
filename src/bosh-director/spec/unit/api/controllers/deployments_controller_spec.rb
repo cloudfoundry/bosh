@@ -1197,70 +1197,36 @@ module Bosh::Director
           end
         end
 
-        describe 'config server variables' do
+        describe 'placeholder variables' do
           before { basic_authorize 'admin', 'admin' }
 
-          it 'should return a list of config server variables with ids only for the deployment to which it belongs' do
-            deployment = Models::Deployment.
-              create(:name => 'test_deployment',
-                     :manifest => YAML.dump({'foo' => '((bar-1))', 'bar' => '((bar-2))'}))
+          it 'returns a list of placeholder variable id and names' do
+            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({'foo' => '((foo))', 'bar' => '((bar))'}))
+            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'foo', deployment: deployment)
+            Models::PlaceholderMapping.create(placeholder_id: '1', placeholder_name: 'bar', deployment: deployment)
 
-            deployment2 = Models::Deployment.
-              create(:name => 'test_deployment2',
-                     :manifest => YAML.dump({'random' => '((random))'}))
-
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'bar-1',
-              placeholder_id: "1",
-              deployment: deployment
-            )
-
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'bar-2',
-              placeholder_id: "2",
-              deployment: deployment
-            )
-
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'random',
-              placeholder_id: "3",
-              deployment: deployment2
-            )
-
-            get '/test_deployment/config_vars'
-
+            get '/test_deployment/variables'
             expect(last_response.status).to eq(200)
-            body = JSON.parse(last_response.body)
-            expect(body.size).to eq(2)
 
-            body.each_with_index do |config_var, i|
-              expect(config_var).to eq(
-                'placeholder_name' => "bar-#{i+1}",
-                'placeholder_id' => "#{i+1}"
-              )
-            end
+            vars = JSON.parse(last_response.body)
+            expect(vars.size).to eq(2)
+            expect(vars[0]).to eq('id' => '0', 'name' => 'foo')
+            expect(vars[1]).to eq('id' => '1', 'name' => 'bar')
           end
 
-          it 'does not return config server variables for other deployments' do
-            deployment = Models::Deployment.
-              create(:name => 'test_deployment',
-                     :manifest => YAML.dump({'foo' => 'blah', 'bar' => 'blah2'}))
+          it 'does not return placeholder variables for other deployments' do
+            deployment1 = Models::Deployment.create(name: 'test_deployment1', manifest: YAML.dump({'foo' => '((foo))'}))
+            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'foo', deployment: deployment1)
 
-            deployment2 = Models::Deployment.
-              create(:name => 'test_deployment2',
-                     :manifest => YAML.dump({'random' => '((random))'}))
+            deployment2 = Models::Deployment.create(name: 'test_deployment2', manifest: YAML.dump({'bar' => '((bar))'}))
+            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'bar', deployment: deployment2)
 
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'random',
-              placeholder_id: "3",
-              deployment: deployment2
-            )
-
-            get '/test_deployment/config_vars'
-
+            get '/test_deployment1/variables'
             expect(last_response.status).to eq(200)
-            body = JSON.parse(last_response.body)
-            expect(body.size).to eq(0)
+
+            vars = JSON.parse(last_response.body)
+            expect(vars.size).to eq(1)
+            expect(vars[0]).to eq('id' => '0', 'name' => 'foo')
           end
         end
       end

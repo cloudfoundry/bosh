@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe 'cli: vars', type: :integration do
+describe 'cli: variables', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:deployment_name) { manifest_hash['name'] }
@@ -39,23 +39,25 @@ describe 'cli: vars', type: :integration do
     "/#{director_name}/#{deployment_name}/#{key}"
   end
 
-  it 'should return list of config vars' do
+  it 'should return list of placeholder variables' do
     config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
 
     deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-    vars = table(bosh_runner.run('vars', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+    variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
-    vars_ids = vars.map { |obj|
+    variable_ids = variables.map { |obj|
       obj["ID"]
     }
-    expect(vars_ids.length).to eq(3)
+    expect(variable_ids.uniq.length).to eq(3)
 
-    vars_names = vars.map { |obj|
+    variable_names = variables.map { |obj|
       obj["Name"]
     }
-    expect(vars_names).to include("TestDirector/simple/cert")
-    expect(vars_names).to include("TestDirector/simple/happiness_level")
-    expect(vars_names).to include("phone_password")
+    expect(variable_names.uniq.length).to eq(3)
+
+    expect(variable_names).to include("TestDirector/simple/cert")
+    expect(variable_names).to include("TestDirector/simple/happiness_level")
+    expect(variable_names).to include("phone_password")
   end
 end

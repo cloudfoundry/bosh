@@ -3,6 +3,9 @@ require 'json'
 
 module Bosh::Director::ConfigServer
   class DeploymentHTTPClient
+
+    @@lock = Mutex.new
+
     def initialize(deployment_name, http_client)
       @http_client = http_client
       @deployment_model = Bosh::Director::Models::Deployment.find(name: deployment_name)
@@ -13,19 +16,12 @@ module Bosh::Director::ConfigServer
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
+        values = {placeholder_id: response_body['id'], placeholder_name: response_body['name'], deployment_id: @deployment_model.id}
 
-        mappings = Bosh::Director::Models::PlaceholderMapping.where(
-          placeholder_name: response_body['name'],
-          placeholder_id: response_body['id'],
-          deployment_id: @deployment_model.id)
-
-        if mappings.empty?
-          Bosh::Director::Models::PlaceholderMapping.create(
-            placeholder_name: response_body['name'],
-            placeholder_id: response_body['id'],
-            deployment: @deployment_model
-          )
-        end
+        @@lock.synchronize {
+          mapping = Bosh::Director::Models::PlaceholderMapping.find(values)
+          Bosh::Director::Models::PlaceholderMapping.insert(values) if mapping.nil?
+        }
       end
 
       response
