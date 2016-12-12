@@ -66,17 +66,27 @@ class Bosh::Cpi::Cli
 
     ruby_method = RPC_METHOD_TO_RUBY_METHOD[method] || method
 
+    error = nil
     begin
       cpi = @cpi.call(context)
+
+      @logs_string_io.print("Call started at #{Time.now.utc.to_s}\n")
+
       result = cpi.public_send(ruby_method, *arguments)
     rescue Bosh::Clouds::RetriableCloudError => e
-      return error_response(error_name(e), e.message, e.ok_to_retry, e.backtrace)
+      error = error_response(error_name(e), e.message, e.ok_to_retry, e.backtrace)
     rescue Bosh::Clouds::CloudError, Bosh::Clouds::CpiError => e
-      return error_response(error_name(e), e.message, false, e.backtrace)
+      error = error_response(error_name(e), e.message, false, e.backtrace)
     rescue ArgumentError => e
-      return error_response(INVALID_CALL_ERROR_TYPE, "Arguments are not correct, details: '#{e.message}'", false, e.backtrace)
+      error = error_response(INVALID_CALL_ERROR_TYPE, "Arguments are not correct, details: '#{e.message}'", false, e.backtrace)
     rescue Exception => e
-      return error_response(UNKNOWN_ERROR_TYPE, e.message, false, e.backtrace)
+      error = error_response(UNKNOWN_ERROR_TYPE, e.message, false, e.backtrace)
+    end
+
+    @logs_string_io.print("\nCall finished at #{Time.now.utc.to_s}")
+
+    if error
+      return error
     end
 
     result_response(result)
