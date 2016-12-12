@@ -35,7 +35,7 @@ module Bosh::Dev::Sandbox
       end
 
       retryable.retryer do
-        `#{File.dirname(__FILE__)}/install_binary.sh #{UAA_VERSION}.war #{webapp_path} 6167d1b5afe3e12c26482fcb45c0056475cb3e1b9ca2996707d9ac9c22f60dc9 bosh-dependencies`
+        `#{File.dirname(__FILE__)}/install_binary.sh #{UAA_VERSION}.war #{webapp_path} 5a5e178c31d030079be3301c157420881331e78ef28e51e3c6ebb6c4dc3ee93b bosh-dependencies`
         $? == 0
       end
     end
