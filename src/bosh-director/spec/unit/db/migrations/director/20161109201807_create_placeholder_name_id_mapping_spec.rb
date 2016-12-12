@@ -39,5 +39,19 @@ module Bosh::Director
         }.to_not raise_error
       end
     end
+
+    context 'a deployment with property mappings' do
+      before do
+        DBSpecHelper.migrate(migration_file)
+        db[:deployments] << {id: 1, name: 'some_deployment'}
+        db[:placeholder_mappings] << {id:1, placeholder_name: "some_name", placeholder_id:"some_id", deployment_id:1}
+      end
+
+      it 'deletes property mapping records when deployment is deleted' do
+        expect(db[:placeholder_mappings].count).to equal(1)
+        db[:deployments].where('id = ?', 1).delete
+        expect(db[:placeholder_mappings].count).to equal(0)
+      end
+    end
   end
 end
