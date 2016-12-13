@@ -5,7 +5,6 @@ namespace :go do
     'go:install',
     'go:set_path',
     'go:set_bin',
-    'go:install_golint',
   ]
 
   desc 'Download & Install Go'
@@ -31,13 +30,6 @@ namespace :go do
     # go installed applications
     ENV['GOBIN'] = File.absolute_path('go/gobin')
     ENV['PATH'] = "#{File.absolute_path('go/gobin')}:#{ENV['PATH']}"
-  end
-
-  desc 'Install GoLint'
-  task :install_golint do
-    golint_repo = 'github.com/golang/lint/golint'
-    sh("go get #{golint_repo}")
-    sh("go install #{golint_repo}")
   end
 end
 
