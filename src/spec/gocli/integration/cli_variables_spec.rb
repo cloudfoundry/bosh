@@ -56,8 +56,8 @@ describe 'cli: variables', type: :integration do
     }
     expect(variable_names.uniq.length).to eq(3)
 
-    expect(variable_names).to include("TestDirector/simple/cert")
-    expect(variable_names).to include("TestDirector/simple/happiness_level")
-    expect(variable_names).to include("phone_password")
+    expect(variable_names).to include("/#{director_name}/#{deployment_name}/cert")
+    expect(variable_names).to include("/#{director_name}/#{deployment_name}/happiness_level")
+    expect(variable_names).to include("/phone_password")
   end
 end

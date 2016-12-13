@@ -16,7 +16,8 @@ module Bosh::Director::ConfigServer
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        values = {placeholder_id: response_body['id'], placeholder_name: response_body['name'], deployment_id: @deployment_model.id}
+        placeholder = response_body['data'][0]
+        values = {placeholder_id: placeholder['id'], placeholder_name: placeholder['name'], deployment_id: @deployment_model.id}
 
         @@lock.synchronize {
           mapping = Bosh::Director::Models::PlaceholderMapping.find(values)
@@ -27,8 +28,8 @@ module Bosh::Director::ConfigServer
       response
     end
 
-    def post(name, body)
-      @http_client.post(name, body)
+    def post(body)
+      @http_client.post(body)
     end
   end
 end

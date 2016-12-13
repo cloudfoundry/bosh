@@ -42,11 +42,11 @@ module Bosh::Director::ConfigServer
       let(:deployment_name) { "zaks_deployment" }
       subject { client }
 
-      let(:integer_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'} }
-      let(:instance_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'} }
-      let(:job_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'} }
-      let(:env_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'} }
-      let(:cert_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'} }
+      let(:integer_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'}]} }
+      let(:instance_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'}]} }
+      let(:job_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'}]} }
+      let(:env_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'}]} }
+      let(:cert_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'}]} }
       let(:mock_config_store) do
         {
           prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
@@ -69,9 +69,10 @@ module Bosh::Director::ConfigServer
           allow(http_client).to receive(:get).with(name).and_return(value)
         end
       end
-      it 'caches responses' do
+
+      it 'saves responses' do
         [integer_placeholder, job_placeholder, env_placeholder, cert_placeholder].each do |placeholder|
-          subject.get(placeholder['name'])
+          subject.get(placeholder['data'][0]['name'])
         end
 
         mappings = Bosh::Director::Models::PlaceholderMapping.all
@@ -79,17 +80,17 @@ module Bosh::Director::ConfigServer
         expect(mappings.count).to eq(4)
 
         [integer_placeholder, job_placeholder, env_placeholder, cert_placeholder].each do |placeholder|
-          received_mapping = mappings.select { |mapping| mapping.placeholder_id == placeholder['id'] }.first
-          expect(received_mapping.placeholder_name).to eq(placeholder['name'])
+          received_mapping = mappings.select { |mapping| mapping.placeholder_id == placeholder['data'][0]['id'] }.first
+          expect(received_mapping.placeholder_name).to eq(placeholder['data'][0]['name'])
         end
       end
 
-      context 'when the value is not present on cfg server' do
+      context 'when the value is not present on config server' do
         before do
           allow(http_client).to receive(:get).with('zak is cool').and_return(SampleNotFoundResponse.new)
         end
 
-        it 'does not cache a response' do
+        it 'does not save response' do
           subject.get('zak is cool')
 
           mappings = Bosh::Director::Models::PlaceholderMapping.all
@@ -100,8 +101,8 @@ module Bosh::Director::ConfigServer
 
     describe '#post' do
       it 'calls the http client without doing anything else' do
-        expect(http_client).to receive(:post).with('dale', 'is also cool').and_return(generate_success_response('success!'))
-        expect(subject.post('dale', 'is also cool').body).to eq('success!')
+        expect(http_client).to receive(:post).with('is also cool').and_return(generate_success_response('success!'))
+        expect(subject.post('is also cool').body).to eq('success!')
       end
     end
   end

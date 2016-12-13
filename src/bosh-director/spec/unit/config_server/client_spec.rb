@@ -24,11 +24,11 @@ module Bosh::Director::ConfigServer
         }
       end
       let(:ignored_subtrees) {[]}
-      let(:integer_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'} }
-      let(:instance_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'} }
-      let(:job_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'} }
-      let(:env_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'} }
-      let(:cert_placeholder) { {'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'} }
+      let(:integer_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'}]} }
+      let(:instance_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'}]} }
+      let(:job_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'}]} }
+      let(:env_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'}]} }
+      let(:cert_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'}]} }
       let(:mock_config_store) do
         {
           prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
@@ -131,9 +131,9 @@ module Bosh::Director::ConfigServer
         #TODO pull out config server mocks into their own lets
         let(:mock_config_store) do
           {
-            prepend_namespace('release_1_placeholder') => generate_success_response({'value' => 'release_1', 'id' => 1}.to_json),
-            prepend_namespace('release_2_version_placeholder') => generate_success_response({'value' => 'v2', 'id' => 2}.to_json),
-            prepend_namespace('job_name') => generate_success_response({'value' => 'spring_server', 'id' => 3}.to_json)
+            prepend_namespace('release_1_placeholder') => generate_success_response({'data'=>[{'value' => 'release_1', 'id' => 1}]}.to_json),
+            prepend_namespace('release_2_version_placeholder') => generate_success_response({'data'=>[{'value' => 'v2', 'id' => 2}]}.to_json),
+            prepend_namespace('job_name') => generate_success_response({'data'=>[{'value' => 'spring_server', 'id' => 3}]}.to_json)
           }
         end
 
@@ -322,7 +322,13 @@ module Bosh::Director::ConfigServer
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
       let(:ok_response) do
         response = SampleSuccessResponse.new
-        response.body = {'value'=> 'hello'}.to_json
+        response.body = {
+          :data => [
+            :id => 'whateverid',
+            :name => 'whatevername',
+            :value => 'hello',
+          ]
+        }.to_json
         response
       end
 
@@ -415,12 +421,12 @@ module Bosh::Director::ConfigServer
                   context 'when type is password' do
                     let(:type){ 'password'}
                     it 'generates a password and returns the user provided value' do
-                      expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
                     end
 
                     it 'throws an error if generation of password errors' do
-                      expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleErrorResponse.new)
+                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleErrorResponse.new)
                       expect(logger).to receive(:error)
 
                       expect{
@@ -430,7 +436,7 @@ module Bosh::Director::ConfigServer
 
                     context 'when placeholder starts with exclamation mark' do
                       it 'generates a password and returns the user provided value' do
-                        expect(http_client).to receive(:post).with(full_key, {'type' => 'password'}).and_return(SampleSuccessResponse.new)
+                        expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleSuccessResponse.new)
                         expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name)).to eq(bang_placeholder)
                       end
                     end
@@ -451,6 +457,7 @@ module Bosh::Director::ConfigServer
 
                     let(:post_body) do
                       {
+                        'name' => full_key,
                         'type' => 'certificate',
                         'parameters' => {
                           'common_name' => dns_record_names[0],
@@ -460,12 +467,12 @@ module Bosh::Director::ConfigServer
                     end
 
                     it 'generates a certificate and returns the user provided placeholder' do
-                      expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleSuccessResponse.new)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)).to eq(the_placeholder)
                     end
 
                     it 'throws an error if generation of certficate errors' do
-                      expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleErrorResponse.new)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleErrorResponse.new)
                       expect(logger).to receive(:error)
 
                       expect{
@@ -475,7 +482,7 @@ module Bosh::Director::ConfigServer
 
                     context 'when placeholder starts with exclamation mark' do
                       it 'generates a certificate and returns the user provided placeholder' do
-                        expect(http_client).to receive(:post).with(full_key, post_body).and_return(SampleSuccessResponse.new)
+                        expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                         expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name, options)).to eq(bang_placeholder)
                       end
                     end

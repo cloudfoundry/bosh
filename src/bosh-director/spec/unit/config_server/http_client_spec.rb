@@ -101,15 +101,15 @@ describe Bosh::Director::ConfigServer::HTTPClient do
         response
       end
 
-      it 'makes a GET call to config server @ /v1/data/{key} and returns response' do
-        expect(mock_http).to receive(:get).with('/v1/data/smurf_key', {'Authorization' => 'fake-auth-header'}).and_return(mock_response)
+      it 'makes a GET call to config server @ /v1/data?name={key} and returns response' do
+        expect(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_return(mock_response)
         expect(subject.get('smurf_key')).to eq(mock_response)
       end
     end
 
     context 'when a OpenSSL::SSL::SSLError error is raised' do
       it 'it throws a Bosh::Director::ConfigServerSSLError error' do
-        allow(mock_http).to receive(:get).with('/v1/data/smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(OpenSSL::SSL::SSLError)
+        allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(OpenSSL::SSL::SSLError)
         expect{subject.get('smurf_key')}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
       end
     end
@@ -130,15 +130,15 @@ describe Bosh::Director::ConfigServer::HTTPClient do
       end
 
       it 'makes a POST call to config server @ /v1/data/{key} with body and returns response' do
-        expect(mock_http).to receive(:post).with('/v1/data/smurf_key', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_return(mock_response)
-        expect(subject.post('smurf_key', request_body)).to eq(mock_response)
+        expect(mock_http).to receive(:post).with('/v1/data', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_return(mock_response)
+        expect(subject.post(request_body)).to eq(mock_response)
       end
     end
 
     context 'when a OpenSSL::SSL::SSLError error is raised' do
       it 'it throws a Bosh::Director::ConfigServerSSLError error' do
-        allow(mock_http).to receive(:post).with('/v1/data/smurf_key', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_raise(OpenSSL::SSL::SSLError)
-        expect{subject.post('smurf_key', request_body)}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
+        allow(mock_http).to receive(:post).with('/v1/data', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_raise(OpenSSL::SSL::SSLError)
+        expect{subject.post(request_body)}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
       end
     end
   end

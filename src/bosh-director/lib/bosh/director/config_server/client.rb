@@ -122,7 +122,7 @@ module Bosh::Director::ConfigServer
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        return response_body['value']
+        return response_body['data'][0]['value']
       elsif response.kind_of? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
       else
@@ -164,10 +164,11 @@ module Bosh::Director::ConfigServer
 
     def generate_password(name)
       request_body = {
+        'name' => name,
         'type' => 'password'
       }
 
-      response = @config_server_http_client.post(name, request_body)
+      response = @config_server_http_client.post(request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
@@ -178,6 +179,7 @@ module Bosh::Director::ConfigServer
     def generate_certificate(name, options)
       dns_record_names = options[:dns_record_names]
       request_body = {
+        'name' => name,
         'type' => 'certificate',
         'parameters' => {
           'common_name' => dns_record_names.first,
@@ -185,7 +187,7 @@ module Bosh::Director::ConfigServer
         }
       }
 
-      response = @config_server_http_client.post(name, request_body)
+      response = @config_server_http_client.post(request_body)
 
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
