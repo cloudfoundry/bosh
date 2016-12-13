@@ -21,6 +21,7 @@ describe Bosh::Clouds::ExternalCpi do
     before { FileUtils.mkdir_p('/var/vcap/task/5') }
 
     before { allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status]) }
+    before { allow(Random).to receive(:rand).and_return('fake-request-id') }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
     it 'calls cpi binary with correct arguments' do
@@ -28,7 +29,7 @@ describe Bosh::Clouds::ExternalCpi do
 
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid"}})
+      expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"fake-request-id"}})
 
       expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
       call_cpi_method
@@ -36,6 +37,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     context 'if properties from cpi config are given' do
       let(:director_uuid) {'fake-director-uuid'}
+      let(:request_id) {'fake-request-id'}
       let(:cpi_config_properties) { {'key1' => {'nestedkey1' => 'nestedvalue1'}, 'key2' => 'value2'} }
       let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, cpi_config_properties ) }
       let(:logger) { double }
@@ -50,7 +52,7 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        context = {'director_uuid' => director_uuid}.merge(cpi_config_properties)
+        context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
         expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -62,9 +64,10 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        context = {'director_uuid' => director_uuid}.merge(cpi_config_properties)
+        context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
         redacted_context = {
             'director_uuid' => director_uuid,
+            'request_id' => request_id,
             'key1' => '<redacted>',
             'key2' => '<redacted>'
         }
@@ -77,6 +80,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
         expected_log = %(External CPI sending request: {"method":"#{cpi_method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
+
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
       end

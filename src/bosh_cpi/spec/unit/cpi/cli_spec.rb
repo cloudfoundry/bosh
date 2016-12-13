@@ -8,12 +8,32 @@ describe Bosh::Cpi::Cli do
     let(:cpi) { instance_double('Bosh::Cloud') }
     let(:logs_io) { StringIO.new }
     let(:result_io) { StringIO.new }
+    let(:debug_io) { StringIO.new }
+
+    before(:each) do
+      allow($stderr).to receive(:write) do |text|
+        debug_io.write(text)
+      end
+    end
+
+    def make_result_regexp(result,  error = 'null', log_string = 'fake-log')
+      case result
+        when String
+          formatted_result = "\"#{Regexp.quote(result)}\""
+        when nil
+          formatted_result = 'null'
+        else
+          formatted_result = "#{Regexp.quote(result.to_s)}"
+      end
+
+      /{"result":#{formatted_result},"error":#{error},"log":".*#{log_string}.*"}/
+    end
 
     describe 'current_vm_id' do
       it 'takes json and calls specified method on the cpi' do
         expect(cpi).to(receive(:current_vm_id).
-          with(no_args)) { logs_io.write('fake-log') }.
-          and_return('fake-vm-cid')
+            with(no_args)) { logs_io.write('fake-log') }.
+            and_return('fake-vm-cid')
 
         subject.run <<-JSON
           {
@@ -23,7 +43,46 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp('fake-vm-cid'))
+      end
+
+      it 'logs the method name and request ID' do
+        expect(cpi).to(receive(:current_vm_id).
+            with(no_args)) { logs_io.write('fake-log') }.
+            and_return('fake-vm-cid')
+
+        subject.run <<-JSON
+          {
+            "method": "current_vm_id",
+            "arguments": [],
+            "context" : { "director_uuid" : "abc", "request_id": "123456" }
+          }
+        JSON
+
+        expect(debug_io.string).to include('INFO')
+        expect(debug_io.string).to include('[req_id 123456]')
+        expect(debug_io.string).to include('Starting current_vm_id')
+        expect(debug_io.string).to include('Finished current_vm_id')
+      end
+
+      it 'logs start time, end time, and duration' do
+        start_time = Time.new(2016,12,12,1,0,0)
+        end_time = Time.new(2016,12,12,1,1,30)
+        allow(Time).to receive(:now).and_return(start_time, end_time)
+
+        expect(cpi).to(receive(:current_vm_id).
+            with(no_args)) { logs_io.write('fake-log') }.
+            and_return('fake-vm-cid')
+
+        subject.run <<-JSON
+          {
+            "method": "current_vm_id",
+            "arguments": [],
+            "context" : { "director_uuid" : "abc", "request_id": "123456" }
+          }
+        JSON
+
+        expect(debug_io.string).to match(/90\.\d+ seconds/)
       end
     end
 
@@ -44,7 +103,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-stemcell-cid","error":null,"log":"fake-log"}')
+        expect(result_io.string).to  match(make_result_regexp('fake-stemcell-cid'))
       end
     end
 
@@ -62,7 +121,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to  match(make_result_regexp(nil))
       end
     end
 
@@ -94,7 +153,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp('fake-vm-cid'))
       end
     end
 
@@ -112,7 +171,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -131,7 +190,7 @@ describe Bosh::Cpi::Cli do
             }
           JSON
 
-          expect(result_io.string).to eq("{\"result\":#{result},\"error\":null,\"log\":\"fake-log\"}")
+          expect(result_io.string).to match(make_result_regexp(result))
         end
       end
     end
@@ -150,7 +209,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -171,7 +230,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -193,7 +252,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-disk-cid","error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp('fake-disk-cid'))
       end
     end
 
@@ -212,7 +271,7 @@ describe Bosh::Cpi::Cli do
             }
           JSON
 
-          expect(result_io.string).to eq("{\"result\":#{result},\"error\":null,\"log\":\"fake-log\"}")
+          expect(result_io.string).to match(make_result_regexp(result))
         end
       end
     end
@@ -231,7 +290,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -249,7 +308,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -267,7 +326,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -285,7 +344,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-snapshot-cid","error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp('fake-snapshot-cid'))
       end
     end
 
@@ -303,7 +362,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(nil))
       end
     end
 
@@ -321,7 +380,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":["fake-disk-cid"],"error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp(['fake-disk-cid']))
       end
     end
 
@@ -339,7 +398,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-vm-type","error":null,"log":"fake-log"}')
+        expect(result_io.string).to match(make_result_regexp('fake-vm-type'))
       end
     end
 
@@ -400,8 +459,8 @@ describe Bosh::Cpi::Cli do
 
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":["only-one-arg"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to match(/{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct, details: '.*'","ok_to_retry":false},"log":/)
         expect(result_io.string).to include_the_backtrace
+        expect(result_io.string).to match(make_result_regexp(nil, '{"type":"InvalidCall","message":"Arguments are not correct, details: .*","ok_to_retry":false}', '.*'))
       end
     end
 
@@ -415,8 +474,9 @@ describe Bosh::Cpi::Cli do
       it 'returns error with camelized name of the class to indicate that cpi failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass1, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false},"log":')
-        expect(result_io.string).to include('cli.rb:')
+        expect(result_io.string).to include_the_backtrace
+        expect(result_io.string).to match(make_result_regexp(nil, '{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false}', '.*'))
+        expect(debug_io.string).to include('Finished get_disks')
       end
     end
 
@@ -426,9 +486,8 @@ describe Bosh::Cpi::Cli do
       it 'returns error with camelized name of the class to indicate that call to cloud/infrastructure failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass2, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to include(
-          '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false},"log"')
-        expect(result_io.string).to include("cli.rb:")
+        expect(result_io.string).to include_the_backtrace
+        expect(result_io.string).to match(make_result_regexp(nil, '{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false}', '.*'))
       end
     end
 
@@ -442,7 +501,7 @@ describe Bosh::Cpi::Cli do
            'that call to cloud/infrastructure failed and suggesting it should be retried' do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-          expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true},"log":')
+          expect(result_io.string).to match(make_result_regexp(nil, '{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true}', '.*'))
           expect(result_io.string).to include_the_backtrace
         end
       end
@@ -451,7 +510,7 @@ describe Bosh::Cpi::Cli do
         it 'returns error with camelized name of the class to indicate that call to cloud/infrastructure failed and suggesting it should not be retried' do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass3.new(false), "Some error message")
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-          expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass3","message":"Some error message","ok_to_retry":false},"log":')
+          expect(result_io.string).to match(make_result_regexp(nil, '{"type":"ErrorClass3","message":"Some error message","ok_to_retry":false}', '.*'))
           expect(result_io.string).to include_the_backtrace
         end
       end
@@ -463,7 +522,7 @@ describe Bosh::Cpi::Cli do
       it 'returns unknown error' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass4, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to include('{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to match(make_result_regexp(nil, '{"type":"Unknown","message":"fake-error-message","ok_to_retry":false}', '.*'))
         expect(result_io.string).to include_the_backtrace
       end
     end
@@ -505,7 +564,7 @@ describe Bosh::Cpi::Cli do
       it 'returns error with correctly camelized name' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ERRClass5, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to include('{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to match(make_result_regexp(nil, '{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false}', '.*'))
         expect(result_io.string).to include_the_backtrace
       end
     end
