@@ -14,5 +14,30 @@ module Bosh::Director
 
       expect(db[:tasks].first[:context_id]).to eq('')
     end
+
+    context 'context length' do
+      before do
+        skip 'SQL lite does not support limiting string size' if [:sqlite].include?(db.adapter_scheme)
+      end
+
+      it 'allows 64 chars in length' do
+        validContextId = "x" * 64
+
+        DBSpecHelper.migrate(migration_file)
+        db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-12-09 11:53:42', description: 'descr', type: 'type', context_id: validContextId}
+
+        expect(db[:tasks].first[:context_id]).to eq(validContextId)
+      end
+
+      it 'does not allow more than 64 chars in length' do
+        invalidContextId = "x" * 65
+
+        DBSpecHelper.migrate(migration_file)
+        expect {
+          db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-12-09 11:53:42', description: 'descr', type: 'type', context_id: invalidContextId}
+        } .to raise_error Sequel::DatabaseError
+
+      end
+    end
   end
 end

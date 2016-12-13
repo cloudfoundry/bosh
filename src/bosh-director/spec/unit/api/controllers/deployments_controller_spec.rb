@@ -53,7 +53,8 @@ module Bosh::Director
 
             it 'accepts a context ID header' do
               context_id = 'example-context-id'
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml', 'X-Bosh-Context-Id' => context_id}
+              header('X-Bosh-Context-Id', context_id)
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               task = expect_redirect_to_queued_task(last_response)
               expect(task.context_id).to eq(context_id)
             end
@@ -257,7 +258,8 @@ module Bosh::Director
             context_id = 'example-context-id'
             deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
 
-            delete '/test_deployment', "", {'X-Bosh-Context-Id' => context_id}
+            header('X-Bosh-Context-Id', context_id)
+            delete '/test_deployment'
 
             task = expect_redirect_to_queued_task(last_response)
             expect(task.context_id).to eq(context_id)
@@ -1099,7 +1101,8 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
-                    deployment
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({})
@@ -1116,12 +1119,12 @@ module Bosh::Director
                     context_id
                   ).and_return(task)
 
+                  header('X-Bosh-Context-Id', context_id)
                   post(
                     '/fake-dep-name/errands/fake-errand-name/runs',
                     JSON.dump({}),
                     {
-                      'CONTENT_TYPE' => 'application/json',
-                      'X-Bosh-Context-Id' => context_id
+                      'CONTENT_TYPE' => 'application/json'
                     }
                   )
                 end
@@ -1132,7 +1135,8 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
-                    deployment
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
