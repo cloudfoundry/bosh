@@ -2,6 +2,7 @@ require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
 require 'membrane'
+require 'netaddr'
 
 module Bosh
   module Clouds
