@@ -54,7 +54,7 @@ describe 'using director with config server', type: :integration do
                                               return_exit_code: true, env: client_env)
 
       expect(exit_code).to_not eq(0)
-      expect(output).to include('Config Server SSL error')
+      expect(output).to include('certificate verify failed')
     end
   end
 

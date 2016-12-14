@@ -297,11 +297,11 @@ module Bosh::Director
 
   # Config server errors
   ConfigServerMissingNames = err(540000)
-  ConfigServerSSLError = err(540001)
-  ConfigServerUnknownError = err(540002)
-  ConfigServerCertificateGenerationError = err(540003)
-  ConfigServerIncorrectNameSyntax = err(540004)
-  ConfigServerGenerationError = err(540005)
+  ConfigServerPasswordGenerationError = err(540002)
+  ConfigServerUnknownError = err(540003)
+  ConfigServerCertificateGenerationError = err(540004)
+  ConfigServerIncorrectNameSyntax = err(540005)
+  ConfigServerGenerationError = err(540006)
 
   # CPI config
   CpiDuplicateName = err(550000)

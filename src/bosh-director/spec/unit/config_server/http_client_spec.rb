@@ -52,7 +52,7 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     response
   end
 
-  let(:connection_error) {OpenSSL::SSL::SSLError.new('')}
+  let(:connection_error) {Errno::ECONNREFUSED.new('')}
 
   before do
     expect(mock_http).to receive(:use_ssl=)
@@ -105,13 +105,6 @@ describe Bosh::Director::ConfigServer::HTTPClient do
       it_behaves_like 'cert_store'
     end
 
-    it 'should raise an error message when the certificate is invalid' do
-      allow(mock_http).to receive(:get).and_raise(OpenSSL::SSL::SSLError)
-      expect{ subject.get('anything') }.to raise_error(
-                                       Bosh::Director::ConfigServerSSLError,
-                                       'Config Server SSL error'
-                                   )
-    end
   end
 
   describe '#get' do
@@ -123,11 +116,11 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     end
 
     context 'when a GET call fails due to a connection error' do
-      it 'it throws a Bosh::Director::ConfigServerSSLError error after trying 3 times' do
-        allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(OpenSSL::SSL::SSLError)
+      it 'it throws a connection error after trying 3 times' do
+        allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(connection_error)
 
         expect(mock_http).to receive(:get).exactly(3).times
-        expect{subject.get('smurf_key')}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
+        expect{subject.get('smurf_key')}.to raise_error(connection_error)
       end
     end
 
@@ -175,10 +168,10 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     end
 
     context 'when a POST call fails due to a connection error' do
-      it 'it throws a Bosh::Director::ConfigServerSSLError error' do
-        allow(mock_http).to receive(:post).with('/v1/data', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_raise(OpenSSL::SSL::SSLError)
+      it 'it throws a connection error' do
+        allow(mock_http).to receive(:post).and_raise(connection_error)
         expect(mock_http).to receive(:post).exactly(3).times
-        expect{subject.post(request_body)}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
+        expect{subject.post(request_body)}.to raise_error(connection_error)
       end
     end
 

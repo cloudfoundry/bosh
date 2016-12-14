@@ -28,7 +28,6 @@ module Bosh::Director::ConfigServer
         end
       rescue => e
         e = get_exception.nil? ? e : get_exception
-        raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error' if e.is_a? OpenSSL::SSL::SSLError
         raise e
       end
     end
@@ -43,7 +42,6 @@ module Bosh::Director::ConfigServer
         end
       rescue => e
         e = post_exception.nil? ? e : post_exception
-        raise Bosh::Director::ConfigServerSSLError, 'Config Server SSL error' if e.is_a? OpenSSL::SSL::SSLError
         raise e
       end
     end
