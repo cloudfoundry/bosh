@@ -26,26 +26,48 @@ module Bosh::Director::ConfigServer
       return "/#{director_name}/#{deployment_name}/#{name}"
     end
 
-    private
+    # @param [String] name the variable name
+    # @raise [Error] if name does not meet variable name specs
+    def validate_variable_name(name)
+      validate_syntax(name, 'Variable')
+    end
+
+    # @param [Array] placeholders list of potential absolute placeholders
+    # @raise [Error] if a placeholder is not absolute
+    def validate_absolute_names(placeholders)
+      non_absolute_names = placeholders.inject([]) do |memo, placeholder|
+        name = extract_placeholder_name(placeholder)
+        memo << name unless name.start_with?('/')
+        memo
+      end
+
+      quoted_non_absolute_names = non_absolute_names.map {|item| "'#{item}'"}
+      raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + quoted_non_absolute_names.join(', ') unless quoted_non_absolute_names.empty?
+    end
+
+    # local utility methods
 
     def validate_placeholder_name(name)
+      validate_syntax(name, 'Placeholder')
+      validate_bang_character(name)
+    end
+
+    def validate_syntax(name, validation_for)
       # Allowing exclamation mark for spiff
       unless /^[a-zA-Z0-9_\-!\/]+$/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "Placeholder name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+              "#{validation_for} name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end
 
       if name.end_with? '/'
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "Placeholder name '#{name}' must not end with a forward slash"
+              "#{validation_for} name '#{name}' must not end with a forward slash"
       end
 
       if /\/\// =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "Placeholder name '#{name}' must not contain two consecutive forward slashes"
+              "#{validation_for} name '#{name}' must not contain two consecutive forward slashes"
       end
-
-      validate_bang_character(name)
     end
 
     def validate_bang_character(name)

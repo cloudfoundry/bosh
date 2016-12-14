@@ -51,6 +51,9 @@ module Bosh::Director
 
       attr_reader :uninterpolated_manifest_text
 
+      # @return [DeploymentPlan::Variables] Returns the variables object of deployment
+      attr_reader :variables
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -75,6 +78,8 @@ module Bosh::Director
 
         @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
+
+        @variables = Variables.new([])
 
         @logger = Config.logger
       end
@@ -285,6 +290,10 @@ module Bosh::Director
         @link_spec[instance_group_name][job_name] ||= {}
         @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
         @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
+      end
+
+      def set_variables(variables_obj)
+        @variables = variables_obj
       end
 
       private

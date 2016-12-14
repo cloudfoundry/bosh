@@ -44,6 +44,7 @@ module Bosh::Director::Jobs
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
         allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
+        allow(planner).to receive(:variables).and_return(Bosh::Director::DeploymentPlan::Variables.new([]))
       end
 
       context 'when all steps complete' do
@@ -67,6 +68,29 @@ module Bosh::Director::Jobs
           expect(job).to_not receive(:run_post_deploys)
 
           job.perform
+        end
+
+        context 'when variables exist in deployment plan' do
+          let(:variables) do
+            Bosh::Director::DeploymentPlan::Variables.new([{'name' => 'placeholder_a', 'type' => 'password'}])
+          end
+
+          let(:logger) { instance_double(Logging::Logger) }
+          let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+          let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::DisabledClient) }
+
+          before do
+            allow(planner).to receive(:variables).and_return(variables)
+            allow(config_server_client).to receive(:interpolate_deployment_manifest).and_return({'name' => 'deployment-name'})
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+            allow(client_factory).to receive(:create_client).and_return(config_server_client)
+          end
+
+          it 'tries to generate the values through config server' do
+            expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name')
+
+            job.perform
+          end
         end
 
         context 'when a cloud_config is passed in' do

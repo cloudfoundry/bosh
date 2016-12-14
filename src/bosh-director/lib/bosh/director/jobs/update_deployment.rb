@@ -67,6 +67,7 @@ module Bosh::Director
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
+            generate_variables_values(deployment_plan.variables, @deployment_name)
             deployment_plan.bind_models
           end
 
@@ -206,6 +207,11 @@ module Bosh::Director
         context['before'] = before_objects
         context['after'] = after_objects
         context
+      end
+
+      def generate_variables_values(variables, deployment_name)
+        config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client(deployment_name)
+        config_server_client.generate_values(variables, deployment_name)
       end
     end
   end

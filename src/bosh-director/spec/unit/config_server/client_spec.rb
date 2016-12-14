@@ -417,28 +417,30 @@ module Bosh::Director::ConfigServer
               context 'when default is NOT defined i.e nil' do
                 let(:full_key) { prepend_namespace('my_smurf') }
                 let(:default_value) { nil }
-                context 'when type is generatable' do
-                  context 'when type is password' do
-                    let(:type){ 'password'}
-                    it 'generates a password and returns the user provided value' do
-                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleSuccessResponse.new)
-                      expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
-                    end
+                let(:type){'any-type-you-like'}
 
-                    it 'throws an error if generation of password errors' do
-                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleErrorResponse.new)
-                      expect(logger).to receive(:error)
+                context 'when the release spec property defines a type' do
+                  it 'generates the value and returns the user provided placeholder' do
+                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleSuccessResponse.new)
+                    expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
+                  end
 
-                      expect{
-                        client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
-                      }. to raise_error(Bosh::Director::ConfigServerPasswordGenerationError, "Config Server failed to generate password for '#{full_key}'")
-                    end
+                  it 'throws an error if generation errors' do
+                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleErrorResponse.new)
+                    expect(logger).to receive(:error)
 
-                    context 'when placeholder starts with exclamation mark' do
-                      it 'generates a password and returns the user provided value' do
-                        expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'password'}).and_return(SampleSuccessResponse.new)
-                        expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name)).to eq(bang_placeholder)
-                      end
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+                    }. to raise_error(
+                      Bosh::Director::ConfigServerGenerationError,
+                      "Config Server failed to generate value for '#{full_key}' with type 'any-type-you-like'. Error: 'There was a problem.'"
+                    )
+                  end
+
+                  context 'when placeholder starts with exclamation mark' do
+                    it 'generates the value and returns the user provided placeholder' do
+                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleSuccessResponse.new)
+                      expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name)).to eq(bang_placeholder)
                     end
                   end
 
@@ -477,7 +479,10 @@ module Bosh::Director::ConfigServer
 
                       expect{
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)
-                      }. to raise_error(Bosh::Director::ConfigServerCertificateGenerationError, "Config Server failed to generate certificate for '#{full_key}'")
+                      }. to raise_error(
+                        Bosh::Director::ConfigServerGenerationError,
+                        "Config Server failed to generate value for '#{full_key}' with type 'certificate'. Error: 'There was a problem.'"
+                      )
                     end
 
                     context 'when placeholder starts with exclamation mark' do
@@ -489,13 +494,106 @@ module Bosh::Director::ConfigServer
                   end
                 end
 
-                context 'when type is NOT generatable' do
-                  let(:type){ 'cat'}
+                context 'when the release spec property does NOT define a type' do
+                  let(:type){ nil }
                   it 'returns that the user provided value as is' do
                     expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
                   end
                 end
               end
+            end
+          end
+        end
+      end
+    end
+
+    describe '#generate_values' do
+      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+
+      context 'when given a variables object' do
+
+        context 'when some variable names syntax is NOT correct' do
+          let(:variable_specs_list) do
+            [
+              [{'name' => 'p*laceholder_a', 'type' => 'password'}],
+              [{'name' => 'placeholder_a/', 'type' => 'password'}],
+              [{'name' => '', 'type' => 'password'}],
+              [{'name' => ' ', 'type' => 'password'}],
+              [{'name' => '((vroom))', 'type' => 'password'}],
+            ]
+          end
+
+          it 'should throw an error and log it' do
+            variable_specs_list.each do |variables_spec|
+              expect{
+                client.generate_values(Bosh::Director::DeploymentPlan::Variables.new(variables_spec), deployment_name)
+              }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
+            end
+          end
+
+        end
+
+        context 'when some variable names is correct' do
+          let(:variables_spec) do
+            [
+              {'name' => 'placeholder_a', 'type' => 'password'},
+              {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io','b.bosh.io']}},
+              {'name' => '/placeholder_c', 'type' => 'gold', 'options' => { 'need' => 'luck' }}
+            ]
+          end
+
+          let(:variables_obj) do
+            Bosh::Director::DeploymentPlan::Variables.new(variables_spec)
+          end
+
+          it 'should generate all the variables in order' do
+            expect(http_client).to receive(:post).with(
+              {
+                'name' => prepend_namespace('placeholder_a'),
+                'type' => 'password',
+                'parameters' => {}
+              }
+            ).ordered.and_return(SampleSuccessResponse.new)
+
+            expect(http_client).to receive(:post).with(
+              {
+                'name' => prepend_namespace('placeholder_b'),
+                'type' => 'certificate',
+                'parameters' => {'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+              }
+            ).ordered.and_return(SampleSuccessResponse.new)
+
+            expect(http_client).to receive(:post).with(
+              {
+                'name' => '/placeholder_c',
+                'type' => 'gold',
+                'parameters' => { 'need' => 'luck' }
+              }
+            ).ordered.and_return(SampleSuccessResponse.new)
+
+            client.generate_values(variables_obj, deployment_name)
+          end
+
+          context 'when config server throws an error while generating' do
+            before do
+              allow(http_client).to receive(:post).with(
+                {
+                  'name' => prepend_namespace('placeholder_a'),
+                  'type' => 'password',
+                  'parameters' => {}
+                }
+              ).ordered.and_return(SampleErrorResponse.new)
+            end
+
+            it 'should throw an error and log it' do
+              expect(logger).to receive(:error)
+
+              expect{
+                client.generate_values(variables_obj, deployment_name)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerGenerationError,
+                     "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Error: 'There was a problem.'"
+                   )
             end
           end
         end
@@ -563,6 +661,12 @@ module Bosh::Director::ConfigServer
         expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name)).to eq('default value is here')
         expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {})).to eq('default value is here')
         expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {'whatever' => 'hello'})).to eq('default value is here')
+      end
+    end
+
+    describe '#generate_values' do
+      it 'exists' do
+        expect{disabled_client.generate_values(anything, anything)}.to_not raise_error
       end
     end
   end

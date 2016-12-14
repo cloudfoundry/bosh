@@ -297,18 +297,20 @@ module Bosh::Director
   # Config server errors
   ConfigServerMissingNames = err(540000)
   ConfigServerSSLError = err(540001)
-  ConfigServerPasswordGenerationError = err(540002)
-  ConfigServerUnknownError = err(540003)
-  ConfigServerCertificateGenerationError = err(540004)
-  ConfigServerIncorrectNameSyntax = err(540005)
+  ConfigServerUnknownError = err(540002)
+  ConfigServerCertificateGenerationError = err(540003)
+  ConfigServerIncorrectNameSyntax = err(540004)
+  ConfigServerGenerationError = err(540005)
 
   # CPI config
   CpiDuplicateName = err(550000)
+
+  # Variables
+  VariablesInvalidFormat = err(560000)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 
   # UAA
   UAAAuthorizationError = err(610000)
-
 end

@@ -529,7 +529,7 @@ describe 'using director with config server', type: :integration do
 
           expect {
             upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-          }.to raise_error(RuntimeError, /Names must be absolute path: addon_release_version_placeholder/)
+          }.to raise_error(RuntimeError, /Names must be absolute path: 'addon_release_version_placeholder'/)
         end
       end
     end
@@ -565,64 +565,174 @@ describe 'using director with config server', type: :integration do
           })
       end
 
-      context 'when types are generatable' do
-        context 'when type is password or certificate' do
-          context 'when these properties are defined in deployment manifest as placeholders' do
-            context 'when these properties are NOT defined in the config server' do
+      context 'when these properties are defined in deployment manifest as placeholders' do
+        context 'when these properties are NOT defined in the config server' do
+          let(:job_properties) do
+            {
+              'smurfs' => {
+                'phone_password' => '((smurfs_phone_password_placeholder))',
+                'happiness_level' => 5
+              },
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                'cert' => '((gargamel_certificate_placeholder))'
+              }
+            }
+          end
+
+          context 'when the properties have default values defined' do
+
+            before do
+              job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
+              job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
+            end
+
+            it 'uses the default values defined' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+              instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+              template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+              expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+
+              hardcoded_cert = instance.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+              expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
+            end
+          end
+
+          context 'when the properties do NOT have default values defined' do
+            it 'generates values for these properties' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+              instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+              # Passwords generation
+              template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+              expect(
+                template_hash['properties_list']['smurfs_phone_password']
+              ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
+              expect(
+                template_hash['properties_list']['gargamel_secret_recipe']
+              ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
+
+              # Certificate generation
+              generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+              generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+              root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
+
+              generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
+
+              expect(generated_cert).to eq(generated_cert_response['certificate'])
+              expect(generated_private_key).to eq(generated_cert_response['private_key'])
+              expect(root_ca).to eq(generated_cert_response['ca'])
+
+              certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
+              expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
+
+              subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
+              expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
+            end
+
+            context 'when config server raises an error while generating' do
+              let(:job_properties) do
+                {
+                  'gargamel' => {
+                    'secret_recipe' => 'stuff'
+                  },
+                  'smurfs' => {
+                    'phone_password' => 'anything',
+                    'happiness_level' => '((happy_level_placeholder))'
+                  }
+                }
+              end
+
+              it 'propagates that error back to the user and fails to deploy' do
+                output, exit_code =  deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  include_credentials: false,  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+                expect(output).to include ("Error: Config Server failed to generate value for '/TestDirector/simple/happy_level_placeholder' with type 'happy'.")
+              end
+            end
+
+            context 'when an instance group has multiple networks' do
               let(:job_properties) do
                 {
                   'smurfs' => {
-                    'phone_password' => '((smurfs_phone_password_placeholder))',
+                    'phone_password' => 'vroom',
                     'happiness_level' => 5
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                    'secret_recipe' => 'hello',
                     'cert' => '((gargamel_certificate_placeholder))'
                   }
                 }
               end
 
-              context 'when the properties have default values defined' do
+              let(:cloud_config) {
+                cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+                cloud_config_hash['resource_pools'].first['size'] = 1
+                cloud_config_hash['networks'] = [
+                  {
+                    'name' => 'a',
+                    'subnets' => [
+                      {
+                        'range' => '192.168.1.0/24',
+                        'gateway' => '192.168.1.1',
+                        'dns' => ['192.168.1.2'],
+                        'static' => '192.168.1.10-192.168.1.15',
+                        'reserved' => [],
+                        'cloud_properties' => {},
+                      }
+                    ]
+                  },
+                  {
+                    'name' => 'b',
+                    'subnets' => [
+                      {
+                        'range' => '192.168.2.0/24',
+                        'gateway' => '192.168.2.1',
+                        'dns' => ['192.168.2.2'],
+                        'static' => '192.168.2.10-192.168.2.15',
+                        'reserved' => [],
+                        'cloud_properties' => {},
+                      }
+                    ]
+                  }
+                ]
+                cloud_config_hash
+              }
 
-                before do
-                  job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
-                  job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
-                end
-
-                it 'uses the default values defined' do
-                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-                  instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-
-                  template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                  expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
-
-                  hardcoded_cert = instance.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
-                  expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
-                end
+              before do
+                manifest_hash['jobs'].first['networks'] = [
+                  {
+                    'name' => 'a',
+                    'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),
+                    'default' => %w(dns gateway addressable)},
+                  {
+                    'name' => 'b',
+                    'static_ips' => %w(192.168.2.10 192.168.2.11 192.168.2.12),
+                  }
+                ]
               end
 
-              context 'when the properties do NOT have default values defined' do
-                it 'generates values for these properties' do
-                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+              it 'generates cert with SAN including all the networks with no duplicates' do
+                deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-                  instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+                generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
-                  # Passwords generation
-                  template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                  expect(
-                    template_hash['properties_list']['smurfs_phone_password']
-                  ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
-                  expect(
-                    template_hash['properties_list']['gargamel_secret_recipe']
-                  ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
+                instances = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |instance|  instance.job_name == 'our_instance_group' }
 
-                  # Certificate generation
+                instances.each do |instance|
                   generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
                   generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
                   root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                  generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
                   expect(generated_cert).to eq(generated_cert_response['certificate'])
                   expect(generated_private_key).to eq(generated_cert_response['private_key'])
@@ -633,183 +743,99 @@ describe 'using director with config server', type: :integration do
 
                   subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
                   expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
-                end
-
-                context 'when an instance group has multiple networks' do
-                  let(:job_properties) do
-                    {
-                      'smurfs' => {
-                        'phone_password' => 'vroom',
-                        'happiness_level' => 5
-                      },
-                      'gargamel' => {
-                        'secret_recipe' => 'hello',
-                        'cert' => '((gargamel_certificate_placeholder))'
-                      }
-                    }
-                  end
-
-                  let(:cloud_config) {
-                    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-                    cloud_config_hash['resource_pools'].first['size'] = 1
-                    cloud_config_hash['networks'] = [
-                      {
-                        'name' => 'a',
-                        'subnets' => [
-                          {
-                            'range' => '192.168.1.0/24',
-                            'gateway' => '192.168.1.1',
-                            'dns' => ['192.168.1.2'],
-                            'static' => '192.168.1.10-192.168.1.15',
-                            'reserved' => [],
-                            'cloud_properties' => {},
-                          }
-                        ]
-                      },
-                      {
-                        'name' => 'b',
-                        'subnets' => [
-                          {
-                            'range' => '192.168.2.0/24',
-                            'gateway' => '192.168.2.1',
-                            'dns' => ['192.168.2.2'],
-                            'static' => '192.168.2.10-192.168.2.15',
-                            'reserved' => [],
-                            'cloud_properties' => {},
-                          }
-                        ]
-                      }
-                    ]
-                    cloud_config_hash
-                  }
-
-                  before do
-                    manifest_hash['jobs'].first['networks'] = [
-                      {
-                        'name' => 'a',
-                        'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),
-                        'default' => %w(dns gateway addressable)},
-                      {
-                        'name' => 'b',
-                        'static_ips' => %w(192.168.2.10 192.168.2.11 192.168.2.12),
-                      }
-                    ]
-                  end
-
-                  it 'generates cert with SAN including all the networks with no duplicates' do
-                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
-
-                    instances = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |instance|  instance.job_name == 'our_instance_group' }
-
-                    instances.each do |instance|
-                      generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
-                      generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
-                      root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                      expect(generated_cert).to eq(generated_cert_response['certificate'])
-                      expect(generated_private_key).to eq(generated_cert_response['private_key'])
-                      expect(root_ca).to eq(generated_cert_response['ca'])
-
-                      certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
-                      expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
-
-                      subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
-                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
-                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.b.simple.bosh/).count).to eq(1)
-                    end
-                  end
-                end
-
-                context 'when placeholders start with exclamation mark' do
-                  let(:job_properties) do
-                    {
-                      'smurfs' => {
-                        'phone_password' => '((!smurfs_phone_password_placeholder))',
-                        'happiness_level' => 9
-                      },
-                      'gargamel' => {
-                        'secret_recipe' => '((!gargamel_secret_recipe_placeholder))',
-                        'cert' => '((!gargamel_certificate_placeholder))'
-                      }
-                    }
-                  end
-
-                  it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
-                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-                    instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-
-                    template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                    expect(
-                      template_hash['properties_list']['smurfs_phone_password']
-                    ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
-                    expect(
-                      template_hash['properties_list']['gargamel_secret_recipe']
-                    ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
-
-                    generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
-                    generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
-                    root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
-
-                    expect(generated_cert).to eq(generated_cert_response['certificate'])
-                    expect(generated_private_key).to eq(generated_cert_response['private_key'])
-                    expect(root_ca).to eq(generated_cert_response['ca'])
-                  end
+                  expect(subject_alt_name.to_s.scan(/\*.our-instance-group.b.simple.bosh/).count).to eq(1)
                 end
               end
             end
 
-            context 'when these properties are defined in config server' do
+            context 'when placeholders start with exclamation mark' do
               let(:job_properties) do
                 {
                   'smurfs' => {
-                    'phone_password' => '((smurfs_phone_password_placeholder))',
-                    'happiness_level' => 5
+                    'phone_password' => '((!smurfs_phone_password_placeholder))',
+                    'happiness_level' => 9
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
-                    'cert' => '((gargamel_certificate_placeholder))'
+                    'secret_recipe' => '((!gargamel_secret_recipe_placeholder))',
+                    'cert' => '((!gargamel_certificate_placeholder))'
                   }
                 }
               end
 
-              let(:certificate_payload) do
-                {
-                  'certificate' => 'cert123',
-                  'private_key' => 'adb123',
-                  'ca' => 'ca456'
-                }
-              end
-
-              it 'uses the values defined in config server' do
-                config_server_helper.put_value(prepend_namespace('smurfs_phone_password_placeholder'), 'i am smurf')
-                config_server_helper.put_value(prepend_namespace('gargamel_secret_recipe_placeholder'), 'banana and jaggery')
-                config_server_helper.put_value(prepend_namespace('gargamel_certificate_placeholder'), certificate_payload)
-
+              it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
                 instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
 
                 template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
-                expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+                expect(
+                  template_hash['properties_list']['smurfs_phone_password']
+                ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
+                expect(
+                  template_hash['properties_list']['gargamel_secret_recipe']
+                ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
                 generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
                 generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
                 root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
 
-                expect(generated_cert).to eq('cert123')
-                expect(generated_private_key).to eq('adb123')
-                expect(root_ca).to eq('ca456')
+                generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
+
+                expect(generated_cert).to eq(generated_cert_response['certificate'])
+                expect(generated_private_key).to eq(generated_cert_response['private_key'])
+                expect(root_ca).to eq(generated_cert_response['ca'])
               end
             end
           end
+        end
 
-          context 'when these properties are NOT defined in deployment manifest' do
+        context 'when these properties are defined in config server' do
+          let(:job_properties) do
+            {
+              'smurfs' => {
+                'phone_password' => '((smurfs_phone_password_placeholder))',
+                'happiness_level' => 5
+              },
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                'cert' => '((gargamel_certificate_placeholder))'
+              }
+            }
+          end
+
+          let(:certificate_payload) do
+            {
+              'certificate' => 'cert123',
+              'private_key' => 'adb123',
+              'ca' => 'ca456'
+            }
+          end
+
+          it 'uses the values defined in config server' do
+            config_server_helper.put_value(prepend_namespace('smurfs_phone_password_placeholder'), 'i am smurf')
+            config_server_helper.put_value(prepend_namespace('gargamel_secret_recipe_placeholder'), 'banana and jaggery')
+            config_server_helper.put_value(prepend_namespace('gargamel_certificate_placeholder'), certificate_payload)
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+            template_hash = YAML.load(instance.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
+            expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+
+            generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')
+            generated_private_key = instance.read_job_template('job_with_property_types', 'generated_key.key')
+            root_ca = instance.read_job_template('job_with_property_types', 'root_ca.pem')
+
+            expect(generated_cert).to eq('cert123')
+            expect(generated_private_key).to eq('adb123')
+            expect(root_ca).to eq('ca456')
+          end
+        end
+      end
+
+      context 'when these properties are NOT defined in deployment manifest' do
             context 'when these properties have defaults' do
               let(:certificate_payload) do
                 {
@@ -875,47 +901,7 @@ describe 'using director with config server', type: :integration do
                 expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
               end
             end
-          end
-        end
-      end
-
-      context 'when types are NOT generatable' do
-        context 'when these properties are defined in deployment manifest' do
-
-          let(:job_properties) do
-            {
-              'gargamel' => {
-                'secret_recipe' => 'stuff'
-              },
-              'smurfs' => {
-                'phone_password' => 'anything',
-                'happiness_level' => '((happy_level_placeholder))'
-              }
-            }
-          end
-
-          context 'when these properties are NOT defined in the config server' do
-            context 'when the properties do NOT have default values defined' do
-              it 'fails to deploy when not finding property in config server' do
-                output, exit_code =  deploy_from_scratch(
-                  no_login: true,
-                  manifest_hash: manifest_hash,
-                  cloud_config_hash: cloud_config,
-                  failure_expected: true,
-                  return_exit_code: true,
-                  include_credentials: false,  env: client_env
-                )
-
-                expect(exit_code).to_not eq(0)
-                expect(output).to include <<-EOF
-Error: Unable to render instance groups for deployment. Errors are:
-   - Failed to load placeholder names from the config server: /TestDirector/simple/happy_level_placeholder
-                EOF
-              end
-            end
-          end
-        end
-      end
+          end     end
     end
 
     context 'when links exist' do

@@ -97,11 +97,10 @@ module Bosh::Director::ConfigServer
             result = provided_prop
           else
             if default_prop.nil?
-              case type
-                when 'password'
-                  generate_password(extracted_name)
-                when 'certificate'
-                  generate_certificate(extracted_name, options)
+              if type == 'certificate'
+                generate_certificate(extracted_name, options)
+              elsif type
+                generate_value(extracted_name, type, {})
               end
               result = provided_prop
             else
@@ -113,6 +112,23 @@ module Bosh::Director::ConfigServer
         end
       end
       result
+    end
+
+    # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
+    # @param [String] deployment_name
+    def generate_values(variables, deployment_name)
+      variables.spec.each do |variable|
+        variable_name = variable['name']
+        validate_variable_name(variable_name)
+
+        constructed_name = add_prefix_if_not_absolute(
+          variable_name,
+          @director_name,
+          deployment_name
+        )
+
+        generate_value(constructed_name, variable['type'], variable['options'])
+      end
     end
 
     private
@@ -162,46 +178,32 @@ module Bosh::Director::ConfigServer
       [config_values, missing_names]
     end
 
-    def generate_password(name)
+    def generate_value(name, type, options)
+      parameters = options.nil? ? {} : options
+
       request_body = {
         'name' => name,
-        'type' => 'password'
+        'type' => type,
+        'parameters' => parameters
       }
 
       response = @config_server_http_client.post(request_body)
 
       unless response.kind_of? Net::HTTPSuccess
-        @logger.error("Config server error on generating password: #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerPasswordGenerationError, "Config Server failed to generate password for '#{name}'"
+        @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{response.message}. Request body sent: #{request_body}")
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
       end
     end
 
     def generate_certificate(name, options)
       dns_record_names = options[:dns_record_names]
-      request_body = {
-        'name' => name,
-        'type' => 'certificate',
-        'parameters' => {
-          'common_name' => dns_record_names.first,
-          'alternative_names' => dns_record_names
-        }
+
+      certificate_options = {
+        'common_name' => dns_record_names.first,
+        'alternative_names' => dns_record_names
       }
 
-      response = @config_server_http_client.post(request_body)
-
-      unless response.kind_of? Net::HTTPSuccess
-        @logger.error("Config server error on generating certificate: #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerCertificateGenerationError, "Config Server failed to generate certificate for '#{name}'"
-      end
-    end
-
-    def validate_absolute_names(placeholders)
-      non_absolute_names = placeholders.inject([]) do |memo, placeholder|
-        name = extract_placeholder_name(placeholder)
-        memo << name unless name.start_with?('/')
-        memo
-      end
-      raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + non_absolute_names.join(',') unless non_absolute_names.empty?
+      generate_value(name, 'certificate', certificate_options)
     end
   end
 
@@ -220,6 +222,10 @@ module Bosh::Director::ConfigServer
 
     def prepare_and_get_property(manifest_provided_prop, default_prop, type, deployment_name, options = {})
       manifest_provided_prop.nil? ? default_prop : manifest_provided_prop
+    end
+
+    def generate_values(variables, deployment_name)
+      # do nothing. When config server is not enabled, nothing to do
     end
   end
 end

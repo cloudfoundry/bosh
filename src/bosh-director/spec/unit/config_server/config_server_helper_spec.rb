@@ -163,5 +163,81 @@ module Bosh::Director::ConfigServer
         end
       end
     end
+
+    describe '#validate_variable_name' do
+      context 'when name does NOT meet specs' do
+        context 'when name has invalid characters' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_variable_names = [
+              '', ' ', '%', '  ', '123 345', '@bosh',
+              'hello_)', 't*', 'smurf cat'
+            ]
+
+            invalid_variable_names.each do |invalid_entity|
+              expect {
+                @helper.validate_variable_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+                   )
+            end
+          end
+        end
+
+        context 'when name ends with a forward slash' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
+              '/', 'hello/', '//', '/test/', 'test//', 'test///'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.validate_variable_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not end with a forward slash"
+                   )
+            end
+          end
+        end
+
+        context 'when name has two consecutive forward slashes' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error' do
+            invalid_placeholders_names = [
+              '//test', 'test//test', '//test//test'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.validate_variable_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not contain two consecutive forward slashes"
+                   )
+            end
+          end
+        end
+      end
+    end
+
+    describe '#validate_absolute_names' do
+      context 'when all placeholders are absolute' do
+        it 'does NOT raise an error' do
+          placeholder_names = ['/test', '/test/test', '/smurf']
+          expect{ @helper.validate_absolute_names(placeholder_names) }.to_not raise_error
+        end
+      end
+
+      context 'when any of the placeholders is NOT absolute' do
+        placeholder_names = ['/test', 'test/test', 'smurf']
+
+        it 'raises an error' do
+          expect {
+            @helper.validate_absolute_names(placeholder_names)
+          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Names must be absolute path: 'test/test', 'smurf'")
+        end
+      end
+
+    end
   end
 end
