@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'rack/test'
+require 'httpclient'
 
 describe Bosh::Director::UAAAuthProvider do
   include Support::UaaHelpers
@@ -94,5 +95,69 @@ describe Bosh::Director::UAAAuthProvider do
       }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{decode_error.inspect}")
     end
   end
+
+  context 'should gracefully handle connection errors' do
+    context 'when getting token fails due to a connection error' do
+      let(:client_credentials_grant_error) {Errno::ECONNREFUSED.new('')}
+      before do
+        allow(token_issuer).to receive(:client_credentials_grant).and_raise(client_credentials_grant_error)
+        allow(logger).to receive(:error)
+      end
+
+      it 'raises the exception after trying 3 times' do
+        expect(token_issuer).to receive(:client_credentials_grant).exactly(3).times
+        expect {
+          token_provider.auth_header
+        }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
+      end
+
+    end
+
+    context 'when getting token fails due to a connection error and then recovers on a subsequent retry' do
+      let(:client_credentials_grant_error) {Errno::ECONNREFUSED.new('')}
+      before do
+        count = 0
+        allow(token_issuer).to receive(:client_credentials_grant) do
+          count += 1
+          if count < 3
+            raise client_credentials_grant_error
+          end
+          first_token
+        end
+        allow(logger).to receive(:error)
+      end
+
+
+      it 'does NOT raise an exception' do
+        expect(token_issuer).to receive(:client_credentials_grant).exactly(3).times
+        expect {
+          token_provider.auth_header
+        }.to_not raise_error
+      end
+
+    end
+
+    it 'sets the appropriate exceptions to handle on retryable' do
+      handled_exceptions = [
+          SocketError,
+          Errno::ECONNREFUSED,
+          Errno::ETIMEDOUT,
+          Errno::ECONNRESET,
+          Timeout::Error,
+          HTTPClient::TimeoutError,
+          HTTPClient::KeepAliveDisconnected,
+          OpenSSL::SSL::SSLError
+      ]
+
+      retryable = double("Bosh::Retryable")
+      allow(retryable).to receive(:retryer).and_return(first_token)
+
+      allow(Bosh::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
+
+      allow(logger).to receive(:error)
+      token_provider.auth_header
+    end
+  end
+
 
 end

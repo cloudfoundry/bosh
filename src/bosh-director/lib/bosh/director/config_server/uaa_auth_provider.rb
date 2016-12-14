@@ -1,4 +1,5 @@
 require 'uaa'
+require 'httpclient'
 
 module Bosh::Director
   class UAAAuthProvider
@@ -58,12 +59,32 @@ module Bosh::Director
     def expires_soon?
       expiration = @token_data[:exp] || @token_data['exp']
       (Time.at(expiration).to_i - Time.now.to_i) < EXPIRATION_DEADLINE_IN_SECONDS
-    end 
+    end
+
+    def retryable
+      handled_exceptions = [
+          SocketError,
+          Errno::ECONNREFUSED,
+          Errno::ETIMEDOUT,
+          Errno::ECONNRESET,
+          ::Timeout::Error,
+          ::HTTPClient::TimeoutError,
+          ::HTTPClient::KeepAliveDisconnected,
+          OpenSSL::SSL::SSLError
+      ]
+      Bosh::Retryable.new({sleep: 0, tries: 3, on: handled_exceptions})
+    end
 
     def fetch
-      @uaa_token = @uaa_token_issuer.client_credentials_grant
+      uaa_exception = nil
+      @uaa_token = retryable.retryer do |retries, exception|
+        uaa_exception = exception
+        @uaa_token_issuer.client_credentials_grant
+      end
+
       @token_data = decode
     rescue => e
+      e = uaa_exception.nil? ? e : uaa_exception
       error_message = "Failed to obtain valid token from UAA: #{e.inspect}"
       @logger.error(error_message)
       raise UAAAuthorizationError, error_message
