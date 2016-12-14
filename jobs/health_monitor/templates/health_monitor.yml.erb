@@ -216,15 +216,6 @@ if p('hm.graphite_enabled')
   params['plugins'] << graphite_plugin
 end
 
-if p('hm.syslog_event_forwarder_enabled', false)
-  params['plugins'] << {
-    'name' => 'syslog_event_forwarder',
-    'events' => [
-      'alert',
-    ],
-  }
-end
-
 if p('hm.consul_event_forwarder_enabled')
   consul_event_forwarder_plugin = {
     'name' => 'consul_event_forwarder',

@@ -27,5 +27,3 @@ $ruby_dir/bin/bundle install \
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}
-
-cp $PWD/syslog_event_forwarder/setup_syslog_event_forwarder.sh ${BOSH_INSTALL_TARGET}/bin/setup_syslog_event_forwarder.sh
