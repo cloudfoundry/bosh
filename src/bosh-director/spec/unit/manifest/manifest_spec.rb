@@ -90,6 +90,13 @@ module Bosh::Director
           allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
+        it 'passes deployment name when creating config-server client' do
+          allow(deployment_model).to receive(:manifest).and_return("{'name':'my-name'}")
+          allow(config_server_client).to receive(:interpolate_deployment_manifest).with({'name' => 'my-name'}).and_return({'name' => 'my-name'})
+          expect(client_factory).to receive(:create_client).with('my-name')
+          Manifest.load_from_model(deployment_model)
+        end
+
         it 'calls the manifest resolver with correct values' do
           expect(config_server_client).to receive(:interpolate_deployment_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_model(deployment_model)
