@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'httpclient'
 
 describe Bosh::Director::ConfigServer::HTTPClient do
   class MockSuccessResponse < Net::HTTPSuccess
@@ -32,6 +33,26 @@ describe Bosh::Director::ConfigServer::HTTPClient do
   end
 
   let(:mock_http) { double('Net::HTTP') }
+
+  let(:handled_exceptions) {
+    [
+        SocketError,
+        Errno::ECONNREFUSED,
+        Errno::ETIMEDOUT,
+        Errno::ECONNRESET,
+        Timeout::Error,
+        HTTPClient::TimeoutError,
+        HTTPClient::KeepAliveDisconnected,
+        OpenSSL::SSL::SSLError
+    ]
+  }
+  let(:mock_response) do
+    response = MockSuccessResponse.new
+    response.body = 'some_response'
+    response
+  end
+
+  let(:connection_error) {OpenSSL::SSL::SSLError.new('')}
 
   before do
     expect(mock_http).to receive(:use_ssl=)
@@ -95,23 +116,47 @@ describe Bosh::Director::ConfigServer::HTTPClient do
 
   describe '#get' do
     context 'when successful' do
-      let(:mock_response) do
-        response = MockSuccessResponse.new
-        response.body = 'some_response'
-        response
-      end
-
       it 'makes a GET call to config server @ /v1/data?name={key} and returns response' do
         expect(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_return(mock_response)
         expect(subject.get('smurf_key')).to eq(mock_response)
       end
     end
 
-    context 'when a OpenSSL::SSL::SSLError error is raised' do
-      it 'it throws a Bosh::Director::ConfigServerSSLError error' do
+    context 'when a GET call fails due to a connection error' do
+      it 'it throws a Bosh::Director::ConfigServerSSLError error after trying 3 times' do
         allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(OpenSSL::SSL::SSLError)
+
+        expect(mock_http).to receive(:get).exactly(3).times
         expect{subject.get('smurf_key')}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
       end
+    end
+
+    context 'when a GET call fails due to a connection error and then recovers on a subsequent retry' do
+      before do
+        count = 0
+        allow(mock_http).to receive(:get) do
+          count += 1
+          if count < 3
+            raise connection_error
+          end
+          mock_response
+        end
+      end
+
+      fit 'does NOT raise an exception' do
+        expect(mock_http).to receive(:get).exactly(3).times
+        expect{subject.get('/hi/ya')}.to_not raise_error
+      end
+    end
+
+    it 'sets the appropriate exceptions to handle on retryable' do
+
+      retryable = double("Bosh::Retryable")
+      allow(retryable).to receive(:retryer).and_return(mock_response)
+
+      allow(Bosh::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
+
+      subject.get('smurf_key')
     end
   end
 
@@ -123,23 +168,45 @@ describe Bosh::Director::ConfigServer::HTTPClient do
     end
 
     context 'when successful' do
-      let(:mock_response) do
-        response = MockSuccessResponse.new
-        response.body = 'some_response'
-        response
-      end
-
       it 'makes a POST call to config server @ /v1/data/{key} with body and returns response' do
         expect(mock_http).to receive(:post).with('/v1/data', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_return(mock_response)
         expect(subject.post(request_body)).to eq(mock_response)
       end
     end
 
-    context 'when a OpenSSL::SSL::SSLError error is raised' do
+    context 'when a POST call fails due to a connection error' do
       it 'it throws a Bosh::Director::ConfigServerSSLError error' do
         allow(mock_http).to receive(:post).with('/v1/data', Yajl::Encoder.encode(request_body), {'Authorization' => 'fake-auth-header', 'Content-Type' => 'application/json'}).and_raise(OpenSSL::SSL::SSLError)
+        expect(mock_http).to receive(:post).exactly(3).times
         expect{subject.post(request_body)}.to raise_error(Bosh::Director::ConfigServerSSLError, 'Config Server SSL error')
       end
+    end
+
+    context 'when a POST call fails due to a connection error and then recovers on a subsequent retry' do
+      before do
+        count = 0
+        allow(mock_http).to receive(:post) do
+          count += 1
+          if count < 3
+            raise connection_error
+          end
+          mock_response
+        end
+      end
+
+      it 'does NOT raise an exception' do
+        expect(mock_http).to receive(:post).exactly(3).times
+        expect{subject.post(request_body)}.to_not raise_error
+      end
+    end
+
+    it 'sets the appropriate exceptions to handle on retryable' do
+      retryable = double("Bosh::Retryable")
+      allow(retryable).to receive(:retryer).and_return(mock_response)
+
+      allow(Bosh::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
+
+      subject.post(request_body)
     end
   end
 
