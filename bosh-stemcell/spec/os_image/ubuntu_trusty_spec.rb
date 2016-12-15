@@ -121,6 +121,8 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by base_ubuntu_packages' do
     # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
+    # rsyslog-gnutls, rsyslog-mmjsonparse, rsyslog-relp removed because we have to build rsyslog from source tarball.
+    # These packages should be added back in once we can use apt-get to install rsyslog again
     %w(
       anacron
       apparmor-utils
@@ -160,9 +162,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       quota
       rsync
       rsyslog
-      rsyslog-gnutls
-      rsyslog-mmjsonparse
-      rsyslog-relp
+
       runit
       scsitools
       strace
@@ -174,7 +174,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and ( pkg == 'rsyslog-mmjsonparse' or pkg == 'rsyslog-gnutls' or pkg == 'rsyslog-relp') }.each do |pkg|
+    ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end

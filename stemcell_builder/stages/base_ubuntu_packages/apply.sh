@@ -24,38 +24,28 @@ fi
 
 pkg_mgr install $debs
 
-if ! is_ppc64le; then
-  # we need newer rsyslog; this comes from the upstream project's own repo
-  run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
-  # needed to remove rsyslog-mmjsonparse on ppc64le
-  # because of this issue https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
-  pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
-  pkg_mgr install "rsyslog-mmjsonparse"
-else
-  pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
+function check_sha256 {
+  run_in_chroot $chroot "
+    cd /tmp
+    echo \"${2}  ${1}\" | shasum -a 256 -c -
+  "
+}
 
-  function check_md5 {
-    result=`run_in_chroot ${chroot} "cd /tmp; md5sum ${1}"`
-    if [ "$result" == "$2  $1" ]; then
-      echo "Checksum is correct"
-    else
-      echo "Checksum error for $1"
-      exit 1
-    fi
-  }
+function install_rsyslog_from_source {
+  run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
+
+  pkg_mgr install "libsystemd-journal-dev libestr-dev libfastjson-dev uuid-dev libgnutls-dev liblogging-stdlog-dev"
 
   run_in_chroot $chroot "
     cd /tmp
-    # on ppc64le compile from source as the .deb packages are not available
-    # from the repo above
     wget http://download.rsyslog.com/liblogging/liblogging-1.0.5.tar.gz
-    wget http://www.rsyslog.com/download/files/download/rsyslog/rsyslog-8.15.0.tar.gz
-    wget http://download.rsyslog.com/librelp/librelp-1.2.9.tar.gz
+    wget http://www.rsyslog.com/download/files/download/rsyslog/rsyslog-$1.tar.gz
+    wget http://download.rsyslog.com/librelp/librelp-$3.tar.gz
   "
 
-  check_md5 liblogging-1.0.5.tar.gz 44b8ce2daa1bfb84c9feaf42f9925fd7
-  check_md5 rsyslog-8.15.0.tar.gz 3fab1c48e8d8111d4cc412482e2fe39d
-  check_md5 librelp-1.2.9.tar.gz 6df8123486b6aafde90c64a0a5951892
+  check_sha256 liblogging-1.0.5.tar.gz 310dc1691279b7a669d383581fe4b0babdc7bf75c9b54a24e51e60428624890b
+  check_sha256 rsyslog-$1.tar.gz $2
+  check_sha256 librelp-$3.tar.gz $4
 
   run_in_chroot $chroot "
     cd /tmp
@@ -65,20 +55,34 @@ else
     make && sudo make install
     cd ..
 
-    tar xvfz librelp-1.2.9.tar.gz
-    cd librelp-1.2.9
+    tar xvfz librelp-$3.tar.gz
+    cd librelp-$3
     ./configure --prefix=/usr
     make && sudo make install
     cd ..
 
-    tar xvfz rsyslog-8.15.0.tar.gz
-    cd rsyslog-8.15.0
+    tar xvfz rsyslog-$1.tar.gz
+    cd rsyslog-$1
     ./configure --enable-mmjsonparse --enable-gnutls --enable-relp --prefix=/usr
     make && sudo make install
 
     cd /tmp
     rm -rf liblogging-* librelp-* rsyslog-*
   "
+}
+
+if ! is_ppc64le; then
+  rsyslog_version=8.22.0
+  rsyslog_sha256=06e2884181333dccecceaca82827ae24ca7a258b4fbf7b1e07a80d4caae640ca
+  librelp_version=1.2.12
+  librelp_sha256=0355730524f7b20bed1b85697296b6ce57ac593ddc8dddcdca263da71dee7bd7
+  install_rsyslog_from_source $rsyslog_version $rsyslog_sha256 $librelp_version $librelp_sha256
+else
+  rsyslog_version=8.15.0
+  rsyslog_sha256=9ed6615a8503964290471e98ed363f3975b964a34c2d4610fb815a432aadaf59
+  librelp_version=1.2.9
+  librelp_sha256=520de7ba3dc688dc72c5b014dc61ef191e9528f77d1651ddca55fc0c149d98a3
+  install_rsyslog_from_source $rsyslog_version $rsyslog_sha256 $librelp_version $librelp_sha256
 fi
 
 exclusions="postfix whoopsie apport"
