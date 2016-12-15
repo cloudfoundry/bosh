@@ -33,6 +33,11 @@ describe 'resurrector', type: :integration, hm: true do
     end
 
     it 'resurrects vms with old deployment ignoring cloud config' do
+
+      # This is a potential/temp fix for the flaky test. For some reason the health monitor
+      # was reading a health_monitor.yml file that does not have a ressurector plugin listed.
+      current_sandbox.reconfigure_health_monitor('health_monitor.yml.erb')
+
       deploy_simple_manifest(manifest_hash: legacy_manifest)
       instances = director.instances(deployment_name: 'simple')
       expect(instances.size).to eq(1)
