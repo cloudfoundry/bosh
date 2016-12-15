@@ -42,8 +42,9 @@ describe 'resurrector', type: :integration, hm: true do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       original_instance = director.instance('foobar', '0', deployment_name: 'simple')
-      original_instance.kill_agent
-      resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+      director.kill_vm_and_wait_for_resurrection(original_instance)
+
+      resurrected_instance = director.instance('foobar', '0', deployment_name: 'simple')
       expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
       instances = director.instances(deployment_name: 'simple')
       expect(instances.size).to eq(1)
