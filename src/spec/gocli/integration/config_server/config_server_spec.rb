@@ -901,7 +901,7 @@ describe 'using director with config server', type: :integration do
                 expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
               end
             end
-          end     end
+      end
     end
 
     context 'when links exist' do
@@ -913,9 +913,9 @@ describe 'using director with config server', type: :integration do
         cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
         cloud_config_hash['compilation']['az'] = 'z1'
         cloud_config_hash['networks'] << {
-            'name' => 'dynamic-network',
-            'type' => 'dynamic',
-            'subnets' => [{'az' => 'z1'}]
+          'name' => 'dynamic-network',
+          'type' => 'dynamic',
+          'subnets' => [{'az' => 'z1'}]
         }
 
         cloud_config_hash
@@ -923,12 +923,12 @@ describe 'using director with config server', type: :integration do
       let(:provider_job_name) { 'http_server_with_provides' }
       let(:my_instance_group) do
         job_spec = Bosh::Spec::Deployments.simple_job(
-            name: 'my_instance_group',
-            templates: [
-                {'name' => provider_job_name},
-                {'name' => 'http_proxy_with_requires'},
-            ],
-            instances: 1
+          name: 'my_instance_group',
+          templates: [
+            {'name' => provider_job_name},
+            {'name' => 'http_proxy_with_requires'},
+          ],
+          instances: 1
         )
         job_spec['azs'] = ['z1']
         job_spec['properties'] = {'listen_port' => 9035, 'name_space' => {'fibonacci' => '((fibonacci_placeholder))'}}
@@ -983,25 +983,25 @@ describe 'using director with config server', type: :integration do
       context 'when manual links are involved' do
         let (:job_with_manual_consumes_link) do
           job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'property_job',
-              templates: [{
-                              'name' => 'consumer',
-                              'consumes' => {
-                                  'provider' => {
-                                      'properties' => {'a' => '((a_placeholder))', 'b' => '((b_placeholder))', 'c' => '((c_placeholder))'},
-                                      'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}],
-                                      'networks' => {'network_1' => 2, 'network_2' => 3}
-                                  }
-                              }
-                          }],
-              instances: 1,
-              static_ips: ['192.168.1.10'],
-              properties: {}
+            name: 'property_job',
+            templates: [{
+                          'name' => 'consumer',
+                          'consumes' => {
+                            'provider' => {
+                              'properties' => {'a' => '((a_placeholder))', 'b' => '((b_placeholder))', 'c' => '((c_placeholder))'},
+                              'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}],
+                              'networks' => {'network_1' => 2, 'network_2' => 3}
+                            }
+                          }
+                        }],
+            instances: 1,
+            static_ips: ['192.168.1.10'],
+            properties: {}
           )
           job_spec['azs'] = ['z1']
           job_spec['networks'] << {
-              'name' => 'dynamic-network',
-              'default' => ['dns', 'gateway']
+            'name' => 'dynamic-network',
+            'default' => ['dns', 'gateway']
           }
           job_spec
         end
@@ -1054,26 +1054,26 @@ describe 'using director with config server', type: :integration do
 
         let(:first_deployment_job_spec) do
           job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'first_deployment_node',
-              templates: [
-                  {
-                      'name' => provider_job_name,
-                      'properties' => {
-                          'listen_port' => 15672,
-                          'name_space' => {
-                              'fibonacci' => '((fibonacci_placeholder))'
-                          }
-                      },
-                      'provides' => {
-                          'http_endpoint' => {
-                              'as' => 'vroom',
-                              'shared' => true
-                          }
-                      }
+            name: 'first_deployment_node',
+            templates: [
+              {
+                'name' => provider_job_name,
+                'properties' => {
+                  'listen_port' => 15672,
+                  'name_space' => {
+                    'fibonacci' => '((fibonacci_placeholder))'
                   }
-              ],
-              instances: 1,
-              static_ips: ['192.168.1.10'],
+                },
+                'provides' => {
+                  'http_endpoint' => {
+                    'as' => 'vroom',
+                    'shared' => true
+                  }
+                }
+              }
+            ],
+            instances: 1,
+            static_ips: ['192.168.1.10'],
           )
           job_spec['azs'] = ['z1']
           job_spec
