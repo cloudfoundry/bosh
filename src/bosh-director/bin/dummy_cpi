@@ -61,7 +61,7 @@ begin
   result = dummy.send(command, *arguments)
 rescue => e
   error = {
-    'type' => 'Bosh::Clouds::CpiError',
+    'type' => e.message,
     'message' => "#{e.message}\n#{e.backtrace.join("\n")}",
     'ok_to_retry' => false
   }

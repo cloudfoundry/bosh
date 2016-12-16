@@ -124,7 +124,7 @@ module Bosh::Clouds
 
     def request_json(method_name, arguments, context)
       JSON.dump({
-                    'method' => method_name.gsub(/\?$/,''),
+                    'method' => method_name,
                     'arguments' => arguments,
                     'context' => context
                 })
