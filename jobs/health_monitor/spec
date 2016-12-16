@@ -231,9 +231,8 @@ properties:
     description: Should we treat all heartbeats as alerts as well?
     default: false
 
-  hm.syslog_event_forwarder.custom_rule:
-    description: Custom rule for syslog event forwarder
-    default: ""
+  hm.syslog_event_forwarder_enabled:
+    description: Removed. Please co-locate the syslog-release instead to forward your logs.
 
   env.http_proxy:
     description: HTTP proxy that the health monitor should use

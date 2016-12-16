@@ -216,6 +216,10 @@ if p('hm.graphite_enabled')
   params['plugins'] << graphite_plugin
 end
 
+if_p('hm.syslog_event_forwarder_enabled') do |_|
+  raise 'property hm.syslog_event_forwarder_enabled has been removed. Please co-locate the syslog-release instead to forward your logs.'
+end
+
 if p('hm.consul_event_forwarder_enabled')
   consul_event_forwarder_plugin = {
     'name' => 'consul_event_forwarder',
