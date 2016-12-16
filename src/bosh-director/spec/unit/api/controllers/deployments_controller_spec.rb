@@ -51,6 +51,20 @@ module Bosh::Director
               expect_redirect_to_queued_task(last_response)
             end
 
+            it 'accepts a context ID header' do
+              context_id = 'example-context-id'
+              header('X-Bosh-Context-Id', context_id)
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              task = expect_redirect_to_queued_task(last_response)
+              expect(task.context_id).to eq(context_id)
+            end
+
+            it 'defaults to no context ID' do
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              task = expect_redirect_to_queued_task(last_response)
+              expect(task.context_id).to eq('')
+            end
+
             it 'only consumes text/yaml' do
               post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/plain'}
               expect(last_response.status).to eq(404)
@@ -106,7 +120,7 @@ module Bosh::Director
 
                 allow_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything, anything, cloud_config, runtime_config, anything, anything)
+                  .with(anything, anything, cloud_config, runtime_config, anything, anything, anything)
                   .and_return(Models::Task.make)
 
                 post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -160,7 +174,7 @@ module Bosh::Director
             it 'does not skip draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -171,7 +185,7 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'),  anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -182,7 +196,7 @@ module Bosh::Director
             it 'skips draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -193,7 +207,7 @@ module Bosh::Director
             it 'passes the parameter' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
@@ -204,7 +218,7 @@ module Bosh::Director
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'), anything())
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -215,7 +229,7 @@ module Bosh::Director
             it 'to false' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false), anything())
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
@@ -223,7 +237,7 @@ module Bosh::Director
             it 'to true' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true))
+                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true), anything())
                           .and_return(OpenStruct.new(:id => 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
@@ -238,6 +252,17 @@ module Bosh::Director
 
             delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
+          end
+
+          it 'accepts a context id' do
+            context_id = 'example-context-id'
+            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
+
+            header('X-Bosh-Context-Id', context_id)
+            delete '/test_deployment'
+
+            task = expect_redirect_to_queued_task(last_response)
+            expect(task.context_id).to eq(context_id)
           end
         end
 
@@ -1076,10 +1101,32 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
-                    deployment
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({})
+                end
+
+                it 'sets context id on the RunErrand task' do
+                  context_id = 'example-context-id'
+                  expect(job_queue).to receive(:enqueue).with(
+                    'admin',
+                    Jobs::RunErrand,
+                    'run errand fake-errand-name from deployment fake-dep-name',
+                    ['fake-dep-name', 'fake-errand-name', false],
+                    deployment,
+                    context_id
+                  ).and_return(task)
+
+                  header('X-Bosh-Context-Id', context_id)
+                  post(
+                    '/fake-dep-name/errands/fake-errand-name/runs',
+                    JSON.dump({}),
+                    {
+                      'CONTENT_TYPE' => 'application/json'
+                    }
+                  )
                 end
 
                 it 'enqueues a keep-alive task' do
@@ -1088,7 +1135,8 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
-                    deployment
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({'keep-alive' => true})

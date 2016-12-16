@@ -45,6 +45,14 @@ module Bosh::Director
         expect(Delayed::Job.first[:queue]).to eq('sample')
       end
 
+      it 'enqueues a job with a context id' do
+        expect(Jobs::DBJob).to receive(:new).with(job_class, 1, ['foo', 'bar']).and_return(Jobs::DBJob.new(job_class, 1,  ['foo', 'bar']))
+        expect(Delayed::Job.count).to eq(0)
+        context_id = 'example-context-id'
+        retval = subject.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment, context_id)
+        expect(retval.context_id).to eq(context_id)
+      end
+
       it 'should clean up old tasks of the given type' do
         expect(task_remover).to receive(:remove).with(job_class.job_type)
 

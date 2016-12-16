@@ -111,6 +111,7 @@ module Bosh::Director
   InstanceTargetStateUndefined = err(70007)
   SnapshotNotFound = err(70008)
   JobNotFound = err(70009, NOT_FOUND)
+  ContextIdViolatedMax = err(70010)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)

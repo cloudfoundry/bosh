@@ -257,7 +257,7 @@ module Bosh::Director
         options = {}
         options['force'] = true if params['force'] == 'true'
         options['keep_snapshots'] = true if params['keep_snapshots'] == 'true'
-        task = @deployment_manager.delete_deployment(current_user, deployment, options)
+        task = @deployment_manager.delete_deployment(current_user, deployment, options, @current_context_id)
         redirect "/tasks/#{task.id}"
       end
 
@@ -371,7 +371,7 @@ module Bosh::Director
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options, @current_context_id)
 
         redirect "/tasks/#{task.id}"
       end
@@ -423,7 +423,8 @@ module Bosh::Director
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
           [deployment.name, errand_name, keep_alive],
-          deployment
+          deployment,
+          @current_context_id
         )
 
         redirect "/tasks/#{task.id}"
