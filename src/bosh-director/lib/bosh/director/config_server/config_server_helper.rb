@@ -54,7 +54,7 @@ module Bosh::Director::ConfigServer
 
     def validate_syntax(name, validation_for)
       # Allowing exclamation mark for spiff
-      unless /^[a-zA-Z0-9_\-!\/]+$/ =~ name
+      unless /^[a-zA-Z0-9_\-\.!\/]+$/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
               "#{validation_for} name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end

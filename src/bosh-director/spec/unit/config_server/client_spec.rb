@@ -28,7 +28,9 @@ module Bosh::Director::ConfigServer
       let(:instance_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'}]} }
       let(:job_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'}]} }
       let(:env_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'}]} }
-      let(:cert_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '5'}]} }
+      let(:ca_value) { 'ca_value' }
+      let(:cert_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => ca_value, 'private_key'=> 'abc123'}, 'id' => '5'}]} }
+      let(:nested_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/nested_placeholder", 'value' => {'x' => {'y' => {'z' => 'gold'}}}}]} }
       let(:mock_config_store) do
         {
           prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
@@ -36,6 +38,7 @@ module Bosh::Director::ConfigServer
           prepend_namespace('job_placeholder') => generate_success_response(job_placeholder.to_json),
           prepend_namespace('env_placeholder') => generate_success_response(env_placeholder.to_json),
           prepend_namespace('cert_placeholder') => generate_success_response(cert_placeholder.to_json),
+          prepend_namespace('nested_placeholder') => generate_success_response(nested_placeholder.to_json),
         }
       end
 
@@ -86,7 +89,7 @@ module Bosh::Director::ConfigServer
           'properties' => {
             'name' => 123
           },
-          'instance_groups' =>           {
+          'instance_groups' => {
             'name' => 'bla',
             'jobs' => [
               {
@@ -105,6 +108,40 @@ module Bosh::Director::ConfigServer
         }
 
         expect(subject).to eq(expected_result)
+      end
+
+      context 'for placeholders with dot syntax' do
+        let(:manifest_hash)  do
+          {
+              'cert_ca' => '((cert_placeholder.ca))',
+              'nest' => '((nested_placeholder.x.y.z))'
+          }
+        end
+
+        it 'should only use the first piece of the placeholder name when making requests to the config_server' do
+          expect(http_client).to receive(:get).with(prepend_namespace('cert_placeholder'))
+          subject
+        end
+
+        it 'should return the sub-property' do
+          expected_result = {
+              'cert_ca' => 'ca_value',
+              'nest' => 'gold'
+          }
+          expect(subject).to eq(expected_result)
+        end
+
+        context 'when all parts of dot syntax are not found' do
+          let(:manifest_hash) do
+            { 'bad_nest' => '((nested_placeholder.x.w.z))' }
+          end
+
+          it 'should raise a missing name error message' do
+            expect{
+              subject
+            }.to raise_error(Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder names from the config server: #{prepend_namespace('nested_placeholder.x.w.z')}")
+          end
+        end
       end
 
       it 'should raise a missing name error message when name is not found in the config_server' do
@@ -339,7 +376,7 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when property value is NOT nil' do
-        context 'when property value is NOT a placeholder (padded with brackets)' do
+        context 'when property value is NOT a placeholder (NOT padded with brackets)' do
           it 'returns that property value' do
             expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
             expect(client.prepare_and_get_property('((my_smurf', 'my_default_value', nil, deployment_name)).to eq('((my_smurf')
@@ -471,6 +508,18 @@ module Bosh::Director::ConfigServer
                     it 'generates a certificate and returns the user provided placeholder' do
                       expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)).to eq(the_placeholder)
+                    end
+
+                    it 'generates a certificate and returns the user provided placeholder even with dots' do
+                      dotted_placeholder = '((my_smurf.ca))'
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
+                      expect(client.prepare_and_get_property(dotted_placeholder, default_value, type, deployment_name, options)).to eq(dotted_placeholder)
+                    end
+
+                    it 'generates a certificate and returns the user provided placeholder even if nested' do
+                      dotted_placeholder = '((my_smurf.ca.fingerprint))'
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
+                      expect(client.prepare_and_get_property(dotted_placeholder, default_value, type, deployment_name, options)).to eq(dotted_placeholder)
                     end
 
                     it 'throws an error if generation of certficate errors' do

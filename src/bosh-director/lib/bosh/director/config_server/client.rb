@@ -92,6 +92,7 @@ module Bosh::Director::ConfigServer
             @director_name,
             deployment_name
           )
+          extracted_name = extracted_name.split('.').first
 
           if name_exists?(extracted_name)
             result = provided_prop
@@ -134,11 +135,18 @@ module Bosh::Director::ConfigServer
     private
 
     def get_value_for_name(name)
-      response = @config_server_http_client.get(name)
+      name_tokens = name.split('.')
+      name_root = name_tokens.shift
+      response = @config_server_http_client.get(name_root)
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        return response_body['data'][0]['value']
+        result = response_body['data'][0]['value']
+        name_tokens.each do |value|
+          raise Bosh::Director::ConfigServerMissingNames, "Failed to find '#{name_tokens.join('.')}' in placeholder '#{name_root}'" if result[value].nil?
+          result = result[value]
+        end
+        return result
       elsif response.kind_of? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
       else

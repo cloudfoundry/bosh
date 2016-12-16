@@ -84,6 +84,72 @@ describe 'using director with config server', type: :integration do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
       end
 
+      context 'with dot syntax' do
+        let(:cloud_config_hash) do
+          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_hash.delete('resource_pools')
+          cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+          cloud_config_hash
+        end
+
+        let(:manifest_hash) do
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest
+          manifest_hash.delete('resource_pools')
+          manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+          manifest_hash['jobs'] = [{
+              'name' => 'foobar',
+              'templates' => ['name' => 'job_1_with_many_properties'],
+              'vm_type' => 'vm-type-name',
+              'stemcell' => 'default',
+              'instances' => 1,
+              'networks' => [{ 'name' => 'a' }],
+              'properties' => {},
+          }]
+          manifest_hash
+        end
+
+        it 'replaces the placeholders in the manifest' do
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
+
+          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
+
+          instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are angry')
+        end
+
+        it 'replaces nested placeholders in the manifest' do
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+
+          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.color.value))'}}
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
+
+          instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
+        end
+
+        it 'errors if all parts of nested placeholder is not found' do
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+
+          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
+
+          output, exit_code =  deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config_hash,
+              failure_expected: true,
+              return_exit_code: true,
+              include_credentials: false,
+              env: client_env
+          )
+
+          expect(exit_code).to_not eq(0)
+          expect(output).to include('Failed to load placeholder names from the config server: /TestDirector/simple/my_placeholder.cat.dog.color.value')
+        end
+      end
+
       context 'when manifest is downloaded through CLI' do
         before do
           job_properties['smurfs']['color'] = '((!smurfs_color_placeholder))'
@@ -529,6 +595,43 @@ describe 'using director with config server', type: :integration do
           expect {
             upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
           }.to raise_error(RuntimeError, /Names must be absolute path: 'addon_release_version_placeholder'/)
+        end
+      end
+
+      context 'when placeholders use dot syntax' do
+        let(:runtime_config) do
+          {
+              'releases' => [{'name' => 'bosh-release', 'version' => '((/placeholder1.version))'}],
+              'addons' => [
+                  {
+                      'name' => 'addon1',
+                      'jobs' => [
+                          {
+                              'name' => 'job_2_with_many_properties',
+                              'release' => 'bosh-release',
+                              'properties' => {'gargamel' => {'color' => '((placeholder2.deeply.nested.color))'}}
+                          }
+                      ]
+                  }]
+          }
+        end
+
+        before do
+          create_and_upload_test_release(include_credentials: false,  env: client_env)
+
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
+          config_server_helper.put_value('/placeholder1', { 'version' => '0.1-dev' })
+          config_server_helper.put_value(prepend_namespace('placeholder2'), {'deeply' => {'nested' => {'color' => 'gold'}}})
+
+          expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+        end
+
+        it 'replaces placeholders in the manifest' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('gold')
         end
       end
     end
