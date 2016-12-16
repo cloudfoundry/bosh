@@ -50,6 +50,22 @@ module Bosh::Director
           events = events.where(instance: params['instance'])
         end
 
+        if params['user']
+          events = events.where(user: params['user'])
+        end
+
+        if params['action']
+          events = events.where(action: params['action'])
+        end
+
+        if params['object_type']
+          events = events.where(object_type: params['object_type'])
+        end
+
+        if params['object_id']
+          events = events.where(object_name: params['object_id'])
+        end
+
         events = events.limit(EVENT_LIMIT).map do |event|
           @event_manager.event_to_hash(event)
         end

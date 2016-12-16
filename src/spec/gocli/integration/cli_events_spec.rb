@@ -64,7 +64,7 @@ describe 'cli: events', type: :integration do
     )
 
     instance_name = parse_first_instance_name(output)
-    output = bosh_runner.run("events --task 6 --instance #{instance_name}", deployment_name: 'simple', json: true)
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action delete", deployment_name: 'simple', json: true)
     data = table(output)
     columns = ['Action', 'Object Type', 'Deployment', 'Instance', 'Task ID']
     expect(get_details(data, columns)).to contain_exactly(
