@@ -135,12 +135,12 @@ module Bosh::Spec
     def generate_command(cmd, options)
       no_color = options.fetch(:no_color, false)
       log_in = options.fetch(:include_credentials, true)
-      user = options[:user] || 'test'
-      password = options[:password] || 'test'
+      client = options[:client] || 'test'
+      client_secret = options[:client_secret] || 'test'
       config = options.fetch(:config, @bosh_config)
       cli_options = ''
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
-      cli_options += " --user=#{user} --password=#{password}" if log_in
+      cli_options += " --client=#{client} --client-secret=#{client_secret}" if log_in
       cli_options += options.fetch(:interactive, false) ? '' : ' -n'
       cli_options += " --no-color" if no_color
       cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"

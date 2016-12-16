@@ -14,7 +14,7 @@ describe 'cli runtime config', type: :integration do
     # not logged in
     expect(bosh_runner.run("update-runtime-config #{__FILE__}", failure_expected: true)).to include('Please log in first')
 
-    bosh_runner.run('log-in', user: 'test', password: 'test')
+    bosh_runner.run('log-in', client: 'test', client_secret: 'test')
 
     # no file
     expect(bosh_runner.run('update-runtime-config /some/nonsense/file', failure_expected: true)).to include("Cannot find file '/some/nonsense/file'")

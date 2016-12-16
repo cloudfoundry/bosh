@@ -18,10 +18,10 @@ describe 'cli: alias-env', type: :integration do
 
   it 'keeps track of user associated with target' do
     bosh_runner.run('alias-env foo', environment_name: current_sandbox.director_url)
-    bosh_runner.run('log-in', environment_name: 'foo', user: 'test', password: 'test')
+    bosh_runner.run('log-in', environment_name: 'foo', client: 'test', client_secret: 'test')
 
     bosh_runner.run('alias-env bar', environment_name: "https://0.0.0.0:#{current_sandbox.director_port}")
-    bosh_runner.run('log-in', environment_name: 'bar', user: 'hm', password: 'pass')
+    bosh_runner.run('log-in', environment_name: 'bar', client: 'hm', client_secret: 'pass')
 
     expect(bosh_runner.run('environment', environment_name: 'bar', include_credentials: false)).to match(/user\s+hm/i)
     expect(bosh_runner.run('environment', environment_name: 'foo', include_credentials: false)).to match(/user\s+test/i)

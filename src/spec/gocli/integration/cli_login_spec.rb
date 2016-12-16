@@ -22,7 +22,7 @@ describe 'cli: login using the directors built-in user DB', type: :integration d
     end
 
     it 'cannot log in if password is invalid' do
-      expect { bosh_runner.run('log-in', user: 'test', password: 'admin') }
+      expect { bosh_runner.run('log-in', client: 'test', client_secret: 'admin') }
         .to raise_error(RuntimeError, /Invalid credentials/)
     end
   end
