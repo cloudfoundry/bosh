@@ -485,7 +485,14 @@ module Bosh
       end
 
       def record_inputs(method, args)
-        @inputs_recorder.record(method, args)
+        @inputs_recorder.record(method, redact_arguments(method, args))
+      end
+
+      def redact_arguments(method_name, arguments)
+        if method_name == :create_vm
+          arguments[:env] = '<redacted>'
+        end
+        arguments
       end
 
       def parameter_names_to_values(the_method, *the_method_args)
