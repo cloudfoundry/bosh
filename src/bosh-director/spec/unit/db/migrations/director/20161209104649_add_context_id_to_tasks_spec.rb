@@ -28,16 +28,6 @@ module Bosh::Director
 
         expect(db[:tasks].first[:context_id]).to eq(validContextId)
       end
-
-      it 'does not allow more than 64 chars in length' do
-        invalidContextId = "x" * 65
-
-        DBSpecHelper.migrate(migration_file)
-        expect {
-          db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-12-09 11:53:42', description: 'descr', type: 'type', context_id: invalidContextId}
-        } .to raise_error Sequel::DatabaseError
-
-      end
     end
   end
 end
