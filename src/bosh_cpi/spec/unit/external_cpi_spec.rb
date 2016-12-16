@@ -300,7 +300,7 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#has_vm?' do
-    it_calls_cpi_method(:has_vm?, :has_vm, 'fake-vm-cid')
+    it_calls_cpi_method(:has_vm?, :has_vm?, 'fake-vm-cid')
   end
 
   describe '#reboot_vm' do
@@ -316,7 +316,7 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#has_disk?' do
-    it_calls_cpi_method(:has_disk?, :has_disk, 'fake-disk-cid')
+    it_calls_cpi_method(:has_disk?, :has_disk?, 'fake-disk-cid')
   end
 
   describe '#delete_disk' do
