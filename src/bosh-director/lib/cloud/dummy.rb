@@ -610,7 +610,7 @@ module Bosh
         def record(method, args)
           FileUtils.mkdir_p(@cpi_inputs_dir)
           data = {method_name: method, inputs: args}
-          @logger.info("Saving input for #{method} #{data} #{ordered_file_path}")
+          @logger.info("Saving input for #{method} <redacted> #{ordered_file_path}")
           File.open(ordered_file_path, 'a') { |f| f.puts(JSON.dump(data)) }
         end
 
