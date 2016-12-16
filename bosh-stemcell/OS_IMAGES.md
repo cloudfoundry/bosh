@@ -6,6 +6,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 ## Ubuntu 14.04
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
+* `AG3ejD_a_GQCBzjv_TMmXpG_A6mgLL_c`
+  - bumped for rsyslog memory leak issue
+  - built from 3312.x (85925be9eba1334f69100c9a724a469fdea17a4c)
+
 * `5bAY7EvrOh.u1QKmL4I2SAcZJX0ou1ff`
   - bumped for https://www.ubuntu.com/usn/usn-3156-1/
   - built from 3312.x (05d58803d75b844288196c8d7126f9e09f9a6a69)
