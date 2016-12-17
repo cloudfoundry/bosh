@@ -90,12 +90,12 @@ director_uuid: $(bosh status --uuid)
 
 releases:
 - name: syslog
-  version: $(cat syslog-release/version)
+  version: "$(cat syslog-release/version)"
 
 stemcells:
 - alias: default
   os: ubuntu-trusty
-  version: $(cat stemcell/version)
+  version: "$(cat stemcell/version)"
 
 update:
   canaries: 1
