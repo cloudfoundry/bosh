@@ -46,7 +46,6 @@ PATH
       bosh-registry (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
-      bosh_cpi (~> 0.0.0)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -87,7 +86,7 @@ PATH
   specs:
     bosh-registry (0.0.0)
       aws-sdk
-      bosh_cpi (~> 0.0.0)
+      bosh_cpi
       fog-openstack
       sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
@@ -133,14 +132,6 @@ PATH
       logging (~> 1.8.2)
       semi_semantic (~> 1.2.0)
 
-PATH
-  remote: bosh_cpi
-  specs:
-    bosh_cpi (0.0.0)
-      bosh_common (~> 0.0.0)
-      logging (~> 1.8.2)
-      membrane (~> 1.1.0)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -165,6 +156,9 @@ GEM
     beefcake (1.0.0)
     blue-shell (0.3.0)
       rspec
+    bosh_cpi (1.3215.3.1)
+      logging (~> 1.8.2)
+      membrane (~> 1.1.0)
     builder (3.1.4)
     cf-uaa-lib (3.2.5)
       multi_json
@@ -357,7 +351,6 @@ DEPENDENCIES
   bosh-template!
   bosh_cli!
   bosh_common!
-  bosh_cpi!
   bundler (~> 1.11.0)
   codeclimate-test-reporter
   eventmachine (= 1.0.4)

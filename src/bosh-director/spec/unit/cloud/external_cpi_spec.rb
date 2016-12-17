@@ -6,7 +6,7 @@ describe Bosh::Clouds::ExternalCpi do
 
   subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
 
-  def self.it_calls_cpi_method(method, cpi_method, *arguments)
+  def self.it_calls_cpi_method(method, *arguments)
     define_method(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
@@ -29,7 +29,7 @@ describe Bosh::Clouds::ExternalCpi do
 
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"fake-request-id"}})
+      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"fake-request-id"}})
 
       expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
       call_cpi_method
@@ -53,7 +53,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
         context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
-        expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -73,12 +73,12 @@ describe Bosh::Clouds::ExternalCpi do
         }
 
         expected_arguments = arguments.clone
-        if cpi_method == :create_vm
+        if method == :create_vm
           expected_arguments[5] = '<redacted>' # redact env parameter
         end
 
-        expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %(External CPI sending request: {"method":"#{cpi_method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_log = %(External CPI sending request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -272,20 +272,19 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#current_vm_id' do
-    it_calls_cpi_method(:current_vm_id, :current_vm_id)
+    it_calls_cpi_method(:current_vm_id)
   end
 
   describe '#create_stemcell' do
-    it_calls_cpi_method(:create_stemcell, :create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
+    it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
   end
 
   describe '#delete_stemcell' do
-    it_calls_cpi_method(:delete_stemcell, :delete_stemcell, 'fake-stemcell-cid')
+    it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
   end
 
   describe '#create_vm' do
     it_calls_cpi_method(:create_vm,
-      :create_vm,
       'fake-agent-id',
       'fake-stemcell-cid',
       {'cloud' => 'props'},
@@ -296,54 +295,54 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#delete_vm' do
-    it_calls_cpi_method(:delete_vm, :delete_vm, 'fake-vm-cid')
+    it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
   end
 
   describe '#has_vm?' do
-    it_calls_cpi_method(:has_vm?, :has_vm?, 'fake-vm-cid')
+    it_calls_cpi_method(:has_vm?, 'fake-vm-cid')
   end
 
   describe '#reboot_vm' do
-    it_calls_cpi_method(:reboot_vm, :reboot_vm, 'fake-vm-cid')
+    it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
   end
 
   describe '#set_vm_metadata' do
-    it_calls_cpi_method(:set_vm_metadata, :set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
+    it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
   end
 
   describe '#create_disk' do
-    it_calls_cpi_method(:create_disk, :create_disk, 100_000, 'fake-vm-cid')
+    it_calls_cpi_method(:create_disk, 100_000, 'fake-vm-cid')
   end
 
   describe '#has_disk?' do
-    it_calls_cpi_method(:has_disk?, :has_disk?, 'fake-disk-cid')
+    it_calls_cpi_method(:has_disk?, 'fake-disk-cid')
   end
 
   describe '#delete_disk' do
-    it_calls_cpi_method(:delete_disk, :delete_disk, 'fake-disk-cid')
+    it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
   end
 
   describe '#attach_disk' do
-    it_calls_cpi_method(:attach_disk, :attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
   end
 
   describe '#detach_disk' do
-    it_calls_cpi_method(:detach_disk, :detach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
   end
 
   describe '#snapshot_disk' do
-    it_calls_cpi_method(:snapshot_disk, :snapshot_disk, 'fake-disk-cid')
+    it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
   end
 
   describe '#delete_snapshot' do
-    it_calls_cpi_method(:delete_snapshot, :delete_snapshot, 'fake-snapshot-cid')
+    it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
   end
 
   describe '#get_disks' do
-    it_calls_cpi_method(:get_disks, :get_disks, 'fake-vm-cid')
+    it_calls_cpi_method(:get_disks, 'fake-vm-cid')
   end
 
   describe '#ping' do
-    it_calls_cpi_method(:ping, :ping)
+    it_calls_cpi_method(:ping)
   end
 end

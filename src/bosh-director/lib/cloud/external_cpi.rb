@@ -13,18 +13,18 @@ module Bosh::Clouds
     class NonExecutable < StandardError; end
 
     KNOWN_RPC_ERRORS = %w(
-      Bosh::Clouds::CpiError
-      Bosh::Clouds::NotSupported
-      Bosh::Clouds::NotImplemented
+    Bosh::Clouds::CpiError
+    Bosh::Clouds::NotSupported
+    Bosh::Clouds::NotImplemented
 
-      Bosh::Clouds::CloudError
-      Bosh::Clouds::VMNotFound
+    Bosh::Clouds::CloudError
+    Bosh::Clouds::VMNotFound
 
-      Bosh::Clouds::NoDiskSpace
-      Bosh::Clouds::DiskNotAttached
-      Bosh::Clouds::DiskNotFound
-      Bosh::Clouds::VMCreationFailed
-    ).freeze
+    Bosh::Clouds::NoDiskSpace
+    Bosh::Clouds::DiskNotAttached
+    Bosh::Clouds::DiskNotFound
+    Bosh::Clouds::VMCreationFailed
+  ).freeze
 
     RESPONSE_SCHEMA = Membrane::SchemaParser.parse do
       {
@@ -68,8 +68,8 @@ module Bosh::Clouds
 
     def invoke_cpi_method(method_name, *arguments)
       context = {
-          'director_uuid' => @director_uuid,
-          'request_id' => "#{Random.rand(100000..999999)}"
+        'director_uuid' => @director_uuid,
+        'request_id' => "#{Random.rand(100000..999999)}"
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
@@ -124,10 +124,10 @@ module Bosh::Clouds
 
     def request_json(method_name, arguments, context)
       JSON.dump({
-                    'method' => method_name,
-                    'arguments' => arguments,
-                    'context' => context
-                })
+        'method' => method_name,
+        'arguments' => arguments,
+        'context' => context
+      })
     end
 
     def handle_error(error_response, method_name)
