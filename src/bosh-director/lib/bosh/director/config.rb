@@ -375,6 +375,11 @@ module Bosh::Director
       end
     end
 
+    def config_server_urls
+      cfg_server_url = Config.config_server['url']
+      cfg_server_url ? [cfg_server_url] : []
+    end
+
     def worker_logger
       logger = Logging::Logger.new('DirectorWorker')
       logging_config = hash.fetch('logging', {})

@@ -189,6 +189,14 @@ describe Bosh::Director::Config do
           expect(described_class.config_server['uaa']['ca_cert_path']).to eq('fake-uaa-ca-cert-path')
         end
 
+        context 'config server urls' do
+          it 'should return an array of urls' do
+            described_class.configure(test_config)
+            config = Bosh::Director::Config.new(test_config)
+            expect(config.config_server_urls).to eq(['https://127.0.0.1:8080'])
+          end
+        end
+
         context 'when url is not https' do
           before {
             test_config["config_server"]["url"] = "http://127.0.0.1:8080"

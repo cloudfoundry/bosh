@@ -26,9 +26,16 @@ module Bosh::Director
             },
             'snapshots' => {
               'status' => Config.enable_snapshots
+            },
+            'config_server' => {
+              'status' => Config.config_server_enabled,
+              'extras' => {
+                'urls' => @config.config_server_urls
+              }
             }
           }
         }
+
         content_type(:json)
         json_encode(status)
       end
