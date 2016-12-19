@@ -171,12 +171,6 @@ namespace :spec do
       end
     end
 
-    desc "Run unit tests for the cpi component"
-    task :cpi do
-      trap('INT') { exit }
-      unit_exec('bosh_cpi')
-    end
-
     task(:agent) do
       # Do not use exec because this task is part of other tasks
       sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')

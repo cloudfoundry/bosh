@@ -9,7 +9,6 @@ dependencies:
 files:
 - bosh-director/**/*
 - bosh_common/**/*
-- bosh_cpi/**/*
 - bosh-registry/**/*
 - blobstore_client/**/*
 - bosh-core/**/*
