@@ -21,7 +21,8 @@ module Bosh::Director
           'source' => 'director',
           'title' => 'director - begin update deployment',
           'summary' => "Begin update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
-          'created_at' => Time.now.to_i
+          'created_at' => Time.now.to_i,
+          'deployment' => "#{@name}"
         }
 
         @logger.info('sending update deployment start event')
@@ -35,7 +36,8 @@ module Bosh::Director
           'source' => 'director',
           'title' => 'director - finish update deployment',
           'summary' => "Finish update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
-          'created_at' => Time.now.to_i
+          'created_at' => Time.now.to_i,
+          'deployment' => "#{@name}"
         }
 
         @logger.info('sending update deployment end event')
@@ -49,7 +51,8 @@ module Bosh::Director
           'source' => 'director',
           'title' => 'director - error during update deployment',
           'summary' => "Error during update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}': #{exception.inspect}",
-          'created_at' => Time.now.to_i
+          'created_at' => Time.now.to_i,
+          'deployment' => "#{@name}"
         }
 
         @logger.info('sending update deployment error event')

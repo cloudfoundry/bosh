@@ -239,6 +239,9 @@ module Bosh::Monitor
     def on_alert(agent, message)
       if message.is_a?(Hash) && !message.has_key?("source")
         message["source"] = agent.name
+        message["deployment"] = agent.deployment
+        message["job"] = agent.job
+        message["instance_id"] = agent.instance_id
       end
 
       @processor.process(:alert, message)

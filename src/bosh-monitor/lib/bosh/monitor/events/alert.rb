@@ -17,11 +17,14 @@ module Bosh::Monitor
         super
         @kind = :alert
 
-        @id         = @attributes["id"]
-        @severity   = @attributes["severity"]
-        @title      = @attributes["title"]
-        @summary    = @attributes["summary"] || @title
-        @source     = @attributes["source"]
+        @id          = @attributes["id"]
+        @severity    = @attributes["severity"]
+        @title       = @attributes["title"]
+        @summary     = @attributes["summary"] || @title
+        @source      = @attributes["source"]
+        @deployment  = @attributes["deployment"] || nil
+        @job         = @attributes["job"] || nil
+        @instance_id = @attributes["instance_id"] || nil
 
         # This rescue is just to preserve existing test behavior. However, this
         # seems like a pretty wacky way to handle errors - wouldn't we rather

@@ -52,17 +52,15 @@ describe 'Bhm::Plugins::Resurrector' do
       it 'should be delivered' do
         plugin.run
         request_url = "#{uri}/events"
-        Timecop.freeze(time) do
-          request_data = {
-            head: {
-              'Content-Type'  => 'application/json',
-              'authorization' => %w[user password]
-            },
-            body: "{\"timestamp\":\"#{time.to_i}\",\"action\":\"create\",\"object_type\":\"alert\",\"object_name\":\"foo\",\"deployment\":\"d\",\"instance\":\"j/i\",\"context\":{\"message\":\"Alert @ #{time.utc}, severity 2: Alert\"}}"
-          }
-          expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
-          plugin.process(alert)
-        end
+        request_data = {
+          head: {
+            'Content-Type' => 'application/json',
+            'authorization' => %w[user password]
+          },
+          body: "{\"timestamp\":\"#{time.to_i}\",\"action\":\"create\",\"object_type\":\"alert\",\"object_name\":\"foo\",\"deployment\":\"d\",\"instance\":\"j/i\",\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}"
+        }
+        expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
+        plugin.process(alert)
       end
 
       context 'when auth provider is using UAA token issuer' do
@@ -91,17 +89,15 @@ describe 'Bhm::Plugins::Resurrector' do
         it 'uses UAA token' do
           plugin.run
           request_url = "#{uri}/events"
-          Timecop.freeze(time) do
-            request_data = {
-              head: {
-                'Content-Type'  => 'application/json',
-                'authorization' => token.auth_header
-              },
-              body: "{\"timestamp\":\"#{time.to_i}\",\"action\":\"create\",\"object_type\":\"alert\",\"object_name\":\"foo\",\"deployment\":\"d\",\"instance\":\"j/i\",\"context\":{\"message\":\"Alert @ #{time.utc}, severity 2: Alert\"}}"
-            }
-            expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
-            plugin.process(alert)
-          end
+          request_data = {
+            head: {
+              'Content-Type' => 'application/json',
+              'authorization' => token.auth_header
+            },
+            body: "{\"timestamp\":\"#{time.to_i}\",\"action\":\"create\",\"object_type\":\"alert\",\"object_name\":\"foo\",\"deployment\":\"d\",\"instance\":\"j/i\",\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}"
+          }
+          expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
+          plugin.process(alert)
         end
       end
     end

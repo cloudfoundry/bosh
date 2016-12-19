@@ -24,17 +24,17 @@ module Bosh::Monitor
         
         logger.info("Event logger is running...")
       end
-      
+
       def process(alert)
         deployment  = alert.attributes['deployment']
         job         = alert.attributes['job']
         id          = alert.attributes['instance_id']
         instance    = job.nil? || id.nil? ? nil : "#{job}/#{id}"
-        timestamp   = Time.new
+        timestamp   = alert.attributes['created_at'] || Time.new
         action      = 'create'
         object_type = 'alert'
         object_name = alert.id
-        context     = {message: alert.to_s}
+        context     = {message: "#{alert.title}. #{alert.to_s}"}
         
         payload =
           {
