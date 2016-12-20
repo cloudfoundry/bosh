@@ -109,16 +109,23 @@ module Bosh::Clouds
 
     def redact_arguments(method_name, arguments)
       if method_name == 'create_vm'
-        redact_env_from_create_vm_arguments(arguments)
+        redact_from_env_in_create_vm_arguments(arguments)
       else
         arguments
       end
     end
 
-    def redact_env_from_create_vm_arguments(arguments)
+    def redact_from_env_in_create_vm_arguments(arguments)
       redacted_arguments = arguments.clone
-      redacted_arguments[5] = '<redacted>'
+      env = redacted_arguments[5]
+      env = redactAllBut(['bosh'], env)
+      env['bosh'] = redactAllBut(['group', 'groups'], env['bosh'])
+      redacted_arguments[5] = env
       redacted_arguments
+    end
+
+    def redactAllBut(keys, hash)
+      Hash[hash.map { |k,v| [k, keys.include?(k) ? v.dup : '<redacted>'] }]
     end
 
     def request_json(method_name, arguments, context)

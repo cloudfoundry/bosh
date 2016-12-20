@@ -71,7 +71,14 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_arguments = arguments.clone
         if method == :create_vm
-          expected_arguments[5] = '<redacted>' # redact env parameter
+          expected_arguments[5] = {
+            'bosh' => {
+              'group' => 'my-group',
+              'groups' => ['my-first-group'],
+              'password' => '<redacted>'
+            },
+            'other' => '<redacted>'
+          }
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
@@ -287,7 +294,14 @@ describe Bosh::Clouds::ExternalCpi do
       {'cloud' => 'props'},
       {'net' => 'props'},
       ['fake-disk-cid'],
-      {'env' => 'props'}
+      {
+        'bosh' => {
+          'group' => 'my-group',
+          'groups' => ['my-first-group'],
+          'password' => 'my-secret-password'
+        },
+        'other' => 'value'
+      }
     )
   end
 
