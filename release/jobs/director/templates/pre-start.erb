@@ -1,10 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash
 
-RUN_DIR=/var/vcap/sys/run/director
-LOG_DIR=/var/vcap/sys/log/director
+set -e
+
 STORE_DIR=/var/vcap/store/director
-TMPDIR=/var/vcap/data/tmp/director
-RUNAS=vcap
 
-mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR
-chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR
+mkdir -p $STORE_DIR
+chown -R vcap:vcap $STORE_DIR
