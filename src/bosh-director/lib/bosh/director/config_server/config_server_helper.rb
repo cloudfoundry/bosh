@@ -68,6 +68,11 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
               "#{validation_for} name '#{name}' must not contain two consecutive forward slashes"
       end
+
+      if /\.\./ =~ name
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "#{validation_for} name '#{name}' must not contain two consecutive dots"
+      end
     end
 
     def validate_bang_character(name)

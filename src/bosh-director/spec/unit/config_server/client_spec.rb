@@ -24,13 +24,13 @@ module Bosh::Director::ConfigServer
         }
       end
       let(:ignored_subtrees) {[]}
-      let(:integer_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/integer_placeholder", 'value' => 123, 'id' => '1'}]} }
-      let(:instance_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/instance_placeholder", 'value' => 'test1', 'id' => '2'}]} }
-      let(:job_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/job_placeholder", 'value' => 'test2', 'id' => '3'}]} }
-      let(:env_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/env_placeholder", 'value' => 'test3', 'id' => '4'}]} }
+      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
+      let(:instance_placeholder) { {'data' => [{'name' => "#{prepend_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '2'}]} }
+      let(:job_placeholder) { {'data' => [{'name' => "#{prepend_namespace('job_placeholder')}", 'value' => 'test2', 'id' => '3'}]} }
+      let(:env_placeholder) { {'data' => [{'name' => "#{prepend_namespace('env_placeholder')}", 'value' => 'test3', 'id' => '4'}]} }
       let(:ca_value) { 'ca_value' }
-      let(:cert_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/cert_placeholder", 'value' => {'ca' => ca_value, 'private_key'=> 'abc123'}, 'id' => '5'}]} }
-      let(:nested_placeholder) { {'data' => [{'name' => "/#{director_name}/#{deployment_name}/nested_placeholder", 'value' => {'x' => {'y' => {'z' => 'gold'}}}}]} }
+      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_namespace('cert_placeholder')}", 'value' => {'ca' => ca_value, 'private_key'=> 'abc123'}, 'id' => '5'}]} }
+      let(:nested_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nested_placeholder')}", 'value' => {'x' => {'y' => {'z' => 'gold'}}}}]} }
       let(:mock_config_store) do
         {
           prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
@@ -71,6 +71,34 @@ module Bosh::Director::ConfigServer
         end
       end
 
+      context 'when response received from server is not in the expected format' do
+        let(:manifest_hash) do
+          {
+              'name' => 'deployment_name',
+              'properties' => {
+                  'name' => '((/bad))'
+              }
+          }
+        end
+
+        it 'raises an error' do
+          bad_responses = [
+              {'x' => {}},
+              {'data' => {'value' => 'x'}},
+              {'data' => []},
+              {'data' => [{'val' => 'x'}]}
+          ]
+
+          bad_responses.each do |bad_response|
+            allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(bad_response.to_json))
+
+            expect {
+              subject
+            }.to raise_error(Bosh::Director::ConfigServerBadResponse, "Received bad response for key '/bad'")
+          end
+        end
+      end
+
       context 'when absolute path is required' do
         it 'should raise error when name is not absolute' do
           expect{
@@ -108,40 +136,6 @@ module Bosh::Director::ConfigServer
         }
 
         expect(subject).to eq(expected_result)
-      end
-
-      context 'for placeholders with dot syntax' do
-        let(:manifest_hash)  do
-          {
-              'cert_ca' => '((cert_placeholder.ca))',
-              'nest' => '((nested_placeholder.x.y.z))'
-          }
-        end
-
-        it 'should only use the first piece of the placeholder name when making requests to the config_server' do
-          expect(http_client).to receive(:get).with(prepend_namespace('cert_placeholder'))
-          subject
-        end
-
-        it 'should return the sub-property' do
-          expected_result = {
-              'cert_ca' => 'ca_value',
-              'nest' => 'gold'
-          }
-          expect(subject).to eq(expected_result)
-        end
-
-        context 'when all parts of dot syntax are not found' do
-          let(:manifest_hash) do
-            { 'bad_nest' => '((nested_placeholder.x.w.z))' }
-          end
-
-          it 'should raise a missing name error message' do
-            expect{
-              subject
-            }.to raise_error(Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder names from the config server: #{prepend_namespace('nested_placeholder.x.w.z')}")
-          end
-        end
       end
 
       it 'should raise a missing name error message when name is not found in the config_server' do
@@ -267,6 +261,52 @@ module Bosh::Director::ConfigServer
 
         it 'should not replace values in ignored subtrees' do
           expect(subject).to eq(interpolated_manifest_hash)
+        end
+      end
+
+      context 'when placeholders use dot syntax' do
+        let(:manifest_hash)  do
+          {
+              'cert_ca' => '((cert_placeholder.ca))',
+              'nest' => '((nested_placeholder.x.y.z))'
+          }
+        end
+
+        it 'should only use the first piece of the placeholder name when making requests to the config_server' do
+          expect(http_client).to receive(:get).with(prepend_namespace('cert_placeholder'))
+          subject
+        end
+
+        it 'should return the sub-property' do
+          expected_result = {
+              'cert_ca' => 'ca_value',
+              'nest' => 'gold'
+          }
+          expect(subject).to eq(expected_result)
+        end
+
+        context 'when all parts of dot syntax are not found' do
+          let(:manifest_hash) do
+            { 'bad_nest' => '((nested_placeholder.x.w.z))' }
+          end
+
+          it 'raises an error' do
+            expect{
+              subject
+            }.to raise_error(Bosh::Director::ConfigServerBadResponse, "Failed to find 'x.w.z' in placeholder '/smurf_director_name/deployment_name/nested_placeholder'")
+          end
+        end
+
+        context 'when bad dot syntax is used' do
+          let(:manifest_hash) do
+            { 'bad_nest' => '((nested_placeholder..x))' }
+          end
+
+          it 'raises an error' do
+            expect{
+              subject
+            }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Placeholder name 'nested_placeholder..x' must not contain two consecutive dots")
+          end
         end
       end
 

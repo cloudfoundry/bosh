@@ -141,11 +141,17 @@ module Bosh::Director::ConfigServer
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        result = response_body['data'][0]['value']
+
+        response_data = response_body['data']
+        bad_response = response_data.nil? || !response_data.is_a?(Array) || response_data.empty? || response_data[0]['value'].nil?
+        raise Bosh::Director::ConfigServerBadResponse, "Received bad response for key '#{name_root}'" if bad_response
+
+        result = response_data[0]['value']
         name_tokens.each do |value|
-          raise Bosh::Director::ConfigServerMissingNames, "Failed to find '#{name_tokens.join('.')}' in placeholder '#{name_root}'" if result[value].nil?
+          raise Bosh::Director::ConfigServerBadResponse, "Failed to find '#{name_tokens.join('.')}' in placeholder '#{name_root}'" if result.nil? || result[value].nil?
           result = result[value]
         end
+
         return result
       elsif response.kind_of? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
