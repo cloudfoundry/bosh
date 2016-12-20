@@ -76,11 +76,10 @@ module Bosh::Clouds
       request = request_json(method_name, arguments, context)
       redacted_request = request_json(method_name, redact_arguments(method_name, arguments), redact_context(context))
 
-      env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
 
       @logger.debug("External CPI sending request: #{redacted_request} with command: #{cpi_exec_path}")
-      cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
+      cpi_response, stderr, exit_status = Open3.capture3({}, cpi_exec_path, stdin_data: request, unsetenv_others: false)
       @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
       parsed_response = parsed_response(cpi_response)
