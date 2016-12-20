@@ -1,6 +1,7 @@
 ---
 name: director
 templates:
+  pre-start.erb: bin/pre-start
   director_ctl.erb: bin/director_ctl
   director.yml.erb.erb: config/director.yml.erb
   worker_ctl.erb: bin/worker_ctl
