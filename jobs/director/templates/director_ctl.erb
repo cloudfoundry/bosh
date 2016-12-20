@@ -48,6 +48,9 @@ function pid_exists() {
 case $1 in
 
   start)
+    mkdir -p $RUN_DIR $LOG_DIR $TMPDIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMPDIR
+
     # This hackery is needed until we have a way to manage things outside
     # the /var/vcap directory. Requires stemcell 0.5.4 or later
     cp /var/vcap/jobs/director/config/sudoers /etc/sudoers.d/director
