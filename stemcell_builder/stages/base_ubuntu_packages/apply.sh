@@ -31,6 +31,15 @@ if ! is_ppc64le; then
     wget https://s3.amazonaws.com/bosh-dependencies/rsyslog-8.22.0-0adiscon1trusty1/libgt0_0.3.11-0adiscon4trusty1_amd64.deb
     echo 'ade96cdbe2cd922b63ef8329fc0531323453a410bfae1685657abfcd9c704ae0  libgt0_0.3.11-0adiscon4trusty1_amd64.deb' | shasum -a 256 -c -
 
+    wget https://s3.amazonaws.com/bosh-dependencies/rsyslog-8.22.0-0adiscon1trusty1/libestr0_0.1.10-0adiscon1trusty1_amd64.deb
+    echo 'c6cfea557f40a6ab6c558691782a420607961b6981d84752a4ce8dbaba17c4e5  libestr0_0.1.10-0adiscon1trusty1_amd64.deb' | shasum -a 256 -c -
+
+    wget https://s3.amazonaws.com/bosh-dependencies/rsyslog-8.22.0-0adiscon1trusty1/libfastjson4_0.99.4-adiscon1trusty1_amd64.deb
+    echo '3eae5ec93d1d7301b293a98ce7997ccbc5678a793de277ff1e3c7741e0d11cfc  libfastjson4_0.99.4-adiscon1trusty1_amd64.deb' | shasum -a 256 -c -
+
+    wget https://s3.amazonaws.com/bosh-dependencies/rsyslog-8.22.0-0adiscon1trusty1/liblogging-stdlog1_1.0.5-0adiscon1trusty1_amd64.deb
+    echo '1ce434d56e3c3ee39090f478cd7f3bde86e6868bd9800beb84b99903def90fe9  liblogging-stdlog1_1.0.5-0adiscon1trusty1_amd64.deb' | shasum -a 256 -c -
+
     wget https://s3.amazonaws.com/bosh-dependencies/rsyslog-8.22.0-0adiscon1trusty1/liblognorm5_2.0.1-1adiscon3trusty1_amd64.deb
     echo 'a943bb7951bdea36a8158e4ba6f77f921d760afc41ddb41ea10e58f7e2b517c5  liblognorm5_2.0.1-1adiscon3trusty1_amd64.deb' | shasum -a 256 -c -
 
@@ -50,6 +59,9 @@ if ! is_ppc64le; then
     echo '8b7f68efc0bf69e5f5a5fc4e19feb15edea875be3f8d8f0fc8a306dde6bf8777  rsyslog-relp_8.22.0-0adiscon1trusty1_amd64.deb' | shasum -a 256 -c -
 
     dpkg -i libgt0_0.3.11-0adiscon4trusty1_amd64.deb \
+      libestr0_0.1.10-0adiscon1trusty1_amd64.deb \
+      libfastjson4_0.99.4-adiscon1trusty1_amd64.deb \
+      liblogging-stdlog1_1.0.5-0adiscon1trusty1_amd64.deb \
       liblognorm5_2.0.1-1adiscon3trusty1_amd64.deb \
       librelp0_1.2.12-0adiscon2trusty1_amd64.deb \
       rsyslog_8.22.0-0adiscon1trusty1_amd64.deb \
