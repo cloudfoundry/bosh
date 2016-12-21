@@ -28,7 +28,12 @@ module Bosh::Director
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
-        cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
+
+        begin
+          cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
+        rescue Bosh::Clouds::VMNotFound
+          @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
+        end
       end
     end
 

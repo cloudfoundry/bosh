@@ -106,6 +106,16 @@ module Bosh
           subject.delete_vm(instance_model)
         end
 
+        context 'when vm has already been deleted from the IaaS' do
+          it 'should log a warning' do
+            expect(logger).to receive(:info).with('Deleting VM')
+            expect(logger).to receive(:warn).with("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
+            expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid).and_raise Bosh::Clouds::VMNotFound
+
+            subject.delete_vm(instance_model)
+          end
+        end
+
         context 'when virtual delete is enabled' do
           subject { VmDeleter.new(logger, false, true) }
 

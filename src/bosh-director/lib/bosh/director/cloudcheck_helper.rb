@@ -46,17 +46,7 @@ module Bosh::Director
       validate_spec(instance_model.spec)
       validate_env(instance_model.vm_env)
 
-      begin
-        vm_deleter.delete_for_instance(instance_model)
-      rescue Bosh::Clouds::VMNotFound
-        # One situation where this handler is actually useful is when
-        # VM has already been deleted but something failed after that
-        # and it is still referenced in DB. In that case it makes sense
-        # to ignore "VM not found" errors in `delete_vm` and let the method
-        # proceed creating a new VM. Other errors are not forgiven.
-
-        @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
-      end
+      vm_deleter.delete_for_instance(instance_model)
     end
 
     def recreate_vm_skip_post_start(instance_model)
