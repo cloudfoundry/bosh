@@ -37,7 +37,7 @@ describe 'cli runtime config', type: :integration do
   it 'can download a runtime config' do
 
     # none present yet
-    expect(bosh_runner.run('runtime-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
+    expect(bosh_runner.run('runtime-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as client 'test'/)
 
     runtime_config = Bosh::Spec::Deployments.simple_runtime_config
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
