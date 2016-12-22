@@ -27,10 +27,7 @@ module Bosh::Director::ConfigServer
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
 
-      retrieved_config_server_values, missing_names = fetch_names_values(placeholders_list, deployment_name, must_be_absolute_name)
-      if missing_names.length > 0
-        raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder names from the config server: #{missing_names.join(', ')}"
-      end
+      retrieved_config_server_values = fetch_names_values(placeholders_list, deployment_name, must_be_absolute_name)
 
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
     end
@@ -140,37 +137,49 @@ module Bosh::Director::ConfigServer
       response = @config_server_http_client.get(name_root)
 
       if response.kind_of? Net::HTTPOK
-        response_body = JSON.parse(response.body)
+        begin
+          response_body = JSON.parse(response.body)
+        rescue JSON::ParserError
+          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+        end
 
         response_data = response_body['data']
-        bad_response = response_data.nil? || !response_data.is_a?(Array) || response_data.empty? || response_data[0]['value'].nil?
-        raise Bosh::Director::ConfigServerBadResponse, "Received bad response for key '#{name_root}'" if bad_response
+
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" if !response_data.is_a?(Array)
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be non empty array" if response_data.empty?
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" if !response_data[0].has_key?('value')
 
         result = response_data[0]['value']
-        name_tokens.each do |value|
-          raise Bosh::Director::ConfigServerBadResponse, "Failed to find '#{name_tokens.join('.')}' in placeholder '#{name_root}'" if result.nil? || result[value].nil?
+
+        name_tokens.each_with_index do |value, index|
+          if !result.is_a?(Hash) || !result.has_key?(value)
+            parent = index > 0 ? ([name_root] + name_tokens[0..(index - 1)]).join('.') : name_root
+            raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' to be a hash" if !result.is_a?(Hash)
+            raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' hash to have key '#{value}'" if !result.has_key?(value)
+          end
+
           result = result[value]
         end
 
         return result
+
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingNames, "Failed to load placeholder name '#{name}' from the config server"
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+
       else
-        raise Bosh::Director::ConfigServerUnknownError, "Unknown config server error: #{response.code}  #{response.message.dump}"
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
       end
     end
 
     def name_exists?(name)
-      begin
-        returned_name = get_value_for_name(name)
-        !!returned_name
-      rescue Bosh::Director::ConfigServerMissingNames
-        false
-      end
+      get_value_for_name(name)
+    rescue Bosh::Director::ConfigServerMissingName
+      false
     end
 
     def fetch_names_values(placeholders, deployment_name, must_be_absolute_name)
-      missing_names = []
+
+      errors = []
       config_values = {}
 
       validate_absolute_names(placeholders) if must_be_absolute_name
@@ -184,12 +193,13 @@ module Bosh::Director::ConfigServer
 
         begin
           config_values[placeholder] = get_value_for_name(name)
-        rescue Bosh::Director::ConfigServerMissingNames
-          missing_names << name
+        rescue Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
+          errors << e.message
         end
       end
 
-      [config_values, missing_names]
+      raise Bosh::Director::ConfigServerFetchError, "\n#{errors.join("\n")}\n" if !errors.empty?
+      config_values
     end
 
     def generate_value(name, type, options)

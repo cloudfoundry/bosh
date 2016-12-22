@@ -296,13 +296,11 @@ module Bosh::Director
   RuntimeIncompleteFilterStemcellSection = err(530005)
 
   # Config server errors
-  ConfigServerMissingNames = err(540000)
-  ConfigServerPasswordGenerationError = err(540002)
+  ConfigServerFetchError = err(540001)
+  ConfigServerMissingName = err(540002)
   ConfigServerUnknownError = err(540003)
-  ConfigServerCertificateGenerationError = err(540004)
-  ConfigServerIncorrectNameSyntax = err(540005)
-  ConfigServerGenerationError = err(540006)
-  ConfigServerBadResponse = err(540007)
+  ConfigServerIncorrectNameSyntax = err(540004)
+  ConfigServerGenerationError = err(540005)
 
   # CPI config
   CpiDuplicateName = err(550000)

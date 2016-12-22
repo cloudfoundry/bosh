@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Failed to load placeholder names from the config server: #{prepend_namespace('my_placeholder')}")
+        expect(output).to include("Failed to find variable '#{prepend_namespace('my_placeholder')}' from config server: HTTP code '404'")
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -455,7 +455,7 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error when uploading runtime config' do
           output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to load placeholder names from the config server: /release_name')
+          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
         end
 
         # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
@@ -496,7 +496,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to load placeholder names from the config server: /placeholder_used_at_render_time')
+            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP code '404'")
           end
         end
       end

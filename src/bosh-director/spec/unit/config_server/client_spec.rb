@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
+
   describe EnabledClient do
     subject(:client) { EnabledClient.new(http_client, director_name, logger) }
     let(:director_name) {'smurf_director_name'}
@@ -24,21 +25,22 @@ module Bosh::Director::ConfigServer
         }
       end
       let(:ignored_subtrees) {[]}
-      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
-      let(:instance_placeholder) { {'data' => [{'name' => "#{prepend_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '2'}]} }
-      let(:job_placeholder) { {'data' => [{'name' => "#{prepend_namespace('job_placeholder')}", 'value' => 'test2', 'id' => '3'}]} }
-      let(:env_placeholder) { {'data' => [{'name' => "#{prepend_namespace('env_placeholder')}", 'value' => 'test3', 'id' => '4'}]} }
-      let(:ca_value) { 'ca_value' }
-      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_namespace('cert_placeholder')}", 'value' => {'ca' => ca_value, 'private_key'=> 'abc123'}, 'id' => '5'}]} }
-      let(:nested_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nested_placeholder')}", 'value' => {'x' => {'y' => {'z' => 'gold'}}}}]} }
+      let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '1'}]} }
+      let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_namespace('empty_placeholder')}", 'value' => '', 'id' => '2'}]} }
+      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '3'}]} }
+      let(:instance_placeholder) { {'data' => [{'name' => "#{prepend_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '4'}]} }
+      let(:job_placeholder) { {'data' => [{'name' => "#{prepend_namespace('job_placeholder')}", 'value' => 'test2', 'id' => '5'}]} }
+      let(:env_placeholder) { {'data' => [{'name' => "#{prepend_namespace('env_placeholder')}", 'value' => 'test3', 'id' => '6'}]} }
+      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_namespace('cert_placeholder')}", 'value' => {'ca' => 'ca_value', 'private_key'=> 'abc123'}, 'id' => '7'}]} }
       let(:mock_config_store) do
         {
+          prepend_namespace('nil_placeholder') => generate_success_response(nil_placeholder.to_json),
+          prepend_namespace('empty_placeholder') => generate_success_response(empty_placeholder.to_json),
           prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
           prepend_namespace('instance_placeholder') => generate_success_response(instance_placeholder.to_json),
           prepend_namespace('job_placeholder') => generate_success_response(job_placeholder.to_json),
           prepend_namespace('env_placeholder') => generate_success_response(env_placeholder.to_json),
           prepend_namespace('cert_placeholder') => generate_success_response(cert_placeholder.to_json),
-          prepend_namespace('nested_placeholder') => generate_success_response(nested_placeholder.to_json),
         }
       end
 
@@ -47,7 +49,9 @@ module Bosh::Director::ConfigServer
         {
           'name' => deployment_name,
           'properties' => {
-            'name' => '((integer_placeholder))'
+            'name' => '((integer_placeholder))',
+            'nil_allowed' => '((nil_placeholder))',
+            'empty_allowed' => '((empty_placeholder))'
           },
           'instance_groups' =>           {
             'name' => 'bla',
@@ -82,20 +86,71 @@ module Bosh::Director::ConfigServer
         end
 
         it 'raises an error' do
-          bad_responses = [
-              {'x' => {}},
-              {'data' => {'value' => 'x'}},
-              {'data' => []},
-              {'data' => [{'val' => 'x'}]}
+          data = [
+              {'response' => 'Invalid JSON response',
+               'message' => 'Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
+
+              {'response' => {'x' => {}},
+               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+
+              {'response' => {'data' => {'value' => 'x'}},
+               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+
+              {'response' => {'data' => []},
+               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
+
+              {'response' => {'data' => [{'val' => 'x'}]},
+               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
           ]
 
-          bad_responses.each do |bad_response|
-            allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(bad_response.to_json))
+          data.each do |entry|
+            allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
 
             expect {
               subject
-            }.to raise_error(Bosh::Director::ConfigServerBadResponse, "Received bad response for key '/bad'")
+            }.to raise_error { |error|
+              expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+              expect(error.message).to include(entry['message'])
+            }
           end
+        end
+      end
+
+      context 'when response received from server has multiple errors' do
+        let(:manifest_hash) do
+          {
+              'name' => 'deployment_name',
+              'properties' => {
+                  'p1' => '((/bad1))',
+                  'p2' => '((/bad2))',
+                  'p3' => '((/bad3))',
+                  'p4' => '((/bad4))',
+                  'p5' => '((/bad5))',
+              }
+          }
+        end
+
+        let(:mock_config_store) do
+          {
+              '/bad1' => generate_success_response('Invalid JSON response'),
+              '/bad2' => generate_success_response({'x' => {}}.to_json),
+              '/bad3' => generate_success_response({'data' => {'value' => 'x'}}.to_json),
+              '/bad4' => generate_success_response({'data' => []}.to_json),
+              '/bad5' => generate_success_response({'data' => [{'val' => 'x'}]}.to_json),
+          }
+        end
+
+        it 'raises an error consolidating all the problems' do
+          expect {
+            subject
+          }.to raise_error { |error|
+              expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+              expect(error.message).to include("Failed to fetch variable '/bad1' from config server: Invalid JSON response")
+              expect(error.message).to include("Failed to fetch variable '/bad2' from config server: Expected data to be an array")
+              expect(error.message).to include("Failed to fetch variable '/bad3' from config server: Expected data to be an array")
+              expect(error.message).to include("Failed to fetch variable '/bad4' from config server: Expected data to be non empty array")
+              expect(error.message).to include("Failed to fetch variable '/bad5' from config server: Expected data[0] to have key 'value'")
+          }
         end
       end
 
@@ -115,7 +170,9 @@ module Bosh::Director::ConfigServer
         expected_result = {
           'name' => 'deployment_name',
           'properties' => {
-            'name' => 123
+            'name' => 123,
+            'nil_allowed' => nil,
+            'empty_allowed' => ''
           },
           'instance_groups' => {
             'name' => 'bla',
@@ -144,18 +201,22 @@ module Bosh::Director::ConfigServer
         manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
           subject
-        }.to raise_error(
-               Bosh::Director::ConfigServerMissingNames,
-               "Failed to load placeholder names from the config server: #{prepend_namespace('missing_placeholder')}")
+        }.to raise_error { |error|
+          expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+          expect(error.message).to include("Failed to find variable '#{prepend_namespace('missing_placeholder')}' from config server: HTTP code '404'")
+        }
       end
 
       it 'should raise an unknown error when config_server returns any error other than a 404' do
-        allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleErrorResponse.new)
+        allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleForbiddenResponse.new)
 
         manifest_hash['properties'] = { 'name' => '((missing_placeholder))' }
         expect{
           subject
-        }.to raise_error(Bosh::Director::ConfigServerUnknownError)
+        }.to raise_error { |error|
+          expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+          expect(error.message).to include("Failed to fetch variable '/smurf_director_name/deployment_name/missing_placeholder' from config server: HTTP code '403'")
+        }
       end
 
       context 'ignored subtrees' do
@@ -265,35 +326,103 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when placeholders use dot syntax' do
+
+        let(:nested_placeholder) do
+          {
+              'data' => [
+                  {
+                      'name' => "#{prepend_namespace('nested_placeholder')}",
+                      'value' => { 'x' => { 'y' => { 'z' => 'gold' } } }
+                  }
+              ]
+          }
+        end
+
+        let(:mock_config_store) do
+          {
+              '/nested_placeholder' => generate_success_response(nested_placeholder.to_json)
+          }
+        end
+
         let(:manifest_hash)  do
           {
-              'cert_ca' => '((cert_placeholder.ca))',
-              'nest' => '((nested_placeholder.x.y.z))'
+              'nest1' => '((/nested_placeholder.x.))',
+              'nest2' => '((/nested_placeholder.x.y))',
+              'nest3' => '((/nested_placeholder.x.y.z))'
           }
         end
 
         it 'should only use the first piece of the placeholder name when making requests to the config_server' do
-          expect(http_client).to receive(:get).with(prepend_namespace('cert_placeholder'))
+          expect(http_client).to receive(:get).with('/nested_placeholder')
           subject
         end
 
         it 'should return the sub-property' do
           expected_result = {
-              'cert_ca' => 'ca_value',
-              'nest' => 'gold'
+              'nest1' => { 'y' => { 'z' => 'gold' } },
+              'nest2' => { 'z' => 'gold' },
+              'nest3' => 'gold'
           }
           expect(subject).to eq(expected_result)
         end
 
         context 'when all parts of dot syntax are not found' do
+
           let(:manifest_hash) do
-            { 'bad_nest' => '((nested_placeholder.x.w.z))' }
+            {
+                'name' => 'deployment_name',
+                'bad_nest' => ''
+            }
           end
 
           it 'raises an error' do
-            expect{
+            data = [
+                {'placeholder' => '((/nested_placeholder.a))',
+                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
+
+                {'placeholder' => '((/nested_placeholder.a.b))',
+                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
+
+                {'placeholder' => '((/nested_placeholder.x.y.a))',
+                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'"},
+
+                {'placeholder' => '((/nested_placeholder.x.a.y))',
+                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'"},
+            ]
+
+            data.each do | entry |
+              manifest_hash['bad_nest'] = entry['placeholder']
+              expect{
+                subject
+              }.to raise_error { |error|
+                expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+                expect(error.message).to include(entry['message'])
+              }
+            end
+          end
+        end
+
+        context 'when multiple errors occur because of parts of dot syntax not found' do
+          let(:manifest_hash) do
+            {
+                'name' => 'deployment_name',
+                'properties' => {
+                    'p1' => '((/nested_placeholder.a))',
+                    'p2' => '((/nested_placeholder.x.y.a))',
+                    'p3' => '((/nested_placeholder.x.a.y))',
+                }
+            }
+          end
+
+          it 'raises an error consolidating all the problems' do
+            expect {
               subject
-            }.to raise_error(Bosh::Director::ConfigServerBadResponse, "Failed to find 'x.w.z' in placeholder '/smurf_director_name/deployment_name/nested_placeholder'")
+            }.to raise_error { |error|
+              expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'")
+              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'")
+              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'")
+            }
           end
         end
 
@@ -439,10 +568,10 @@ module Bosh::Director::ConfigServer
 
             context 'when config server returns an error while checking for name' do
               it 'raises an error' do
-                expect(http_client).to receive(:get).with(prepend_namespace('my_smurf')).and_return(SampleErrorResponse.new)
+                expect(http_client).to receive(:get).with(prepend_namespace('my_smurf')).and_return(SampleForbiddenResponse.new)
                 expect{
                   client.prepare_and_get_property(the_placeholder, 'my_default_value', nil, deployment_name)
-                }. to raise_error(Bosh::Director::ConfigServerUnknownError)
+                }. to raise_error(Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '/smurf_director_name/deployment_name/my_smurf' from config server: HTTP code '403'")
               end
             end
 
@@ -503,7 +632,7 @@ module Bosh::Director::ConfigServer
                   end
 
                   it 'throws an error if generation errors' do
-                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleErrorResponse.new)
+                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleForbiddenResponse.new)
                     expect(logger).to receive(:error)
 
                     expect{
@@ -563,7 +692,7 @@ module Bosh::Director::ConfigServer
                     end
 
                     it 'throws an error if generation of certficate errors' do
-                      expect(http_client).to receive(:post).with(post_body).and_return(SampleErrorResponse.new)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleForbiddenResponse.new)
                       expect(logger).to receive(:error)
 
                       expect{
@@ -671,7 +800,7 @@ module Bosh::Director::ConfigServer
                   'type' => 'password',
                   'parameters' => {}
                 }
-              ).ordered.and_return(SampleErrorResponse.new)
+              ).ordered.and_return(SampleForbiddenResponse.new)
             end
 
             it 'should throw an error and log it' do
@@ -764,19 +893,19 @@ module Bosh::Director::ConfigServer
     attr_accessor :body
 
     def initialize
-      super(nil, Net::HTTPOK, nil)
+      super(nil, '200', nil)
     end
   end
 
   class SampleNotFoundResponse < Net::HTTPNotFound
     def initialize
-      super(nil, Net::HTTPNotFound, 'Not Found Brah')
+      super(nil, '404', 'Not Found Brah')
     end
   end
 
-  class SampleErrorResponse < Net::HTTPForbidden
+  class SampleForbiddenResponse < Net::HTTPForbidden
     def initialize
-      super(nil, Net::HTTPForbidden, 'There was a problem.')
+      super(nil, '403', 'There was a problem.')
     end
   end
-end
+  end
