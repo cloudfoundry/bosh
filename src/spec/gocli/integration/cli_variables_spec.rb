@@ -10,7 +10,7 @@ describe 'cli: variables', type: :integration do
     Bosh::Spec::Deployments.test_release_manifest.merge(
       {
         'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
-          name: 'our_instance_group',
+          name: '((ig_placeholder))',
           templates: [
             {'name' => 'job_with_property_types',
              'properties' => job_properties
@@ -40,6 +40,7 @@ describe 'cli: variables', type: :integration do
   end
 
   it 'should return list of placeholder variables' do
+    config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_group')
     config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
 
     deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
@@ -49,13 +50,14 @@ describe 'cli: variables', type: :integration do
     variable_ids = variables.map { |obj|
       obj["ID"]
     }
-    expect(variable_ids.uniq.length).to eq(3)
+    expect(variable_ids.uniq.length).to eq(4)
 
     variable_names = variables.map { |obj|
       obj["Name"]
     }
-    expect(variable_names.uniq.length).to eq(3)
+    expect(variable_names.uniq.length).to eq(4)
 
+    expect(variable_names).to include("/#{director_name}/#{deployment_name}/ig_placeholder")
     expect(variable_names).to include("/#{director_name}/#{deployment_name}/cert")
     expect(variable_names).to include("/#{director_name}/#{deployment_name}/happiness_level")
     expect(variable_names).to include("/phone_password")
