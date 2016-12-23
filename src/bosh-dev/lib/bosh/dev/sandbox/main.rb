@@ -25,7 +25,7 @@ module Bosh::Dev::Sandbox
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
     HM_CONFIG = 'health_monitor.yml'
-    HM_CONF_TEMPLATE = File.join(ASSETS_DIR, 'health_monitor.yml.erb')
+    DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
 
     EXTERNAL_CPI = 'cpi'
     EXTERNAL_CPI_TEMPLATE = File.join(ASSETS_DIR, 'cpi.erb')
@@ -188,7 +188,7 @@ module Bosh::Dev::Sandbox
       @logger.info("Reset took #{time} seconds")
     end
 
-    def reconfigure_health_monitor(erb_template)
+    def reconfigure_health_monitor(erb_template=DEFAULT_HM_CONF_TEMPLATE_NAME)
       @health_monitor_process.stop
       write_in_sandbox(HM_CONFIG, load_config_template(File.join(ASSETS_DIR, erb_template)))
       @health_monitor_process.start
@@ -293,13 +293,6 @@ module Bosh::Dev::Sandbox
       File.join(ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
-    def with_health_monitor_running
-      health_monitor_process.start
-      yield
-    ensure
-      health_monitor_process.stop
-    end
-
     private
 
     def external_cpi_config
@@ -334,7 +327,8 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_sandbox_root
-      write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
+      hm_template_path = File.join(ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
+      write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)

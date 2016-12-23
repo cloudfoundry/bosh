@@ -1351,8 +1351,7 @@ Error 100: Unable to process links for deployment. Errors are:
     end
 
     context 'when resurrector tries to resurrect an VM with jobs that consume links', hm: true do
-      before { current_sandbox.health_monitor_process.start }
-      after { current_sandbox.health_monitor_process.stop }
+      with_reset_hm_before_each
 
       let(:links) do
         {

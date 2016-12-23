@@ -342,8 +342,7 @@ describe 'network configuration', type: :integration do
     end
 
     context 'dynamic network' do
-      before { current_sandbox.health_monitor_process.start }
-      after { current_sandbox.health_monitor_process.stop }
+      with_reset_hm_before_each
 
       it 'should update spec.ip with new ip on recreate' do
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

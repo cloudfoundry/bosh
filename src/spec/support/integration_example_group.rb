@@ -261,7 +261,7 @@ module IntegrationSandboxHelpers
           status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
           logger.info("\n  Stopping sandboxed environment for BOSH tests...")
           current_sandbox.stop
-          cleanup_sandbox_dir
+          cleanup_client_sandbox_dir
         rescue => e
           logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace.join("\n")}"
         ensure
@@ -287,7 +287,7 @@ module IntegrationSandboxHelpers
   end
 
   def prepare_sandbox
-    cleanup_sandbox_dir
+    cleanup_client_sandbox_dir
     setup_test_release_dir
     setup_bosh_work_dir
     setup_home_dir
@@ -350,7 +350,7 @@ module IntegrationSandboxHelpers
     ENV['HOME'] = ClientSandbox.home_dir
   end
 
-  def cleanup_sandbox_dir
+  def cleanup_client_sandbox_dir
     FileUtils.rm_rf(ClientSandbox.base_dir)
     FileUtils.mkdir_p(ClientSandbox.base_dir)
   end
@@ -378,6 +378,15 @@ module IntegrationSandboxBeforeHelpers
       else
         reset_sandbox
       end
+    end
+  end
+
+  def with_reset_hm_before_each
+    before do
+      current_sandbox.reconfigure_health_monitor
+    end
+    after do
+      current_sandbox.health_monitor_process.stop
     end
   end
 end

@@ -2,9 +2,7 @@ require "spec_helper"
 
 describe 'health_monitor: 1', type: :integration, hm: true do
   with_reset_sandbox_before_each
-
-  before { current_sandbox.health_monitor_process.start }
-  after { current_sandbox.health_monitor_process.stop }
+  with_reset_hm_before_each
 
   # ~1m20s
   it 'resurrects stateless nodes if agent is not responding' do

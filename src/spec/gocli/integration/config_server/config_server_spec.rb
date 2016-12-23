@@ -127,8 +127,7 @@ describe 'using director with config server', type: :integration do
       end
 
       context 'when health monitor is around and resurrector is enabled' do
-        before { current_sandbox.health_monitor_process.start }
-        after { current_sandbox.health_monitor_process.stop }
+        with_reset_hm_before_each
 
         it 'interpolates values correctly when resurrector kicks in' do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')

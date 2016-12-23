@@ -829,8 +829,7 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   context 'when HM notifies director to scan & fix an ignored VM', hm: true do
-    before { current_sandbox.health_monitor_process.start }
-    after { current_sandbox.health_monitor_process.stop }
+    with_reset_hm_before_each
 
     it 'should not scan & fix the ignored VM' do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest

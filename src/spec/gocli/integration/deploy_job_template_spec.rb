@@ -55,8 +55,7 @@ describe 'deploy job template', type: :integration do
   end
 
   context 'health monitor', hm: true do
-    before { current_sandbox.health_monitor_process.start }
-    after { current_sandbox.health_monitor_process.stop }
+    with_reset_hm_before_each
 
     it 'creates alerts to mark the start and end of an update deployment' do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
