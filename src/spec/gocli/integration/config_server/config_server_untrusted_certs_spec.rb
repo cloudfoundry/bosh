@@ -34,6 +34,6 @@ describe 'using director with config server and the certs are not trusted', type
                                             return_exit_code: true, include_credentials: false, env: client_env)
 
     expect(exit_code).to_not eq(0)
-    expect(output).to include('Config Server SSL error')
+    expect(output).to include('certificate verify failed')
   end
 end
