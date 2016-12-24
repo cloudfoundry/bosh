@@ -31,7 +31,7 @@ module Bosh::Director
       end
       version = records.max_by{|r| r.id }
       version = version.nil? ? 0 : version.id
-      records.each do |dns_record|
+      records.reject { |r| r.instance_id.nil? }.each do |dns_record|
           hosts << [dns_record.ip, dns_record.name]
       end
       DnsRecords.new(hosts, version)

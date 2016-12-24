@@ -46,7 +46,6 @@ describe 'local DNS', type: :integration do
       let(:manifest_deployment) { initial_deployment(10, 5) }
 
       it 'deploys and downgrades with max_in_flight' do
-        pending("#126335577")
         manifest_deployment['jobs'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(4)

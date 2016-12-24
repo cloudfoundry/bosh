@@ -137,6 +137,20 @@ module Bosh::Director
             expect(dns.export_dns_records.version).to eq(1)
           end
         end
+
+        context 'when there are tombstone records' do
+          before do
+            Bosh::Director::Models::LocalDnsRecord.make(
+              instance_id: nil,
+              name: 'foo',
+              ip: '192.0.2.102')
+          end
+
+          it 'does not include the tombstone records' do
+            expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+            expect(dns.export_dns_records.version).to eq(2)
+          end
+        end
       end
     end
 

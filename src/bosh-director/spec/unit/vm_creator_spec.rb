@@ -24,7 +24,7 @@ module Bosh
         )
       end
       let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager ).to_hash }
-      let(:dns_manager) { DnsManager.new('bosh', {}, nil, nil, nil, nil) }
+      let(:dns_manager) { DnsManager.new('bosh', {}, nil, nil, nil) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
