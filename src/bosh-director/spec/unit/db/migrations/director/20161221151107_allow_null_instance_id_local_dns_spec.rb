@@ -10,7 +10,7 @@ module Bosh::Director
     it 'allows instance_id to be null' do
       expect{
         db[:local_dns_records] << {id: 1, name: 'record1', ip: '123'}
-      }.to raise_error Sequel::NotNullConstraintViolation
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
       db[:local_dns_records] << {id: 1, name: 'record1', ip: '123'}

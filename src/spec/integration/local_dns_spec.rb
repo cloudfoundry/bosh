@@ -47,7 +47,7 @@ describe 'local DNS', type: :integration do
       it 'deploys and downgrades with max_in_flight' do
         manifest_deployment['jobs'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-        check_agent_etc_hosts(5, 10)
+        check_agent_etc_hosts(5, 5)
 
         manifest_deployment['jobs'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
