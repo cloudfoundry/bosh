@@ -506,8 +506,7 @@ module Bosh
         end
 
         def pause_delete_vms
-          @          @/var/vcap/data/create-env('Pausing delete_vms')
-          ('Pausing delete_vms')
+          @logger.debug('Pausing delete_vms')
           path = File.join(@cpi_commands, 'pause_delete_vms')
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, 'marker')
