@@ -6,6 +6,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 ## Ubuntu 14.04
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
+* `fnsqKZYfgbfM1Fn4fQ739bDde6c9uPsl`
+  - Pin rsyslog to version 8.22
+  - built from 257.x-3263.x (4e33d8ce9e58684edf738103a35f643823f189f3)
+
 * `pXrNoL544aDEFwaznc1r0CNTFeXq3.UE`
   - USN-3156-1: APT vulnerability
   - built from 257.x-3263.x (41edff6464246431d6440b2446bb9cc5f872167f)
