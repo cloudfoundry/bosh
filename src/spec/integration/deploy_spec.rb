@@ -1316,21 +1316,6 @@ Deployed 'simple' to '#{current_sandbox.director_name}'
           cloud_config_hash
         end
 
-        context 'director deployment does not set generate_vm_passwords' do
-          it 'does not override default VM password' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
-
-            instance = director.instances.first
-            agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
-            user_password_exists = File.exist?("#{agent_dir}/bosh/vcap/password")
-            root_password_exists = File.exist?("#{agent_dir}/bosh/root/password")
-
-            expect(user_password_exists).to be_falsey
-            expect(root_password_exists).to be_falsey
-          end
-        end
-
         context 'director deployment sets generate_vm_passwords as true' do
           with_reset_sandbox_before_each(generate_vm_passwords: true)
           it 'generates a random unique password for each vm' do
