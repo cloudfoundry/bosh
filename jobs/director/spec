@@ -394,10 +394,10 @@ properties:
     description: Address for agent to connect to nats
   registry.address:
     description: Address of the Registry to connect to
-  registry.http.port:
+  registry.port:
     description: Port of the Registry to connect to
     default: 25777
-  registry.http.user:
+  registry.username:
     description: User to access the Registry
-  registry.http.password:
+  registry.password:
     description: Password to access the Registry
