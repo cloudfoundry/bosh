@@ -1,54 +1,32 @@
 #!/usr/bin/env bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-# Define variables
-mirror=
+# Older debootstrap leaves udev daemon child process when building trusty release
+# https://bugs.launchpad.net/ubuntu/+source/debootstrap/+bug/1182540
+# The issue was fixed in 1.0.52
+downloaded_file=`mktemp`
 
-# Use ISO as mirror
-if [ ! -z "${UBUNTU_ISO:-}" ]
-then
-  iso_mount_path=`mktemp -d`
-  echo "Mounting iso from $UBUNTU_ISO at $iso_mount_path"
-  mount -o loop -t iso9660 $UBUNTU_ISO $iso_mount_path
-  add_on_exit "umount $iso_mount_path"
-  mirror="file://$iso_mount_path"
+# Install debootstrap
+if is_ppc64le; then
+  wget "http://archive.ubuntu.com/ubuntu/pool/main/d/debootstrap/debootstrap_1.0.67_all.deb" -qO $downloaded_file && \
+    echo "0a12e0a2bbff185d47711a716b1f2734856100e8784361203e834fed0cffa51b  $downloaded_file" | shasum -a 256 -c -
+else
+  wget "http://archive.ubuntu.com/ubuntu/pool/main/d/debootstrap/debootstrap_1.0.59_all.deb" -qO $downloaded_file && \
+    echo "1df1b167fed24eb2cae0bcc0ba6d5357f6a40fe0a8aaa6bfe828c7a007413f65  $downloaded_file" | shasum -a 256 -c -
 fi
 
-# Use specified mirror
-if [ ! -z "${UBUNTU_MIRROR:-}" ]
-then
-  mirror=$UBUNTU_MIRROR
-fi
-
-if [ $base_debootstrap_suite == "trusty" ]
-then
-  # Older debootstrap leaves udev daemon child process when building trusty release
-  # https://bugs.launchpad.net/ubuntu/+source/debootstrap/+bug/1182540
-  # The issue was fixed in 1.0.52
-  downloaded_file=`mktemp`
-  if is_ppc64le; then
-    url="http://archive.ubuntu.com/ubuntu/pool/main/d/debootstrap/debootstrap_1.0.67_all.deb"
-  else
-    url="http://archive.ubuntu.com/ubuntu/pool/main/d/debootstrap/debootstrap_1.0.59_all.deb"
-  fi
-  wget $url -qO $downloaded_file
-  dpkg -i $downloaded_file
-  rm $downloaded_file
-fi
+dpkg -i $downloaded_file
+rm $downloaded_file
 
 # Bootstrap the base system
 echo "Running debootstrap"
-debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot $mirror
+debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot ""
 
-# Shady work around vmbuilder in combination with ubuntu iso cache corrupting
-# the debian list caches. There is a discussion in:
-# https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
+# See https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
 rm -f $chroot/var/lib/apt/lists/{archive,security,lock}*
 
 # Copy over some other system assets
@@ -58,7 +36,6 @@ cp $assets_dir/etc/hosts $chroot/etc/hosts
 # Timezone
 cp $assets_dir/etc/timezone $chroot/etc/timezone
 
-# TODO: see if non-interactive flag can be removed
 run_in_chroot $chroot "dpkg-reconfigure -fnoninteractive -pcritical tzdata"
 
 # Locale
