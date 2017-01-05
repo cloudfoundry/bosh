@@ -107,7 +107,13 @@ module Bosh::Director
       let(:release) { Models::Release.make(name: 'appcloud') }
       let(:manifest_packages) { nil }
       let(:manifest_jobs) { nil }
-      before { allow(job).to receive(:with_release_lock).and_yield }
+      let(:status) { instance_double(Process::Status, exitstatus: 0)}
+
+      before do
+        allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
+        allow(Open3).to receive(:capture3).and_return([nil, 'some error', status])
+        allow(job).to receive(:with_release_lock).and_yield
+      end
 
       context 'when release is local' do
         let(:job_options) { {} }
@@ -133,10 +139,11 @@ module Bosh::Director
           job.perform
         end
 
-        context 'with a sha1' do
-          context 'when the sha1 does match' do
-            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => Digest::SHA1.file(release_path).hexdigest } }
-            it 'verifies the sha1 matches the release' do
+        context 'with multiple digests' do
+          context 'when the digest matches' do
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:#{Digest::SHA1.file(release_path).hexdigest}"} }
+
+            it 'verifies that the digest matches the release' do
               allow(job).to receive(:release_path).and_return(release_path)
 
               expect(job).to receive(:download_remote_release)
@@ -146,18 +153,20 @@ module Bosh::Director
             end
           end
 
-          context 'when the sha1 does not match' do
-            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => 'abcd1234'} }
-            it 'raises an error when the sha1 does not match' do
-              allow(job).to receive(:release_path).and_return(release_path)
+          context 'when the digest does not match' do
+            let(:status) { instance_double(Process::Status, exitstatus: 1)}
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:potato"} }
 
+            it 'raises an error' do
+              allow(job).to receive(:release_path).and_return(release_path)
               expect(job).to receive(:download_remote_release)
 
               expect {
                 job.perform
-              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch)
+              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, /^Verifying release SHA1 'sha1:potato' failed with error: some error/)
             end
           end
+
         end
       end
 

@@ -40,6 +40,7 @@ module Bosh::Director
         :remove_dev_tools,
         :enable_virtual_delete_vms,
         :local_dns,
+        :verify_multidigest_path
       )
 
       attr_reader(
@@ -186,6 +187,11 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+
+        if config['blobstore']['options']['verify_multidigest_path'].nil?
+          raise ArgumentError, 'Multiple Digest binary must be specified'
+        end
+        @verify_multidigest_path = config['blobstore']['options']['verify_multidigest_path']
       end
 
       def canonized_dns_domain_name

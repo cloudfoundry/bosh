@@ -18,6 +18,7 @@ blobstore:
     endpoint: http://127.0.0.1
     user: admin
     password:
+    verify_multidigest_path: /some/path
 local_dns:
   enabled: false
   include_index: false
@@ -35,11 +36,13 @@ cloud:
     dir: ...
      # to be added
 backup_destination:
-  provider: s3
+  provider: s3cli
   options:
     bucket_name: foo
     access_key_id: asdf
     secret_access_key: zxcv
+    s3cli_path: true
+    verify_multidigest_path: /some/path
 user_management:
   provider: local
   local:

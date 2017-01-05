@@ -101,6 +101,26 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'when using s3 blobstore' do
+      before do
+        deployment_manifest_fragment['properties']['blobstore']['provider'] = 's3'
+        deployment_manifest_fragment['properties']['blobstore']['bucket_name'] = 'bucket'
+      end
+
+      it 'should configure the paths' do
+        expect(parsed_yaml['blobstore']['provider']).to eq('s3cli')
+        expect(parsed_yaml['blobstore']['options']['s3cli_config_path']).to eq('/var/vcap/data/tmp/director')
+        expect(parsed_yaml['blobstore']['options']['s3cli_path']).to eq('/var/vcap/packages/s3cli/bin/s3cli')
+      end
+    end
+
+    context 'when using the verify-multidigest binary' do
+
+      it 'should configure the paths' do
+        expect(parsed_yaml['blobstore']['options']['verify_multidigest_path']).to eq('/var/vcap/packages/verify-multidigest/bin/verify-multidigest')
+      end
+    end
+
     it 'should contain the trusted_certs field' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
@@ -138,21 +158,56 @@ describe 'director.yml.erb.erb' do
       end
     end
 
-    it 'dumps the director.backup_destination at the top level' do
-      deployment_manifest_fragment['properties']['director'].merge!('backup_destination' => {
-        'some_backup_url' => 'http://foo.bar.com',
-        'how_much_to_back_up' => {
-          'all_the_things' => true
-        }
-      })
+    context 'backup destination' do
+      before do
+        deployment_manifest_fragment['properties']['director'].merge!('backup_destination' => {
+          'some_backup_url' => 'http://foo.bar.com',
+          'how_much_to_back_up' => {
+            'all_the_things' => true
+          }
+        })
+      end
 
-      expect(parsed_yaml['backup_destination']).to eq({
-        'some_backup_url' => 'http://foo.bar.com',
-        'how_much_to_back_up' => {
-          'all_the_things' => true
-        }
-      })
+      it 'dumps the director.backup_destination at the top level' do
+        expect(parsed_yaml['backup_destination']).to eq({
+          'some_backup_url' => 'http://foo.bar.com',
+          'how_much_to_back_up' => {
+            'all_the_things' => true
+          }
+        })
+      end
+
+      context 'when using s3 blobstore' do
+        before do
+          deployment_manifest_fragment['properties']['director']['backup_destination'] = {
+            'provider' => 's3'
+          }
+        end
+
+        it 'should configure the paths' do
+          expect(parsed_yaml['backup_destination']['provider']).to eq('s3cli')
+          expect(parsed_yaml['backup_destination']['options']['s3cli_config_path']).to eq('/var/vcap/data/tmp/director')
+          expect(parsed_yaml['backup_destination']['options']['s3cli_path']).to eq('/var/vcap/packages/s3cli/bin/s3cli')
+        end
+      end
+
+      context 'when using dav blobstore' do
+        before do
+          deployment_manifest_fragment['properties']['director']['backup_destination'] = {
+            'provider' => 'dav'
+          }
+        end
+
+        it 'should configure the paths' do
+          expect(parsed_yaml['backup_destination']['provider']).to eq('davcli')
+
+          expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
+          expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
+        end
+      end
+
     end
+
 
     context 'events configuration' do
       context 'when enabled' do

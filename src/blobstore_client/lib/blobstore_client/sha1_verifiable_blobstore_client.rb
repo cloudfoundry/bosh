@@ -1,13 +1,16 @@
 require 'digest/sha1'
 require 'forwardable'
+require 'open3'
+
 
 module Bosh
   module Blobstore
     class Sha1VerifiableBlobstoreClient < BaseClient
       extend Forwardable
 
-      def initialize(client)
+      def initialize(client, multidigest_path)
         @client = client
+        @multidigest_path = multidigest_path
       end
 
       def get(id, file = nil, options = {})
@@ -33,9 +36,9 @@ module Bosh
 
       def check_sha1(expected_sha1, file_to_check)
         expected_sha1 = expected_sha1
-        actual_sha1   = Digest::SHA1.file(file_to_check.path).hexdigest
-        unless expected_sha1 == actual_sha1
-          raise BlobstoreError, "sha1 mismatch expected=#{expected_sha1} actual=#{actual_sha1}"
+        out, err, status = Open3.capture3("#{@multidigest_path} verify-multi-digest #{file_to_check.path} #{expected_sha1}")
+        unless status.exitstatus == 0
+          raise BlobstoreError, "sha1 mismatch expected=#{expected_sha1}, error: #{err}"
         end
       end
     end

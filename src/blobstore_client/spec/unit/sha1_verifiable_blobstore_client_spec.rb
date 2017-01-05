@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe Sha1VerifiableBlobstoreClient do
-    subject { described_class.new(wrapped_client) }
+    subject { described_class.new(wrapped_client, multidigest_path) }
+    let(:multidigest_path) { '/some/path' }
     let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
 
     it_implements_base_client_interface
@@ -37,8 +38,12 @@ module Bosh::Blobstore
         before { allow(wrapped_client).to receive(:get) }
 
         context 'when sha1 of downloaded file matches expected sha1' do
-          before { allow(Digest::SHA1).to receive(:file).with('fake-file-path').and_return(sha1_digest) }
-          let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'expected-sha1') }
+          let(:process_status) { instance_double('Process::Status', exitstatus: 0) }
+
+          before do
+            allow(Open3).to receive(:capture3).with("#{multidigest_path} verify-multi-digest fake-file-path expected-sha1").
+                and_return(['foo', 'bar', process_status])
+          end
 
           context 'when expected sha1 is given in the options' do
             it 'does not raise an error' do
@@ -58,8 +63,12 @@ module Bosh::Blobstore
         end
 
         context 'when sha1 of downloaded file does not match expected sha1' do
-          before { allow(Digest::SHA1).to receive(:file).with('fake-file-path').and_return(sha1_digest) }
-          let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'actual-sha1') }
+          let(:process_status) { instance_double('Process::Status', exitstatus: 1) }
+
+          before do
+            allow(Open3).to receive(:capture3).with("#{multidigest_path} verify-multi-digest fake-file-path expected-sha1").
+                and_return(['foo', 'bar', process_status])
+          end
 
           context 'when expected sha1 is given in the options' do
             it 'raises BlobstoreError' do
@@ -67,7 +76,7 @@ module Bosh::Blobstore
                 subject.get('fake-id', file, sha1: 'expected-sha1')
               }.to raise_error(
                 BlobstoreError,
-                /sha1 mismatch expected=expected-sha1 actual=actual-sha1/,
+                /sha1 mismatch expected=expected-sha1, error: bar/,
               )
             end
           end

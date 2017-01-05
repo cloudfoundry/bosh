@@ -56,6 +56,15 @@ describe 'cli: deploy uploading', type: :integration do
       expect(output).to match /Release SHA1 '#{release_sha}' does not match the expected SHA1 'abcd1234'/
       expect(output).not_to match /Succeeded/
     end
+
+    it 'allows multiple digests in the sha1 field' do
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'sha1:14ab572f7d00333d8e528ab197a513d44c709257', 1))
+
+      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
+      expect(output).to match /Using deployment 'minimal'/
+      expect(output).to match /Release has been created: test_release\/1/
+      expect(output).to match /Succeeded/
+    end
   end
 
   context 'with a local release tarball' do

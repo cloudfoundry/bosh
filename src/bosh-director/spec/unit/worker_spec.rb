@@ -10,7 +10,9 @@ describe 'worker' do
       },
       'blobstore' => {
         'provider' => 'simple',
-        'options' => {}
+        'options' => {
+          'verify_multidigest_path' => '/some/path'
+        }
       },
       'config_server' => {
         'enabled' => false

@@ -23,7 +23,10 @@ module Bosh::Director
         config['dir'] = temp_dir
         config['blobstore'] = {
           'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
+          'options' => {
+            'blobstore_path' => blobstore_dir,
+            'verify_multidigest_path' => '/some/path'
+          }
         }
         Config.load_hash(config)
       }

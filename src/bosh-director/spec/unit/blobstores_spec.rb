@@ -17,6 +17,7 @@ module Bosh::Director
             'endpoint' => 'http://127.0.0.1',
             'user'     => 'admin',
             'password' => nil,
+            'verify_multidigest_path' => '/some/path'
           })
           .and_return(blobstore_client)
         expect(blobstores.blobstore).to eq(blobstore_client)
@@ -28,10 +29,12 @@ module Bosh::Director
         blobstore_client = double('fake-blobstore-client')
         expect(Bosh::Blobstore::Client)
           .to receive(:safe_create)
-          .with('s3', {
+          .with('s3cli', {
             'bucket_name' => 'foo',
             'access_key_id' => 'asdf',
             'secret_access_key' => 'zxcv',
+            's3cli_path' => true,
+            'verify_multidigest_path' => '/some/path'
           })
           .and_return(blobstore_client)
         expect(blobstores.backup_destination).to eq(blobstore_client)
