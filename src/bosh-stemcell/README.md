@@ -3,6 +3,21 @@
 Tools for creating stemcells.
 
 
+## Concourse workflow
+
+To create a stemcell on concourse instead of locally on virtualbox, you can execute the build-stemcell task.
+```
+mkdir /tmp/version
+cat <<EOF >/tmp/version/0.0
+0.0
+EOF
+
+pushd /Users/pivotal/workspace/bosh
+fly -t production login
+IAAS=vsphere HYPERVISOR=esxi OS_NAME=ubuntu OS_VERSION=trusty time fly -t production execute -p -x -i version=/tmp/version/0.0 -i bosh-src=. -c /Users/pivotal/workspace/bosh/ci/pipelines/stemcells/tasks/build.yml -o stemcell=/tmp/vsphere/dev/
+popd
+```
+
 ## Setup
 
 Historically stemcells have been built using an AWS instance created by vagrant. We're in the process of switching that process to use containers. Unless you have a reason for building with vagrant, please use the Container-based method and report any issues.
