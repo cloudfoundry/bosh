@@ -59,7 +59,7 @@ echo 'AllowGroups bosh_sshers' >> $chroot/etc/ssh/sshd_config
 sed "/^ *DenyUsers/d" -i $chroot/etc/ssh/sshd_config
 echo 'DenyUsers root' >> $chroot/etc/ssh/sshd_config
 
-sed "/^ *HostKey \/etc\/ssh\/ssh_host_dsa_key/d" -i $chroot/etc/ssh/sshd_config
+sed "/^[ #]*HostKey \/etc\/ssh\/ssh_host_dsa_key/d" -i $chroot/etc/ssh/sshd_config
 
 # OS Specifics
 if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" -o "$(get_os_type)" == "photonos" ]; then

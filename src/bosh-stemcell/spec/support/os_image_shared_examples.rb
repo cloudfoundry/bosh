@@ -530,7 +530,8 @@ shared_examples_for 'every OS image' do
       it { should be_directory }
 
       describe 'Audit log directories must have mode 0755 or less permissive (750 by default) (stig: V-38493)' do
-        it { should be_mode 750 }
+        it { should_not be_writable.by('group') }
+        it { should_not be_writable.by('others') }
       end
     end
 
