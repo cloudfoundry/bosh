@@ -36,9 +36,6 @@ case $1 in
 
     echo $$ > $PIDFILE
 
-<% if p('hm.syslog_event_forwarder_enabled', false) %>
-    /var/vcap/packages/health_monitor/bin/setup_syslog_event_forwarder.sh $CONFIG_DIR
-<% end %>
     exec chpst -u $RUNAS:$RUNAS \
       /var/vcap/packages/health_monitor/bin/bosh-monitor \
       -c /var/vcap/jobs/health_monitor/config/health_monitor.yml \
