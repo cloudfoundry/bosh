@@ -75,7 +75,8 @@ module Bosh::Monitor
           :index => @index,
           :instance_id => @instance_id,
           :job_state => @job_state,
-          :vitals => @vitals
+          :vitals => @vitals,
+          :metrics => @metrics.map(&:to_hash)
         }
       end
 

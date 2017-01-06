@@ -140,6 +140,11 @@ properties:
   hm.tsdb.port:
     description: Port of TSDB to connect to
 
+  # Send events to stdin of remote process in json
+  hm.json_enabled:
+    description: Enable JSON plugin
+    default: false
+
   # Send events via PagerDuty
   hm.pagerduty_enabled:
     description: Enable PagerDuty plugin
