@@ -243,10 +243,14 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existent'}} }
 
         it 'fails' do
+          expected_error_msg = <<-EXPECTED.strip
+Unable to process links for deployment. Errors are:
+  - Can't find deployment non-existent
+          EXPECTED
+
           expect {
             links_resolver.resolve(api_server_job)
-          }.to raise_error("Unable to process links for deployment. Errors are:
-   - Can't find deployment non-existent")
+          }.to raise_error(expected_error_msg)
         end
       end
     end
@@ -320,22 +324,30 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existant'}} }
 
       it 'fails' do
+        expected_error_msg = <<-EXPECTED.strip
+Unable to process links for deployment. Errors are:
+  - Can't find deployment non-existant
+        EXPECTED
+
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("Unable to process links for deployment. Errors are:
-   - Can't find deployment non-existant")
+        }.to raise_error(expected_error_msg)
       end
     end
 
     context 'when required link is not specified in manifest' do
       let(:links) { {'other' => {"from" => 'c'}} }
-
       let(:consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
+
       it 'fails' do
+        expected_error_msg = <<-EXPECTED.strip
+Unable to process links for deployment. Errors are:
+  - Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.
+        EXPECTED
+
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("Unable to process links for deployment. Errors are:
-   - Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.")
+        }.to raise_error(expected_error_msg)
       end
     end
 

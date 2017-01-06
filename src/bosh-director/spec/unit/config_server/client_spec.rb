@@ -88,19 +88,19 @@ module Bosh::Director::ConfigServer
         it 'raises an error' do
           data = [
               {'response' => 'Invalid JSON response',
-               'message' => 'Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
+               'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
 
               {'response' => {'x' => {}},
-               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+               'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
               {'response' => {'data' => {'value' => 'x'}},
-               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+               'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
               {'response' => {'data' => []},
-               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
+               'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
 
               {'response' => {'data' => [{'val' => 'x'}]},
-               'message' => 'Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+               'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
           ]
 
           data.each do |entry|
@@ -145,11 +145,11 @@ module Bosh::Director::ConfigServer
             subject
           }.to raise_error { |error|
               expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-              expect(error.message).to include("Failed to fetch variable '/bad1' from config server: Invalid JSON response")
-              expect(error.message).to include("Failed to fetch variable '/bad2' from config server: Expected data to be an array")
-              expect(error.message).to include("Failed to fetch variable '/bad3' from config server: Expected data to be an array")
-              expect(error.message).to include("Failed to fetch variable '/bad4' from config server: Expected data to be non empty array")
-              expect(error.message).to include("Failed to fetch variable '/bad5' from config server: Expected data[0] to have key 'value'")
+              expect(error.message).to include("- Failed to fetch variable '/bad1' from config server: Invalid JSON response")
+              expect(error.message).to include("- Failed to fetch variable '/bad2' from config server: Expected data to be an array")
+              expect(error.message).to include("- Failed to fetch variable '/bad3' from config server: Expected data to be an array")
+              expect(error.message).to include("- Failed to fetch variable '/bad4' from config server: Expected data to be non empty array")
+              expect(error.message).to include("- Failed to fetch variable '/bad5' from config server: Expected data[0] to have key 'value'")
           }
         end
       end
@@ -203,7 +203,7 @@ module Bosh::Director::ConfigServer
           subject
         }.to raise_error { |error|
           expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-          expect(error.message).to include("Failed to find variable '#{prepend_namespace('missing_placeholder')}' from config server: HTTP code '404'")
+          expect(error.message).to include("- Failed to find variable '#{prepend_namespace('missing_placeholder')}' from config server: HTTP code '404'")
         }
       end
 
@@ -215,7 +215,7 @@ module Bosh::Director::ConfigServer
           subject
         }.to raise_error { |error|
           expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-          expect(error.message).to include("Failed to fetch variable '/smurf_director_name/deployment_name/missing_placeholder' from config server: HTTP code '403'")
+          expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/deployment_name/missing_placeholder' from config server: HTTP code '403'")
         }
       end
 
@@ -378,16 +378,16 @@ module Bosh::Director::ConfigServer
           it 'raises an error' do
             data = [
                 {'placeholder' => '((/nested_placeholder.a))',
-                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
+                 'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
 
                 {'placeholder' => '((/nested_placeholder.a.b))',
-                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
+                 'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
 
                 {'placeholder' => '((/nested_placeholder.x.y.a))',
-                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'"},
+                 'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'"},
 
                 {'placeholder' => '((/nested_placeholder.x.a.y))',
-                 'message' => "Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'"},
+                 'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'"},
             ]
 
             data.each do | entry |
@@ -419,9 +419,9 @@ module Bosh::Director::ConfigServer
               subject
             }.to raise_error { |error|
               expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'")
-              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'")
-              expect(error.message).to include("Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'")
+              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'")
+              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'")
+              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'")
             }
           end
         end

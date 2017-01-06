@@ -1,8 +1,11 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_instance'
+require 'bosh/director/formatter_helper'
 
 module Bosh::Director::Core::Templates
   class JobInstanceRenderer
+    include Bosh::Director::FormatterHelper
+
     def initialize(templates, job_template_loader)
       @templates = templates
       @job_template_loader = job_template_loader
@@ -22,12 +25,8 @@ module Bosh::Director::Core::Templates
       end
 
       if errors.length > 0
-        message = "Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:"
-
-        errors.each do |e|
-          message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
-        end
-
+        combined_errors = errors.map{|error| error.message.strip }.join("\n")
+        message = prepend_header_and_indent_body("- Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:", combined_errors.strip, {:indent_by => 2})
         raise message
       end
 

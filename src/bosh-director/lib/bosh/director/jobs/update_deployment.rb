@@ -1,8 +1,11 @@
+require 'bosh/director/formatter_helper'
+
 module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
       include LockHelper
       include LegacyDeploymentHelper
+      include Bosh::Director::FormatterHelper
 
       @queue = :normal
 
@@ -153,25 +156,20 @@ module Bosh::Director
         end
       end
 
-      def render_job_templates(jobs)
+      def render_job_templates(instance_groups)
         errors = []
         job_renderer = JobRenderer.create
-        jobs.each do |job|
+        instance_groups.each do |instance_group|
           begin
-            job_renderer.render_job_instances(job.needed_instance_plans)
+            job_renderer.render_job_instances(instance_group.needed_instance_plans)
           rescue Exception => e
             errors.push e
           end
         end
 
         if errors.length > 0
-          message = 'Unable to render instance groups for deployment. Errors are:'
-
-          errors.each do |e|
-            message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
-          end
-
-          raise message
+          message = errors.map{|error| error.message.strip}.join("\n")
+          raise prepend_header_and_indent_body('Unable to render instance groups for deployment. Errors are:', message, {:indent_by => 2})
         end
       end
 

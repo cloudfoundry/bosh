@@ -25,10 +25,10 @@ describe 'deploy', type: :integration do
 
         expect(output).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'foobar'. Errors are:
-     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
-       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+  - Unable to render jobs for instance group 'foobar'. Errors are:
+    - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
         expect(director.instances.length).to eq(0)
@@ -688,9 +688,9 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).to_not eq(0)
           expect(output).to include <<-EOF.strip
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
-     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+    - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end
@@ -841,9 +841,9 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).to_not eq(0)
           expect(output).to include <<-EOF.strip
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'worker_2'. Errors are:
-     - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'worker_2'. Errors are:
+    - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end

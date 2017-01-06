@@ -432,9 +432,9 @@ describe 'Links', type: :integration do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(out).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'my_api'. Errors are:
-     - Unable to render templates for job 'api_server_with_bad_optional_links'. Errors are:
-       - Error filling in template 'config.yml.erb' (line 3: Can't find link 'optional_link_name')
+  - Unable to render jobs for instance group 'my_api'. Errors are:
+    - Unable to render templates for job 'api_server_with_bad_optional_links'. Errors are:
+      - Error filling in template 'config.yml.erb' (line 3: Can't find link 'optional_link_name')
           EOF
         end
       end
@@ -463,9 +463,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to process links for deployment. Errors are:
-   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-        simple.mysql.database.db
-        simple.postgres.backup_database.backup_db
+  - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+       simple.mysql.database.db
+       simple.postgres.backup_database.backup_db
           EOF
         end
       end

@@ -109,8 +109,30 @@ module Bosh::Director::Core::Templates
           ).at_least(2).times
         end
 
-      end
+        context 'rendering templates returns errors' do
+          let(:job_template_renderer) do
+            JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb, source_erb], logger)
+          end
 
+          before do
+            allow(source_erb).to receive(:render).and_raise('Error filling something in the template')
+          end
+
+          it 'formats the error messages is a generic way' do
+            expected_error_msg = <<-EXPECTED.strip
+- Unable to render templates for job 'fake-job-name'. Errors are:
+  - Error filling something in the template
+  - Error filling something in the template
+            EXPECTED
+
+            expect {
+              job_template_renderer.render(spec)
+            }.to raise_error { |error|
+              expect(error.message).to eq(expected_error_msg)
+            }
+          end
+        end
+      end
     end
   end
 end

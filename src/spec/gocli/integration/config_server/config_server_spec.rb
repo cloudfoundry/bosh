@@ -32,9 +32,6 @@ describe 'using director with config server', type: :integration do
     {
       'gargamel' => {
         'color' => '((my_placeholder))'
-      },
-      'smurfs' => {
-        'happiness_level' => 10
       }
     }
   end
@@ -46,273 +43,72 @@ describe 'using director with config server', type: :integration do
   context 'when config server certificates are trusted' do
 
     context 'when deployment manifest has placeholders' do
-      it 'raises an error when config server does not have values for placeholders' do
-        output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
-                                                cloud_config_hash: cloud_config, failure_expected: true,
-                                                return_exit_code: true, include_credentials: false, env: client_env)
+      context 'when some placeholders are not set in config server' do
 
-        expect(exit_code).to_not eq(0)
-        expect(output).to include("Failed to find variable '#{prepend_namespace('my_placeholder')}' from config server: HTTP code '404'")
-      end
-
-      it 'does not log interpolated properties in the task debug logs and deploy output' do
-        skip("#130127863")
-        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
-
-        deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-        expect(deploy_output).to_not include('he is colorless')
-
-        debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
-        expect(debug_output).to_not include('he is colorless')
-      end
-
-      it 'replaces placeholders in the manifest when config server has value for placeholders' do
-        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-
-        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-      end
-
-      it 'does not add namespace to keys starting with slash' do
-        config_server_helper.put_value('/my_placeholder', 'cats are happy')
-        job_properties['gargamel']['color'] = "((/my_placeholder))"
-
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-      end
-
-      context 'with dot syntax' do
-        let(:cloud_config_hash) do
-          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_config_hash.delete('resource_pools')
-          cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-          cloud_config_hash
-        end
-
-        let(:manifest_hash) do
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          manifest_hash.delete('resource_pools')
-          manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
-          manifest_hash['jobs'] = [{
-              'name' => 'foobar',
-              'templates' => ['name' => 'job_1_with_many_properties'],
-              'vm_type' => 'vm-type-name',
-              'stemcell' => 'default',
-              'instances' => 1,
-              'networks' => [{ 'name' => 'a' }],
-              'properties' => {},
-          }]
-          manifest_hash
-        end
-
-        it 'replaces the placeholders in the manifest' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
-
-          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
-
-          instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are angry')
-        end
-
-        it 'replaces nested placeholders in the manifest' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
-
-          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.color.value))'}}
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
-
-          instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
-        end
-
-        it 'errors if all parts of nested placeholder is not found' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
-
-          manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
-
-          output, exit_code =  deploy_from_scratch(
-              no_login: true,
-              manifest_hash: manifest_hash,
-              cloud_config_hash: cloud_config_hash,
-              failure_expected: true,
-              return_exit_code: true,
-              include_credentials: false,
-              env: client_env
-          )
-
-          expect(exit_code).to_not eq(0)
-          expect(output).to include("Failed to fetch variable '#{prepend_namespace('my_placeholder')}' from config server: Expected parent '#{prepend_namespace('my_placeholder')}.cat' hash to have key 'dog'")
-        end
-      end
-
-      context 'when manifest is downloaded through CLI' do
-        before do
-          job_properties['smurfs']['color'] = '((!smurfs_color_placeholder))'
-        end
-
-        it 'returns original raw manifest (with no changes) when downloaded through cli' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'happy smurf')
-
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-          downloaded_manifest = bosh_runner.run("manifest", deployment_name: manifest_hash['name'], include_credentials: false, env: client_env)
-
-          expect(downloaded_manifest).to include '((my_placeholder))'
-          expect(downloaded_manifest).to include '((!smurfs_color_placeholder))'
-          expect(downloaded_manifest).to_not include 'happy smurf'
-        end
-      end
-
-      context 'when a placeholder starts with an exclamation mark' do
         let(:job_properties) do
           {
-            'gargamel' => {
-              'color' => '((!my_placeholder))'
-            },
-            'smurfs' => {
-              'happiness_level' => 10
-            }
+              'gargamel' => {
+                  'color' => '((i_am_not_here_1))',
+                  'age' => '((i_am_not_here_2))',
+                  'dob' => '((i_am_not_here_3))',
+              }
           }
         end
 
-        it 'strips the exclamation mark when getting value from config server' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are very happy')
+        it 'raises an error' do
+          output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
+                                                  cloud_config_hash: cloud_config, failure_expected: true,
+                                                  return_exit_code: true, include_credentials: false, env: client_env)
 
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          expect(exit_code).to_not eq(0)
 
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are very happy')
+          expect(output).to include <<-EOF.strip
+Error: Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'our_instance_group'. Errors are:
+    - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EOF
         end
       end
 
-      context 'when health monitor is around and resurrector is enabled' do
-        with_reset_hm_before_each
+      context 'when all placeholders are set in config server' do
+        it 'does not log interpolated properties in the task debug logs and deploy output' do
+          skip("#130127863")
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
 
-        it 'interpolates values correctly when resurrector kicks in' do
+          deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          expect(deploy_output).to_not include('he is colorless')
+
+          debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
+          expect(debug_output).to_not include('he is colorless')
+        end
+
+        it 'replaces placeholders in the manifest when config server has value for placeholders' do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
           template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
-
-          director.kill_vm_and_wait_for_resurrection(instance, deployment_name: 'simple', include_credentials: false, env: client_env)
-
-          new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
         end
-      end
 
-      context 'when config server values changes post deployment' do
-        it 'updates the job on bosh redeploy' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+        it 'does not add namespace to keys starting with slash' do
+          config_server_helper.put_value('/my_placeholder', 'cats are happy')
+          job_properties['gargamel']['color'] = "((/my_placeholder))"
 
-          manifest_hash['jobs'].first['instances'] = 1
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-          expect(output).to match /Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/
-
-          new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          new_template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
         end
 
-        it 'updates the job on start/restart/recreate' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-          manifest_hash['jobs'].first['instances'] = 1
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-          # ============================================
-          # Restart
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-          output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
-          expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
-
-          # ============================================
-          # Recreate
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
-          output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
-          expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
-
-          # ============================================
-          # start
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
-          bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-          output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
-          expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
-        end
-      end
-
-      describe 'env values in instance groups and resource pools' do
-        context 'when instance groups env is using placeholders' do
+        context 'with dot syntax' do
           let(:cloud_config_hash) do
             cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
             cloud_config_hash.delete('resource_pools')
-
             cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
             cloud_config_hash
-          end
-
-          let(:env_hash) do
-            {
-              'env1' => '((env1_placeholder))',
-              'env2' => 'env_value2',
-              'env3' => {
-                'color' => '((color_placeholder))'
-              },
-              'bosh' => {
-                'group' => 'foobar'
-              },
-            }
-          end
-
-          let(:resolved_env_hash) do
-            {
-              'env1' => 'lazy smurf',
-              'env2' => 'env_value2',
-              'env3' => {
-                'color' => 'super_color'
-              },
-              'bosh' => {
-                'group' => 'testdirector-simple-foobar',
-                'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
-              },
-            }
           end
 
           let(:manifest_hash) do
@@ -326,159 +122,382 @@ describe 'using director with config server', type: :integration do
                                        'stemcell' => 'default',
                                        'instances' => 1,
                                        'networks' => [{ 'name' => 'a' }],
-                                       'properties' => {'gargamel' => {'color' => 'black'}},
-                                       'env' => env_hash
+                                       'properties' => {},
                                      }]
             manifest_hash
           end
 
+          it 'replaces the placeholders in the manifest' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
+
+            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
+
+            instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are angry')
+          end
+
+          it 'replaces nested placeholders in the manifest' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+
+            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.color.value))'}}
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
+
+            instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
+          end
+
+          it 'errors if all parts of nested placeholder is not found' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+
+            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
+
+            output, exit_code =  deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config_hash,
+              failure_expected: true,
+              return_exit_code: true,
+              include_credentials: false,
+              env: client_env
+            )
+
+            expect(exit_code).to_not eq(0)
+            expect(output).to include("Failed to fetch variable '#{prepend_namespace('my_placeholder')}' from config server: Expected parent '#{prepend_namespace('my_placeholder')}.cat' hash to have key 'dog'")
+          end
+        end
+
+        context 'when manifest is downloaded through CLI' do
           before do
-            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
-            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'super_color')
+            job_properties.merge!({'smurfs' => {'color' => '((!smurfs_color_placeholder))'}})
           end
 
-          it 'should interpolate them correctly' do
-            deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
-            create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
-            deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-            expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}])
-          end
+          it 'returns original raw manifest (with no changes)' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'happy smurf')
+            config_server_helper.put_value(prepend_namespace('smurfs_color_placeholder'), 'I am blue')
 
-          it 'should not log interpolated env values in the debug logs and deploy output' do
-            skip("#130127863")
-            debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-            expect(deploy_output).to_not include('lazy smurf')
-            expect(deploy_output).to_not include('super_color')
+            downloaded_manifest = bosh_runner.run("manifest", deployment_name: manifest_hash['name'], include_credentials: false, env: client_env)
 
-            expect(debug_output).to_not include('lazy smurf')
-            expect(debug_output).to_not include('super_color')
+            expect(downloaded_manifest).to include '((my_placeholder))'
+            expect(downloaded_manifest).to include '((!smurfs_color_placeholder))'
+            expect(downloaded_manifest).to_not include 'happy smurf'
+            expect(downloaded_manifest).to_not include 'I am blue'
           end
         end
 
-        context 'when resource pool env is using placeholders (legacy manifest)' do
-          let(:env_hash) do
+        context 'when a placeholder starts with an exclamation mark' do
+          let(:job_properties) do
             {
-              'env1' => '((env1_placeholder))',
-              'env2' => 'env_value2',
-              'env3' => {
-                'color' => '((color_placeholder))'
-              },
-              'bosh' => {
-                'group' => 'foobar',
-                'password' => 'foobar'
-              },
-            }
-          end
-
-          let(:resolved_env_hash) do
-            {
-              'env1' => 'lazy cat',
-              'env2' => 'env_value2',
-              'env3' => {
-                'color' => 'smurf blue'
-              },
-              'bosh' => {
-                'group' => 'testdirector-simple-foobar',
-                'password' => 'foobar',
-                'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
-              },
-            }
-          end
-
-          it 'should interpolate them correctly' do
-            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy cat')
-            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'smurf blue')
-
-            deployment_manifest = Bosh::Spec::Deployments.legacy_manifest
-            deployment_manifest['resource_pools'][0]['env'] = env_hash
-
-            deploy_from_scratch(no_login: true, include_credentials: false, env: client_env, manifest_hash: deployment_manifest)
-
-            create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
-
-            deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-            expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'none'}])
-          end
-        end
-
-        context 'when remove_dev_tools key exist' do
-          with_reset_sandbox_before_each(
-            remove_dev_tools: true,
-            config_server_enabled: true,
-            user_authentication: 'uaa',
-            uaa_encryption: 'asymmetric'
-          )
-
-          let(:env_hash) do
-            {
-              'env1' => '((env1_placeholder))',
-              'env2' => 'env_value2',
-              'env3' => {
-                'color' => '((color_placeholder))'
-              },
-              'bosh' => {
-                'password' => 'foobar'
+              'gargamel' => {
+                'color' => '((!my_placeholder))'
               }
             }
           end
 
-          let(:simple_manifest) do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            manifest_hash['jobs'][0]['instances'] = 1
-            manifest_hash['jobs'][0]['env'] = env_hash
-            manifest_hash
+          it 'strips the exclamation mark when getting value from config server' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are very happy')
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are very happy')
+          end
+        end
+
+        context 'when health monitor is around and resurrector is enabled' do
+          with_reset_hm_before_each
+
+          it 'interpolates values correctly when resurrector kicks in' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
+
+            director.kill_vm_and_wait_for_resurrection(instance, deployment_name: 'simple', include_credentials: false, env: client_env)
+
+            new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
+          end
+        end
+
+        context 'when config server values changes post deployment' do
+          it 'updates the job on bosh redeploy' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+
+            manifest_hash['jobs'].first['instances'] = 1
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
+
+            output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+            expect(output).to match /Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/
+
+            new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            new_template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
           end
 
-          let(:cloud_config) do
-            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-            cloud_config_hash['resource_pools'][0].delete('env')
-            cloud_config_hash
+          it 'updates the job on start/restart/recreate' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+
+            manifest_hash['jobs'].first['instances'] = 1
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+            # ============================================
+            # Restart
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
+            output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
+            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
+
+            # ============================================
+            # Recreate
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
+            output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
+            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
+
+            # ============================================
+            # start
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
+            bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+            output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
+            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
+          end
+        end
+
+        describe 'env values in instance groups and resource pools' do
+          context 'when instance groups env is using placeholders' do
+            let(:cloud_config_hash) do
+              cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+              cloud_config_hash.delete('resource_pools')
+
+              cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+              cloud_config_hash
+            end
+
+            let(:env_hash) do
+              {
+                'env1' => '((env1_placeholder))',
+                'env2' => 'env_value2',
+                'env3' => {
+                  'color' => '((color_placeholder))'
+                },
+                'bosh' => {
+                  'group' => 'foobar'
+                },
+              }
+            end
+
+            let(:resolved_env_hash) do
+              {
+                'env1' => 'lazy smurf',
+                'env2' => 'env_value2',
+                'env3' => {
+                  'color' => 'super_color'
+                },
+                'bosh' => {
+                  'group' => 'testdirector-simple-foobar',
+                  'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                },
+              }
+            end
+
+            let(:manifest_hash) do
+              manifest_hash = Bosh::Spec::Deployments.simple_manifest
+              manifest_hash.delete('resource_pools')
+              manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+              manifest_hash['jobs'] = [{
+                                         'name' => 'foobar',
+                                         'templates' => ['name' => 'job_1_with_many_properties'],
+                                         'vm_type' => 'vm-type-name',
+                                         'stemcell' => 'default',
+                                         'instances' => 1,
+                                         'networks' => [{ 'name' => 'a' }],
+                                         'properties' => {'gargamel' => {'color' => 'black'}},
+                                         'env' => env_hash
+                                       }]
+              manifest_hash
+            end
+
+            before do
+              config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
+              config_server_helper.put_value(prepend_namespace('color_placeholder'), 'super_color')
+            end
+
+            it 'should interpolate them correctly' do
+              deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+              create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+              deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
+              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}])
+            end
+
+            it 'should not log interpolated env values in the debug logs and deploy output' do
+              skip("#130127863")
+              debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
+
+              expect(deploy_output).to_not include('lazy smurf')
+              expect(deploy_output).to_not include('super_color')
+
+              expect(debug_output).to_not include('lazy smurf')
+              expect(debug_output).to_not include('super_color')
+            end
           end
 
-          before do
-            config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
-            config_server_helper.put_value(prepend_namespace('color_placeholder'), 'blue')
+          context 'when resource pool env is using placeholders (legacy manifest)' do
+            let(:env_hash) do
+              {
+                'env1' => '((env1_placeholder))',
+                'env2' => 'env_value2',
+                'env3' => {
+                  'color' => '((color_placeholder))'
+                },
+                'bosh' => {
+                  'group' => 'foobar',
+                  'password' => 'foobar'
+                },
+              }
+            end
+
+            let(:resolved_env_hash) do
+              {
+                'env1' => 'lazy cat',
+                'env2' => 'env_value2',
+                'env3' => {
+                  'color' => 'smurf blue'
+                },
+                'bosh' => {
+                  'group' => 'testdirector-simple-foobar',
+                  'password' => 'foobar',
+                  'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                },
+              }
+            end
+
+            it 'should interpolate them correctly' do
+              config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy cat')
+              config_server_helper.put_value(prepend_namespace('color_placeholder'), 'smurf blue')
+
+              deployment_manifest = Bosh::Spec::Deployments.legacy_manifest
+              deployment_manifest['resource_pools'][0]['env'] = env_hash
+
+              deploy_from_scratch(no_login: true, include_credentials: false, env: client_env, manifest_hash: deployment_manifest)
+
+              create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+
+              deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
+              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'none'}])
+            end
           end
 
-          it 'should send the flag to the agent with interpolated values' do
-            deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+          context 'when remove_dev_tools key exist' do
+            with_reset_sandbox_before_each(
+              remove_dev_tools: true,
+              config_server_enabled: true,
+              user_authentication: 'uaa',
+              uaa_encryption: 'asymmetric'
+            )
 
-            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(invocations[2].inputs).to match({'agent_id' => String,
-                                                    'stemcell_id' => String,
-                                                    'cloud_properties' => {},
-                                                    'networks' => Hash,
-                                                    'disk_cids' => Array,
-                                                    'env' =>
-                                                      {
-                                                        'env1' => 'lazy smurf',
-                                                        'env2' => 'env_value2',
-                                                        'env3' => {
-                                                          'color' => 'blue'
-                                                        },
-                                                        'bosh' => {
-                                                          'password' => 'foobar',
-                                                          'remove_dev_tools' => true,
-                                                          'group' => 'testdirector-simple-foobar',
-                                                          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+            let(:env_hash) do
+              {
+                'env1' => '((env1_placeholder))',
+                'env2' => 'env_value2',
+                'env3' => {
+                  'color' => '((color_placeholder))'
+                },
+                'bosh' => {
+                  'password' => 'foobar'
+                }
+              }
+            end
+
+            let(:simple_manifest) do
+              manifest_hash = Bosh::Spec::Deployments.simple_manifest
+              manifest_hash['jobs'][0]['instances'] = 1
+              manifest_hash['jobs'][0]['env'] = env_hash
+              manifest_hash
+            end
+
+            let(:cloud_config) do
+              cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+              cloud_config_hash['resource_pools'][0].delete('env')
+              cloud_config_hash
+            end
+
+            before do
+              config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
+              config_server_helper.put_value(prepend_namespace('color_placeholder'), 'blue')
+            end
+
+            it 'should send the flag to the agent with interpolated values' do
+              deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+              invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(invocations[2].inputs).to match({'agent_id' => String,
+                                                      'stemcell_id' => String,
+                                                      'cloud_properties' => {},
+                                                      'networks' => Hash,
+                                                      'disk_cids' => Array,
+                                                      'env' =>
+                                                        {
+                                                          'env1' => 'lazy smurf',
+                                                          'env2' => 'env_value2',
+                                                          'env3' => {
+                                                            'color' => 'blue'
+                                                          },
+                                                          'bosh' => {
+                                                            'password' => 'foobar',
+                                                            'remove_dev_tools' => true,
+                                                            'group' => 'testdirector-simple-foobar',
+                                                            'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                                                          }
                                                         }
-                                                      }
-                                                   })
-          end
+                                                     })
+            end
 
-          it 'does not cause a recreate vm on redeploy' do
-            deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+            it 'does not cause a recreate vm on redeploy' do
+              deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(invocations.size).to eq(3) # 2 compilation vms and 1 for the one in the instance_group
+              invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(invocations.size).to eq(3) # 2 compilation vms and 1 for the one in the instance_group
 
-            deploy_simple_manifest(no_login: true, manifest_hash: simple_manifest, include_credentials: false,  env: client_env)
+              deploy_simple_manifest(no_login: true, manifest_hash: simple_manifest, include_credentials: false,  env: client_env)
 
-            invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(invocations.size).to eq(3) # no vms should have been deleted/created
+              invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(invocations.size).to eq(3) # no vms should have been deleted/created
+            end
           end
         end
       end

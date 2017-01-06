@@ -90,13 +90,13 @@ describe 'template', type: :integration do
 
     expect(output).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'foobar'. Errors are:
-     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
-       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
-     - Unable to render templates for job 'foobar_with_bad_properties_2'. Errors are:
-       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+  - Unable to render jobs for instance group 'foobar'. Errors are:
+    - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+    - Unable to render templates for job 'foobar_with_bad_properties_2'. Errors are:
+      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
     EOF
   end
 end

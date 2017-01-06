@@ -203,6 +203,50 @@ module Bosh::Director::Jobs
         end
       end
 
+      context 'when rendering templates fails' do
+        let(:expected_result) do
+          <<-EXPECTED.strip
+Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'my_instance_group_1'. Errors are:
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+  - Unable to render jobs for instance group 'my_instance_group_2'. Errors are:
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EXPECTED
+        end
+
+        let(:error_msgs) do
+          <<-ERROR_MSGS.strip
+- Unable to render jobs for instance group 'my_instance_group_1'. Errors are:
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+- Unable to render jobs for instance group 'my_instance_group_2'. Errors are:
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          ERROR_MSGS
+        end
+
+        before do
+          allow(notifier).to receive(:send_start_event)
+          allow(planner).to receive(:bind_models)
+          allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
+          allow(planner).to receive(:instance_models).and_return([])
+        end
+
+        it 'formats the error messages' do
+          expect {
+            job.perform
+          }.to raise_error { |error|
+            expect(error.message).to eq(expected_result)
+          }
+        end
+      end
+
       context 'when job is being dry-run' do
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered

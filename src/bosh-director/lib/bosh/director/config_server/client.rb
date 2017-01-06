@@ -2,6 +2,7 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class EnabledClient
+    include Bosh::Director::FormatterHelper
     include ConfigServerHelper
 
     def initialize(http_client, director_name, logger)
@@ -194,11 +195,15 @@ module Bosh::Director::ConfigServer
         begin
           config_values[placeholder] = get_value_for_name(name)
         rescue Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
-          errors << e.message
+          errors << e
         end
       end
 
-      raise Bosh::Director::ConfigServerFetchError, "\n#{errors.join("\n")}\n" if !errors.empty?
+      if errors.length > 0
+        message = errors.map{|error| "- #{error.message}"}.join("\n")
+        raise Bosh::Director::ConfigServerFetchError, message
+      end
+
       config_values
     end
 

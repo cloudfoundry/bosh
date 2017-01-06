@@ -106,8 +106,31 @@ module Bosh::Director
         perform
       end
 
+      context 'when getting the templates spec of an instance plan errors' do
+        before do
+          allow(instance).to receive(:job_name).and_return('my_instance_group')
+          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise Exception, <<-EOF
+- Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+- Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+- Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EOF
+        end
 
+        it 'formats the error messages' do
+          expected = <<-EXPECTED.strip
+- Unable to render jobs for instance group 'my_instance_group'. Errors are:
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EXPECTED
 
+          expect {
+            perform
+          }.to raise_error { |error|
+            expect(error.message).to eq(expected)
+          }
+        end
+      end
     end
   end
 end

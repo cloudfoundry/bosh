@@ -293,7 +293,7 @@ module Bosh::Director
       end
 
       def extract_global_and_instance_group_properties
-        # Manifest can contain global and per-job properties section
+        # Manifest can contain global and per-instance_group properties section
         instance_group_properties = safe_property(@instance_group_spec, 'properties', :class => Hash, :optional => true, :default => {})
 
         merged_properties = @deployment.properties.recursive_merge(instance_group_properties)

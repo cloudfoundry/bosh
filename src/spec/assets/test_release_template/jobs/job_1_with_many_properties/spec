@@ -11,3 +11,7 @@ properties:
     default: blue
   gargamel.color:
     description: The color of gargamel it is required
+  gargamel.age:
+    description: The age of gargamel it is required
+  gargamel.dob:
+    description: The DOB of gargamel it is required
