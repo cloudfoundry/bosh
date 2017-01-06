@@ -464,8 +464,8 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(output).to include <<-EOF
 Error 100: Unable to process links for deployment. Errors are:
   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-       simple.mysql.database.db
-       simple.postgres.backup_database.backup_db
+     simple.mysql.database.db
+     simple.postgres.backup_database.backup_db
           EOF
         end
       end
