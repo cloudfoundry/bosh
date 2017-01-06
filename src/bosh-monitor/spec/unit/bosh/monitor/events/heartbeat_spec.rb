@@ -1,12 +1,9 @@
 require 'spec_helper'
 
 describe Bhm::Events::Heartbeat do
+  let(:timestamp) { 1320196099  }
 
-  before :each do
-    @ts = 1320196099
-  end
-
-  let(:heartbeat) { make_heartbeat(timestamp: 1320196099) }
+  let(:heartbeat) { make_heartbeat(timestamp: timestamp) }
 
   context 'validations' do
     it 'requires id' do
@@ -32,14 +29,14 @@ describe Bhm::Events::Heartbeat do
   it 'has short description' do
     expect(heartbeat.short_description).to eq('Heartbeat from mysql_node/instance_id_abc (agent_id=deadbeef index=0) @ 2011-11-02 01:08:19 UTC')
 
-    expect(make_heartbeat(:index => nil, :timestamp => 1320196099).short_description).to eq('Heartbeat from mysql_node/instance_id_abc (agent_id=deadbeef) @ 2011-11-02 01:08:19 UTC')
+    expect(make_heartbeat(:index => nil, :timestamp => timestamp).short_description).to eq("Heartbeat from mysql_node/instance_id_abc (agent_id=deadbeef) @ 2011-11-02 01:08:19 UTC")
   end
 
   it 'has hash representation' do
     expect(heartbeat.to_hash).to eq({
       :kind => 'heartbeat',
       :id => 1,
-      :timestamp => @ts,
+      :timestamp => timestamp,
       :deployment => 'oleg-cloud',
       :agent_id => 'deadbeef',
       :instance_id => 'instance_id_abc',
@@ -58,6 +55,23 @@ describe Bhm::Events::Heartbeat do
         }
       },
       :teams => ['ateam', 'bteam'],
+      :metrics => [
+          {:name => "system.load.1m", :value => "0.2", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.cpu.user", :value => "22.3", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.cpu.sys", :value => "23.4", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.cpu.wait", :value => "33.22", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.mem.percent", :value => "32.2", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.mem.kb", :value => "512031", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.swap.percent", :value => "32.6", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.swap.kb", :value => "231312", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.system.percent", :value => "74", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.system.inode_percent", :value => "68", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.ephemeral.percent", :value => "33", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.ephemeral.inode_percent", :value => "74", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.persistent.percent", :value => "97", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.disk.persistent.inode_percent", :value => "10", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.healthy", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}}
+      ],
     })
   end
 

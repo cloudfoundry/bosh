@@ -78,6 +78,7 @@ module Bosh::Monitor
           :job_state => @job_state,
           :vitals => @vitals,
           :teams => @teams,
+          :metrics => @metrics.map(&:to_hash),
         }
       end
 
