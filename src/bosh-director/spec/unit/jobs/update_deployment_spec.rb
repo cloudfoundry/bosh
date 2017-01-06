@@ -232,6 +232,7 @@ Unable to render instance groups for deployment. Errors are:
         end
 
         before do
+          expect(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(notifier).to receive(:send_start_event)
           allow(planner).to receive(:bind_models)
           allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
