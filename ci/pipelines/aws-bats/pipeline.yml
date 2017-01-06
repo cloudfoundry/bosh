@@ -96,8 +96,8 @@ jobs:
             AWS_REGION_NAME:        {{aws_region__primary}}
             BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
             PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-            BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
+            BOSH_CLIENT:            {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_CLIENT_SECRET:     {{BOSH_DIRECTOR_PASSWORD}}
             STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 
         - task: run-bats
