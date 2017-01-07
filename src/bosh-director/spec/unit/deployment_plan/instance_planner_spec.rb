@@ -344,7 +344,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: az.name) }
 
       before do
-        BD::Models::IpAddress.make(address: ip_to_i('192.168.1.5'), network_name: 'fake-network', instance: existing_instance_model)
+        BD::Models::IpAddress.make(address_str: ip_to_i('192.168.1.5').to_s, network_name: 'fake-network', instance: existing_instance_model)
 
         allow(deployment).to receive(:network).with('fake-network') { manual_network }
 
