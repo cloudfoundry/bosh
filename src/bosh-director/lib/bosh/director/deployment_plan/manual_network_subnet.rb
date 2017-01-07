@@ -22,7 +22,7 @@ module Bosh::Director
 
         netmask = range.wildcard_mask
         network_id = range.network(:Objectify => true)
-        broadcast = range.broadcast(:Objectify => true)
+        broadcast = range.version == 6 ? range.last(:Objectify => true) : range.broadcast(:Objectify => true)
 
         ignore_missing_gateway = Bosh::Director::Config.ignore_missing_gateway
         gateway_property = safe_property(subnet_spec, "gateway", class: String, optional: ignore_missing_gateway)

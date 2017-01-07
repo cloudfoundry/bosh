@@ -4,6 +4,7 @@ require 'rack/test'
 module Bosh::Director
   module Api
     describe Controllers::DeploymentsController do
+      include IpUtil
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
@@ -759,7 +760,7 @@ module Bosh::Director
                 ip_addresses_params  = {
                   'instance_id' => instance.id,
                   'task_id' => "#{i}",
-                  'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                  'address_str' => ip_to_i("1.2.3.#{i}").to_s,
                 }
                 Models::IpAddress.create(ip_addresses_params)
               end
@@ -943,7 +944,7 @@ module Bosh::Director
                   ip_addresses_params  = {
                     'instance_id' => instance.id,
                     'task_id' => "#{i}",
-                    'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                    'address_str' => ip_to_i("1.2.3.#{i}").to_s,
                   }
                   Models::IpAddress.create(ip_addresses_params)
                 end
