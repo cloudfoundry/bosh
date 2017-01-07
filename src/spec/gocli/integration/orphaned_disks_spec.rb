@@ -29,7 +29,7 @@ describe 'orphaned disks', type: :integration do
     expect(result).to contain_exactly(
       {
         'Disk CID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'Size' => '129 MB',
+        'Size' => '123 MiB',
         'Deployment' => 'second-deployment',
         'Instance' => 'second-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
         'AZ' => '',
@@ -37,7 +37,7 @@ describe 'orphaned disks', type: :integration do
       },
       {
         'Disk CID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'Size' => '129 MB',
+        'Size' => '123 MiB',
         'Deployment' => 'first-deployment',
         'Instance' => 'first-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
         'AZ' => '',
