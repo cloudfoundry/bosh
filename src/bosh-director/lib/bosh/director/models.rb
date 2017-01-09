@@ -28,6 +28,7 @@ require 'bosh/director/models/ephemeral_blob'
 require 'bosh/director/models/placeholder_mapping'
 require 'delayed_job_sequel'
 require 'bosh/director/models/event'
+require 'bosh/director/models/agent_dns_version'
 require 'bosh/director/models/team'
 
 module Bosh::Director

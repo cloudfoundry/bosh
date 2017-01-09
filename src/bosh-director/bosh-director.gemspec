@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-director-drain-workers'
   spec.executables << 'bosh-director-migrate'
   spec.executables << 'bosh-director-scheduler'
+  spec.executables << 'bosh-director-sync-dns'
   spec.executables << 'bosh-director-worker'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
