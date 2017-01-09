@@ -1255,28 +1255,33 @@ module Bosh::Director
         end
 
         describe 'placeholder variables' do
+          let(:set_id) { 'some-set-id' }
+          let(:successful_variables_set_id) { 'some-successful-id' }
           before { basic_authorize 'admin', 'admin' }
 
           it 'returns a list of placeholder variable id and names' do
-            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({'foo' => '((foo))', 'bar' => '((bar))'}))
-            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'foo', deployment: deployment)
-            Models::PlaceholderMapping.create(placeholder_id: '1', placeholder_name: 'bar', deployment: deployment)
+            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({'foo' => '((foo))', 'bar' => '((bar))'}), variables_set_id: set_id, successful_variables_set_id: successful_variables_set_id)
+
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id)
+            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: set_id)
+            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: successful_variables_set_id)
+            Models::VariableMapping.create(variable_id: '2', variable_name: 'baz', set_id: successful_variables_set_id)
 
             get '/test_deployment/variables'
             expect(last_response.status).to eq(200)
 
             vars = JSON.parse(last_response.body)
-            expect(vars.size).to eq(2)
+            expect(vars.size).to eq(3)
             expect(vars[0]).to eq('id' => '0', 'name' => 'foo')
             expect(vars[1]).to eq('id' => '1', 'name' => 'bar')
+            expect(vars[2]).to eq('id' => '2', 'name' => 'baz')
           end
 
           it 'does not return placeholder variables for other deployments' do
-            deployment1 = Models::Deployment.create(name: 'test_deployment1', manifest: YAML.dump({'foo' => '((foo))'}))
-            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'foo', deployment: deployment1)
-
-            deployment2 = Models::Deployment.create(name: 'test_deployment2', manifest: YAML.dump({'bar' => '((bar))'}))
-            Models::PlaceholderMapping.create(placeholder_id: '0', placeholder_name: 'bar', deployment: deployment2)
+            Models::Deployment.create(name: 'test_deployment1', manifest: YAML.dump({'foo' => '((foo))'}), variables_set_id: set_id, successful_variables_set_id: successful_variables_set_id)
+            Models::Deployment.create(name: 'test_deployment2', manifest: YAML.dump({'bar' => '((bar))'}), variables_set_id: 'blah', successful_variables_set_id: 'pow')
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id)
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'bar', set_id: 'blah')
 
             get '/test_deployment1/variables'
             expect(last_response.status).to eq(200)

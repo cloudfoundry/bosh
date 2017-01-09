@@ -16,12 +16,21 @@ module Bosh::Director::ConfigServer
 
       if response.kind_of? Net::HTTPOK
         response_body = JSON.parse(response.body)
-        placeholder = response_body['data'][0]
-        values = {placeholder_id: placeholder['id'], placeholder_name: placeholder['name'], deployment_id: @deployment_model.id}
+        variable = response_body['data'][0]
+        insert_values = {
+          variable_id: variable['id'],
+          variable_name: variable['name'],
+          set_id: @deployment_model.variables_set_id
+        }
+
+        check_values = {
+          variable_name: variable['name'],
+          set_id: @deployment_model.variables_set_id
+        }
 
         @@lock.synchronize {
-          mapping = Bosh::Director::Models::PlaceholderMapping.find(values)
-          Bosh::Director::Models::PlaceholderMapping.insert(values) if mapping.nil?
+          mapping = Bosh::Director::Models::VariableMapping.find(check_values)
+          Bosh::Director::Models::VariableMapping.insert(insert_values) if mapping.nil?
         }
       end
 

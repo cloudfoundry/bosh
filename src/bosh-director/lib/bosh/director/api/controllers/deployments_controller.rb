@@ -298,7 +298,10 @@ module Bosh::Director
       end
 
       get '/:deployment/variables' do
-        mappings = Models::PlaceholderMapping.where(deployment_id: deployment.id)
+        mappings = Models::VariableMapping
+                     .select(:variable_id, :variable_name)
+                     .where(:set_id=>[deployment.variables_set_id, deployment.successful_variables_set_id])
+                     .group(:variable_id, :variable_name).all
         JSON.generate(create_variables_response(mappings))
       end
 
@@ -501,8 +504,8 @@ module Bosh::Director
       def create_variables_response(variables)
         variables.map do |variable|
         {
-          'id' => variable.placeholder_id,
-          'name' => variable.placeholder_name
+          'id' => variable.variable_id,
+          'name' => variable.variable_name
         }
         end
       end

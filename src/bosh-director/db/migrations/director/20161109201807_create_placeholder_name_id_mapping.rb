@@ -8,4 +8,8 @@ Sequel.migration do
       unique [:placeholder_id, :deployment_id]
     end
   end
+
+  down do
+    drop_table :placeholder_mappings
+  end
 end

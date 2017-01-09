@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module Bosh::Director
   module DeploymentPlan
     class DeploymentRepo
@@ -36,6 +38,7 @@ module Bosh::Director
             end
           end
 
+          attributes[:variables_set_id] = SecureRandom.uuid
           Bosh::Director::Models::Deployment.create_with_teams(attributes)
         end
       end

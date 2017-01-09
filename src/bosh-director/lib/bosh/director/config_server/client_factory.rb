@@ -26,7 +26,7 @@ module Bosh::Director::ConfigServer
       if @config_server_enabled
         if deployment_name
           raise Bosh::Director::DeploymentNotFound, "no deployment found with name #{deployment_name}" unless Bosh::Director::Models::Deployment.find(name: deployment_name)
-          EnabledClient.new(DeploymentHTTPClient.new(deployment_name,HTTPClient.new), @director_name, @logger)
+          EnabledClient.new(DeploymentHTTPClient.new(deployment_name, HTTPClient.new), @director_name, @logger)
         else
           EnabledClient.new(HTTPClient.new, @director_name, @logger)
         end

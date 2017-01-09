@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'securerandom'
 
 module Bosh
   module Director
@@ -40,6 +41,13 @@ module Bosh
                 instance = subject.find_or_create_by_name('foo')
                 expect(instance.name).to eq('foo')
               }.to change { Models::Deployment.count }
+            end
+
+            it 'generates a placeholder set identifier' do
+              ret_uuid = 'abc123'
+              allow(SecureRandom).to receive(:uuid).and_return(ret_uuid)
+              instance = subject.find_or_create_by_name('foo')
+              expect(instance.variables_set_id).to eq(ret_uuid)
             end
           end
         end
