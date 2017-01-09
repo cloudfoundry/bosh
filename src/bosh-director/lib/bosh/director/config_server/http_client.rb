@@ -19,7 +19,7 @@ module Bosh::Director::ConfigServer
 
     def get(name)
       uri = build_base_uri
-      uri.query = URI.escape("name=#{name}")
+      uri.query = URI.escape("name=#{name}&current=true")
       get_exception = nil
       begin
         retryable.retryer do |retries, exception|

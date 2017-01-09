@@ -109,15 +109,15 @@ describe Bosh::Director::ConfigServer::HTTPClient do
 
   describe '#get' do
     context 'when successful' do
-      it 'makes a GET call to config server @ /v1/data?name={key} and returns response' do
-        expect(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_return(mock_response)
+      it "makes a GET call using 'name' query parameter for variable name and 'current' query parameter set to true" do
+        expect(mock_http).to receive(:get).with('/v1/data?name=smurf_key&current=true', {'Authorization' => 'fake-auth-header'}).and_return(mock_response)
         expect(subject.get('smurf_key')).to eq(mock_response)
       end
     end
 
     context 'when a GET call fails due to a connection error' do
       it 'it throws a connection error after trying 3 times' do
-        allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key', {'Authorization' => 'fake-auth-header'}).and_raise(connection_error)
+        allow(mock_http).to receive(:get).with('/v1/data?name=smurf_key&current=true', {'Authorization' => 'fake-auth-header'}).and_raise(connection_error)
 
         expect(mock_http).to receive(:get).exactly(3).times
         expect{subject.get('smurf_key')}.to raise_error(connection_error)
