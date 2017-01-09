@@ -138,6 +138,69 @@ module Bosh::Director::ConfigServer
             end
           end
         end
+
+        context 'when name contains dots' do
+          it 'should raise a ConfigServerIncorrectNameSyntax error when name contains dots before the last slash' do
+            invalid_placeholders_names = [
+              '((/hello.bye/test))', '((smurf/cat.happy/meow.loud))', '((./test))',
+              '((././test.test))', '((smurf/cat.happy/cat.sad/meow.loud))'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.extract_placeholder_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not contain dots before the last slash"
+                   )
+            end
+          end
+
+          it 'should raise a ConfigServerIncorrectNameSyntax error when a segment starts with a dot' do
+            invalid_placeholders_names = [
+              '((/.))', '((.))', '((/t/.))', '((/t/..))', '((/t/...))'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.extract_placeholder_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not have segment starting with a dot"
+                   )
+            end
+          end
+
+          it 'should raise a ConfigServerIncorrectNameSyntax error when ending with a dot' do
+            invalid_placeholders_names = [
+              '((/hello/t.))', '((/hello/t..))', '((t.))', '((t..))'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.extract_placeholder_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not end name with a dot"
+                   )
+            end
+          end
+
+          it 'should raise a ConfigServerIncorrectNameSyntax error when containing consecutive dots' do
+            invalid_placeholders_names = [
+              '((smurf/b..h))', '((smurf/b...h))', '((b..h))', '((b...h))'
+            ]
+
+            invalid_placeholders_names.each do |invalid_entity|
+              expect {
+                @helper.extract_placeholder_name(invalid_entity)
+              }.to raise_error(
+                     Bosh::Director::ConfigServerIncorrectNameSyntax,
+                     "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not contain consecutive dots"
+                   )
+            end
+          end
+        end
       end
     end
 
@@ -170,7 +233,7 @@ module Bosh::Director::ConfigServer
           it 'should raise a ConfigServerIncorrectNameSyntax error' do
             invalid_variable_names = [
               '', ' ', '%', '  ', '123 345', '@bosh',
-              'hello_)', 't*', 'smurf cat'
+              'hello_)', 't*', 'smurf cat', 'smurf.cat'
             ]
 
             invalid_variable_names.each do |invalid_entity|

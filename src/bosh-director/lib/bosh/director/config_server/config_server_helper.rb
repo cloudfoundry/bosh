@@ -26,10 +26,24 @@ module Bosh::Director::ConfigServer
       return "/#{director_name}/#{deployment_name}/#{name}"
     end
 
+    # These are the variable names in the variables section of the manifest
     # @param [String] name the variable name
     # @raise [Error] if name does not meet variable name specs
     def validate_variable_name(name)
-      validate_syntax(name, 'Variable')
+      unless /^[a-zA-Z0-9_\-\/]+$/ =~ name
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Variable name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+      end
+
+      if name.end_with? '/'
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Variable name '#{name}' must not end with a forward slash"
+      end
+
+      if /\/\// =~ name
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Variable name '#{name}' must not contain two consecutive forward slashes"
+      end
     end
 
     # @param [Array] placeholders list of potential absolute placeholders
@@ -48,31 +62,24 @@ module Bosh::Director::ConfigServer
     # local utility methods
 
     def validate_placeholder_name(name)
-      validate_syntax(name, 'Placeholder')
-      validate_bang_character(name)
-    end
-
-    def validate_syntax(name, validation_for)
       # Allowing exclamation mark for spiff
       unless /^[a-zA-Z0-9_\-\.!\/]+$/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "#{validation_for} name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+              "Placeholder name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end
 
       if name.end_with? '/'
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "#{validation_for} name '#{name}' must not end with a forward slash"
+              "Placeholder name '#{name}' must not end with a forward slash"
       end
 
       if /\/\// =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "#{validation_for} name '#{name}' must not contain two consecutive forward slashes"
+              "Placeholder name '#{name}' must not contain two consecutive forward slashes"
       end
 
-      if /\.\./ =~ name
-        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
-              "#{validation_for} name '#{name}' must not contain two consecutive dots"
-      end
+      validate_name_dot_syntax(name)
+      validate_bang_character(name)
     end
 
     def validate_bang_character(name)
@@ -83,6 +90,33 @@ module Bosh::Director::ConfigServer
         unless name.start_with?('!') && name.size != 1
           raise Bosh::Director::ConfigServerIncorrectNameSyntax, bang_error_msg(name)
         end
+      end
+    end
+
+    def validate_name_dot_syntax(name)
+      if name.include? '/'
+        slug_before_last_slash = name[/.*\//]
+        if slug_before_last_slash.include? '.'
+          raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+                "Placeholder name '#{name}' syntax error: Must not contain dots before the last slash"
+        end
+      end
+
+      slug_after_last_slash = name[/[^\/]+$/]
+
+      if slug_after_last_slash.start_with? '.'
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Placeholder name '#{name}' syntax error: Must not have segment starting with a dot"
+      end
+
+      if slug_after_last_slash.end_with? '.'
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Placeholder name '#{name}' syntax error: Must not end name with a dot"
+      end
+
+      if /\.\./ =~ slug_after_last_slash
+        raise Bosh::Director::ConfigServerIncorrectNameSyntax,
+              "Placeholder name '#{name}' syntax error: Must not contain consecutive dots"
       end
     end
 

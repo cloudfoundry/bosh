@@ -346,7 +346,7 @@ module Bosh::Director::ConfigServer
 
         let(:manifest_hash)  do
           {
-              'nest1' => '((/nested_placeholder.x.))',
+              'nest1' => '((/nested_placeholder.x))',
               'nest2' => '((/nested_placeholder.x.y))',
               'nest3' => '((/nested_placeholder.x.y.z))'
           }
@@ -434,7 +434,7 @@ module Bosh::Director::ConfigServer
           it 'raises an error' do
             expect{
               subject
-            }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Placeholder name 'nested_placeholder..x' must not contain two consecutive dots")
+            }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Placeholder name 'nested_placeholder..x' syntax error: Must not contain consecutive dots")
           end
         end
       end
