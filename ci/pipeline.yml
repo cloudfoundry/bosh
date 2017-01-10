@@ -312,7 +312,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - trigger: true
+      - trigger: false
         passed:
         - integration-2.1-mysql
         - integration-1.9-postgres
@@ -330,7 +330,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - trigger: true
+      - trigger: false
         passed:
         - integration-2.1-mysql
         - integration-1.9-postgres
