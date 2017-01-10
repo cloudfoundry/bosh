@@ -591,6 +591,8 @@ module Bosh::Director
               }
 
               instance_params['vm_cid'] = "cid-#{i}" if i < 8
+              instance_params['availability_zone'] = "az0" if i == 0
+              instance_params['availability_zone'] = "az1" if i == 1
               Models::Instance.create(instance_params)
             end
 
@@ -602,11 +604,12 @@ module Bosh::Director
 
             body.each_with_index do |instance_with_vm, i|
               expect(instance_with_vm).to eq(
-                  'agent_id' => "agent-#{i}",
-                  'job' => "job-#{i}",
-                  'index' => i,
-                  'cid' => "cid-#{i}",
-                  'id' => "instance-#{i}"
+                'agent_id' => "agent-#{i}",
+                'job' => "job-#{i}",
+                'index' => i,
+                'cid' => "cid-#{i}",
+                'id' => "instance-#{i}",
+                'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
               )
             end
           end
@@ -649,6 +652,8 @@ module Bosh::Director
                     'spec_json' => '{ "lifecycle": "service" }',
                 }
 
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
                 Models::Instance.create(instance_params)
               end
 
@@ -665,6 +670,7 @@ module Bosh::Director
                                         'job' => "job-#{i}",
                                         'index' => i,
                                         'id' => "instance-#{i}",
+                                        'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                                         'expects_vm' => true
                                     )
               end
@@ -704,6 +710,7 @@ module Bosh::Director
                                          'job' => 'job',
                                          'index' => 1,
                                          'id' => 'instance-1',
+                                         'az' => nil,
                                          'expects_vm' => true
                                      )
                 end
@@ -725,6 +732,7 @@ module Bosh::Director
                                          'job' => 'job',
                                          'index' => 1,
                                          'id' => 'instance-1',
+                                         'az' => nil,
                                          'expects_vm' => false
                                      )
                 end
@@ -748,6 +756,7 @@ module Bosh::Director
                                        'job' => 'job',
                                        'index' => 1,
                                        'id' => 'instance-1',
+                                       'az' => nil,
                                        'expects_vm' => false
                                    )
               end
