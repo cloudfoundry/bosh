@@ -493,7 +493,8 @@ module Bosh::Director
             'cid' => instance.vm_cid,
             'job' => instance.job,
             'index' => instance.index,
-            'id' => instance.uuid
+            'id' => instance.uuid,
+            'az' => instance.availability_zone,
         }
       end
 
