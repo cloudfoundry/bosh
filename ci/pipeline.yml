@@ -359,7 +359,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - trigger: true
+      - trigger: false
         passed:
         - unit-1.9
         - unit-2.3
@@ -377,7 +377,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - trigger: true
+      - trigger: false
         passed:
         - unit-1.9
         - unit-1.9-postgres
