@@ -35,6 +35,7 @@ module Bosh::Director
         options[:ssl_cert_store] = cert_store
       end
 
+      @uaa_url = uaa_url
       @uaa_token_issuer = CF::UAA::TokenIssuer.new(
         uaa_url,
         client_id,
@@ -83,7 +84,11 @@ module Bosh::Director
       end
 
       @token_data = decode
-    rescue => e
+    rescue CF::UAA::SSLException => e
+      error_message = "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{@uaa_url}'"
+      @logger.error("#{error_message}. Error thrown: #{e.inspect}")
+      raise UAAAuthorizationError, error_message
+    rescue Exception => e
       e = uaa_exception.nil? ? e : uaa_exception
       error_message = "Failed to obtain valid token from UAA: #{e.inspect}"
       @logger.error(error_message)

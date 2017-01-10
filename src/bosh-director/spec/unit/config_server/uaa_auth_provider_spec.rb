@@ -6,11 +6,12 @@ describe Bosh::Director::UAAAuthProvider do
   include Support::UaaHelpers
 
   subject(:token_provider) { described_class.new(config, logger) }
+  let(:uaa_url) {'https://fake-uaa-url'}
   let(:config) do
     {
         'client_id' => 'fake-client',
         'client_secret' => 'fake-client-secret',
-        'url' => 'fake-uaa-url',
+        'url' => uaa_url,
         'ca_cert_path' => 'fake-ca-cert-path'
     }
   end
@@ -27,7 +28,7 @@ describe Bosh::Director::UAAAuthProvider do
     allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
 
     allow(CF::UAA::TokenIssuer).to receive(:new).with(
-        'fake-uaa-url', 'fake-client', 'fake-client-secret', { :ssl_ca_file => 'fake-ca-cert-path' }
+      uaa_url, 'fake-client', 'fake-client-secret', { :ssl_ca_file => 'fake-ca-cert-path' }
     ).and_return(token_issuer)
     allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
   end
@@ -70,6 +71,18 @@ describe Bosh::Director::UAAAuthProvider do
       expect {
         token_provider.auth_header
       }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
+    end
+
+    context 'when error is CF::UAA::SSLException' do
+      let(:client_credentials_grant_error) do
+        CF::UAA::SSLException.new("Invalid SSL Cert for #{uaa_url}. Use '--skip-ssl-validation' to continue with an insecure target")
+      end
+
+      it 'catches the error and provide more user friendly error message' do
+        expect {
+          token_provider.auth_header
+        }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{uaa_url}'")
+      end
     end
   end
 
@@ -158,6 +171,4 @@ describe Bosh::Director::UAAAuthProvider do
       token_provider.auth_header
     end
   end
-
-
 end
