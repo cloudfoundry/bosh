@@ -77,19 +77,15 @@ module Bosh::Director
     end
 
     def fetch
-      uaa_exception = nil
-      @uaa_token = retryable.retryer do |retries, exception|
-        uaa_exception = exception
+      @uaa_token = retryable.retryer do
         @uaa_token_issuer.client_credentials_grant
       end
-
       @token_data = decode
     rescue CF::UAA::SSLException => e
       error_message = "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{@uaa_url}'"
       @logger.error("#{error_message}. Error thrown: #{e.inspect}")
       raise UAAAuthorizationError, error_message
     rescue Exception => e
-      e = uaa_exception.nil? ? e : uaa_exception
       error_message = "Failed to obtain valid token from UAA: #{e.inspect}"
       @logger.error(error_message)
       raise UAAAuthorizationError, error_message

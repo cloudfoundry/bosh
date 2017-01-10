@@ -20,29 +20,15 @@ module Bosh::Director::ConfigServer
     def get(name)
       uri = build_base_uri
       uri.query = URI.escape("name=#{name}&current=true")
-      get_exception = nil
-      begin
-        retryable.retryer do |retries, exception|
-          get_exception = exception
-          @http.get(uri.request_uri, {'Authorization' => @auth_provider.auth_header})
-        end
-      rescue => e
-        e = get_exception.nil? ? e : get_exception
-        raise e
+      retryable.retryer do
+        @http.get(uri.request_uri, {'Authorization' => @auth_provider.auth_header})
       end
     end
 
     def post(body)
       uri = build_base_uri
-      post_exception = nil
-      begin
-        retryable.retryer do |retries, exception|
-          get_exception = exception
-          @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header, 'Content-Type' => 'application/json'})
-        end
-      rescue => e
-        e = post_exception.nil? ? e : post_exception
-        raise e
+      retryable.retryer do
+        @http.post(uri.path, Yajl::Encoder.encode(body), {'Authorization' => @auth_provider.auth_header, 'Content-Type' => 'application/json'})
       end
     end
 
