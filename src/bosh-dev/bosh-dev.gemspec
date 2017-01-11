@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-stemcell'
   spec.add_dependency 'peach'
   spec.add_dependency 'bundler'
-  spec.add_dependency 'fog-aws'
+  spec.add_dependency 'fog-aws', '~> 0.7.6'
   spec.add_dependency 'logging'
 end

@@ -21,10 +21,9 @@ PATH
       bosh-core
       bosh-director
       bosh-stemcell
-      bosh_cli
       bosh_common
       bundler
-      fog-aws
+      fog-aws (~> 0.7.6)
       logging
       peach
 
