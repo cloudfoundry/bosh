@@ -14,7 +14,6 @@ groups:
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
       - fuzz-tests
-      - publish-coverage
       - candidate-release
       - finalize-bosh-release
       - merge-master
@@ -28,19 +27,16 @@ groups:
       - unit-2.3-postgres
       - integration-2.3-mysql
       - integration-2.3-postgres
-      - publish-coverage
 
   - name: mysql
     jobs:
       - unit-2.3-mysql
       - integration-2.3-mysql
-      - publish-coverage
 
   - name: postgres
     jobs:
       - unit-2.3-postgres
       - integration-2.3-postgres
-      - publish-coverage
 
   - name: finalize
     jobs:
@@ -424,23 +420,6 @@ jobs:
           channel: {{slack_channel_name}}
           icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
           text: {{slack_failure_message}}
-
-  - name: publish-coverage
-    public: true
-    serial: true
-    build_logs_to_retain: 10
-    plan:
-      - trigger: true
-        passed:
-        - unit-2.3
-        - integration-2.3-mysql
-        - integration-2.3-postgres
-        - blobstore-client-integration
-        get: bosh-src
-      - task: publish
-        file: bosh-src/ci/tasks/publish-coverage.yml
-        params:
-          CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
   - name: candidate-release
     plan:
