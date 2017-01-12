@@ -61,15 +61,15 @@ describe Bosh::Cli::Release do
       opts = {
         :blobstore_path => "/tmp/blobstore"
       }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", opts).and_call_original
-      expect(local_release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+      expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("local", opts).and_call_original
+      expect(local_release.blobstore).to be_kind_of(Bosh::Cli::Blobstore::BaseClient)
     end
 
     it "returns the cached blobstore client if previously constructed" do
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).and_call_original
+      expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).and_call_original
       blobstore = local_release.blobstore
 
-      expect(Bosh::Blobstore::Client).to_not receive(:safe_create)
+      expect(Bosh::Cli::Blobstore::Client).to_not receive(:safe_create)
       new_blobstore = local_release.blobstore
 
       expect(blobstore).to be(new_blobstore)
@@ -115,8 +115,8 @@ describe Bosh::Cli::Release do
         let(:config_dir) { spec_asset("config/local") }
 
         it "returns the configured blobstore" do
-          expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
-          expect(release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+          expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
+          expect(release.blobstore).to be_kind_of(Bosh::Cli::Blobstore::BaseClient)
         end
       end
     end
@@ -132,7 +132,7 @@ describe Bosh::Cli::Release do
         it "prints warning and returns nil" do
           expect(release).to receive(:warning).
             with("Missing blobstore configuration, please update config/final.yml before making a final release")
-          expect(Bosh::Blobstore::Client).to_not receive(:safe_create)
+          expect(Bosh::Cli::Blobstore::Client).to_not receive(:safe_create)
           expect(release.blobstore).to be_nil
         end
       end
@@ -141,8 +141,8 @@ describe Bosh::Cli::Release do
         let(:config_dir) { spec_asset("config/local") }
 
         it "returns the configured blobstore" do
-          expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
-          expect(release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+          expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
+          expect(release.blobstore).to be_kind_of(Bosh::Cli::Blobstore::BaseClient)
         end
       end
     end
@@ -161,7 +161,7 @@ describe Bosh::Cli::Release do
         :secret_access_key => "foo",
         :access_key_id => "bar"
       }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("s3", opts)
+      expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("s3", opts)
       r.blobstore
     end
 
@@ -177,7 +177,7 @@ describe Bosh::Cli::Release do
           :user => 'dav-user',
           :password => 'dav-password'
       }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("dav", opts)
+      expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("dav", opts)
       r.blobstore
     end
 
@@ -197,7 +197,7 @@ describe Bosh::Cli::Release do
       opts = {
         :blobstore_path => "/tmp/blobstore"
       }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", opts)
+      expect(Bosh::Cli::Blobstore::Client).to receive(:safe_create).with("local", opts)
       r.blobstore
     end
 

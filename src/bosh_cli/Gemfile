@@ -1,0 +1,72 @@
+# encoding: UTF-8
+
+source 'https://rubygems.org'
+
+gem 'bosh_cli', path: '.'
+
+gem 'rake', '~>10.0'
+
+# json version is hardcoded in release director, health_monitor and registry packages
+# when modified needs to be updated there as well
+gem 'json', '=1.8.3'
+
+gem 'talentbox-delayed_job_sequel', '~> 4.1'
+
+gem 'bundler', '~>1.11.0'
+
+group :production do
+  # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
+  # also bosh_openstack_registry, director
+  gem 'pg'
+  gem 'mysql2'
+end
+
+group :bat do
+  gem 'httpclient'
+  gem 'minitar'
+  gem 'net-ssh'
+end
+
+group :development, :test do
+  gem 'serverspec', '0.15.4'
+
+  gem 'rspec', '~> 3.0.0'
+  gem 'rspec-its'
+  gem 'rspec-instafail'
+
+  gem 'parallel_tests', '~> 2.0'
+  gem 'rack-test'
+  gem 'webmock'
+  gem 'fakefs'
+  gem 'simplecov', '~> 0.9.0'
+  gem 'sinatra'
+  gem 'sinatra-contrib'
+  gem 'codeclimate-test-reporter', require: false
+  gem 'vcr'
+  gem 'pry'
+
+  # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
+  gem 'eventmachine', '1.0.4'
+
+  # Explicitly do not require serverspec dependency
+  # so that it could be monkey patched in a deterministic way
+  # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`
+  gem 'specinfra', '1.15.0', require: nil
+
+  # for director
+  gem 'machinist', '~>1.0'
+
+  # for root level specs
+  gem 'rest-client'
+  gem 'nats'
+  gem 'rugged'
+
+  gem 'sqlite3'
+  gem 'timecop', '~>0.7.1'
+  gem 'blue-shell'
+
+  gem 'unix-crypt'
+
+  # for registry
+  gem 'mono_logger'
+end

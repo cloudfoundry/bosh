@@ -192,7 +192,7 @@ module Bosh::Cli
 
     def assign_version
       latest_final_version = Versions::ReleaseVersionsIndex.new(@final_index).latest_version
-      latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
+      latest_final_version ||= Bosh::Cli::Common::Version::ReleaseVersion.parse('0')
 
       if @final
         # Drop pre-release and post-release segments, and increment the release segment

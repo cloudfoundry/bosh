@@ -236,7 +236,7 @@ module Bosh::Cli
         end
       end
 
-      Bosh::ThreadPool.new(:max_threads => @max_parallel_downloads, :logger => Logging::Logger.new(nil)).wrap do |pool|
+      Bosh::Cli::ThreadPool.new(:max_threads => @max_parallel_downloads, :logger => Logging::Logger.new(nil)).wrap do |pool|
         missing_blobs.each do |path, sha|
           pool.process do
             local_path = download_blob(path)

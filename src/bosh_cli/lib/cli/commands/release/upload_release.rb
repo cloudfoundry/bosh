@@ -121,7 +121,7 @@ If --name & --version are provided, they will be used for checking if release ex
           tarball_path = tarball.convert_to_old_format
         end
 
-        Bosh::Common::Version::ReleaseVersion.parse(tarball.version) if new_director?
+        Bosh::Cli::Common::Version::ReleaseVersion.parse(tarball.version) if new_director?
 
         begin
           if repack && !fix
@@ -236,22 +236,22 @@ If --name & --version are provided, they will be used for checking if release ex
 
       def should_convert_to_old_format?(version)
         return false if new_director?
-        old_format = Bosh::Common::Version::ReleaseVersion.parse(version).to_old_format
+        old_format = Bosh::Cli::Common::Version::ReleaseVersion.parse(version).to_old_format
         old_format && version != old_format
       end
 
       def new_director?
         director_version = director.get_status['version']
         new_format_director_version = '1.2580.0'
-        Bosh::Common::Version::BoshVersion.parse(director_version) >=
-          Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
+        Bosh::Cli::Common::Version::BoshVersion.parse(director_version) >=
+          Bosh::Cli::Common::Version::BoshVersion.parse(new_format_director_version)
       end
 
       def director_supports_fast_unpack?
         director_version = director.get_status['version']
         new_format_director_version = '1.3100.0'
-        Bosh::Common::Version::BoshVersion.parse(director_version) >
-            Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
+        Bosh::Cli::Common::Version::BoshVersion.parse(director_version) >
+            Bosh::Cli::Common::Version::BoshVersion.parse(new_format_director_version)
       end
     end
   end

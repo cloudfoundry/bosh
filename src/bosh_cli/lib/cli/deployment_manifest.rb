@@ -1,4 +1,4 @@
-require 'common/deep_copy'
+require 'cli/common/deep_copy'
 
 module Bosh::Cli
   class DeploymentManifest
@@ -7,7 +7,7 @@ module Bosh::Cli
     end
 
     def normalize
-      normalized = Bosh::Common::DeepCopy.copy(manifest_hash)
+      normalized = Bosh::Cli::Common::DeepCopy.copy(manifest_hash)
 
       # for backwards compatibility, new directors always convert stemcell and release versions to string
       if normalized['resource_pools']

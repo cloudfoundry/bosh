@@ -45,7 +45,7 @@ module Bosh::Cli::Command
           version = nil
           if options[:version]
             version = options[:version]
-            version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s unless version.nil?
+            version = Bosh::Cli::Common::Version::ReleaseVersion.parse(version).to_s unless version.nil?
           end
 
           release_filename = create_from_spec(version)
@@ -256,9 +256,9 @@ module Bosh::Cli::Command
       end
 
       def commit_hash
-        status = Bosh::Exec.sh('git show-ref --head --hash=8 2> /dev/null')
+        status = Bosh::Cli::Exec.sh('git show-ref --head --hash=8 2> /dev/null')
         status.output.split.first
-      rescue Bosh::Exec::Error
+      rescue Bosh::Cli::Exec::Error
         '00000000'
       end
 

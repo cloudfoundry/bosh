@@ -10,7 +10,7 @@ module Bosh::Cli::Versions
         version_strings = ['1.8-dev', '1.9-dev']
         allow(version_index).to receive(:version_strings).and_return(version_strings)
 
-        expected_version_list = Bosh::Common::Version::ReleaseVersionList.parse(version_strings)
+        expected_version_list = Bosh::Cli::Common::Version::ReleaseVersionList.parse(version_strings)
         expect(release_versions_index.versions).to eq(expected_version_list)
       end
     end

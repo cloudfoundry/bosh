@@ -107,7 +107,7 @@ module Bosh::Cli::Command
       end
 
       def next_final_version
-        latest_final_version = Bosh::Cli::Versions::ReleaseVersionsIndex.new(@release_index).latest_version || Bosh::Common::Version::ReleaseVersion.parse('0')
+        latest_final_version = Bosh::Cli::Versions::ReleaseVersionsIndex.new(@release_index).latest_version || Bosh::Cli::Common::Version::ReleaseVersion.parse('0')
         latest_final_version.increment_release.to_s
       end
 

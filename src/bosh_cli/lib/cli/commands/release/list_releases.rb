@@ -39,7 +39,7 @@ module Bosh::Cli::Command
           t.headings = 'Name', 'Versions'
           releases.each do |release|
             versions = release['versions'].sort { |v1, v2|
-              Bosh::Common::Version::ReleaseVersion.parse_and_compare(v1, v2)
+              Bosh::Cli::Common::Version::ReleaseVersion.parse_and_compare(v1, v2)
             }.map { |v| ((release['in_use'] || []).include?(v)) ? "#{v}*" : v }
 
             t << [release['name'], versions.join(', ')]
@@ -76,7 +76,7 @@ module Bosh::Cli::Command
       end
 
       def sort_versions(versions)
-        versions.sort { |v1, v2| Bosh::Common::Version::ReleaseVersion.parse_and_compare(v1['version'], v2['version']) }
+        versions.sort { |v1, v2| Bosh::Cli::Common::Version::ReleaseVersion.parse_and_compare(v1['version'], v2['version']) }
       end
 
       def formatted_version_and_commit_hash(version)

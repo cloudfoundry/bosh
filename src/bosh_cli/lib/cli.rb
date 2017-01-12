@@ -6,7 +6,7 @@ end
 
 autoload :HTTPClient, 'httpclient'
 
-require 'blobstore_client'
+require 'cli/blobstore_client'
 require 'base64'
 require 'digest/sha1'
 require 'fileutils'
@@ -35,21 +35,21 @@ include Archive::Tar
 
 require 'semi_semantic/version'
 
-require 'bosh/template/evaluation_context'
+require 'cli/bosh/template/evaluation_context'
 
 unless defined?(Bosh::Cli::VERSION)
   require 'cli/version'
 end
 
-require 'common/common'
-require 'common/exec'
-require 'common/release/release_directory'
-require 'common/version/release_version'
-require 'common/version/release_version_list'
-require 'common/version/bosh_version'
-require 'common/version/stemcell_version'
-require 'common/version/stemcell_version_list'
-require 'common/thread_pool'
+require 'cli/common/common'
+require 'cli/common/exec'
+require 'cli/common/release/release_directory'
+require 'cli/common/version/release_version'
+require 'cli/common/version/release_version_list'
+require 'cli/common/version/bosh_version'
+require 'cli/common/version/stemcell_version'
+require 'cli/common/version/stemcell_version_list'
+require 'cli/common/thread_pool'
 
 require 'cli/config'
 require 'cli/core_ext'

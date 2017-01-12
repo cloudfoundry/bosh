@@ -20,19 +20,20 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  = %w(bosh)
 
-  spec.add_dependency 'bosh_common', "~>#{version}"
-  spec.add_dependency 'bosh-template', "~>#{version}"
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'json_pure',   '~>1.7'
   spec.add_dependency 'highline',    '~>1.6.2'
   spec.add_dependency 'progressbar', '~>0.21.0'
   spec.add_dependency 'httpclient',  '=2.7.1'
   spec.add_dependency 'terminal-table',   '~>1.4.3'
-  spec.add_dependency 'blobstore_client', "~>#{version}"
   spec.add_dependency 'net-ssh',          '=2.9.2'
   spec.add_dependency 'net-ssh-gateway',  '~>1.2.0'
   spec.add_dependency 'net-scp', '~>1.1.0'
   spec.add_dependency 'netaddr', '~>1.5.0'
   spec.add_dependency 'minitar', '~>0.5.4'
   spec.add_dependency 'sshkey', '~>1.7.0'
+  spec.add_dependency 'aws-sdk-resources', '2.2.0'
+  spec.add_dependency 'multi_json',      '~> 1.1'
+  spec.add_dependency 'semi_semantic', '~>1.2.0'
+  spec.add_dependency 'logging',       '~>1.8.2'
 end

@@ -14,7 +14,7 @@ module Bosh::Cli
       release_source.cleanup
     end
 
-    let(:blobstore) { Bosh::Blobstore::Client.create('local', 'blobstore_path' => blobstore_dir) }
+    let(:blobstore) { Bosh::Cli::Blobstore::Client.create('local', 'blobstore_path' => blobstore_dir) }
     let(:blobstore_dir) { File.join(workspace_dir, 'blobstore') }
 
     let(:job_tarball) { Tempfile.new('job-tarball', workspace_dir) }

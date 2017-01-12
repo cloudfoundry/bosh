@@ -6,7 +6,7 @@ describe Bosh::Cli::ArchiveRepository do
   let(:tarball) { Tempfile.new(['tarball', '.tgz']) }
   after { archive_dir_path.rmtree; cache_dir_path.rmtree; tarball.unlink }
 
-  let(:blobstore) { instance_double(Bosh::Blobstore::SimpleBlobstoreClient) }
+  let(:blobstore) { instance_double(Bosh::Cli::Blobstore::SimpleBlobstoreClient) }
   let(:resource) do
     instance_double(Bosh::Cli::Resources::Package,
       name: 'package-name',
@@ -192,7 +192,7 @@ describe Bosh::Cli::ArchiveRepository do
         before do
           expect(final_resolver).to receive(:find_file).
             with('fake-blobstore-id', sha1, 'package package-name (fake-fingerprint)').
-            and_raise(Bosh::Blobstore::NotFound)
+            and_raise(Bosh::Cli::Blobstore::NotFound)
         end
 
         it 'raises BlobstoreError' do
@@ -206,7 +206,7 @@ describe Bosh::Cli::ArchiveRepository do
         before do
           expect(final_resolver).to receive(:find_file).
             with('fake-blobstore-id', sha1, 'package package-name (fake-fingerprint)').
-            and_raise(Bosh::Blobstore::BlobstoreError)
+            and_raise(Bosh::Cli::Blobstore::BlobstoreError)
         end
 
         it 'raises BlobstoreError' do

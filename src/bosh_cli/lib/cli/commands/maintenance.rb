@@ -45,7 +45,7 @@ module Bosh::Cli::Command
       stemcells_by_name.each_pair do |_, stemcells|
         stemcells.reject! { |stemcell| !stemcell['deployments'].empty? }
         sorted_stemcells = stemcells.sort do |sc1, sc2|
-          Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
+          Bosh::Cli::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Cli::Common::Version::StemcellVersion.parse(sc2['version'])
         end
 
         delete_list.concat(trim_array(sorted_stemcells, n_to_keep))
@@ -76,7 +76,7 @@ module Bosh::Cli::Command
         version_tuples = versions.map do |v|
           {
             provided: v,
-            parsed: Bosh::Common::Version::ReleaseVersion.parse(v)
+            parsed: Bosh::Cli::Common::Version::ReleaseVersion.parse(v)
           }
         end
         versions = version_tuples.sort_by { |v| v[:parsed] }.map { |v| v[:provided] }

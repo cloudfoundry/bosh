@@ -1,12 +1,12 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'common/deep_copy'
-require 'bosh/template/property_helper'
+require 'cli/common/deep_copy'
+require 'cli/bosh/template/property_helper'
 
 module Bosh::Cli
   class JobPropertyCollection
     include Enumerable
-    include Bosh::Template::PropertyHelper
+    include Bosh::Cli::Template::PropertyHelper
 
     # @param [Bosh::Cli::Resources::Job] job Which job this property collection is for
     # @param [Hash] global_properties Globally defined properties
@@ -15,8 +15,8 @@ module Bosh::Cli
     def initialize(job, global_properties, job_properties, mappings)
       @job = job
 
-      @job_properties = Bosh::Common::DeepCopy.copy(job_properties || {})
-      merge(@job_properties, Bosh::Common::DeepCopy.copy(global_properties))
+      @job_properties = Bosh::Cli::Common::DeepCopy.copy(job_properties || {})
+      merge(@job_properties, Bosh::Cli::Common::DeepCopy.copy(global_properties))
 
       @mappings = mappings || {}
       @properties = []

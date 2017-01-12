@@ -11,7 +11,7 @@ module Bosh::Cli
     end
 
     # @param [String] manifest_file Release manifest path
-    # @param [Bosh::Blobstore::Client] blobstore Blobstore client
+    # @param [Bosh::Cli::Blobstore::Client] blobstore Blobstore client
     # @param [Array] package_matches List of package checksums that director
     #   can match
     # @param [String] release_source Release directory
@@ -124,7 +124,7 @@ module Bosh::Cli
 
       resolver = Versions::VersionFileResolver.new(storage, @blobstore)
       resolver.find_file(blobstore_id, sha1, "#{build_type} #{desc}")
-    rescue Bosh::Blobstore::BlobstoreError => e
+    rescue Bosh::Cli::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 

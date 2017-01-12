@@ -92,7 +92,7 @@ module Bosh::Cli
 
     # Picks blobstore client to use with current release.
     #
-    # @return [Bosh::Blobstore::Client] blobstore client
+    # @return [Bosh::Cli::Blobstore::Client] blobstore client
     def blobstore
       return @blobstore if @blobstore
       blobstore_config = Marshal.load(Marshal.dump(@final_config["blobstore"]))
@@ -111,10 +111,10 @@ module Bosh::Cli
 
       options = merge_private_data(provider, options)
 
-      opts = Bosh::Common.symbolize_keys(options)
-      @blobstore = Bosh::Blobstore::Client.safe_create(provider, opts)
+      opts = Bosh::Cli::Common.symbolize_keys(options)
+      @blobstore = Bosh::Cli::Blobstore::Client.safe_create(provider, opts)
 
-    rescue Bosh::Blobstore::BlobstoreError => e
+    rescue Bosh::Cli::Blobstore::BlobstoreError => e
       err("Cannot initialize blobstore: #{e}")
     end
 

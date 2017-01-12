@@ -111,7 +111,7 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
       stemcells = director.list_stemcells.sort do |sc1, sc2|
         if sc1['name'] == sc2['name']
-          Bosh::Common::Version::StemcellVersion.parse_and_compare(sc1['version'], sc2['version'])
+          Bosh::Cli::Common::Version::StemcellVersion.parse_and_compare(sc1['version'], sc2['version'])
         else
           sc1['name'] <=> sc2['name']
         end

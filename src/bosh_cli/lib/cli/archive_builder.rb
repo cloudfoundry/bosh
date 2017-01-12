@@ -34,7 +34,7 @@ module Bosh::Cli
       end
 
       artifact
-    rescue Bosh::Blobstore::BlobstoreError => e
+    rescue Bosh::Cli::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 

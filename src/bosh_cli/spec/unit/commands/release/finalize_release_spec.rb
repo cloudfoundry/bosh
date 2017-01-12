@@ -22,7 +22,7 @@ module Bosh::Cli::Command::Release
       let(:file) {instance_double(File)}
       let(:tarball) { instance_double('Bosh::Cli::ReleaseTarball') }
       let(:blob_manager) { instance_double('Bosh::Cli::BlobManager') }
-      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+      let(:blobstore) { instance_double('Bosh::Cli::Blobstore::Client') }
       let(:archive_builder) { instance_double('Bosh::Cli::ArchiveBuilder') }
       let(:version_index) { instance_double('Bosh::Cli::Versions::VersionsIndex') }
       let(:release_version_index) { instance_double('Bosh::Cli::Versions::ReleaseVersionsIndex') }
@@ -62,7 +62,7 @@ module Bosh::Cli::Command::Release
         allow(version_index).to receive(:add_version)
 
         allow(Bosh::Cli::Versions::ReleaseVersionsIndex).to receive(:new).and_return(release_version_index)
-        allow(release_version_index).to receive(:latest_version).and_return(Bosh::Common::Version::ReleaseVersion.parse('2'))
+        allow(release_version_index).to receive(:latest_version).and_return(Bosh::Cli::Common::Version::ReleaseVersion.parse('2'))
       end
 
       it 'is a command with the correct options' do
