@@ -2,7 +2,6 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class EnabledClient
-    include Bosh::Director::FormatterHelper
     include ConfigServerHelper
 
     def initialize(http_client, director_name, logger)

@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::FormatterHelper do
-  include Bosh::Director::FormatterHelper
+
+  subject { described_class.new}
 
   describe '#indent_string' do
     it 'indents string' do
@@ -17,7 +18,7 @@ Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config serve
  Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
       EXPECTED
 
-      expect(indent_string(input)).to eq output
+      expect(subject.indent_string(input)).to eq output
     end
 
     it 'indents string with custom character' do
@@ -35,7 +36,7 @@ Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config serve
 .Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
       EXPECTED
 
-      expect(indent_string(input, {:indent_char => '.'})).to eq output
+      expect(subject.indent_string(input, {:indent_char => '.'})).to eq output
     end
 
     it 'indents string with custom indentation count' do
@@ -51,7 +52,7 @@ Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config serve
     Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
       EXPECTED
 
-      expect(indent_string(input, {:indent_by => 4})).to eq output
+      expect(subject.indent_string(input, {:indent_by => 4})).to eq output
     end
 
   end
@@ -71,7 +72,7 @@ I am a header
  Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
       EXPECTED
 
-      expect(prepend_header_and_indent_body('I am a header', input)).to eq output
+      expect(subject.prepend_header_and_indent_body('I am a header', input)).to eq output
     end
 
     it 'respects indentation options string' do
@@ -88,7 +89,7 @@ I am a header
 ....Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
       EXPECTED
 
-      expect(prepend_header_and_indent_body('I am a header', input, {:indent_by => 4, :indent_char => '.'})).to eq output
+      expect(subject.prepend_header_and_indent_body('I am a header', input, {:indent_by => 4, :indent_char => '.'})).to eq output
     end
   end
 end

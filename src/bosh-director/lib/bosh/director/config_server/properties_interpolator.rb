@@ -1,6 +1,5 @@
 module Bosh::Director::ConfigServer
   class PropertiesInterpolator
-    include Bosh::Director::FormatterHelper
 
     def initialize(deployment_name)
       @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client(deployment_name)
@@ -26,7 +25,8 @@ module Bosh::Director::ConfigServer
           interpolated_hash = @config_server_client.interpolate(job_properties, deployment_name)
           result[job_name] = interpolated_hash
         rescue Exception => e
-          errors << prepend_header_and_indent_body("- Unable to render templates for job '#{job_name}'. Errors are:", e.message.strip, {:indent_by => 2})
+          header = "- Unable to render templates for job '#{job_name}'. Errors are:"
+          errors << Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
         end
       end
 
@@ -53,7 +53,7 @@ module Bosh::Director::ConfigServer
             link_spec['properties'] = interpolated_hash
           rescue Exception => e
             header = "- Unable to interpolate link '#{link_name}' properties; provided by '#{link_spec['deployment_name']}' deployment. Errors are:"
-            errors << prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
+            errors << Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
           end
         end
       end

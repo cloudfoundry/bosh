@@ -1,10 +1,8 @@
 require 'bosh/director/core/templates/job_template_loader'
 require 'bosh/director/core/templates/job_instance_renderer'
-require 'bosh/director/formatter_helper'
 
 module Bosh::Director
   class JobRenderer
-    include Bosh::Director::FormatterHelper
 
     def self.create
       new(Config.logger)
@@ -45,7 +43,8 @@ module Bosh::Director
       begin
        instance_plan.spec.as_template_spec
       rescue Exception => e
-        message = prepend_header_and_indent_body("- Unable to render jobs for instance group '#{instance_plan.instance.job_name}'. Errors are:", e.message.strip, {:indent_by => 2})
+        header = "- Unable to render jobs for instance group '#{instance_plan.instance.job_name}'. Errors are:"
+        message = FormatterHelper.new.prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
         raise message
       end
     end

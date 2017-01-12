@@ -7,7 +7,6 @@ require 'common/deep_copy'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
-    include Bosh::Director::FormatterHelper
 
     attr_reader :monit_erb, :source_erbs
 
@@ -43,7 +42,8 @@ module Bosh::Director::Core::Templates
 
       if errors.length > 0
         combined_errors = errors.map{|error| "- #{error.message.strip}"}.join("\n")
-        message = prepend_header_and_indent_body("- Unable to render templates for job '#{@name}'. Errors are:", combined_errors.strip, {:indent_by => 2})
+        header = "- Unable to render templates for job '#{@name}'. Errors are:"
+        message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
 
         raise message
       end

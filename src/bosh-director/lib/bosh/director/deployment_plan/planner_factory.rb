@@ -1,5 +1,3 @@
-require 'bosh/director/formatter_helper'
-
 module Bosh
   module Director
     module DeploymentPlan
@@ -14,7 +12,6 @@ module Bosh
       end
 
       class PlannerFactory
-        include Bosh::Director::FormatterHelper
         include ValidationHelper
 
         def self.create(logger)
@@ -150,7 +147,8 @@ module Bosh
 
           if errors.length > 0
             combined_errors = errors.map{|error| "- #{error.message.strip}"}.join("\n")
-            message = prepend_header_and_indent_body('Unable to process links for deployment. Errors are:', combined_errors.strip, {:indent_by => 2})
+            header = 'Unable to process links for deployment. Errors are:'
+            message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
 
             raise message
           end

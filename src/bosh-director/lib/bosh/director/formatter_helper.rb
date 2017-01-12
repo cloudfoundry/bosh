@@ -1,5 +1,5 @@
 module Bosh::Director
-  module FormatterHelper
+  class FormatterHelper
 
     # @param [String] src Source string to be indented
     # @param [Hash] options

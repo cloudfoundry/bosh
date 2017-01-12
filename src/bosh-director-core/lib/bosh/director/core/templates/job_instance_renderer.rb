@@ -4,7 +4,6 @@ require 'bosh/director/formatter_helper'
 
 module Bosh::Director::Core::Templates
   class JobInstanceRenderer
-    include Bosh::Director::FormatterHelper
 
     def initialize(templates, job_template_loader)
       @templates = templates
@@ -26,7 +25,8 @@ module Bosh::Director::Core::Templates
 
       if errors.length > 0
         combined_errors = errors.map{|error| error.message.strip }.join("\n")
-        message = prepend_header_and_indent_body("- Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:", combined_errors.strip, {:indent_by => 2})
+        header = "- Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:"
+        message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
         raise message
       end
 
