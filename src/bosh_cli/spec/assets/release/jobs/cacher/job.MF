@@ -1,6 +1,0 @@
----
-packages:
-  - stuff
-templates:
-  file1.conf: config/file1.conf
-  file2.conf: config/file2.conf

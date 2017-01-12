@@ -1,6 +1,0 @@
----
-blobstore:
-  dav:
-    endpoint: http://bosh-blobstore.some.url.com:8080
-    user: dav-user
-    password: dav-password

@@ -1,5 +1,0 @@
----
-blobstore:
-  s3:
-    access_key_id: bar
-    secret_access_key: foo
