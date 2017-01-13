@@ -219,6 +219,50 @@ describe 'variable generation with config server', type: :integration do
             expect(subject_alt_name.to_s.scan(/a.smurfs.io/).count).to eq(1)
             expect(subject_alt_name.to_s.scan(/b.smurfs.io/).count).to eq(1)
           end
+
+          context 'when the variable is referenced as a mid-string interpolation' do
+            let (:variables) do
+              [
+                {
+                  'name' => '/var_a',
+                  'type' => 'password'
+                },
+                {
+                  'name' => 'var_b',
+                  'type' => 'certificate',
+                  'options' => {
+                    'common_name' => 'smurfs.io',
+                    'alternative_names' => ['a.smurfs.io', 'b.smurfs.io']
+                  }
+                }
+              ]
+            end
+
+            let(:job_properties) do
+              {
+                'smurfs' => {
+                  'phone_password' => 'very secret',
+                  'happiness_level' => 'my happy level is secret: ((/var_a))'
+                },
+                'gargamel' => {
+                  'secret_recipe' => '((var_b))',
+                  'password' => 'something',
+                  'hard_coded_cert' => 'meow',
+                  'cert' => '((var_b))'
+                }
+              }
+            end
+
+            it 'generates that variable as normal, using the type provided in the variable section' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+              instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+              generated_var_a = config_server_helper.get_value('/var_a')
+
+              properties_displayer_template = instance.read_job_template('job_with_property_types', 'properties_displayer.yml')
+              expect(properties_displayer_template).to include("my happy level is secret: #{generated_var_a}")
+            end
+          end
         end
       end
     end
