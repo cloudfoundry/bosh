@@ -18,7 +18,7 @@ apt-get install -y \
 apt-get clean
 
 # Install bosh-cli
-wget https://s3.amazonaws.com/bosh-init-artifacts/bosh-cli-0.0.147-linux-amd64 -O /bin/bosh-cli
+wget https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-0.0.147-linux-amd64 -O /bin/bosh-cli
 echo "533342d7663c3e5dc731769e157608c74dd9eccb  /bin/bosh-cli" | sha1sum -c -
 chmod +x /bin/bosh-cli
 
