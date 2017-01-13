@@ -3,9 +3,17 @@ module Bosh::Director::ConfigServer
 
     # Checks if string starts with '((' and ends with '))'
     # @param [String] value string to be checked
-    # @return [Boolean] true is it starts with '((' and ends with '))'
-    def is_placeholder?(value)
-      value.to_s.match(/^\(\(.*\)\)$/)
+    # @return [Boolean] true if it starts with '((' and ends with '))'
+    def is_full_placeholder?(value)
+      value.to_s.match(/^\(\([^\(]*\)\)$/)
+    end
+
+    # Extracts all placeholders from given string
+    # @param [String] input string to be checked
+    # @return [Array] list of placeholders found
+    def extract_placeholders_from_string(input)
+      return [] if input.nil?
+      input.scan(/\(\(.*?\)\)/)
     end
 
     # @param [String] placeholder

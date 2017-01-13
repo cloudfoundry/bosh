@@ -302,6 +302,7 @@ module Bosh::Director
   ConfigServerIncorrectNameSyntax = err(540004)
   ConfigServerGenerationError = err(540005)
   ConfigServerDeploymentNameMissing = err(540006)
+  ConfigServerIncorrectPlaceholderPlacement = err(540007)
 
   # CPI config
   CpiDuplicateName = err(550000)

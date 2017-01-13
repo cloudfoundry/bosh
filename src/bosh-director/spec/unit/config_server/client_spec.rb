@@ -545,15 +545,18 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when property value is NOT nil' do
-        context 'when property value is NOT a placeholder (NOT padded with brackets)' do
+        context 'when property value is NOT a full placeholder (NOT padded with brackets)' do
           it 'returns that property value' do
             expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
             expect(client.prepare_and_get_property('((my_smurf', 'my_default_value', nil, deployment_name)).to eq('((my_smurf')
             expect(client.prepare_and_get_property('my_smurf))', 'my_default_value', 'whatever', deployment_name)).to eq('my_smurf))')
+            expect(client.prepare_and_get_property('((my_smurf))((vroom))', 'my_default_value', 'whatever', deployment_name)).to eq('((my_smurf))((vroom))')
+            expect(client.prepare_and_get_property('((my_smurf)) i am happy', 'my_default_value', 'whatever', deployment_name)).to eq('((my_smurf)) i am happy')
+            expect(client.prepare_and_get_property('this is ((smurf_1)) this is ((smurf_2))', 'my_default_value', 'whatever', deployment_name)).to eq('this is ((smurf_1)) this is ((smurf_2))')
           end
         end
 
-        context 'when property value is a placeholder (padded with brackets)' do
+        context 'when property value is a FULL placeholder (padded with brackets)' do
           context 'when placeholder syntax is invalid' do
             it 'raises an error' do
               expect{

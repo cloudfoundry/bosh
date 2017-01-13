@@ -73,6 +73,7 @@ module Bosh::Director::ConfigServer
       )
     end
 
+    # Refer to unit tests for full understanding of this method
     # @param [Object] provided_prop property value
     # @param [Object] default_prop property value
     # @param [String] type of property
@@ -83,7 +84,7 @@ module Bosh::Director::ConfigServer
       if provided_prop.nil?
         result = default_prop
       else
-        if is_placeholder?(provided_prop)
+        if is_full_placeholder?(provided_prop)
           extracted_name = add_prefix_if_not_absolute(
             extract_placeholder_name(provided_prop),
             @director_name,

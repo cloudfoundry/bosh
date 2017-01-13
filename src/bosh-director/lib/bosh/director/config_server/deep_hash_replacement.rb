@@ -17,6 +17,8 @@ module Bosh::Director::ConfigServer
 
     def replace_placeholders(obj_to_be_resolved, config_map, config_values)
       result = Bosh::Common::DeepCopy.copy(obj_to_be_resolved)
+      errors = []
+
       config_map.each do |config_loc|
         config_path = config_loc['path']
         ret = result
@@ -26,7 +28,25 @@ module Bosh::Director::ConfigServer
             obj[el]
           end
         end
-        ret[config_path.last] = config_values[config_loc['placeholder']]
+
+        placeholder = config_loc['placeholder']
+        value_to_inject = config_values[placeholder]
+        target = ret[config_path.last]
+
+        if target == placeholder
+          ret[config_path.last] = value_to_inject
+        else
+          if value_to_inject.is_a?(String) || value_to_inject.is_a?(Fixnum)
+            ret[config_path.last] = target.gsub(placeholder, value_to_inject.to_s)
+          else
+            errors <<  "- Failed to substitute placeholder: Can not replace '#{placeholder}' in '#{target}'. The value should be a String or an Integer."
+          end
+        end
+      end
+
+      if errors.length > 0
+        message = errors.join("\n")
+        raise Bosh::Director::ConfigServerIncorrectPlaceholderPlacement, message
       end
 
       result
@@ -49,8 +69,9 @@ module Bosh::Director::ConfigServer
         end
       else
         path ||= []
-        if is_placeholder?(obj.to_s)
-          result << {'placeholder' => obj.to_s, 'path' => path}
+        placeholders = extract_placeholders_from_string(obj.to_s)
+        placeholders.each do |placeholder|
+          result << {'placeholder' => placeholder, 'path' => path}
         end
       end
     end

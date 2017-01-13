@@ -7,27 +7,52 @@ module Bosh::Director::ConfigServer
       @helper.extend(ConfigServerHelper)
     end
 
-    describe '#is_placeholder?' do
-      it 'should return true if value is placeholder' do
+    describe '#is_full_placeholder??' do
+      it 'should return true if value is a full placeholder' do
         placeholders = [
-          '((smurf))', '((((smurf))))', '((!smurf))', '(())', '(( ))',
+          '((smurf))', '((!smurf))', '(())', '(( ))',
           '((  ))', '(( smurf))', '((/smurf))', '((/smurf))', '((/smurf))',
           '((/))', '((vroom vroo/m))'
         ]
 
         placeholders.each do |placeholder|
-          expect(@helper.is_placeholder?(placeholder)).to be_truthy
+          expect(@helper.is_full_placeholder?(placeholder)).to be_truthy
         end
       end
 
-      it 'should return false if value is not a placeholder' do
+      it 'should return false if value is not a full placeholder' do
         not_placeholders = [
           '((smurf', '(!smurf))', 'smurf))', '((smurf', '(( smurf)',
-          '(()', '((', '()'
+          '(()', '((', '()', '((hello))((bye))'
         ]
 
         not_placeholders.each do |not_placeholder|
-          expect(@helper.is_placeholder?(not_placeholder)).to be_falsey
+          expect(@helper.is_full_placeholder?(not_placeholder)).to be_falsey
+        end
+      end
+    end
+
+    describe '#extract_placeholders_from_string' do
+      it 'handles nil input' do
+        expect(@helper.extract_placeholders_from_string(nil)).to match_array([])
+      end
+
+      it 'should return the placeholders' do
+        input = {
+          '((smurf))' => ['((smurf))'],
+          'smurf ((smurf1)) likes ((smurf2))' => ['((smurf1))', '((smurf2))'],
+          '(())' => ['(())'],
+          '(( ))' => ['(( ))'],
+          '((hello)) ((vroom))((smurf))-happy' => ['((hello))', '((vroom))', '((smurf))'],
+          'hello(())' => ['(())'],
+          'hello((/test/1/2/3)) hello ((cats))' => ['((/test/1/2/3))', '((cats))'],
+          '' => [],
+          'illigal char ((&&^&)) and ((##$$%%))' => ['((&&^&))', '((##$$%%))'],
+          'cat' => []
+        }
+
+        input.each do |k, v|
+          expect(@helper.extract_placeholders_from_string(k)).to match_array(v)
         end
       end
     end

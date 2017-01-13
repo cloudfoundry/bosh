@@ -103,6 +103,72 @@ Error: Unable to render instance groups for deployment. Errors are:
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         end
 
+        context 'mid string interpolation' do
+          let(:job_properties) do
+            {
+              'gargamel' => {
+                'color' => 'mild brownish ((my_placeholder)) yellowish ((smurf_age_placeholder))'
+              }
+            }
+          end
+
+          it 'replaces the placeholders in the manifest' do
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'greenish')
+            config_server_helper.put_value(prepend_namespace('smurf_age_placeholder'), 9)
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('mild brownish greenish yellowish 9')
+          end
+
+          context 'when value returned by config server is not a string or a number' do
+            let(:job_properties) do
+              {
+                'smurfs' => {
+                  'color' => 'my color is ((my_placeholder_1))'
+                },
+                'gargamel' => {
+                  'color' => 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'
+                }
+              }
+            end
+
+            let(:my_placeholder_value) do
+              {
+                'cat' => 'meow',
+                'dog' => 'woof'
+              }
+            end
+
+            it 'errors' do
+              config_server_helper.put_value(prepend_namespace('my_placeholder_1'), my_placeholder_value)
+              config_server_helper.put_value(prepend_namespace('my_placeholder_2'), my_placeholder_value)
+              config_server_helper.put_value(prepend_namespace('my_placeholder_3'), my_placeholder_value)
+
+              output, exit_code =  deploy_from_scratch(
+                no_login: true,
+                manifest_hash: manifest_hash,
+                cloud_config_hash: cloud_config,
+                failure_expected: true,
+                return_exit_code: true,
+                include_credentials: false,
+                env: client_env
+              )
+
+              expect(exit_code).to_not eq(0)
+              expect(output).to include <<-EOF.strip
+Error: Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'our_instance_group'. Errors are:
+    - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Failed to substitute placeholder: Can not replace '((my_placeholder_1))' in 'my color is ((my_placeholder_1))'. The value should be a String or an Integer.
+      - Failed to substitute placeholder: Can not replace '((my_placeholder_2))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+      - Failed to substitute placeholder: Can not replace '((my_placeholder_3))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+            EOF
+            end
+          end
+        end
+
         context 'with dot syntax' do
           let(:cloud_config_hash) do
             cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -139,13 +205,24 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           it 'replaces nested placeholders in the manifest' do
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+            config_server_helper.put_value(prepend_namespace('my_placeholder_1'), { 'cat'=> {'color' => {'value' => 'orange'}}})
+            config_server_helper.put_value(prepend_namespace('my_placeholder_2'), { 'cat'=> {'color' => {'value' => 'black'}}})
+            config_server_helper.put_value(prepend_namespace('my_placeholder_3'), { 'cat'=> {'color' => {'value' => 'white'}}})
 
-            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.color.value))'}}
+            manifest_hash['jobs'][0]['properties'] = {
+              'smurfs' => {
+                'color' => 'I am a ((my_placeholder_2.cat.color.value)) cat. My kitten is ((my_placeholder_3.cat.color.value))'
+              },
+              'gargamel' => {
+                'color' => '((my_placeholder_1.cat.color.value))'
+              }
+            }
+
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
 
             instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
             template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['smurfs_color']).to eq('I am a black cat. My kitten is white')
             expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
           end
 
@@ -702,13 +779,10 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           context 'when the properties have default values defined' do
-
-            before do
+            it 'uses the default values defined' do
               job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
               job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
-            end
 
-            it 'uses the default values defined' do
               deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
               instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
@@ -718,6 +792,41 @@ Error: Unable to render instance groups for deployment. Errors are:
 
               hardcoded_cert = instance.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
               expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
+            end
+
+            context 'when it is NOT a full placeholder' do
+              let(:job_properties) do
+                {
+                  'smurfs' => {
+                    'phone_password' => 'anything',
+                    'happiness_level' => 5
+                  },
+                  'gargamel' => {
+                    'password' => 'my password is: ((gargamel_password_placeholder))',
+                    'cert' => 'anything'
+                  }
+                }
+              end
+
+              it 'does NOT use the default values, and fails' do
+                output, exit_code = deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  include_credentials: false,
+                  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+                expect(output).to include <<-EOF.strip
+Error: Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'our_instance_group'. Errors are:
+    - Unable to render templates for job 'job_with_property_types'. Errors are:
+      - Failed to find variable '/TestDirector/simple/gargamel_password_placeholder' from config server: HTTP code '404'
+                EOF
+              end
             end
           end
 
@@ -752,6 +861,61 @@ Error: Unable to render instance groups for deployment. Errors are:
 
               subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
               expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
+            end
+
+            context 'when placeholder is NOT a full placeholder' do
+              let(:job_properties) do
+                {
+                  'smurfs' => {
+                    'phone_password' => 'vrooom ((smurfs_phone_password_placeholder))',
+                    'happiness_level' => 5
+                  },
+                  'gargamel' => {
+                    'secret_recipe' => 'hello ((gargamel_secret_recipe_placeholder))',
+                    'cert' => 'meow ((gargamel_certificate_placeholder))'
+                  }
+                }
+              end
+
+              it 'does not generate values for these properties' do
+                output, exit_code = deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  include_credentials: false,
+                  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+                expect(output).to include <<-EOF.strip
+Error: Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'our_instance_group'. Errors are:
+    - Unable to render templates for job 'job_with_property_types'. Errors are:
+      - Failed to find variable '/TestDirector/simple/smurfs_phone_password_placeholder' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/gargamel_secret_recipe_placeholder' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/gargamel_certificate_placeholder' from config server: HTTP code '404'
+                EOF
+
+                expect {
+                  config_server_helper.get_value('/TestDirector/simple/smurfs_phone_password_placeholder')
+                }.to raise_error { |error|
+                  expect(error.message).to include('404 Not Found')
+                }
+
+                expect {
+                  config_server_helper.get_value('/TestDirector/simple/gargamel_secret_recipe_placeholder')
+                }.to raise_error { |error|
+                  expect(error.message).to include('404 Not Found')
+                }
+
+                expect {
+                  config_server_helper.get_value('/TestDirector/simple/gargamel_certificate_placeholder')
+                }.to raise_error { |error|
+                  expect(error.message).to include('404 Not Found')
+                }
+              end
             end
 
             context 'when config server raises an error while generating' do
