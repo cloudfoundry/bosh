@@ -22,7 +22,7 @@ fi
 echo "$BOSH_SSH_TUNNEL_KEY" > ssh_tunnel_key
 chmod 600 ssh_tunnel_key
 
-bosh-init deploy bosh-init.yml
+bosh-cli create-env bosh-init.yml
 
 # occasionally we get a race where director process hasn't finished starting
 # before nginx is reachable causing "Cannot talk to director..." messages.
@@ -64,5 +64,5 @@ EOF
 
 bosh update cloud-config /tmp/cloud-config
 
-mv $HOME/.bosh_init director-state/
+mv $HOME/.bosh director-state/
 mv bosh-init.yml bosh-init-state.json director-state/
