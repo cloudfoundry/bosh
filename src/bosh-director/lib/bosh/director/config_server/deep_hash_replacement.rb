@@ -15,12 +15,12 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    def replace_placeholders(obj_to_be_resolved, config_map, config_values)
+    def replace_placeholders(obj_to_be_resolved, placeholder_paths, placeholder_values)
       result = Bosh::Common::DeepCopy.copy(obj_to_be_resolved)
       errors = []
 
-      config_map.each do |config_loc|
-        config_path = config_loc['path']
+      placeholder_paths.each do |placeholder_path|
+        config_path = placeholder_path['path']
         ret = result
 
         if config_path.length > 1
@@ -29,8 +29,8 @@ module Bosh::Director::ConfigServer
           end
         end
 
-        placeholder = config_loc['placeholder']
-        value_to_inject = config_values[placeholder]
+        placeholder = placeholder_path['placeholder']
+        value_to_inject = placeholder_values[placeholder]
         target = ret[config_path.last]
 
         if target == placeholder
