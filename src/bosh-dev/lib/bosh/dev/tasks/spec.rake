@@ -9,6 +9,7 @@ require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/legacy_agent_manager'
+require 'bosh/dev/verify_multidigest_manager'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -54,6 +55,10 @@ namespace :spec do
 
         unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
           Bosh::Dev::LegacyAgentManager.install
+        end
+
+        unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+          Bosh::Dev::VerifyMultidigestManager.install
         end
       end
     end
