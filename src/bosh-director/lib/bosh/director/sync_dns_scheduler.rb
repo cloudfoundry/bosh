@@ -24,7 +24,7 @@ module Bosh::Director
     private
 
     def broadcast
-      @dns_version_converger.update_instances_with_stale_dns_records
+      @dns_version_converger.update_instances_based_on_strategy
     end
   end
 end
