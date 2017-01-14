@@ -9,8 +9,6 @@ EOF
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/aws/cpi.yml \
   --vars-store director-creds.yml \
-  -v access_key_id=$BOSH_INIT_ACCESS_KEY \
-  -v secret_access_key=$BOSH_INIT_SECRET_KEY \
   -v region=us-east-1 \
   -v az=us-east-1a \
   -v default_key_name=compiled-release \
@@ -19,7 +17,7 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -v director_name=release-compiler \
   -v internal_cidr=10.0.2.0/24 \
   -v internal_gw=10.0.2.1 \
-  -v private_key="$BOSH_SSH_TUNNEL_KEY" > director.yml
+  --vars-env "BOSH" > director.yml
 
 bosh-cli create-env director.yml -l director-creds.yml
 

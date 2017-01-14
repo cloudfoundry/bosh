@@ -14,11 +14,6 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-deployment.git
 
-  - name: bosh-aws-cpi-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry-incubator/bosh-aws-cpi-release
-
   #
   # releases to compile
   #
@@ -120,9 +115,9 @@ jobs:
           stemcell: ubuntu-trusty-3312-stemcell
           bosh-release: bosh-release-260
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.15
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.101, 10.0.2.110-10.0.2.255]
       - do:
@@ -154,9 +149,9 @@ jobs:
           stemcell: ubuntu-trusty-3312-stemcell
           bosh-release: bosh-release-260
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.16
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.111, 10.0.2.120-10.0.2.255]
       - do:
@@ -189,9 +184,9 @@ jobs:
           stemcell: ubuntu-trusty-3263-stemcell
           bosh-release: bosh-release-257
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.11
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.59, 10.0.2.70-10.0.2.255]
       - do:
@@ -223,9 +218,9 @@ jobs:
           stemcell: ubuntu-trusty-3263-stemcell
           bosh-release: bosh-release-257
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.12
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.69, 10.0.2.80-10.0.2.255]
       - do:
@@ -258,9 +253,9 @@ jobs:
           stemcell: ubuntu-trusty-3263-stemcell
           bosh-release: bosh-release-255
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.13
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.79, 10.0.2.90-10.0.2.255]
       - do:
@@ -294,9 +289,9 @@ jobs:
           stemcell: ubuntu-trusty-3263-stemcell
           bosh-release: bosh-release-255
         params:
-          BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
-          BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
-          BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.14
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.89, 10.0.2.100-10.0.2.255]
       - do:
