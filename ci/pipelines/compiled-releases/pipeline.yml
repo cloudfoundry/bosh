@@ -112,7 +112,6 @@ jobs:
           - get: bosh-deployment
           - get: bosh-release-260
             trigger: true
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3312-stemcell
             trigger: true
       - task: deploy-director
@@ -147,7 +146,6 @@ jobs:
           - get: uaa-release-20
             trigger: true
           - get: bosh-release-260
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3312-stemcell
             trigger: true
       - task: deploy-director
@@ -183,7 +181,6 @@ jobs:
           - get: bosh-deployment
           - get: bosh-release-257
             trigger: true
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3263-stemcell
             trigger: true
       - task: deploy-director
@@ -218,7 +215,6 @@ jobs:
           - get: uaa-release
             trigger: true
           - get: bosh-release-257
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3263-stemcell
             trigger: true
       - task: deploy-director
@@ -254,7 +250,6 @@ jobs:
           - get: bosh-deployment
           - get: bosh-release-255
             trigger: true
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3263-stemcell
             trigger: true
       - task: deploy-director
@@ -291,7 +286,6 @@ jobs:
           - get: bosh-release-255
             version:
               version: "255.12"
-          - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3263-stemcell
             trigger: true
       - task: deploy-director

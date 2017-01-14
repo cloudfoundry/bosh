@@ -21,7 +21,7 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -v internal_gw=10.0.2.1 \
   -v private_key="$BOSH_SSH_TUNNEL_KEY" > director.yml
 
-bosh-cli create-env director.yml
+bosh-cli create-env director.yml -l director-creds.yml
 
 # occasionally we get a race where director process hasn't finished starting
 # before nginx is reachable causing "Cannot talk to director..." messages.
