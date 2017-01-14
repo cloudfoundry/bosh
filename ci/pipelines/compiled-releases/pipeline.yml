@@ -12,7 +12,7 @@ resources:
   - name: bosh-deployment
     type: git
     source:
-      uri: https://github.com/cloudfoundry/bosh–deployment.git
+      uri: https://github.com/cloudfoundry/bosh-deployment.git
 
   - name: bosh-aws-cpi-release
     type: bosh-io-release
