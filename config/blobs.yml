@@ -94,3 +94,11 @@ verify-multidigest/verify-multidigest-0.0.4-linux-amd64:
   size: 2847787
   object_id: 00e7c605-3326-46a1-78fe-338d3bd84158
   sha: ead1cf0f4b18aba397d5623a9fc2853b9239118c
+verify-multidigest/verify-multidigest-0.0.13-darwin-amd64:
+  size: 2799536
+  object_id: f7bfc5c8-320a-474d-765a-13d28bc77960
+  sha: 6a613b4d67e7d95e82588c3c6f5bd9c5720d852e
+verify-multidigest/verify-multidigest-0.0.13-linux-amd64:
+  size: 2847787
+  object_id: 0a3c4ca6-5858-4d9e-5719-053530cac51c
+  sha: 6fa2297d0e941db5b10faca6b6ca93e11faac5db
