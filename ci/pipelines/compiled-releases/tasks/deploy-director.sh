@@ -6,6 +6,8 @@ cat > director-creds.yml <<EOF
 internal_ip: $BOSH_TARGET_IP
 EOF
 
+echo "$BOSH_private_key" > /tmp/private_key
+
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/aws/cpi.yml \
   --vars-store director-creds.yml \
@@ -17,6 +19,7 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -v director_name=release-compiler \
   -v internal_cidr=10.0.2.0/24 \
   -v internal_gw=10.0.2.1 \
+  --var-file private_key=/tmp/private_key \
   --vars-env "BOSH" > director.yml
 
 bosh-cli create-env director.yml -l director-creds.yml
