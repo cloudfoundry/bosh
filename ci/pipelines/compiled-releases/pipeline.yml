@@ -9,6 +9,11 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: {{branch}}
 
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh–deployment.git
+
   - name: bosh-aws-cpi-release
     type: bosh-io-release
     source:
@@ -104,6 +109,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: bosh-release-260
             trigger: true
           - get: bosh-aws-cpi-release
@@ -126,8 +132,6 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3312-stemcell
             release: bosh-release-260
-          params:
-            BOSH_TARGET_IP: 10.0.2.15
         - put: bosh-on-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
@@ -139,6 +143,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: uaa-release-20
             trigger: true
           - get: bosh-release-260
@@ -162,8 +167,6 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3312-stemcell
             release: uaa-release-20
-          params:
-            BOSH_TARGET_IP: 10.0.2.16
         - put: uaa-on-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
@@ -177,6 +180,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: bosh-release-257
             trigger: true
           - get: bosh-aws-cpi-release
@@ -199,8 +203,6 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3263-stemcell
             release: bosh-release-257
-          params:
-            BOSH_TARGET_IP: 10.0.2.11
         - put: bosh-on-ubuntu-trusty-3263
           params:
             file: "compiled-release/*.tgz"
@@ -212,6 +214,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: uaa-release
             trigger: true
           - get: bosh-release-257
@@ -235,8 +238,6 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3263-stemcell
             release: uaa-release
-          params:
-            BOSH_TARGET_IP: 10.0.2.12
         - put: uaa-on-ubuntu-trusty-3263
           params:
             file: "compiled-release/*.tgz"
@@ -250,6 +251,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: bosh-release-255
             trigger: true
           - get: bosh-aws-cpi-release
@@ -266,15 +268,12 @@ jobs:
           BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.13
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.79, 10.0.2.90-10.0.2.255]
-          BOSH_REDIS: true
       - do:
         - task: export-release
           file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
           input_mapping:
             stemcell: ubuntu-trusty-3263-stemcell
             release: bosh-release-255
-          params:
-            BOSH_TARGET_IP: 10.0.2.13
         - put: bosh-on-ubuntu-trusty-3263
           params:
             file: "compiled-release/*.tgz"
@@ -286,6 +285,7 @@ jobs:
     plan:
       - aggregate:
           - get: bosh-src
+          - get: bosh-deployment
           - get: uaa-release
             trigger: true
           - get: bosh-release-255
@@ -305,15 +305,12 @@ jobs:
           BOSH_SSH_TUNNEL_KEY: {{bosh_ssh_tunnel_key}}
           BOSH_TARGET_IP: 10.0.2.14
           BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.89, 10.0.2.100-10.0.2.255]
-          BOSH_REDIS: true
       - do:
         - task: export-release
           file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
           input_mapping:
             stemcell: ubuntu-trusty-3263-stemcell
             release: uaa-release
-          params:
-            BOSH_TARGET_IP: 10.0.2.14
         - put: uaa-on-ubuntu-trusty-3263
           params:
             file: "compiled-release/*.tgz"

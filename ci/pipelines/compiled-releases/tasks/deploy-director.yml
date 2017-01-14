@@ -8,9 +8,7 @@ image_resource:
 
 inputs:
   - name: bosh-src
-  - name: bosh-release
-  - name: bosh-aws-cpi-release
-  - name: stemcell
+  - name: bosh-deployment
 
 outputs:
   - name: director-state
