@@ -52,7 +52,7 @@ update:
 instance_groups: []
 EOF
 
-bosh-cli -d $BOSH_DEPLOYMENT deploy manifest.yml
+bosh-cli -n -d $BOSH_DEPLOYMENT deploy manifest.yml
 bosh-cli -d $BOSH_DEPLOYMENT export-release $RELEASE_NAME/$RELEASE_VERSION $STEMCELL_OS/$STEMCELL_VERSION
 
 mv *.tgz compiled-release/$( echo *.tgz | sed "s/\.tgz$/-$( date -u +%Y%m%d%H%M%S ).tgz/" )
@@ -62,4 +62,4 @@ sha1sum compiled-release/*.tgz
 # cleanup
 #
 
-bosh-cli -d $BOSH_DEPLOYMENT delete-deployment
+bosh-cli -n -d $BOSH_DEPLOYMENT delete-deployment
