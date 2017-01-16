@@ -54,7 +54,7 @@ describe 'cli: deploy uploading', type: :integration do
       bosh_runner.run("upload stemcell #{stemcell_filename}")
 
       output = bosh_runner.run('deploy', failure_expected: true)
-      expect(output).to match /Release SHA1 '#{release_sha}' does not match the expected SHA1 'abcd1234'/
+      expect(output).to match /release SHA1 'abcd1234' failed with error: Expected stream to have digest 'abcd1234' but was '#{release_sha}'/
       expect(output).not_to include("Deployed 'minimal' to '#{current_sandbox.director_name}'")
     end
 
