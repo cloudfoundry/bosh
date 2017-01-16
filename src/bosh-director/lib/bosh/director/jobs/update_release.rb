@@ -110,6 +110,7 @@ module Bosh::Director
       end
 
       def verify_sha1
+        logger.info("Running ... #{Config.verify_multidigest_path} verify-multi-digest #{release_path} #{sha1}")
         _, err, status = Open3.capture3("#{Config.verify_multidigest_path} verify-multi-digest #{release_path} #{sha1}")
         unless status.exitstatus == 0
           raise ReleaseSha1DoesNotMatch, "Verifying release SHA1 '#{sha1}' failed with error: #{err}"

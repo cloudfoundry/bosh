@@ -80,7 +80,7 @@ module Bosh::Dev::Sandbox
       @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = sandbox_path('verify-multidigest')
+      @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
 
       FileUtils.mkdir_p(@logs_path)
 
@@ -335,8 +335,6 @@ module Bosh::Dev::Sandbox
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)
-      FileUtils.copy(File.join(ASSETS_DIR, 'verify-multidigest'),
-                     sandbox_path('verify-multidigest'))
     end
 
     def read_from_sandbox(filename)

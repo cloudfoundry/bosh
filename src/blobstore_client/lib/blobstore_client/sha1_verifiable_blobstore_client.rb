@@ -35,8 +35,7 @@ module Bosh
       private
 
       def check_sha1(expected_sha1, file_to_check)
-        expected_sha1 = expected_sha1
-        out, err, status = Open3.capture3("#{@multidigest_path} verify-multi-digest #{file_to_check.path} #{expected_sha1}")
+        _, err, status = Open3.capture3("#{@multidigest_path} verify-multi-digest #{file_to_check.path} #{expected_sha1}")
         unless status.exitstatus == 0
           raise BlobstoreError, "sha1 mismatch expected=#{expected_sha1}, error: #{err}"
         end
