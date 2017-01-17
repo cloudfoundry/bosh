@@ -206,7 +206,7 @@ module Bosh::Director
       end
 
       def generate_variables_values(variables, deployment_name)
-        config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client(deployment_name)
+        config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
         config_server_client.generate_values(variables, deployment_name)
       end
     end

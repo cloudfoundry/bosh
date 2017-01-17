@@ -1173,7 +1173,7 @@ module Bosh::Director
             )
           end
           let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
-          let(:runtime_config) { Models::RuntimeConfig.make(manifest: {'addons' => []}) }
+          let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: {'addons' => []}) }
 
           before do
             Models::Deployment.create(

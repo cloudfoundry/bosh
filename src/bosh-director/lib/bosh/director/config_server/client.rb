@@ -8,6 +8,7 @@ module Bosh::Director::ConfigServer
       @config_server_http_client = http_client
       @director_name = director_name
       @deep_hash_replacer = DeepHashReplacement.new
+      @deployment_lookup = Bosh::Director::Api::DeploymentLookup.new
       @logger = logger
     end
 
@@ -24,10 +25,12 @@ module Bosh::Director::ConfigServer
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
 
+      set_id = @deployment_lookup.by_name(deployment_name).variables_set_id
+
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
 
-      retrieved_config_server_values = fetch_names_values(placeholders_list, deployment_name, must_be_absolute_name)
+      retrieved_config_server_values = fetch_values(placeholders_list, deployment_name, set_id, must_be_absolute_name)
 
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
     end
@@ -51,13 +54,14 @@ module Bosh::Director::ConfigServer
       interpolate(
         deployment_manifest,
         deployment_manifest['name'],
-        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false }
+        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}
       )
     end
 
     # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
+    # @param deployment_name [String] Name of current deployment
     # @return [Hash] A Deep copy of the interpolated manifest Hash
-    def interpolate_runtime_manifest(runtime_manifest)
+    def interpolate_runtime_manifest(runtime_manifest, deployment_name)
       ignored_subtrees = [
         ['addons', Integer, 'properties'],
         ['addons', Integer, 'jobs', Integer, 'properties'],
@@ -68,7 +72,7 @@ module Bosh::Director::ConfigServer
       # in the runtime config to be absolute, except for the properties in addons
       interpolate(
         runtime_manifest,
-        nil,
+        deployment_name,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
       )
     end
@@ -132,68 +136,35 @@ module Bosh::Director::ConfigServer
 
     private
 
-    def get_value_for_name(name)
-      name_tokens = name.split('.')
-      name_root = name_tokens.shift
-      response = @config_server_http_client.get(name_root)
-
-      if response.kind_of? Net::HTTPOK
-        begin
-          response_body = JSON.parse(response.body)
-        rescue JSON::ParserError
-          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
-        end
-
-        response_data = response_body['data']
-
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" if !response_data.is_a?(Array)
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be non empty array" if response_data.empty?
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" if !response_data[0].has_key?('value')
-
-        result = response_data[0]['value']
-
-        name_tokens.each_with_index do |value, index|
-          if !result.is_a?(Hash) || !result.has_key?(value)
-            parent = index > 0 ? ([name_root] + name_tokens[0..(index - 1)]).join('.') : name_root
-            raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' to be a hash" if !result.is_a?(Hash)
-            raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' hash to have key '#{value}'" if !result.has_key?(value)
-          end
-
-          result = result[value]
-        end
-
-        return result
-
-      elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
-
-      else
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
-      end
-    end
-
-    def name_exists?(name)
-      get_value_for_name(name)
-    rescue Bosh::Director::ConfigServerMissingName
-      false
-    end
-
-    def fetch_names_values(placeholders, deployment_name, must_be_absolute_name)
+    def fetch_values(variables, deployment_name, set_id, must_be_absolute_name)
+      validate_absolute_names(variables) if must_be_absolute_name
 
       errors = []
       config_values = {}
 
-      validate_absolute_names(placeholders) if must_be_absolute_name
-
-      placeholders.each do |placeholder|
+      variables.each do |variable|
         name = add_prefix_if_not_absolute(
-          extract_placeholder_name(placeholder),
+          extract_placeholder_name(variable),
           @director_name,
           deployment_name
         )
 
         begin
-          config_values[placeholder] = get_value_for_name(name)
+          name_root = get_name_root(name)
+          mapping = Bosh::Director::Models::VariableMapping[set_id: set_id, variable_name: name_root]
+
+          if mapping.nil?
+            var = get_variable_for_name(name)
+
+            if save_mapping(name_root, set_id, var)
+              config_values[variable] = get_value_from_variable(name, var)
+            else
+              mapping = Bosh::Director::Models::VariableMapping[set_id: set_id, variable_name: name_root]
+              config_values[variable] = get_value_for_id(mapping.variable_name, mapping.variable_id)
+            end
+          else
+            config_values[variable] = get_value_for_id(name, mapping.variable_id)
+          end
         rescue Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
           errors << e
         end
@@ -207,8 +178,88 @@ module Bosh::Director::ConfigServer
       config_values
     end
 
-    def generate_value(name, type, options)
+    def get_value_for_id(name, id)
+      name_root = get_name_root(name)
+      response = @config_server_http_client.get_by_id(id)
+
+      response_data = nil
+      if response.kind_of? Net::HTTPOK
+        begin
+          response_data = JSON.parse(response.body)
+        rescue JSON::ParserError
+          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+        end
+      elsif response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+      else
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
+      end
+
+      get_value_from_variable(name, response_data)
+    end
+
+    def get_value_from_variable(name, var)
+      name_tokens = name.split('.')
+      name_root = name_tokens.shift
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" unless var.has_key?('value')
+
+      value = var['value']
+
+      name_tokens.each_with_index do |token, index|
+        parent = index > 0 ? ([name_root] + name_tokens[0..(index - 1)]).join('.') : name_root
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' to be a hash" unless value.is_a?(Hash)
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' hash to have key '#{token}'" unless value.has_key?(token)
+
+        value = value[token]
+      end
+
+      value
+    end
+
+    def get_variable_for_name(name)
+      name_root = get_name_root(name)
+
+      response = @config_server_http_client.get(name_root)
+
+      if response.kind_of? Net::HTTPOK
+        begin
+          response_body = JSON.parse(response.body)
+        rescue JSON::ParserError
+          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+        end
+
+        response_data = response_body['data']
+
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" unless response_data.is_a?(Array)
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be non empty array" if response_data.empty?
+
+        response_data[0]
+      elsif response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+      else
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
+      end
+    end
+
+    def name_exists?(name)
+      get_variable_for_name(name)
+    rescue Bosh::Director::ConfigServerMissingName
+      false
+    end
+
+    def save_mapping(name_root, set_id, var)
+      begin
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless var.has_key?('id')
+        Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: var['id'] )
+      rescue Sequel::UniqueConstraintViolation => e
+        return false
+      end
+      true
+    end
+
+    def generate_value(name, type, deployment_name, options)
       parameters = options.nil? ? {} : options
+
 
       request_body = {
         'name' => name,
@@ -223,10 +274,14 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
       end
 
+      name_root = get_name_root(name)
       begin
-        JSON.parse(response.body)
+        set_id = @deployment_lookup.by_name(deployment_name).variables_set_id
+        response_body = JSON.parse(response.body)
+        Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: response_body['id'])
+        response_body
       rescue JSON::ParserError
-        raise Bosh::Director::ConfigServerGenerationError,"Config Server returned a NON-JSON body while generating value for '#{name}' with type '#{type}'"
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{name_root}' with type '#{type}'"
       end
     end
 
@@ -239,6 +294,12 @@ module Bosh::Director::ConfigServer
       }
 
       generate_value_and_record_event(name, 'certificate', deployment_name, certificate_options)
+
+    end
+
+    def get_name_root(variable_name)
+      name_tokens = variable_name.split('.')
+      name_tokens[0]
     end
 
     def add_event(options)
@@ -257,7 +318,7 @@ module Bosh::Director::ConfigServer
 
     def generate_value_and_record_event(variable_name, variable_type, deployment_name, options)
       begin
-        result = generate_value(variable_name, variable_type, options)
+        result = generate_value(variable_name, variable_type, deployment_name, options)
         add_event(
           :action => 'create',
           :deployment_name => deployment_name,
@@ -286,7 +347,7 @@ module Bosh::Director::ConfigServer
       Bosh::Common::DeepCopy.copy(manifest)
     end
 
-    def interpolate_runtime_manifest(manifest)
+    def interpolate_runtime_manifest(manifest, deployment_name)
       Bosh::Common::DeepCopy.copy(manifest)
     end
 

@@ -195,6 +195,26 @@ module Bosh::Spec
       })
     end
 
+    def self.runtime_config_with_job_placeholders
+      {
+        'releases' => [{'name' => '((/release_name))', 'version' => '0.1-dev'}],
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [
+              {
+                'name' => 'job_2_with_many_properties',
+                'release' => '((/release_name))',
+                'properties' => {
+                  'gargamel' => { 'color' => '((/gargamel_colour))'},
+                }
+              }
+            ]
+          }
+        ]
+      }
+    end
+
     def self.runtime_config_with_links
       {
         'releases' => [{'name' => 'bosh-release', 'version' => '0+dev.1'}],

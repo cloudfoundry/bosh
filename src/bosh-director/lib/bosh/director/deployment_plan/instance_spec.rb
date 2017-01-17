@@ -48,7 +48,7 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-        @properties_interpolator = ConfigServer::PropertiesInterpolator.new(@instance.deployment_model.name)
+        @properties_interpolator = ConfigServer::PropertiesInterpolator.new
       end
 
       def as_template_spec

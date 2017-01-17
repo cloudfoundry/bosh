@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::ConfigServer::PropertiesInterpolator do
-  subject(:properties_interpolator) { described_class.new(deployment_name) }
+  subject(:properties_interpolator) { described_class.new }
 
   let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
   let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
@@ -9,7 +9,7 @@ describe Bosh::Director::ConfigServer::PropertiesInterpolator do
 
   before do
     allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-    allow(client_factory).to receive(:create_client).with(deployment_name).and_return(config_server_client)
+    allow(client_factory).to receive(:create_client).and_return(config_server_client)
   end
 
   describe '#interpolate_template_spec_properties' do

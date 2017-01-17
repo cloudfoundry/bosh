@@ -212,7 +212,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          allow(Bosh::Director::ConfigServer::PropertiesInterpolator).to receive(:new).with(deployment_name).and_return(properties_interpolator)
+          allow(Bosh::Director::ConfigServer::PropertiesInterpolator).to receive(:new).and_return(properties_interpolator)
         end
 
         it 'resolves properties and links properties' do

@@ -168,7 +168,7 @@ module Bosh::Director::Models
   end
 
   RuntimeConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_runtime_config }
+    raw_manifest { Bosh::Spec::Deployments.simple_runtime_config }
   end
 
   CpiConfig.blueprint do

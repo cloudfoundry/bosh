@@ -17,6 +17,20 @@ module Bosh::Director::ConfigServer
       set_cert_store(ca_cert_path)
     end
 
+    def get_by_id(id)
+      uri = URI.join(@config_server_uri, URI.escape("v1/data/#{id}"))
+      get_exception = nil
+      begin
+        retryable.retryer do |retries, exception|
+          get_exception = exception
+          @http.get(uri.request_uri, {'Authorization' => @auth_provider.auth_header})
+        end
+      rescue => e
+        e = get_exception.nil? ? e : get_exception
+        raise e
+      end
+    end
+
     def get(name)
       uri = build_base_uri
       uri.query = URI.escape("name=#{name}&current=true")

@@ -1,8 +1,8 @@
 module Bosh::Director::ConfigServer
   class PropertiesInterpolator
 
-    def initialize(deployment_name)
-      @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client(deployment_name)
+    def initialize
+      @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client
     end
 
     # @param [Hash] template_spec_properties Hash to be interpolated

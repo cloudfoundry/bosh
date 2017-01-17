@@ -126,7 +126,6 @@ require 'bosh/director/config_server/uaa_auth_provider'
 require 'bosh/director/config_server/client'
 require 'bosh/director/config_server/client_factory'
 require 'bosh/director/config_server/http_client'
-require 'bosh/director/config_server/deployment_http_client'
 require 'bosh/director/config_server/properties_interpolator'
 require 'bosh/director/config_server/config_server_helper'
 

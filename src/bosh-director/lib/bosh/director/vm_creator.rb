@@ -125,7 +125,7 @@ module Bosh::Director
       parent_id = add_event(deployment_name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
 
-      config_server_client = @config_server_client_factory.create_client(deployment_name)
+      config_server_client = @config_server_client_factory.create_client
       env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name)
 
       options = {:agent_id => agent_id}
