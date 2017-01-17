@@ -2,10 +2,10 @@
 
 set -eux
 
-export BOSH_ENVIRONMENT=`bosh-cli int director-creds.yml --path /internal_ip`
-export BOSH_CA_CERT=`bosh-cli int director-creds.yml --path /director_ssl/ca`
+export BOSH_ENVIRONMENT=`bosh-cli int director-state/director-creds.yml --path /internal_ip`
+export BOSH_CA_CERT=`bosh-cli int director-state/director-creds.yml --path /director_ssl/ca`
 export BOSH_CLIENT=admin
-export BOSH_CLIENT_SECRET=`bosh-cli int director-creds.yml --path /admin_password`
+export BOSH_CLIENT_SECRET=`bosh-cli int director-state/director-creds.yml --path /admin_password`
 export BOSH_DEPLOYMENT=compilation
 
 #
