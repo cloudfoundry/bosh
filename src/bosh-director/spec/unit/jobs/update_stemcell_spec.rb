@@ -18,6 +18,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
+
+      multi_digest_filename = RUBY_PLATFORM =~ /darwin/ ? 'verify-multidigest-0.0.13-darwin-amd64' : 'verify-multidigest-0.0.13-linux-amd64'
+
+      multi_digest_binary_path = File.join(File.dirname(__FILE__), "../../../../../blobs/verify-multidigest/#{multi_digest_filename}")
+      File.chmod(0700, multi_digest_binary_path)
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return(multi_digest_binary_path)
     end
 
     context 'when the stemcell tarball is valid' do
