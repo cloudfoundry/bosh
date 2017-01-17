@@ -15,7 +15,7 @@ describe Bhm::Plugins::Json do
     expect(plugin.run).to be(false)
   end
 
-  it "does not send metrics for alerts" do
+  it "sends alerts as JSON" do
     alert = make_alert(timestamp: Time.now.to_i)
 
     expect(EventMachine::DeferrableChildProcess).to receive(:open).with("/bin/cat").and_return(process)
@@ -23,7 +23,10 @@ describe Bhm::Plugins::Json do
     EM.run do
       plugin.run
 
-      expect(process).to_not receive(:send_data)
+      expect(process).to receive(:send_data) do |payload|
+        json = JSON.parse(payload)
+        expect(json['kind']).to eq 'alert'
+      end
       plugin.process(alert)
 
       EM.stop

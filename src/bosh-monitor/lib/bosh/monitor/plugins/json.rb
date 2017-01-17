@@ -14,8 +14,6 @@ module Bosh::Monitor::Plugins
     end
 
     def process(event)
-      return false if event.is_a? Bosh::Monitor::Events::Alert
-
       event_json = event.to_json
       @processes.each do |process|
         process.send_data "#{event_json}\n"
