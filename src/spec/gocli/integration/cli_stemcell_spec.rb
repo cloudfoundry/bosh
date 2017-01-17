@@ -267,7 +267,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Error: Stemcell SHA1 '.*' does not match the expected SHA1 'shawone'/)
+          expect(output).to match(/Error: sha1 mismatch expected=shawone, error: Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
           expect(exit_code).to eq(1)
         end
 
@@ -275,7 +275,7 @@ describe 'cli: stemcell', type: :integration do
           let(:multidigest_string) { 'sha256:5ca766c62c8eb49d698810096f091ad5b19167d6c2fcd592eb0a99a553b70526;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
 
           it 'accepts and verifies the multiple digests' do
-            output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 #{multidigest_string}")
+            output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
             expect(output).to match /Save stemcell/
             expect(output).to match /Succeeded/
           end

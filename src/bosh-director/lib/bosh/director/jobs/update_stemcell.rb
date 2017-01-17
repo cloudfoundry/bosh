@@ -123,9 +123,9 @@ module Bosh::Director
       private
 
       def verify_sha1
-        stemcell_hash = Digest::SHA1.file(@stemcell_path).hexdigest
-        if stemcell_hash != @stemcell_sha1
-          raise StemcellSha1DoesNotMatch, "Stemcell SHA1 '#{stemcell_hash}' does not match the expected SHA1 '#{@stemcell_sha1}'"
+        _, err, status = Open3.capture3("#{Config.verify_multidigest_path} verify-multi-digest #{@stemcell_path} '#{@stemcell_sha1}'")
+        unless status.exitstatus == 0
+          raise StemcellSha1DoesNotMatch, "sha1 mismatch expected=#{@stemcell_sha1}, error: #{err}"
         end
       end
 
