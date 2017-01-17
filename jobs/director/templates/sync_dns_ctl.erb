@@ -7,9 +7,7 @@ LOG_DIR=/var/vcap/sys/log/director
 PIDFILE=$RUN_DIR/sync_dns.pid
 RUNAS=vcap
 
-PATH=/var/vcap/packages/ruby/bin:$PATH
-PATH=$PATH:/var/vcap/jobs/director/bin
-export $PATH
+export PATH=/var/vcap/packages/ruby/bin:/var/vcap/jobs/director/bin:$PATH
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
 export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
@@ -51,20 +49,14 @@ case $1 in
     ;;
 
   stop)
-    PID=$(head -1 $PIDFILE)
-    if [ ! -z $PID ] && pid_exists $PID; then
-      kill $PID
+    if [ -f $PIDFILE ]; then
+      kill -9 `cat $PIDFILE` || true
+      rm -f $PIDFILE
     fi
-    TRIES=0
-    while [ -e /proc/$PID ]
-    do
-      TRIES=$(( $TRIES + 1 ))
-      if [ $TRIES -gt 100 ]; then
-        kill -9 $PID
-      fi
-      sleep 0.1
-    done
-    rm -f $PIDFILE
+    ;;
+
+  force)
+    /var/vcap/packages/director/bin/bosh-director-trigger-one-time-sync-dns
     ;;
 
   *)
