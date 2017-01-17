@@ -105,7 +105,8 @@ if p('hm.json_enabled')
  params['plugins'] << {
     'name' => 'json',
     'events' => [
-      'heartbeat'
+      'alert',
+      'heartbeat',
     ],
     'options' => {},
   }
