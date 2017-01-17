@@ -16,7 +16,7 @@ tar -xzf stemcell/*.tgz $( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )
 STEMCELL_OS=$( grep -E '^operating_system: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
 STEMCELL_VERSION=$( grep -E '^version: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
 
-bosh-cli upload-stemcell stemcell/*.tgz
+bosh-cli -n upload-stemcell stemcell/*.tgz
 
 #
 # release metadata/upload
@@ -27,7 +27,7 @@ tar -xzf *.tgz $( tar -tzf *.tgz | grep 'release.MF' )
 RELEASE_NAME=$( grep -E '^name: ' release.MF | awk '{print $2}' | tr -d "\"'" )
 RELEASE_VERSION=$( grep -E '^version: ' release.MF | awk '{print $2}' | tr -d "\"'" )
 
-bosh-cli upload-release *.tgz
+bosh-cli -n upload-release *.tgz
 cd ../
 
 #

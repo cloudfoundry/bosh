@@ -60,7 +60,7 @@ compilation:
   network: private
 EOF
 
-bosh-cli update-cloud-config /tmp/cloud-config
+bosh-cli -n update-cloud-config /tmp/cloud-config
 
 mv $HOME/.bosh director-state/
 mv director.yml director-creds.yml director-state.json director-state/
