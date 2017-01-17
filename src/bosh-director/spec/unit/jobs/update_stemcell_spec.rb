@@ -8,7 +8,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     it_behaves_like 'a DJ job'
   end
 
-  describe '#perform' do
+  xdescribe '#perform' do
     let(:cloud) { Bosh::Director::Config.cloud }
 
     let(:event_log){ Bosh::Director::EventLog::Log.new }
