@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -ex
-
+if [ `uname -m` != "ppc64le" ]; then
 cat > /etc/apt/sources.list <<EOS
 deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
 deb-src http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
@@ -28,6 +28,7 @@ deb-src http://us.archive.ubuntu.com/ubuntu/ trusty multiverse
 deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
 deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
 EOS
+fi
 
 apt-get update
 apt-get -y upgrade; apt-get clean
