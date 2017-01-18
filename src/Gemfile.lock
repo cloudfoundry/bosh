@@ -136,9 +136,7 @@ GEM
     blue-shell (0.3.0)
       rspec
     bosh_cli (0.0.0)
-      blobstore_client (~> 0.0.0)
-      bosh-template (~> 0.0.0)
-      bosh_common (~> 0.0.0)
+      aws-sdk-resources (= 2.2.0)
       cf-uaa-lib (~> 3.2.1)
       highline (~> 1.6.2)
       httpclient (= 2.7.1)
