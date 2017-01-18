@@ -9,23 +9,12 @@ module Bosh::Director::ConfigServer
     let(:logger) { double('Logging::Logger') }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
 
-    let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
-    let(:task_id) {42}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
-
-    let(:success_response) do
-      result = SampleSuccessResponse.new
-      result.body = '{}'
-      result
-    end
-
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"
     end
 
     before do
       allow(logger).to receive(:info)
-      allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
     end
 
     describe '#interpolate' do
@@ -640,59 +629,26 @@ module Bosh::Director::ConfigServer
                 let(:type){'any-type-you-like'}
 
                 context 'when the release spec property defines a type' do
-                  let(:success_response) do
-                    result = SampleSuccessResponse.new
-                    result.body = {'id'=>858, 'name'=>'/smurf_director_name/deployment_name/my_smurf', 'value'=>'abc'}.to_json
-                    result
-                  end
-
-                  it 'generates the value, record the event, and returns the user provided placeholder' do
-                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(success_response)
+                  it 'generates the value and returns the user provided placeholder' do
+                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleSuccessResponse.new)
                     expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)).to eq(the_placeholder)
-                    expect(Bosh::Director::Models::Event.count).to eq(1)
-
-                    recorded_event = Bosh::Director::Models::Event.first
-                    expect(recorded_event.user).to eq('user')
-                    expect(recorded_event.action).to eq('create')
-                    expect(recorded_event.object_type).to eq('variable')
-                    expect(recorded_event.object_name).to eq('/smurf_director_name/deployment_name/my_smurf')
-                    expect(recorded_event.task).to eq("#{task_id}")
-                    expect(recorded_event.deployment).to eq(deployment_name)
-                    expect(recorded_event.instance).to eq(nil)
-                    expect(recorded_event.context).to eq({'id'=>858, 'name'=>'/smurf_director_name/deployment_name/my_smurf'})
                   end
 
-                  context 'when config server throws an error while generating' do
-                    before do
-                      allow(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleForbiddenResponse.new)
-                    end
+                  it 'throws an error if generation errors' do
+                    expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleForbiddenResponse.new)
+                    expect(logger).to receive(:error)
 
-                    it 'throws an error and record and event' do
-                      expect(logger).to receive(:error)
-                      expect{
-                        client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
-                      }. to raise_error(
-                              Bosh::Director::ConfigServerGenerationError,
-                              "Config Server failed to generate value for '#{full_key}' with type 'any-type-you-like'. Error: 'There was a problem.'"
-                            )
-
-                      expect(Bosh::Director::Models::Event.count).to eq(1)
-
-                      error_event = Bosh::Director::Models::Event.first
-                      expect(error_event.user).to eq('user')
-                      expect(error_event.action).to eq('create')
-                      expect(error_event.object_type).to eq('variable')
-                      expect(error_event.object_name).to eq('/smurf_director_name/deployment_name/my_smurf')
-                      expect(error_event.task).to eq("#{task_id}")
-                      expect(error_event.deployment).to eq(deployment_name)
-                      expect(error_event.context).to eq({})
-                      expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/my_smurf' with type 'any-type-you-like'. Error: 'There was a problem.'")
-                    end
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+                    }. to raise_error(
+                      Bosh::Director::ConfigServerGenerationError,
+                      "Config Server failed to generate value for '#{full_key}' with type 'any-type-you-like'. Error: 'There was a problem.'"
+                    )
                   end
 
                   context 'when placeholder starts with exclamation mark' do
                     it 'generates the value and returns the user provided placeholder' do
-                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(success_response)
+                      expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name)).to eq(bang_placeholder)
                     end
                   end
@@ -722,19 +678,19 @@ module Bosh::Director::ConfigServer
                     end
 
                     it 'generates a certificate and returns the user provided placeholder' do
-                      expect(http_client).to receive(:post).with(post_body).and_return(success_response)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)).to eq(the_placeholder)
                     end
 
                     it 'generates a certificate and returns the user provided placeholder even with dots' do
                       dotted_placeholder = '((my_smurf.ca))'
-                      expect(http_client).to receive(:post).with(post_body).and_return(success_response)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(dotted_placeholder, default_value, type, deployment_name, options)).to eq(dotted_placeholder)
                     end
 
                     it 'generates a certificate and returns the user provided placeholder even if nested' do
                       dotted_placeholder = '((my_smurf.ca.fingerprint))'
-                      expect(http_client).to receive(:post).with(post_body).and_return(success_response)
+                      expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                       expect(client.prepare_and_get_property(dotted_placeholder, default_value, type, deployment_name, options)).to eq(dotted_placeholder)
                     end
 
@@ -752,7 +708,7 @@ module Bosh::Director::ConfigServer
 
                     context 'when placeholder starts with exclamation mark' do
                       it 'generates a certificate and returns the user provided placeholder' do
-                        expect(http_client).to receive(:post).with(post_body).and_return(success_response)
+                        expect(http_client).to receive(:post).with(post_body).and_return(SampleSuccessResponse.new)
                         expect(client.prepare_and_get_property(bang_placeholder, default_value, type, deployment_name, options)).to eq(bang_placeholder)
                       end
                     end
@@ -777,7 +733,7 @@ module Bosh::Director::ConfigServer
 
       context 'when given a variables object' do
 
-        context 'when some variable names syntax are NOT correct' do
+        context 'when some variable names syntax is NOT correct' do
           let(:variable_specs_list) do
             [
               [{'name' => 'p*laceholder_a', 'type' => 'password'}],
@@ -798,7 +754,7 @@ module Bosh::Director::ConfigServer
 
         end
 
-        context 'when ALL variable names syntax are correct' do
+        context 'when some variable names is correct' do
           let(:variables_spec) do
             [
               {'name' => 'placeholder_a', 'type' => 'password'},
@@ -818,7 +774,7 @@ module Bosh::Director::ConfigServer
                 'type' => 'password',
                 'parameters' => {}
               }
-            ).ordered.and_return(success_response)
+            ).ordered.and_return(SampleSuccessResponse.new)
 
             expect(http_client).to receive(:post).with(
               {
@@ -826,7 +782,7 @@ module Bosh::Director::ConfigServer
                 'type' => 'certificate',
                 'parameters' => {'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
               }
-            ).ordered.and_return(success_response)
+            ).ordered.and_return(SampleSuccessResponse.new)
 
             expect(http_client).to receive(:post).with(
               {
@@ -834,78 +790,9 @@ module Bosh::Director::ConfigServer
                 'type' => 'gold',
                 'parameters' => { 'need' => 'luck' }
               }
-            ).ordered.and_return(success_response)
+            ).ordered.and_return(SampleSuccessResponse.new)
 
             client.generate_values(variables_obj, deployment_name)
-          end
-
-          it 'should record events' do
-            success_response_1 = SampleSuccessResponse.new
-            success_response_1.body = {'id'=>1, 'name'=>'/smurf_director_name/deployment_name/placeholder_a', 'value'=>'abc'}.to_json
-
-            success_response_2 = SampleSuccessResponse.new
-            success_response_2.body = {'id'=>2, 'name'=>'/smurf_director_name/deployment_name/placeholder_b', 'value'=>'my_cert_value'}.to_json
-
-            success_response_3 = SampleSuccessResponse.new
-            success_response_3.body = {'id'=>3, 'name'=>'/placeholder_c', 'value'=>'value_3'}.to_json
-
-            expect(http_client).to receive(:post).with(
-              {
-                'name' => prepend_namespace('placeholder_a'),
-                'type' => 'password',
-                'parameters' => {}
-              }
-            ).ordered.and_return(success_response_1)
-
-            expect(http_client).to receive(:post).with(
-              {
-                'name' => prepend_namespace('placeholder_b'),
-                'type' => 'certificate',
-                'parameters' => {'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
-              }
-            ).ordered.and_return(success_response_2)
-
-            expect(http_client).to receive(:post).with(
-              {
-                'name' => '/placeholder_c',
-                'type' => 'gold',
-                'parameters' => { 'need' => 'luck' }
-              }
-            ).ordered.and_return(success_response_3)
-
-            expect {
-              client.generate_values(variables_obj, deployment_name)
-            }.to change { Bosh::Director::Models::Event.count }.from(0).to(3)
-
-            event_1 = Bosh::Director::Models::Event.first
-            expect(event_1.user).to eq('user')
-            expect(event_1.action).to eq('create')
-            expect(event_1.object_type).to eq('variable')
-            expect(event_1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
-            expect(event_1.task).to eq("#{task_id}")
-            expect(event_1.deployment).to eq(deployment_name)
-            expect(event_1.instance).to eq(nil)
-            expect(event_1.context).to eq({'id'=>1,'name'=>'/smurf_director_name/deployment_name/placeholder_a'})
-
-            event_2 = Bosh::Director::Models::Event.order(:id)[2]
-            expect(event_2.user).to eq('user')
-            expect(event_2.action).to eq('create')
-            expect(event_2.object_type).to eq('variable')
-            expect(event_2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
-            expect(event_2.task).to eq("#{task_id}")
-            expect(event_2.deployment).to eq(deployment_name)
-            expect(event_2.instance).to eq(nil)
-            expect(event_2.context).to eq({'id'=>2,'name'=>'/smurf_director_name/deployment_name/placeholder_b'})
-
-            event_3 = Bosh::Director::Models::Event.order(:id)[3]
-            expect(event_3.user).to eq('user')
-            expect(event_3.action).to eq('create')
-            expect(event_3.object_type).to eq('variable')
-            expect(event_3.object_name).to eq('/placeholder_c')
-            expect(event_3.task).to eq("#{task_id}")
-            expect(event_3.deployment).to eq(deployment_name)
-            expect(event_3.instance).to eq(nil)
-            expect(event_3.context).to eq({'id'=>3,'name'=>'/placeholder_c'})
           end
 
           context 'when config server throws an error while generating' do
@@ -919,7 +806,7 @@ module Bosh::Director::ConfigServer
               ).ordered.and_return(SampleForbiddenResponse.new)
             end
 
-            it 'should throw an error, log it, and record event' do
+            it 'should throw an error and log it' do
               expect(logger).to receive(:error)
 
               expect{
@@ -927,38 +814,6 @@ module Bosh::Director::ConfigServer
               }.to raise_error(
                      Bosh::Director::ConfigServerGenerationError,
                      "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Error: 'There was a problem.'"
-                   )
-
-              expect(Bosh::Director::Models::Event.count).to eq(1)
-
-              error_event = Bosh::Director::Models::Event.first
-              expect(error_event.user).to eq('user')
-              expect(error_event.action).to eq('create')
-              expect(error_event.object_type).to eq('variable')
-              expect(error_event.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
-              expect(error_event.task).to eq("#{task_id}")
-              expect(error_event.deployment).to eq(deployment_name)
-              expect(error_event.instance).to eq(nil)
-              expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Error: 'There was a problem.'")
-            end
-          end
-
-          context 'when config server response is NOT in JSON format' do
-            before do
-              response = SampleSuccessResponse.new
-              response.body = 'NOT JSON!!!'
-
-              allow(http_client).to receive(:post).and_return(response)
-            end
-
-            it 'should throw an error and log it' do
-              expect(logger).to_not receive(:error)
-
-              expect{
-                client.generate_values(variables_obj, deployment_name)
-              }.to raise_error(
-                     Bosh::Director::ConfigServerGenerationError,
-                     "Config Server returned a NON-JSON body while generating value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'"
                    )
             end
           end

@@ -97,9 +97,9 @@ module Bosh::Director::ConfigServer
           else
             if default_prop.nil?
               if type == 'certificate'
-                generate_certificate(extracted_name, deployment_name, options)
+                generate_certificate(extracted_name, options)
               elsif type
-                generate_value_and_record_event(extracted_name, type, deployment_name, {})
+                generate_value(extracted_name, type, {})
               end
               result = provided_prop
             else
@@ -126,7 +126,7 @@ module Bosh::Director::ConfigServer
           deployment_name
         )
 
-        generate_value_and_record_event(constructed_name, variable['type'], deployment_name, variable['options'])
+        generate_value(constructed_name, variable['type'], variable['options'])
       end
     end
 
@@ -222,15 +222,9 @@ module Bosh::Director::ConfigServer
         @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
       end
-
-      begin
-        JSON.parse(response.body)
-      rescue JSON::ParserError
-        raise Bosh::Director::ConfigServerGenerationError,"Config Server returned a NON-JSON body while generating value for '#{name}' with type '#{type}'"
-      end
     end
 
-    def generate_certificate(name, deployment_name, options)
+    def generate_certificate(name, options)
       dns_record_names = options[:dns_record_names]
 
       certificate_options = {
@@ -238,42 +232,7 @@ module Bosh::Director::ConfigServer
         'alternative_names' => dns_record_names
       }
 
-      generate_value_and_record_event(name, 'certificate', deployment_name, certificate_options)
-    end
-
-    def add_event(options)
-      Bosh::Director::Config.current_job.event_manager.create_event(
-        {
-          user:        Bosh::Director::Config.current_job.username,
-          object_type: 'variable',
-          task:        Bosh::Director::Config.current_job.task_id,
-          action:      options.fetch(:action),
-          object_name: options.fetch(:object_name),
-          deployment:  options.fetch(:deployment_name),
-          context:     options.fetch(:context, {}),
-          error:       options.fetch(:error, nil)
-        })
-    end
-
-    def generate_value_and_record_event(variable_name, variable_type, deployment_name, options)
-      begin
-        result = generate_value(variable_name, variable_type, options)
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :context => {'name' => result['name'], 'id' => result['id']}
-        )
-        result
-      rescue Exception => e
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :error => e
-        )
-        raise e
-      end
+      generate_value(name, 'certificate', certificate_options)
     end
   end
 
