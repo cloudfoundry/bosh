@@ -64,7 +64,7 @@ describe 'variable generation with config server', type: :integration do
         ]
       end
 
-      it 'should generate the variables' do
+      it 'should generate the variables and record them in events' do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
         var_a = config_server_helper.get_value(prepend_namespace('var_a'))
@@ -84,6 +84,17 @@ describe 'variable generation with config server', type: :integration do
         subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
         expect(subject_alt_name.to_s.scan(/a.bosh.io/).count).to eq(1)
         expect(subject_alt_name.to_s.scan(/b.bosh.io/).count).to eq(1)
+
+        events_output = bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env)
+        scrubbed_events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(events_output))))
+        scrubbed_variables_events = scrubbed_events.select{ | event | event['Object Type'] == 'variable'}
+
+        expect(scrubbed_variables_events.size).to eq(3)
+        expect(scrubbed_variables_events).to include(
+           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/TestDirector/simple/var_a', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'Error' => ''},
+           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/var_b', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'Error' => ''},
+           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/TestDirector/simple/var_c', 'Deployment' => 'simple', 'Instance' => "", 'Context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_c/, 'Error' => ''}
+         )
       end
 
       context 'when a variable already exists in config server' do
