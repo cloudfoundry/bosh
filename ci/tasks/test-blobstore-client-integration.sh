@@ -12,6 +12,11 @@ check_param secret_access_key
 check_param s3_host
 check_param s3_region
 
+pushd bosh-src
+  bosh sync blobs
+  chmod +x ./blobs/s3cli/s3cli-*-amd64
+popd
+
 export S3CMD_CONFIG_FILE="${PWD}/s3cmd.s3cfg"
 cat > "${S3CMD_CONFIG_FILE}" << EOF
 [default]
