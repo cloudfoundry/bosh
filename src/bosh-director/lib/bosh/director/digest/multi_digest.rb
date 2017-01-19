@@ -13,7 +13,7 @@ module Bosh
           @logger.info("Verifying file shasum with command: \"#{cmd}\"")
           _, err, status = Open3.capture3(cmd)
           unless status.exitstatus == 0
-            raise ShaMismatchError, "sha1 mismatch expected='#{expected_multi_digest_sha}', error: '#{err}'"
+            raise ShaMismatchError, "#{err}"
           end
           @logger.info("Shasum matched for file: '#{file_path}' digest: '#{expected_multi_digest_sha}'")
         end

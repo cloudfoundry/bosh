@@ -53,7 +53,7 @@ describe 'cli: deploy uploading', type: :integration do
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'abcd1234', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Error: sha1 mismatch expected='abcd1234', error: 'Expected stream to have digest 'abcd1234' but was '#{release_sha}'/
+      expect(output).to match /Expected stream to have digest 'abcd1234' but was '#{release_sha}'/
       expect(output).not_to match /Succeeded/
     end
 

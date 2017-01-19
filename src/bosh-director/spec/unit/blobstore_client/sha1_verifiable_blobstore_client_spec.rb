@@ -79,8 +79,7 @@ module Bosh::Blobstore
               expect {
                 subject.get('fake-id', file, sha1: 'expected-sha1')
               }.to raise_error(
-                Bosh::Blobstore::BlobstoreError,
-                /sha1 mismatch expected='expected-sha1', error: 'bar'/,
+                Bosh::Blobstore::BlobstoreError, 'bar'
               )
             end
           end

@@ -165,7 +165,7 @@ module Bosh::Director
 
               expect {
                 job.perform
-              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, /sha1 mismatch expected='sha1:potato', error: 'some error'/)
+              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, 'some error')
             end
           end
 

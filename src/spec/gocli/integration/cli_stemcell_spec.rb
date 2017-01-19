@@ -267,7 +267,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Error: sha1 mismatch expected='shawone', error: 'Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
+          expect(output).to match(/Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
           expect(exit_code).to eq(1)
         end
 

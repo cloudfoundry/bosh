@@ -40,7 +40,7 @@ module Bosh::Director::Digest
         it 'does not raise an error' do
           expect {
             subject.verify(file_path, 'expected-sha')
-          }.to raise_error(ShaMismatchError, /sha1 mismatch expected='expected-sha', error: 'bar'/)
+          }.to raise_error(ShaMismatchError, 'bar')
         end
       end
     end
