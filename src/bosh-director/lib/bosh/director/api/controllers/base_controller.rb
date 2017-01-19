@@ -90,6 +90,11 @@ module Bosh::Director
           set(:dump_errors, false)
         end
 
+        not_found do
+          status(404)
+          "Endpoint '#{request.path}' not found. Please consider upgrading your director"
+        end
+
         error do
           exception = request.env['sinatra.error']
           if exception.kind_of?(DirectorError)
