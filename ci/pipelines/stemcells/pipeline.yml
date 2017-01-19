@@ -115,6 +115,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+        trigger: true
       - get: version
         params:
           bump: {{stemcell_version_semver_bump}}
@@ -722,6 +723,9 @@ resources:
     source:
       uri: {{bosh_src_url}}
       branch: {{stemcell-branch}}
+      paths:
+        - "bosh-stemcell"
+        - "stemcell_builder"
 
   - name: version
     type: semver
