@@ -724,8 +724,8 @@ resources:
       uri: {{bosh_src_url}}
       branch: {{stemcell-branch}}
       paths:
-        - "bosh-stemcell"
-        - "stemcell_builder"
+        - "src/bosh-stemcell"
+        - "src/stemcell_builder"
 
   - name: version
     type: semver
