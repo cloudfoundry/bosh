@@ -25,7 +25,7 @@ module Bosh::Director::ConfigServer
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
 
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
-      placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
+      placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
 
       retrieved_config_server_values = fetch_names_values(placeholders_list, deployment_name, must_be_absolute_name)
 
