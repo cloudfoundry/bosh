@@ -15,7 +15,7 @@ module Bosh::Director::Models
       let(:stemcell) { instance_double('Bosh::Director::Models::Stemcell', sha1: '<stemcell-sha1>') }
 
       before do
-        allow(Digest::SHA1).to receive(:hexdigest) { |input| "hexdigest for '#{input}'" }
+        allow(::Digest::SHA1).to receive(:hexdigest) { |input| "hexdigest for '#{input}'" }
       end
 
       it 'generates sha1 that uniquely identifies a package by its dependencies & stemcell' do
@@ -70,7 +70,7 @@ module Bosh::Director::Models
 
     describe '#dependency_key_sha1' do
       let(:dependency_key) { 'fake-key' }
-      let(:dependency_key_sha1) { Digest::SHA1.hexdigest(dependency_key) }
+      let(:dependency_key_sha1) { ::Digest::SHA1.hexdigest(dependency_key) }
 
       context 'when creating new compiled package' do
         it 'generates dependency key sha' do
@@ -95,7 +95,7 @@ module Bosh::Director::Models
           )
 
           compiled_package.update dependency_key: 'new-fake-key'
-          new_dependency_key_sha1 = Digest::SHA1.hexdigest('new-fake-key')
+          new_dependency_key_sha1 = ::Digest::SHA1.hexdigest('new-fake-key')
 
           expect(compiled_package.dependency_key_sha1).to eq(new_dependency_key_sha1)
         end

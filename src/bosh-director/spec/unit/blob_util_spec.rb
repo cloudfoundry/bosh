@@ -71,7 +71,7 @@ module Bosh::Director
 
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(double('Bosh::Blobstore::Client', create: blob_id))
 
-        allow(Digest::SHA1).to receive_message_chain(:file, :hexdigest).and_return('cp sha1')
+        allow(::Digest::SHA1).to receive_message_chain(:file, :hexdigest).and_return('cp sha1')
         allow(Models::CompiledPackage).to receive(:generate_build_number).with(package, 'chrome-os', 'latest')
 
         expect(compiled_package_cache_blobstore).to receive(:get) do |sha, file|

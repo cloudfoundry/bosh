@@ -36,7 +36,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-registry',      "~>#{version}"
   # ----------------------------------------------------------------------------
 
-  spec.add_dependency 'blobstore_client',   "~>#{version}"
   spec.add_dependency 'bosh-core',          "~>#{version}"
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"

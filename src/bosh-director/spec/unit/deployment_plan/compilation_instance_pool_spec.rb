@@ -154,7 +154,7 @@ module Bosh::Director
         action
 
         compilation_instance = Models::Instance.find(uuid: 'instance-uuid-1')
-        expect(compilation_instance.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
+        expect(compilation_instance.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(trusted_certs))
       end
 
       it 'should record creation event' do

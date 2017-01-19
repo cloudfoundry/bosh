@@ -115,9 +115,8 @@ describe 'director.yml.erb.erb' do
     end
 
     context 'when using the verify-multidigest binary' do
-
       it 'should configure the paths' do
-        expect(parsed_yaml['blobstore']['options']['verify_multidigest_path']).to eq('/var/vcap/packages/verify-multidigest/bin/verify-multidigest')
+        expect(parsed_yaml['verify_multidigest_path']).to eq('/var/vcap/packages/verify-multidigest/bin/verify-multidigest')
       end
     end
 

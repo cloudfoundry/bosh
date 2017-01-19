@@ -193,7 +193,7 @@ module Bosh::Director
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -269,7 +269,7 @@ module Bosh::Director
       #
       # @return [Boolean] true if the VM needs to be sent a new set of trusted certificates
       def trusted_certs_changed?
-        config_trusted_certs = Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
+        config_trusted_certs = ::Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
         changed = config_trusted_certs != @model.trusted_certs_sha1
         log_changes(__method__, @model.trusted_certs_sha1, config_trusted_certs) if changed
         changed

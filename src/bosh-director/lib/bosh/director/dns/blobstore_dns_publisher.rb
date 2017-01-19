@@ -14,7 +14,7 @@ module Bosh::Director
       json_records = dns_records.to_json
       blobstore_id = @blobstore.create(json_records)
         Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
-                                    :sha1 => Digest::SHA1.hexdigest(json_records),
+                                    :sha1 => ::Digest::SHA1.hexdigest(json_records),
                                     :version => dns_records.version,
                                     :created_at => Time.new)
       blobstore_id

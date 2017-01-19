@@ -380,7 +380,7 @@ version: 0.1-dev
 
         context 'that is successfully placed in the blobstore' do
 
-          let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'expected-sha1')}
+          let(:sha1_digest) { instance_double('::Digest::SHA1', hexdigest: 'expected-sha1')}
 
           it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
             expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
@@ -390,7 +390,7 @@ version: 0.1-dev
             allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
               File.write(output_path, 'Some glorious content')
             }
-            allow(Digest::SHA1).to receive(:file).with(any_args).and_return(sha1_digest)
+            allow(::Digest::SHA1).to receive(:file).with(any_args).and_return(sha1_digest)
 
             expect {
               job.perform

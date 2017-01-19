@@ -46,7 +46,7 @@ module Bosh
         content = File.read(image_path)
         data = YAML.load(content)
         data.merge!('image' => image_path)
-        stemcell_id = Digest::SHA1.hexdigest(content)
+        stemcell_id = ::Digest::SHA1.hexdigest(content)
 
         File.write(stemcell_file(stemcell_id), YAML.dump(data))
         stemcell_id

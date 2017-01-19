@@ -188,10 +188,10 @@ module Bosh::Director
 
         @lock = Monitor.new
 
-        if config['blobstore']['options']['verify_multidigest_path'].nil?
+        if config['verify_multidigest_path'].nil?
           raise ArgumentError, 'Multiple Digest binary must be specified'
         end
-        @verify_multidigest_path = config['blobstore']['options']['verify_multidigest_path']
+        @verify_multidigest_path = config['verify_multidigest_path']
       end
 
       def canonized_dns_domain_name

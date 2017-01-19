@@ -5,7 +5,7 @@ Sequel.migration do
       add_column :agent_id, String, unique: true
       add_column :credentials_json, String, :text => true
       add_column :vm_env_json, String, :text => true
-      add_column :trusted_certs_sha1, String, { :default => Digest::SHA1.hexdigest('') }
+      add_column :trusted_certs_sha1, String, { :default => ::Digest::SHA1.hexdigest('') }
     end
 
     self[:instances].each do |instance|

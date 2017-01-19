@@ -6,7 +6,7 @@ module Bosh::Director::Models
     def self.create_cache_key(package, transitive_dependencies, stemcell_sha1)
       dependency_fingerprints = transitive_dependencies.to_a.sort_by(&:name).map {|p| p.fingerprint }
       hash_input = ([package.fingerprint, stemcell_sha1]+dependency_fingerprints).join('')
-      Digest::SHA1.hexdigest(hash_input)
+      ::Digest::SHA1.hexdigest(hash_input)
     end
 
     # Marks job template model as being used by release version
@@ -29,7 +29,7 @@ module Bosh::Director::Models
     end
 
     def before_save
-      self.dependency_key_sha1 = Digest::SHA1.hexdigest(self.dependency_key)
+      self.dependency_key_sha1 = ::Digest::SHA1.hexdigest(self.dependency_key)
 
       super
     end

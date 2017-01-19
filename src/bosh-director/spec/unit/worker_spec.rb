@@ -8,11 +8,10 @@ describe 'worker' do
       'db' => {
         'adapter' => 'sqlite'
       },
+      'verify_multidigest_path' => '/some/path',
       'blobstore' => {
         'provider' => 'simple',
-        'options' => {
-          'verify_multidigest_path' => '/some/path'
-        }
+        'options' => {}
       },
       'config_server' => {
         'enabled' => false

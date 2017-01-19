@@ -4,7 +4,10 @@ require 'digest'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
-    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before do
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+    end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe 'DJ job class expectations' do
@@ -110,7 +113,6 @@ module Bosh::Director
       let(:status) { instance_double(Process::Status, exitstatus: 0)}
 
       before do
-        allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
         allow(Open3).to receive(:capture3).and_return([nil, 'some error', status])
         allow(job).to receive(:with_release_lock).and_yield
       end
@@ -141,7 +143,7 @@ module Bosh::Director
 
         context 'with multiple digests' do
           context 'when the digest matches' do
-            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:#{Digest::SHA1.file(release_path).hexdigest}"} }
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:#{::Digest::SHA1.file(release_path).hexdigest}"} }
 
             it 'verifies that the digest matches the release' do
               allow(job).to receive(:release_path).and_return(release_path)
@@ -163,7 +165,7 @@ module Bosh::Director
 
               expect {
                 job.perform
-              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, /^Verifying release SHA1 'sha1:potato' failed with error: some error/)
+              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, /sha1 mismatch expected='sha1:potato', error: 'some error'/)
             end
           end
 

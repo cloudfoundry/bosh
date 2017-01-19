@@ -47,7 +47,7 @@ export S3_HOST=${s3_host}
 
 pushd bosh-src/src
   bundle install
-  pushd blobstore_client
+  pushd bosh-director
 
     # Create bucket in US region
     bucket_name="bosh-blobstore-bucket-$RANDOM"

@@ -207,7 +207,7 @@ describe 'upload release', type: :integration do
     it 'rejects the release when the sha1 does not match' do
       expect {
         bosh_runner.run("upload-release #{release_url} --sha1 abcd1234")
-      }.to raise_error(RuntimeError, /Error: Verifying release SHA1 'abcd1234' failed with error: Expected stream to have digest 'abcd1234' but was '#{sha1}'/)
+      }.to raise_error(RuntimeError, /Error: sha1 mismatch expected='abcd1234', error: 'Expected stream to have digest 'abcd1234' but was '#{sha1}'/)
     end
   end
 

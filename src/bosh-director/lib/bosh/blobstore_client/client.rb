@@ -14,11 +14,7 @@ module Bosh
 
       def self.safe_create(provider, options = {})
         wrapped_client = create(provider, options)
-        if options['verify_multidigest_path'].nil?
-          raise BlobstoreError,
-                'Multiple Digest binary not provided'
-        end
-        sha1_client    = Sha1VerifiableBlobstoreClient.new(wrapped_client, options['verify_multidigest_path'])
+        sha1_client    = Sha1VerifiableBlobstoreClient.new(wrapped_client, Bosh::Director::Config.logger)
         retryable      = Retryable.new(tries: 6, sleep: 2.0, on: [BlobstoreError])
         RetryableBlobstoreClient.new(sha1_client, retryable)
       end

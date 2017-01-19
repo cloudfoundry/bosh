@@ -25,7 +25,6 @@ require 'bosh/template/evaluation_context'
 require 'common/version/release_version_list'
 
 require 'bcrypt'
-require 'blobstore_client'
 require 'eventmachine'
 require 'netaddr'
 require 'delayed_job'
@@ -63,6 +62,8 @@ require 'bosh/director/config'
 require 'bosh/director/event_log'
 require 'bosh/director/task_result_file'
 require 'bosh/director/blob_util'
+
+require 'bosh/director/digest/digest'
 
 require 'bosh/director/agent_client'
 require 'cloud'
@@ -218,3 +219,17 @@ require 'bosh/director/api/controllers/restore_controller'
 require 'bosh/director/api/controllers/events_controller'
 require 'bosh/director/api/controllers/vms_controller'
 require 'bosh/director/api/route_configuration'
+
+require 'common/common'
+
+require 'bosh/blobstore_client/errors'
+require 'bosh/blobstore_client/client'
+
+Bosh::Blobstore.autoload(:BaseClient, 'bosh/blobstore_client/base')
+require 'bosh/blobstore_client/retryable_blobstore_client'
+require 'bosh/blobstore_client/sha1_verifiable_blobstore_client'
+
+Bosh::Blobstore.autoload(:SimpleBlobstoreClient, 'bosh/blobstore_client/simple_blobstore_client')
+Bosh::Blobstore.autoload(:LocalClient, 'bosh/blobstore_client/local_client')
+Bosh::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/blobstore_client/davcli_blobstore_client')
+Bosh::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/blobstore_client/s3cli_blobstore_client')

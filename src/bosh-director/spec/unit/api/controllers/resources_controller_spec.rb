@@ -25,7 +25,6 @@ module Bosh::Director
           'provider' => 'local',
           'options' => {
             'blobstore_path' => blobstore_dir,
-            'verify_multidigest_path' => '/some/path'
           }
         }
         Config.load_hash(config)

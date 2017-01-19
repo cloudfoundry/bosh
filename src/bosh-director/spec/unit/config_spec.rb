@@ -18,7 +18,6 @@ describe Bosh::Director::Config do
         'provider' => 'local',
         'options' => {
             'blobstore_path' => blobstore_dir,
-            'verify_multidigest_path' => '/some/path'
         }
     }
     config['snapshots']['enabled'] = true
@@ -321,24 +320,23 @@ describe Bosh::Director::Config do
         expect(described_class.canonized_dns_domain_name).to eq('test-domain-name')
       end
     end
+  end
 
-    context 'multiple digest' do
-      context 'when verify multidigest is provided' do
-        it 'allows access to multidigest path' do
-          described_class.configure(base_config)
-          expect(described_class.verify_multidigest_path).to eq('/some/path')
-        end
+  context 'multiple digest' do
+    context 'when verify multidigest is provided' do
+      it 'allows access to multidigest path' do
+        described_class.configure(base_config)
+        expect(described_class.verify_multidigest_path).to eq('/some/path')
+      end
+    end
+
+    context 'when verify multidigest is not provided' do
+      before do
+        base_config['verify_multidigest_path'] = nil
       end
 
-      context 'when verify multidigest is not provided' do
-        before do
-          base_config['blobstore']['options'] = {}
-        end
-        it 'raises an error' do
-          expect{
-            described_class.configure(base_config)
-          }.to raise_error(ArgumentError)
-        end
+      it 'raises an error' do
+        expect{ described_class.configure(base_config) }.to raise_error(ArgumentError)
       end
     end
   end

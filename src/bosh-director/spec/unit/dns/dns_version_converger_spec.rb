@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:dns_version_converger) { DnsVersionConverger.new(logger, 32) }
     let(:agent_client) { double(AgentClient) }
     let(:credentials) { {'creds' => 'hash'} }
-    let(:blob_sha1) { Digest::SHA1.hexdigest('dns-records') }
+    let(:blob_sha1) { ::Digest::SHA1.hexdigest('dns-records') }
     let(:logger) { double(Logger)}
 
     let!(:local_dns_blob) do

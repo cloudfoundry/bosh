@@ -17,7 +17,6 @@ module Bosh::Director
             'endpoint' => 'http://127.0.0.1',
             'user'     => 'admin',
             'password' => nil,
-            'verify_multidigest_path' => '/some/path'
           })
           .and_return(blobstore_client)
         expect(blobstores.blobstore).to eq(blobstore_client)
@@ -34,7 +33,6 @@ module Bosh::Director
             'access_key_id' => 'asdf',
             'secret_access_key' => 'zxcv',
             's3cli_path' => true,
-            'verify_multidigest_path' => '/some/path'
           })
           .and_return(blobstore_client)
         expect(blobstores.backup_destination).to eq(blobstore_client)

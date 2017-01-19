@@ -104,7 +104,7 @@ module Bosh::Director
 
         oid = blobstore_client.create(tarball_file)
 
-        tarball_hexdigest = Digest::SHA1.file(output_path).hexdigest
+        tarball_hexdigest = ::Digest::SHA1.file(output_path).hexdigest
 
         Bosh::Director::Models::EphemeralBlob.new(
             blobstore_id: oid,

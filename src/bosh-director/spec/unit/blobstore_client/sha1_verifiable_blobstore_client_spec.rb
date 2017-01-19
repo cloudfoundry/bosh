@@ -2,12 +2,16 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe Sha1VerifiableBlobstoreClient do
-    subject { described_class.new(wrapped_client, multidigest_path) }
-    let(:multidigest_path) { '/some/path' }
+    subject { described_class.new(wrapped_client, logger) }
     let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:multidigest_path) { 'some/path/to/binary' }
 
     it_implements_base_client_interface
     it_calls_wrapped_client_methods(except: [:get])
+
+    before do
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return(multidigest_path)
+    end
 
     describe '#get' do
       let(:file) { double('fake-file', path: 'fake-file-path') }
@@ -75,8 +79,8 @@ module Bosh::Blobstore
               expect {
                 subject.get('fake-id', file, sha1: 'expected-sha1')
               }.to raise_error(
-                BlobstoreError,
-                /sha1 mismatch expected=expected-sha1, error: bar/,
+                Bosh::Blobstore::BlobstoreError,
+                /sha1 mismatch expected='expected-sha1', error: 'bar'/,
               )
             end
           end

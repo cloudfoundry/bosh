@@ -367,7 +367,7 @@ module Bosh::Director::DeploymentPlan
         it 'tells the agent to update instance settings and updates the instance model' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [{'name' => 'some-disk', 'cid' => 'some-cid'}])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
 
@@ -379,7 +379,7 @@ module Bosh::Director::DeploymentPlan
         it 'does not send any disk associations to update' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
     end

@@ -55,7 +55,7 @@ module Bosh::Director::Test
             raise "Cannot create job: #{tar_out}"
           end
 
-          job["sha1"] ||= Digest::SHA1.file("#{job["name"]}.tgz").hexdigest
+          job["sha1"] ||= ::Digest::SHA1.file("#{job["name"]}.tgz").hexdigest
         end
         FileUtils.rm_rf(job_dir)
       end
@@ -74,7 +74,7 @@ module Bosh::Director::Test
             raise "Cannot create package: #{tar_out}"
           end
 
-          package["sha1"] ||= Digest::SHA1.file("#{package["name"]}.tgz").hexdigest
+          package["sha1"] ||= ::Digest::SHA1.file("#{package["name"]}.tgz").hexdigest
         end
         FileUtils.rm_rf(package_dir)
       end

@@ -31,7 +31,7 @@ module Bosh::Director
           # file already exists at the release_path
           @release_path = release_path
         end
-
+        @multi_digest_verifier = Digest::MultiDigest.new(logger)
         @rebase = !!options['rebase']
         @fix = !!options['fix']
       end
@@ -44,7 +44,7 @@ module Bosh::Director
 
         single_step_stage("Downloading remote release") { download_remote_release } if release_url
 
-        single_step_stage("Verifying remote release") { verify_sha1 } if sha1
+        single_step_stage("Verifying remote release") { verify_sha } if sha1
 
         release_dir = nil
         single_step_stage("Extracting release") { release_dir = extract_release }
@@ -109,11 +109,11 @@ module Bosh::Director
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
       end
 
-      def verify_sha1
-        logger.info("Running ... #{Config.verify_multidigest_path} verify-multi-digest #{release_path} #{sha1}")
-        _, err, status = Open3.capture3("#{Config.verify_multidigest_path} verify-multi-digest #{release_path} #{sha1}")
-        unless status.exitstatus == 0
-          raise ReleaseSha1DoesNotMatch, "Verifying release SHA1 '#{sha1}' failed with error: #{err}"
+      def verify_sha
+        begin
+          @multi_digest_verifier.verify(release_path, sha1)
+        rescue Bosh::Director::Digest::ShaMismatchError => e
+          raise Bosh::Director::ReleaseSha1DoesNotMatch.new(e)
         end
       end
 
@@ -419,7 +419,7 @@ module Bosh::Director
           tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           validate_tgz(tgz, "#{package.name}.tgz")
           blobstore_id = BlobUtil.create_blob(tgz)
-          sha1 = Digest::SHA1.file(tgz).hexdigest
+          sha1 = ::Digest::SHA1.file(tgz).hexdigest
         else
           blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
           sha1 = other_compiled_package.sha1

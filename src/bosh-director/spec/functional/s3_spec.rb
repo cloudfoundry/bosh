@@ -1,8 +1,21 @@
-require 'spec_helper'
 require 'tempfile'
 require 'net/http'
 
+require 'erb'
+require 'tempfile'
+require 'bosh/director'
+
 module Bosh::Blobstore
+  def asset(filename)
+    File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
+  end
+
+  def erb_asset(filename, binding)
+    file = Tempfile.new('erb_asset')
+    file.write(ERB.new(File.read(asset(filename))).result(binding))
+    file.flush
+    file
+  end
 
   describe S3cliBlobstoreClient do
     let(:access_key_id) do

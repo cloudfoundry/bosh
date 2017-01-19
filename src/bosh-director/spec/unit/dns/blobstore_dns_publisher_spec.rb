@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'blobstore_client/null_blobstore_client'
+require 'bosh/blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe BlobstoreDnsPublisher do
@@ -25,7 +25,7 @@ module Bosh::Director
           it 'adds new entry to LocalDnsBlob table' do
             blobstore_id = dns.publish(dns_records)
             local_dns_blob = Bosh::Director::Models::LocalDnsBlob.find(:blobstore_id => blobstore_id)
-            expect(local_dns_blob.sha1).to eq(Digest::SHA1.hexdigest(dns_records.to_json))
+            expect(local_dns_blob.sha1).to eq(::Digest::SHA1.hexdigest(dns_records.to_json))
             expect(local_dns_blob.version).to eq(2)
           end
         end

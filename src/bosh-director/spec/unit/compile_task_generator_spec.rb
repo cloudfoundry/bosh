@@ -32,7 +32,7 @@ module Bosh::Director
       context 'when existing compiled packages do not exist' do
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
-            expect(Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
+            expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
@@ -67,7 +67,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            expect(Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
+            expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
 
             package_a.dependency_set_json = ['package_b', 'package_c'].to_json
             package_b.dependency_set_json = ['package_d'].to_json
@@ -109,7 +109,7 @@ module Bosh::Director
 
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
-            expect(Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
+            expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
 
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
 
@@ -147,7 +147,7 @@ module Bosh::Director
           end
 
           it 'correctly adds dependencies' do
-            expect(Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
+            expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
 
             package_a.dependency_set_json = ['package_b', 'package_c'].to_json
             package_b.dependency_set_json = ['package_d'].to_json

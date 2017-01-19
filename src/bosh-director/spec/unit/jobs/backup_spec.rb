@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'blobstore_client'
 require 'fakefs/spec_helpers'
 
 module Bosh::Director

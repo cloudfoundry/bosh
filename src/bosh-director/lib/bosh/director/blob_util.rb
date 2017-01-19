@@ -27,7 +27,7 @@ module Bosh::Director
     end
     
     def self.verify_blob(blobstore_id, sha1)
-      sha1 == Digest::SHA1.hexdigest(blobstore.get(blobstore_id))
+      sha1 == ::Digest::SHA1.hexdigest(blobstore.get(blobstore_id))
     rescue Bosh::Blobstore::BlobstoreError => e
       return false
     end
@@ -70,7 +70,7 @@ module Bosh::Director
 
         File.open(blob_path) do |file|
           blobstore_id = blobstore.create(file)
-          compiled_package_sha1 = Digest::SHA1.file(blob_path).hexdigest
+          compiled_package_sha1 = ::Digest::SHA1.file(blob_path).hexdigest
         end
       end
 

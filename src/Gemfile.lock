@@ -1,13 +1,4 @@
 PATH
-  remote: blobstore_client
-  specs:
-    blobstore_client (0.0.0)
-      aws-sdk-resources (= 2.2.0)
-      bosh_common (~> 0.0.0)
-      httpclient (= 2.7.1)
-      multi_json (~> 1.1)
-
-PATH
   remote: bosh-core
   specs:
     bosh-core (0.0.0)
@@ -39,7 +30,6 @@ PATH
   specs:
     bosh-director (0.0.0)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 0.0.0)
       bosh-core (~> 0.0.0)
       bosh-director-core (~> 0.0.0)
       bosh-registry (~> 0.0.0)
@@ -332,7 +322,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client!
   blue-shell
   bosh-core!
   bosh-dev!

@@ -28,7 +28,7 @@ Sequel.migration do
 
     self[:compiled_packages].each do |row|
       self[:compiled_packages].filter(:id => row[:id]).update(
-        :dependency_key_sha1 => Digest::SHA1.hexdigest(row[:dependency_key])
+        :dependency_key_sha1 => ::Digest::SHA1.hexdigest(row[:dependency_key])
       )
     end
 
