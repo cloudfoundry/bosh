@@ -271,6 +271,12 @@ describe 'cli: stemcell', type: :integration do
           expect(exit_code).to eq(1)
         end
 
+        it 'rejects the release when the sha1 is an unknown algorithm' do
+          expect {
+            bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 'shaxyz:abcd1234'")
+          }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unkown algorithm 'shaxyz'/)
+        end
+
         context 'when multiple digests are provided' do
           let(:multidigest_string) { 'sha256:5ca766c62c8eb49d698810096f091ad5b19167d6c2fcd592eb0a99a553b70526;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
 

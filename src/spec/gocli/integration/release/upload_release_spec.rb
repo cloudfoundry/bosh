@@ -209,6 +209,22 @@ describe 'upload release', type: :integration do
         bosh_runner.run("upload-release #{release_url} --sha1 abcd1234")
       }.to raise_error(RuntimeError, /Expected stream to have digest 'abcd1234' but was '#{sha1}'/)
     end
+
+    it 'rejects the release when the sha1 is an unknown algorithm' do
+      expect {
+        bosh_runner.run("upload-release #{release_url} --sha1 'shaxyz:abcd1234'")
+      }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unkown algorithm 'shaxyz'/)
+    end
+
+    context 'when multiple digests are provided' do
+      let(:multidigest_string) { 'sha256:a0fa18fba0e244c2c7c0d3f09900d56852b60ec62653babdfcd8b899cbe3d108;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
+
+      it 'accepts and verifies the multiple digests' do
+        output = bosh_runner.run("upload-release #{release_url} --sha1 '#{multidigest_string}'")
+        expect(output).to include('Creating new packages')
+        expect(output).to include('Creating new jobs')
+      end
+    end
   end
 
   describe 're-uploading a release after it fails in a previous attempt' do
