@@ -42,6 +42,21 @@ resources:
     source:
       repository: cloudfoundry/uaa-release
 
+  - name: bosh-warden-cpi-release
+    type: bosh-io-release
+    source:
+      repository: cppforlife/bosh-warden-cpi-release
+
+  - name: garden-linux-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/garden-linux-release
+
+  - name: garden-runc-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/garden-runc-release
+
   #
   # stemcells to compile on
   #
@@ -301,6 +316,110 @@ jobs:
             stemcell: ubuntu-trusty-3263-stemcell
             release: uaa-release
         - put: uaa-on-ubuntu-trusty-3263
+          params:
+            file: "compiled-release/*.tgz"
+        ensure:
+          task: teardown-director
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
+
+  # ------
+
+  - name: compile-bosh-warden-cpi-release-latest-ubuntu-trusty-3312
+    plan:
+      - aggregate:
+          - get: bosh-src
+          - get: bosh-deployment
+          - get: bosh-warden-cpi-release
+            trigger: true
+          - get: bosh-release-260
+          - get: ubuntu-trusty-3312-stemcell
+            trigger: true
+      - task: deploy-director
+        file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
+        input_mapping:
+          stemcell: ubuntu-trusty-3312-stemcell
+          bosh-release: bosh-release-260
+        params:
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
+          BOSH_TARGET_IP: 10.0.2.17
+          BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.121, 10.0.2.130-10.0.2.255]
+      - do:
+        - task: export-release
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
+          input_mapping:
+            stemcell: ubuntu-trusty-3312-stemcell
+            release: bosh-warden-cpi-release
+        - put: bosh-on-ubuntu-trusty-3312
+          params:
+            file: "compiled-release/*.tgz"
+        ensure:
+          task: teardown-director
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
+
+  - name: compile-garden-linux-release-latest-ubuntu-trusty-3312
+    plan:
+      - aggregate:
+          - get: bosh-src
+          - get: bosh-deployment
+          - get: garden-linux-release
+            trigger: true
+          - get: bosh-release-260
+          - get: ubuntu-trusty-3312-stemcell
+            trigger: true
+      - task: deploy-director
+        file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
+        input_mapping:
+          stemcell: ubuntu-trusty-3312-stemcell
+          bosh-release: bosh-release-260
+        params:
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
+          BOSH_TARGET_IP: 10.0.2.18
+          BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.131, 10.0.2.140-10.0.2.255]
+      - do:
+        - task: export-release
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
+          input_mapping:
+            stemcell: ubuntu-trusty-3312-stemcell
+            release: garden-linux-release
+        - put: bosh-on-ubuntu-trusty-3312
+          params:
+            file: "compiled-release/*.tgz"
+        ensure:
+          task: teardown-director
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
+
+  - name: compile-garden-runc-release-latest-ubuntu-trusty-3312
+    plan:
+      - aggregate:
+          - get: bosh-src
+          - get: bosh-deployment
+          - get: garden-runc-release
+            trigger: true
+          - get: bosh-release-260
+          - get: ubuntu-trusty-3312-stemcell
+            trigger: true
+      - task: deploy-director
+        file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
+        input_mapping:
+          stemcell: ubuntu-trusty-3312-stemcell
+          bosh-release: bosh-release-260
+        params:
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
+          BOSH_TARGET_IP: 10.0.2.19
+          BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.141, 10.0.2.150-10.0.2.255]
+      - do:
+        - task: export-release
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
+          input_mapping:
+            stemcell: ubuntu-trusty-3312-stemcell
+            release: garden-runc-release
+        - put: bosh-on-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
         ensure:
