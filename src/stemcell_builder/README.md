@@ -7,7 +7,7 @@ or virtual machine format.
 
 ## Usage
 
-See [bosh-stemcell](/bosh-stemcell/README.md)
+See [bosh-stemcell](../bosh-stemcell/README.md)
 
 
 ## Concepts
