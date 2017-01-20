@@ -84,7 +84,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-bosh-[\\d\\.]+-on-ubuntu-trusty-stemcell-3312.*-(\\d+).tgz"
+      regexp: "bosh-[\\d\\.]+-ubuntu-trusty-3312.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty-3312
     type: s3
@@ -92,7 +92,31 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-uaa-[\\d\\.]+-on-ubuntu-trusty-stemcell-3312.*-(\\d+).tgz"
+      regexp: "uaa-[\\d\\.]+-ubuntu-trusty-3312.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  - name: bosh-warden-cpi-release-ubuntu-trusty-3312
+    type: s3
+    source:
+      bucket: "bosh-compiled-release-tarballs"
+      access_key_id: {{aws_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+      regexp: "bosh-warden-cpi-[\\d\\.]+-ubuntu-trusty-3312.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  - name: garden-linux-release-ubuntu-trusty-3312
+    type: s3
+    source:
+      bucket: "bosh-compiled-release-tarballs"
+      access_key_id: {{aws_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+      regexp: "garden-linux-[\\d\\.]+-ubuntu-trusty-3312.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  - name: garden-runc-release-ubuntu-trusty-3312
+    type: s3
+    source:
+      bucket: "bosh-compiled-release-tarballs"
+      access_key_id: {{aws_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+      regexp: "garden-runc-[\\d\\.]+-ubuntu-trusty-3312.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
   # ubuntu-trusty-3263
 
@@ -102,7 +126,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-bosh-[\\d\\.]+-on-ubuntu-trusty-stemcell-3263.*-(\\d+).tgz"
+      regexp: "bosh-[\\d\\.]+-ubuntu-trusty-stemcell-3263.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty-3263
     type: s3
@@ -110,7 +134,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-uaa-[\\d\\.]+-on-ubuntu-trusty-stemcell-3263.*-(\\d+).tgz"
+      regexp: "uaa-[\\d\\.]+-ubuntu-trusty-stemcell-3263.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
 jobs:
   # ubuntu-trusty-3312
@@ -351,7 +375,7 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3312-stemcell
             release: bosh-warden-cpi-release
-        - put: bosh-on-ubuntu-trusty-3312
+        - put: bosh-warden-cpi-release-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
         ensure:
@@ -385,7 +409,7 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3312-stemcell
             release: garden-linux-release
-        - put: bosh-on-ubuntu-trusty-3312
+        - put: garden-linux-release-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
         ensure:
@@ -419,7 +443,7 @@ jobs:
           input_mapping:
             stemcell: ubuntu-trusty-3312-stemcell
             release: garden-runc-release
-        - put: bosh-on-ubuntu-trusty-3312
+        - put: garden-runc-release-ubuntu-trusty-3312
           params:
             file: "compiled-release/*.tgz"
         ensure:
