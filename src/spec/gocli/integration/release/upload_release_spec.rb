@@ -217,12 +217,23 @@ describe 'upload release', type: :integration do
     end
 
     context 'when multiple digests are provided' do
-      let(:multidigest_string) { 'sha256:a0fa18fba0e244c2c7c0d3f09900d56852b60ec62653babdfcd8b899cbe3d108;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
+      context 'when the digest is valid' do
+        let(:multidigest_string) { 'sha256:a0fa18fba0e244c2c7c0d3f09900d56852b60ec62653babdfcd8b899cbe3d108;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
+        it 'accepts and verifies the multiple digests' do
+          output = bosh_runner.run("upload-release #{release_url} --sha1 '#{multidigest_string}'")
+          expect(output).to include('Creating new packages')
+          expect(output).to include('Creating new jobs')
+        end
+      end
 
-      it 'accepts and verifies the multiple digests' do
-        output = bosh_runner.run("upload-release #{release_url} --sha1 '#{multidigest_string}'")
-        expect(output).to include('Creating new packages')
-        expect(output).to include('Creating new jobs')
+      context 'when the digest is invalid' do
+        let(:multidigest_string) { 'sha256:bad_sha_512;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
+
+        it 'rejects the release' do
+          expect {
+            bosh_runner.run("upload-release #{release_url} --sha1 '#{multidigest_string}'")
+          }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:bad_sha_512' but was 'sha256:/)
+        end
       end
     end
   end
