@@ -79,7 +79,7 @@ describe Bosh::Director::JobUpdater do
         [instance_plan]
       end
 
-      it 'should apply the insatnce plan' do
+      it 'should apply the instance plan' do
         job_updater.update
 
         check_event_log do |events|
