@@ -26,16 +26,16 @@ module Bosh::Dev::Sandbox
     ROOT_PRIVATE_KEY = File.join(CERTS_DIR, 'rootCA.key')
     JWT_VERIFICATION_KEY = File.join(CERTS_DIR, 'jwtVerification.key')
     UAA_CA_CERT = File.join(CERTS_DIR, 'server.crt')
-    CONFIG_SERVER_CONFIG_FILE = File.join(INSTALL_DIR, 'config-server-config.json')
 
-    def initialize(port_provider, base_log_path, logger)
+    def initialize(port_provider, base_log_path, logger, test_env_number)
       @port = port_provider.get_port(:config_server_port)
       @logger = logger
       @log_location = "#{base_log_path}.config-server.out"
+      @config_server_config_file= File.join(INSTALL_DIR, "config-server-config#{test_env_number}.json")
       @config_server_socket_connector = SocketConnector.new('config-server', 'localhost', @port, @log_location, logger)
 
       @config_server_process = Bosh::Dev::Sandbox::Service.new(
-        [executable_path, CONFIG_SERVER_CONFIG_FILE],
+        [executable_path, @config_server_config_file],
         {
           output: @log_location
         },
@@ -112,7 +112,7 @@ module Bosh::Dev::Sandbox
 
     def setup_config_file(with_trusted_certs = true)
       config = with_trusted_certs ? config_json : config_with_untrusted_cert_json
-      File.open(CONFIG_SERVER_CONFIG_FILE, 'w') { |file| file.write(config) }
+      File.open(@config_server_config_file, 'w') { |file| file.write(config) }
     end
 
     def config_json

@@ -154,7 +154,7 @@ describe 'variable generation with config server', type: :integration do
           expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
         end
 
-        context 'when variable is referenced by a property that have a type in release spec' do
+        context 'when variable is referenced by a property that has a type in release spec' do
           let(:manifest_hash) do
             Bosh::Spec::Deployments.test_release_manifest.merge(
               {
