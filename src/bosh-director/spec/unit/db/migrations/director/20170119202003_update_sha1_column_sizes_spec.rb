@@ -117,11 +117,11 @@ module Bosh::Director
       expect(db[:stemcells].where(sha1: a_512_len_str).count).to eq(1)
 
       db[:local_dns_blobs] << {
-        sha1: 'c' * 769,
+        sha1: 'c' * 512,
         blobstore_id: 'blob_id',
         created_at: Time.now
       }
-      expect(db[:local_dns_blobs].where(sha1: 'c' * 769).count).to eq(1)
+      expect(db[:local_dns_blobs].where(sha1: 'c' * 512).count).to eq(1)
 
       db.tables.each do |t|
         expect(db.indexes(t)).to eq(indexes_before[t])
