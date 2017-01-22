@@ -263,7 +263,7 @@ describe 'cli: stemcell', type: :integration do
 
       context 'when a sha1 is provided' do
         it 'accepts shas' do
-          output = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 73b51e1285240898f34b0fac22aba7ad4cc6ac65")
+          output = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
           expect(output).to include("Stemcell uploaded and created.")
         end
 

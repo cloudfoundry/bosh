@@ -32,12 +32,17 @@ describe 'cli: stemcell', type: :integration do
   end
 
   context 'if cpi config is used' do
-    it 'creates a stemcell for each configured cpi' do
+    it 'creates a stemcell for each configured cpi if it matches stemcell format' do
       stemcell_filename = spec_asset('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
       cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+      stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
+
+      out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
+      expect(out).to include("stemcell_formats of this stemcell does not support by available cpis")
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
       expect(out).to include('Save stemcell')
@@ -58,7 +63,6 @@ describe 'cli: stemcell', type: :integration do
               'cpi' => 'cpi-name2',
               'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
-
       ])
     end
   end
@@ -257,7 +261,7 @@ describe 'cli: stemcell', type: :integration do
 
       context 'when a sha1 is provided' do
         it 'accepts shas' do
-          output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 73b51e1285240898f34b0fac22aba7ad4cc6ac65")
+          output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
           expect(output).to match /Save stemcell/
           expect(output).to match /Succeeded/
         end
@@ -267,7 +271,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
+          expect(output).to match(/Expected stream to have digest 'shawone' but was 'bd0c5cc17b6753870f0e6b0155a2122e32649c22'/)
           expect(exit_code).to eq(1)
         end
 
@@ -279,7 +283,7 @@ describe 'cli: stemcell', type: :integration do
 
         context 'when multiple digests are provided' do
           context 'when the digest is valid' do
-            let(:multidigest_string) { 'sha256:5ca766c62c8eb49d698810096f091ad5b19167d6c2fcd592eb0a99a553b70526;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+            let(:multidigest_string) { 'sha256:9179cb9d588cd62c8adbdea1f1b7623ab42b5c653232fed335a1343c7109df1d;sha1:bd0c5cc17b6753870f0e6b0155a2122e32649c22' }
 
             it 'accepts and verifies the multiple digests' do
               output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
@@ -289,7 +293,7 @@ describe 'cli: stemcell', type: :integration do
           end
 
           context 'when the digest is valid' do
-            let(:multidigest_string) { 'sha256:bad256;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+            let(:multidigest_string) { 'sha256:bad256;sha1:bd0c5cc17b6753870f0e6b0155a2122e32649c22' }
 
             it 'accepts and verifies the multiple digests' do
               expect {
