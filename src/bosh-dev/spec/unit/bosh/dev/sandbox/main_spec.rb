@@ -3,6 +3,13 @@ require 'bosh/dev/sandbox/main'
 
 module Bosh::Dev::Sandbox
   describe Main do
+    let(:uaa){ double(UaaService)}
+    before do
+      allow(UaaService).to receive(:new).and_return(uaa)
+      allow(uaa).to receive(:port).and_return(9999)
+      allow(uaa).to receive(:reconfigure)
+    end
+
     subject(:sandbox) { Main.new({}, nil, 0, logger) }
 
     describe '#run' do
