@@ -4,7 +4,7 @@
     <Connector class="org.apache.coyote.http11.Http11NioProtocol" port="${uaa.http_port}" protocol="HTTP/1.1" connectionTimeout="20000" address="127.0.0.1"/>
     <Engine name="Catalina" defaultHost="localhost">
 
-      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false">
+      <Host name="localhost" appBase="${uaa.webapps}" unpackWARs="true" autoDeploy="false">
         <Valve className="org.apache.catalina.valves.RemoteIpValve"
                remoteIpHeader="x-forwarded-for"
                protocolHeader="x-forwarded-proto"

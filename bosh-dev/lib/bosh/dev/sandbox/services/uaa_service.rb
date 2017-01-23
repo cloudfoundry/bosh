@@ -18,7 +18,7 @@ module Bosh::Dev::Sandbox
     CERTS_DIR = File.expand_path('certs', ASSETS_DIR)
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
 
-    def initialize(port_provider, base_log_path, logger)
+    def initialize(port_provider, sandbox_root, base_log_path, logger)
       @port = port_provider.get_port(:uaa_http)
       @server_port = port_provider.get_port(:uaa_server)
 
@@ -27,9 +27,17 @@ module Bosh::Dev::Sandbox
       @log_location = "#{base_log_path}.uaa.out"
 
       @connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/uaa/login', 'Reset password', @log_location, logger)
+
+      @uaa_webapps_path = File.join(sandbox_root,'uaa.webapps')
+      if ! File.exists? @uaa_webapps_path
+        FileUtils.mkdir_p @uaa_webapps_path
+        war_file_path = File.join(TOMCAT_DIR, 'webapps', UAA_FILENAME)
+        FileUtils.cp war_file_path, @uaa_webapps_path
+      end
     end
 
     def self.install
+
       webapp_path = File.join(TOMCAT_DIR, 'webapps', UAA_FILENAME)
 
       FileUtils.mkdir_p(TOMCAT_DIR)
@@ -77,6 +85,7 @@ module Bosh::Dev::Sandbox
           'uaa.http_port' => @port,
           'uaa.server_port' => @server_port,
           'uaa.access_log_dir' => File.dirname(@log_location),
+          'uaa.webapps' => @uaa_webapps_path
       }
 
       @service = Service.new(
