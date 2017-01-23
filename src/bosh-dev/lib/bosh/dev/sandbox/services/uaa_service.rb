@@ -31,7 +31,7 @@ module Bosh::Dev::Sandbox
       @uaa_webapps_path = File.join(sandbox_root,'uaa.webapps')
       if ! File.exists? @uaa_webapps_path
         FileUtils.mkdir_p @uaa_webapps_path
-        war_file_path = File.join(TOMCAT_DIR, 'webapps', UAA_FILENAME)
+        war_file_path = File.join(REPO_ROOT, TOMCAT_DIR, 'webapps', UAA_FILENAME)
         FileUtils.cp war_file_path, @uaa_webapps_path
       end
     end
