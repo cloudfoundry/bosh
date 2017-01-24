@@ -8,13 +8,12 @@ module Bosh::Director
       :run_errand
     end
 
-    def initialize(deployment_name, errand_name, keep_alive, when_changed)
+    def initialize(deployment_name, errand_name, keep_alive)
       @deployment_name = deployment_name
       @errand_name = errand_name
       @deployment_manager = Api::DeploymentManager.new
       @instance_manager = Api::InstanceManager.new
       @keep_alive = keep_alive
-      @when_changed = when_changed
       blobstore = App.instance.blobstores.blobstore
       log_bundles_cleaner = LogBundlesCleaner.new(blobstore, 60 * 60 * 24 * 10, logger) # 10 days
       @logs_fetcher = LogsFetcher.new(@instance_manager, log_bundles_cleaner, logger)
@@ -24,7 +23,6 @@ module Bosh::Director
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
       deployment_manifest = Manifest.load_from_model(deployment_model)
       deployment_name = deployment_manifest.to_hash['name']
-
       with_deployment_lock(deployment_name) do
         deployment = nil
         job = nil
@@ -54,35 +52,11 @@ module Bosh::Director
           job.bind_instances(deployment.ip_provider)
 
           JobRenderer.create.render_job_instances(job.needed_instance_plans)
-          deployment.compile_packages
-
-          if @when_changed
-            logger.info('Errand run with --when-changed')
-            last_errand_run = Models::ErrandRun.where(instance_id: job.instances.first.model.id).first
-
-            if last_errand_run
-              changed_instance_plans = job.needed_instance_plans.select do |plan|
-                if JSON.dump(plan.instance.current_packages) != last_errand_run.successful_packages_spec
-                  logger.info("Packages changed FROM: #{last_errand_run.successful_packages_spec} TO: #{plan.instance.current_packages}")
-                  next true
-                end
-
-                if plan.instance.configuration_hash != last_errand_run.successful_configuration_hash
-                  logger.info("Configuration changed FROM: #{last_errand_run.successful_configuration_hash} TO: #{plan.instance.configuration_hash}")
-                  next true
-                end
-              end
-
-              if last_errand_run.successful && changed_instance_plans.empty?
-                logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-                result_file.write(JSON.dump({exit_code: 0, stdout: '', stderr: '', logs: {}}) + "\n")
-                return
-              end
-            end
-          end
         end
 
-        runner = Errand::Runner.new(job.instances.first, job.name, result_file, @instance_manager, @logs_fetcher)
+        deployment.compile_packages
+
+        runner = Errand::Runner.new(job, result_file, @instance_manager, @logs_fetcher)
 
         cancel_blk = lambda {
           begin
@@ -113,28 +87,28 @@ module Bosh::Director
         update_instances(job_manager)
         block_result = blk.call
       rescue Exception
-        cleanup_vms_and_log_error(job_manager)
+        cleanup_instances_and_log_error(job_manager)
         raise
       else
-        cleanup_vms(job_manager)
+        cleanup_instances_and_raise_error(job_manager)
         return block_result
       end
     end
 
-    def cleanup_vms_and_log_error(job_manager)
+    def cleanup_instances_and_log_error(job_manager)
       begin
-        cleanup_vms(job_manager)
+        cleanup_instances_and_raise_error(job_manager)
       rescue Exception => e
-        logger.warn("Failed to delete vms: #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}")
+        logger.warn("Failed to delete instances: #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}")
       end
     end
 
-    def cleanup_vms(job_manager)
+    def cleanup_instances_and_raise_error(job_manager)
       if @keep_alive
-        logger.info('Skipping vms deletion, keep-alive is set')
+        logger.info('Skipping instances deletion, keep-alive is set')
       else
-        logger.info('Deleting vms')
-        delete_vms(job_manager)
+        logger.info('Deleting instances')
+        delete_instances(job_manager)
       end
     end
 
@@ -146,11 +120,11 @@ module Bosh::Director
       job_manager.update_instances
     end
 
-    def delete_vms(job_manager)
+    def delete_instances(job_manager)
       @ignore_cancellation = true
 
-      logger.info('Starting to delete job vms')
-      job_manager.delete_vms
+      logger.info('Starting to delete job instances')
+      job_manager.delete_instances
 
       @ignore_cancellation = false
     end

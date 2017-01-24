@@ -1109,7 +1109,7 @@ module Bosh::Director
                     'admin',
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', false, false],
+                    ['fake-dep-name', 'fake-errand-name', false],
                     deployment,
                     ""
                   ).and_return(task)
@@ -1123,7 +1123,7 @@ module Bosh::Director
                     'admin',
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', false, false],
+                    ['fake-dep-name', 'fake-errand-name', false],
                     deployment,
                     context_id
                   ).and_return(task)
@@ -1143,25 +1143,12 @@ module Bosh::Director
                     'admin',
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', true, false],
+                    ['fake-dep-name', 'fake-errand-name', true],
                     deployment,
                     ""
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
-                end
-
-                it 'enqueues a when-changed task' do
-                  expect(job_queue).to receive(:enqueue).with(
-                    'admin',
-                    Jobs::RunErrand,
-                    'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', false, true],
-                    deployment,
-                    ""
-                  ).and_return(task)
-
-                  perform({'when-changed' => true})
                 end
               end
             end

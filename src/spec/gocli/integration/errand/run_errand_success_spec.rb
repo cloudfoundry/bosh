@@ -135,47 +135,6 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
   end
 
-  context 'when the --when-changed flag is specified' do
-    with_reset_sandbox_before_each
-
-    before do
-        deploy_from_scratch(manifest_hash: manifest_hash)
-        bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
-    end
-
-    context 'when the errand configuration has not changed' do
-      it 'does not re-run the errand' do
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --when-changed', return_exit_code: true, deployment_name: deployment_name)
-        expect(exit_code).to eq(0)
-        errand_task_id = bosh_runner.get_most_recent_task_id
-        task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
-        expect(task_result).to include('{"exit_code":0,"stdout":"","stderr":"","logs":{}}')
-        expect(output).not_to match('Creating missing vms')
-      end
-    end
-
-    context 'when the errand configuration has changed' do
-      it 'reruns the errand' do
-        manifest_hash['jobs'].find { |job| job['name'] == 'fake-errand-name'}['properties'] = {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'new-stdout',
-            'stderr' => 'new-stderr',
-            'run_package_file' => true,
-          }
-        }
-        deploy_simple_manifest(manifest_hash: manifest_hash)
-
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --when-changed', return_exit_code: true, deployment_name: deployment_name)
-        expect(exit_code).to eq(0)
-        expect(output).to match('Creating missing vms') # output should indicate errand runs
-        errand_task_id = bosh_runner.get_most_recent_task_id
-        task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
-        expect(task_result).to match('"exit_code":0')
-      end
-    end
-  end
-
   describe 'network update is required for the job vm' do
     with_reset_sandbox_before_each
 

@@ -2,22 +2,21 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Runner do
-    subject { described_class.new(instance, 'fake-job-name', result_file, instance_manager, logs_fetcher) }
+    subject { described_class.new(job, result_file, instance_manager, logs_fetcher) }
+    let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job-name') }
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
     context 'when there is at least 1 instance' do
-      let(:instance) do
-        instance_double('Bosh::Director::DeploymentPlan::Instance',
-          index: 0,
-          configuration_hash: 'configuration_hash',
-          current_packages: {'current' => 'packages'}
-        )
-      end
+      before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
+      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 0) }
 
-      before { allow(instance).to receive(:model).with(no_args).and_return(instance_model) }
-      let(:instance_model) do
+      # This instance will not currently run an errand
+      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
+
+      before { allow(instance1).to receive(:model).with(no_args).and_return(instance1_model) }
+      let(:instance1_model) do
         Models::Instance.make(
           job: 'fake-job-name',
           index: 0,
@@ -27,7 +26,7 @@ module Bosh::Director
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
 
-      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
+      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance1_model.credentials, instance1_model.agent_id).and_return(agent_client) }
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do
@@ -39,10 +38,10 @@ module Bosh::Director
         context 'when agent is able to run errands' do
           before { allow(Config).to receive(:result).and_return(result_file) }
           let(:result_file) { instance_double('File', write: nil) }
-          let(:exit_code) { 0 }
+
           let(:agent_task_result) do
             {
-              'exit_code' => exit_code,
+              'exit_code' => 123,
               'stdout' => 'fake-stdout',
               'stderr' => 'fake-stderr',
             }
@@ -75,7 +74,7 @@ module Bosh::Director
           it 'writes run_errand response with exit_code, stdout, stderr and logs result to task result file' do
             expect(result_file).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
-                'exit_code' => 0,
+                'exit_code' => 123,
                 'stdout' => 'fake-stdout',
                 'stderr' => 'fake-stderr',
                 'logs' => {
@@ -93,90 +92,29 @@ module Bosh::Director
             subject.run
           end
 
-          it 'creates a new errand run in the database if none exists' do
-            expect { subject.run }.to change { Models::ErrandRun.count }.by(1)
-            expect(Models::ErrandRun.first.successful).to be_truthy
-          end
-
-          context 'when the errand has run previously' do
-            let(:was_successful) { false }
-
-            before do
-              Models::ErrandRun.make(successful: was_successful,
-                instance_id: instance_model.id,
-                successful_configuration_hash: 'last_successful_run_configuration',
-                successful_packages_spec: '{"packages" => "last_successful_run_packages"}'
-              )
-              allow(instance).to receive(:current_packages).and_return({'successful' => 'package_spec'})
-              allow(instance).to receive(:configuration_hash).and_return('successful_hash')
-            end
-
-            it 'updates the errand run model to reflect successful run' do
-              expect { subject.run }.to change {
-                Models::ErrandRun.where({successful: true,
-                  successful_configuration_hash: 'successful_hash',
-                  successful_packages_spec: '{"successful":"package_spec"}'}).count
-              }.by 1
-            end
-
-            context 'when the errand does not succeed' do
-              let(:exit_code) { 42 }
-
-              it 'updates the errand run model to reflect unsuccessful run' do
-                subject.run
-
-                errand_run = Models::ErrandRun.first
-                expect(errand_run.successful).to be_falsey
-                expect(errand_run.successful_configuration_hash).to eq('')
-                expect(errand_run.successful_packages_spec).to eq('')
-              end
-            end
-
-            context 'when an unrescued error occurs' do
-              let(:was_successful) { true }
-
-              before do
-                allow(agent_client).to receive(:wait_for_task).and_raise
-              end
-
-              it 'updates the errand run to be unsuccessful and then raises the error' do
-                expect{
-                  subject.run
-                }.to raise_error(Exception)
-                errand_run = Models::ErrandRun.first
-
-                expect(errand_run.successful).to be_falsey
-                expect(errand_run.successful_configuration_hash).to eq ''
-                expect(errand_run.successful_packages_spec).to eq ''
-              end
-            end
-          end
-
           it 'returns a short description from errand result' do
             errand_result = instance_double('Bosh::Director::Errand::Result', to_hash: {})
-            allow(errand_result).to receive(:exit_code)
 
             expect(errand_result).to receive(:short_description).
-              with('fake-job-name').
-              and_return('fake-short-description')
+               with('fake-job-name').
+               and_return('fake-short-description')
 
             expect(Errand::Result).to receive(:from_agent_task_results).
               with(agent_task_result, 'fake-logs-blobstore-id').
               and_return(errand_result)
 
-
             expect(subject.run).to eq('fake-short-description')
           end
 
           it 'fetches the logs from agent with correct job type and filters' do
-            expect(logs_fetcher).to receive(:fetch).with(instance.model, 'job', nil)
+            expect(logs_fetcher).to receive(:fetch).with(instance1.model, 'job', nil)
             subject.run
           end
 
           it 'writes run_errand response with nil fetched lobs blobstore id if fetching logs fails' do
             expect(result_file).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
-                'exit_code' => 0,
+                'exit_code' => 123,
                 'stdout' => 'fake-stdout',
                 'stderr' => 'fake-stderr',
                 'logs' => {
@@ -209,7 +147,7 @@ module Bosh::Director
             it 'writes the errand result received from the agent\'s cancellation' do
               expect(result_file).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
-                  'exit_code' => 0,
+                  'exit_code' => 123,
                   'stdout' => 'fake-stdout',
                   'stderr' => 'fake-stderr',
                   'logs' => {
@@ -228,7 +166,7 @@ module Bosh::Director
             it 'writes run_errand response with nil blobstore_id if fetching logs fails' do
               expect(result_file).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
-                  'exit_code' => 0,
+                  'exit_code' => 123,
                   'stdout' => 'fake-stdout',
                   'stderr' => 'fake-stderr',
                   'logs' => {
@@ -282,10 +220,10 @@ module Bosh::Director
         end
 
         context 'when job instance is not associated with any VM yet' do
-          before { instance_model.update(vm_cid: nil) }
+          before { instance1_model.update(vm_cid: nil) }
 
           it 'raises an error' do
-            expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_model.uuid} (#{instance_model.index})' doesn't reference a VM")
+            expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance1_model.uuid} (#{instance1_model.index})' doesn't reference a VM")
           end
         end
       end
@@ -310,7 +248,8 @@ module Bosh::Director
     end
 
     context 'when there are 0 instances' do
-      let(:instance) { nil }
+      before { allow(job).to receive(:instances).with(no_args).and_return([]) }
+
       describe '#run' do
         it 'raises an error' do
           expect { subject.run }.to raise_error(
