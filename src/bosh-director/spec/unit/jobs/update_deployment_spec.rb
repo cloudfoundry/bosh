@@ -40,6 +40,7 @@ module Bosh::Director::Jobs
       end
 
       before do
+        allow(job).to receive(:with_deployment_lock).and_yield.ordered
         allow(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(compile_step)
         allow(Bosh::Director::DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -81,7 +82,6 @@ module Bosh::Director::Jobs
 
       context 'when all steps complete' do
         before do
-          expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
           expect(update_step).to receive(:perform).ordered
           expect(notifier).to receive(:send_end_event).ordered
@@ -264,7 +264,6 @@ Unable to render instance groups for deployment. Errors are:
         end
 
         before do
-          expect(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(notifier).to receive(:send_start_event)
           allow(planner).to receive(:bind_models)
           allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
@@ -282,7 +281,6 @@ Unable to render instance groups for deployment. Errors are:
 
       context 'when job is being dry-run' do
         before do
-          expect(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(job_renderer).to receive(:render_job_instances)
           allow(planner).to receive(:bind_models)
           allow(planner).to receive(:instance_models).and_return([])
@@ -314,7 +312,6 @@ Unable to render instance groups for deployment. Errors are:
 
       context 'when the first step fails' do
         before do
-          expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
           expect(notifier).to receive(:send_error_event).ordered
         end
