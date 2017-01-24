@@ -304,12 +304,12 @@ Error: Unable to render instance groups for deployment. Errors are:
 
             new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
             template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
           end
         end
 
         context 'when config server values changes post deployment' do
-          it 'updates the job on bosh redeploy' do
+          before do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
             manifest_hash['jobs'].first['instances'] = 1
@@ -320,9 +320,10 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
+          end
 
+          it 'updates the job on bosh redeploy' do
             output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
             expect(output).to match /Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/
 
             new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
@@ -330,46 +331,32 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
           end
 
-          it 'updates the job on start/restart/recreate' do
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-            manifest_hash['jobs'].first['instances'] = 1
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-            # ============================================
-            # Restart
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-            output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
-            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
-
-            # ============================================
-            # Recreate
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
-            output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
-            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
-
-            # ============================================
-            # start
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
+          it 'does NOT update the job on start' do
             bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
             output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
             expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
             template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+          end
+
+          it 'does NOT update the job on restart' do
+            output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
+            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+          end
+
+          it 'does NOT update the job on recreate' do
+            output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
+            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
           end
         end
 
@@ -581,11 +568,14 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
 
     context 'when runtime manifest has placeholders' do
-      context 'when config server does not have all keys' do
+      context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
-        it 'will throw a valid error when uploading runtime config' do
-          output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, include_credentials: false,  env: client_env)
+        it 'will throw a valid error for the runtime config on deploy' do
+          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+
+          output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, include_credentials: false,  env: client_env)
+
           expect(exit_code).to_not eq(0)
           expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
         end
@@ -671,7 +661,6 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
 
-          # redeploy_output = parse_blocks(bosh_runner.run('deploy', manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
           redeploy_output = parse_blocks(deploy_simple_manifest(manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
           scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
 
@@ -687,9 +676,10 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         it 'throws errors when placeholders do not start with slash' do
           runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
+          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
           expect {
-            upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+            deploy_from_scratch(no_login: true, include_credentials: false,  env: client_env)
           }.to raise_error(RuntimeError, /Names must be absolute path: 'addon_release_version_placeholder'/)
         end
       end

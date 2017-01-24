@@ -399,7 +399,7 @@ LOGMESSAGE
                 expect {
                   planner
                 }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
-                                 "Runtime manifest contains the release 'test_release_2' with version as 'latest'. " +
+                                 "Runtime manifest contains the release 'bosh-release' with version as 'latest'. " +
                                    "Please specify the actual version string."
               end
 

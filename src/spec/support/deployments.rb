@@ -113,7 +113,7 @@ module Bosh::Spec
 
     def self.runtime_config_latest_release
       {
-        'releases' => [{'name' => 'test_release_2', 'version' => 'latest'}]
+        'releases' => [{'name' => 'bosh-release', 'version' => 'latest'}]
       }
     end
 

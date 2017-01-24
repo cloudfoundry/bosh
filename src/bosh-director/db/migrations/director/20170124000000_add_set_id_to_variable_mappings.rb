@@ -30,11 +30,6 @@ Sequel.migration do
       deployment = self[:deployments].filter(id: deployment_id).first
       self[:instances].filter(id: instance[:id]).update(variables_set_id: deployment[:name])
     end
-
-    alter_table(:runtime_configs) do
-      add_column(:variables_set_id, String, null: false, default: '')
-    end
-
   end
 
   down do
@@ -45,7 +40,7 @@ Sequel.migration do
       String :placeholder_id, :null => false
       String :placeholder_name, :null => false
       foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
-      unique [:placeholder_id, :deployment_id] # readding the proper constraint
+      unique [:placeholder_id, :deployment_id] # reading the proper constraint
     end
 
     alter_table(:deployments) do
@@ -54,10 +49,6 @@ Sequel.migration do
     end
 
     alter_table(:instances) do
-      drop_column(:variables_set_id)
-    end
-
-    alter_table(:runtime_configs) do
       drop_column(:variables_set_id)
     end
   end

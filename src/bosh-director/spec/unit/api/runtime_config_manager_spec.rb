@@ -19,7 +19,7 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       invalid_manifest = ":"
       expect{
         manager.update(invalid_manifest)
-      }.to raise_error Psych::SyntaxError
+      }.to raise_error Bosh::Director::InvalidYamlError
     end
   end
 

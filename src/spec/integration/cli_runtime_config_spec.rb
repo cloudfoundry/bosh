@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe "cli runtime config", type: :integration do
   with_reset_sandbox_before_each
+  let(:client_env) { client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
 
   it "can upload a runtime config" do
     target_and_login
@@ -48,18 +49,26 @@ describe "cli runtime config", type: :integration do
     expect(bosh_runner.run("runtime-config")).to include(Psych.dump(runtime_config))
   end
 
-  it "gives an error when release version is 'latest'" do
+  it "gives an error when release version is 'latest' on deploy" do
     target_and_login
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_latest_release)
-    expect(bosh_runner.run("update runtime-config #{runtime_config_file.path}", failure_expected: true)).to include("Error 530001: Runtime " +
-      "manifest contains the release 'test_release_2' with version as 'latest'. Please specify the actual version string.")
+    runtime_config = Bosh::Spec::Deployments.runtime_config_latest_release
+    upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+
+    output, exit_code = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true, return_exit_code: true)
+    expect(exit_code).to_not eq(0)
+    expect(output).to include("Error 530001: Runtime " +
+      "manifest contains the release 'bosh-release' with version as 'latest'. Please specify the actual version string.")
   end
 
   it "gives an error when release for addon does not exist in releases section" do
     target_and_login
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_release_missing)
-    expect(bosh_runner.run("update runtime-config #{runtime_config_file.path}", failure_expected: true)).to include("Error 530002: Runtime " +
-      "manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
+    runtime_config = Bosh::Spec::Deployments.runtime_config_release_missing
+    upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+
+    output, exit_code = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true, return_exit_code: true)
+    expect(exit_code).to_not eq(0)
+    expect(output).to include("Error 530002: Runtime " +
+                                "manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
   end
 
   it 'does not fail when runtime config is very large' do

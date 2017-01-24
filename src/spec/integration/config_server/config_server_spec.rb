@@ -162,12 +162,12 @@ describe 'using director with config server', type: :integration do
 
           new_vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
         end
       end
 
       context 'when config server values changes post deployment' do
-        it 'updates the job on bosh redeploy' do
+        before do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           manifest_hash['jobs'].first['instances'] = 1
@@ -178,7 +178,9 @@ describe 'using director with config server', type: :integration do
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
+        end
 
+        it 'updates the job on bosh redeploy' do
           output = bosh_runner.run('deploy', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
@@ -187,46 +189,32 @@ describe 'using director with config server', type: :integration do
           expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
         end
 
-        it 'updates the job on start/restart/recreate' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-          manifest_hash['jobs'].first['instances'] = 1
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-          # ============================================
-          # Restart
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-          output = bosh_runner.run('restart', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
-
-          # ============================================
-          # Recreate
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
-          output = bosh_runner.run('recreate', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
-
-          # ============================================
-          # start
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
+        it 'does NOT update the job on start' do
           bosh_runner.run('stop', env: client_env)
           output = bosh_runner.run('start', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+        end
+
+        it 'does NOT update the job on restart' do
+          output = bosh_runner.run('restart', env: client_env)
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+        end
+
+        it 'does NOT update the job on recreate' do
+          output = bosh_runner.run('recreate', env: client_env)
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
         end
       end
 
@@ -452,8 +440,11 @@ describe 'using director with config server', type: :integration do
       context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
-        it 'will throw a valid error when uploading runtime config' do
-          output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
+        it 'will throw a valid error for the runtime config on deploy' do
+          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+
+          output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, env: client_env)
+
           expect(exit_code).to_not eq(0)
           expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
         end
@@ -554,9 +545,10 @@ describe 'using director with config server', type: :integration do
 
         it 'throws errors when placeholders do not start with slash' do
           runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
+          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
 
           expect {
-            upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+            deploy_from_scratch(no_login: true, env: client_env)
           }.to raise_error(RuntimeError, /Error 540004: Names must be absolute path: 'addon_release_version_placeholder'/)
         end
       end

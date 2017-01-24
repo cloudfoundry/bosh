@@ -216,6 +216,11 @@ module Bosh::Director::Models
     instance_id { Sham.instance_id }
   end
 
+  VariableMapping.blueprint do
+    variable_id   { Sham.variable_id }
+    variable_name { Sham.variable_name }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }

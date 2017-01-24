@@ -28,6 +28,7 @@ require 'bosh/director/api/cloud_config_manager'
 require 'bosh/director/api/runtime_config_manager'
 require 'bosh/director/api/cpi_config_manager'
 require 'bosh/director/api/instance_ignore_manager'
+require 'bosh/director/api/variables_manager'
 require 'bosh/director/api/syslog_helper'
 
 require 'bosh/director/api/instance_lookup'

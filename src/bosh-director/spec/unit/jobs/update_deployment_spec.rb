@@ -33,6 +33,7 @@ module Bosh::Director::Jobs
       let(:planner) do
         instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', instance_groups_starting_on_deploy: [deployment_job])
       end
+      let(:deployment_repo) { instance_double('Bosh::Director::DeploymentPlan::DeploymentRepo') }
 
       let(:mock_manifest) do
         Bosh::Director::Manifest.new(YAML.load(manifest_content), nil, nil)
@@ -44,7 +45,38 @@ module Bosh::Director::Jobs
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
         allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
+        allow(Bosh::Director::DeploymentPlan::DeploymentRepo).to receive(:new).and_return(deployment_repo)
         allow(planner).to receive(:variables).and_return(Bosh::Director::DeploymentPlan::Variables.new([]))
+        allow(deployment_repo).to receive(:update_variable_set)
+      end
+
+      context 'variable set creation' do
+        before do
+          allow(update_step).to receive(:perform).ordered
+          allow(planner).to receive(:bind_models)
+          allow(planner).to receive(:instance_models).and_return([])
+          allow(planner).to receive(:compile_packages)
+          allow(planner).to receive(:instance_groups).and_return([deployment_job])
+          allow(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
+          allow(notifier).to receive(:send_start_event)
+          allow(notifier).to receive(:send_end_event).ordered
+        end
+
+        context "when options hash contains 'job_states' key" do
+          let (:options) { {'job_states' => {}} }
+
+          it 'should NOT create a new variable set for the deployment' do
+            expect(deployment_repo).to_not receive(:update_variable_set)
+            job.perform
+          end
+        end
+
+        context "when options hash does NOT contain 'job_states' information" do
+          it 'should create a new variable set for the deployment' do
+            expect(deployment_repo).to receive(:update_variable_set)
+            job.perform
+          end
+        end
       end
 
       context 'when all steps complete' do

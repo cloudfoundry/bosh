@@ -298,11 +298,8 @@ module Bosh::Director
       end
 
       get '/:deployment/variables' do
-        mappings = Models::VariableMapping
-                     .select(:variable_id, :variable_name)
-                     .where(:set_id=>[deployment.variables_set_id, deployment.successful_variables_set_id])
-                     .group(:variable_id, :variable_name).all
-        JSON.generate(create_variables_response(mappings))
+        mappings = Api::VariablesManager.new.get_variables_for_deployment(deployment)
+        JSON.generate(mappings)
       end
 
       # Cloud check

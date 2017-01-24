@@ -315,4 +315,7 @@ module Bosh::Director
 
   # UAA
   UAAAuthorizationError = err(610000)
+
+  # Invalid YAML
+  InvalidYamlError = err(710000)
 end

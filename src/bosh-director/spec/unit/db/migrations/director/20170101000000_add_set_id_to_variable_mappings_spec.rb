@@ -4,7 +4,7 @@ require 'securerandom'
 module Bosh::Director
   describe 'add_set_id_to_variable_mappings' do
     let(:db) { DBSpecHelper.db }
-    let(:migration_file) { '20170101000000_add_set_id_to_variable_mappings.rb' }
+    let(:migration_file) { '20170124000000_add_set_id_to_variable_mappings.rb' }
     let(:set_id) { 'abc123' }
     let(:deployment_name) {'fake-deployment-name'}
 

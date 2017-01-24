@@ -1254,7 +1254,7 @@ module Bosh::Director
           end
         end
 
-        describe 'placeholder variables' do
+        describe 'variables' do
           let(:set_id) { 'some-set-id' }
           let(:successful_variables_set_id) { 'some-successful-id' }
           before { basic_authorize 'admin', 'admin' }
