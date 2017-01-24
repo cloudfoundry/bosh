@@ -204,6 +204,11 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
+  ErrandRun.blueprint do
+    instance_id    { Instance.make.id }
+    successful  { false }
+  end
+
   LocalDnsBlob.blueprint do
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
