@@ -189,11 +189,12 @@ module Bosh::Monitor
           message = payload
       end
 
+      deployment = @deployment_name_to_deployments[agent.deployment]
       case kind.to_s
         when "alert"
           on_alert(agent, message)
         when "heartbeat"
-          on_heartbeat(agent, message)
+          on_heartbeat(agent, deployment, message)
         when "shutdown"
           on_shutdown(agent)
         else
@@ -253,7 +254,7 @@ module Bosh::Monitor
       remove_agent(agent.id)
     end
 
-    def on_heartbeat(agent, message)
+    def on_heartbeat(agent, deployment, message)
       agent.updated_at = Time.now
 
       if message.is_a?(Hash)
@@ -262,6 +263,7 @@ module Bosh::Monitor
         message["deployment"] = agent.deployment
         message["job"] = agent.job
         message["instance_id"] = agent.instance_id
+        message["teams"] = deployment ? deployment.teams : []
 
         if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
           return

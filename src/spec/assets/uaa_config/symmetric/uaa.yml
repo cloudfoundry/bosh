@@ -35,6 +35,15 @@ oauth:
       secret: "short-lived-secret"
       access-token-validity: 5
       refresh-token-validity: 3600
+    team-client:
+      id: team-client
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid,bosh.teams.ateam.admin
+      authorities: bosh.teams.ateam.admin
+      secret: "team-secret"
+      access-token-validity: 60
+      refresh-token-validity: 3600
     no-access:
       id: no-access
       override: true

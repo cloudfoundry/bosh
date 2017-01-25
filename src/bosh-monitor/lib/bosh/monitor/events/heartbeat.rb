@@ -2,7 +2,7 @@ module Bosh::Monitor
   module Events
     class Heartbeat < Base
 
-      attr_reader :agent_id, :deployment, :job, :index, :metrics, :instance_id
+      attr_reader :agent_id, :deployment, :job, :index, :metrics, :instance_id, :teams
 
       def initialize(attributes = {})
         super
@@ -12,12 +12,13 @@ module Bosh::Monitor
         @id = @attributes["id"]
         @timestamp = Time.at(@attributes["timestamp"]) rescue @attributes["timestamp"]
 
-        @deployment = @attributes["deployment"]
-        @agent_id = @attributes["agent_id"]
-        @job = @attributes["job"]
-        @index = @attributes["index"].to_s
-        @instance_id = @attributes["instance_id"]
-        @job_state = @attributes["job_state"]
+        @deployment = @attributes['deployment']
+        @agent_id = @attributes['agent_id']
+        @job = @attributes['job']
+        @index = @attributes['index'].to_s
+        @instance_id = @attributes['instance_id']
+        @job_state = @attributes['job_state']
+        @teams = @attributes['teams']
 
         @tags = {}
         @tags["job"] = @job if @job
@@ -75,7 +76,8 @@ module Bosh::Monitor
           :index => @index,
           :instance_id => @instance_id,
           :job_state => @job_state,
-          :vitals => @vitals
+          :vitals => @vitals,
+          :teams => @teams,
         }
       end
 

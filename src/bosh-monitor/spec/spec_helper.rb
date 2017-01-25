@@ -70,7 +70,8 @@ def make_heartbeat(attrs = {})
               "ephemeral" => { "percent" => 33, "inode_percent" =>  74 },
               "persistent" => { "percent" => 97, "inode_percent" =>  10 },
           }
-      }
+      },
+      :teams => ['ateam']
   }
   Bhm::Events::Heartbeat.new(defaults.merge(attrs))
 end

@@ -46,6 +46,7 @@ module Bosh::Monitor
           id:#{heartbeat.instance_id}
           deployment:#{heartbeat.deployment}
           agent:#{heartbeat.agent_id}
+          teams:#{heartbeat.teams}
         ]
 
         dog_client.batch_metrics do

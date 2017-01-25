@@ -4,7 +4,7 @@ describe Bhm::Deployment do
 
   describe '.create' do
     context 'from valid hash' do
-      let(:deployment_data) { {'name' => 'deployment_name'} }
+      let(:deployment_data) { {'name' => 'deployment_name', 'teams' => ['ateam'] } }
 
       it 'creates a deployment' do
         deployment = Bhm::Deployment.create(deployment_data)
@@ -146,14 +146,23 @@ describe Bhm::Deployment do
       deployment.upsert_agent(Bhm::Instance.create({'id' => 'iuuid2', 'agent_id' => 'auuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
     end
 
-    it "returns all agent ids" do
+    it 'returns all agent ids' do
       expect(deployment.agent_ids).to eq(['auuid1', 'auuid2'].to_set)
     end
 
-    it "removes ids from removed agents" do
+    it 'removes ids from removed agents' do
       deployment.remove_agent('auuid1')
 
       expect(deployment.agent_ids).to eq(['auuid2'].to_set)
+    end
+  end
+
+  describe '#teams' do
+    let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name', 'teams' => ['ateam', 'bteam']}) }
+    let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
+
+    it 'returns teams provided in intialization' do
+      expect(deployment.teams).to eq(['ateam', 'bteam'])
     end
   end
 end
