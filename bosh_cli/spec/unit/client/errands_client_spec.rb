@@ -12,11 +12,11 @@ describe Bosh::Cli::Client::ErrandsClient do
         .with(
           :post,
           '/deployments/fake-deployment-name/errands/fake-errand-name/runs',
-          { content_type: 'application/json', payload: "{\"keep-alive\":false}" },
+          { content_type: 'application/json', payload: '{"keep-alive":false,"when-changed":false}' },
         )
         .and_return([:done, 'fake-task-id'])
 
-      client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE)
+      client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, FALSE)
     end
 
     it 'tells the director to run the errand with the keep-alive option' do
@@ -26,11 +26,25 @@ describe Bosh::Cli::Client::ErrandsClient do
       .with(
         :post,
         '/deployments/fake-deployment-name/errands/fake-errand-name/runs',
-        { content_type: 'application/json', payload: "{\"keep-alive\":true}" },
+        { content_type: 'application/json', payload: '{"keep-alive":true,"when-changed":false}' },
       )
       .and_return([:done, 'fake-task-id'])
 
-      client.run_errand('fake-deployment-name', 'fake-errand-name', TRUE)
+      client.run_errand('fake-deployment-name', 'fake-errand-name', TRUE, FALSE)
+      end
+
+    it 'tells the director to run the errand with the when-changed option' do
+      allow(director).to receive(:get_task_result_log).and_return('{}')
+
+      expect(director).to receive(:request_and_track)
+      .with(
+        :post,
+        '/deployments/fake-deployment-name/errands/fake-errand-name/runs',
+        { content_type: 'application/json', payload: '{"keep-alive":false,"when-changed":true}' },
+      )
+      .and_return([:done, 'fake-task-id'])
+
+      client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, TRUE)
     end
 
     [:done, :cancelled].each do |status|
@@ -49,7 +63,7 @@ describe Bosh::Cli::Client::ErrandsClient do
             with('fake-task-id').
             and_return("#{raw_task_output}\n")
 
-          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE)
+          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, FALSE)
           expect(actual_status).to eq(status)
           expect(task_id).to eq('fake-task-id')
           expect(actual_result).to eq(described_class::ErrandResult.new(
@@ -68,7 +82,7 @@ describe Bosh::Cli::Client::ErrandsClient do
             with('fake-task-id').
             and_return("#{raw_task_output}\n")
 
-          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE)
+          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, FALSE)
           expect(actual_status).to eq(status)
           expect(task_id).to eq('fake-task-id')
           expect(actual_result).to eq(described_class::ErrandResult.new(
@@ -78,7 +92,7 @@ describe Bosh::Cli::Client::ErrandsClient do
         it 'does not raise an error if output is empty' do
           expect(director).to receive(:get_task_result_log).with('fake-task-id').and_return(nil)
 
-          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE)
+          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, FALSE)
           expect(actual_status).to eq(status)
           expect(task_id).to eq('fake-task-id')
           expect(actual_result).to be_nil
@@ -90,7 +104,7 @@ describe Bosh::Cli::Client::ErrandsClient do
       before { allow(director).to receive(:request_and_track).and_return([:not_done, 'fake-task-id']) }
 
       it 'returns status, task_id and result' do
-        status, task_id, result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE)
+        status, task_id, result = client.run_errand('fake-deployment-name', 'fake-errand-name', FALSE, FALSE)
         expect(status).to eq(:not_done)
         expect(task_id).to eq('fake-task-id')
         expect(result).to be_nil

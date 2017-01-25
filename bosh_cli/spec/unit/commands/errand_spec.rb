@@ -72,7 +72,7 @@ describe Bosh::Cli::Command::Errand do
 
           it 'tells director to start running errand with given name on given instance' do
             expect(errands_client).to receive(:run_errand).
-              with('fake-dep-name', 'fake-errand-name', FALSE).
+              with('fake-dep-name', 'fake-errand-name', FALSE, FALSE).
               and_return([:done, 'fake-task-id', errand_result])
             perform
           end
@@ -82,7 +82,18 @@ describe Bosh::Cli::Command::Errand do
 
             it 'tells the director to not delete/stop the instance' do
               expect(errands_client).to receive(:run_errand).
-                with('fake-dep-name', 'fake-errand-name', TRUE).
+                with('fake-dep-name', 'fake-errand-name', TRUE, FALSE).
+                and_return([:done, 'fake-task-id', errand_result])
+              perform
+            end
+          end
+
+          context 'when errand is run with when-changed option' do
+            before { command.options[:when_changed] = true }
+
+            it 'tells the director to not delete/stop the instance' do
+              expect(errands_client).to receive(:run_errand).
+                with('fake-dep-name', 'fake-errand-name', FALSE, TRUE).
                 and_return([:done, 'fake-task-id', errand_result])
               perform
             end

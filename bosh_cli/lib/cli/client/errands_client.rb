@@ -27,9 +27,9 @@ module Bosh::Cli::Client
       @director = director
     end
 
-    def run_errand(deployment_name, errand_name, keep_alive)
+    def run_errand(deployment_name, errand_name, keep_alive, when_changed)
       url = "/deployments/#{deployment_name}/errands/#{errand_name}/runs"
-      payload = MultiJson.encode({'keep-alive' => (keep_alive || FALSE)})
+      payload = MultiJson.encode({'keep-alive' => (keep_alive || FALSE), 'when-changed' => (when_changed || FALSE)})
       options = { content_type: 'application/json', payload: payload }
 
       status, task_id = @director.request_and_track(:post, url, options)
