@@ -86,7 +86,8 @@ describe Bhm::Plugins::DataDog do
           id:instance_id_abc
           deployment:oleg-cloud
           agent:deadbeef
-          teams:["ateam"]
+          team:ateam
+          team:bteam
       ]
       time = Time.now
       expect(dog_client).to receive(:emit_points).with('bosh.healthmonitor.system.load.1m', [[Time.at(time.to_i) , 0.2]], tags: tags)

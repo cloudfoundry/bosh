@@ -46,8 +46,9 @@ module Bosh::Monitor
           id:#{heartbeat.instance_id}
           deployment:#{heartbeat.deployment}
           agent:#{heartbeat.agent_id}
-          teams:#{heartbeat.teams}
         ]
+
+        heartbeat.teams.each { |team| tags << "team:#{team}" }
 
         dog_client.batch_metrics do
           heartbeat.metrics.each do |metric|

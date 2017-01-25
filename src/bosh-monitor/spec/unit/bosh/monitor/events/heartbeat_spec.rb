@@ -57,7 +57,7 @@ describe Bhm::Events::Heartbeat do
             'persistent' => {'percent' => 97, 'inode_percent' => 10 },
         }
       },
-      :teams => ['ateam'],
+      :teams => ['ateam', 'bteam'],
     })
   end
 
