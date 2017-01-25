@@ -204,3 +204,11 @@ bosh -d ./deployment.yml ssh syslog_forwarder 0 "echo c1oudc0w | sudo -S bash /t
 bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
 
 grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get message forwarded from BlackBox" ; exit 1 )
+
+# testing CEF logs #135979501
+DOWNLOAD_DESTINATION=$(mktemp -d -t)
+EXPECTED_VALUE="CEF:0|CloudFoundry|BOSH|1|agent_api|get_task"
+
+bosh -d ./deployment.yml vms
+bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
+grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get CEF logs from syslog" ; exit 1 )
