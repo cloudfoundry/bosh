@@ -46,6 +46,7 @@ Among the included plugins are:
 - Emailer - Sends configurable Emails on events reciept
 - Consul Event Forwarder - Sends heartbeats as events and TTL checks to a consul cluster
 - EventLogger - Stores events in Director DB
+- Json Emitter - Sends metrics in json format to any binaries in /var/vcap/jobs/*/bin/bosh-monitor
   
 Plugins should conform to the following interface:
 
