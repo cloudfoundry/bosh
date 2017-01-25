@@ -251,7 +251,7 @@ module Bosh::Director::ConfigServer
       begin
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless var.has_key?('id')
         Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: var['id'] )
-      rescue Sequel::UniqueConstraintViolation => e
+      rescue Sequel::UniqueConstraintViolation
         return false
       end
       true
@@ -259,7 +259,6 @@ module Bosh::Director::ConfigServer
 
     def generate_value(name, type, deployment_name, options)
       parameters = options.nil? ? {} : options
-
 
       request_body = {
         'name' => name,
