@@ -220,7 +220,8 @@ module Bosh::Director
                 'version' => sc.version
               }
             end,
-            'cloud_config' => cloud_config
+            'cloud_config' => cloud_config,
+            'teams' => deployment.teams.map { |t| t.name },
           }
         end
 

@@ -557,9 +557,14 @@ module Bosh::Director
             old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
             new_cloud_config = Models::CloudConfig.make(manifest: {})
 
+            good_team = Models::Team.create(name: 'dabest')
+            bad_team = Models::Team.create(name: 'daworst')
+
             deployment_3 = Models::Deployment.create(
               name: 'deployment-3',
-            )
+            ).tap do |deployment|
+              deployment.teams = [bad_team]
+            end
 
             deployment_2 = Models::Deployment.create(
               name: 'deployment-2',
@@ -569,6 +574,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell_1_2)
               deployment.add_release_version(release_1_1)
               deployment.add_release_version(release_2_1)
+              deployment.teams = [good_team]
             end
 
             deployment_1 = Models::Deployment.create(
@@ -579,6 +585,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell_2_1)
               deployment.add_release_version(release_1_1)
               deployment.add_release_version(release_1_2)
+              deployment.teams = [good_team, bad_team]
             end
 
             get '/', {}, {}
@@ -597,6 +604,7 @@ module Bosh::Director
                       {'name' => 'stemcell-2', 'version' => '1'},
                     ],
                     'cloud_config' => 'outdated',
+                    'teams' => ['dabest', 'daworst'],
                   },
                   {
                     'name' => 'deployment-2',
@@ -609,12 +617,14 @@ module Bosh::Director
                       {'name' => 'stemcell-1', 'version' => '2'},
                     ],
                     'cloud_config' => 'latest',
+                    'teams' => ['dabest'],
                   },
                   {
                     'name' => 'deployment-3',
                     'releases' => [],
                     'stemcells' => [],
                     'cloud_config' => 'none',
+                    'teams' => ['daworst'],
                   }
                 ])
           end
