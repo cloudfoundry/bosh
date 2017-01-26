@@ -159,11 +159,12 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         manifest_hash['jobs'].find { |job| job['name'] == 'fake-errand-name'}['properties'] = {
           'errand1' => {
             'exit_code' => 0,
-            'stdout' => 'new-stdout',
+            'stdout' => "new-stdout\nadditional-stdout",
             'stderr' => 'new-stderr',
             'run_package_file' => true,
           }
         }
+
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         output, exit_code = bosh_runner.run('run-errand fake-errand-name --when-changed', return_exit_code: true, deployment_name: deployment_name)
@@ -172,6 +173,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         errand_task_id = bosh_runner.get_most_recent_task_id
         task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
         expect(task_result).to match('"exit_code":0')
+        expect(task_result).to match(/"stdout":"new-stdout\\nadditional-stdout/)
       end
     end
   end
