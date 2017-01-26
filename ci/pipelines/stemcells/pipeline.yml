@@ -726,6 +726,7 @@ resources:
       paths:
         - "src/bosh-stemcell"
         - "src/stemcell_builder"
+        - "src/go/src/github.com/cloudfoundry/bosh-agent"
 
   - name: version
     type: semver
