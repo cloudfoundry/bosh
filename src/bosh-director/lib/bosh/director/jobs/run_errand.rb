@@ -75,7 +75,6 @@ module Bosh::Director
 
               if last_errand_run.successful && changed_instance_plans.empty?
                 logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-                result_file.write(JSON.dump({exit_code: 0, stdout: '', stderr: '', logs: {}}) + "\n")
                 return
               end
             end

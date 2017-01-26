@@ -272,10 +272,9 @@ module Bosh::Director
                       end
                       let(:instance_plan){ instance_double(DeploymentPlan::InstancePlan, instance: instance) }
 
-                      it 'does not run the errand and outputs empty hash to result file' do
+                      it 'does not run the errand and does not output ' do
                         expect(job_manager).to_not receive(:create_missing_vms)
                         expect(runner).to_not receive(:run)
-                        expect(result_file).to receive(:write).with('{"exit_code":0,"stdout":"","stderr":"","logs":{}}'+ "\n")
 
                         subject.perform
                       end
