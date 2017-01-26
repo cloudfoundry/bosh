@@ -417,13 +417,15 @@ module Bosh::Director
 
       post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
-        keep_alive = json_decode(request.body.read)['keep-alive'] || FALSE
+        parsed_request_body = json_decode(request.body.read)
+        keep_alive = parsed_request_body['keep-alive'] || FALSE
+        when_changed = parsed_request_body['when-changed'] || FALSE
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
-          [deployment.name, errand_name, keep_alive],
+          [deployment.name, errand_name, keep_alive, when_changed],
           deployment,
           @current_context_id
         )

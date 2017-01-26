@@ -30,6 +30,7 @@ require 'delayed_job_sequel'
 require 'bosh/director/models/event'
 require 'bosh/director/models/agent_dns_version'
 require 'bosh/director/models/team'
+require 'bosh/director/models/errand_run'
 
 module Bosh::Director
   module Models
