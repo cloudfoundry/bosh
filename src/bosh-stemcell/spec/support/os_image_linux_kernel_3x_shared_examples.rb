@@ -68,6 +68,14 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
         should contain /^net.ipv4.icmp_ignore_bogus_error_responses=1$/
       end
 
+      it 'sets tcp syncookies' do
+        should contain /^net.ipv4.tcp_syncookies=1$/
+      end
+
+      it 'increases tcp_max_syn_backlog to 1280' do
+        should contain /^net.ipv4.tcp_max_syn_backlog-1280$/
+      end
+
       it 'should disable core dumps (CIS-4.1)' do
         should contain /^fs.suid_dumpable=0$/
       end
