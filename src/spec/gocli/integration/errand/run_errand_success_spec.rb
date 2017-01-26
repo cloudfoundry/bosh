@@ -304,13 +304,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         {return_exit_code: true, json: true, deployment_name: 'errand'})
 
       output = scrub_random_ids(table(@output))
-      expect(output).to contain_exactly(
-        {
-          'Exit Code' => '0',
-          'Stdout' => "fake-errand-stdout-n stdout-from-errand1-package\n",
-          'Stderr' => "fake-errand-stderrusage: sleep seconds\n"
-        },
-      )
+
+      expect(output[0]['Stdout']).to match('fake-errand-stdout')
+      expect(output[0]['Stderr']).to match('fake-errand-stderr')
+      expect(output[0]['Exit Code']).to match('0')
+
       expect(@exit_code).to eq(0)
     end
 
