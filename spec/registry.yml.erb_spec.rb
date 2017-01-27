@@ -8,12 +8,14 @@ describe 'registry.yml.erb' do
     {
       'properties' => {
         'registry' => {
+          'port' => 80,
+          'username' => 'user',
+          'password' => 'password',
           'http' => {
             'port' => 80,
             'user' => 'user',
             'password' => 'password'
           },
-
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',

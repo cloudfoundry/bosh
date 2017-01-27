@@ -48,6 +48,14 @@ params = {
       'options' => {
       'director' => director
       },
+    },
+    {
+      'name' => 'json',
+      'events' => [
+        'alert',
+        'heartbeat',
+      ],
+      'options' => {},
     }
   ]
 }
@@ -99,17 +107,6 @@ if p('hm.email_notifications')
   end
 
   params['plugins'] << smtp_plugin
-end
-
-if p('hm.json_enabled')
- params['plugins'] << {
-    'name' => 'json',
-    'events' => [
-      'alert',
-      'heartbeat',
-    ],
-    'options' => {},
-  }
 end
 
 if p('hm.tsdb_enabled')

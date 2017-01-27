@@ -148,6 +148,12 @@ namespace :spec do
     @cpi_builds ||= unit_builds.select { |f| File.directory?(f) && f.end_with?("_cpi") }
   end
 
+  desc 'Run all release unit tests (ERB templates)'
+  task :release_unit do
+    puts "Release unit tests (ERB templates)"
+    system("cd .. && rspec --tty --backtrace -c -f p spec/")
+  end
+
   namespace :unit do
     desc 'Run all unit tests for ruby components'
     task :ruby do
@@ -183,7 +189,7 @@ namespace :spec do
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:unit:ruby spec:unit:agent)
+  task :unit => %w(spec:release_unit spec:unit:ruby spec:unit:agent)
 
   namespace :external do
     desc 'AWS bootstrap CLI can provision and destroy resources'
