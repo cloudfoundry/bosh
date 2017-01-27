@@ -488,6 +488,31 @@ module Bosh::Director
         }.to raise_exception(RuntimeError, 'foo')
       end
 
+      it 'should cancel even if not timeout' do
+        args = {method: :get_state, arguments: []}
+
+        expect(@nats_rpc).to receive(:send_request).
+          with('get_state.bar', hash_including(args)).once.and_return({})
+
+        allow(@nats_rpc).to receive(:cancel_request)
+
+        client_opts = {
+          timeout: 0.1,
+          retry_methods: {retry_method: 10}
+        }
+        client = AgentClient.new('get_state', 'bar', client_opts)
+
+        task_id = 1
+        task = Models::Task.make(:id => task_id, :state => 'cancelling')
+        job = Jobs::BaseJob.new()
+        job.task_id = task_id
+        Config.instance_variable_set(:@current_job, job)
+
+        expect {
+          client.get_state { Config.job_cancelled? }
+        }.to raise_exception(TaskCancelled)
+      end
+
       describe :wait_until_ready do
         let(:client) { AgentClient.new('foo', 'bar', timeout: 0.1) }
 
