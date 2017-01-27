@@ -267,7 +267,7 @@ describe 'director.yml.erb.erb' do
                 'enabled' => true,
                 'url' => 'https://config-server-host',
             }
-            expect { parsed_yaml['config_server'] }.to raise_error
+            expect { parsed_yaml['config_server'] }.to raise_error(/Can't find property '\["director.config_server.uaa.url"\]'/)
           end
 
           it 'throws an error when uaa url is not defined' do
