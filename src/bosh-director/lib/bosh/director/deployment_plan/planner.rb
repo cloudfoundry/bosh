@@ -252,6 +252,11 @@ module Bosh::Director
         instance_groups
       end
 
+      # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
+      def errand_instance_groups
+        @instance_groups.select(&:is_errand?)
+      end
+
       def persist_updates!
         #prior updates may have had release versions that we no longer use.
         #remove the references to these stale releases.

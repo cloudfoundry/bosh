@@ -722,21 +722,6 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
     end
 
-    context 'when running an errand that has placeholders' do
-      let(:errand_manifest){ Bosh::Spec::Deployments.manifest_errand_with_placeholders }
-      let(:namespaced_key) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
-
-      it 'replaces placeholder in properties' do
-        config_server_helper.put_value(namespaced_key, 'test value')
-
-        deploy_from_scratch(no_login: true, manifest_hash: errand_manifest,
-                            cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-        errand_result = bosh_runner.run('run-errand fake-errand-name --keep-alive', deployment_name: 'errand', include_credentials: false,  env: client_env)
-
-        expect(errand_result).to include('test value')
-      end
-    end
-
     context 'when release job spec properties have types' do
       let(:manifest_hash) do
         Bosh::Spec::Deployments.test_release_manifest.merge(

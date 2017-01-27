@@ -83,7 +83,7 @@ module Bosh::Director
           next_releases, next_stemcells  = get_stemcells_and_releases
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
-          render_job_templates(deployment_plan.instance_groups_starting_on_deploy)
+          render_templates_and_snapshot_errand_variables(deployment_plan)
 
           if dry_run?
             return "/deployments/#{deployment_plan.name}"
@@ -158,7 +158,18 @@ module Bosh::Director
         end
       end
 
-      def render_job_templates(instance_groups)
+      def render_templates_and_snapshot_errand_variables(deployment_plan)
+        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy)
+        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups)
+
+        unless errors.empty?
+          message = errors.map{|error| error.message.strip}.join("\n")
+          header = 'Unable to render instance groups for deployment. Errors are:'
+          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2})
+        end
+      end
+
+      def render_instance_groups_templates(instance_groups)
         errors = []
         job_renderer = JobRenderer.create
         instance_groups.each do |instance_group|
@@ -168,12 +179,36 @@ module Bosh::Director
             errors.push e
           end
         end
+        errors
+      end
 
-        if errors.length > 0
-          message = errors.map{|error| error.message.strip}.join("\n")
-          header = 'Unable to render instance groups for deployment. Errors are:'
-          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2})
+      def snapshot_errands_variables_versions(errands_instance_groups)
+        errors = []
+        properties_interpolator = ConfigServer::PropertiesInterpolator.new
+
+        errands_instance_groups.each do |instance_group|
+          instance_group_errors = []
+
+          begin
+            properties_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name)
+          rescue Exception => e
+            instance_group_errors.push e
+          end
+
+          begin
+            properties_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {})
+          rescue Exception => e
+            instance_group_errors.push e
+          end
+
+          unless instance_group_errors.empty?
+            message = instance_group_errors.map{|error| error.message.strip}.join("\n")
+            header = "- Unable to render jobs for instance group '#{instance_group.name}'. Errors are:"
+            e = Exception.new(Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2}))
+            errors << e
+          end
         end
+        errors
       end
 
       def get_stemcells_and_releases

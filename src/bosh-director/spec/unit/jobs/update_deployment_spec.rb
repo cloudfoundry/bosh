@@ -12,6 +12,11 @@ module Bosh::Director::Jobs
     let(:options) { {} }
     let(:deployment_job) { Bosh::Director::DeploymentPlan::InstanceGroup.new(logger) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:errand_instance_group) do
+      ig = Bosh::Director::DeploymentPlan::InstanceGroup.new(logger)
+      ig.name = 'some-errand-instance-group'
+      ig
+    end
 
     before do
       Bosh::Director::App.new(config)
@@ -24,6 +29,7 @@ module Bosh::Director::Jobs
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
       let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
+      let(:properties_interpolator) { instance_double('Bosh::Director::ConfigServer::PropertiesInterpolator') }
       let(:planner_factory) do
         instance_double(
           'Bosh::Director::DeploymentPlan::PlannerFactory',
@@ -31,7 +37,12 @@ module Bosh::Director::Jobs
         )
       end
       let(:planner) do
-        instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', instance_groups_starting_on_deploy: [deployment_job])
+        instance_double(
+          'Bosh::Director::DeploymentPlan::Planner',
+          name: 'deployment-name',
+          instance_groups_starting_on_deploy: [deployment_job],
+          errand_instance_groups: [errand_instance_group]
+        )
       end
       let(:deployment_repo) { instance_double('Bosh::Director::DeploymentPlan::DeploymentRepo') }
 
@@ -45,10 +56,13 @@ module Bosh::Director::Jobs
         allow(Bosh::Director::DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
+        allow(Bosh::Director::ConfigServer::PropertiesInterpolator).to receive(:new).and_return(properties_interpolator)
         allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
         allow(Bosh::Director::DeploymentPlan::DeploymentRepo).to receive(:new).and_return(deployment_repo)
         allow(planner).to receive(:variables).and_return(Bosh::Director::DeploymentPlan::Variables.new([]))
         allow(deployment_repo).to receive(:update_variable_set)
+        allow(properties_interpolator).to receive(:interpolate_template_spec_properties)
+        allow(properties_interpolator).to receive(:interpolate_link_spec_properties)
       end
 
       context 'variable set creation' do
@@ -100,6 +114,23 @@ module Bosh::Director::Jobs
           expect(job).to_not receive(:run_post_deploys)
 
           job.perform
+        end
+
+        context 'errands variables versioning' do
+          let(:errand_properties) {{ 'some-key' => 'some-value'}}
+          let(:resolved_links) {{ 'some-link-key' => 'some-link-value'}}
+
+          before do
+            allow(errand_instance_group).to receive(:properties).and_return(errand_properties)
+            allow(errand_instance_group).to receive(:resolved_links).and_return(resolved_links)
+          end
+
+          it 'versions the variables in errands' do
+            expect(properties_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties,'deployment-name')
+            expect(properties_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links)
+
+            job.perform
+          end
         end
 
         context 'when variables exist in deployment plan' do
@@ -240,26 +271,30 @@ module Bosh::Director::Jobs
           <<-EXPECTED.strip
 Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'my_instance_group_1'. Errors are:
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+    - Unable to render templates for job 'some_job1'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
   - Unable to render jobs for instance group 'my_instance_group_2'. Errors are:
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+    - Unable to render templates for job 'some_job2'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
           EXPECTED
         end
 
         let(:error_msgs) do
           <<-ERROR_MSGS.strip
 - Unable to render jobs for instance group 'my_instance_group_1'. Errors are:
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+  - Unable to render templates for job 'some_job1'. Errors are:
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
 - Unable to render jobs for instance group 'my_instance_group_2'. Errors are:
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+  - Unable to render templates for job 'some_job2'. Errors are:
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+    - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
           ERROR_MSGS
         end
 
@@ -276,6 +311,56 @@ Unable to render instance groups for deployment. Errors are:
           }.to raise_error { |error|
             expect(error.message).to eq(expected_result)
           }
+        end
+
+        context 'errand variable versioning fails' do
+          let(:expected_result) do
+            <<-EXPECTED.strip
+Unable to render instance groups for deployment. Errors are:
+  - Unable to render jobs for instance group 'my_instance_group_1'. Errors are:
+    - Unable to render templates for job 'some_job1'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+  - Unable to render jobs for instance group 'my_instance_group_2'. Errors are:
+    - Unable to render templates for job 'some_job2'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+  - Unable to render jobs for instance group 'some-errand-instance-group'. Errors are:
+    - Unable to render templates for job 'some_errand_job1'. Errors are:
+      - Failed to find variable '/TestDirector/simple/some_property_error' from config server: HTTP code '404'
+    - Unable to interpolate link 'some-link-name' properties; provided by 'some_provider_deployment_name' deployment. Errors are:
+      - Failed to find variable '/TestDirector/simple/some_link_error' from config server: HTTP code '404'
+            EXPECTED
+          end
+
+          let(:errand_properties_error) do
+            <<-EXPECTED.strip
+- Unable to render templates for job 'some_errand_job1'. Errors are:
+  - Failed to find variable '/TestDirector/simple/some_property_error' from config server: HTTP code '404'
+            EXPECTED
+          end
+
+          let(:errand_link_error) do
+            <<-EXPECTED.strip
+- Unable to interpolate link 'some-link-name' properties; provided by 'some_provider_deployment_name' deployment. Errors are:
+  - Failed to find variable '/TestDirector/simple/some_link_error' from config server: HTTP code '404'
+            EXPECTED
+          end
+
+          before do
+            allow(errand_instance_group).to receive(:properties).and_raise(errand_properties_error)
+            allow(errand_instance_group).to receive(:resolved_links).and_raise(errand_link_error)
+          end
+
+          it 'formats the error messages for service & errand instance groups' do
+            expect {
+              job.perform
+            }.to raise_error { |error|
+              expect(error.message).to eq(expected_result)
+            }
+          end
         end
       end
 

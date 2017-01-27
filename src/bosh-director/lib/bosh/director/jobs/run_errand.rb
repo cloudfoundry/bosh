@@ -27,41 +27,41 @@ module Bosh::Director
 
       with_deployment_lock(deployment_name) do
         deployment = nil
-        job = nil
+        errand_instance_group = nil
 
         event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
         event_log_stage.advance_and_track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
           deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
           deployment.bind_models
-          job = deployment.instance_group(@errand_name)
+          errand_instance_group = deployment.instance_group(@errand_name)
 
-          if job.nil?
+          if errand_instance_group.nil?
             raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"
           end
 
-          unless job.is_errand?
+          unless errand_instance_group.is_errand?
             raise RunErrandError,
-              "Instance group '#{job.name}' is not an errand. To mark an instance group as an errand " +
+              "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " +
                 "set its lifecycle to 'errand' in the deployment manifest."
           end
 
-          if job.instances.empty?
+          if errand_instance_group.instances.empty?
             raise InstanceNotFound, "Instance '#{@deployment_name}/#{@errand_name}/0' doesn't exist"
           end
 
           logger.info('Starting to prepare for deployment')
-          job.bind_instances(deployment.ip_provider)
+          errand_instance_group.bind_instances(deployment.ip_provider)
 
-          JobRenderer.create.render_job_instances(job.needed_instance_plans)
+          JobRenderer.create.render_job_instances(errand_instance_group.needed_instance_plans)
           deployment.compile_packages
 
           if @when_changed
             logger.info('Errand run with --when-changed')
-            last_errand_run = Models::ErrandRun.where(instance_id: job.instances.first.model.id).first
+            last_errand_run = Models::ErrandRun.where(instance_id: errand_instance_group.instances.first.model.id).first
 
             if last_errand_run
-              changed_instance_plans = job.needed_instance_plans.select do |plan|
+              changed_instance_plans = errand_instance_group.needed_instance_plans.select do |plan|
                 if JSON.dump(plan.instance.current_packages) != last_errand_run.successful_packages_spec
                   logger.info("Packages changed FROM: #{last_errand_run.successful_packages_spec} TO: #{plan.instance.current_packages}")
                   next true
@@ -81,7 +81,7 @@ module Bosh::Director
           end
         end
 
-        runner = Errand::Runner.new(job.instances.first, job.name, result_file, @instance_manager, @logs_fetcher)
+        runner = Errand::Runner.new(errand_instance_group.instances.first, errand_instance_group.name, result_file, @instance_manager, @logs_fetcher)
 
         cancel_blk = lambda {
           begin
@@ -92,7 +92,7 @@ module Bosh::Director
           end
         }
 
-        with_updated_instances(deployment, job) do
+        with_updated_instances(deployment, errand_instance_group) do
           logger.info('Starting to run errand')
           runner.run(&cancel_blk)
         end
