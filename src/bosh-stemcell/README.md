@@ -8,13 +8,15 @@ Tools for creating stemcells.
 To create a stemcell on concourse instead of locally on virtualbox, you can execute the build-stemcell task.
 ```
 mkdir /tmp/version
-cat <<EOF >/tmp/version/0.0
+cat <<EOF >/tmp/version/number
 0.0
 EOF
+cd /tmp/version
+git init
 
 pushd /Users/pivotal/workspace/bosh
 fly -t production login
-IAAS=vsphere HYPERVISOR=esxi OS_NAME=ubuntu OS_VERSION=trusty time fly -t production execute -p -x -i version=/tmp/version/0.0 -i bosh-src=. -c /Users/pivotal/workspace/bosh/ci/pipelines/stemcells/tasks/build.yml -o stemcell=/tmp/vsphere/dev/
+IAAS=vsphere HYPERVISOR=esxi OS_NAME=ubuntu OS_VERSION=trusty time fly -t production execute -p -x -i version=/tmp/version -i bosh-src=. -c /Users/pivotal/workspace/bosh/ci/pipelines/stemcells/tasks/build.yml -o stemcell=/tmp/vsphere/dev/
 popd
 ```
 
