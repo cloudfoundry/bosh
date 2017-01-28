@@ -73,7 +73,7 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       end
 
       it 'increases tcp_max_syn_backlog to 1280' do
-        should contain /^net.ipv4.tcp_max_syn_backlog-1280$/
+        should contain /^net.ipv4.tcp_max_syn_backlog=1280$/
       end
 
       it 'should disable core dumps (CIS-4.1)' do
