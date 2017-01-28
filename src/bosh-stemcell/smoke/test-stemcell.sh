@@ -212,3 +212,11 @@ EXPECTED_VALUE="CEF:0|CloudFoundry|BOSH|1|agent_api|get_task"
 bosh -d ./deployment.yml vms
 bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
 grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get CEF logs from syslog" ; exit 1 )
+
+# testing audit logs for use of binaries #137987887
+DOWNLOAD_DESTINATION=$(mktemp -d -t)
+EXPECTED_VALUE="exe=/usr/bin/chage"
+
+bosh -d ./deployment.yml ssh syslog_forwarder 0 "chage -h"
+bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
+grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able to get audit logs for chage usage" ; exit 1 )

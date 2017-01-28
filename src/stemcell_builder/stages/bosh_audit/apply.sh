@@ -94,11 +94,28 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
 -a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
 
-# record unsuccessful unauthorized access attempts to files - EACCES
+# Record unsuccessful unauthorized access attempts to files - EACCES
 -a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
 -a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
 -a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
 -a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+
+# Record use of additional binaries
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/sbin/unix_chkpwd -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/sbin/mount.nfs -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/pam_timestamp_check -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/write -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/bin/mount -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/newgrp -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/wall -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/passwd -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/bin/umount -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/crontab -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/chfn -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/ssh-agent -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/gpasswd -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/chsh -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/chage -k privileged
 ' >> $chroot/etc/audit/rules.d/audit.rules
 
     echo '
