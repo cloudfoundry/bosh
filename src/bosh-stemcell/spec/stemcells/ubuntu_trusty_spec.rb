@@ -17,7 +17,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should contain ' earlyprintk=ttyS0 rootdelay=300' }
       its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
 
-      it('should set the grub menu password (stig: V-38585)') { should contain /^password --md5 $1$.*/ }
+      it('should set the grub menu password (stig: V-38585)') { should contain /^password --md5 \*/ }
       it('should be of mode 600 (stig: V-38583)') { should be_mode('600') }
       it('should be owned by root (stig: V-38579)') { should be_owned_by('root') }
       it('should be grouped into root (stig: V-38581)') { should be_grouped_into('root') }

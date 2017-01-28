@@ -235,10 +235,7 @@ fi
 
 # For grub.conf
 if [ -f ${image_mount_point}/boot/grub/grub.conf ];then
-  md5_password=`run_in_chroot ${image_mount_point} "if which grub-md5-crypt > /dev/null;then echo -e '${random_password}\n${random_password}' | grub-md5-crypt | grep -e '^\\$1\\$.*'; fi"`
-  if [ -n $md5_password ];then
-    sed -i "/timeout=/a password --md5 ${md5_password}" ${image_mount_point}/boot/grub/grub.conf
-  fi
+  sed -i "/timeout=/a password --md5 *" ${image_mount_point}/boot/grub/grub.conf
   chown -fLR root:root ${image_mount_point}/boot/grub/grub.conf
   chmod 600 ${image_mount_point}/boot/grub/grub.conf
 fi
