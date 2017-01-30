@@ -387,7 +387,7 @@ module Bosh::Spec
     def self.vm_extension
       {
           'name' => 'vm-extension-name',
-          'cloud_properties' => {},
+          'cloud_properties' => {'my' => 'cloud_property'},
       }
     end
 
