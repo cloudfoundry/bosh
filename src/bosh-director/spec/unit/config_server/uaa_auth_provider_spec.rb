@@ -2,10 +2,10 @@ require 'spec_helper'
 require 'rack/test'
 require 'httpclient'
 
-describe Bosh::Director::UAAAuthProvider do
+describe Bosh::Director::ConfigServer::UAAAuthProvider do
   include Support::UaaHelpers
 
-  subject(:token_provider) { described_class.new(config, logger) }
+  subject { described_class.new(config, logger) }
   let(:uaa_url) {'https://fake-uaa-url'}
   let(:config) do
     {
@@ -33,24 +33,15 @@ describe Bosh::Director::UAAAuthProvider do
     allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
   end
 
-  it 'returns auth header provided by UAA' do
-    expect(token_provider.auth_header).to eq(first_token.auth_header)
-  end
-
-  it 'reuses the same token for subsequent requests' do
-    expect(token_provider.auth_header).to eq(first_token.auth_header)
-    expect(token_provider.auth_header).to eq(first_token.auth_header)
-  end
-
-  context 'when token is about to expire' do
-    let(:expiration_time) { Time.now.to_i + 50 }
-
-    it 'obtains new token' do
-      expect(token_provider.auth_header).to eq(first_token.auth_header)
-      expect(token_provider.auth_header).to eq(second_token.auth_header)
+  context '#get_token' do
+    it 'returns a new uaa token' do
+      expect(Bosh::Director::ConfigServer::UAAToken).to receive(:new).exactly(2).times
+      subject.get_token
+      subject.get_token
     end
   end
 
+  let(:token) { subject.get_token }
   context 'when getting token fails' do
 
     let(:client_credentials_grant_error) {RuntimeError.new('failed')}
@@ -63,13 +54,13 @@ describe Bosh::Director::UAAAuthProvider do
     it 'logs an error' do
       expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
       expect {
-        token_provider.auth_header
+        token.auth_header
       }.to raise_error
     end
 
     it 'raises UAAAuthorizationError' do
       expect {
-        token_provider.auth_header
+        token.auth_header
       }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
     end
 
@@ -80,7 +71,7 @@ describe Bosh::Director::UAAAuthProvider do
 
       it 'catches the error and provide more user friendly error message' do
         expect {
-          token_provider.auth_header
+          token.auth_header
         }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{uaa_url}'")
       end
     end
@@ -98,13 +89,13 @@ describe Bosh::Director::UAAAuthProvider do
     it 'logs an error' do
       expect(logger).to receive(:error).with("Failed to obtain valid token from UAA: #{decode_error.inspect}")
       expect {
-        token_provider.auth_header
+        token.auth_header
       }.to raise_error
     end
 
     it 'raises UAAAuthorizationError' do
       expect {
-        token_provider.auth_header
+        token.auth_header
       }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{decode_error.inspect}")
     end
   end
@@ -120,10 +111,9 @@ describe Bosh::Director::UAAAuthProvider do
       it 'raises the exception after trying 3 times' do
         expect(token_issuer).to receive(:client_credentials_grant).exactly(3).times
         expect {
-          token_provider.auth_header
+          token.auth_header
         }.to raise_error(Bosh::Director::UAAAuthorizationError, "Failed to obtain valid token from UAA: #{client_credentials_grant_error.inspect}")
       end
-
     end
 
     context 'when getting token fails due to a connection error and then recovers on a subsequent retry' do
@@ -140,14 +130,12 @@ describe Bosh::Director::UAAAuthProvider do
         allow(logger).to receive(:error)
       end
 
-
       it 'does NOT raise an exception' do
         expect(token_issuer).to receive(:client_credentials_grant).exactly(3).times
         expect {
-          token_provider.auth_header
+          token.auth_header
         }.to_not raise_error
       end
-
     end
 
     it 'sets the appropriate exceptions to handle on retryable' do
@@ -168,7 +156,7 @@ describe Bosh::Director::UAAAuthProvider do
       allow(Bosh::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
 
       allow(logger).to receive(:error)
-      token_provider.auth_header
+      token.auth_header
     end
   end
 end

@@ -37,12 +37,12 @@ module Bosh::Spec
     end
 
     def auth_header
-      auth_provider = Bosh::Director::UAAAuthProvider.new(@uaa_config_hash, logger)
+      auth_provider = Bosh::Director::ConfigServer::UAAAuthProvider.new(@uaa_config_hash, logger)
       ex = nil
 
       20.times do
         begin
-          return auth_provider.auth_header
+          return auth_provider.get_token.auth_header
         rescue => ex
           sleep(5)
         end

@@ -7,11 +7,7 @@ module Bosh::Director::ConfigServer
       director_name = Bosh::Director::Config.name
       config_server_enabled = Bosh::Director::Config.config_server_enabled
 
-      new(
-        director_name,
-        config_server_enabled,
-        logger
-      )
+      new(director_name, config_server_enabled, logger)
     end
 
     # @param config_server_enabled True or False
@@ -24,7 +20,11 @@ module Bosh::Director::ConfigServer
 
     def create_client
       if @config_server_enabled
-        EnabledClient.new(HTTPClient.new, @director_name, @logger)
+        auth_http_client = AuthHTTPClient.new
+        retryable_http_client = RetryableHTTPClient.new(auth_http_client)
+        config_server_http_client = ConfigServerHTTPClient.new(retryable_http_client)
+
+        EnabledClient.new(config_server_http_client, @director_name, @logger)
       else
         DisabledClient.new
       end

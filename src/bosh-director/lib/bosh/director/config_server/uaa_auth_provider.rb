@@ -1,9 +1,8 @@
 require 'uaa'
 require 'httpclient'
 
-module Bosh::Director
+module Bosh::Director::ConfigServer
   class UAAAuthProvider
-
     def initialize(config, logger)
       @client_id = config['client_id'].to_s
       @client_secret = config['client_secret'].to_s
@@ -13,17 +12,14 @@ module Bosh::Director
       @logger = logger
     end
 
-    def auth_header
-      @uaa_token ||= UAAToken.new(@client_id, @client_secret, @url, @ca_cert_path, @logger)
-      @uaa_token.auth_header
+    def get_token
+      UAAToken.new(@client_id, @client_secret, @url, @ca_cert_path, @logger)
     end
   end
 
   private
 
   class UAAToken
-    EXPIRATION_DEADLINE_IN_SECONDS = 60
-
     def initialize(client_id, client_secret, uaa_url, ca_cert_path, logger)
       options = {}
 
@@ -46,21 +42,11 @@ module Bosh::Director
     end
 
     def auth_header
-      if @uaa_token && !expires_soon?
-        return @uaa_token.auth_header
-      end
-
-      fetch
-
+      fetch unless @uaa_token
       @uaa_token ? @uaa_token.auth_header : nil
     end
 
     private
-
-    def expires_soon?
-      expiration = @token_data[:exp] || @token_data['exp']
-      (Time.at(expiration).to_i - Time.now.to_i) < EXPIRATION_DEADLINE_IN_SECONDS
-    end
 
     def retryable
       handled_exceptions = [
@@ -84,11 +70,11 @@ module Bosh::Director
     rescue CF::UAA::SSLException => e
       error_message = "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{@uaa_url}'"
       @logger.error("#{error_message}. Error thrown: #{e.inspect}")
-      raise UAAAuthorizationError, error_message
+      raise Bosh::Director::UAAAuthorizationError, error_message
     rescue Exception => e
       error_message = "Failed to obtain valid token from UAA: #{e.inspect}"
       @logger.error(error_message)
-      raise UAAAuthorizationError, error_message
+      raise Bosh::Director::UAAAuthorizationError, error_message
     end
 
     def decode

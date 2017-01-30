@@ -11,7 +11,9 @@ describe Bosh::Director::ConfigServer::ClientFactory do
     subject(:client_factory) { Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger) }
 
     context 'when config server is enabled' do
-      let(:mock_http_client) { double(Bosh::Director::ConfigServer::HTTPClient) }
+      let(:mock_auth_http_client) { double(Bosh::Director::ConfigServer::AuthHTTPClient) }
+      let(:mock_retryable_http_client) { double(Bosh::Director::ConfigServer::RetryableHTTPClient) }
+      let(:mock_config_server_http_client) { double(Bosh::Director::ConfigServer::ConfigServerHTTPClient) }
       let(:mock_enabled_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
 
       before do
@@ -20,8 +22,10 @@ describe Bosh::Director::ConfigServer::ClientFactory do
       end
 
       it 'returns an instance of ConfigServer::EnabledClient' do
-        expect(Bosh::Director::ConfigServer::HTTPClient).to receive(:new).and_return(mock_http_client)
-        expect(Bosh::Director::ConfigServer::EnabledClient).to receive(:new).with(mock_http_client, 'my-director-name', anything).and_return(mock_enabled_client)
+        expect(Bosh::Director::ConfigServer::AuthHTTPClient).to receive(:new).and_return(mock_auth_http_client)
+        expect(Bosh::Director::ConfigServer::RetryableHTTPClient).to receive(:new).with(mock_auth_http_client).and_return(mock_retryable_http_client)
+        expect(Bosh::Director::ConfigServer::ConfigServerHTTPClient).to receive(:new).with(mock_retryable_http_client).and_return(mock_config_server_http_client)
+        expect(Bosh::Director::ConfigServer::EnabledClient).to receive(:new).with(mock_config_server_http_client, 'my-director-name', anything).and_return(mock_enabled_client)
         expect(Bosh::Director::ConfigServer::DisabledClient).to_not receive(:new)
         expect(subject.create_client).to eq(mock_enabled_client)
       end
@@ -35,7 +39,7 @@ describe Bosh::Director::ConfigServer::ClientFactory do
       end
 
       it 'returns an instance of ConfigServer::DisabledClient' do
-        expect(Bosh::Director::ConfigServer::HTTPClient).to_not receive(:new)
+        expect(Bosh::Director::ConfigServer::ConfigServerHTTPClient).to_not receive(:new)
         expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:new)
         expect(Bosh::Director::ConfigServer::DisabledClient).to receive(:new).and_return(mock_disabled_client)
         expect(subject.create_client).to eq(mock_disabled_client)
