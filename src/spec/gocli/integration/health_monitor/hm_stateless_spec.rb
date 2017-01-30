@@ -176,6 +176,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'job_state' => 'running',
           'vitals' => anything,
           'teams' => ['ateam'],
+          'metrics' => anything,
       }
 
       expect(heartbeat_hashes.length).to be > 0
