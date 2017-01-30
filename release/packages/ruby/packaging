@@ -1,6 +1,6 @@
 set -e
 
-tar xzf ruby/yaml-0.1.5.tar.gz
+tar xzf ruby/yaml-0.1.7.tar.gz
 (
   set -e
   cd yaml-0.1.5
