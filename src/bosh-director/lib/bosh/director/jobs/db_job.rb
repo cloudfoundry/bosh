@@ -39,12 +39,18 @@ module Bosh::Director
       end
 
       def queue_name
-        if (@job_class.instance_variable_get(:@local_fs) ||
-          (@job_class.respond_to?(:local_fs) && @job_class.local_fs)) && !Config.director_pool.nil?
-          Config.director_pool
+        queue =
+          if (@job_class.instance_variable_get(:@local_fs) ||
+            (@job_class.respond_to?(:local_fs) && @job_class.local_fs)) && !Config.director_pool.nil?
+            Config.director_pool
+          else
+            @job_class.instance_variable_get(:@queue) ||
+              (@job_class.respond_to?(:queue) && @job_class.queue)
+          end
+        if Bosh::Director::Models::DirectorAttribute.get_attribute('tasks_paused') && queue != :urgent
+          :pause
         else
-          @job_class.instance_variable_get(:@queue) ||
-            (@job_class.respond_to?(:queue) && @job_class.queue)
+          queue
         end
       end
 

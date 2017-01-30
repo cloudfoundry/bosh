@@ -30,5 +30,21 @@ module Bosh::Director::Models
       uuid = first(name: 'uuid')
       return uuid.value if uuid
     end
+
+    def self.set_attribute(attr_name, attr_value)
+      create(name: attr_name, value: attr_value.to_s)
+    rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
+      error_message = e.message.downcase
+      if error_message.include?('unique') || error_message.include?('duplicate')
+        where(name: attr_name).update(value: attr_value.to_s)
+      else
+        raise e
+      end
+    end
+
+    def self.get_attribute(attr_name)
+      record = first(name: attr_name)
+      record.nil? || record.value == "false" ? false : true
+    end
   end
 end

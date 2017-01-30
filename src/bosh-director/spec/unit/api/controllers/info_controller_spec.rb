@@ -80,6 +80,9 @@ module Bosh::Director
               'extras' => {
                 'urls' => []
               }
+            },
+            'pause_tasks' => {
+              'status' => false
             }
           }
         }

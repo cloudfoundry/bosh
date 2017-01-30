@@ -78,6 +78,37 @@ module Bosh::Director
       expect(db_job.queue_name).to eq(:normal)
     end
 
+    context 'when tasks are paused and unpaused' do
+      let(:urgent_db_job) { Jobs::DBJob.new(urgent_job_class, task.id, args) }
+      let(:urgent_job_class) do
+        Class.new(Jobs::BaseJob) do
+          def perform
+            'foo'
+          end
+          def self.perform(*args)
+            'foo'
+          end
+          @queue = :urgent
+        end
+      end
+
+      it 'sets normal queue to pause' do
+        expect(db_job.queue_name).to eq(:normal)
+        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(true)
+        expect(db_job.queue_name).to eq(:pause)
+        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(false)
+        expect(db_job.queue_name).to eq(:normal)
+      end
+
+      it 'does not set urgent queue to pause' do
+        expect(urgent_db_job.queue_name).to eq(:urgent)
+        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(true)
+        expect(urgent_db_job.queue_name).to eq(:urgent)
+        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(false)
+        expect(urgent_db_job.queue_name).to eq(:urgent)
+      end
+    end
+
     context 'when worker should have access to filesystem' do
       let(:job_class) do
         Class.new(Jobs::BaseJob) do
