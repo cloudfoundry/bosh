@@ -53,8 +53,8 @@ shared:
     tags: [vsphere-v5.1]
     file: pipelines/vsphere/tasks/prepare-director.yml
     params: &prepare-director-params
-      BOSH_USER:                            {{stemcell-test-director-username}}
-      BOSH_PASSWORD:                        {{stemcell-test-director-password}}
+      BOSH_CLIENT:                          {{stemcell-test-director-username}}
+      BOSH_CLIENT_SECRET:                   {{stemcell-test-director-password}}
       BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
       BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
       BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
@@ -79,8 +79,8 @@ shared:
     file: pipelines/vsphere/tasks/prepare-bats.yml
     params: &prepare-bats-params
       BAT_VCAP_PASSWORD:      {{bat-vcap-password}}
-      BOSH_USER:              {{stemcell-test-director-username}}
-      BOSH_PASSWORD:          {{stemcell-test-director-password}}
+      BOSH_CLIENT:            {{stemcell-test-director-username}}
+      BOSH_CLIENT_SECRET:     {{stemcell-test-director-password}}
 
   - &run-bats
     task: run-bats
@@ -596,7 +596,7 @@ resources:
     type: git
     source:
       uri: {{bosh_src_url}}
-      branch: develop
+      branch: 260.x
       private_key: {{github_deployment_key}}
 
   - name: candidate-version
