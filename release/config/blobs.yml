@@ -62,10 +62,10 @@ postgres/postgresql-9.0.23.tar.gz:
   size: 19776342
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
-postgres/postgresql-9.4.9.tar.gz:
-  size: 23300245
-  object_id: 0c5a6fc6-2c99-4d7e-b73d-f4339356f40f
-  sha: c9d641eb69885672e5aacee413cd778d88b8420d
+postgres/postgresql-9.4.10.tar.gz:
+  size: 23333040
+  object_id: 703026d4-1eff-47f6-5bfd-f4cdcb5d5370
+  sha: 69f810b063f9b1fb569e99d722fa74c29363efc9
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
