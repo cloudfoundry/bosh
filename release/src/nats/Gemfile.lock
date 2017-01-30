@@ -8,7 +8,7 @@ GEM
       eventmachine (>= 1.0.3)
       json_pure (>= 1.8.0)
       thin (>= 1.5.0)
-    rack (1.5.2)
+    rack (1.5.4)
     thin (1.5.1)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)

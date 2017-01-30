@@ -30,10 +30,10 @@ nats/vendor/cache/nats-0.5.0.beta.12.gem:
   size: 30208
   object_id: 714da93b-b55f-4adf-a5e5-b11ea991cd1f
   sha: f39b79844741d0019cd6e277ded2b2025b69bca3
-nats/vendor/cache/rack-1.5.2.gem:
-  size: 216576
-  object_id: 8e0440d6-d7cb-4085-9b33-2957bfb9a5bd
-  sha: a17f40c9beb03b458f537f42cf36dd90d8230625
+nats/vendor/cache/rack-1.5.4.gem:
+  size: 216064
+  object_id: 61e5a9ed-2a1a-41d4-5fa8-6ec6a966ff61
+  sha: d71ea9c90d7ef2a0787722f233da8fcbfb5e55d5
 nats/vendor/cache/thin-1.5.1.gem:
   size: 55296
   object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
