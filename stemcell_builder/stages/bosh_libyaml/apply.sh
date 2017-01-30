@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 mkdir -p $chroot/$bosh_dir/src
 mkdir -p $chroot/usr/lib64
 
-libyaml_basename=yaml-0.1.6
+libyaml_basename=yaml-0.1.7
 libyaml_archive=$libyaml_basename.tar.gz
 
 cp -r $dir/assets/$libyaml_archive $chroot/$bosh_dir/src
