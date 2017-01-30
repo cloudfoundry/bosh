@@ -87,7 +87,7 @@ s3cli/s3cli-0.0.45-linux-amd64:
   object_id: 0c22e9a1-5d7a-48d6-9d5f-178237006042
   sha: dd0bad17c31d215189c6ad25daf80cd00226a940
   size: 12289048
-postgres/postgresql-9.4.9.tar.gz:
-  object_id: 0c5a6fc6-2c99-4d7e-b73d-f4339356f40f
-  sha: c9d641eb69885672e5aacee413cd778d88b8420d
-  size: 23300245
+postgres/postgresql-9.4.10.tar.gz:
+  size: 23333040
+  object_id: 703026d4-1eff-47f6-5bfd-f4cdcb5d5370
+  sha: 69f810b063f9b1fb569e99d722fa74c29363efc9
