@@ -165,7 +165,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'properties interpolation' do
-        let(:properties_interpolator) { double(Bosh::Director::ConfigServer::PropertiesInterpolator) }
+        let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
         let(:properties) do
           {
@@ -212,12 +212,12 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          allow(Bosh::Director::ConfigServer::PropertiesInterpolator).to receive(:new).and_return(properties_interpolator)
+          allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         end
 
         it 'resolves properties and links properties' do
-          expect(properties_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment').and_return(resolved_properties)
-          expect(properties_interpolator).to receive(:interpolate_link_spec_properties).with(links).and_return(resolved_links)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment').and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links).and_return(resolved_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)

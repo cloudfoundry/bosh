@@ -48,11 +48,11 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-        @properties_interpolator = ConfigServer::PropertiesInterpolator.new
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @properties_interpolator).spec
+        TemplateSpec.new(full_spec, @variables_interpolator).spec
       end
 
       def as_apply_spec
@@ -92,10 +92,10 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, properties_interpolator)
+      def initialize(full_spec, variables_interpolator)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
-        @properties_interpolator = properties_interpolator
+        @variables_interpolator = variables_interpolator
       end
 
       def spec
@@ -122,8 +122,8 @@ module Bosh::Director
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
-        template_hash['properties'] =  @properties_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'])
-        interpolated_links_spec = @properties_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
+        template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'])
+        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
 
         template_hash['links'] = {}
         interpolated_links_spec.each do |link_name, link_spec|

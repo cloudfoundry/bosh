@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bosh::Director::ConfigServer::PropertiesInterpolator do
-  subject(:properties_interpolator) { described_class.new }
+describe Bosh::Director::ConfigServer::VariablesInterpolator do
+  subject(:variables_interpolator) { described_class.new }
 
   let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
   let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
@@ -329,6 +329,55 @@ describe Bosh::Director::ConfigServer::PropertiesInterpolator do
           }
         end
       end
+    end
+  end
+
+  describe '#interpolate_deployment_manifest' do
+    let(:ignored_subtrees) do
+      index_type = Integer
+      any_string = String
+
+      ignored_subtrees = []
+      ignored_subtrees << ['properties']
+      ignored_subtrees << ['instance_groups', index_type, 'properties']
+      ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
+      ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
+      ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
+      ignored_subtrees << ['instance_groups', index_type, 'env']
+      ignored_subtrees << ['jobs', index_type, 'env']
+      ignored_subtrees << ['resource_pools', index_type, 'env']
+      ignored_subtrees
+    end
+
+    let(:deployment_manifest) {{'name' => 'smurf-deployment', 'properties' => {'a' => '{{placeholder}}'}}}
+
+    it 'should call interpolate with the correct arguments' do
+      expect(config_server_client).to receive(:interpolate).with(deployment_manifest , 'smurf-deployment', subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false).and_return({'name' => 'smurf'})
+      result = subject.interpolate_deployment_manifest(deployment_manifest)
+      expect(result).to eq({'name' => 'smurf'})
+    end
+  end
+
+  describe '#interpolate_runtime_manifest' do
+    let(:deployment_name) { 'some_deployment_name' }
+
+    let(:ignored_subtrees) do
+      index_type = Integer
+      any_string = String
+
+      ignored_subtrees = []
+      ignored_subtrees << ['addons', index_type, 'properties']
+      ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
+      ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
+      ignored_subtrees
+    end
+
+    it 'should call interpolate with the correct arguments' do
+      expect(config_server_client).to receive(:interpolate).with({'name' => '{{placeholder}}'}, deployment_name, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
+      result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'}, deployment_name)
+      expect(result).to eq({'name' => 'smurf'})
     end
   end
 end

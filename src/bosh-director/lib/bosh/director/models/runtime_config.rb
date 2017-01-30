@@ -16,8 +16,8 @@ module Bosh
 
         def interpolated_manifest_for_deployment(deployment_name)
           manifest_hash = YAML.load(properties)
-          config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(Config.logger).create_client
-          config_server_client.interpolate_runtime_manifest(manifest_hash, deployment_name)
+          variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+          variables_interpolator.interpolate_runtime_manifest(manifest_hash, deployment_name)
         end
 
         def tags(deployment_name)

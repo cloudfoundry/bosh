@@ -559,56 +559,6 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    describe '#interpolate_deployment_manifest' do
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
-
-      let(:ignored_subtrees) do
-        index_type = Integer
-        any_string = String
-
-        ignored_subtrees = []
-        ignored_subtrees << ['properties']
-        ignored_subtrees << ['instance_groups', index_type, 'properties']
-        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
-        ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
-        ignored_subtrees << ['jobs', index_type, 'properties']
-        ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
-        ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
-        ignored_subtrees << ['instance_groups', index_type, 'env']
-        ignored_subtrees << ['jobs', index_type, 'env']
-        ignored_subtrees << ['resource_pools', index_type, 'env']
-        ignored_subtrees
-      end
-
-      it 'should call interpolate with the correct arguments' do
-        expect(subject).to receive(:interpolate).with({'name' => 'smurf', 'properties' => {'a' => '{{placeholder}}'}}, 'smurf', {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}).and_return({'name' => 'smurf'})
-        result = subject.interpolate_deployment_manifest({'name' => 'smurf', 'properties' => {'a' => '{{placeholder}}'}})
-        expect(result).to eq({'name' => 'smurf'})
-      end
-    end
-
-    describe '#interpolate_runtime_manifest' do
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
-      let(:deployment_name) { 'some_deployment_name' }
-
-      let(:ignored_subtrees) do
-        index_type = Integer
-        any_string = String
-
-        ignored_subtrees = []
-        ignored_subtrees << ['addons', index_type, 'properties']
-        ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
-        ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
-        ignored_subtrees
-      end
-
-      it 'should call interpolate with the correct arguments' do
-        expect(subject).to receive(:interpolate).with({'name' => '{{placeholder}}'}, deployment_name, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
-        result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'}, deployment_name)
-        expect(result).to eq({'name' => 'smurf'})
-      end
-    end
-
     describe '#prepare_and_get_property' do
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
       let(:ok_response) do
@@ -1083,7 +1033,6 @@ module Bosh::Director::ConfigServer
   end
 
   describe DisabledClient do
-
     subject(:disabled_client) { DisabledClient.new }
     let(:deployment_name) { 'smurf_deployment' }
 
@@ -1097,32 +1046,6 @@ module Bosh::Director::ConfigServer
 
       it 'returns src as is' do
         expect(disabled_client.interpolate(src, deployment_name)).to eq(src)
-      end
-    end
-
-    describe '#interpolate_deployment_manifest' do
-      let(:manifest) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      it 'returns manifest as is' do
-        expect(disabled_client.interpolate_deployment_manifest(manifest)).to eq(manifest)
-      end
-    end
-
-    describe '#interpolate_runtime_manifest' do
-      let(:manifest) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      it 'returns manifest as is' do
-        expect(disabled_client.interpolate_runtime_manifest(manifest, deployment_name)).to eq(manifest)
       end
     end
 

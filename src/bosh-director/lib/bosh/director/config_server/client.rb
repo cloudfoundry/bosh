@@ -35,48 +35,6 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
     end
 
-    # @param [Hash] deployment_manifest Deployment Manifest Hash to be interpolated
-    # @return [Hash] A Deep copy of the interpolated manifest Hash
-    def interpolate_deployment_manifest(deployment_manifest)
-      ignored_subtrees = [
-        ['properties'],
-        ['instance_groups', Integer, 'properties'],
-        ['instance_groups', Integer, 'jobs', Integer, 'properties'],
-        ['instance_groups', Integer, 'jobs', Integer, 'consumes', String, 'properties'],
-        ['jobs', Integer, 'properties'],
-        ['jobs', Integer, 'templates', Integer, 'properties'],
-        ['jobs', Integer, 'templates', Integer, 'consumes', String, 'properties'],
-        ['instance_groups', Integer, 'env'],
-        ['jobs', Integer, 'env'],
-        ['resource_pools', Integer, 'env'],
-      ]
-
-      interpolate(
-        deployment_manifest,
-        deployment_manifest['name'],
-        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}
-      )
-    end
-
-    # @param [Hash] runtime_manifest Runtime Manifest Hash to be interpolated
-    # @param deployment_name [String] Name of current deployment
-    # @return [Hash] A Deep copy of the interpolated manifest Hash
-    def interpolate_runtime_manifest(runtime_manifest, deployment_name)
-      ignored_subtrees = [
-        ['addons', Integer, 'properties'],
-        ['addons', Integer, 'jobs', Integer, 'properties'],
-        ['addons', Integer, 'jobs', Integer, 'consumes', String, 'properties'],
-      ]
-
-      # Deployment name is passed here as nil because we required all placeholders
-      # in the runtime config to be absolute, except for the properties in addons
-      interpolate(
-        runtime_manifest,
-        deployment_name,
-        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
-      )
-    end
-
     # Refer to unit tests for full understanding of this method
     # @param [Object] provided_prop property value
     # @param [Object] default_prop property value
@@ -340,14 +298,6 @@ module Bosh::Director::ConfigServer
   class DisabledClient
     def interpolate(src, deployment_name, options={})
       Bosh::Common::DeepCopy.copy(src)
-    end
-
-    def interpolate_deployment_manifest(manifest)
-      Bosh::Common::DeepCopy.copy(manifest)
-    end
-
-    def interpolate_runtime_manifest(manifest, deployment_name)
-      Bosh::Common::DeepCopy.copy(manifest)
     end
 
     def prepare_and_get_property(manifest_provided_prop, default_prop, type, deployment_name, options = {})

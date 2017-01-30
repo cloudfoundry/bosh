@@ -8,15 +8,11 @@ module Bosh::Director::Models
     let(:deployment_name) { 'some_deployment_name' }
 
     describe "#interpolated_manifest_for_deployment" do
-      let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
-      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
-      let(:logger) { instance_double(Logging::Logger) }
+      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
       before do
-        allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
-        allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).with(logger).and_return(client_factory)
-        allow(client_factory).to receive(:create_client).and_return(config_server_client)
-        allow(config_server_client).to receive(:interpolate_runtime_manifest).with(mock_manifest, deployment_name).and_return(new_runtime_config)
+        allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
+        allow(variables_interpolator).to receive(:interpolate_runtime_manifest).with(mock_manifest, deployment_name).and_return(new_runtime_config)
       end
 
       it 'calls manifest resolver and returns its result' do

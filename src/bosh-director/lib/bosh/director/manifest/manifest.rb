@@ -72,8 +72,8 @@ module Bosh::Director
       raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
 
       if resolve_interpolation
-        config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(Config.logger).create_client
-        hybrid_manifest_hash = config_server_client.interpolate_deployment_manifest(manifest_hash)
+        variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+        hybrid_manifest_hash = variables_interpolator.interpolate_deployment_manifest(manifest_hash)
         hybrid_runtime_config_hash = runtime_config.nil? || !manifest_hash['name'] ? {} : runtime_config.interpolated_manifest_for_deployment(manifest_hash['name'])
       else
         hybrid_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)

@@ -29,7 +29,7 @@ module Bosh::Director::Jobs
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
       let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
-      let(:properties_interpolator) { instance_double('Bosh::Director::ConfigServer::PropertiesInterpolator') }
+      let(:variables_interpolator) { instance_double('Bosh::Director::ConfigServer::VariablesInterpolator') }
       let(:planner_factory) do
         instance_double(
           'Bosh::Director::DeploymentPlan::PlannerFactory',
@@ -56,13 +56,14 @@ module Bosh::Director::Jobs
         allow(Bosh::Director::DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
-        allow(Bosh::Director::ConfigServer::PropertiesInterpolator).to receive(:new).and_return(properties_interpolator)
+        allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
         allow(Bosh::Director::DeploymentPlan::DeploymentRepo).to receive(:new).and_return(deployment_repo)
         allow(planner).to receive(:variables).and_return(Bosh::Director::DeploymentPlan::Variables.new([]))
         allow(deployment_repo).to receive(:update_variable_set)
-        allow(properties_interpolator).to receive(:interpolate_template_spec_properties)
-        allow(properties_interpolator).to receive(:interpolate_link_spec_properties)
+        allow(variables_interpolator).to receive(:interpolate_template_spec_properties) {|properties, _| properties}
+        allow(variables_interpolator).to receive(:interpolate_link_spec_properties) {|links_spec| links_spec}
+        allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
       end
 
       context 'variable set creation' do
@@ -126,8 +127,8 @@ module Bosh::Director::Jobs
           end
 
           it 'versions the variables in errands' do
-            expect(properties_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties,'deployment-name')
-            expect(properties_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links)
+            expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties,'deployment-name')
+            expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links)
 
             job.perform
           end
@@ -144,7 +145,6 @@ module Bosh::Director::Jobs
 
           before do
             allow(planner).to receive(:variables).and_return(variables)
-            allow(config_server_client).to receive(:interpolate_deployment_manifest).and_return({'name' => 'deployment-name'})
             allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
             allow(client_factory).to receive(:create_client).and_return(config_server_client)
           end
@@ -165,6 +165,11 @@ module Bosh::Director::Jobs
 
         context 'when a runtime_config is passed in' do
           let(:runtime_config_id) { Bosh::Director::Models::RuntimeConfig.make.id }
+
+          before do
+            allow(variables_interpolator).to receive(:interpolate_runtime_manifest)
+          end
+
           it 'uses the runtime config' do
             expect(job.perform).to eq('/deployments/deployment-name')
           end

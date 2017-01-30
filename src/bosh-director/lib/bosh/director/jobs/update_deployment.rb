@@ -184,19 +184,19 @@ module Bosh::Director
 
       def snapshot_errands_variables_versions(errands_instance_groups)
         errors = []
-        properties_interpolator = ConfigServer::PropertiesInterpolator.new
+        variables_interpolator = ConfigServer::VariablesInterpolator.new
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
           begin
-            properties_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name)
+            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name)
           rescue Exception => e
             instance_group_errors.push e
           end
 
           begin
-            properties_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {})
+            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {})
           rescue Exception => e
             instance_group_errors.push e
           end
