@@ -32,7 +32,7 @@ packages:
 - ruby
 - s3cli
 - davcli
-- verify-multidigest
+- verify_multidigest
 
 properties:
   env.http_proxy:
