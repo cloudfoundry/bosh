@@ -67,10 +67,6 @@ postgres/postgresql-9.0.23.tar.gz:
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
   size: 19776342
-postgres/postgresql-9.4.5.tar.gz:
-  object_id: aa6fa8b1-870f-43c3-9858-542dae89344f
-  sha: 5278d04093f3cb2e00796fae15b2e33406844d01
-  size: 23211720
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
   sha: 74dd87a9537f98fc93cace2252424ae1c6c46fbf
@@ -79,10 +75,6 @@ mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
   sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
   size: 4639216
-postgres/postgresql-9.4.6.tar.gz:
-  object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
-  sha: bd031beebd86bf149c497525dccf57eebe5a6add
-  size: 23249307
 nginx/headers-more-nginx-module-0.30.tar.gz:
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
   sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
@@ -95,3 +87,7 @@ nginx/nginx-1.11.1.tar.gz:
   object_id: 7bdb66cc-ef74-4e21-b114-23e87f8437c5
   sha: 6b6172b26628b95c4ad0d6cb5b11eb4aa59c2a83
   size: 913417
+postgres/postgresql-9.4.10.tar.gz:
+  size: 23333040
+  object_id: 703026d4-1eff-47f6-5bfd-f4cdcb5d5370
+  sha: 69f810b063f9b1fb569e99d722fa74c29363efc9
