@@ -1,12 +1,11 @@
 ---
 name: director
+
 dependencies:
 - libpq
 - mysql
 - ruby
-- s3cli
-- davcli
-- verify-multidigest
+
 files:
 - bosh-director/**/*
 - bosh_common/**/*

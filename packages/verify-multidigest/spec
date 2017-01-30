@@ -1,5 +1,6 @@
 ---
 name: verify-multidigest
+
 files:
 - verify-multidigest/verify-multidigest-0.0.13-darwin-amd64
 - verify-multidigest/verify-multidigest-0.0.13-linux-amd64

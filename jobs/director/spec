@@ -1,5 +1,6 @@
 ---
 name: director
+
 templates:
   pre-start.erb: bin/pre-start
   director_ctl.erb: bin/director_ctl
@@ -21,6 +22,7 @@ templates:
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   sync_dns_ctl.erb: bin/sync_dns_ctl
+
 packages:
 - director
 - nginx
@@ -30,6 +32,7 @@ packages:
 - ruby
 - s3cli
 - davcli
+- verify-multidigest
 
 properties:
   env.http_proxy:
