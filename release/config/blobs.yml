@@ -7,10 +7,10 @@ genisoimage/cdrkit-1.1.11.tar.gz:
   object_id: bb61a16c-6078-4e18-9c1f-9c2d6f056cd6
   sha: 3f7ddc06db0272942e1a4cd98c3c96462df77387
   size: 1445133
-ruby/yaml-0.1.5.tar.gz:
-  object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
-  sha: 8b78cb9f759c7d80db8a7328c0ebecfe34fde737
-  size: 504897
+ruby/yaml-0.1.7.tar.gz:
+  size: 527518
+  object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
+  sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
