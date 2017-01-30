@@ -215,7 +215,7 @@ grep ${EXPECTED_VALUE} ${DOWNLOAD_DESTINATION}/syslog.* || ( echo "was not able 
 
 # testing audit logs for use of binaries #137987887
 DOWNLOAD_DESTINATION=$(mktemp -d -t)
-EXPECTED_VALUE="exe=/usr/bin/chage"
+EXPECTED_VALUE="exe=\"/usr/bin/chage\""
 
 bosh -d ./deployment.yml ssh syslog_forwarder 0 "chage -h"
 bosh -d ./deployment.yml scp --download syslog_storer 0 "/var/vcap/store/syslog_storer/syslog.log" $DOWNLOAD_DESTINATION
