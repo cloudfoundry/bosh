@@ -1041,6 +1041,12 @@ module Bosh::Director::ConfigServer
       expect(DisabledClient.instance_methods - EnabledClient.instance_methods).to be_empty
     end
 
+    it 'has the same arity as EnabledClient methods' do
+      EnabledClient.instance_methods.each do |method_name|
+        expect(EnabledClient.instance_method(method_name).arity).to eq(DisabledClient.instance_method(method_name).arity)
+      end
+    end
+
     describe '#interpolate' do
       let(:src) do
         {
