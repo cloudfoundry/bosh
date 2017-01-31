@@ -6,7 +6,7 @@ module Bosh::Dev::Sandbox
 
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
 
-    CONFIG_SERVER_VERSION = "0.0.101"
+    CONFIG_SERVER_VERSION = "0.0.108"
     DARWIN_CONFIG_SERVER_SHA256 = "8dda535aaeeaeba1c692afc34dd98859e2fbe7b4cd2a20b1da5d81a081d3ed14"
     LINUX_CONFIG_SERVER_SHA256 = "f54ed498bad248a732870af9b484d874f602a438266eb4cae41069a7eeb28d86"
 
