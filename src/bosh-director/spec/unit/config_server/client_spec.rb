@@ -1036,6 +1036,11 @@ module Bosh::Director::ConfigServer
     subject(:disabled_client) { DisabledClient.new }
     let(:deployment_name) { 'smurf_deployment' }
 
+    it 'responds to all methods of EnabledClient and vice versa' do
+      expect(EnabledClient.instance_methods - DisabledClient.instance_methods).to be_empty
+      expect(DisabledClient.instance_methods - EnabledClient.instance_methods).to be_empty
+    end
+
     describe '#interpolate' do
       let(:src) do
         {

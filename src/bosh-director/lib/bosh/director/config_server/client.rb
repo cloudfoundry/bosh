@@ -2,8 +2,6 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class EnabledClient
-    include ConfigServerHelper
-
     def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
       @director_name = director_name
@@ -46,9 +44,9 @@ module Bosh::Director::ConfigServer
       if provided_prop.nil?
         result = default_prop
       else
-        if is_full_placeholder?(provided_prop)
-          extracted_name = add_prefix_if_not_absolute(
-            extract_placeholder_name(provided_prop),
+        if ConfigServerHelper.is_full_placeholder?(provided_prop)
+          extracted_name = ConfigServerHelper.add_prefix_if_not_absolute(
+            ConfigServerHelper.extract_placeholder_name(provided_prop),
             @director_name,
             deployment_name
           )
@@ -80,9 +78,9 @@ module Bosh::Director::ConfigServer
     def generate_values(variables, deployment_name)
       variables.spec.each do |variable|
         variable_name = variable['name']
-        validate_variable_name(variable_name)
+        ConfigServerHelper.validate_variable_name(variable_name)
 
-        constructed_name = add_prefix_if_not_absolute(
+        constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(
           variable_name,
           @director_name,
           deployment_name
@@ -95,14 +93,14 @@ module Bosh::Director::ConfigServer
     private
 
     def fetch_values(variables, deployment_name, set_id, must_be_absolute_name)
-      validate_absolute_names(variables) if must_be_absolute_name
+      ConfigServerHelper.validate_absolute_names(variables) if must_be_absolute_name
 
       errors = []
       config_values = {}
 
       variables.each do |variable|
-        name = add_prefix_if_not_absolute(
-          extract_placeholder_name(variable),
+        name = ConfigServerHelper.add_prefix_if_not_absolute(
+          ConfigServerHelper.extract_placeholder_name(variable),
           @director_name,
           deployment_name
         )

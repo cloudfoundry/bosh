@@ -2,7 +2,6 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
-    include ConfigServerHelper
 
     def placeholders_paths(obj, subtrees_to_ignore = [])
       map = []
@@ -81,7 +80,7 @@ module Bosh::Director::ConfigServer
         end
       else
         path ||= []
-        placeholders = extract_placeholders_from_string(obj.to_s)
+        placeholders = ConfigServerHelper.extract_placeholders_from_string(obj.to_s)
         result << {'placeholders' => placeholders, 'path' => path} unless placeholders.empty?
       end
     end

@@ -2,11 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe ConfigServerHelper do
-    before do
-      @helper = Object.new
-      @helper.extend(ConfigServerHelper)
-    end
-
     describe '#is_full_placeholder??' do
       it 'should return true if value is a full placeholder' do
         placeholders = [
@@ -16,7 +11,7 @@ module Bosh::Director::ConfigServer
         ]
 
         placeholders.each do |placeholder|
-          expect(@helper.is_full_placeholder?(placeholder)).to be_truthy
+          expect(ConfigServerHelper.is_full_placeholder?(placeholder)).to be_truthy
         end
       end
 
@@ -27,14 +22,14 @@ module Bosh::Director::ConfigServer
         ]
 
         not_placeholders.each do |not_placeholder|
-          expect(@helper.is_full_placeholder?(not_placeholder)).to be_falsey
+          expect(ConfigServerHelper.is_full_placeholder?(not_placeholder)).to be_falsey
         end
       end
     end
 
     describe '#extract_placeholders_from_string' do
       it 'handles nil input' do
-        expect(@helper.extract_placeholders_from_string(nil)).to match_array([])
+        expect(ConfigServerHelper.extract_placeholders_from_string(nil)).to match_array([])
       end
 
       it 'should return the placeholders' do
@@ -52,7 +47,7 @@ module Bosh::Director::ConfigServer
         }
 
         input.each do |k, v|
-          expect(@helper.extract_placeholders_from_string(k)).to match_array(v)
+          expect(ConfigServerHelper.extract_placeholders_from_string(k)).to match_array(v)
         end
       end
     end
@@ -76,7 +71,7 @@ module Bosh::Director::ConfigServer
           }
 
           names.each do |k, v|
-            expect(@helper.extract_placeholder_name(k)).to eq(v)
+            expect(ConfigServerHelper.extract_placeholder_name(k)).to eq(v)
           end
         end
 
@@ -88,7 +83,7 @@ module Bosh::Director::ConfigServer
           }
 
           names.each do |k, v|
-            expect(@helper.extract_placeholder_name(k)).to eq(v)
+            expect(ConfigServerHelper.extract_placeholder_name(k)).to eq(v)
           end
         end
       end
@@ -103,7 +98,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
@@ -120,7 +115,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not end with a forward slash"
@@ -137,7 +132,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not contain two consecutive forward slashes"
@@ -154,7 +149,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' contains invalid character '!'. If it is included for spiff, " +
@@ -173,7 +168,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not contain dots before the last slash"
@@ -188,7 +183,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not have segment starting with a dot"
@@ -203,7 +198,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not end name with a dot"
@@ -218,7 +213,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.extract_placeholder_name(invalid_entity)
+                ConfigServerHelper.extract_placeholder_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Placeholder name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' syntax error: Must not contain consecutive dots"
@@ -234,7 +229,7 @@ module Bosh::Director::ConfigServer
         it 'should return name as is' do
           input_name = '/dir/dep/name'
           expected_name = '/dir/dep/name'
-          expect(@helper.add_prefix_if_not_absolute(input_name, 'dir2', 'dep2')).to eq(expected_name)
+          expect(ConfigServerHelper.add_prefix_if_not_absolute(input_name, 'dir2', 'dep2')).to eq(expected_name)
         end
       end
 
@@ -246,7 +241,7 @@ module Bosh::Director::ConfigServer
             deployment = 'dep'
 
             expected_name = '/dir/dep/name'
-            expect(@helper.add_prefix_if_not_absolute(input_name, director, deployment)).to eq(expected_name)
+            expect(ConfigServerHelper.add_prefix_if_not_absolute(input_name, director, deployment)).to eq(expected_name)
           end
         end
       end
@@ -263,7 +258,7 @@ module Bosh::Director::ConfigServer
 
             invalid_variable_names.each do |invalid_entity|
               expect {
-                @helper.validate_variable_name(invalid_entity)
+                ConfigServerHelper.validate_variable_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
@@ -280,7 +275,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.validate_variable_name(invalid_entity)
+                ConfigServerHelper.validate_variable_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not end with a forward slash"
@@ -297,7 +292,7 @@ module Bosh::Director::ConfigServer
 
             invalid_placeholders_names.each do |invalid_entity|
               expect {
-                @helper.validate_variable_name(invalid_entity)
+                ConfigServerHelper.validate_variable_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
                      "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must not contain two consecutive forward slashes"
@@ -312,7 +307,7 @@ module Bosh::Director::ConfigServer
       context 'when all placeholders are absolute' do
         it 'does NOT raise an error' do
           placeholder_names = ['/test', '/test/test', '/smurf']
-          expect{ @helper.validate_absolute_names(placeholder_names) }.to_not raise_error
+          expect{ ConfigServerHelper.validate_absolute_names(placeholder_names) }.to_not raise_error
         end
       end
 
@@ -321,7 +316,7 @@ module Bosh::Director::ConfigServer
 
         it 'raises an error' do
           expect {
-            @helper.validate_absolute_names(placeholder_names)
+            ConfigServerHelper.validate_absolute_names(placeholder_names)
           }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Names must be absolute path: 'test/test', 'smurf'")
         end
       end

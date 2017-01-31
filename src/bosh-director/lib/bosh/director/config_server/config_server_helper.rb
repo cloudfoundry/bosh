@@ -1,17 +1,16 @@
 module Bosh::Director::ConfigServer
-  module ConfigServerHelper
-
+  class ConfigServerHelper
     # Checks if string starts with '((' and ends with '))'
     # @param [String] value string to be checked
     # @return [Boolean] true if it starts with '((' and ends with '))'
-    def is_full_placeholder?(value)
+    def self.is_full_placeholder?(value)
       value.to_s.match(/^\(\([^\(]*\)\)$/)
     end
 
     # Extracts all placeholders from given string
     # @param [String] input string to be checked
     # @return [Array] list of placeholders found
-    def extract_placeholders_from_string(input)
+    def self.extract_placeholders_from_string(input)
       return [] if input.nil?
       input.scan(/\(\(.*?\)\)/)
     end
@@ -19,7 +18,7 @@ module Bosh::Director::ConfigServer
     # @param [String] placeholder
     # @return [String] placeholder name stripped from starting and ending brackets
     # @raise [Error] if name does not meet specs
-    def extract_placeholder_name(placeholder)
+    def self.extract_placeholder_name(placeholder)
       name = placeholder.to_s.gsub(/(^\(\(|\)\)$)/, '')
       validate_placeholder_name(name)
       process_name!(name)
@@ -29,7 +28,7 @@ module Bosh::Director::ConfigServer
     # @param [String] director_name
     # @param [String] deployment_name
     # @return [String] name prepended with /:director_name/:deployment_name if name is not absolute
-    def add_prefix_if_not_absolute(name, director_name, deployment_name)
+    def self.add_prefix_if_not_absolute(name, director_name, deployment_name)
       return name if name.start_with?('/')
       return "/#{director_name}/#{deployment_name}/#{name}"
     end
@@ -37,7 +36,7 @@ module Bosh::Director::ConfigServer
     # These are the variable names in the variables section of the manifest
     # @param [String] name the variable name
     # @raise [Error] if name does not meet variable name specs
-    def validate_variable_name(name)
+    def self.validate_variable_name(name)
       unless /^[a-zA-Z0-9_\-\/]+$/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
               "Variable name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
@@ -56,7 +55,7 @@ module Bosh::Director::ConfigServer
 
     # @param [Array] placeholders list of potential absolute placeholders
     # @raise [Error] if a placeholder is not absolute
-    def validate_absolute_names(placeholders)
+    def self.validate_absolute_names(placeholders)
       non_absolute_names = placeholders.inject([]) do |memo, placeholder|
         name = extract_placeholder_name(placeholder)
         memo << name unless name.start_with?('/')
@@ -67,9 +66,7 @@ module Bosh::Director::ConfigServer
       raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + quoted_non_absolute_names.join(', ') unless quoted_non_absolute_names.empty?
     end
 
-    # local utility methods
-
-    def validate_placeholder_name(name)
+    private_class_method def self.validate_placeholder_name(name)
       # Allowing exclamation mark for spiff
       unless /^[a-zA-Z0-9_\-\.!\/]+$/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
@@ -90,7 +87,7 @@ module Bosh::Director::ConfigServer
       validate_bang_character(name)
     end
 
-    def validate_bang_character(name)
+    private_class_method def self.validate_bang_character(name)
       bang_count = name.scan(/!/).count
       if bang_count > 1
         raise Bosh::Director::ConfigServerIncorrectNameSyntax, bang_error_msg(name)
@@ -101,7 +98,7 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def validate_name_dot_syntax(name)
+    private_class_method def self.validate_name_dot_syntax(name)
       if name.include? '/'
         slug_before_last_slash = name[/.*\//]
         if slug_before_last_slash.include? '.'
@@ -128,12 +125,12 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def bang_error_msg(name)
+    private_class_method def self.bang_error_msg(name)
       "Placeholder name '#{name}' contains invalid character '!'. If it is included for spiff, " +
         'it should only be at the beginning of the name. Note: it will not be considered a part of the name'
     end
 
-    def process_name!(name)
+    private_class_method def self.process_name!(name)
       name.gsub(/^!/, '') # remove ! because of spiff
     end
   end
