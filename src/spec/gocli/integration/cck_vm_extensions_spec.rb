@@ -17,13 +17,19 @@ describe 'cck vm extensions', type: :integration do
       manifest['jobs'][0]['stemcell'] = 'default'
 
       cloud_config_hash.delete('resource_pools')
-      cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-      cloud_config_hash['vm_extensions'] = [Bosh::Spec::Deployments.vm_extension]
+      cloud_config_hash['vm_types'] = [{
+        'name' => 'vm-type-name',
+        'cloud_properties' => {'my' => 'vm_type_cloud_property'},
+      }]
+      cloud_config_hash['vm_extensions'] = [{
+        'name' => 'vm-extension-name',
+        'cloud_properties' => {'my' => 'vm_extension_cloud_property'},
+      }]
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest)
 
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm').last
-      expect(create_vm_invocation.inputs['cloud_properties']).to eq({'my' => 'cloud_property'}), 'failed during deploy'
+      expect(create_vm_invocation.inputs['cloud_properties']).to eq({'my' => 'vm_extension_cloud_property'}), 'failed during deploy'
       expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(3)
     end
 
@@ -36,7 +42,7 @@ describe 'cck vm extensions', type: :integration do
 
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm').last
       expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(4)
-      expect(create_vm_invocation.inputs['cloud_properties']).to eq({'my' => 'cloud_property'}), 'failed after resurrection'
+      expect(create_vm_invocation.inputs['cloud_properties']).to eq({'my' => 'vm_extension_cloud_property'}), 'failed after resurrection'
     end
   end
 end
