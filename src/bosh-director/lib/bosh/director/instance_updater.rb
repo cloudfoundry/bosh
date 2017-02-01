@@ -112,6 +112,7 @@ module Bosh::Director
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
         @rendered_templates_persistor.persist(instance_plan)
+        instance.update_variables_set_id
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
@@ -122,7 +123,6 @@ module Bosh::Director
         )
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
-
 
       InstanceUpdater::InstanceState.with_instance_update_and_event_creation(instance.model, parent_id, instance.deployment_model.name, action, &update_procedure)
     end

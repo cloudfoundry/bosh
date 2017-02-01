@@ -3,59 +3,31 @@ require 'spec_helper'
 describe Bosh::Director::Api::VariablesManager do
   subject(:manager) { described_class.new }
 
-  let(:variable_set_id) { 'var_id_32' }
-  let(:success_variable_set_id) { 'var_success_23' }
+  let (:variable_set_id_1) { 'var_id_1' }
+  let (:variable_set_id_2) { 'var_id_2' }
+  let (:variable_set_id_3) { 'var_id_3' }
+  let (:variable_set_id_4) { 'var_id_4' }
+  let (:variable_set_id_5) { 'var_id_5' }
 
-  let(:deployment_id) { 1234 }
-  let(:deployment_name) { 'COOKIE_CUTTER_DEPLOYMENT' }
-  let(:deployment) {
-    Bosh::Director::Models::Deployment.make(
-      id: deployment_id,
-      name: 'COOKIE_CUTTER_DEPLOYMENT',
-      variables_set_id: variable_set_id,
-      successful_variables_set_id: variable_set_id
-    )
-  }
+  let(:deployment1) { Bosh::Director::Models::Deployment.make(id: 1, name: 'cookie_deployment', variables_set_id: variable_set_id_1, successful_variables_set_id: variable_set_id_4) }
+  let(:deployment2) { Bosh::Director::Models::Deployment.make(id: 2, name: 'chocolate_deployment', variables_set_id: variable_set_id_2, successful_variables_set_id: variable_set_id_3) }
+  let(:deployment3) { Bosh::Director::Models::Deployment.make(id: 3, name: 'icecream_deployment', variables_set_id: variable_set_id_5, successful_variables_set_id: variable_set_id_5) }
 
   describe '#get_variables_for_deployment' do
-
-    before do
-      Bosh::Director::Models::VariableMapping.make(id: 1, variable_name: 'var1', variable_id: 'id1', set_id: variable_set_id)
-      Bosh::Director::Models::VariableMapping.make(id: 2, variable_name: 'var2', variable_id: 'id2', set_id: variable_set_id)
-      Bosh::Director::Models::VariableMapping.make(id: 3, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id)
-    end
-
-    context 'when variables_set_id and successful_variables_set_id are the same' do
-      it 'should return unique variables associated with the id' do
-        expected_variables = [
-          {
-            'id' => 'id1',
-            'name' => 'var1'
-          },
-          {
-            'id' => 'id2',
-            'name' => 'var2'
-          },
-          {
-            'id' => 'id3',
-            'name' => 'var3'
-          }
-        ]
-
-        variables = subject.get_variables_for_deployment(deployment)
-        expect(variables).to eq(expected_variables)
-      end
-    end
-
-    context 'when variables_set_id and successful_variables_set_id are NOT the same' do
-
+    context 'when you have multiple deployments' do
       before do
-        Bosh::Director::Models::VariableMapping.make(id: 7, variable_name: 'successVar7', variable_id: 'successId7', set_id: success_variable_set_id)
-        deployment[:successful_variables_set_id] = success_variable_set_id
+        Bosh::Director::Models::VariableMapping.make(id: 1, variable_name: 'var1', variable_id: 'id1', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        Bosh::Director::Models::VariableMapping.make(id: 2, variable_name: 'var2', variable_id: 'id2', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        Bosh::Director::Models::VariableMapping.make(id: 3, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        Bosh::Director::Models::VariableMapping.make(id: 4, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_4, deployment_id: deployment1.id)
+
+        Bosh::Director::Models::VariableMapping.make(id: 5, variable_name: 'var4', variable_id: 'id4', set_id: variable_set_id_2, deployment_id: deployment2.id)
+        Bosh::Director::Models::VariableMapping.make(id: 6, variable_name: 'var5', variable_id: 'id5', set_id: variable_set_id_3, deployment_id: deployment2.id)
+
+        Bosh::Director::Models::VariableMapping.make(id: 7, variable_name: 'var6', variable_id: 'id6', set_id: variable_set_id_5, deployment_id: deployment3.id)
       end
 
-      it 'should return all variables associated with both ids' do
-
+      it 'should only return the unique variables associated with that particular deployment' do
         expected_variables = [
           {
             'id' => 'id1',
@@ -68,42 +40,12 @@ describe Bosh::Director::Api::VariablesManager do
           {
             'id' => 'id3',
             'name' => 'var3'
-          },
-          {
-            'id' => 'successId7',
-            'name' => 'successVar7'
           }
         ]
 
-        variables = subject.get_variables_for_deployment(deployment)
+        variables = subject.get_variables_for_deployment(deployment1)
         expect(variables).to eq(expected_variables)
-      end
-
-      it 'should return only the unique variables associated with both ids' do
-        Bosh::Director::Models::VariableMapping.make(id: 8, variable_name: 'var1', variable_id: 'id1', set_id: success_variable_set_id)
-
-        expected_variables = [
-          {
-            'id' => 'id1',
-            'name' => 'var1'
-          },
-          {
-            'id' => 'id2',
-            'name' => 'var2'
-          },
-          {
-            'id' => 'id3',
-            'name' => 'var3'
-          },
-          {
-            'id' => 'successId7',
-            'name' => 'successVar7'
-          }
-        ]
-
-        variables = subject.get_variables_for_deployment(deployment)
-        expect(variables).to eq(expected_variables)
-        expect(variables.count).to eq(4)
+        expect(variables.count).to eq(3)
       end
     end
   end

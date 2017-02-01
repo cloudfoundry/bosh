@@ -1,0 +1,14 @@
+---
+name: job_with_bad_template
+templates:
+  configurable_template.erb: configurable_template
+
+packages: []
+
+properties:
+  failure_index:
+    description: 'template rendering will fail for specified instance index'
+    default: -1
+  random_property:
+    description: 'template rendering will fail for specified instance index'
+    default: 'random'

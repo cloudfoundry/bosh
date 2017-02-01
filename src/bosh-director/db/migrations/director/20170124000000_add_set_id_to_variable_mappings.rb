@@ -9,6 +9,7 @@ Sequel.migration do
       String :variable_id, :null => false, :default => ''
       String :variable_name, :null => false, :default => ''
       String :set_id, :null => false, :default => ''
+      foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
       index [:variable_name, :set_id], :unique => true, :name => :variables_set
     end
 

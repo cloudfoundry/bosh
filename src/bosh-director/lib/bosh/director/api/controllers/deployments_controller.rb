@@ -367,6 +367,7 @@ module Bosh::Director
 
         options['cloud_config'] = cloud_config
         options['runtime_config'] = runtime_config
+        options['deploy'] = true
 
         deployment_name = deployment['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false

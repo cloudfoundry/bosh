@@ -545,6 +545,44 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
+  describe '#needed_instance_plans_for_variable_resolution' do
+
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'release' => 'appcloud',
+        'instances' => 1,
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => {},
+        'template' => %w(foo bar),
+      }
+    end
+
+    it 'should NOT return instance plans for ignored and detached instances' do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
+
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1.bind_new_instance_model
+      instance1.mark_as_bootstrap
+      instance2 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2.bind_new_instance_model
+
+      instance2.model.update(ignore: true)
+
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
+      instance_group.add_instance_plans([instance_plan1, instance_plan2])
+
+      needed_instance_plans_for_variable_resolution = [instance_plan1]
+      expect(instance_group.needed_instance_plans_for_variable_resolution).to eq(needed_instance_plans_for_variable_resolution)
+    end
+  end
+
   describe '#add_job' do
     subject { described_class.new(logger) }
 

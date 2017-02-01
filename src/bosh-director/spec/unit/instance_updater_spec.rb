@@ -45,6 +45,44 @@ module Bosh::Director
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
     end
 
+    context 'for any state' do
+      let (:disk_manager) { instance_double(DiskManager) }
+      let (:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+
+      before do
+        allow(DiskManager).to receive(:new).and_return(disk_manager)
+        allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+
+        allow(state_applier).to receive(:apply)
+        allow(instance_plan).to receive(:changes).and_return([:state])
+        allow(instance_plan).to receive(:already_detached?).and_return(true)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(updater).to receive(:needs_recreate?).and_return(false)
+        allow(disk_manager).to receive(:update_persistent_disk)
+        allow(instance).to receive(:update_instance_settings)
+        allow(rendered_templates_persistor).to receive(:persist)
+        allow(job).to receive(:update)
+      end
+
+      context 'when rendered templates persist fails' do
+        before do
+          allow(rendered_templates_persistor).to receive(:persist).and_raise('random runtime error')
+        end
+
+        it 'does NOT update the variable set id for the instance' do
+          expect(instance).to_not receive(:update_variables_set_id)
+          expect {
+            updater.update(instance_plan)
+          }.to raise_error
+        end
+      end
+
+      it 'updates the variable_set_id on the instance' do
+        expect(instance).to receive(:update_variables_set_id)
+        updater.update(instance_plan)
+      end
+    end
+
     context 'when stopping instances' do
       before do
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)

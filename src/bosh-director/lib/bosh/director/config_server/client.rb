@@ -104,15 +104,14 @@ module Bosh::Director::ConfigServer
           @director_name,
           deployment_name
         )
-
         begin
           name_root = get_name_root(name)
           mapping = Bosh::Director::Models::VariableMapping[set_id: set_id, variable_name: name_root]
-
           if mapping.nil?
             var = get_variable_for_name(name)
 
-            if save_mapping(name_root, set_id, var)
+            deployment = @deployment_lookup.by_name(deployment_name)
+            if save_mapping(name_root, set_id, var, deployment.id)
               config_values[variable] = get_value_from_variable(name, var)
             else
               mapping = Bosh::Director::Models::VariableMapping[set_id: set_id, variable_name: name_root]
@@ -203,10 +202,10 @@ module Bosh::Director::ConfigServer
       false
     end
 
-    def save_mapping(name_root, set_id, var)
+    def save_mapping(name_root, set_id, var, deployment_id)
       begin
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless var.has_key?('id')
-        Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: var['id'] )
+        Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: var['id'], deployment_id: deployment_id )
       rescue Sequel::UniqueConstraintViolation
         return false
       end
@@ -223,21 +222,28 @@ module Bosh::Director::ConfigServer
       }
 
       response = @config_server_http_client.post(request_body)
-
       unless response.kind_of? Net::HTTPSuccess
         @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{response.message}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
       end
 
-      name_root = get_name_root(name)
+      response_body = nil
       begin
-        set_id = @deployment_lookup.by_name(deployment_name).variables_set_id
         response_body = JSON.parse(response.body)
-        Bosh::Director::Models::VariableMapping.create(set_id: set_id, variable_name: name_root, variable_id: response_body['id'])
-        response_body
       rescue JSON::ParserError
-        raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{name_root}' with type '#{type}'"
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'"
       end
+
+      deployment = @deployment_lookup.by_name(deployment_name)
+
+      Bosh::Director::Models::VariableMapping.create(
+        set_id: deployment.variables_set_id,
+        variable_name: get_name_root(name),
+        variable_id: response_body['id'],
+        deployment_id: deployment.id
+      )
+
+      response_body
     end
 
     def generate_certificate(name, deployment_name, options)

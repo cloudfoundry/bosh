@@ -36,6 +36,7 @@ describe 'create release', type: :integration do
           './jobs/job_that_modifies_properties.tgz',
           './jobs/transitive_deps.tgz',
           './jobs/id_job.tgz',
+          './jobs/job_with_bad_template.tgz',
           './packages/a.tgz',
           './packages/b.tgz',
           './packages/bar.tgz',
@@ -158,7 +159,8 @@ describe 'create release', type: :integration do
               job_desc('job_with_property_types'),
               job_desc('job_with_post_start_script'),
               job_desc('transitive_deps'),
-              job_desc('id_job')
+              job_desc('id_job'),
+              job_desc('job_with_bad_template')
             ),
             'license' => license_desc,
 

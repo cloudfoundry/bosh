@@ -409,5 +409,18 @@ module Bosh::Director::DeploymentPlan
         expect(instance.stemcell_cid).to eq('test-cid')
       end
     end
+
+    describe '#update_variables_set_id' do
+      it 'updates the instance model variable_set_id' do
+        deployment.variables_set_id = 'fake-set-id'
+        instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+        instance.bind_existing_instance_model(instance_model)
+
+        instance.update_variables_set_id
+
+        instance_model = Bosh::Director::Models::Instance.all.first
+        expect(instance_model.variables_set_id).to eq('fake-set-id')
+      end
+    end
   end
 end

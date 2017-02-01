@@ -5,6 +5,7 @@ module Bosh::Director::ConfigServer
     subject(:client) { EnabledClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
+    let(:deployment_attrs) { { id: 1, name: deployment_name, variables_set_id: variables_set_id } }
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 'var_set_id' }
     let(:success_post_response) {
@@ -26,11 +27,7 @@ module Bosh::Director::ConfigServer
     end
 
     before do
-      attr = {
-        name: deployment_name,
-        variables_set_id: variables_set_id,
-      }
-      Bosh::Director::Models::Deployment.make(attr)
+      Bosh::Director::Models::Deployment.make(deployment_attrs)
 
       allow(logger).to receive(:info)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
@@ -110,6 +107,7 @@ module Bosh::Director::ConfigServer
               set_id: variables_set_id,
               variable_name: variable_name,
               variable_id: variable_id,
+              deployment_id: deployment_attrs[:id],
             }
             Bosh::Director::Models::VariableMapping.create(attr)
           end
@@ -717,7 +715,12 @@ module Bosh::Director::ConfigServer
                   it 'should save generated variable to variable_mappings table' do
                     allow(http_client).to receive(:post).and_return(success_post_response)
 
-                    expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(set_id: variables_set_id, variable_name: prepend_namespace('my_smurf'), variable_id: 'some_id1')
+                    expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
+                      set_id: variables_set_id,
+                      variable_name: prepend_namespace('my_smurf'),
+                      variable_id: 'some_id1',
+                      deployment_id: deployment_attrs[:id]
+                    )
 
                     client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
                   end
@@ -883,17 +886,31 @@ module Bosh::Director::ConfigServer
 
           it 'should save generated variables to variable_mappings table' do
             allow(http_client).to receive(:post).and_return(
-              generate_success_response(
-                { "id": "some_id1" }.to_json),
-              generate_success_response(
-                { "id": "some_id2" }.to_json),
-              generate_success_response(
-                { "id": "some_id3" }.to_json),
+              generate_success_response({ "id": "some_id1" }.to_json),
+              generate_success_response({ "id": "some_id2" }.to_json),
+              generate_success_response({ "id": "some_id3" }.to_json),
             )
 
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(set_id: variables_set_id, variable_name: prepend_namespace('placeholder_a'), variable_id: 'some_id1')
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(set_id: variables_set_id, variable_name: prepend_namespace('placeholder_b'), variable_id: 'some_id2')
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(set_id: variables_set_id, variable_name: '/placeholder_c', variable_id: 'some_id3')
+            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
+              set_id: variables_set_id,
+              variable_name: prepend_namespace('placeholder_a'),
+              variable_id: 'some_id1',
+              deployment_id: deployment_attrs[:id]
+            )
+
+            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
+              set_id: variables_set_id,
+              variable_name: prepend_namespace('placeholder_b'),
+              variable_id: 'some_id2',
+              deployment_id: deployment_attrs[:id]
+            )
+
+            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
+              set_id: variables_set_id,
+              variable_name: '/placeholder_c',
+              variable_id: 'some_id3',
+              deployment_id: deployment_attrs[:id]
+            )
 
             client.generate_values(variables_obj, deployment_name)
           end

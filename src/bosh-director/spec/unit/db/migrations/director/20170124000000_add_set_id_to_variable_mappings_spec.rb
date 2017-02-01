@@ -7,6 +7,7 @@ module Bosh::Director
     let(:migration_file) { '20170124000000_add_set_id_to_variable_mappings.rb' }
     let(:set_id) { 'abc123' }
     let(:deployment_name) {'fake-deployment-name'}
+    let(:deployment) { {id: 1, name: deployment_name, manifest: '{}'} }
 
     before {
       allow(SecureRandom).to receive(:uuid).and_return(set_id)
@@ -34,10 +35,21 @@ module Bosh::Director
         expect(db[:instances].count).to eq(1)
       end
 
+      it 'has constraint ensuring variable_mappings entry is deleted when parent deployment is deleted' do
+        db[:variable_mappings] << {id: 5, variable_id: '15', variable_name: 'variable_5', set_id: set_id, deployment_id: deployment[:id]}
+        db[:variable_mappings] << {id: 6, variable_id: '16', variable_name: 'variable_6', set_id: set_id, deployment_id: deployment[:id]}
+        expect(db[:variable_mappings].all.count).to eq(2)
+
+        db[:instances].delete
+        db[:vms].delete
+        db[:deployments].delete
+        expect(db[:variable_mappings].all.count).to eq(0)
+      end
+
       it 'there is a unique constraint on set_id+variable_name' do
-        db[:variable_mappings] << {id: 5, variable_id: '15', variable_name: 'variable_5', set_id: set_id}
+        db[:variable_mappings] << {id: 5, variable_id: '15', variable_name: 'variable_5', set_id: set_id, deployment_id: deployment[:id]}
         expect{
-          db[:variable_mappings] << {id: 6, variable_id: '16', variable_name: 'variable_5', set_id: set_id}
+          db[:variable_mappings] << {id: 6, variable_id: '16', variable_name: 'variable_5', set_id: set_id, deployment_id: deployment[:id]}
         }.to raise_error(Sequel::UniqueConstraintViolation)
       end
     end

@@ -251,6 +251,10 @@ module Bosh::Director
         @model.update(availability_zone: availability_zone_name)
       end
 
+      def update_variables_set_id
+        @model.update(variables_set_id: @deployment_model.variables_set_id)
+      end
+
       def state
         case @virtual_state
           when 'recreate'

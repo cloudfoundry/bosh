@@ -39,6 +39,21 @@ describe 'cli: variables', type: :integration do
     "/#{director_name}/#{deployment_name}/#{key}"
   end
 
+  def assert_count_variable_id_and_name(count_variable_ids, count_variable_names)
+    variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+
+    variable_ids = variables.map { |obj|
+      obj["ID"]
+    }
+    expect(variable_ids.uniq.length).to eq(count_variable_ids)
+
+    variable_names = variables.map { |obj|
+      obj["Name"]
+    }
+    expect(variable_names.uniq.length).to eq(count_variable_names)
+    variable_names
+  end
+
   it 'should return list of placeholder variables' do
     config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_group')
     config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
@@ -89,5 +104,82 @@ describe 'cli: variables', type: :integration do
 
     expect(variable_names).to include("/release_name")
     expect(variable_names).to include("/gargamel_colour")
+  end
+
+  context 'when dealing with multiple deploys' do
+    let(:manifest_hash) do
+      Bosh::Spec::Deployments.test_release_manifest.merge(
+        {
+          'releases'=>[{'name'=>'bosh-release', 'version'=>'0.1-dev'}],
+          'jobs' => [
+            Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'job1',
+              templates: [
+                {'name' => 'job_with_bad_template',
+                 'properties' => {
+                   'failure_index' => -1,
+                   'random_property' => '((random_property))'
+                 }
+                }
+              ],
+              instances: 1
+            ),
+            Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'job2',
+              templates: [
+                {'name' => 'job_with_bad_template',
+                 'properties' => {
+                   'failure_index' => -1,
+                   'random_property' => '((other_property))'
+                 }
+                }
+              ],
+              instances: 2
+            )
+          ]
+        })
+    end
+
+    context 'when you have ignored VMs' do
+      it 'should not fetch new values for the variable on that VM' do
+        config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop_now')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+        instance = director.instance('job1', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+        assert_count_variable_id_and_name(2, 2)
+
+        bosh_runner.run("ignore #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+
+        config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop2')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+        assert_count_variable_id_and_name(3, 2)
+      end
+    end
+
+    context 'when you have hard stopped VMs' do
+      it 'should not fetch new values for the variable on that VM' do
+        config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop_now')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+        instance = director.instance('job1', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+        assert_count_variable_id_and_name(2, 2)
+
+        bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+
+        config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop2')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+        assert_count_variable_id_and_name(3, 2)
+      end
+    end
   end
 end

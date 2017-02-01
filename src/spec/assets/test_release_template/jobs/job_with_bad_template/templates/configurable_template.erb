@@ -1,0 +1,6 @@
+echo "index=<%= spec.index %>"
+
+<% if p('failure_index') == spec.index %>
+    <% raise 'forced failure' %>
+<% end %>
+echo "blah=<%= p('random_property') %>"

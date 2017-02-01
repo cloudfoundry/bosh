@@ -49,7 +49,7 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.raw_manifest}")
         end
 
-        if !@options.key?('job_states')
+        if @options['deploy']
           deployment_repo = DeploymentPlan::DeploymentRepo.new
           deployment_repo.update_variable_set(manifest_hash['name'])
         end
@@ -174,7 +174,7 @@ module Bosh::Director
         job_renderer = JobRenderer.create
         instance_groups.each do |instance_group|
           begin
-            job_renderer.render_job_instances(instance_group.needed_instance_plans)
+            job_renderer.render_job_instances(instance_group.needed_instance_plans_for_variable_resolution)
           rescue Exception => e
             errors.push e
           end

@@ -73,23 +73,23 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:instance_models).and_return([])
           allow(planner).to receive(:compile_packages)
           allow(planner).to receive(:instance_groups).and_return([deployment_job])
-          allow(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
+          allow(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans_for_variable_resolution)
           allow(notifier).to receive(:send_start_event)
           allow(notifier).to receive(:send_end_event).ordered
         end
 
-        context "when options hash contains 'job_states' key" do
-          let (:options) { {'job_states' => {}} }
+        context "when options hash contains 'deploy' key" do
+          let (:options) { {'deploy' => true } }
 
-          it 'should NOT create a new variable set for the deployment' do
-            expect(deployment_repo).to_not receive(:update_variable_set)
+          it 'should create a new variable set for the deployment' do
+            expect(deployment_repo).to receive(:update_variable_set)
             job.perform
           end
         end
 
-        context "when options hash does NOT contain 'job_states' information" do
-          it 'should create a new variable set for the deployment' do
-            expect(deployment_repo).to receive(:update_variable_set)
+        context "when options hash does NOT contain 'deploy'" do
+          it 'should NOT create a new variable set for the deployment' do
+            expect(deployment_repo).to_not receive(:update_variable_set)
             job.perform
           end
         end
@@ -110,7 +110,7 @@ module Bosh::Director::Jobs
 
         it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
           expect(planner).to receive(:bind_models)
-          expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
+          expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans_for_variable_resolution)
           expect(planner).to receive(:compile_packages)
           expect(job).to_not receive(:run_post_deploys)
 

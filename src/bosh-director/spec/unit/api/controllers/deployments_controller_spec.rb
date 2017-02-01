@@ -1282,13 +1282,13 @@ module Bosh::Director
           let(:successful_variables_set_id) { 'some-successful-id' }
           before { basic_authorize 'admin', 'admin' }
 
-          it 'returns a list of placeholder variable id and names' do
+          it 'returns a list of variable id and names' do
             deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({'foo' => '((foo))', 'bar' => '((bar))'}), variables_set_id: set_id, successful_variables_set_id: successful_variables_set_id)
 
-            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id)
-            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: set_id)
-            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: successful_variables_set_id)
-            Models::VariableMapping.create(variable_id: '2', variable_name: 'baz', set_id: successful_variables_set_id)
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id, deployment_id: deployment.id)
+            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: set_id, deployment_id: deployment.id)
+            Models::VariableMapping.create(variable_id: '1', variable_name: 'bar', set_id: successful_variables_set_id, deployment_id: deployment.id)
+            Models::VariableMapping.create(variable_id: '2', variable_name: 'baz', set_id: successful_variables_set_id, deployment_id: deployment.id)
 
             get '/test_deployment/variables'
             expect(last_response.status).to eq(200)
@@ -1300,11 +1300,11 @@ module Bosh::Director
             expect(vars[2]).to eq('id' => '2', 'name' => 'baz')
           end
 
-          it 'does not return placeholder variables for other deployments' do
-            Models::Deployment.create(name: 'test_deployment1', manifest: YAML.dump({'foo' => '((foo))'}), variables_set_id: set_id, successful_variables_set_id: successful_variables_set_id)
-            Models::Deployment.create(name: 'test_deployment2', manifest: YAML.dump({'bar' => '((bar))'}), variables_set_id: 'blah', successful_variables_set_id: 'pow')
-            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id)
-            Models::VariableMapping.create(variable_id: '0', variable_name: 'bar', set_id: 'blah')
+          it 'does not return variables for other deployments' do
+            deployment1 = Models::Deployment.create(name: 'test_deployment1', manifest: YAML.dump({'foo' => '((foo))'}), variables_set_id: set_id, successful_variables_set_id: successful_variables_set_id)
+            deployment2 = Models::Deployment.create(name: 'test_deployment2', manifest: YAML.dump({'bar' => '((bar))'}), variables_set_id: 'blah', successful_variables_set_id: 'pow')
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'foo', set_id: set_id, deployment_id: deployment1.id)
+            Models::VariableMapping.create(variable_id: '0', variable_name: 'bar', set_id: 'blah', deployment_id: deployment2.id)
 
             get '/test_deployment1/variables'
             expect(last_response.status).to eq(200)
