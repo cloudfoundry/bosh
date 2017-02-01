@@ -15,11 +15,13 @@ describe Bosh::Director::Api::VariablesManager do
 
   describe '#get_variables_for_deployment' do
     context 'when you have multiple deployments' do
+      let(:deployment1_variables) { [] }
+
       before do
-        Bosh::Director::Models::VariableMapping.make(id: 1, variable_name: 'var1', variable_id: 'id1', set_id: variable_set_id_1, deployment_id: deployment1.id)
-        Bosh::Director::Models::VariableMapping.make(id: 2, variable_name: 'var2', variable_id: 'id2', set_id: variable_set_id_1, deployment_id: deployment1.id)
-        Bosh::Director::Models::VariableMapping.make(id: 3, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_1, deployment_id: deployment1.id)
-        Bosh::Director::Models::VariableMapping.make(id: 4, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_4, deployment_id: deployment1.id)
+        deployment1_variables << Bosh::Director::Models::VariableMapping.make(id: 1, variable_name: 'var1', variable_id: 'id1', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        deployment1_variables << Bosh::Director::Models::VariableMapping.make(id: 2, variable_name: 'var2', variable_id: 'id2', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        deployment1_variables << Bosh::Director::Models::VariableMapping.make(id: 3, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_1, deployment_id: deployment1.id)
+        deployment1_variables << Bosh::Director::Models::VariableMapping.make(id: 4, variable_name: 'var3', variable_id: 'id3', set_id: variable_set_id_4, deployment_id: deployment1.id)
 
         Bosh::Director::Models::VariableMapping.make(id: 5, variable_name: 'var4', variable_id: 'id4', set_id: variable_set_id_2, deployment_id: deployment2.id)
         Bosh::Director::Models::VariableMapping.make(id: 6, variable_name: 'var5', variable_id: 'id5', set_id: variable_set_id_3, deployment_id: deployment2.id)
@@ -28,24 +30,9 @@ describe Bosh::Director::Api::VariablesManager do
       end
 
       it 'should only return the unique variables associated with that particular deployment' do
-        expected_variables = [
-          {
-            'id' => 'id1',
-            'name' => 'var1'
-          },
-          {
-            'id' => 'id2',
-            'name' => 'var2'
-          },
-          {
-            'id' => 'id3',
-            'name' => 'var3'
-          }
-        ]
-
         variables = subject.get_variables_for_deployment(deployment1)
-        expect(variables).to eq(expected_variables)
-        expect(variables.count).to eq(3)
+        expect(variables).to match_array(deployment1_variables)
+        expect(variables.count).to eq(4)
       end
     end
   end

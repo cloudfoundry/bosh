@@ -43,18 +43,18 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj["ID"]
+      obj['ID']
     }
     expect(variable_ids.uniq.length).to eq(count_variable_ids)
 
     variable_names = variables.map { |obj|
-      obj["Name"]
+      obj['Name']
     }
     expect(variable_names.uniq.length).to eq(count_variable_names)
     variable_names
   end
 
-  it 'should return list of placeholder variables' do
+  it 'should return list of variables' do
     config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_group')
     config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
 
@@ -63,12 +63,12 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj["ID"]
+      obj['ID']
     }
     expect(variable_ids.uniq.length).to eq(4)
 
     variable_names = variables.map { |obj|
-      obj["Name"]
+      obj['Name']
     }
     expect(variable_names.uniq.length).to eq(4)
 
@@ -78,7 +78,7 @@ describe 'cli: variables', type: :integration do
     expect(variable_names).to include("/phone_password")
   end
 
-  it 'should return list of placeholder variables for the runtime_config' do
+  it 'should return list of variables for the runtime_config' do
     runtime_config = Bosh::Spec::Deployments.runtime_config_with_job_placeholders
     upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
@@ -93,12 +93,12 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj["ID"]
+      obj['ID']
     }
     expect(variable_ids.uniq.length).to eq(6)
 
     variable_names = variables.map { |obj|
-      obj["Name"]
+      obj['Name']
     }
     expect(variable_names.uniq.length).to eq(6)
 
@@ -168,7 +168,7 @@ describe 'cli: variables', type: :integration do
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-        instance = director.instance('job1', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+        instance = director.instance('job1', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
         assert_count_variable_id_and_name(2, 2)
 
         bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)

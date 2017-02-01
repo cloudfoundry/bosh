@@ -48,6 +48,7 @@ module Bosh::Director
         @instance_manager = Api::InstanceManager.new
         @deployments_repo = DeploymentPlan::DeploymentRepo.new
         @instance_ignore_manager = Api::InstanceIgnoreManager.new
+        @variables_manager = Api::VariablesManager.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -299,8 +300,15 @@ module Bosh::Director
       end
 
       get '/:deployment/variables' do
-        mappings = Api::VariablesManager.new.get_variables_for_deployment(deployment)
-        JSON.generate(mappings)
+        variable_mappings = @variables_manager.get_variables_for_deployment(deployment)
+        result = variable_mappings.map { |variable|
+          {
+            'id' => variable.variable_id,
+            'name' => variable.variable_name,
+          }
+        }.uniq
+
+        json_encode(result)
       end
 
       # Cloud check
@@ -500,15 +508,6 @@ module Bosh::Director
             'id' => instance.uuid,
             'az' => instance.availability_zone,
         }
-      end
-
-      def create_variables_response(variables)
-        variables.map do |variable|
-        {
-          'id' => variable.variable_id,
-          'name' => variable.variable_name
-        }
-        end
       end
     end
   end
