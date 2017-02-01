@@ -116,15 +116,20 @@ module Bosh::Director
       }
       expect(db[:stemcells].where(sha1: a_512_len_str).count).to eq(1)
 
-      db[:local_dns_blobs] << {
-        sha1: 'c' * 512,
-        blobstore_id: 'blob_id',
-        created_at: Time.now
-      }
-      expect(db[:local_dns_blobs].where(sha1: 'c' * 512).count).to eq(1)
+      expect {
+        db[:local_dns_blobs] << {
+          sha1: 'c' * 512,
+          blobstore_id: 'blob_id',
+          created_at: Time.now
+        }
+      }.to raise_error(Sequel::UniqueConstraintViolation)
 
       db.tables.each do |t|
-        expect(db.indexes(t)).to eq(indexes_before[t])
+        if t == :local_dns_blobs
+          expect(db.indexes(t)).to eq(:blobstore_id_idx => {:columns=>[:blobstore_id], :unique=>true})
+        else
+          expect(db.indexes(t)).to eq(indexes_before[t])
+        end
       end
     end
   end

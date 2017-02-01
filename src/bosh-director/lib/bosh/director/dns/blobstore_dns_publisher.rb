@@ -48,7 +48,7 @@ module Bosh::Director
           raise e unless (error_message.include?('unique') || error_message.include?('duplicate'))
         end
       end
-      Models::LocalDnsBlob.where('id != ?', last_record.id).delete
+      Models::LocalDnsBlob.where('id < ?', last_record.id).delete
     end
   end
 end
