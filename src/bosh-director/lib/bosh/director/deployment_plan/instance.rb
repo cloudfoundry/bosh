@@ -34,8 +34,7 @@ module Bosh::Director
           job.name,
           index,
           virtual_state,
-          job.vm_type,
-          job.vm_extensions,
+          MergedCloudProperties.new(availability_zone, job.vm_type, job.vm_extensions).get,
           job.stemcell,
           job.env,
           job.compilation?,
@@ -50,8 +49,7 @@ module Bosh::Director
         job_name,
         index,
         virtual_state,
-        vm_type,
-        vm_extensions,
+        merged_cloud_properties,
         stemcell,
         env,
         compilation,
@@ -65,11 +63,10 @@ module Bosh::Director
         @logger = logger
         @deployment_model = deployment_model
         @job_name = job_name
-        @vm_type = vm_type
-        @vm_extensions = vm_extensions
         @stemcell = stemcell
         @env = env
         @compilation = compilation
+        @merged_cloud_properties = merged_cloud_properties
 
         @configuration_hash = nil
         @template_hashes = nil
@@ -121,14 +118,6 @@ module Bosh::Director
             bootstrap: false
           })
         @uuid = @model.uuid
-      end
-
-      def vm_type
-        @vm_type
-      end
-
-      def vm_extensions
-        @vm_extensions
       end
 
       def stemcell
@@ -246,8 +235,9 @@ module Bosh::Director
         @model.update(bootstrap: false)
       end
 
-      def assign_availability_zone(availability_zone)
+      def assign_availability_zone_and_update_cloud_properties(availability_zone, vm_type, vm_extensions)
         @availability_zone = availability_zone
+        @merged_cloud_properties = MergedCloudProperties.new(availability_zone, vm_type, vm_extensions).get
         @model.update(availability_zone: availability_zone_name)
       end
 
@@ -284,19 +274,7 @@ module Bosh::Director
       end
 
       def cloud_properties
-        merged_cloud_properties = nil
-
-        if !@availability_zone.nil?
-          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, @availability_zone.cloud_properties)
-        end
-
-        merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_type.cloud_properties)
-
-        Array(vm_extensions).each do |vm_extension|
-          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_extension.cloud_properties)
-        end
-
-        merged_cloud_properties
+        @merged_cloud_properties
       end
 
       def availability_zone_name
@@ -316,11 +294,6 @@ module Bosh::Director
       end
 
       private
-
-      def merge_cloud_properties(merged_cloud_properties, new_cloud_properties)
-        merged_cloud_properties.nil? ? new_cloud_properties : merged_cloud_properties.merge(new_cloud_properties)
-      end
-
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model

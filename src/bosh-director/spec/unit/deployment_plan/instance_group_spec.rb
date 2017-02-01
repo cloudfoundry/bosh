@@ -15,7 +15,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       releases: {}
     )
   end
-  let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
+  let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({'name' => 'dea'}) }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
 

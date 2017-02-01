@@ -116,14 +116,12 @@ module Bosh::Director
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone,
                                                                instance_model.cloud_properties_hash,
                                                                nil)
-      vm_extensions = DeploymentPlan::VmExtension.new({'name' => '', 'cloud_properties' => instance_model.cloud_properties_hash})
 
       instance_from_model = DeploymentPlan::Instance.new(
         instance_model.job,
         instance_model.index,
         instance_model.state,
-        vm_type,
-        vm_extensions,
+        instance_model.cloud_properties_hash,
         stemcell,
         env,
         false,

@@ -11,7 +11,8 @@ module Bosh::Director::DeploymentPlan
       job_state = job.state_for_instance(existing_instance_model) || existing_instance_model.state
       @logger.debug("Job instance states: #{job.instance_states}, found: #{job.state_for_instance(existing_instance_model)}, state: #{job_state}")
 
-      instance = Instance.create_from_job(job, index, job_state, deployment.model, existing_instance_state, existing_instance_model.availability_zone, @logger)
+      availability_zone = AvailabilityZone.new(existing_instance_model.availability_zone, {})
+      instance = Instance.create_from_job(job, index, job_state, deployment.model, existing_instance_state, availability_zone, @logger)
       instance.bind_existing_instance_model(existing_instance_model)
 
       existing_network_reservations = @network_reservation_repository.fetch_network_reservations(existing_instance_model, existing_instance_state)
@@ -33,7 +34,9 @@ module Bosh::Director::DeploymentPlan
       else
         stemcell = nil
       end
-      instance = Instance.new(existing_instance_model.job, existing_instance_model.index, existing_instance_model.state, vm_type, nil, stemcell, env, existing_instance_model.compilation, existing_instance_model.deployment, existing_instance_state, existing_instance_model.availability_zone, @logger)
+      availability_zone = AvailabilityZone.new(existing_instance_model.availability_zone, {})
+      merged_cloud_properties = MergedCloudProperties.new(availability_zone, vm_type, nil).get
+      instance = Instance.new(existing_instance_model.job, existing_instance_model.index, existing_instance_model.state, merged_cloud_properties, stemcell, env, existing_instance_model.compilation, existing_instance_model.deployment, existing_instance_state, availability_zone, @logger)
       instance.bind_existing_instance_model(existing_instance_model)
 
       existing_network_reservations = @network_reservation_repository.fetch_network_reservations(existing_instance_model, existing_instance_state)
