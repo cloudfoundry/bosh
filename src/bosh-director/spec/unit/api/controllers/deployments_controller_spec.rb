@@ -648,11 +648,9 @@ module Bosh::Director
         describe 'getting deployment vms info' do
           before { basic_authorize 'reader', 'reader' }
 
-          it 'returns a list of instances with vms (vm_cid != nil)' do
-            deployment = Models::Deployment.
-                create(:name => 'test_deployment',
-                       :manifest => YAML.dump({'foo' => 'bar'}))
+          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
+          it 'returns a list of instances with vms (vm_cid != nil)' do
             15.times do |i|
               instance_params = {
                 'deployment_id' => deployment.id,
@@ -683,7 +681,90 @@ module Bosh::Director
                 'cid' => "cid-#{i}",
                 'id' => "instance-#{i}",
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                'ips' => [],
               )
+            end
+          end
+
+          context 'ips' do
+            it 'returns instance ip addresses' do
+              15.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
+                }
+
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
+                instance = Models::Instance.create(instance_params)
+
+                ip_addresses_params  = {
+                  'instance_id' => instance.id,
+                  'task_id' => "#{i}",
+                  'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                }
+                Models::IpAddress.create(ip_addresses_params)
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(8)
+
+              body.each_with_index do |instance_with_vm, i|
+                expect(instance_with_vm).to eq(
+                  'agent_id' => "agent-#{i}",
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'cid' => "cid-#{i}",
+                  'id' => "instance-#{i}",
+                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                  'ips' => ["1.2.3.#{i}"],
+                )
+              end
+            end
+
+            it 'returns network spec ip addresses' do
+              15.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
+                  'spec_json' => "{ \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
+                }
+
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
+                Models::Instance.create(instance_params)
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(8)
+
+              body.each_with_index do |instance_with_vm, i|
+                expect(instance_with_vm).to eq(
+                  'agent_id' => "agent-#{i}",
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'cid' => "cid-#{i}",
+                  'id' => "instance-#{i}",
+                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                  'ips' => ["1.2.3.#{i}"],
+                )
+              end
             end
           end
         end
@@ -744,8 +825,92 @@ module Bosh::Director
                                         'index' => i,
                                         'id' => "instance-#{i}",
                                         'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                        'ips' => [],
                                         'expects_vm' => true
                                     )
+              end
+            end
+
+            context 'ips' do
+              it 'returns instance ip addresses' do
+                15.times do |i|
+                  instance_params = {
+                      'deployment_id' => deployment.id,
+                      'job' => "job-#{i}",
+                      'index' => i,
+                      'state' => 'started',
+                      'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
+                      'spec_json' => '{ "lifecycle": "service" }',
+                  }
+
+                  instance_params['availability_zone'] = "az0" if i == 0
+                  instance_params['availability_zone'] = "az1" if i == 1
+                  instance = Models::Instance.create(instance_params)
+
+                  ip_addresses_params  = {
+                    'instance_id' => instance.id,
+                    'task_id' => "#{i}",
+                    'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                  }
+                  Models::IpAddress.create(ip_addresses_params)
+                end
+
+                get '/test_deployment/instances'
+
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+                expect(body.size).to eq(15)
+
+                body.each_with_index do |instance, i|
+                  expect(instance).to eq(
+                                          'agent_id' => "agent-#{i}",
+                                          'cid' => nil,
+                                          'job' => "job-#{i}",
+                                          'index' => i,
+                                          'id' => "instance-#{i}",
+                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'ips' => ["1.2.3.#{i}"],
+                                          'expects_vm' => true
+                                      )
+                end
+              end
+
+              it 'returns network spec ip addresses' do
+                15.times do |i|
+                  instance_params = {
+                      'deployment_id' => deployment.id,
+                      'job' => "job-#{i}",
+                      'index' => i,
+                      'state' => 'started',
+                      'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
+                      'spec_json' => "{ \"lifecycle\": \"service\", \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
+                  }
+
+                  instance_params['availability_zone'] = "az0" if i == 0
+                  instance_params['availability_zone'] = "az1" if i == 1
+                  Models::Instance.create(instance_params)
+                end
+
+                get '/test_deployment/instances'
+
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+                expect(body.size).to eq(15)
+
+                body.each_with_index do |instance, i|
+                  expect(instance).to eq(
+                                          'agent_id' => "agent-#{i}",
+                                          'cid' => nil,
+                                          'job' => "job-#{i}",
+                                          'index' => i,
+                                          'id' => "instance-#{i}",
+                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'ips' => ["1.2.3.#{i}"],
+                                          'expects_vm' => true
+                                      )
+                end
               end
             end
           end
@@ -784,6 +949,7 @@ module Bosh::Director
                                          'index' => 1,
                                          'id' => 'instance-1',
                                          'az' => nil,
+                                         'ips' => [],
                                          'expects_vm' => true
                                      )
                 end
@@ -806,6 +972,7 @@ module Bosh::Director
                                          'index' => 1,
                                          'id' => 'instance-1',
                                          'az' => nil,
+                                         'ips' => [],
                                          'expects_vm' => false
                                      )
                 end
@@ -830,6 +997,7 @@ module Bosh::Director
                                        'index' => 1,
                                        'id' => 'instance-1',
                                        'az' => nil,
+                                       'ips' => [],
                                        'expects_vm' => false
                                    )
               end

@@ -507,8 +507,17 @@ module Bosh::Director
             'index' => instance.index,
             'id' => instance.uuid,
             'az' => instance.availability_zone,
+            'ips' => ips(instance),
         }
       end
+
+      def ips(instance)
+        result = instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+        if result.empty? && instance.spec && instance.spec['networks']
+          result = instance.spec['networks'].map {|_, network| network['ip']}
+        end
+        result
+       end
     end
   end
 end
