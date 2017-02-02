@@ -11,7 +11,8 @@ module Bosh::Director::DeploymentPlan
       job_state = job.state_for_instance(existing_instance_model) || existing_instance_model.state
       @logger.debug("Job instance states: #{job.instance_states}, found: #{job.state_for_instance(existing_instance_model)}, state: #{job_state}")
 
-      instance = Instance.create_from_job(job, index, job_state, deployment.model, existing_instance_state, existing_instance_model.availability_zone, @logger)
+      availability_zone = AvailabilityZone.new(existing_instance_model.availability_zone, {})
+      instance = Instance.create_from_job(job, index, job_state, deployment.model, existing_instance_state, availability_zone, @logger)
       instance.bind_existing_instance_model(existing_instance_model)
 
       existing_network_reservations = @network_reservation_repository.fetch_network_reservations(existing_instance_model, existing_instance_state)
