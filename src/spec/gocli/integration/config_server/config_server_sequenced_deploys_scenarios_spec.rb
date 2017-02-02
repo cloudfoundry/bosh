@@ -60,10 +60,23 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
       end
 
-      it "does NOT update jobs (does NOT pick up new config server values) on 'bosh start'" do
+      it "does NOT update jobs (does NOT pick up new config server values) on 'bosh start' after 'bosh stop'" do
         bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
         output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
         expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+      end
+
+      it "does NOT update jobs (does NOT pick up new config server values) on 'bosh start' after 'bosh stop --hard'" do
+        bosh_runner.run('stop --hard', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+        output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
+
+        scrubbed_output = scrub_random_ids(output)
+        expect(scrubbed_output).to include('Creating missing vms: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+        expect(scrubbed_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
         instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
         template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
