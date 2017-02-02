@@ -32,7 +32,6 @@ describe Bosh::Director::Api::VariablesManager do
       it 'should only return the unique variables associated with that particular deployment' do
         variables = subject.get_variables_for_deployment(deployment1)
         expect(variables).to match_array(deployment1_variables)
-        expect(variables.count).to eq(4)
       end
     end
   end
