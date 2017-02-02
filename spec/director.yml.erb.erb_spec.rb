@@ -116,7 +116,7 @@ describe 'director.yml.erb.erb' do
 
     context 'when using the verify-multidigest binary' do
       it 'should configure the paths' do
-        expect(parsed_yaml['verify_multidigest_path']).to eq('/var/vcap/packages/verify-multidigest/bin/verify-multidigest')
+        expect(parsed_yaml['verify_multidigest_path']).to eq('/var/vcap/packages/verify_multidigest/bin/verify-multidigest')
       end
     end
 
