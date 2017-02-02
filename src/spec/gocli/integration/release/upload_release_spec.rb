@@ -213,7 +213,7 @@ describe 'upload release', type: :integration do
     it 'rejects the release when the sha1 is an unknown algorithm' do
       expect {
         bosh_runner.run("upload-release #{release_url} --sha1 'shaxyz:abcd1234'")
-      }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unkown algorithm 'shaxyz'/)
+      }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unknown algorithm 'shaxyz'/)
     end
 
     context 'when multiple digests are provided' do
