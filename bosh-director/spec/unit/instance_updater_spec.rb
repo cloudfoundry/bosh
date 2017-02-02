@@ -16,7 +16,8 @@ module Bosh::Director
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
       vm_type = DeploymentPlan::VmType.new({'name' => 'small_vm'})
       stemcell = DeploymentPlan::Stemcell.new('ubuntu_stemcell', 'ubuntu_1', 'ubuntu', '8')
-      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, vm_type, [], stemcell, {}, false, deployment_model, {}, az, logger)
+      merged_cloud_properties = DeploymentPlan::MergedCloudProperties.new(az, vm_type, []).get
+      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, merged_cloud_properties, stemcell, {}, false, deployment_model, {}, az, logger)
       instance.bind_existing_instance_model(instance_model)
 
       instance

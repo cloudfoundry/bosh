@@ -128,10 +128,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.uuid).to eq(existing_instance.uuid)
       expect(instance.state).to eq(existing_instance.state)
       expect(instance.index).to eq(existing_instance.index)
-      expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+      expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
       expect(instance.compilation?).to eq(existing_instance.compilation)
       expect(instance.job_name).to eq(existing_instance.job)
-      expect(instance.vm_type.name).to eq('vm-type')
       expect(instance.stemcell.model).to eq(stemcell)
       expect(instance.env).to eq(env)
     end
@@ -150,10 +149,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         expect(instance.uuid).to eq(existing_instance.uuid)
         expect(instance.state).to eq(existing_instance.state)
         expect(instance.index).to eq(existing_instance.index)
-        expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+        expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
         expect(instance.compilation?).to eq(existing_instance.compilation)
         expect(instance.job_name).to eq(existing_instance.job)
-        expect(instance.vm_type).to be_nil
         expect(instance.stemcell).to be_nil
         expect(instance.env).to eq({})
       end

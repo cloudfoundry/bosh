@@ -207,21 +207,18 @@ module Bosh::Director::DeploymentPlan
       describe 'when the cloud properties change' do
 
         describe 'logging' do
-          before do
-            availability_zone.cloud_properties['baz'] = 'bang'
-            vm_type.cloud_properties['abcd'] = 'wera'
-          end
+          let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
+          let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
+          let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
 
           it 'should log the change' do
-            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"a"=>"b", "baz"=>"bang", "abcd"=>"wera"}')
+            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
             instance.cloud_properties_changed?
           end
         end
 
         describe 'when the availability zone cloud properties change' do
-          before do
-            availability_zone.cloud_properties['baz'] = 'bang'
-          end
+          let(:availability_zone) { AvailabilityZone.new('az', {'naz' => 'bang'})}
 
           it 'should return true' do
             expect(instance.cloud_properties_changed?).to eq(true)
@@ -229,9 +226,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe 'when the resource pool cloud properties change' do
-          before do
-            vm_type.cloud_properties['abcd'] = 'wera'
-          end
+          let(:vm_type) { VmType.new({'name' =>'', 'cloud_properties' => {'abcd' => 'wera'}}) }
 
           it 'should return true' do
             expect(instance.cloud_properties_changed?).to eq(true)
@@ -253,9 +248,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           describe 'when there is no availability zone and resource pool cloud properties change' do
-            before do
-              vm_type.cloud_properties['abcd'] = 'wera'
-            end
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'abcd' => 'wera'}}) }
 
             it 'should return true' do
               expect(instance.cloud_properties_changed?).to be(true)
@@ -265,85 +258,7 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#cloud_properties' do
-      context 'when the instance has an availability zone' do
-        it 'merges the resource pool cloud properties into the availability zone cloud properties' do
-          availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-          allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
-          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-
-          expect(instance.cloud_properties).to eq(
-              {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
-            )
-        end
-
-        context 'when the instance has vm_extensions' do
-          context 'when vm_type and vm_extensions and availability zones have some overlapping cloud properties' do
-            let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
-            let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
-            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
-
-            it 'uses the vm_type cloud_properties then the availability zones then rightmost vm_extension for overlapping values' do
-              availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-              allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one', 'other-stuff' => 'who-chares'})
-              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff', 'other-stuff' => 'i-chares'})
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'fooz' => 'bar', 'resources' => 'the-new-stuff', 'food' => 'drink'})
-              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz', 'food' => 'eat'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-new-stuff', 'foo' => 'baaaz', 'zone' => 'the-right-one', 'food' => 'eat', 'fooz' => 'bar', 'other-stuff' => 'i-chares'})
-            end
-          end
-        end
-      end
-
-      context 'when the instance does not have an availability zone' do
-        it 'uses just the resource pool cloud properties' do
-          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-          expect(instance.cloud_properties).to eq(
-              {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
-            )
-        end
-
-        context 'when the instance has vm_extensions' do
-          let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
-          let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
-
-          context 'when the same property exists in multiple vm_extensions' do
-            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
-
-            it 'uses the right most vm_extension\'s property value for overlapping values' do
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar', 'resources' => 'the-good-stuff'})
-              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'baaaz'})
-            end
-          end
-
-          context 'when vm_type and vm_extensions have some overlapping cloud properties' do
-            let(:vm_extensions) {[vm_extension_1]}
-
-            it 'uses the vm_type cloud_properties for overlapping values' do
-              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'bar'})
-            end
-          end
-        end
-
-      end
-    end
 
     describe '#update_instance_settings' do
       let(:fake_cert) { 'super trustworthy cert' }

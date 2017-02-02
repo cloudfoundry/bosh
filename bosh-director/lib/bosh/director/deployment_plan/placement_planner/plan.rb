@@ -15,7 +15,7 @@ module Bosh
 
             instance_plans.reject(&:obsolete?).each do |instance_plan|
               @logger.debug("Assigning az '#{instance_plan.desired_instance.availability_zone}' to instance '#{instance_plan.instance}'")
-              instance_plan.instance.assign_availability_zone(instance_plan.desired_instance.az)
+              instance_plan.instance.assign_availability_zone_and_update_cloud_properties(instance_plan.desired_instance.az, instance_plan.desired_instance.instance_group.vm_type, instance_plan.desired_instance.instance_group.vm_extensions)
             end
             instance_plans
           end

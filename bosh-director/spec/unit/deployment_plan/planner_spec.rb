@@ -109,7 +109,7 @@ module Bosh::Director
           }
         end
         let(:resource_pools) { [ResourcePool.new(resource_pool_spec)] }
-        let(:vm_type) { nil }
+        let(:vm_type) { VmType.new({'name' => 'vm_type'}) }
 
         before do
           deployment_model.add_stemcell(stemcell_model)
