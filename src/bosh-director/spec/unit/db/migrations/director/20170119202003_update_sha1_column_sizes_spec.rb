@@ -126,7 +126,8 @@ module Bosh::Director
 
       db.tables.each do |t|
         if t == :local_dns_blobs
-          expect(db.indexes(t)).to eq(:blobstore_id_idx => {:columns=>[:blobstore_id], :unique=>true})
+          expect(db.indexes(t)[:blobstore_id_idx][:columns]).to contain_exactly(:blobstore_id)
+          expect(db.indexes(t)[:blobstore_id_idx][:unique]).to be_truthy
         else
           expect(db.indexes(t)).to eq(indexes_before[t])
         end
