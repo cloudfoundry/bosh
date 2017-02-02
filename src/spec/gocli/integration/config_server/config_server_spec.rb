@@ -308,58 +308,6 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
         end
 
-        context 'when config server values changes post deployment' do
-          before do
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-            manifest_hash['jobs'].first['instances'] = 1
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-          end
-
-          it 'updates the job on bosh redeploy' do
-            output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-            expect(output).to match /Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/
-
-            new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            new_template_hash = YAML.load(new_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
-          end
-
-          it 'does NOT update the job on start' do
-            bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-            output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
-            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-          end
-
-          it 'does NOT update the job on restart' do
-            output = parse_blocks(bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env))
-            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-          end
-
-          it 'does NOT update the job on recreate' do
-            output = parse_blocks(bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
-            expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
-
-            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-            expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-          end
-        end
-
         describe 'env values in instance groups and resource pools' do
           context 'when instance groups env is using placeholders' do
             let(:cloud_config_hash) do
