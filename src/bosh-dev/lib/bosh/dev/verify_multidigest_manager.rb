@@ -30,7 +30,7 @@ module Bosh::Dev
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      multidigest_info = VerifyMultidigestInfo.new('0.0.13', '691fab97e041c55beadeefb3d52742ab1f92b0f6e233efd23dbab19bb95c495e', 'c2635fca8aeecc332bbf71ada5e4506556967c4bde579cc7066e0236fd7c5284')
+      multidigest_info = VerifyMultidigestInfo.new('0.0.27', '53f13fad308c9e6463dbe6836a246dcd1e74cf870c3030ed97724696b29f1c5f', '0c2c119693d6c1404e530afcfc5758c0aa4cb0e0eb9e594d1d9f50b1630a2ec3')
       executable_file_path = generate_executable_full_path('verify-multidigest')
       downloaded_file_path = download(multidigest_info)
       FileUtils.copy(downloaded_file_path, executable_file_path)
@@ -49,7 +49,7 @@ module Bosh::Dev
 
       unless File.exist?(destination_path)
         retryable.retryer do
-          `#{File.dirname(__FILE__)}/sandbox/services/install_binary.sh #{multidigest_info.file_name_to_download} #{destination_path} #{multidigest_info.sha256} bosh-dependencies/verify-multidigest`
+          `#{File.dirname(__FILE__)}/sandbox/services/install_binary.sh #{multidigest_info.file_name_to_download} #{destination_path} #{multidigest_info.sha256} verify-multidigest`
           $? == 0
         end
       end
