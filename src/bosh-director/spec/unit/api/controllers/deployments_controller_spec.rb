@@ -1294,10 +1294,7 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
 
             vars = JSON.parse(last_response.body)
-            expect(vars.size).to eq(3)
-            expect(vars[0]).to eq('id' => '0', 'name' => 'foo')
-            expect(vars[1]).to eq('id' => '1', 'name' => 'bar')
-            expect(vars[2]).to eq('id' => '2', 'name' => 'baz')
+            expect(vars).to match_array([{'id' => '0', 'name' => 'foo'},{'id' => '1', 'name' => 'bar'},{'id' => '2', 'name' => 'baz'}])
           end
 
           it 'does not return variables for other deployments' do
@@ -1310,8 +1307,7 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
 
             vars = JSON.parse(last_response.body)
-            expect(vars.size).to eq(1)
-            expect(vars[0]).to eq('id' => '0', 'name' => 'foo')
+            expect(vars).to match_array([{'id' => '0', 'name' => 'foo'}])
           end
         end
       end
