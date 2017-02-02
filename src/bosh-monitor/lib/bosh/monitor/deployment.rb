@@ -108,5 +108,8 @@ module Bosh::Monitor
       @agent_id_to_agent.keys.to_set
     end
 
+    def update_teams(new_teams)
+      @teams = new_teams
+    end
   end
 end

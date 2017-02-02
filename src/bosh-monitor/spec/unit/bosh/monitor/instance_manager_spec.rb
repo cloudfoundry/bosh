@@ -54,7 +54,7 @@ module Bhm
             instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
             cloud1 = [instance1]
             manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam']}])
-            manager.sync_deployment_state('mycloud', cloud1)
+            manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam']}, cloud1)
 
             expect(event_processor).to receive(:process).with(
                 :heartbeat,
@@ -84,7 +84,7 @@ module Bhm
               instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
               cloud1 = [instance1]
               manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam']}])
-              manager.sync_deployment_state('mycloud', cloud1)
+              manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam']}, cloud1)
 
               expect(event_processor).to receive(:process).with(
                   :heartbeat,
@@ -100,8 +100,7 @@ module Bhm
 
               manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
 
-              manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam', 'bteam']}])
-              manager.sync_deployment_state('mycloud', cloud1)
+              manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam', 'bteam']}, cloud1)
 
               expect(event_processor).to receive(:process).with(
                   :heartbeat,
@@ -165,15 +164,15 @@ module Bhm
           cloud1 = [instance1, instance2]
           cloud2 = [instance3, instance4]
           manager.sync_deployments([{'name' => 'mycloud'}, {'name' => 'othercloud'}])
-          manager.sync_deployment_state('mycloud', cloud1)
-          manager.sync_deployment_state('othercloud', cloud2)
+          manager.sync_deployment_state({'name' => 'mycloud'}, cloud1)
+          manager.sync_deployment_state({'name' => 'othercloud'}, cloud2)
 
           expect(manager.deployments_count).to eq(2)
           expect(manager.agents_count).to eq(4)
           expect(manager.instances_count).to eq(4)
 
           manager.sync_deployments([{'name' => 'mycloud'}]) # othercloud is gone
-          manager.sync_deployment_state('mycloud', cloud1)
+          manager.sync_deployment_state({'name' => 'mycloud'}, cloud1)
           expect(manager.deployments_count).to eq(1)
           expect(manager.agents_count).to eq(2)
           expect(manager.instances_count).to eq(2)
@@ -188,17 +187,17 @@ module Bhm
 
           instances = [instance1, instance2]
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state('mycloud', instances)
+          manager.sync_deployment_state({'name' => 'mycloud'}, instances)
           expect(manager.instances_count).to eq(2)
           expect(manager.agents_count).to eq(2)
 
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state('mycloud', instances - [instance1])
+          manager.sync_deployment_state({'name' => 'mycloud'}, instances - [instance1])
           expect(manager.instances_count).to eq(1)
           expect(manager.agents_count).to eq(1)
 
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state('mycloud', [instance1, instance3])
+          manager.sync_deployment_state({'name' => 'mycloud'}, [instance1, instance3])
           expect(manager.instances_count).to eq(2)
           expect(manager.agents_count).to eq(2)
         end

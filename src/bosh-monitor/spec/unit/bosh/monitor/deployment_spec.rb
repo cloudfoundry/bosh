@@ -165,4 +165,16 @@ describe Bhm::Deployment do
       expect(deployment.teams).to eq(['ateam', 'bteam'])
     end
   end
+
+  describe '#update_teams' do
+    let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name', 'teams' => ['ateam', 'bteam']}) }
+    let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
+
+    it 'updates teams with given values' do
+      expect(deployment.teams).to eq(['ateam', 'bteam'])
+
+      deployment.update_teams(['anotherteam'])
+      expect(deployment.teams).to eq(['anotherteam'])
+    end
+  end
 end

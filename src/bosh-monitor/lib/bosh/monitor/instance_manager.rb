@@ -66,7 +66,9 @@ module Bosh::Monitor
       remove_inactive_deployments(active_deployment_names)
     end
 
-    def sync_deployment_state(deployment_name, instances_data)
+    def sync_deployment_state(deployment, instances_data)
+      deployment_name = deployment['name']
+      sync_teams(deployment)
       sync_instances(deployment_name, instances_data)
       sync_agents(deployment_name, get_instances_for_deployment(deployment_name))
     end
@@ -322,9 +324,9 @@ module Bosh::Monitor
       active_deployment_names = Set.new
       deployments.each do |deployment_data|
         deployment = Deployment.create(deployment_data)
-
-        @deployment_name_to_deployments[deployment.name] = deployment
-
+        unless @deployment_name_to_deployments[deployment.name]
+          @deployment_name_to_deployments[deployment.name] = deployment
+        end
         active_deployment_names << deployment.name
       end
       active_deployment_names
@@ -365,6 +367,13 @@ module Bosh::Monitor
 
     def update_rogue_agents(deployment_agents)
       deployment_agents.each { |agent_id| @rogue_agents.delete(agent_id) }
+    end
+
+    def sync_teams(deployment)
+      deployment_name = deployment['name']
+      deployment_model = @deployment_name_to_deployments[deployment_name]
+      deployment_model.update_teams(deployment['teams'])
+      @deployment_name_to_deployments[deployment_name] = deployment_model
     end
   end
 end
