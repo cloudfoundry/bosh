@@ -322,9 +322,9 @@ module Bosh::Monitor
       active_deployment_names = Set.new
       deployments.each do |deployment_data|
         deployment = Deployment.create(deployment_data)
-        unless @deployment_name_to_deployments[deployment.name]
-          @deployment_name_to_deployments[deployment.name] = deployment
-        end
+
+        @deployment_name_to_deployments[deployment.name] = deployment
+
         active_deployment_names << deployment.name
       end
       active_deployment_names

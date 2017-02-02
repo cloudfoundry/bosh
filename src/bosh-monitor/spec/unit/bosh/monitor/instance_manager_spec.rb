@@ -75,7 +75,47 @@ module Bhm
             it 'does not process the heartbeat' do
               expect(event_processor).not_to receive(:process)
 
-              manager.process_event(:heartbeat, "hm.agent.heartbeat.007")
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
+            end
+          end
+
+          context 'when teams have changed between heartbeats' do
+            it 'updates teams in heartbeat event' do
+              instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
+              cloud1 = [instance1]
+              manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam']}])
+              manager.sync_deployment_state('mycloud', cloud1)
+
+              expect(event_processor).to receive(:process).with(
+                  :heartbeat,
+                  {
+                      'timestamp' => Integer,
+                      'agent_id' => '007',
+                      'deployment' => 'mycloud',
+                      'instance_id' => 'iuuid1',
+                      'job' => 'mutator',
+                      'teams' => ['ateam'],
+                  }
+              )
+
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
+
+              manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam', 'bteam']}])
+              manager.sync_deployment_state('mycloud', cloud1)
+
+              expect(event_processor).to receive(:process).with(
+                  :heartbeat,
+                  {
+                      'timestamp' => Integer,
+                      'agent_id' => '007',
+                      'deployment' => 'mycloud',
+                      'instance_id' => 'iuuid1',
+                      'job' => 'mutator',
+                      'teams' => ['ateam', 'bteam'],
+                  }
+              )
+
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
             end
           end
         end
