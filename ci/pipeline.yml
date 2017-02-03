@@ -7,7 +7,7 @@ groups:
       - unit-2.3-postgres
       - blobstore-client-integration
       - integration-2.3-postgres-gocli
-      - integration-2.3-mysql
+      - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - load-tests-postgres
       - load-tests-mysql
@@ -20,18 +20,10 @@ groups:
       - bats-centos
       - bats-ubuntu
 
-  - name: 2.3
-    jobs:
-      - unit-2.3
-      - unit-2.3-mysql
-      - unit-2.3-postgres
-      - integration-2.3-mysql
-      - integration-2.3-postgres
-
   - name: mysql
     jobs:
       - unit-2.3-mysql
-      - integration-2.3-mysql
+      - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
@@ -213,16 +205,20 @@ jobs:
             icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
             text: {{slack_failure_message}}
 
-  - name: integration-2.3-mysql
+  - name: integration-mysql-gocli-sha1
     public: true
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: gocli-release-bucket-linux
+          trigger: true
       - aggregate:
         - task: test-group-1
           privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
           tags: ["bosh-integration-4"]
           params:
             DB:           mysql
@@ -232,7 +228,7 @@ jobs:
 
         - task: test-group-2
           privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
           tags: ["bosh-integration-5"]
           params:
             DB:           mysql
@@ -242,7 +238,7 @@ jobs:
 
         - task: test-group-3
           privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
           tags: ["bosh-integration-6"]
           params:
             DB:           mysql
@@ -429,7 +425,7 @@ jobs:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
-      - integration-2.3-mysql
+      - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - integration-2.3-postgres-gocli
       - blobstore-client-integration
