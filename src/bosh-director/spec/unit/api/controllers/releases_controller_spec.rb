@@ -151,14 +151,49 @@ module Bosh::Director
       end
 
       describe 'POST', '/export' do
-        def perform
-          params = {
+        let(:params) do
+          {
             release_name: 'release-name-value',
             release_version: 'release-version-value',
             stemcell_os:    'bosh-stemcell-os-value',
             stemcell_version:    'bosh-stemcell-version-value',
           }
+        end
+
+        def perform
           post '/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
+        end
+
+        context 'when the request does not contains the sha2 flag' do
+          before { authorize 'admin', 'admin' }
+
+          it 'authenticated access redirect to the created task' do
+            expected_sha2_param = nil
+            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param]
+            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            perform
+          end
+        end
+
+        context 'when the request contains the sha2 flag' do
+          let(:params) do
+            {
+              release_name:        'release-name-value',
+              release_version:     'release-version-value',
+              stemcell_os:         'bosh-stemcell-os-value',
+              stemcell_version:    'bosh-stemcell-version-value',
+              sha2:                 'true'
+            }
+          end
+
+          before { authorize 'admin', 'admin' }
+
+          it 'authenticated access redirect to the created task' do
+            expected_sha2_param = 'true'
+            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param]
+            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            perform
+          end
         end
 
         context 'when user has admin access' do

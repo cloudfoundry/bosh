@@ -5,8 +5,13 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::ExportRelease do
     include Support::FakeLocks
+
+    let(:multi_digest) { instance_double(Digest::MultiDigest) }
+    let(:sha2) { nil }
+
     before do
       fake_locks
+      allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
       Bosh::Director::Config.current_job = job
       allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
@@ -15,9 +20,10 @@ module Bosh::Director
       blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
       app = instance_double(App, blobstores: blobstores)
       allow(App).to receive(:instance).and_return(app)
+      allow(multi_digest).to receive(:create).and_return('expected-sha1')
     end
 
-    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1') }
+    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2) }
 
     def create_stemcell
       Bosh::Director::Models::Stemcell.create(
@@ -378,9 +384,36 @@ version: 0.1-dev
           job.perform
         end
 
-        context 'that is successfully placed in the blobstore' do
+        it 'should calculate the digest of the generated archive using the sha1 algorithm by default' do
+          expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
 
-          let(:sha1_digest) { instance_double('::Digest::SHA1', hexdigest: 'expected-sha1')}
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create).and_return(expected_blobstore_id)
+          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+            File.write(output_path, 'Some glorious content')
+            expect(multi_digest).to receive(:create).with(['sha1'], output_path).and_return('expected-sha1')
+          }
+
+          job.perform
+        end
+
+        context 'when the sha2 constructor arg is truthy' do
+          let(:sha2) { "true" }
+          it 'should calculate the digest of the generated archive using the sha256 algorithm when sha2' do
+            expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
+
+            allow(blobstore_client).to receive(:get)
+            allow(blobstore_client).to receive(:create).and_return(expected_blobstore_id)
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              File.write(output_path, 'Some glorious content')
+              expect(multi_digest).to receive(:create).with(['sha256'], output_path).and_return('expected-sha2')
+            }
+
+            job.perform
+          end
+        end
+
+        context 'that is successfully placed in the blobstore' do
 
           it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
             expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
@@ -390,7 +423,6 @@ version: 0.1-dev
             allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
               File.write(output_path, 'Some glorious content')
             }
-            allow(::Digest::SHA1).to receive(:file).with(any_args).and_return(sha1_digest)
 
             expect {
               job.perform
@@ -399,7 +431,6 @@ version: 0.1-dev
             ephemeral_blob = Bosh::Director::Models::EphemeralBlob.first
             expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
             expect(ephemeral_blob.sha1).to eq('expected-sha1')
-
           end
         end
       end

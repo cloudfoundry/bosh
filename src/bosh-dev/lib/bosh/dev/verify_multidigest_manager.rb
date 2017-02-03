@@ -2,8 +2,6 @@ require 'common/retryable'
 
 module Bosh::Dev
   class VerifyMultidigestManager
-    S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/bosh-dependencies/verify-multidigest'
-
     class VerifyMultidigestInfo < Struct.new(:multidigest_name_rev, :darwin_sha256, :linux_sha256)
       def sha256
         darwin? ? darwin_sha256 : linux_sha256
@@ -30,7 +28,7 @@ module Bosh::Dev
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      multidigest_info = VerifyMultidigestInfo.new('0.0.27', '53f13fad308c9e6463dbe6836a246dcd1e74cf870c3030ed97724696b29f1c5f', '0c2c119693d6c1404e530afcfc5758c0aa4cb0e0eb9e594d1d9f50b1630a2ec3')
+      multidigest_info = VerifyMultidigestInfo.new('0.0.28', '041dfc99c280f83bfe9dc826da01d6bd5d7a9af8fec37dbe1b3a9a137f3ba1dc', 'c3b244d96438c0533533cd2ff05b5d0672678a478fb15a5a0674f35c3ed836a0')
       executable_file_path = generate_executable_full_path('verify-multidigest')
       downloaded_file_path = download(multidigest_info)
       FileUtils.copy(downloaded_file_path, executable_file_path)

@@ -3,6 +3,7 @@ module Bosh
     module Digest
 
       class ShaMismatchError < StandardError; end
+      class DigestCreationError < StandardError; end
 
     end
   end
