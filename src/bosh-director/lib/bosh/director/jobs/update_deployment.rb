@@ -49,20 +49,17 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.raw_manifest}")
         end
 
-        if @options['deploy']
-          deployment_repo = DeploymentPlan::DeploymentRepo.new
-          deployment_repo.update_variable_set(manifest_hash['name'])
-        end
-
-        deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
-
-        @deployment_name = deployment_manifest_object.to_hash['name']
+        @deployment_name = manifest_hash['name']
 
         previous_releases, previous_stemcells = get_stemcells_and_releases
         context = {}
         parent_id = add_event
 
         with_deployment_lock(@deployment_name) do
+          DeploymentPlan::DeploymentRepo.new.update_variable_set(manifest_hash['name']) if @options['deploy']
+
+          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
+
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event unless dry_run?
 
