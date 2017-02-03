@@ -80,7 +80,6 @@ module Bosh::Director::Digest
           allow(Open3).to receive(:capture3).with("#{multi_digest_path} create-multi-digest sha1,sha256 fake-file-path").
             and_return(['foo', 'bar', instance_double('Process::Status', exitstatus: 0)])
           expect(logger).to receive(:info).with(/Creating digest with command: "#{multi_digest_path} create-multi-digest sha1,sha256 fake-file-path"/)
-          expect(logger).to receive(:info).with(/Creating digest with command: "#{multi_digest_path} create-multi-digest sha1,sha256 fake-file-path"/)
           expect(logger).to receive(:info).with(/Digest 'foo' created for file: 'fake-file-path'/)
           subject.create([MultiDigest::SHA1,MultiDigest::SHA256], file_path)
         end
