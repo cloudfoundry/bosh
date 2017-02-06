@@ -6,7 +6,7 @@ groups:
       - unit-2.3-mysql
       - unit-2.3-postgres
       - blobstore-client-integration
-      - integration-2.3-postgres-gocli
+      - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - load-tests-postgres
@@ -430,7 +430,7 @@ jobs:
       - unit-2.3-postgres
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
-      - integration-2.3-postgres-gocli
+      - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
       - load-tests-postgres
