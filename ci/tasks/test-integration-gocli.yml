@@ -20,3 +20,4 @@ params:
   NUM_GROUPS:        8
   GROUP:             1,2,3,4,5,6,7,8
   SPEC_PATH:         ~
+  SHA2_MODE:         ~

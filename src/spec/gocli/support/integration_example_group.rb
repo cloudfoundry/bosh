@@ -32,13 +32,14 @@ module IntegrationExampleGroup
   end
 
   def make_a_bosh_runner(opts={})
-    Bosh::Spec::BoshRunner.new(
+    Bosh::Spec::BoshGoCliRunner.new(
       opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
       opts.fetch(:config_path, ClientSandbox.bosh_config),
       current_sandbox.cpi.method(:agent_log_path),
       current_sandbox.nats_log_path,
       current_sandbox.saved_logs_path,
-      logger
+      logger,
+      ENV['SHA2_MODE'] == 'true',
     )
   end
 

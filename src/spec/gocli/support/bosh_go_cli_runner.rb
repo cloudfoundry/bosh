@@ -1,16 +1,17 @@
 require_relative '../shared/support/table_helpers'
 
 module Bosh::Spec
-  class BoshRunner
+  class BoshGoCliRunner
     include Support::TableHelpers
 
-    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger)
+    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger, sha2)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
       @agent_log_path_resolver = agent_log_path_resolver
       @nats_log_path = nats_log_path
       @saved_logs_path = saved_logs_path
       @logger = logger
+      @sha2 = sha2
     end
 
     def run(cmd, options = {})
@@ -39,7 +40,6 @@ module Bosh::Spec
       raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
       sandbox
     end
-
 
     def run_in_current_dir(cmd, options={})
       run_in_dir(cmd, Dir.pwd, options)
@@ -150,6 +150,7 @@ module Bosh::Spec
       default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
+      cli_options += ' --sha2' if @sha2
 
       "gobosh #{cli_options} #{cmd}"
     end

@@ -5,8 +5,8 @@ module Bosh
         SHA1 = 'sha1'
         SHA256 = 'sha256'
 
-        def initialize(logger)
-          @multidigest_path = Config.verify_multidigest_path
+        def initialize(logger, multi_digest_binary_path=Config.verify_multidigest_path)
+          @multidigest_path = multi_digest_binary_path
           @logger = logger
         end
 

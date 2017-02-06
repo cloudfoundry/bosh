@@ -157,7 +157,7 @@ jobs:
           s3_host: {{blobstore_client_aws_s3_host}}
           run_aws_tests: "Not null"
 
-  - name: integration-2.3-postgres-gocli
+  - name: integration-postgres-gocli-sha2
     public: true
     serial: true
     build_logs_to_retain: 250
@@ -175,8 +175,9 @@ jobs:
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
+            NUM_GROUPS:   24
+            GROUP:        1,4,7,10,13,16,19,22
+            SHA2_MODE:    true
 
         - task: test-group-2
           privileged: true
@@ -185,8 +186,9 @@ jobs:
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
+            NUM_GROUPS:   24
+            GROUP:        2,5,8,11,14,17,20,23
+            SHA2_MODE:    true
 
         - task: test-group-3
           privileged: true
@@ -195,8 +197,9 @@ jobs:
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
 
         on_failure:
           put: slack-alert

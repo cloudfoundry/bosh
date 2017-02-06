@@ -8,6 +8,12 @@ describe 'finalize release', type: :integration do
 
   before { setup_test_release_dir }
 
+
+  let(:sha_generator) do
+    path = File.expand_path('../../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
+    Bosh::Director::Digest::MultiDigest.new(logger, path)
+  end
+
   describe 'release finalization' do
     context 'when finalizing a release that was built elsewhere' do
       it 'updates the .final_builds index for each job and package' do
@@ -102,7 +108,7 @@ describe 'finalize release', type: :integration do
         end
       end
 
-      it 'includes the LICENSE file' do
+      def includes_the_LICENSE_file(expected_license_version)
         Dir.chdir(ClientSandbox.test_release_dir) do
           expect(File).to_not exist('NOTICE')
           File.open('LICENSE', 'w') do |f|
@@ -111,14 +117,15 @@ describe 'finalize release', type: :integration do
           bosh_runner.run_in_current_dir("create-release --force --tarball=#{release_file.path} --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize-release #{release_file.path} --force", json: true)
 
-          expected_license_version = '7a59f7973cddfa0301ca34a29d4cc876247dd7de'
           expect(out).to match(/Added license 'license\/#{expected_license_version}'/)
           expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./LICENSE)
-          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
+
+          actual_digest = sha_generator.create(digest_algorithms, blobstore_license_file_path(expected_license_version))
+          expect(actual_digest).to eq manifest_sha1_of_license(expected_license_version)
         end
       end
 
-      it 'includes the NOTICE file if no LICENSE was present' do
+      def includes_the_NOTICE_file_if_no_LICENSE_was_present(expected_license_version)
         Dir.chdir(ClientSandbox.test_release_dir) do
           File.delete('LICENSE')
           File.open('NOTICE', 'w') do |f|
@@ -127,10 +134,10 @@ describe 'finalize release', type: :integration do
           bosh_runner.run_in_current_dir("create-release --force --tarball=#{release_file.path} --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize-release #{release_file.path} --force", json: true)
 
-          expected_license_version = 'af23c9afabd1eae2ff49db2545937b0467c61dd3'
           expect(out).to match(/Added license 'license\/#{expected_license_version}'/)
           expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./NOTICE)
-          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
+          actual_digest = sha_generator.create(digest_algorithms, blobstore_license_file_path(expected_license_version))
+          expect(actual_digest).to eq manifest_sha1_of_license(expected_license_version)
         end
       end
 
@@ -144,7 +151,7 @@ describe 'finalize release', type: :integration do
         end
       end
 
-      it 'includes both NOTICE and LICENSE files when present' do
+      def includes_both_NOTICE_and_LICENSE_files_when_present(expected_license_version)
         Dir.chdir(ClientSandbox.test_release_dir) do
           File.open('NOTICE', 'w') do |f|
             f.write('This is an example license file called NOTICE')
@@ -153,10 +160,43 @@ describe 'finalize release', type: :integration do
           out = bosh_runner.run_in_current_dir("finalize-release #{release_file.path} --force", json: true)
 
           # an artifact's version and fingerprint are set identical in recent BOSH versions
-          expected_license_version = '4b31262e2a9d1718eb36f6bb5c6b051df6c41ae1'
           expect(out).to match(/Added license 'license\/#{expected_license_version}'/)
           expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./LICENSE ./NOTICE)
-          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
+          actual_digest = sha_generator.create(digest_algorithms, blobstore_license_file_path(expected_license_version))
+          expect(actual_digest).to eq manifest_sha1_of_license(expected_license_version)
+        end
+      end
+
+      describe 'when using sha1', sha1: true do
+        let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA1] }
+
+        it 'includes the LICENSE file' do
+          includes_the_LICENSE_file('7a59f7973cddfa0301ca34a29d4cc876247dd7de')
+        end
+
+        it 'includes the NOTICE file if no LICENSE was present' do
+          includes_the_NOTICE_file_if_no_LICENSE_was_present('af23c9afabd1eae2ff49db2545937b0467c61dd3')
+        end
+
+        it 'includes both NOTICE and LICENSE files when present' do
+          includes_both_NOTICE_and_LICENSE_files_when_present('4b31262e2a9d1718eb36f6bb5c6b051df6c41ae1')
+        end
+      end
+
+
+      describe 'when using sha2', sha2: true do
+        let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA256] }
+
+        it 'includes the LICENSE file' do
+          includes_the_LICENSE_file('24f59b89c3a9f4eed2f4b9b07bc754891fadc49d8ec0dda25c562d90e568b375')
+        end
+
+        it 'includes the NOTICE file if no LICENSE was present' do
+          includes_the_NOTICE_file_if_no_LICENSE_was_present('eb70cb1dcc90b1d1b1271bfa26a57e62240e46a38a87c64fbde94e2b65fe0c37')
+        end
+
+        it 'includes both NOTICE and LICENSE files when present' do
+          includes_both_NOTICE_and_LICENSE_files_when_present('28b1b5c589a8e798e4859f32e9e610ef66cd272edc9698a9e036906e63416dbb')
         end
       end
     end
