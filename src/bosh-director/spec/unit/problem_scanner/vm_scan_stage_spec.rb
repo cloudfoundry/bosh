@@ -82,13 +82,28 @@ module Bosh::Director
           allow(unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
         end
 
-        it 'does not report any problem' do
-          expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-          expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound')
+        context 'when no vms are specified (cck cli command does not send missing vm info)' do
+          it 'does not report any problem' do
+            expect(event_logger).to receive(:track_and_log).with('Checking VM states')
+            expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound')
 
-          expect(problem_register).to_not receive(:problem_found)
+            expect(problem_register).to_not receive(:problem_found)
 
-          vm_scanner.scan
+            vm_scanner.scan
+          end
+        end
+
+        context 'when a specific set of vms specified (HM sends info about which vms are missing)' do
+          it 'does not report any problem' do
+            allow(instance_manager).to receive(:find_by_name).with(deployment, 'job-1', 0).and_return(detached_instance)
+
+            expect(event_logger).to receive(:track_and_log).with('Checking VM states')
+            expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound')
+
+            expect(problem_register).to_not receive(:problem_found)
+
+            vm_scanner.scan([['job-1', 0]])
+          end
         end
       end
 
