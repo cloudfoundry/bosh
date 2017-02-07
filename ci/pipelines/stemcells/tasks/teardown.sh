@@ -1,22 +1,9 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
-source /etc/profile.d/chruby.sh
-chruby 2.1.7
+mv director-state/* .
+mv director-state/.bosh $HOME/
+mv bosh-cli/bosh-cli-* /usr/local/bin/bosh-cli
 
-# inputs
-input_dir=$(realpath director-state/)
-bosh_cli=$(realpath bosh-cli/bosh-cli-*)
-chmod +x $bosh_cli
-
-if [ ! -e "${input_dir}/director-state.json" ]; then
-  echo "director-state.json does not exist, skipping..."
-  exit 0
-fi
-
-pushd ${input_dir} > /dev/null
-  # configuration
-  echo "deleting existing BOSH Director VM..."
-  $bosh_cli -n delete-env director.yml
-popd
+bosh-cli delete-env director.yml -l director-creds.yml

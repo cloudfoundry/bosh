@@ -143,25 +143,10 @@ jobs:
             - build-azure-hyperv-centos-7
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
-        - get: bosh-src
-          passed:
-            - build-warden-boshlite-centos-7
-            - build-warden-boshlite-ubuntu-trusty
-            - build-aws-xen-hvm-ubuntu-trusty
-            - build-azure-hyperv-ubuntu-trusty
-            - build-google-kvm-ubuntu-trusty
-            - build-google-kvm-centos-7
-            - build-openstack-kvm-ubuntu-trusty
-            - build-vsphere-esxi-ubuntu-trusty
-            - build-vcloud-esxi-ubuntu-trusty
-            - build-aws-xen-hvm-centos-7
-            - build-azure-hyperv-centos-7
-            - build-openstack-kvm-centos-7
-            - build-vsphere-esxi-centos-7
+        - get: bosh-linux-stemcell-builder
+        - get: bosh-deployment
         - get: bosh-cli
         - get: syslog-release
-        - get: bosh-release
-        - get: cpi-release
         - get: vsphere-esxi-ubuntu-trusty
           passed: [build-vsphere-esxi-ubuntu-trusty]
           tags:
@@ -177,34 +162,25 @@ jobs:
           input_mapping:
             stemcell: vsphere-esxi-ubuntu-trusty
           params:
-            DIRECTOR_IP:                          {{stemcell-test-director-address}}
-            BOSH_VSPHERE_VCENTER_CIDR:            {{bosh-director-vcenter-cidr}}
-            BOSH_VSPHERE_VCENTER_GATEWAY:         {{bosh-director-vcenter-gateway}}
-            BOSH_VSPHERE_DNS:                     {{bosh-director-vcenter-dns}}
-            BOSH_DIRECTOR_USERNAME:               {{stemcell-test-director-username}}
-            BOSH_DIRECTOR_PASSWORD:               {{stemcell-test-director-password}}
-            BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
-            BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
-            BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
-            BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
-            BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
-            BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
-            BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
-            BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
-            BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
-            BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+            BOSH_internal_ip:                          {{stemcell-test-director-address}}
+            BOSH_internal_cidr:            {{bosh-director-vcenter-cidr}}
+            BOSH_internal_gw:         {{bosh-director-vcenter-gateway}}
+            BOSH_vcenter_ip:                 {{vcenter-ip}}
+            BOSH_vcenter_user:            {{vcenter-user}}
+            BOSH_vcenter_password:        {{vcenter-password}}
+            BOSH_vcenter_dc:              {{vcenter-dc}}
+            BOSH_vcenter_cluster:         {{vcenter-cluster}}
+            BOSH_vcenter_ds:       {{vcenter-datastore}}
+            BOSH_network_name:            {{vcenter-vlan}}
+            BOSH_vcenter_vms:       {{vcenter-vm-folder}}
+            BOSH_vcenter_templates: {{vcenter-template-folder}}
+            BOSH_vcenter_disks:       {{vcenter-disk-path}}
 
         - task: test-stemcell
           tags: [vsphere-v5.1]
-          file: bosh-src/src/bosh-stemcell/smoke/test-stemcell.yml
+          file: bosh-linux-stemcell-builder/ci/tasks/test-stemcell.yml
           input_mapping:
             stemcell: vsphere-esxi-ubuntu-trusty
-          params:
-            BOSH_DIRECTOR_ADDRESS:        {{stemcell-test-director-address}}
-            BOSH_DIRECTOR_USERNAME:       {{stemcell-test-director-username}}
-            BOSH_DIRECTOR_PASSWORD:       {{stemcell-test-director-password}}
-            BOSH_VSPHERE_VCENTER_CLUSTER: {{vcenter-cluster}}
-            BOSH_VSPHERE_VCENTER_DC:      {{vcenter-dc}}
         ensure:
           do:
           - task: teardown
@@ -898,6 +874,23 @@ resources:
       regexp: vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # Test Stemcells
+  #
+
+  - name: bosh-linux-stemcell-builder
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-linux-stemcell-builder
+      branch: master
+
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment
+      branch: master
+
 
   #
   # BATs
