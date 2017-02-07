@@ -144,6 +144,7 @@ jobs:
             - build-openstack-kvm-centos-7
             - build-vsphere-esxi-centos-7
         - get: bosh-linux-stemcell-builder
+        - get: bosh-src
         - get: bosh-deployment
         - get: bosh-cli
         - get: syslog-release

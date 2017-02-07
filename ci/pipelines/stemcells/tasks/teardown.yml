@@ -6,6 +6,7 @@ image_resource:
   source: {repository: boshcpi/cpi-certification}
 
 inputs:
+  - name: bosh-src
   - name: bosh-deployment
   - name: director-state
   - name: bosh-cli
