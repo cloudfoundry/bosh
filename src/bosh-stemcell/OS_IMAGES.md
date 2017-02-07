@@ -526,11 +526,14 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+* `iNCXblKF6k8OWwqzAzRg39iKJ92DdGhv`
+  - Updated initramfs drivers
+  - built from develop (797a09d6bc376e0b500d7eda44d953a358f5db8a)
+
 * `.NhB1MddNdpI_8UM9k.ipNKCwucXkriU`
   - CIS stories
   - built from develop (c63b0c8b0a6bd9873238e7c717356919a2ec40b6)
 
-CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 * `dRMFj_k6Sgs84W3K5FBGMc7HXHZGAEK8`
   - periodic bump
   - built from develop (379493156c63dd8f62e9f69452e37909898fd31f)
