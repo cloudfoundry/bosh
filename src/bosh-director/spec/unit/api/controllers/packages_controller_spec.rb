@@ -40,7 +40,7 @@ module Bosh::Director
                   name: 'fake-pkg1',
                   version: 'fake-pkg1-version',
                   blobstore_id: 'fake-pkg1-blobstoreid',
-                  sha1: 'fake-pkg1-sha',
+                  sha1: 'fakepkg1sha',
                   fingerprint: 'fake-pkg1-fingerprint',
               )
 
@@ -50,7 +50,7 @@ module Bosh::Director
                   name: 'fake-pkg3',
                   version: 'fake-pkg3-version',
                   blobstore_id: 'fake-pkg3-blobstoreid',
-                  sha1: 'fake-pkg3-sha',
+                  sha1: 'fakepkg3sha',
                   fingerprint: 'fake-pkg3-fingerprint',
               )
             end
@@ -79,7 +79,7 @@ module Bosh::Director
                   Models::Package.make(
                     release: release,
                     name: 'fake-pkg1',
-                    version: 'fake-pkg1-sha',
+                    version: 'fakepkg1sha',
                     fingerprint: 'fake-pkg1-fingerprint',
                   )
 
@@ -88,7 +88,7 @@ module Bosh::Director
                   Models::Package.make(
                     release: release,
                     name: 'fake-pkg3',
-                    version: 'fake-pkg3-sha',
+                    version: 'fakepkg3sha',
                     fingerprint: 'fake-pkg3-fingerprint',
                   )
                 end
@@ -135,21 +135,21 @@ module Bosh::Director
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg1',
-                  version: 'fake-pkg1-sha',
+                  version: 'fakepkg1sha',
                   fingerprint: 'fake-pkg1-fingerprint',
                 )
 
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg2',
-                  version: 'fake-pkg2-sha',
+                  version: 'fakepkg2sha',
                   fingerprint: nil, # set to nil explicitly
                 )
 
                 Models::Package.make(
                   release: release,
                   name: 'fake-pkg3',
-                  version: 'fake-pkg3-sha',
+                  version: 'fakepkg3sha',
                   fingerprint: 'fake-pkg3-fingerprint',
                 )
               end
@@ -215,7 +215,7 @@ module Bosh::Director
                 release: release,
                 name: 'fake-pkg1',
                 version: 'fake-pkg1-version',
-                sha1: 'fake-pkg1-sha',
+                sha1: 'fakepkg1sha',
                 fingerprint: 'fake-pkg1-fingerprint',
             )
 
@@ -223,7 +223,7 @@ module Bosh::Director
                 release: release,
                 name: 'fake-pkg2',
                 version: 'fake-pkg2-version',
-                sha1: 'fake-pkg2-sha',
+                sha1: 'fakepkg2sha',
                 fingerprint: 'fake-pkg2-fingerprint',
             )
 
@@ -231,7 +231,7 @@ module Bosh::Director
                 release: release,
                 name: 'fake-pkg3',
                 version: 'fake-pkg3-version',
-                sha1: 'fake-pkg3-sha',
+                sha1: 'fakepkg3sha',
                 fingerprint: 'fake-pkg3-fingerprint',
             )
 
@@ -239,14 +239,14 @@ module Bosh::Director
                 release: release,
                 name: 'fake-pkg4',
                 version: 'fake-pkg4-version',
-                sha1: 'fake-pkg4-sha',
+                sha1: 'fakepkg4sha',
                 fingerprint: 'fake-pkg4-fingerprint',
             )
 
             Models::CompiledPackage.make(
                 package_id: package1.id,
                 blobstore_id: 'cpkg1_blobstore_id',
-                sha1: 'cpkg1_sha1',
+                sha1: 'cpkg1sha1',
                 stemcell_os: 'ubuntu-trusty',
                 stemcell_version: '3000',
                 dependency_key: '[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
@@ -255,7 +255,7 @@ module Bosh::Director
             Models::CompiledPackage.make(
                 package_id: package4.id,
                 blobstore_id: 'cpkg4_blobstore_id',
-                sha1: 'cpkg4_sha4',
+                sha1: 'cpkg4sha4',
                 stemcell_os: 'ubuntu-trusty',
                 stemcell_version: '3000',
                 dependency_key: '[["fake-pkg1","fake-pkg1-version",[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]]]',

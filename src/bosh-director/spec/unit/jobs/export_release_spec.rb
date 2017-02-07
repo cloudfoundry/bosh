@@ -261,11 +261,11 @@ module Bosh::Director
               fingerprint: 'ruby_fingerprint',
               release_id: release.id,
               blobstore_id: 'ruby_package_blobstore_id',
-              sha1: 'ruby_package_sha1',
+              sha1: 'rubypackagesha1',
               dependency_set_json: [].to_json,
           )
           package_ruby.add_compiled_package(
-              sha1: 'ruby_compiled_package_sha1',
+              sha1: 'rubycompiledpackagesha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
               dependency_key: [].to_json,
               build: 23,
@@ -283,7 +283,7 @@ module Bosh::Director
               dependency_set_json: JSON.generate(["ruby"]),
           )
           package_postgres.add_compiled_package(
-              sha1: 'postgres_compiled_package_sha1',
+              sha1: 'postgrescompiledpackagesha1',
               blobstore_id: 'postgres_package_blobstore_id',
               dependency_key: '[["ruby","ruby_version"]]',
               build: 23,
@@ -328,8 +328,8 @@ module Bosh::Director
           }
 
           expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-          expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby_compiled_package_sha1')
-          expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres_compiled_package_sha1')
+          expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+          expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
           expect(blobstore_client).to receive(:get).with('foo_blobstore_id', anything, sha1: 'foo_sha1')
           job.perform
         end
@@ -347,13 +347,13 @@ compiled_packages:
 - name: ruby
   version: ruby_version
   fingerprint: ruby_fingerprint
-  sha1: ruby_compiled_package_sha1
+  sha1: rubycompiledpackagesha1
   stemcell: ubuntu/1
   dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
-  sha1: postgres_compiled_package_sha1
+  sha1: postgrescompiledpackagesha1
   stemcell: ubuntu/1
   dependencies:
   - ruby

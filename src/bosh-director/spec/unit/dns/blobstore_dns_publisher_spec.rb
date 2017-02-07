@@ -46,11 +46,11 @@ module Bosh::Director
         context 'when LocalDnsBlob has records' do
             before {
               Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id0',
-                                          sha1: 'fake-sha0',
+                                          sha1: 'fakesha0',
                                           version: 1,
                                           :created_at => Time.new)
               Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id1',
-                                          sha1: 'fake-sha1',
+                                          sha1: 'fakesha1',
                                           version: 2,
                                           :created_at => Time.new)
             }
@@ -59,7 +59,7 @@ module Bosh::Director
 
             it 'retrieves the last blob' do
               expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
-              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fake-sha1', 2)
+              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fakesha1', 2)
               dns.broadcast
             end
           end

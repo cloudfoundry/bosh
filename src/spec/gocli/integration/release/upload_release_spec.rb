@@ -227,12 +227,12 @@ describe 'upload release', type: :integration do
       end
 
       context 'when the digest is invalid' do
-        let(:multidigest_string) { 'sha256:bad_sha_512;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
+        let(:multidigest_string) { 'sha256:badsha512;sha1:14ab572f7d00333d8e528ab197a513d44c709257' }
 
         it 'rejects the release' do
           expect {
             bosh_runner.run("upload-release #{release_url} --sha1 '#{multidigest_string}'")
-          }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:bad_sha_512' but was 'sha256:/)
+          }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:badsha512' but was 'sha256:/)
         end
       end
     end

@@ -283,17 +283,17 @@ module Bosh::Director
       it 'sends sync_dns to the agent' do
         expect(client).to receive(:send_nats_request) do |message_name, args|
           expect(message_name).to eq(:sync_dns)
-          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fake-sha1'])
+          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1'])
         end
-        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1')
+        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1')
       end
 
       it 'sends sync_dns to the agent with version parameter' do
         expect(client).to receive(:send_nats_request) do |message_name, args|
           expect(message_name).to eq(:sync_dns)
-          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fake-sha1', version: 1])
+          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1])
         end
-        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1', version: 1)
+        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1)
       end
     end
 

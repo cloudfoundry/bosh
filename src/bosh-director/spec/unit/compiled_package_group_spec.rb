@@ -7,7 +7,7 @@ module Bosh::Director
 
     let(:release_version) { Models::ReleaseVersion.make(release: release) }
     let(:release) { Models::Release.make }
-    let(:stemcell) { make_stemcell(sha1: 'fake_stemcell_sha1', operating_system: 'chrome-os') }
+    let(:stemcell) { make_stemcell(sha1: 'fakestemcellsha1', operating_system: 'chrome-os') }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell) }
 
@@ -36,7 +36,7 @@ module Bosh::Director
 
     describe '#stemcell_sha1' do
       it 'returns the stemcells sha1' do
-        expect(package_group.stemcell_sha1).to eq('fake_stemcell_sha1')
+        expect(package_group.stemcell_sha1).to eq('fakestemcellsha1')
       end
     end
   end
