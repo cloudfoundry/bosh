@@ -28,7 +28,7 @@ module Bosh::Dev
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      multidigest_info = VerifyMultidigestInfo.new('0.0.28', '041dfc99c280f83bfe9dc826da01d6bd5d7a9af8fec37dbe1b3a9a137f3ba1dc', 'c3b244d96438c0533533cd2ff05b5d0672678a478fb15a5a0674f35c3ed836a0')
+      multidigest_info = VerifyMultidigestInfo.new('0.0.29', 'cb5c51d6912f829d482e0a52aeef0286c646f48c07bd2aecfe3969ddcb44c6dc', '0a4f79232cf7752712c8825624ef78da6de5dbc56c809324c24d614fbb9e3990')
       executable_file_path = generate_executable_full_path('verify-multidigest')
       downloaded_file_path = download(multidigest_info)
       FileUtils.copy(downloaded_file_path, executable_file_path)
