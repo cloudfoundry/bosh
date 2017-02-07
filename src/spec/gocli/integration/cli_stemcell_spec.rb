@@ -289,12 +289,12 @@ describe 'cli: stemcell', type: :integration do
           end
 
           context 'when the digest is valid' do
-            let(:multidigest_string) { 'sha256:bad_256;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+            let(:multidigest_string) { 'sha256:bad256;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
 
             it 'accepts and verifies the multiple digests' do
               expect {
                 bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
-              }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:bad_256' but was '/)
+              }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:bad256' but was '/)
             end
           end
         end
