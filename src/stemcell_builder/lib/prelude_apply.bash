@@ -68,7 +68,7 @@ function pkg_exists {
   then
     run_in_chroot $chroot "apt-get update"
     result=`run_in_chroot $chroot "if apt-cache show $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
-    if [ "$result" == 'exists' ]; then
+    if [[ "$result" == *"exists"* ]]; then
       return 0
     else
       return 1
