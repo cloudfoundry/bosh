@@ -76,7 +76,7 @@ function pkg_exists {
   elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photonos' ]
   then
     result=`run_in_chroot $chroot "if yum list $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
-    if [ "$result" == 'exists' ]; then
+    if [[ "$result" == *"exists"* ]]; then
       return 0
     else
       return 1
