@@ -1,10 +1,10 @@
 # BATs rake tasks
 
-There are 2 rake tasks that are designed to help with running BATs. They require minumum number of environment variables which are being used to construct deployment manifest. See `Envrionment variables` section below for the full list of environment variables.
+There are two rake tasks that are designed to help with running BATs. They require a minimum number of environment variables which are used to construct the deployment manifest. See [Environment variables](#environment-variables) section below for the full list of environment variables.
 
 ## Running BATs against existing director
 
-The following command should be used to run BATs against running director.
+The following command should be used to run BATs against a running director.
 
 ```
 $ cd bosh
@@ -24,16 +24,16 @@ There are some infrastructure specific BATs and BATs that depend on network type
 
 ## Running BATs without existing director
 
-The following command will deploy the micro BOSH using tested stemcell first and then run BATs against it.
+The following command will deploy the micro BOSH using a tested stemcell first and then run BATs against it.
 
 ```
 $ cd bosh
 $ bundle exec rake spec:system:micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>,<disk_format>]
 ```
 
-See previos section for arguments meaning.
+See previous section for arguments' meanings.
 
-## Specifying the stemcell that is being tested
+## Specifying the stemcell to be tested
 
 `CANDIDATE_BUILD_NUMBER` environment variable determines which stemcell is being tested in rake tasks.
 
