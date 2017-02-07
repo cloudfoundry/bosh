@@ -35,7 +35,6 @@ function run_in_chroot {
 
     mkdir -p $chroot/proc
     mount -n --bind /proc $chroot/proc
-    mount -n --bind /sys $chroot/sys
 
     chroot $chroot env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin http_proxy=${http_proxy:-} bash -e -c "$script"
 EOS
