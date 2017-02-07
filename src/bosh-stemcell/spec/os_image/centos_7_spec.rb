@@ -87,6 +87,22 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'installed by system_initramfs' do
+    describe command("zcat /boot/initramfs-3.10.0-514.6.1.el7.x86_64.img | cpio -t") do
+      let(:kernel_version) { "3.10.0-514.6.1.el7.x86_64" }
+
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/ext4/ext4.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/jbd2/jbd2.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/mbcache.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/scsi/scsi_transport_spi.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/scsi/scsi_transport_spi.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptspi.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptbase.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptscsih.ko")}
+      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/block/xen-blkfront.ko")}
+    end
+  end
+
   context 'overriding control alt delete (stig: V-38668)' do
     describe file('/etc/systemd/system/ctrl-alt-del.target') do
       it { should be_file }
