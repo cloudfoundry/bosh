@@ -197,6 +197,12 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to_not contain(/HostKey \/etc\/ssh\/ssh_host_dsa_key$/)
     end
 
+    it 'enables RSA, ECDSA, ED25519 host keys' do
+      matches = sshd_config.content.select { |line| line[/^Host.*/]}
+
+      expect(matches).to contain_exactly('HostKey /etc/ssh/ssh_host_rsa_key', 'HostKey /etc/ssh/ssh_host_ecdsa_key', 'HostKey /etc/ssh/ssh_host_ed25519_key')
+    end
+
     it 'disallows X11 forwarding' do
       expect(sshd_config).to contain(/^X11Forwarding no$/)
       expect(sshd_config).to_not contain(/^X11DisplayOffset/)
