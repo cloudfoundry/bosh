@@ -7,6 +7,7 @@ internal_ip: $BOSH_internal_ip
 EOF
 
 mv bosh-cli/bosh-cli-* /usr/local/bin/bosh-cli
+chmod +x /usr/local/bin/bosh-cli
 
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/vsphere/cpi.yml \
