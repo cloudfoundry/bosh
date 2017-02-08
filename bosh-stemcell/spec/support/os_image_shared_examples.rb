@@ -198,7 +198,7 @@ shared_examples_for 'every OS image' do
     end
 
     it 'enables RSA, ECDSA, ED25519 host keys' do
-      matches = sshd_config.content.select { |line| line[/^Host.*/]}
+      matches = sshd_config.content.scan(/^HostKey.*/)
 
       expect(matches).to contain_exactly('HostKey /etc/ssh/ssh_host_rsa_key', 'HostKey /etc/ssh/ssh_host_ecdsa_key', 'HostKey /etc/ssh/ssh_host_ed25519_key')
     end
