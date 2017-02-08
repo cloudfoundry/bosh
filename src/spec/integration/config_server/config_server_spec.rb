@@ -569,7 +569,7 @@ describe 'using director with config server', type: :integration do
       end
     end
 
-    context 'when release job spec properties have types' do
+    xcontext 'when release job spec properties have types' do
       let(:manifest_hash) do
         Bosh::Spec::Deployments.test_release_manifest.merge(
           {

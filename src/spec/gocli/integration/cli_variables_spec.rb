@@ -26,7 +26,6 @@ describe 'cli: variables', type: :integration do
     {
       'gargamel' => {
         'secret_recipe' => 'poutine',
-        'cert' => '((cert))'
       },
       'smurfs' => {
         'happiness_level' => '((happiness_level))',
@@ -65,15 +64,14 @@ describe 'cli: variables', type: :integration do
     variable_ids = variables.map { |obj|
       obj['ID']
     }
-    expect(variable_ids.uniq.length).to eq(4)
+    expect(variable_ids.uniq.length).to eq(3)
 
     variable_names = variables.map { |obj|
       obj['Name']
     }
-    expect(variable_names.uniq.length).to eq(4)
+    expect(variable_names.uniq.length).to eq(3)
 
     expect(variable_names).to include("/#{director_name}/#{deployment_name}/ig_placeholder")
-    expect(variable_names).to include("/#{director_name}/#{deployment_name}/cert")
     expect(variable_names).to include("/#{director_name}/#{deployment_name}/happiness_level")
     expect(variable_names).to include("/phone_password")
   end
@@ -95,12 +93,12 @@ describe 'cli: variables', type: :integration do
     variable_ids = variables.map { |obj|
       obj['ID']
     }
-    expect(variable_ids.uniq.length).to eq(6)
+    expect(variable_ids.uniq.length).to eq(5)
 
     variable_names = variables.map { |obj|
       obj['Name']
     }
-    expect(variable_names.uniq.length).to eq(6)
+    expect(variable_names.uniq.length).to eq(5)
 
     expect(variable_names).to include("/release_name")
     expect(variable_names).to include("/gargamel_colour")
