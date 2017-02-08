@@ -605,8 +605,8 @@ shared_examples_for 'every OS image' do
     end
 
     describe 'file deletion events must be recorded (CIS-8.1.14)' do
-      its(:content) { should match /^-a always,exit -F arch=b64 -S unlink -S rmdir -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
-      its(:content) { should match /^-a always,exit -F arch=b32 -S unlink -S rmdir -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S unlink -S unlinkat -S rmdir -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S unlink -S unlinkat -S rmdir -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
     end
 
     describe 'audit rules are made immutable (CIS-8.1.18)' do
@@ -623,7 +623,7 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-w \/var\/log\/faillog -p wa -k logins$/ }
       its(:content) { should match /^-w \/var\/log\/lastlog -p wa -k logins$/ }
       its(:content) { should match /^-w \/var\/log\/tallylog -p wa -k logins$/ }
-      its(:content) { should match /^-w \/var\/log\/faillock -p wa -k logins$/ }
+      its(:content) { should match /^-w \/var\/run\/faillock -p wa -k logins$/ }
     end
 
     describe 'record session initiation events (CIS-8.1.9)' do
