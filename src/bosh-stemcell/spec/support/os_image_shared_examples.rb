@@ -605,8 +605,8 @@ shared_examples_for 'every OS image' do
     end
 
     describe 'file deletion events must be recorded (CIS-8.1.14)' do
-      its(:content) { should match /^-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
-      its(:content) { should match /^-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S unlink -S rmdir -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S unlink -S rmdir -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete$/ }
     end
 
     describe 'audit rules are made immutable (CIS-8.1.18)' do
@@ -623,6 +623,7 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-w \/var\/log\/faillog -p wa -k logins$/ }
       its(:content) { should match /^-w \/var\/log\/lastlog -p wa -k logins$/ }
       its(:content) { should match /^-w \/var\/log\/tallylog -p wa -k logins$/ }
+      its(:content) { should match /^-w \/var\/log\/faillock -p wa -k logins$/ }
     end
 
     describe 'record session initiation events (CIS-8.1.9)' do
@@ -646,6 +647,7 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-w \/etc\/issue\.net -p wa -k system-locale$/ }
       its(:content) { should match /^-w \/etc\/hosts -p wa -k system-locale$/ }
       its(:content) { should match /^-w \/etc\/network -p wa -k system-locale$/ }
+      its(:content) { should match /^-w \/etc\/sysconfig\/network -p wa -k system-locale$/ }
     end
 
     describe 'record events that modify systems mandatory access controls (CIS-8.1.7)' do
@@ -673,10 +675,10 @@ shared_examples_for 'every OS image' do
     end
 
     describe 'record unsuccessful unauthorized access attempts to files - EACCES (CIS-8.1.11)' do
-      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
-      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
-      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
-      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b64 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
+      its(:content) { should match /^-a always,exit -F arch=b32 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access/ }
     end
 
     describe 'record use of binaries' do
@@ -695,6 +697,22 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/gpasswd -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/chsh -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/chage -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/mount -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/su -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/umount -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/lib64\/dbus-1\/dbus-daemon-launch-helper -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/openssh\/ssh-keysign -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/krb5_child -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/ldap_child -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/p11_child -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/proxy_child -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/selinux_child -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/utempter\/utempter -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/mount.nfs -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/netreport -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/postdrop -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/postqueue -k privileged/ }
+      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/usernetctl -k privileged/ }
     end
   end
 

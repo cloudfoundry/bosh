@@ -45,8 +45,8 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -w /etc/localtime -p wa -k time-change
 
 # Record file deletion events
--a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
--a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+-a always,exit -F arch=b64 -S unlink -S unlinkat -S rmdir -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+-a always,exit -F arch=b32 -S unlink -S unlinkat -S rmdir -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
 
 # Record changes to sudoers file
 -w /etc/sudoers -p wa -k scope
@@ -55,6 +55,7 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -w /var/log/faillog -p wa -k logins
 -w /var/log/lastlog -p wa -k logins
 -w /var/log/tallylog -p wa -k logins
+-w /var/run/faillock -p wa -k logins
 
 # Record session initiation events
 -w /var/run/utmp -p wa -k session
@@ -75,6 +76,7 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -w /etc/issue.net -p wa -k system-locale
 -w /etc/hosts -p wa -k system-locale
 -w /etc/network -p wa -k system-locale
+-w /etc/sysconfig/network -p wa -k system-locale
 
 # Record events that modify systems mandatory access controls
 -w /etc/selinux/ -p wa -k MAC-policy
@@ -95,10 +97,10 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
 
 # Record unsuccessful unauthorized access attempts to files - EACCES
--a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
--a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
--a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
--a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b64 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b32 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b64 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b32 -S creat -S open -S open_by_handle_at -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
 
 # Record use of additional binaries
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/sbin/unix_chkpwd -k privileged
@@ -116,6 +118,23 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/gpasswd -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/chsh -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/chage -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/mount -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/su -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/umount -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/lib64/dbus-1/dbus-daemon-launch-helper -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/openssh/ssh-keysign -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/krb5_child -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/ldap_child -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/p11_child -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/proxy_child -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/selinux_child -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/utempter/utempter -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/mount.nfs -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/netreport -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/postdrop -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/postqueue -k privileged
+-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/usernetctl -k privileged
+
 ' >> $chroot/etc/audit/rules.d/audit.rules
 
     echo '
