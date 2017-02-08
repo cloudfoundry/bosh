@@ -21,6 +21,11 @@ describe 'cli: events', type: :integration do
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
     output = bosh_runner.run('events', json: true)
 
+    data = table(output)
+    id = data[-1]["ID"]
+    event_output =  bosh_runner.run("event #{id}")
+    expect(event_output.split.join(" ")).to include("ID #{id}")
+
     data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
     stable_data = get_details(data, ['ID', 'Time', 'User', 'Task ID'])
     flexible_data = get_details(data, [ 'Action', 'Object Type', 'Object ID', 'Deployment', 'Instance', 'Context', 'Error'])

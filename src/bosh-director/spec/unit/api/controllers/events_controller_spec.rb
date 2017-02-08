@@ -136,8 +136,9 @@ module Bosh::Director
             basic_authorize 'admin', 'admin'
 
             get '/3'
-            expect(last_response.status).to eq(400)
-            expect(last_response.body).to eq('Event 3 not found')
+
+            expect(last_response.status).to eq(404)
+            expect(last_response.body).to eq('Event not found')
           end
         end
 

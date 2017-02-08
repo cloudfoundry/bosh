@@ -9,12 +9,10 @@ module Bosh::Director
       get '/:id' do
         content_type(:json)
 
-        event_id = params[:id]
+        event_id = params[:id].to_i
         event = Models::Event[event_id]
         if event.nil?
-          status(400)
-          body("Event #{event_id} not found")
-          return
+          not_found
         end
         json_encode(@event_manager.event_to_hash(event))
       end
@@ -125,6 +123,11 @@ module Bosh::Director
 
       def integer?(string)
         string =~ /\A[-+]?\d+\z/
+      end
+
+      not_found do
+        status(404)
+        "Event not found"
       end
     end
   end
