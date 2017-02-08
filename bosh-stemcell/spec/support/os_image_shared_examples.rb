@@ -193,6 +193,10 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^PrintLastLog yes$/)
     end
 
+    it 'disables insecure DSA host keys' do
+      expect(sshd_config).to_not contain(/HostKey \/etc\/ssh\/ssh_host_dsa_key$/)
+    end
+
     it 'disallows X11 forwarding' do
       expect(sshd_config).to contain(/^X11Forwarding no$/)
       expect(sshd_config).to_not contain(/^X11DisplayOffset/)
