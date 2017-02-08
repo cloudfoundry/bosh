@@ -984,6 +984,96 @@ module Bosh::Director::ConfigServer
             expect(event_3.context).to eq({'id'=>3,'name'=>'/placeholder_c'})
           end
 
+          context 'when variable options contains a ca key' do
+
+            context 'when variable type is certificate & ca is relative' do
+              let(:variables_spec) do
+                [
+                    {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'ca' => 'my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},
+                ]
+              end
+
+              let(:variables_obj) do
+                Bosh::Director::DeploymentPlan::Variables.new(variables_spec)
+              end
+
+              it 'namespaces the ca reference for a variable with type certificate' do
+                expect(http_client).to receive(:post).with(
+                    {
+                        'name' => prepend_namespace('placeholder_b'),
+                        'type' => 'certificate',
+                        'parameters' => {'ca' => prepend_namespace('my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+                    }
+                ).ordered.and_return(
+                    generate_success_response(
+                        {
+                            "id": "some_id2",
+                        }.to_json))
+
+                client.generate_values(variables_obj, deployment_name)
+              end
+
+            end
+
+            context 'when variable type is certificate & ca is absolute' do
+              let(:variables_spec) do
+                [
+                    {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'ca' => '/my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},
+                ]
+              end
+
+              let(:variables_obj) do
+                Bosh::Director::DeploymentPlan::Variables.new(variables_spec)
+              end
+
+              it 'namespaces the ca reference for a variable with type certificate' do
+                expect(http_client).to receive(:post).with(
+                    {
+                        'name' => prepend_namespace('placeholder_b'),
+                        'type' => 'certificate',
+                        'parameters' => {'ca' => ('/my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+                    }
+                ).ordered.and_return(
+                    generate_success_response(
+                        {
+                            "id": "some_id2",
+                        }.to_json))
+
+                client.generate_values(variables_obj, deployment_name)
+              end
+
+            end
+
+            context 'when variable type is NOT certificate' do
+              let(:variables_spec) do
+                [
+                    {'name' => 'placeholder_a', 'type' => 'something-else','options' => {'ca' => 'some_ca_value'}},
+                ]
+              end
+
+              let(:variables_obj) do
+                Bosh::Director::DeploymentPlan::Variables.new(variables_spec)
+              end
+
+              it 'it passes options through to config server without modification' do
+                expect(http_client).to receive(:post).with(
+                    {
+                        'name' => prepend_namespace('placeholder_a'),
+                        'type' => 'something-else',
+                        'parameters' => {'ca' => 'some_ca_value'}
+                    }
+                ).ordered.and_return(
+                    generate_success_response(
+                        {
+                            "id": "some_id1",
+                        }.to_json))
+
+                client.generate_values(variables_obj, deployment_name)
+              end
+            end
+
+
+          end
           context 'when config server throws an error while generating' do
             before do
               allow(http_client).to receive(:post).with(

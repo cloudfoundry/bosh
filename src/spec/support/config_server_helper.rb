@@ -14,6 +14,17 @@ module Bosh::Spec
       }
     end
 
+    def post(name, type)
+      json_body = { "name": name, "type": type}
+      if type == "root-certificate"
+        json_body = {"name": name,"type": "certificate","parameters":{"is_ca": true, "common_name": "#{name}-cn", "alternative_names":["#{name}-an"]}}
+      end
+      response = send_request('POST', build_uri, JSON.dump(json_body))
+      raise "Config server responded with an error.\n #{response.inspect}" unless response.kind_of? Net::HTTPSuccess
+
+      JSON.parse(response.body)
+    end
+
     def put_value(name, value)
       response = send_request('PUT', build_uri, JSON.dump({name: name, value: value}))
       raise "Config server responded with an error.\n #{response.inspect}" unless response.kind_of? Net::HTTPSuccess

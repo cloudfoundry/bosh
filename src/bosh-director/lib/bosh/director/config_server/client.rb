@@ -86,6 +86,14 @@ module Bosh::Director::ConfigServer
           deployment_name
         )
 
+        if variable['type'] == 'certificate' && variable['options'] && variable['options']['ca']
+          variable['options']['ca'] = ConfigServerHelper.add_prefix_if_not_absolute(
+              variable['options']['ca'],
+              @director_name,
+              deployment_name
+          )
+        end
+
         generate_value_and_record_event(constructed_name, variable['type'], deployment_name, variable['options'])
       end
     end
