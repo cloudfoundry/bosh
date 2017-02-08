@@ -141,6 +141,12 @@ shared_examples_for 'every OS image' do
       it 'should not restart rsyslog on rotate so that logs are not lost' do
         should_not contain 'restart rsyslog'
       end
+
+      it 'should configure the news services' do
+        should contain '/var/log/news/news.crit'
+        should contain '/var/log/news/news.err'
+        should contain '/var/log/news/news.notice'
+      end
     end
   end
 
