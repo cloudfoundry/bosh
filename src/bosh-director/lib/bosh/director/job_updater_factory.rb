@@ -4,8 +4,8 @@ module Bosh::Director
       @logger = logger
     end
 
-    def new_job_updater(deployment_plan, job)
-      JobUpdater.new(deployment_plan, job, DiskManager.new(@logger))
+    def new_job_updater(ip_provider, job)
+      JobUpdater.new(ip_provider, job, DiskManager.new(@logger))
     end
   end
 end

@@ -74,7 +74,7 @@ module Bosh::Director
 
         it_deletes_unneeded_instances.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
-        expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
+        expect(multi_job_updater).to receive(:run).with(base_job, ip_provider, [job1, job2]).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
         subject.perform
       end

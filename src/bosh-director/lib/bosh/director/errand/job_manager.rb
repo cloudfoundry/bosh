@@ -19,7 +19,7 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_updater = JobUpdater.new(@deployment, @job, @disk_manager)
+      job_updater = JobUpdater.new(@deployment.ip_provider, @job, @disk_manager)
       job_updater.update
     end
 
