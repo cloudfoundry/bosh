@@ -112,6 +112,7 @@ module Bosh::Director
       allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
     end
     let(:availability_zone) { nil }
 

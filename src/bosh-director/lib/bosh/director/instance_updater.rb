@@ -112,7 +112,7 @@ module Bosh::Director
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
         @rendered_templates_persistor.persist(instance_plan)
-        instance.update_variables_set_id
+        instance.update_variable_set
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,

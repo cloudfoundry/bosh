@@ -37,6 +37,7 @@ module Bosh::Director
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
     before do
+      Models::VariableSet.create(deployment: deployment_model)
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
@@ -71,7 +72,7 @@ module Bosh::Director
         end
 
         it 'does NOT update the variable set id for the instance' do
-          expect(instance).to_not receive(:update_variables_set_id)
+          expect(instance).to_not receive(:update_variable_set)
           expect {
             updater.update(instance_plan)
           }.to raise_error
@@ -79,7 +80,7 @@ module Bosh::Director
       end
 
       it 'updates the variable_set_id on the instance' do
-        expect(instance).to receive(:update_variables_set_id)
+        expect(instance).to receive(:update_variable_set)
         updater.update(instance_plan)
       end
     end

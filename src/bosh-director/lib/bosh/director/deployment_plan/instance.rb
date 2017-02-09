@@ -115,7 +115,8 @@ module Bosh::Director
             compilation: @compilation,
             uuid: SecureRandom.uuid,
             availability_zone: availability_zone_name,
-            bootstrap: false
+            bootstrap: false,
+            variable_set_id: @deployment_model.current_variable_set.id
           })
         @uuid = @model.uuid
       end
@@ -241,8 +242,8 @@ module Bosh::Director
         @model.update(availability_zone: availability_zone_name)
       end
 
-      def update_variables_set_id
-        @model.update(variables_set_id: @deployment_model.variables_set_id)
+      def update_variable_set
+        @model.update(variable_set: @deployment_model.current_variable_set)
       end
 
       def state
@@ -311,6 +312,7 @@ module Bosh::Director
           model.state = 'started'
           model.compilation = @compilation
           model.uuid = SecureRandom.uuid
+          model.variable_set_id = @deployment_model.current_variable_set.id
         end
       end
 

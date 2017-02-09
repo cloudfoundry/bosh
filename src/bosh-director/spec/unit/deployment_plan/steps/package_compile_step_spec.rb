@@ -64,6 +64,8 @@ module Bosh::Director
     }
 
     before do
+      Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
@@ -687,9 +689,12 @@ module Bosh::Director
     describe '#prepare_vm' do
       let(:number_of_workers) { 2 }
       let(:plan) do
+        deployment_model = Models::Deployment.make
+        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+
         instance_double('Bosh::Director::DeploymentPlan::Planner',
           compilation: compilation_config,
-          model: Models::Deployment.make,
+          model: deployment_model,
           name: 'fake-deployment',
           ip_provider: ip_provider
         )

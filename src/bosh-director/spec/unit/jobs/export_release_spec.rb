@@ -57,17 +57,19 @@ module Bosh::Director
         )
       end
 
+      before do
+        Models::VariableSet.create(deployment: deployment_model)
+
+        allow(job).to receive(:with_deployment_lock).and_yield
+        allow(job).to receive(:with_release_lock).and_yield
+        allow(job).to receive(:with_stemcell_lock).and_yield
+      end
+
       it 'raises an error when the requested release does not exist' do
         create_stemcell
         expect {
           job.perform
         }.to raise_error(Bosh::Director::ReleaseNotFound)
-      end
-
-      before do
-        allow(job).to receive(:with_deployment_lock).and_yield
-        allow(job).to receive(:with_release_lock).and_yield
-        allow(job).to receive(:with_stemcell_lock).and_yield
       end
 
       context 'when the requested release exists but version does not match' do

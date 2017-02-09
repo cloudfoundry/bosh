@@ -7,6 +7,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
     ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
     model = BD::Models::Deployment.make
+    BD::Models::VariableSet.create(deployment: model)
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       network: network,
       ip_provider: ip_provider,

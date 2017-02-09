@@ -115,6 +115,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     before do
+      Bosh::Director::Models::VariableSet.make(deployment: deployment)
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)

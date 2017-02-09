@@ -44,7 +44,6 @@ module Bosh::Director::Jobs
           errand_instance_groups: [errand_instance_group]
         )
       end
-      let(:deployment_repo) { instance_double('Bosh::Director::DeploymentPlan::DeploymentRepo') }
 
       let(:mock_manifest) do
         Bosh::Director::Manifest.new(YAML.load(manifest_content), nil, nil)
@@ -58,9 +57,7 @@ module Bosh::Director::Jobs
         allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
-        allow(Bosh::Director::DeploymentPlan::DeploymentRepo).to receive(:new).and_return(deployment_repo)
         allow(planner).to receive(:variables).and_return(Bosh::Director::DeploymentPlan::Variables.new([]))
-        allow(deployment_repo).to receive(:update_variable_set)
         allow(variables_interpolator).to receive(:interpolate_template_spec_properties) {|properties, _| properties}
         allow(variables_interpolator).to receive(:interpolate_link_spec_properties) {|links_spec| links_spec}
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
@@ -79,17 +76,27 @@ module Bosh::Director::Jobs
         end
 
         context "when options hash contains 'deploy' key" do
-          let (:options) { {'deploy' => true } }
+          let(:options) { {'deploy' => true } }
+          let(:fixed_time) { Time.now }
+
+          before do
+            allow(Time).to receive(:now).and_return(fixed_time)
+          end
 
           it 'should create a new variable set for the deployment' do
-            expect(deployment_repo).to receive(:update_variable_set)
+            deployment_model = Bosh::Director::Models::Deployment.make
+
+            expect(Bosh::Director::Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+            expect(deployment_model).to receive(:add_variable_set).with({:created_at=> fixed_time})
             job.perform
           end
         end
 
         context "when options hash does NOT contain 'deploy'" do
+          let (:options) { {'deploy' => false } }
+
           it 'should NOT create a new variable set for the deployment' do
-            expect(deployment_repo).to_not receive(:update_variable_set)
+            expect(Bosh::Director::Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
             job.perform
           end
         end

@@ -63,6 +63,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     allow(foo_job).to receive(:add_properties)
     allow(bar_job).to receive(:add_properties)
+    allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
   end
 
   describe '#parse' do

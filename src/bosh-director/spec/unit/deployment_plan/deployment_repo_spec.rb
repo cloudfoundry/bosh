@@ -42,11 +42,6 @@ module Bosh
                 expect(instance.name).to eq('foo')
               }.to change { Models::Deployment.count }
             end
-
-            it 'uses an empty placeholder set identifier' do
-              instance = subject.find_or_create_by_name('foo')
-              expect(instance.variables_set_id).to eq('')
-            end
           end
         end
 
@@ -129,33 +124,6 @@ module Bosh
                                                                  'runtime_config' => runtime_config })
             expect(deployment.cloud_config).to eq(cloud_config)
             expect(deployment.runtime_config).to eq(runtime_config)
-          end
-        end
-      end
-
-      describe '.update_variable_set' do
-        context 'given a name of an existing deployment' do
-          it 'should generate the variable_set_id attribute' do
-            existing = Models::Deployment.create(name: 'existing')
-
-            deployment = subject.find_or_create_by_name('existing')
-            expect(deployment).to eq(existing)
-            expect(deployment.variables_set_id).to eq('')
-
-            ret_uuid = 'unique_uuid'
-            allow(SecureRandom).to receive(:uuid).and_return(ret_uuid)
-
-            subject.update_variable_set('existing')
-            deployment = subject.find_or_create_by_name('existing')
-            expect(deployment.variables_set_id).to eq(ret_uuid)
-          end
-        end
-
-        context 'given a name of a deployment that does NOT exist' do
-          it 'should raise an error' do
-            expect {
-              subject.update_variable_set('dep_dne')
-            }.to raise_exception Bosh::Director::DeploymentNotFound, "Deployment 'dep_dne' doesn't exist"
           end
         end
       end

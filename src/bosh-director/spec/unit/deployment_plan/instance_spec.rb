@@ -67,12 +67,15 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#bind_new_instance_model' do
-      it 'sets the instance model and uuid' do
+      it 'sets the instance model, uuid, and instance model variable_set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
         expect(instance.model).to be_nil
         expect(instance.uuid).to be_nil
 
         instance.bind_new_instance_model
         expect(instance.model).not_to be_nil
+        expect(instance.model.variable_set).to eq(variable_set_model)
         expect(instance.uuid).not_to be_nil
       end
     end
@@ -258,8 +261,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-
-
     describe '#update_instance_settings' do
       let(:fake_cert) { 'super trustworthy cert' }
       let(:persistent_disk_model) { instance_double(Bosh::Director::Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid')}
@@ -299,7 +300,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-
     describe '#update_cloud_properties' do
       it 'saves the cloud properties' do
         availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
@@ -325,16 +325,21 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#update_variables_set_id' do
-      it 'updates the instance model variable_set_id' do
-        deployment.variables_set_id = 'fake-set-id'
+    describe '#update_variable_set' do
+      let(:fixed_time) { Time.now }
+
+      it 'updates the instance model with latest deployment variable_set' do
+        latest_variable_set = Bosh::Director::Models::VariableSet.make(id: 1, deployment: deployment, created_at: fixed_time + 1)
+        Bosh::Director::Models::VariableSet.make(id: 2, deployment: deployment, created_at: fixed_time)
+        Bosh::Director::Models::VariableSet.make(id: 3, deployment: deployment, created_at: fixed_time - 1)
+
         instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
-        instance.update_variables_set_id
+        instance.update_variable_set
 
         instance_model = Bosh::Director::Models::Instance.all.first
-        expect(instance_model.variables_set_id).to eq('fake-set-id')
+        expect(instance_model.variable_set).to eq(latest_variable_set)
       end
     end
   end

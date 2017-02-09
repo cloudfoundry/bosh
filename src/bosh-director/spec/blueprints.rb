@@ -99,6 +99,7 @@ module Bosh::Director::Models
     vm_cid      { Sham.vm_cid }
     agent_id    { Sham.agent_id }
     uuid        { Sham.uuid }
+    variable_set { VariableSet.make }
   end
 
   IpAddress.blueprint do
@@ -221,10 +222,11 @@ module Bosh::Director::Models
     instance_id { Sham.instance_id }
   end
 
-  VariableMapping.blueprint do
-    variable_id   { Sham.variable_id }
-    variable_name { Sham.variable_name }
-  end
+  VariableSet.blueprint {
+    deployment { Deployment.make }
+  }
+
+  Variable.blueprint {}
 
   module Dns
     Domain.blueprint do

@@ -25,13 +25,6 @@ module Bosh::Director
         create_for_attributes(attributes)
       end
 
-      def update_variable_set(deployment_name)
-        deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
-        raise DeploymentNotFound, "Deployment '#{deployment_name}' doesn't exist" unless deployment
-        deployment[:variables_set_id] = SecureRandom.uuid
-        deployment.save
-      end
-
       private
 
       def create_for_attributes(attributes)

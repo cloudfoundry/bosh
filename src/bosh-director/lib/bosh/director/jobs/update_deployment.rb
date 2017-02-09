@@ -56,7 +56,10 @@ module Bosh::Director
         parent_id = add_event
 
         with_deployment_lock(@deployment_name) do
-          DeploymentPlan::DeploymentRepo.new.update_variable_set(manifest_hash['name']) if @options['deploy']
+
+          if @options['deploy']
+            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now)
+          end
 
           deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
 

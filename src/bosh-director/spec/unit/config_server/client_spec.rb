@@ -5,9 +5,9 @@ module Bosh::Director::ConfigServer
     subject(:client) { EnabledClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
-    let(:deployment_attrs) { { id: 1, name: deployment_name, variables_set_id: variables_set_id } }
+    let(:deployment_attrs) { { id: 1, name: deployment_name } }
     let(:logger) { double('Logging::Logger') }
-    let(:variables_set_id) { 'var_set_id' }
+    let(:variables_set_id) { 2000 }
     let(:success_post_response) {
       generate_success_response({ "id": "some_id1" }.to_json)
     }
@@ -27,7 +27,8 @@ module Bosh::Director::ConfigServer
     end
 
     before do
-      Bosh::Director::Models::Deployment.make(deployment_attrs)
+      deployment_model = Bosh::Director::Models::Deployment.make(deployment_attrs)
+      Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model)
 
       allow(logger).to receive(:info)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
@@ -102,14 +103,7 @@ module Bosh::Director::ConfigServer
         context 'when variable is already fetched for the current set' do
           before do
             allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
-
-            attr = {
-              set_id: variables_set_id,
-              variable_name: variable_name,
-              variable_id: variable_id,
-              deployment_id: deployment_attrs[:id],
-            }
-            Bosh::Director::Models::VariableMapping.create(attr)
+            Bosh::Director::Models::Variable.create(variable_set_id: variables_set_id, variable_name: variable_name, variable_id: variable_id)
           end
 
           it 'should request by id' do
@@ -124,24 +118,32 @@ module Bosh::Director::ConfigServer
           end
 
           it 'should add the name to id mapping for the current set to database' do
-            expect(Bosh::Director::Models::VariableMapping[variable_name: variable_name, set_id: variables_set_id]).to be_nil
+            expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to be_nil
             client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, interpolate_options)
-            models = Bosh::Director::Models::VariableMapping.all
+            models = Bosh::Director::Models::Variable.all
             expect(models.length).to eq(1)
-            expect(Bosh::Director::Models::VariableMapping[variable_name: variable_name, set_id: variables_set_id]).to_not be_nil
+            expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to_not be_nil
           end
 
           context 'but variable was added to the current set by another worker after the initial check' do
-            let(:valid_mapping) {
-              obj = double
-              allow(obj).to receive(:variable_id).and_return(variable_id)
-              allow(obj).to receive(:variable_name).and_return(variable_name)
-              obj
-            }
+            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
+            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:variable) { instance_double(Bosh::Director::Models::Variable) }
+
+            before do
+              allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
+              allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
+              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
+              allow(variable_set).to receive(:add_variable).and_raise(Sequel::UniqueConstraintViolation)
+              allow(variable_set).to receive(:id)
+              allow(variable).to receive(:variable_id).and_return(variable_id)
+              allow(variable).to receive(:variable_name).and_return(variable_name)
+
+              allow(Bosh::Director::Models::Variable).to receive(:[]).and_return(nil, variable)
+            end
 
             it 'should fetch by id from database' do
-              allow(Bosh::Director::Models::VariableMapping).to receive(:[]).and_return(nil, valid_mapping)
-              allow(Bosh::Director::Models::VariableMapping).to receive(:create).and_raise(Sequel::UniqueConstraintViolation)
               allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
 
               expect(http_client).to receive(:get_by_id).with(variable_id)
@@ -714,15 +716,13 @@ module Bosh::Director::ConfigServer
 
                   it 'should save generated variable to variable_mappings table' do
                     allow(http_client).to receive(:post).and_return(success_post_response)
-
-                    expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
-                      set_id: variables_set_id,
-                      variable_name: prepend_namespace('my_smurf'),
-                      variable_id: 'some_id1',
-                      deployment_id: deployment_attrs[:id]
-                    )
+                    expect(Bosh::Director::Models::Variable[variable_name: prepend_namespace('my_smurf'), variable_set_id: variables_set_id]).to be_nil
 
                     client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+
+                    saved_variable = Bosh::Director::Models::Variable[variable_name: prepend_namespace('my_smurf'), variable_set_id: variables_set_id]
+                    expect(saved_variable.variable_name).to eq(prepend_namespace('my_smurf'))
+                    expect(saved_variable.variable_id).to eq('some_id1')
                   end
 
                   context 'when placeholder starts with exclamation mark' do
@@ -857,7 +857,9 @@ module Bosh::Director::ConfigServer
               generate_success_response(
                 {
                   "id": "some_id1",
-                }.to_json))
+                }.to_json)
+            )
+
             expect(http_client).to receive(:post).with(
               {
                 'name' => prepend_namespace('placeholder_b'),
@@ -868,7 +870,9 @@ module Bosh::Director::ConfigServer
               generate_success_response(
                 {
                   "id": "some_id2",
-                }.to_json))
+                }.to_json)
+            )
+
             expect(http_client).to receive(:post).with(
               {
                 'name' => '/placeholder_c',
@@ -879,40 +883,28 @@ module Bosh::Director::ConfigServer
               generate_success_response(
                 {
                   "id": "some_id3",
-                }.to_json))
+                }.to_json)
+            )
 
             client.generate_values(variables_obj, deployment_name)
           end
 
-          it 'should save generated variables to variable_mappings table' do
+          it 'should save generated variables to variable table with correct associations' do
             allow(http_client).to receive(:post).and_return(
-              generate_success_response({ "id": "some_id1" }.to_json),
-              generate_success_response({ "id": "some_id2" }.to_json),
-              generate_success_response({ "id": "some_id3" }.to_json),
+              generate_success_response({'id': 'some_id1'}.to_json),
+              generate_success_response({'id': 'some_id2'}.to_json),
+              generate_success_response({'id': 'some_id3'}.to_json),
             )
 
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
-              set_id: variables_set_id,
-              variable_name: prepend_namespace('placeholder_a'),
-              variable_id: 'some_id1',
-              deployment_id: deployment_attrs[:id]
-            )
-
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
-              set_id: variables_set_id,
-              variable_name: prepend_namespace('placeholder_b'),
-              variable_id: 'some_id2',
-              deployment_id: deployment_attrs[:id]
-            )
-
-            expect(Bosh::Director::Models::VariableMapping).to receive(:create).with(
-              set_id: variables_set_id,
-              variable_name: '/placeholder_c',
-              variable_id: 'some_id3',
-              deployment_id: deployment_attrs[:id]
-            )
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id1', variable_name: prepend_namespace('placeholder_a'), variable_set_id: variables_set_id]).to be_nil
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id2', variable_name: prepend_namespace('placeholder_b'), variable_set_id: variables_set_id]).to be_nil
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id3', variable_name: '/placeholder_c', variable_set_id: variables_set_id]).to be_nil
 
             client.generate_values(variables_obj, deployment_name)
+
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id1', variable_name: prepend_namespace('placeholder_a'), variable_set_id: variables_set_id]).to_not be_nil
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id2', variable_name: prepend_namespace('placeholder_b'), variable_set_id: variables_set_id]).to_not be_nil
+            expect(Bosh::Director::Models::Variable[variable_id: 'some_id3', variable_name: '/placeholder_c', variable_set_id: variables_set_id]).to_not be_nil
           end
 
           it 'should record events' do

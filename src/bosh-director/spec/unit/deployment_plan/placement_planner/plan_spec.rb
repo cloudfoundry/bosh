@@ -52,6 +52,10 @@ module Bosh::Director::DeploymentPlan
     ] }
     let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
 
+    before do
+      Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+    end
+
     context 'when job networks include static IPs' do
       let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '10.10.1.10']}
 
