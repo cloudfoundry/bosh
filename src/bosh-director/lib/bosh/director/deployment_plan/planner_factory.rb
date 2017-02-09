@@ -63,7 +63,7 @@ module Bosh
           }
 
           plan_options = {
-            'recreate' => options.fetch('recreate', []),
+            'recreate' => !!options['recreate'],
             'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},

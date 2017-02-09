@@ -56,7 +56,7 @@ module Bosh::Director
       end
 
       let(:plan_instance) do
-        instance_double('Bosh::Director::DeploymentPlan::Instance', uuid: 'some-uuid')
+        instance_double('Bosh::Director::DeploymentPlan::Instance')
       end
 
       let(:states_by_existing_instance) do
@@ -91,7 +91,7 @@ module Bosh::Director
         allow(desired_instance).to receive(:index).and_return(1)
         allow(desired_instance).to receive(:index=)
         allow(desired_instance).to receive(:deployment)
-        allow(instance_repo).to receive(:create).and_return(plan_instance)
+        allow(instance_repo).to receive(:create)
         allow(instance_repo).to receive(:fetch_existing).and_return(plan_instance)
         allow(instance_group).to receive(:name).and_return('group-name')
         allow(index_assigner).to receive(:assign_index)
@@ -107,11 +107,6 @@ module Bosh::Director
         it 'populates the instance plan existing model' do
           instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(instance_plan.existing_instance).to eq(existing_instance_model)
-        end
-
-        it 'ensures it is not recreated' do
-          instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-          expect(instance_plan.needs_recreate?).to be_falsey
         end
 
         it 'fetches network reservations' do
@@ -130,29 +125,12 @@ module Bosh::Director
             existing_instance: anything,
             instance: anything,
             skip_drain: anything,
-            recreate_instance: anything,
+            recreate_deployment: anything,
             need_to_fix: anything,
             tags: tags
           )
 
           instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
-        end
-
-        context 'when some instances need to be recreated' do
-          let(:options) { {'recreate' => [existing_instance_model.uuid]} }
-
-          it 'passes through recreate_instance: true to only those instances' do
-            allow(instance_repo).to receive(:fetch_existing).and_return(
-              instance_double(Instance, uuid: existing_instance_model.uuid, update_description: {}),
-              instance_double(Instance, uuid: 'any-uuid', update_description: {}, current_job_state: 'running'))
-
-            plan_to_recreate = instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
-            expect(plan_to_recreate.needs_recreate?).to be_truthy
-
-            instance_model = Models::Instance.make
-            plan_not_to_recreate = instance_plan_factory.desired_existing_instance_plan(instance_model, desired_instance)
-            expect(plan_not_to_recreate.needs_recreate?).to be_falsey
-          end
         end
       end
 
@@ -166,27 +144,11 @@ module Bosh::Director
             existing_instance: anything,
             instance: anything,
             skip_drain: anything,
-            recreate_instance: anything,
+            recreate_deployment: anything,
             tags: tags
           )
 
           instance_plan_factory.desired_new_instance_plan(desired_instance)
-        end
-
-        context 'when some instances need to be recreated' do
-          let(:options) { {'recreate' => ['recreate-uuid']} }
-
-          it 'passes through recreate_instance: true to only those instances' do
-            allow(instance_repo).to receive(:create).and_return(
-              instance_double(Instance, uuid: 'recreate-uuid', update_description: {}),
-              instance_double(Instance, uuid: 'any-uuid', update_description: {}, current_job_state: 'running'))
-
-            plan_to_recreate = instance_plan_factory.desired_new_instance_plan(desired_instance)
-            expect(plan_to_recreate.needs_recreate?).to be_truthy
-
-            plan_not_to_recreate = instance_plan_factory.desired_new_instance_plan(desired_instance)
-            expect(plan_not_to_recreate.needs_recreate?).to be_falsey
-          end
         end
       end
     end

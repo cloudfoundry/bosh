@@ -5,7 +5,7 @@ module Bosh
         def initialize(instance_repo, states_by_existing_instance, skip_drain_decider, index_assigner, network_reservation_repository, options = {})
           @instance_repo = instance_repo
           @skip_drain_decider = skip_drain_decider
-          @instances_to_recreate = options.fetch('recreate', [])
+          @recreate_deployment = options.fetch('recreate', false)
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
           @network_reservation_repository = network_reservation_repository
@@ -20,7 +20,7 @@ module Bosh
             existing_instance: existing_instance_model,
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(existing_instance_model.job),
-            recreate_instance: false
+            recreate_deployment: @recreate_deployment
           )
         end
 
@@ -37,7 +37,7 @@ module Bosh
             existing_instance: existing_instance_model,
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
-            recreate_instance: @instances_to_recreate.include?(instance.uuid),
+            recreate_deployment: @recreate_deployment,
             need_to_fix: need_to_fix,
             tags: @tags,
           )
@@ -52,7 +52,7 @@ module Bosh
             existing_instance: nil,
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
-            recreate_instance: @instances_to_recreate.include?(instance.uuid),
+            recreate_deployment: @recreate_deployment,
             tags: @tags,
           )
         end

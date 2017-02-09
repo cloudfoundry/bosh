@@ -103,21 +103,4 @@ describe 'recreate instance', type: :integration do
       end
     end
   end
-
-  it 'continues to maintain state of the job from before the recreate' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.simple_manifest)
-    expect(director.vms.size).to eq 3
-    original_instance = director.instances.first
-    instance_uuid = original_instance.id
-    original_instance_vm_cid = original_instance.vm_cid
-
-    _, exit_code = bosh_runner.run("stop --hard foobar/#{instance_uuid}", deployment_name: 'simple', return_exit_code: true)
-    expect(exit_code).to eq 0
-
-    _, exit_code = bosh_runner.run('recreate foobar', deployment_name: 'simple', return_exit_code: true)
-    expect(exit_code).to eq 0
-
-    expect(director.instance('foobar', instance_uuid).vm_cid).not_to eq original_instance_vm_cid
-    expect(director.vms.size).to eq 2
-  end
 end

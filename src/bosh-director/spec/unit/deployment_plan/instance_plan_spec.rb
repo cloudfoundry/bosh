@@ -79,7 +79,7 @@ module Bosh::Director::DeploymentPlan
     describe '#initialize' do
       context 'with defaults' do
         it 'correctly sets instance variables' do
-          expect(instance_plan.recreate_instance).to eq(false)
+          expect(instance_plan.recreate_deployment).to eq(false)
           expect(instance_plan.skip_drain).to eq(false)
         end
       end
@@ -262,8 +262,8 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when instance plan is being recreated' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_instance: true) }
+      context 'when deployment is being recreated' do
+        let(:deployment) { instance_double(Planner, recreate: true) }
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
         end
@@ -358,7 +358,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the instance is being recreated' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_instance: true) }
+        let(:deployment) { instance_double(Planner, recreate: true) }
 
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
@@ -396,7 +396,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when deployment is being recreated' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_instance: true) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return changed' do
           expect(instance_plan.needs_recreate?).to be_truthy
@@ -405,6 +405,22 @@ module Bosh::Director::DeploymentPlan
         it 'should log the change reason' do
           expect(logger).to receive(:debug).with('needs_recreate? job deployment is configured with "recreate" state')
           instance_plan.needs_recreate?
+        end
+      end
+
+      context 'when instance is being recreated' do
+        let(:instance_state) { 'recreate' }
+
+        it 'should return true when desired instance is in "recreate" state' do
+          expect(instance_plan.needs_recreate?).to be_truthy
+        end
+      end
+
+      context 'when instance is not being recreated' do
+        let(:instance_state) { 'stopped' }
+
+        it 'should return false when desired instance is in any another state' do
+          expect(instance_plan.needs_recreate?).to be_falsey
         end
       end
 
@@ -427,7 +443,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is ok' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_instance: true) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return false' do
           expect(instance_plan.needs_to_fix?).to be_falsey
@@ -435,7 +451,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is nil' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: nil, network_plans: network_plans, recreate_instance: true) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: nil, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return false' do
           expect(instance_plan.needs_to_fix?).to be_falsey

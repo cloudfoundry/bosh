@@ -68,22 +68,13 @@ module Bosh::Director
       # PUT /deployments/foo/jobs/dea?new_name=dea_new or
       # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true&fix=true
       put '/:deployment/jobs/:job', :consumes => :yaml do
-        if params['state'] == 'recreate'
-          if params[:job] == '*'
-            instances_to_recreate = @instance_manager.find_instances_by_deployment(deployment).map(&:uuid)
-          else
-            instances_to_recreate = @instance_manager.filter_by(deployment, {job: params[:job]}).map(&:uuid)
-          end
-          options = {'recreate' => instances_to_recreate}
-        else
-          options = {
-            'job_states' => {
-              params[:job] => {
-                'state' => params['state']
-              }
+        options = {
+          'job_states' => {
+            params[:job] => {
+              'state' => params['state']
             }
           }
-        end
+        }
 
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
         options['canaries'] = params[:canaries] if !!params['canaries']
@@ -111,11 +102,6 @@ module Bosh::Director
         instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
         index = instance.index
 
-        if params['state'] == 'recreate'
-          options = {
-            'recreate' => [instance.uuid]
-          }
-        else
         options = {
           'job_states' => {
             params[:job] => {
@@ -125,8 +111,6 @@ module Bosh::Director
             }
           },
         }
-        end
-
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
         options['fix'] = true if params['fix'] == 'true'
         options['dry_run'] = true if params['dry_run'] == 'true'
@@ -372,6 +356,7 @@ module Bosh::Director
 
         options = {}
         options['dry_run'] = true if params['dry_run'] == 'true'
+        options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         options['fix'] = true if params['fix'] == 'true'
         options.merge!('scopes' => token_scopes)
@@ -393,9 +378,6 @@ module Bosh::Director
         deployment_name = deployment['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
-        if params['recreate'] == 'true'
-          options['recreate'] = @instance_manager.find_instances_by_deployment(deployment_model).map(&:uuid)
-        end
 
         task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options, @current_context_id)
 
