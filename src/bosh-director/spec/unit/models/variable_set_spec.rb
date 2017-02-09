@@ -37,15 +37,9 @@ module Bosh::Director::Models
     end
 
     describe '#before_create' do
-      let(:random_current_time) { Time.now }
-
-      before do
-          allow(Time).to receive(:now).and_return(random_current_time)
-      end
-
-      it 'should set created_at to current time' do
-        variable_set = VariableSet.make(id: 1, deployment: deployment)
-        expect(variable_set.created_at).to eq(random_current_time)
+      it 'should set created_at' do
+        variable_set = VariableSet.make(deployment: deployment)
+        expect(variable_set.created_at).to_not be_nil
       end
     end
   end

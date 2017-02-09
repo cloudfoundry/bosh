@@ -329,9 +329,9 @@ module Bosh::Director::DeploymentPlan
       let(:fixed_time) { Time.now }
 
       it 'updates the instance model with latest deployment variable_set' do
-        latest_variable_set = Bosh::Director::Models::VariableSet.make(id: 1, deployment: deployment, created_at: fixed_time + 1)
-        Bosh::Director::Models::VariableSet.make(id: 2, deployment: deployment, created_at: fixed_time)
-        Bosh::Director::Models::VariableSet.make(id: 3, deployment: deployment, created_at: fixed_time - 1)
+        latest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
+        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
         instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)

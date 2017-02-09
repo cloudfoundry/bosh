@@ -20,13 +20,13 @@ module Bosh::Director
       it 'has a non null constraint for deployment_id' do
         expect {
           db[:variable_sets] << {id: 100, created_at: Time.now}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'has a non null constraint for created_at' do
         expect {
           db[:variable_sets] << {id: 100, deployment_id: 1}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'defaults deploy_success to false' do
@@ -71,19 +71,19 @@ module Bosh::Director
       it 'has a non null constraint for variable_id' do
         expect {
           db[:variables] << {id: 1, variable_name: 'var_1', variable_set_id: 100}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'has a non null constraint for variable_name' do
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_set_id: 100}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'has a non null constraint for variable_set_id' do
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_name: 'var_1'}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'cascades on variable_sets deletion' do
@@ -196,7 +196,7 @@ module Bosh::Director
         DBSpecHelper.migrate(migration_file)
         expect {
           db[:instances] << {job: 'job', index: 1, deployment_id: 1, state: 'running'}
-        }.to raise_error Sequel::NotNullConstraintViolation
+        }.to raise_error
       end
 
       it 'has a foreign key association with variable_sets table' do

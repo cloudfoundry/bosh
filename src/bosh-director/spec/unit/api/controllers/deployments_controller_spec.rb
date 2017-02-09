@@ -251,8 +251,9 @@ module Bosh::Director
                       .with(anything(), anything(), anything(), anything(), anything(), hash_including({'recreate' => ['dcaa7234-dfd2-4f1b-b0a4-182f2026afed', '0B949287-CDED-4761-9002-FC4035E11B21']}), anything())
                       .and_return(OpenStruct.new(:id => 1))
               deployment = Models::Deployment.create(name: 'deployment-name', manifest: YAML.dump({'foo' => 'bar'}))
-              Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started')
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              variable_set = Models::VariableSet.create(deployment: deployment)
+              Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started', :variable_set => variable_set)
+              Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', :variable_set => variable_set)
               post '/?recreate=true', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
@@ -335,9 +336,10 @@ module Bosh::Director
                         .and_return(OpenStruct.new(:id => 1))
 
                 deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
-                Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started')
-                Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
-                Models::Instance.create(deployment: deployment, job: 'dea', index: '3', uuid: '68c9ac2f-68de-4607-9bb6-0c633ffc1ab1', state: 'started')
+                variable_set = Models::VariableSet.create(deployment: deployment)
+                Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started', variable_set: variable_set)
+                Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', variable_set: variable_set)
+                Models::Instance.create(deployment: deployment, job: 'dea', index: '3', uuid: '68c9ac2f-68de-4607-9bb6-0c633ffc1ab1', state: 'started', variable_set: variable_set)
                 put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               end
             end
