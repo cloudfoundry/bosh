@@ -23,12 +23,6 @@ module Bosh::Director
         }.to raise_error
       end
 
-      it 'has a non null constraint for created_at' do
-        expect {
-          db[:variable_sets] << {id: 100, deployment_id: 1}
-        }.to raise_error
-      end
-
       it 'defaults deploy_success to false' do
           db[:variable_sets] << {id: 100, deployment_id: 1, created_at: Time.now}
           expect(db[:variable_sets].first['deploy_success']).to be_falsey
@@ -66,18 +60,6 @@ module Bosh::Director
         db[:variable_sets] << {id: 100, deployment_id: 1, created_at: Time.now}
         db[:variable_sets] << {id: 200, deployment_id: 1, created_at: Time.now}
         db[:variable_sets] << {id: 300, deployment_id: 2, created_at: Time.now}
-      end
-
-      it 'has a non null constraint for variable_id' do
-        expect {
-          db[:variables] << {id: 1, variable_name: 'var_1', variable_set_id: 100}
-        }.to raise_error
-      end
-
-      it 'has a non null constraint for variable_name' do
-        expect {
-          db[:variables] << {id: 1, variable_id: 'var_id_1', variable_set_id: 100}
-        }.to raise_error
       end
 
       it 'has a non null constraint for variable_set_id' do
