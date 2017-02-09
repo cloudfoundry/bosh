@@ -41,7 +41,7 @@ module Bosh::Director
       # Job instances from the old manifest that are not in the new manifest
       attr_reader :unneeded_instance_plans
 
-      # @return [Boolean] Indicates whether VMs should be recreated
+      # @return [Array<string>] Indicates which instances should be recreated
       attr_reader :recreate
 
       attr_writer :cloud_planner
@@ -73,7 +73,7 @@ module Bosh::Director
         @unneeded_vms = []
         @unneeded_instance_plans = []
 
-        @recreate = !!options['recreate']
+        @recreate = options.fetch('recreate', [])
         @fix = !!options['fix']
 
         @link_spec = {}

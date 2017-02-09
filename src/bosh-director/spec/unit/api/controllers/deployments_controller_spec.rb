@@ -244,6 +244,20 @@ module Bosh::Director
             end
           end
 
+          context 'with the "recreate" param' do
+            it 'recreates all instances' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                      .with(anything(), anything(), anything(), anything(), anything(), hash_including({'recreate' => ['dcaa7234-dfd2-4f1b-b0a4-182f2026afed', '0B949287-CDED-4761-9002-FC4035E11B21']}), anything())
+                      .and_return(OpenStruct.new(:id => 1))
+              deployment = Models::Deployment.create(name: 'deployment-name', manifest: YAML.dump({'foo' => 'bar'}))
+              Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started')
+              Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              post '/?recreate=true', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
         end
 
         describe 'deleting deployment' do
@@ -296,22 +310,47 @@ module Bosh::Director
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response.status).to eq(404)
             end
+
+            context 'when state is recreate' do
+              let(:state) { 'recreate' }
+
+              it 'propagates the recreate state through to the selected instances' do
+                expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                        .with(anything, anything, anything, anything, anything, hash_including({'recreate' => instances_to_recreate}))
+                        .and_return(OpenStruct.new(:id => 1))
+
+                deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+                Models::Instance.create(deployment: deployment, job: 'other_job', index: '1', uuid: 'dcaa7234-dfd2-4f1b-b0a4-182f2026afed', state: 'started')
+                Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+                Models::Instance.create(deployment: deployment, job: 'dea', index: '3', uuid: '68c9ac2f-68de-4607-9bb6-0c633ffc1ab1', state: 'started')
+                put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              end
+            end
           end
 
           context 'for all jobs in deployment' do
-            let (:path) { '/foo/jobs/*?state=stopped' }
+            let(:instances_to_recreate) {['dcaa7234-dfd2-4f1b-b0a4-182f2026afed', '0B949287-CDED-4761-9002-FC4035E11B21','68c9ac2f-68de-4607-9bb6-0c633ffc1ab1']}
+            let(:state) { 'stopped' }
+            let (:path) { "/foo/jobs/*?state=#{state}" }
             it_behaves_like 'change state'
           end
           context 'for one job in deployment' do
-            let (:path) { '/foo/jobs/dea?state=stopped' }
+            let(:instances_to_recreate) {['0B949287-CDED-4761-9002-FC4035E11B21','68c9ac2f-68de-4607-9bb6-0c633ffc1ab1']}
+            let(:state) { 'stopped' }
+            let (:path) { "/foo/jobs/dea?state=#{state}" }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment by index' do
-            let (:path) { '/foo/jobs/dea/2?state=stopped' }
+            let(:instances_to_recreate) {['0B949287-CDED-4761-9002-FC4035E11B21']}
+            let(:state) { 'stopped' }
+            let (:path) { "/foo/jobs/dea/2?state=#{state}" }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment by id' do
-            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped' }
+            let(:instances_to_recreate) {['0B949287-CDED-4761-9002-FC4035E11B21']}
+            let(:state) { 'stopped' }
+            let (:path) { "/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=#{state}" }
             it_behaves_like 'change state'
           end
 

@@ -94,10 +94,10 @@ module Bosh::Director
         end
 
         it 'should parse recreate' do
-          expect(planner.recreate).to eq(false)
+          expect(planner.recreate).to eq([])
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config, deployment_model, 'recreate' => true)
-          expect(plan.recreate).to eq(true)
+          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config, deployment_model, 'recreate' => ['instance1-uuid', 'instance2-uuid'])
+          expect(plan.recreate).to eq(['instance1-uuid', 'instance2-uuid'])
         end
 
         describe '#bind_models' do

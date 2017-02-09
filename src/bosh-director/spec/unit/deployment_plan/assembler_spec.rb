@@ -7,7 +7,7 @@ module Bosh::Director
       name: 'simple',
       using_global_networking?: false,
       skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
-      recreate: false,
+      recreate: ['instance-uuid'],
       model: BD::Models::Deployment.make,
 
     ) }
@@ -68,7 +68,7 @@ module Bosh::Director
       end
 
       it 'passes tags to instance plan factory' do
-        expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}}
+        expected_options = {'recreate' => ['instance-uuid'], 'tags' => {'key1' => 'value1'}}
         expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
         assembler.bind_models({tags: {'key1' => 'value1'}})
       end

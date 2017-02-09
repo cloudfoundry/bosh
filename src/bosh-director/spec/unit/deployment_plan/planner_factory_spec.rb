@@ -80,6 +80,14 @@ module Bosh
                 expect { planner }.to raise_error 'canaries value should be integer or percent'
               end
             end
+
+            context 'when deployment needs to recreate some instances' do
+              let(:plan_options) { {'recreate' => ['instance-to-recreate-uuid']} }
+              it 'passes it through to the planner' do
+                deployment = planner
+                expect(deployment.recreate).to eq(['instance-to-recreate-uuid'])
+              end
+            end
           end
 
           it 'logs the migrated manifests' do

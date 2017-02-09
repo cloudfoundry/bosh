@@ -64,14 +64,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when deployment is being recreated' do
-      let(:options) { {'recreate' => true} }
+      let(:options) { {'recreate' => ['instance-to-recreate-uuid']} }
 
       it 'should return instance plans with "recreate" option set on them' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name, uuid: 'instance-to-recreate-uuid')
 
         instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
 
-        expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
+        expect(instance_plans.select(&:recreate_instance).count).to eq(instance_plans.count)
       end
     end
 
