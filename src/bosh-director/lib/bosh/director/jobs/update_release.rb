@@ -392,8 +392,7 @@ module Bosh::Director
                   fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
                 end
               end
-              package_sha1 = compiled_package_spec[:package_meta]['sha1']
-              create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
+              create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
               had_effect = true
             end
           elsif @fix
@@ -413,6 +412,35 @@ module Bosh::Director
           other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
         end
         other_compiled_packages
+      end
+
+      def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
+        if other_compiled_package.nil?
+          tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
+          validate_tgz(tgz, "#{package.name}.tgz")
+          blobstore_id = BlobUtil.create_blob(tgz)
+          sha1 = ::Digest::SHA1.file(tgz).hexdigest
+        else
+          blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
+          sha1 = other_compiled_package.sha1
+        end
+
+        compiled_package = Models::CompiledPackage.new
+        compiled_package.blobstore_id = blobstore_id
+        compiled_package.sha1 = sha1
+        release_version_model_dependency_key = dependency_key(package)
+        if release_version_model_dependency_key != CompiledRelease::Manifest.new(@manifest).dependency_key(package.name)
+          raise ReleasePackageDependencyKeyMismatch, "The uploaded release contains package dependencies in '#{package.name}' that do not match database records."
+        end
+        compiled_package.dependency_key = release_version_model_dependency_key
+
+        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
+        compiled_package.package_id = package.id
+
+        compiled_package.stemcell_os = stemcell_os
+        compiled_package.stemcell_version = stemcell_version
+
+        compiled_package.save
       end
 
       # Creates package in DB according to given metadata
@@ -588,35 +616,6 @@ module Bosh::Director
       end
 
       private
-
-      def create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_package)
-        if other_compiled_package.nil?
-          tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-          validate_tgz(tgz, "#{package.name}.tgz")
-          blobstore_id = BlobUtil.create_blob(tgz)
-          sha1 = package_sha1
-        else
-          blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
-          sha1 = other_compiled_package.sha1
-        end
-
-        compiled_package = Models::CompiledPackage.new
-        compiled_package.blobstore_id = blobstore_id
-        compiled_package.sha1 = sha1
-        release_version_model_dependency_key = dependency_key(package)
-        if release_version_model_dependency_key != CompiledRelease::Manifest.new(@manifest).dependency_key(package.name)
-          raise ReleasePackageDependencyKeyMismatch, "The uploaded release contains package dependencies in '#{package.name}' that do not match database records."
-        end
-        compiled_package.dependency_key = release_version_model_dependency_key
-
-        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
-        compiled_package.package_id = package.id
-
-        compiled_package.stemcell_os = stemcell_os
-        compiled_package.stemcell_version = stemcell_version
-
-        compiled_package.save
-      end
 
       def dependency_key(package)
         KeyGenerator.new.dependency_key_from_models(package, @release_version_model)
