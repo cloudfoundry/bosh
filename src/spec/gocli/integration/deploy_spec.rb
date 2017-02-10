@@ -921,10 +921,10 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'it supports compiled releases' do
       context 'release and stemcell have been uploaded' do
-        before {
+        before do
           bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
           bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-        }
+        end
 
         context 'it uploads the compiled release when there is no corresponding stemcell' do
           it 'should not raise an error' do
