@@ -15,8 +15,9 @@ RSpec.configure do |config|
 
   config.after do |example|
     if example.exception
-      example.exception.message << "\nTest directory: #{tmp_dir}"
-      example.exception.message << "\nSandbox directory: #{Bosh::Dev::Sandbox::Workspace.dir}"
+      puts "An exception occurred running #{example}"
+      puts "\nTest directory: #{tmp_dir}"
+      puts "\nSandbox directory: #{Bosh::Dev::Sandbox::Workspace.dir}"
     else
       FileUtils.rm_rf(tmp_dir)
     end
