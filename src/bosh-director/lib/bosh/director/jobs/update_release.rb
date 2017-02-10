@@ -206,6 +206,8 @@ module Bosh::Director
         registered_packages = []
 
         manifest_packages.each do |package_meta|
+          package_meta['compiled_package_sha1'] = package_meta['sha1']
+
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
           @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
             if package.fingerprint != package_meta['fingerprint']
@@ -235,7 +237,7 @@ module Bosh::Director
               existing_package.save
             end
 
-            if existing_package.release_versions.include? @release_version_model
+            if existing_package.release_versions.include?(@release_version_model)
               if existing_package.blobstore_id.nil?
                 packages.each do |package|
                   unless package.blobstore_id.nil?
@@ -392,7 +394,8 @@ module Bosh::Director
                   fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
                 end
               end
-              create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
+              package_sha1 = compiled_package_spec[:package_meta]['compiled_package_sha1']
+              create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
               had_effect = true
             end
           elsif @fix
@@ -414,12 +417,12 @@ module Bosh::Director
         other_compiled_packages
       end
 
-      def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
+      def create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_package)
         if other_compiled_package.nil?
           tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           validate_tgz(tgz, "#{package.name}.tgz")
           blobstore_id = BlobUtil.create_blob(tgz)
-          sha1 = ::Digest::SHA1.file(tgz).hexdigest
+          sha1 = package_sha1
         else
           blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
           sha1 = other_compiled_package.sha1

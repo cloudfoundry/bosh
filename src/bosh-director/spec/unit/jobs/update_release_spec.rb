@@ -363,7 +363,8 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-2',
               'name' => 'fake-name-2',
               'version' => 'fake-version-2',
-              'dependencies' => []
+              'dependencies' => [],
+              'compiled_package_sha1' => 'fakesha2',
             }
           ], release_dir)
           job.perform
