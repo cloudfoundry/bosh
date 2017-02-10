@@ -3,7 +3,6 @@ Sequel.migration do
     create_table :variable_sets do
       primary_key :id
       foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
-      Boolean :deploy_success, :default => false
       Time :created_at, null: false, :index => true
     end
 

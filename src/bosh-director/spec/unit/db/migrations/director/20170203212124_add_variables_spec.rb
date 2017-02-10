@@ -110,8 +110,10 @@ module Bosh::Director
 
       it 'adds a variable set to deployment' do
         DBSpecHelper.migrate(migration_file)
+
         expect(db[:variable_sets].count).to eq(1)
         expect(db[:variable_sets].first[:deployment_id]).to eq(123)
+        expect(db[:variable_sets].first[:created_at]).to_not be_nil
       end
 
     end
