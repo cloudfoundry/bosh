@@ -470,19 +470,24 @@ describe 'upload release', type: :integration do
   end
 
   describe 'uploading release with --fix' do
-    def get_blob_ids(table_string)
-      table_string.lines.inject([]) do |result, line|
-        match = line.match(/\|\s(\S+)\s\|\s\S+\s\|$/)
-        result << match[1] if match
-        result
+    def get_blob_ids(json_output)
+      json = JSON.parse(json_output)
+      result = []
+      json['Tables'].each do |table|
+        blobIdColIdx = table['Header'].index('Blobstore ID')
+        table['Rows'].each do |row|
+          blob_id = row[blobIdColIdx]
+          result << blob_id if blob_id != ''
+        end
       end
+      result
     end
 
     def search_and_delete_files(file_path, blob_files)
       if File.directory? file_path
         Dir.foreach(file_path) do |file|
-          if file !='.' and file !='..'
-            search_and_delete_files(file_path+'/'+file, blob_files)
+          if file != '.' and file != '..'
+            search_and_delete_files(file_path + '/' + file, blob_files)
           end
         end
       else
@@ -508,8 +513,9 @@ describe 'upload release', type: :integration do
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 
-        inspect1 = bosh_runner.run('inspect-release bosh-release/0+dev.1')
+        inspect1 = bosh_runner.run('inspect-release bosh-release/0+dev.1', json: true)
         blob_files_1 = get_blob_ids(inspect1)
+        expect(blob_files_1).to_not be_empty
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
@@ -520,8 +526,9 @@ describe 'upload release', type: :integration do
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 
-        inspect2 = bosh_runner.run('inspect-release bosh-release/0+dev.1')
+        inspect2 = bosh_runner.run('inspect-release bosh-release/0+dev.1', json: true)
         blob_files_2 = get_blob_ids(inspect2)
+        expect(blob_files_2).to_not be_empty
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end
@@ -532,16 +539,18 @@ describe 'upload release', type: :integration do
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
         bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
-        inspect1 = bosh_runner.run('inspect-release hello-go/50')
-        blob_files_1 = get_blob_ids(inspect1.split(/\n\n/)[1])
+        inspect1 = bosh_runner.run('inspect-release hello-go/50', json: true)
+        blob_files_1 = get_blob_ids(inspect1)
+        expect(blob_files_1).to_not be_empty
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
 
         bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')} --fix")
 
-        inspect2 = bosh_runner.run('inspect-release hello-go/50')
-        blob_files_2 = get_blob_ids(inspect2.split(/\n\n/)[1])
+        inspect2 = bosh_runner.run('inspect-release hello-go/50', json: true)
+        blob_files_2 = get_blob_ids(inspect2)
+        expect(blob_files_2).to_not be_empty
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end

@@ -921,7 +921,7 @@ module Bosh::Director
           end
         end
 
-        context 'eliminates broken compiled packages' do
+        context 'eliminates compiled packages' do
           let!(:package) do
             package = Models::Package.make(
               release: release,
@@ -943,28 +943,7 @@ module Bosh::Director
             stemcell_version: '4.5'
           )}
 
-          it 'verifies package' do
-            expect(BlobUtil).to receive(:verify_blob).with(
-              'fake-compiled-pkg-blobstore-id-1',
-              'fakecompiledsha1'
-            ).and_return(true)
-            expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
-            expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'packages', 'fake-name-1.tgz')
-            ).and_return('new-pkg-blobstore-id-1')
-            expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
-            ).and_return('new-job-blobstore-id-1')
-            expect(Models::CompiledPackage.dataset.count).to eql 1
-
-            job.perform
-          end
-
           it 'eliminates package when broken or missing' do
-            expect(BlobUtil).to receive(:verify_blob).with(
-              'fake-compiled-pkg-blobstore-id-1',
-              'fakecompiledsha1'
-            ).and_return(false)
             expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'packages', 'fake-name-1.tgz')

@@ -483,7 +483,7 @@ module Bosh::Director
           package.sha1 = sha1
 
           if package.blobstore_id != nil
-            delete_compiled_packages package
+            delete_compiled_packages(package)
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
             return true
@@ -673,18 +673,16 @@ with blobstore_id '#{package.blobstore_id}'")
 
       def delete_compiled_packages(package)
         package.compiled_packages.each do |compiled_pkg|
-          unless BlobUtil.verify_blob(compiled_pkg.blobstore_id, compiled_pkg.sha1)
-            logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
+          logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
 '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
-            begin
-              logger.info("Deleting compiled package '#{compiled_pkg.name}'")
-              BlobUtil.delete_blob(compiled_pkg.blobstore_id)
-            rescue Bosh::Blobstore::BlobstoreError => e
-              logger.info("Error deleting compiled package \
+          begin
+            logger.info("Deleting compiled package '#{compiled_pkg.name}'")
+            BlobUtil.delete_blob(compiled_pkg.blobstore_id)
+          rescue Bosh::Blobstore::BlobstoreError => e
+            logger.info("Error deleting compiled package \
 '#{compiled_pkg.blobstore_id}/#{compiled_pkg.name}' #{e.inspect}")
-            end
-            compiled_pkg.destroy
           end
+          compiled_pkg.destroy
         end
       end
 
