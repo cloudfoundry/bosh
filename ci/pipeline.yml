@@ -409,6 +409,7 @@ jobs:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true }
     - { get: bosh-fuzz-tests }
+    - { get: bosh-cli }
 
     - task: test
       privileged: true
