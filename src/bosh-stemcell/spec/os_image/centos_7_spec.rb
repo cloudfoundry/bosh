@@ -88,18 +88,80 @@ describe 'CentOS 7 OS image', os_image: true do
   end
 
   context 'installed by system_initramfs' do
-    describe command("zcat /boot/initramfs-3.10.0-514.6.1.el7.x86_64.img | cpio -t") do
+    describe command("zcat /boot/initramfs-3.10.0-514.6.1.el7.x86_64.img | cpio -t | grep '/lib/modules/3.10.0-514.6.1.el7.x86_64'") do
       let(:kernel_version) { "3.10.0-514.6.1.el7.x86_64" }
 
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/ext4/ext4.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/jbd2/jbd2.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/fs/mbcache.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/scsi/scsi_transport_spi.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/scsi/scsi_transport_spi.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptspi.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptbase.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/message/fusion/mptscsih.ko")}
-      its (:stdout) { should match("/lib/modules/#{kernel_version}/kernel/drivers/block/xen-blkfront.ko")}
+      modules = [
+        #ata
+        	'ata_generic', 'pata_acpi',
+        #block
+          'floppy', 'loop', 'brd', 'xen-blkfront',
+        #hv
+          'hv_vmbus',
+        #virtio
+          'virtio_blk', 'virtio_net', 'virtio_pci', 'virtio_scsi',
+        #fusion
+          'mptspi', 'mptbase', 'mptscsih',
+        #scsci
+          '3w-9xxx',
+        	'3w-sas',
+        	'aic79xx',
+        	'arcmsr',
+        	'bfa',
+        	'fnic',
+        	'hpsa',
+        	'hptiop',
+        	'hv_storvsc',
+          'hv_vmbus',
+        	'initio',
+        	'isci',
+        	'libsas',
+        	'lpfc',
+        	'megaraid_sas',
+        	'mpt2sas',
+        	'mpt3sas',
+        	'mtip32xx',
+        	'mvsas',
+        	'mvumi',
+        	'nvme',
+        	'pm80xx',
+        	'pmcraid',
+        	'qla2xxx',
+        	'qla4xxx',
+        	'raid_class',
+        	'stex',
+        	'sx8',
+        	'vmw_pvscsi',
+        #fs
+	        'cachefiles',
+	        'cifs',
+	        'cramfs',
+	        'dlm',
+	        'libore',
+	        'fscache',
+          'grace',
+          'nfs_acl',
+	        'fuse',
+	        'gfs2',
+	        'isofs',
+	        'nfs',
+	        'nfsd',
+	        'nfsv3',
+	        'nfsv4',
+	        'overlay',
+	        'ramoops',
+	        'squashfs',
+	        'udf',
+          'btrfs',
+          'ext4',
+          'jbd2',
+          'mbcache',
+	        'xfs'
+      ]
+
+      modules.each do |foo|
+        its (:stdout) { should match(/\/#{foo}\.ko/) }
+      end
     end
   end
 
