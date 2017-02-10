@@ -457,4 +457,64 @@ EOF
       it { should contain('service auditd start') }
     end
   end
+
+  describe 'allowed user accounts' do
+    describe file('/etc/passwd') do
+      its(:content) { should eql(<<HERE) }
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+libuuid:x:100:101::/var/lib/libuuid:/usr/sbin/nologin
+syslog:x:101:104::/home/syslog:/bin/false
+sshd:x:102:65534::/var/run/sshd:/usr/sbin/nologin
+statd:x:103:65534::/var/lib/nfs:/bin/false
+vcap:x:1000:1000:BOSH System User:/home/vcap:/bin/bash
+HERE
+    end
+
+    describe file('/etc/shadow') do
+      shadow_match = Regexp.new <<'END_SHADOW', [Regexp::MULTILINE]
+\Aroot:(.+):17207:0:99999:7:::
+daemon:\*:17207:0:99999:7:::
+bin:\*:17207:0:99999:7:::
+sys:\*:17207:0:99999:7:::
+sync:\*:17207:0:99999:7:::
+games:\*:17207:0:99999:7:::
+man:\*:17207:0:99999:7:::
+lp:\*:17207:0:99999:7:::
+mail:\*:17207:0:99999:7:::
+news:\*:17207:0:99999:7:::
+uucp:\*:17207:0:99999:7:::
+proxy:\*:17207:0:99999:7:::
+www-data:\*:17207:0:99999:7:::
+backup:\*:17207:0:99999:7:::
+list:\*:17207:0:99999:7:::
+irc:\*:17207:0:99999:7:::
+gnats:\*:17207:0:99999:7:::
+nobody:\*:17207:0:99999:7:::
+libuuid:!:17207:0:99999:7:::
+syslog:\*:17207:0:99999:7:::
+sshd:\*:17207:0:99999:7:::
+statd:\*:17207:0:99999:7:::
+vcap:(.+):17207:1:99999:7:::\Z
+END_SHADOW
+
+      its(:content) { should match(shadow_match) }
+    end
+  end
 end

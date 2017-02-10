@@ -355,4 +355,72 @@ describe 'CentOS 7 OS image', os_image: true do
       it { should contain('service auditd start') }
     end
   end
+
+  describe 'allowed user accounts' do
+    describe file('/etc/passwd') do
+      its(:content) { should eql(<<HERE) }
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+mail:x:8:12:mail:/var/spool/mail:/sbin/nologin
+operator:x:11:0:operator:/root:/sbin/nologin
+games:x:12:100:games:/usr/games:/sbin/nologin
+ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
+nobody:x:99:99:Nobody:/:/sbin/nologin
+systemd-bus-proxy:x:999:998:systemd Bus Proxy:/:/sbin/nologin
+systemd-network:x:192:192:systemd Network Management:/:/sbin/nologin
+dbus:x:81:81:System message bus:/:/sbin/nologin
+polkitd:x:998:997:User for polkitd:/:/sbin/nologin
+rpc:x:32:32:Rpcbind Daemon:/var/lib/rpcbind:/sbin/nologin
+abrt:x:173:173::/etc/abrt:/sbin/nologin
+libstoragemgmt:x:997:996:daemon account for libstoragemgmt:/var/run/lsm:/sbin/nologin
+tcpdump:x:72:72::/:/sbin/nologin
+chrony:x:996:995::/var/lib/chrony:/sbin/nologin
+ntp:x:38:38::/etc/ntp:/sbin/nologin
+tss:x:59:59:Account used by the trousers package to sandbox the tcsd daemon:/dev/null:/sbin/nologin
+sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+vcap:x:1000:1000:BOSH System User:/home/vcap:/bin/bash
+syslog:x:995:992::/home/syslog:/sbin/nologin
+HERE
+    end
+
+    describe file('/etc/shadow') do
+      shadow_match = Regexp.new <<'END_SHADOW', [Regexp::MULTILINE]
+\Aroot:(.+):17207:0:99999:7:::
+bin:\*:17110:0:99999:7:::
+daemon:\*:17110:0:99999:7:::
+adm:\*:17110:0:99999:7:::
+lp:\*:17110:0:99999:7:::
+sync:\*:17110:0:99999:7:::
+shutdown:\*:17110:0:99999:7:::
+halt:\*:17110:0:99999:7:::
+mail:\*:17110:0:99999:7:::
+operator:\*:17110:0:99999:7:::
+games:\*:17110:0:99999:7:::
+ftp:\*:17110:0:99999:7:::
+nobody:\*:17110:0:99999:7:::
+systemd-bus-proxy:!!:17207::::::
+systemd-network:!!:17207::::::
+dbus:!!:17207::::::
+polkitd:!!:17207::::::
+rpc:!!:17207:0:99999:7:::
+abrt:!!:17207::::::
+libstoragemgmt:!!:17207::::::
+tcpdump:!!:17207::::::
+chrony:!!:17207::::::
+ntp:!!:17207::::::
+tss:!!:17207::::::
+sshd:!!:17207::::::
+vcap:(.+):17207:1:99999:7:::
+syslog:!!:17207::::::\Z
+END_SHADOW
+
+      its(:content) { should match(shadow_match) }
+    end
+  end
 end

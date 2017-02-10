@@ -31,7 +31,7 @@ cp -f $assets_dir/rsyslog_50-default.conf $chroot/etc/rsyslog.d/50-default.conf
 # Add user/group
 # add syslog to the vcap group in a separate step in case the syslog user already exists
 run_in_bosh_chroot $chroot "
-  useradd --system --user-group --no-create-home syslog || true
+  useradd --system --user-group --no-create-home --shell /sbin/nologin syslog || true
   usermod -G vcap syslog
 "
 
