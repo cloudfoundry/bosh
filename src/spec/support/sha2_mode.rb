@@ -1,4 +1,6 @@
 RSpec.configure do |config|
+  require 'rspec/core/formatters/console_codes'
+
   if ENV['SHA2_MODE'] == 'true'
     warning = 'Running cli commands with --sha2 flag, skipping tests with sha1 tag'
     puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
