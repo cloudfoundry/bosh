@@ -307,6 +307,7 @@ jobs:
     plan:
     - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
+    - { get: bosh-cli }
 
     - task: test
       privileged: true
@@ -331,6 +332,7 @@ jobs:
     plan:
     - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
+    - { get: bosh-cli }
 
     - task: test
       privileged: true
@@ -355,6 +357,7 @@ jobs:
     plan:
     - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
+    - { get: bosh-cli }
 
     - task: test
       privileged: true
@@ -380,6 +383,7 @@ jobs:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true }
     - { get: bosh-load-tests-workspace }
+    - { get: bosh-cli }
 
     - task: test
       privileged: true
