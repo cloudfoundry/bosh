@@ -4,6 +4,7 @@ module Bosh::Director
   describe 'add_variables' do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170203212124_add_variables.rb' }
+    let(:mysql_db_adpater_schemes) { [:mysql, :mysql2] }
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
@@ -20,6 +21,16 @@ module Bosh::Director
       it 'has a non null constraint for deployment_id' do
         expect {
           db[:variable_sets] << {id: 100, created_at: Time.now}
+        }.to raise_error
+      end
+
+      it 'has a non null constraint for created_at' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
+        expect {
+          db[:variable_sets] << {id: 100, deployment_id: 1}
         }.to raise_error
       end
 
@@ -60,6 +71,26 @@ module Bosh::Director
         db[:variable_sets] << {id: 100, deployment_id: 1, created_at: Time.now}
         db[:variable_sets] << {id: 200, deployment_id: 1, created_at: Time.now}
         db[:variable_sets] << {id: 300, deployment_id: 2, created_at: Time.now}
+      end
+
+      it 'has a non null constraint for variable_id' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
+        expect {
+          db[:variables] << {id: 1, variable_name: 'var_1', variable_set_id: 100}
+        }.to raise_error
+      end
+
+      it 'has a non null constraint for variable_name' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
+        expect {
+          db[:variables] << {id: 1, variable_id: 'var_id_1', variable_set_id: 100}
+        }.to raise_error
       end
 
       it 'has a non null constraint for variable_set_id' do
