@@ -533,6 +533,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+* `BT0lsjUFB1029I0B0Koy1GRl.d1bea.n`
+  - syslog user shell is /sbin/nologin
+  - built from develop (f3a8f786506aeb7854bae21c09409b52cd98f9d9)
+
 * `mMDpTCwMaCY37JpWBPDEoE4vELx.S6BJ`
   - Restore initramfs drivers removed by CentOS bump
   - built from develop (e01db28d13b79d843b20deb003e75a5d32a5cd17)
