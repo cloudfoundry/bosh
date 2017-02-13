@@ -127,15 +127,6 @@ describe 'upload release', type: :integration do
     end
   end
 
-  # ~9s
-  it 'cannot upload malformed release', no_reset: true do
-    target_and_login
-
-    release_filename = spec_asset('release_invalid_checksum.tgz')
-    out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
-    expect(out).to match /Release is invalid, please fix, verify and upload again/
-  end
-
   # ~32s
   it 'marks releases that have uncommitted changes' do
     commit_hash = ''

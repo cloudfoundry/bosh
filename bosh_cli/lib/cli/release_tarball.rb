@@ -274,7 +274,7 @@ module Bosh::Cli
 
       manifest_yaml[@packages_folder].each_with_index do |package, i|
         @packages << package
-        name, version = package['name'], package['version']
+        name = package['name']
 
         package_file   = File.expand_path(name + ".tgz", File.join(@unpack_dir, @packages_folder))
         package_exists = File.exists?(package_file)
@@ -286,10 +286,6 @@ module Bosh::Cli
 
         if package_exists
           @available_packages[name] = true
-          step("Package '#{name}' checksum",
-               "Incorrect checksum for package '#{name}'") do
-            Digest::SHA1.file(package_file).hexdigest == package["sha1"]
-          end
         end
       end
 
@@ -340,11 +336,6 @@ module Bosh::Cli
         end
 
         if job_exists
-          step("Job '#{name}' checksum",
-               "Incorrect checksum for job '#{name}'") do
-            Digest::SHA1.file(job_file).hexdigest == job["sha1"]
-          end
-
           job_tmp_dir = Dir.mktmpdir
           FileUtils.mkdir_p(job_tmp_dir)
           job_extracted = !!system("tar", "-C", job_tmp_dir, "-xzf", job_file, out: "/dev/null", err: "/dev/null")

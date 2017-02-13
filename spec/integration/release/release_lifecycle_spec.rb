@@ -140,18 +140,6 @@ describe 'release lifecycle', type: :integration do
       .to raise_error(RuntimeError, /No releases/)
   end
 
-  it 'verifies a sample valid release', no_reset: true do
-    release_filename = spec_asset('test_release.tgz')
-    out = bosh_runner.run("verify release #{release_filename}")
-    expect(out).to match(regexp("'#{release_filename}' is a valid release"))
-  end
-
-  it 'points to an error on invalid release', no_reset: true do
-    release_filename = spec_asset('release_invalid_checksum.tgz')
-    out = bosh_runner.run("verify release #{release_filename}", failure_expected: true)
-    expect(out).to match(regexp("'#{release_filename}' is not a valid release"))
-  end
-
   def with_changed_release
     new_file = File.join('src', 'bar', SecureRandom.uuid)
     begin
