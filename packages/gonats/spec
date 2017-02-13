@@ -1,0 +1,8 @@
+---
+name: gonats
+
+dependencies:
+  - golang
+
+files:
+  - go/src/github.com/nats-io/**/*.go

@@ -1,0 +1,44 @@
+---
+name: gonats
+
+templates:
+  go_nats_ctl.erb: bin/go_nats_ctl
+  go_nats.cfg.erb: config/go_nats.cfg
+
+packages:
+  - gonats
+  - golang
+
+properties:
+  gonats.listen_address:
+    description: IP address nats mbus listens on
+    default: 0.0.0.0
+  gonats.port:
+    description: TCP port nats mbus listens on
+    default: 4222
+  gonats.no_epoll:
+    description: Disable epoll (Linux)
+    default: false
+  gonats.no_kqueue:
+    description: Disable kqueue (MacOSX and BSD)
+    default: true
+  gonats.ping_interval:
+    description: Time interval (in seconds) pings from server
+    default: 5
+  gonats.ping_max_outstanding:
+    godescription: Maximum number of pings before declaring a client unresponsive
+    default: 2
+  gonats.user:
+    description: Username clients must use to access nats mbus
+  gonats.password:
+    description: Password clients must use to access nats mbus
+  gonats.auth_timeout:
+    description: Timeout (in seconds) for clients to send auth credentials
+    default: 1
+  gonats.http.port:
+    description: TCP port NATS listens on for HTTP connections (optional)
+    default: 9222
+  gonats.http.user:
+    description: Username clients must use to access nats mbus via HTTP connection (optional)
+  gonats.http.password:
+    description: Password clients must use to access nats mbus via HTTP connection (optional)

@@ -1,0 +1,20 @@
+net: <%= p("gonats.listen_address") %>
+port: <%= p("gonats.port") %>
+
+<% if_p('gonats.http.port') do |port| %>
+http: <%= port %>
+<% end %>
+
+logtime: true
+
+pid_file: /var/vcap/sys/run/gonats/gnatsd.pid
+log_file: /var/vcap/sys/log/gonats/gnatsd.log
+
+authorization {
+  user: "<%= p("gonats.user") %>"
+  password: "<%= p('gonats.password') %>"
+  timeout: <%= p('gonats.auth_timeout') %>
+}
+
+ping_interval: <%= p('gonats.ping_interval') %>
+ping_max: <%= p('gonats.ping_max_outstanding') %>

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Avoid Neighbour table overflow
+sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
+sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
+
+export PATH=/var/vcap/packages/golang/bin:$PATH
+export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
+
+RUN_DIR=/var/vcap/sys/run/gonats
+LOG_DIR=/var/vcap/sys/log/gonats
+CONFIG_FILE=/var/vcap/jobs/gonats/config/go_nats.cfg
+PIDFILE=$RUN_DIR/gonats.pid
+RUNAS=vcap
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR
+    echo $$ > $PIDFILE
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
+
+    exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/gonats/bin/gnatsd \
+      -c $CONFIG_FILE \
+      >>  $LOG_DIR/gonats.stdout.log \
+      2>> $LOG_DIR/gonats.stderr.log
+    ;;
+
+  stop)
+    if [ -f $PIDFILE ]; then
+      kill -9 `cat $PIDFILE` || true
+      rm -f $PIDFILE
+    fi
+    ;;
+
+  *)
+    echo "Usage: go_nats_ctl {start|stop}" ;;
+esac

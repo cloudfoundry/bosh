@@ -1,0 +1,7 @@
+check process gonats
+  with pidfile /var/vcap/sys/run/gonats/gonats.pid
+  start program "/var/vcap/jobs/gonats/bin/go_nats_ctl start"
+  stop program "/var/vcap/jobs/gonats/bin/go_nats_ctl stop"
+  group vcap
+  if totalmem > 500 Mb for 2 cycles then alert
+  if totalmem > 3000 Mb then restart

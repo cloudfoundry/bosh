@@ -2,6 +2,10 @@ davcli/davcli-0.0.6-linux-amd64:
   size: 8705864
   object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
   sha: 6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
+golang/go1.7.5.linux-amd64.tar.gz:
+  size: 84176916
+  object_id: c442e2e9-2f9f-4c8f-623f-c1c65da76a50
+  sha: 7c6902ce8cd3b9963082d748c50df074e4896796
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   size: 519628
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
