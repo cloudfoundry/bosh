@@ -938,13 +938,13 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(table(output)).to include({
               'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
               'Blobstore ID' => /[a-f0-9\-]{36}/,
-              'SHA1' => '735987b52907d970106f38413825773eec7cc577',
+              'Digest' => '735987b52907d970106f38413825773eec7cc577',
               'Compiled for' => 'centos-7/3001',
             })
             expect(table(output)).to include({
               'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
               'Blobstore ID' => '',
-              'SHA1' => '',
+              'Digest' => '',
               'Compiled for' => '(source)',
             })
           end

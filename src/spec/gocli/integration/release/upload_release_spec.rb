@@ -252,18 +252,18 @@ describe 'upload release', type: :integration do
       expect(bosh_releases_out).to include({'Name' => 'test_release', 'Version' => '1', 'Commit Hash' => '50e58513+'})
 
       inspect_release_out = table(bosh_runner.run('inspect-release test_release/1', json: true))
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196', 'Blobstore ID' => String, 'SHA1' => 'a7d51f65cda79d2276dc9cc254e6fec523b07b02', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_1_and_2/673c3689362f2adb37baed3d8d4344cf03ff7637', 'Blobstore ID' => String, 'SHA1' => 'c9acbf245d4b4721141b54b26bee20bfa58f4b54', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_2/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74', 'Blobstore ID' => String, 'SHA1' => '79475b0b035fe70f13a777758065210407170ec3', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_3/54120dd68fab145433df83262a9ba9f3de527a4b', 'Blobstore ID' => String, 'SHA1' => 'ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_4/0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c', 'Blobstore ID' => String, 'SHA1' => '1ff32a12e0c574720dd8e5111834bac67229f5c1', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_5/fb41300edf220b1823da5ab4c243b085f9f249af', 'Blobstore ID' => String, 'SHA1' => '37350e20c6f78ab96a1191e5d97981a8d2831665', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196', 'Blobstore ID' => String, 'Digest' => 'a7d51f65cda79d2276dc9cc254e6fec523b07b02', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_1_and_2/673c3689362f2adb37baed3d8d4344cf03ff7637', 'Blobstore ID' => String, 'Digest' => 'c9acbf245d4b4721141b54b26bee20bfa58f4b54', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_2/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74', 'Blobstore ID' => String, 'Digest' => '79475b0b035fe70f13a777758065210407170ec3', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_3/54120dd68fab145433df83262a9ba9f3de527a4b', 'Blobstore ID' => String, 'Digest' => 'ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_4/0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c', 'Blobstore ID' => String, 'Digest' => '1ff32a12e0c574720dd8e5111834bac67229f5c1', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(inspect_release_out).to include({'Job' => 'job_using_pkg_5/fb41300edf220b1823da5ab4c243b085f9f249af', 'Blobstore ID' => String, 'Digest' => '37350e20c6f78ab96a1191e5d97981a8d2831665', 'Links Consumed' => '', 'Links Provided' => ''})
 
-      expect(inspect_release_out).to include( {'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'SHA1'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9'})
-      expect(inspect_release_out).to include( {'Package' => 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'SHA1'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500'})
-      expect(inspect_release_out).to include( {'Package' => 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'SHA1'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0'})
-      expect(inspect_release_out).to include( {'Package' => 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'SHA1'=> '603f212d572b0307e4c51807c5e03c47944bb9c3'})
-      expect(inspect_release_out).to include( {'Package' => 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'SHA1'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00'})
+      expect(inspect_release_out).to include( {'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'Digest'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9'})
+      expect(inspect_release_out).to include( {'Package' => 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'Digest'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500'})
+      expect(inspect_release_out).to include( {'Package' => 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'Digest'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0'})
+      expect(inspect_release_out).to include( {'Package' => 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'Digest'=> '603f212d572b0307e4c51807c5e03c47944bb9c3'})
+      expect(inspect_release_out).to include( {'Package' => 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for' => '(source)', 'Blobstore ID' => String, 'Digest'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00'})
     end
 
     it 'does not allow uploading same release version with different commit hash' do
@@ -293,10 +293,10 @@ describe 'upload release', type: :integration do
       expect(shared_release_blobstore_ids & test_release_blobstore_ids).to eq([])
 
       test_release_artifacts = test_release_desc.map do |item|
-        { 'Artifact' => item.fetch('Package', item['Job']), 'SHA1' => item['SHA1'] }
+        { 'Artifact' => item.fetch('Package', item['Job']), 'Digest' => item['Digest'] }
       end
       shared_release_artifacts = shared_release_desc.map do |item|
-        { 'Artifact' => item.fetch('Package', item['Job']), 'SHA1' => item['SHA1'] }
+        { 'Artifact' => item.fetch('Package', item['Job']), 'Digest' => item['Digest'] }
       end
 
       expect((shared_release_artifacts & test_release_artifacts).length).to eq(test_release_artifacts.length)
@@ -418,16 +418,16 @@ describe 'upload release', type: :integration do
       inspect_release_with_other_name_out = table(bosh_runner.run('inspect-release test_release_with_other_name/1', json: true))
       inspect_release_out = table(bosh_runner.run('inspect-release test_release/1', json: true))
 
-      expect(inspect_release_out).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '735987b52907d970106f38413825773eec7cc577'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '5b21895211d8592c129334e3d11bd148033f7b82'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> 'f5cc94a01d2365bbeea00a4765120a29cdfb3bd7'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '603f212d572b0307e4c51807c5e03c47944bb9c3'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> 'f21275861158ad864951faf76da0dce9c1b5f215'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00'})
-      expect(inspect_release_out).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '002deec46961440df01c620be491e5b12246c5df'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '735987b52907d970106f38413825773eec7cc577'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '5b21895211d8592c129334e3d11bd148033f7b82'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> 'f5cc94a01d2365bbeea00a4765120a29cdfb3bd7'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '603f212d572b0307e4c51807c5e03c47944bb9c3'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> 'f21275861158ad864951faf76da0dce9c1b5f215'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00'})
+      expect(inspect_release_out).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '002deec46961440df01c620be491e5b12246c5df'})
 
       # make sure the the blobstore_ids of the packages in the 2 releases are different
       inspect_release_with_other_name_packages = inspect_release_with_other_name_out.map{|item| item['Blobstore ID']}
@@ -444,23 +444,23 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
       output = table(bosh_runner.run('inspect-release test_release/1', json: true))
-      expect(output).to include({'Job'=> 'job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196', 'Blobstore ID'=> String, 'SHA1'=> 'a7d51f65cda79d2276dc9cc254e6fec523b07b02', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(output).to include({'Job'=> 'job_using_pkg_1_and_2/673c3689362f2adb37baed3d8d4344cf03ff7637', 'Blobstore ID'=> String, 'SHA1'=> 'c9acbf245d4b4721141b54b26bee20bfa58f4b54', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(output).to include({'Job'=> 'job_using_pkg_2/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74', 'Blobstore ID'=> String, 'SHA1'=> '79475b0b035fe70f13a777758065210407170ec3', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(output).to include({'Job'=> 'job_using_pkg_3/54120dd68fab145433df83262a9ba9f3de527a4b', 'Blobstore ID'=> String, 'SHA1'=> 'ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(output).to include({'Job'=> 'job_using_pkg_4/0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c', 'Blobstore ID'=> String, 'SHA1'=> '1ff32a12e0c574720dd8e5111834bac67229f5c1', 'Links Consumed' => '', 'Links Provided' => ''})
-      expect(output).to include({'Job'=> 'job_using_pkg_5/fb41300edf220b1823da5ab4c243b085f9f249af', 'Blobstore ID'=> String, 'SHA1'=> '37350e20c6f78ab96a1191e5d97981a8d2831665', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196', 'Blobstore ID'=> String, 'Digest'=> 'a7d51f65cda79d2276dc9cc254e6fec523b07b02', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_1_and_2/673c3689362f2adb37baed3d8d4344cf03ff7637', 'Blobstore ID'=> String, 'Digest'=> 'c9acbf245d4b4721141b54b26bee20bfa58f4b54', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_2/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74', 'Blobstore ID'=> String, 'Digest'=> '79475b0b035fe70f13a777758065210407170ec3', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_3/54120dd68fab145433df83262a9ba9f3de527a4b', 'Blobstore ID'=> String, 'Digest'=> 'ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_4/0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c', 'Blobstore ID'=> String, 'Digest'=> '1ff32a12e0c574720dd8e5111834bac67229f5c1', 'Links Consumed' => '', 'Links Provided' => ''})
+      expect(output).to include({'Job'=> 'job_using_pkg_5/fb41300edf220b1823da5ab4c243b085f9f249af', 'Blobstore ID'=> String, 'Digest'=> '37350e20c6f78ab96a1191e5d97981a8d2831665', 'Links Consumed' => '', 'Links Provided' => ''})
 
-      expect(output).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9' })
-      expect(output).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '735987b52907d970106f38413825773eec7cc577' })
-      expect(output).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500' })
-      expect(output).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '5b21895211d8592c129334e3d11bd148033f7b82' })
-      expect(output).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0' })
-      expect(output).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> 'f5cc94a01d2365bbeea00a4765120a29cdfb3bd7' })
-      expect(output).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> '603f212d572b0307e4c51807c5e03c47944bb9c3' })
-      expect(output).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> 'f21275861158ad864951faf76da0dce9c1b5f215' })
-      expect(output).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'SHA1'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00' })
-      expect(output).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'SHA1'=> '002deec46961440df01c620be491e5b12246c5df' })
+      expect(output).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '93fade7dd8950d8a1dd2bf5ec751e478af3150e9' })
+      expect(output).to include({'Package'=> 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '735987b52907d970106f38413825773eec7cc577' })
+      expect(output).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> 'b2751daee5ef20b3e4f3ebc3452943c28f584500' })
+      expect(output).to include({'Package'=> 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '5b21895211d8592c129334e3d11bd148033f7b82' })
+      expect(output).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '62fff2291aac72f5bd703dba0c5d85d0e23532e0' })
+      expect(output).to include({'Package'=> 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> 'f5cc94a01d2365bbeea00a4765120a29cdfb3bd7' })
+      expect(output).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> '603f212d572b0307e4c51807c5e03c47944bb9c3' })
+      expect(output).to include({'Package'=> 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> 'f21275861158ad864951faf76da0dce9c1b5f215' })
+      expect(output).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> '(source)', 'Blobstore ID'=> String, 'Digest'=> 'ad733ca76ab4747747d8f9f1ddcfa568519a2e00' })
+      expect(output).to include({'Package'=> 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4', 'Compiled for'=> 'centos-7/3001', 'Blobstore ID'=> String, 'Digest'=> '002deec46961440df01c620be491e5b12246c5df' })
     end
 
     it 'allows uploading two source releases with different version numbers but identical contents' do
