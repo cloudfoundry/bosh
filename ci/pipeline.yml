@@ -63,8 +63,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - { get: interval-trigger, trigger: true }
-      - { get: bosh-src }
+      - { get: bosh-src, trigger: true }
 
   - name: unit-1.9
     public: true
@@ -392,11 +391,6 @@ jobs:
       - {put: bosh-candidate, params: {repository: bosh-src}}
 
 resources:
-  - name: interval-trigger
-    type: time
-    source:
-      interval: 45m # average build time for the integration tests
-
   - name: bosh-src
     type: git
     source:
