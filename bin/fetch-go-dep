@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e -x
+
+if [  $# -ne 1 ]; then 
+	echo "Must provide package name as argument." 
+	echo -e "\nUsage:\n$0 PACKAGE_NAME \n" 
+	exit 1
+fi
+
+package_name=$1
+
+bin=$(dirname $0)
+deps_file=${bin}/../go-job-deps.txt
+touch ${deps_file}
+
+package_path="${GOPATH}/src/$(echo ${package_name} | sed 's/\/\.\.\.$//')"
+
+rm -rf ${package_path}
+
+$bin/go get -d ${package_name}
+
+pushd ${package_path}
+set +e
+sha=$(git rev-parse --short HEAD)
+git_repo=$?
+set -e
+if [ $git_repo -ne 0 ]; then
+	sha=$(hg id -i)
+fi
+popd
+
+git_path=$(find ${package_path} -name '.git')
+rm -rf $git_path
+hg_path=$(find ${package_path} -name '.hg')
+rm -rf $hg_path
+
+if sed -h 2>&1 | grep -q GNU ; then
+  sed -i "s#${package_name}:.*#$package_name:$sha#g" ${deps_file}
+else
+  sed -i '' "s#${package_name}:.*#$package_name:$sha#g" ${deps_file}
+fi
+
+set +e
+grep "${package_name}:" ${deps_file}
+found=$?
+set -e
+
+if [ $found -ne 0 ]; then
+	echo $package_name:$sha >> ${deps_file}
+fi
+
+find ${package_path} -type f -name '*_test.go' -exec rm -rf {} \;
