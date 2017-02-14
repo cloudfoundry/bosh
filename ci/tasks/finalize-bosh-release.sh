@@ -8,7 +8,7 @@ cp candidate-version/number bumped-candidate-version/number
 export ROOT_PATH=$PWD
 PROMOTED_REPO=$PWD/bosh-src-with-final
 
-mv bosh-cli/bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
+mv bosh-cli/alpha-bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
 export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
 chmod +x $GO_CLI_PATH
 
