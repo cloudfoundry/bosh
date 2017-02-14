@@ -16,12 +16,6 @@ properties:
   gonats.port:
     description: TCP port nats mbus listens on
     default: 4222
-  gonats.no_epoll:
-    description: Disable epoll (Linux)
-    default: false
-  gonats.no_kqueue:
-    description: Disable kqueue (MacOSX and BSD)
-    default: true
   gonats.ping_interval:
     description: Time interval (in seconds) pings from server
     default: 5
@@ -38,7 +32,3 @@ properties:
   gonats.http.port:
     description: TCP port NATS listens on for HTTP connections (optional)
     default: 9222
-  gonats.http.user:
-    description: Username clients must use to access nats mbus via HTTP connection (optional)
-  gonats.http.password:
-    description: Password clients must use to access nats mbus via HTTP connection (optional)
