@@ -33,10 +33,10 @@ module Bosh::Director
       end
       let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, vm_cid: 'fake-vm-cid', availability_zone: 'az1') }
       let(:disk_owners) { {'fake-disk-cid' => ['fake-vm-cid']} }
-      before { allow(cloud).to receive(:has_disk?).and_return(true) }
+      before { allow(cloud).to receive(:has_disk).and_return(true) }
 
       context 'when cloud does not have disk' do
-        before { allow(cloud).to receive(:has_disk?).and_return(false) }
+        before { allow(cloud).to receive(:has_disk).and_return(false) }
 
         it 'registers missing disk problem' do
           expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
@@ -56,9 +56,9 @@ module Bosh::Director
         end
       end
 
-      context 'when cloud does not implement has_disk?' do
+      context 'when cloud does not implement has_disk' do
         before do
-          allow(cloud).to receive(:has_disk?).and_raise(Bosh::Clouds::NotImplemented)
+          allow(cloud).to receive(:has_disk).and_raise(Bosh::Clouds::NotImplemented)
         end
 
         it 'does not register any problems' do

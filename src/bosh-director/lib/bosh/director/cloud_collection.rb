@@ -14,12 +14,12 @@ module Bosh::Director
       call_method_for_clouds(:delete_vm, vm_id)
     end
 
-    def has_vm?(vm_id)
-      check_method_for_clouds(:has_vm?, vm_id)
+    def has_vm(vm_id)
+      check_method_for_clouds(:has_vm, vm_id)
     end
 
-    def has_disk?(disk_id)
-      check_method_for_clouds(:has_disk?, disk_id)
+    def has_disk(disk_id)
+      check_method_for_clouds(:has_disk, disk_id)
     end
 
     def reboot_vm(vm_id)

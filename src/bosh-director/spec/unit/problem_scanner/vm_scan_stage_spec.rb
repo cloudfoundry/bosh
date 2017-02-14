@@ -59,7 +59,7 @@ module Bosh::Director
         unresponsive_agent_client = instance_double(AgentClient)
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instances[0].credentials, instances[0].agent_id, anything).and_return(unresponsive_agent_client)
         expect(unresponsive_agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
-        allow(cloud).to receive(:has_vm?).and_raise(Bosh::Clouds::NotImplemented)
+        allow(cloud).to receive(:has_vm).and_raise(Bosh::Clouds::NotImplemented)
         expect(cloud_factory).to receive(:for_availability_zone).with(instances[0].availability_zone).and_return(cloud)
 
         expect(problem_register).to receive(:problem_found).with(
@@ -164,8 +164,8 @@ module Bosh::Director
             agent_options = { timeout: 10, retry_methods: { get_state: 0}}
             allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_without_vm.credentials, instance_without_vm.agent_id, agent_options).and_return(unresponsive_agent)
             allow(unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
-            allow(cloud).to receive(:has_vm?).with('vm-cid-0').and_return(true)
-            allow(cloud).to receive(:has_vm?).with('vm-cid-1').and_return(true)
+            allow(cloud).to receive(:has_vm).with('vm-cid-0').and_return(true)
+            allow(cloud).to receive(:has_vm).with('vm-cid-1').and_return(true)
           }
 
           it 'registers missing VM problem' do
@@ -195,9 +195,9 @@ module Bosh::Director
           end
         end
 
-        context 'when cloud implements has_vm?' do
+        context 'when cloud implements has_vm' do
           before do
-            allow(cloud).to receive(:has_vm?).and_return(true)
+            allow(cloud).to receive(:has_vm).and_return(true)
           end
 
           context 'when cloud has VM' do
@@ -224,7 +224,7 @@ module Bosh::Director
 
           context 'when cloud does not have VM' do
             before do
-              allow(cloud).to receive(:has_vm?).with('vm-cid-0').and_return(false)
+              allow(cloud).to receive(:has_vm).with('vm-cid-0').and_return(false)
             end
 
             it 'registers missing VM problem' do
@@ -249,9 +249,9 @@ module Bosh::Director
           end
         end
 
-        context 'when cloud does not implement has_vm?' do
+        context 'when cloud does not implement has_vm' do
           before do
-            allow(cloud).to receive(:has_vm?).and_raise(Bosh::Clouds::NotImplemented)
+            allow(cloud).to receive(:has_vm).and_raise(Bosh::Clouds::NotImplemented)
           end
 
           it 'registers unresponsive agent problem' do
@@ -298,7 +298,7 @@ module Bosh::Director
             allow(ignored_responsive_agent).to receive(:get_state).and_return(good_state)
             allow(ignored_responsive_agent).to receive(:list_disk).and_return([])
 
-            allow(cloud).to receive(:has_vm?).and_return(true)
+            allow(cloud).to receive(:has_vm).and_return(true)
             expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
             expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
           end
@@ -315,7 +315,7 @@ module Bosh::Director
 
     describe 'agent_disks' do
       let(:instance) { create_vm(0) }
-      before { allow(cloud).to receive(:has_vm?).and_return(true) }
+      before { allow(cloud).to receive(:has_vm).and_return(true) }
 
       let(:agent) { double('Bosh::Director::AgentClient') }
       before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent) }

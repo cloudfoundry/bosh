@@ -51,11 +51,11 @@ module Bosh::Clouds
     def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_vm(*arguments) invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def has_vm?(*arguments); invoke_cpi_method(__method__.to_s.chomp('?'), *arguments); end
+    def has_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def has_disk?(*arguments); invoke_cpi_method(__method__.to_s.chomp('?'), *arguments); end
+    def has_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def attach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end

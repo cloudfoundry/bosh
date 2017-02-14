@@ -71,7 +71,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is present' do
         before do
-          allow(cloud).to receive(:has_vm?).and_return(true)
+          allow(cloud).to receive(:has_vm).and_return(true)
         end
 
         context 'when agent responds to list_disk' do
@@ -179,7 +179,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is missing' do
         before do
-          allow(cloud).to receive(:has_vm?).and_return(false)
+          allow(cloud).to receive(:has_vm).and_return(false)
         end
 
         it_ignores_cloud_disk_errors

@@ -97,7 +97,7 @@ module Bosh::Director
 
     def has_vm?(instance)
       cloud = cloud_factory.for_availability_zone(instance.availability_zone)
-      instance.vm_cid && cloud.has_vm?(instance.vm_cid)
+      instance.vm_cid && cloud.has_vm(instance.vm_cid)
     end
 
     def add_disk_owner(disk_cid, vm_cid)

@@ -198,7 +198,7 @@ RSpec.configure do |rspec|
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
 
-    allow(Bosh::Director::Config).to receive(:cloud).and_return(instance_double(Bosh::Cloud))
+    allow(Bosh::Director::Config).to receive(:cloud).and_return(instance_double(Bosh::Clouds::ExternalCpi))
 
     threadpool = instance_double(Bosh::Director::ThreadPool)
     allow(Bosh::Director::ThreadPool).to receive(:new).and_return(threadpool)

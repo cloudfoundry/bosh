@@ -35,8 +35,8 @@ module Bosh::Director
       it_behaves_like 'a delegator'
     end
 
-    describe 'has_vm?' do
-      let(:method_name) { :has_vm? }
+    describe 'has_vm' do
+      let(:method_name) { :has_vm }
       let(:method_args) { ['potato_id'] }
 
       it_behaves_like 'a delegator'
@@ -44,18 +44,18 @@ module Bosh::Director
       it 'returns true if a cloud returns true' do
         expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
         expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_return(true)
-        expect(collection.has_vm?(*method_args)).to eq(true)
+        expect(collection.has_vm(*method_args)).to eq(true)
       end
 
       it 'returns false if all clouds return false' do
         expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
         expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
-        expect(collection.has_vm?(*method_args)).to eq(false)
+        expect(collection.has_vm(*method_args)).to eq(false)
       end
     end
 
-    describe 'has_disk?' do
-      let(:method_name) { :has_disk? }
+    describe 'has_disk' do
+      let(:method_name) { :has_disk }
       let(:method_args) { ['flat_potato_id'] }
 
       it_behaves_like 'a delegator'
@@ -63,13 +63,13 @@ module Bosh::Director
       it 'returns true if a cloud returns true' do
         expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
         expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_return(true)
-        expect(collection.has_disk?(*method_args)).to eq(true)
+        expect(collection.has_disk(*method_args)).to eq(true)
       end
 
       it 'returns false if all clouds return false' do
         expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
         expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_return(false)
-        expect(collection.has_disk?(*method_args)).to eq(false)
+        expect(collection.has_disk(*method_args)).to eq(false)
       end
     end
 

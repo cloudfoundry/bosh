@@ -35,7 +35,7 @@ module Bosh::Director
           delete_unneeded_instances
 
           @logger.info('Creating missing VMs')
-          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm? check?
+          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm check?
           @vm_creator.create_for_instance_plans(@deployment_plan.instance_plans_with_missing_vms, @deployment_plan.ip_provider, @deployment_plan.tags)
 
           @base_job.task_checkpoint
