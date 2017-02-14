@@ -165,7 +165,7 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-        - get: gocli-release-bucket-linux
+        - get: bosh-cli
           trigger: true
       - aggregate:
         - task: test-group-1
@@ -216,7 +216,7 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-        - get: gocli-release-bucket-linux
+        - get: bosh-cli
           trigger: true
       - aggregate:
         - task: test-group-1
@@ -638,17 +638,11 @@ resources:
     source:
       url: {{slack_hook_url}}
 
-  - name: gocli-release-bucket-linux
-    type: s3
-    source:
-      regexp: bosh-cli-(.*)-linux-amd64
-      bucket: bosh-cli-artifacts
-
   - name: bosh-cli
     type: s3
     source:
-      regexp: bosh-cli-(.*)-linux-amd64
-      bucket: {{bosh_cli_aws_s3_release_bucket}}
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
   #

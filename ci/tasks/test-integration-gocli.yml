@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: bosh-src
-- name: gocli-release-bucket-linux
+- name: bosh-cli
 
 run:
   path: bosh-src/ci/tasks/test-integration-gocli.sh
