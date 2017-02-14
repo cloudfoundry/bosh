@@ -1,10 +1,6 @@
 net: <%= p("gonats.listen_address") %>
 port: <%= p("gonats.port") %>
 
-<% if_p('gonats.http.port') do |port| %>
-http: <%= port %>
-<% end %>
-
 logtime: true
 
 pid_file: /var/vcap/sys/run/gonats/gnatsd.pid
