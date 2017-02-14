@@ -6,6 +6,12 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 ## Ubuntu 14.04
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
+
+* `rrkMk4sy1rzbR0IhdRACHCNyOPRPCMkY`
+  - periodic bump
+  - audit rules updates
+  - built from develop (bce86bb747294c01c5257b902684110c2f4acb09)
+
 * `8odz7YS4cR0uur4ycxMo5Vtb97pUIIsE`
   - CIS stories
   - built from develop (61d9eebdf6886cf31c7f18e38d16bbb53086267e)
@@ -533,6 +539,12 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `q0lcxAuupe.zg916f2cZC002kIsBUxMq`
+  - periodic bump
+  - audit rules updates
+  - built from develop (bce86bb747294c01c5257b902684110c2f4acb09)
+
 * `BT0lsjUFB1029I0B0Koy1GRl.d1bea.n`
   - syslog user shell is /sbin/nologin
   - built from develop (f3a8f786506aeb7854bae21c09409b52cd98f9d9)
