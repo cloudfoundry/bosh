@@ -76,7 +76,6 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -w /etc/issue.net -p wa -k system-locale
 -w /etc/hosts -p wa -k system-locale
 -w /etc/network -p wa -k system-locale
--w /etc/sysconfig/network -p wa -k system-locale
 
 # Record events that modify systems mandatory access controls
 -w /etc/selinux/ -p wa -k MAC-policy
@@ -121,14 +120,6 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/mount -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/su -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/bin/umount -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/lib64/dbus-1/dbus-daemon-launch-helper -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/openssh/ssh-keysign -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/krb5_child -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/ldap_child -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/p11_child -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/proxy_child -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/sssd/selinux_child -k privileged
--a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/libexec/utempter/utempter -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/mount.nfs -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/netreport -k privileged
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/postdrop -k privileged

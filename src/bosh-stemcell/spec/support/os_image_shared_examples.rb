@@ -653,7 +653,6 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-w \/etc\/issue\.net -p wa -k system-locale$/ }
       its(:content) { should match /^-w \/etc\/hosts -p wa -k system-locale$/ }
       its(:content) { should match /^-w \/etc\/network -p wa -k system-locale$/ }
-      its(:content) { should match /^-w \/etc\/sysconfig\/network -p wa -k system-locale$/ }
     end
 
     describe 'record events that modify systems mandatory access controls (CIS-8.1.7)' do
@@ -706,14 +705,6 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/mount -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/su -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/bin\/umount -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/lib64\/dbus-1\/dbus-daemon-launch-helper -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/openssh\/ssh-keysign -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/krb5_child -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/ldap_child -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/p11_child -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/proxy_child -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/sssd\/selinux_child -k privileged/ }
-      its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/libexec\/utempter\/utempter -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/mount.nfs -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/netreport -k privileged/ }
       its(:content) { should match /^-a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=\/usr\/sbin\/postdrop -k privileged/ }
