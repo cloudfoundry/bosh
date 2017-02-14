@@ -146,13 +146,13 @@ module Bosh
       end
 
       HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
-      def has_vm?(vm_cid)
+      def has_vm(vm_cid)
         validate_and_record_inputs(HAS_VM_SCHEMA, __method__, vm_cid)
         @vm_repo.exists?(vm_cid)
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
-      def has_disk?(disk_id)
+      def has_disk(disk_id)
         validate_and_record_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
         File.exists?(disk_file(disk_id))
       end

@@ -9,17 +9,17 @@ describe 'vm delete', type: :integration do
 
     #reference to instance
     instance = director.instances.first
-    expect(current_sandbox.cpi.has_vm?(instance.vm_cid)).to be_truthy
+    expect(current_sandbox.cpi.has_vm(instance.vm_cid)).to be_truthy
     bosh_runner.run("delete vm #{instance.vm_cid}")
-    expect(current_sandbox.cpi.has_vm?(instance.vm_cid)).not_to be_truthy
+    expect(current_sandbox.cpi.has_vm(instance.vm_cid)).not_to be_truthy
 
     #no reference to instance
     network ={'a' => {'ip' => '192.168.1.5', 'type' => 'dynamic'}}
     id = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], {})
 
-    expect(current_sandbox.cpi.has_vm?(id)).to be_truthy
+    expect(current_sandbox.cpi.has_vm(id)).to be_truthy
     bosh_runner.run("delete vm #{id}")
-    expect(current_sandbox.cpi.has_vm?(id)).not_to be_truthy
+    expect(current_sandbox.cpi.has_vm(id)).not_to be_truthy
 
     #vm does not exists
     expect { bosh_runner.run("delete vm #{id}") }.not_to raise_error
