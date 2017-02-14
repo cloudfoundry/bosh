@@ -3,7 +3,7 @@ require 'bosh/director/models/deployment'
 
 module Bosh::Director::Models
   describe Deployment do
-    subject(:deployment) { described_class.make(manifest: manifest) }
+    subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
     let(:manifest) { <<-HERE }
 ---
 tags:
@@ -32,6 +32,43 @@ HERE
 
         it 'returns empty list' do
           expect(deployment.tags).to eq({})
+        end
+      end
+
+      context 'when tags use variables' do
+        let(:mock_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+
+        let(:manifest) { <<-HERE }
+---
+tags:
+  tagA: ((tag-var1))
+  tagO: ((/tag-var2))
+        HERE
+
+        let(:tags) do
+          {
+              'tagA' => '((tag-var1))',
+              'tagO'=> '((/tag-var2))'
+          }
+        end
+
+        let(:interpolated_tags) do
+          {
+            'tagA' => 'apples',
+            'tagO' => 'oranges'
+          }
+        end
+
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+          allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+          allow(mock_client).to receive(:interpolate).and_return(interpolated_tags)
+        end
+
+        it 'substitutes the variables in the tags section' do
+          expect(mock_client).to receive(:interpolate).with(tags, deployment.name)
+          expect(deployment.tags).to eq(interpolated_tags)
         end
       end
     end

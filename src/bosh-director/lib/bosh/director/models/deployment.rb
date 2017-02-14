@@ -43,13 +43,13 @@ module Bosh::Director::Models
     end
 
     def tags
-      tags = {}
+      return {} unless manifest
 
-      if manifest
-        tags = YAML.load(manifest)['tags'] || {}
-      end
+      tags = YAML.load(manifest)['tags']
+      return {} if tags.nil? || tags.empty?
 
-      tags
+      client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
+      client.interpolate(tags, name)
     end
 
     def current_variable_set

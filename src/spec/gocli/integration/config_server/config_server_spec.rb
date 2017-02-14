@@ -3,12 +3,6 @@ require_relative '../../spec_helper'
 describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-  def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
-    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
-    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
-  end
-
   let(:manifest_hash) do
     Bosh::Spec::Deployments.test_release_manifest.merge(
       {
@@ -36,8 +30,36 @@ describe 'using director with config server', type: :integration do
     }
   end
 
+  def upload_links_release
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
+    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
+    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
+  end
+
   def prepend_namespace(key)
     "/#{director_name}/#{deployment_name}/#{key}"
+  end
+
+  def bosh_run_cck_with_resolution(num_errors, option=1, env={})
+    env.each do |key, value|
+      ENV[key] = value
+    end
+
+    output = ''
+    bosh_runner.run_interactively('cck', deployment_name: 'simple', no_login: true, include_credentials: false) do |runner|
+      (1..num_errors).each do
+        expect(runner).to have_output 'Skip for now'
+
+        runner.send_keys option.to_s
+      end
+
+      expect(runner).to have_output 'Continue?'
+      runner.send_keys 'y'
+
+      expect(runner).to have_output 'Succeeded'
+      output = runner.output
+    end
+    output
   end
 
   context 'when config server certificates are trusted' do
@@ -512,6 +534,118 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
           end
         end
+
+        context 'when tags are to be passed to a vm' do
+
+          let(:cloud_config_hash) do
+            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+            cloud_config_hash.delete('resource_pools')
+
+            cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+            cloud_config_hash
+          end
+
+          let(:manifest_hash) do
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash.delete('resource_pools')
+            manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+            manifest_hash['jobs'] = [{
+                'name' => 'foobar',
+                'templates' => ['name' => 'id_job'],
+                'vm_type' => 'vm-type-name',
+                'stemcell' => 'default',
+                'instances' => 1,
+                'networks' => [{ 'name' => 'a' }],
+                'properties' => {}
+            }, {
+               'name' => 'goobar',
+               'templates' => ['name' => 'errand_without_package'],
+               'vm_type' => 'vm-type-name',
+               'stemcell' => 'default',
+               'instances' => 1,
+               'networks' => [{ 'name' => 'a' }],
+               'properties' => {},
+               'lifecycle' => 'errand'
+            }]
+            manifest_hash['tags'] = {
+                'tag-key1' => '((/tag-variable1))',
+                'tag-key2' => '((tag-variable2))'
+            }
+            manifest_hash
+          end
+
+          before do
+            config_server_helper.put_value('/tag-variable1', 'peanuts')
+            config_server_helper.put_value(prepend_namespace('tag-variable2'), 'almonds')
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+          end
+
+          it 'does variable substitution on the initial creation' do
+            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.first
+            inputs = set_vm_metadata_invocation.inputs
+            expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+            expect(inputs['metadata']['tag-key2']).to eq('almonds')
+          end
+
+          it 'retains the tags with variable substitution on re-deploy' do
+            pre_redeploy_invocations_size = current_sandbox.cpi.invocations.size
+
+            manifest_hash['jobs'].first['instances'] = 2
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
+            invocations = current_sandbox.cpi.invocations.drop(pre_redeploy_invocations_size)
+            set_vm_metadata_invocations = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }
+            expect(set_vm_metadata_invocations.size).to eq(1)
+
+            inputs = set_vm_metadata_invocations.first.inputs
+            expect(inputs['metadata']['tag-key2']).to eq('almonds')
+            expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+          end
+
+          it 'retains the tags with variable substitution on hard stop and start' do
+            instance = director.instance('foobar', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+
+            bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+            pre_start_invocations_size = current_sandbox.cpi.invocations.size
+
+            bosh_runner.run("start #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+
+            invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
+            set_vm_metadata_invocation = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
+            inputs = set_vm_metadata_invocation.inputs
+            expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+            expect(inputs['metadata']['tag-key2']).to eq('almonds')
+          end
+
+          it 'retains the tags with variable substitution on recreate' do
+            current_sandbox.cpi.kill_agents
+            pre_kill_invocations_size = current_sandbox.cpi.invocations.size
+
+            recreate_vm_without_waiting_for_process = 3
+            bosh_run_cck_with_resolution(1, recreate_vm_without_waiting_for_process, client_env)
+
+            invocations = current_sandbox.cpi.invocations.drop(pre_kill_invocations_size)
+            set_vm_metadata_invocation = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
+            inputs = set_vm_metadata_invocation.inputs
+            expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+            expect(inputs['metadata']['tag-key2']).to eq('almonds')
+          end
+
+          context 'and we are running an errand' do
+            it 'applies the tags to the errand while it is running' do
+              pre_errand_invocations_size = current_sandbox.cpi.invocations.size
+
+              bosh_runner.run('run-errand goobar', deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+
+              invocations = current_sandbox.cpi.invocations.drop(pre_errand_invocations_size)
+              set_vm_metadata_invocation = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
+              inputs = set_vm_metadata_invocation.inputs
+              expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+              expect(inputs['metadata']['tag-key2']).to eq('almonds')
+            end
+          end
+        end
       end
     end
 
@@ -598,6 +732,45 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
           manifest_hash['jobs'].first['instances'] = 3
+        end
+
+        context 'when tags are to be passed to a vm' do
+          before do
+            runtime_config['tags']= {
+                'tag_mode' => '((/tag-mode))',
+                'tag_value' => '((/tag-value))'
+            }
+            upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+            create_and_upload_test_release(include_credentials: false,  env: client_env)
+
+            config_server_helper.put_value('/tag-mode', 'ha')
+            config_server_helper.put_value('/tag-value', 'deprecated')
+
+            manifest_hash['jobs'].first['instances'] = 1
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+          end
+
+          it 'does variable substitution on the initial creation' do
+            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.first
+            inputs = set_vm_metadata_invocation.inputs
+            expect(inputs['metadata']['tag_mode']).to eq('ha')
+            expect(inputs['metadata']['tag_value']).to eq('deprecated')
+          end
+
+          it 'retains the tags with variable substitution on recreate' do
+            skip("#139724667")
+
+            current_sandbox.cpi.kill_agents
+            current_sandbox.cpi.invocations.drop(current_sandbox.cpi.invocations.size)
+
+            recreate_vm_without_waiting_for_process = 3
+            bosh_run_cck_with_resolution(1, recreate_vm_without_waiting_for_process, client_env)
+
+            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
+            inputs = set_vm_metadata_invocation.inputs
+            expect(inputs['metadata']['tag_mode']).to eq('ha')
+            expect(inputs['metadata']['tag_value']).to eq('deprecated')
+          end
         end
 
         it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
@@ -1408,3 +1581,5 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
   end
 end
+
+
