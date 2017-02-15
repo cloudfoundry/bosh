@@ -56,7 +56,7 @@ module Bosh::Blobstore
 
       describe 'create' do
         it 'should store a file' do
-          test_file = asset('file')
+          test_file = Tempfile.new('file')
           client = LocalClient.new(@options)
           fh = File.open(test_file)
           id = client.create(fh)
