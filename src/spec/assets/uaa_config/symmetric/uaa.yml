@@ -44,6 +44,15 @@ oauth:
       secret: "team-secret"
       access-token-validity: 60
       refresh-token-validity: 3600
+    team-client-read-access:
+      id: team-client-read-access
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid,bosh.teams.ateam.read
+      authorities: bosh.teams.ateam.read
+      secret: "team-secret"
+      access-token-validity: 60
+      refresh-token-validity: 3600
     no-access:
       id: no-access
       override: true
