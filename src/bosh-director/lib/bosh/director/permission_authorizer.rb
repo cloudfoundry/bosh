@@ -50,6 +50,8 @@ module Bosh::Director
         else
           raise ArgumentError, "Unexpected permission for task: #{permission}"
         end
+      elsif subject == :events && permission == :access_events
+        expected_scope << add_bosh_team_scopes(user_scopes)
       else
         raise ArgumentError, "Unexpected subject: #{subject}"
       end
@@ -61,9 +63,16 @@ module Bosh::Director
 
     def add_bosh_admin_scopes(user_scopes)
       user_scopes.select do |scope|
-        scope.match(/\Abosh\.teams\.([^\.]*)\.admin\z/)
+        scope.match(/\Abosh\.teams\.([^.]*)\.admin\z/)
       end
     end
+
+    def add_bosh_team_scopes(user_scopes)
+      user_scopes.select do |scope|
+        scope.match(/\Abosh\.teams\.([^.])*\.(admin|read)\z/)
+      end
+    end
+
 
     def director_permissions
       {

@@ -100,13 +100,13 @@ module Bosh::Blobstore
 
       it 'should take a file as argument' do
         expect(subject).to receive(:store_in_webdav)
-        file = File.open(asset('file'))
+        file = File.open(Tempfile.new('file'))
         subject.create(file)
       end
 
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        file = File.open(asset('file'))
+        file = File.open(Tempfile.new('file'))
         expect(Open3).to receive(:capture3).with("#{davcli_path} -c #{expected_config_file} put #{file.path} FAKE_UUID")
         subject.create(file)
       end

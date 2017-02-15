@@ -9,7 +9,7 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
+    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
     let(:disk_manager) {DiskManager.new(logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:reuse_compilation_vms) { false }

@@ -143,13 +143,13 @@ module Bosh::Blobstore
 
       it 'should take a file as argument' do
         expect(client).to receive(:store_in_s3)
-        file = File.open(asset('file'))
+        file = File.open(Tempfile.new('file'))
         client.create(file)
       end
 
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        file = File.open(asset('file'))
+        file = File.open(Tempfile.new('file'))
         expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} put #{file.path} FAKE_UUID")
         client.create(file)
       end
