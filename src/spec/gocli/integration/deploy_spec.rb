@@ -158,6 +158,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
               'Release(s)' => 'bosh-release/0+dev.1',
               'Stemcell(s)' => 'ubuntu-stemcell/1',
+              'Team(s)' => '',
               'Cloud Config' => 'none',
             }
           ])
@@ -195,6 +196,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
               'Release(s)' => 'bosh-release/0+dev.1',
               'Stemcell(s)' => 'ubuntu-stemcell/1',
+              'Team(s)' => '',
               'Cloud Config' => 'none',
             }
           ])

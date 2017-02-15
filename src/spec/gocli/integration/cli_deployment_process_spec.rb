@@ -49,7 +49,7 @@ describe 'cli: deployment process', type: :integration do
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: minimal_manifest['name'])
-        expect_table('deployments', [{'Name' => 'minimal', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}, {'Name' => 'minimal2', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}])
+        expect_table('deployments', [{'Name' => 'minimal', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'latest'}, {'Name' => 'minimal2', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'latest'}])
       end
 
       context 'properties from first deployment are modified in second deployment' do
@@ -332,7 +332,7 @@ lines'}
       out = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(out).to include("Using deployment 'minimal'")
 
-      expect_table('deployments', [{'Name' => 'minimal', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Cloud Config' => 'latest'}])
+      expect_table('deployments', [{'Name' => 'minimal', 'Release(s)' => 'test_release/1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'latest'}])
     end
 
     context 'when cloud config is updated and deploying has failed' do
@@ -363,6 +363,7 @@ lines'}
                 'Name' => 'simple',
                 'Release(s)' => 'bosh-release/0+dev.1',
                 'Stemcell(s)' => 'ubuntu-stemcell/1',
+                'Team(s)' => '',
                 'Cloud Config' => 'outdated'
             }
         ])
