@@ -24,6 +24,7 @@ groupadd bosh_sshers
 usermod -G ${vcap_user_groups} vcap
 usermod -s /bin/bash vcap
 groupadd bosh_sudoers
+sed -i 's/:::/:*::/g' /etc/gshadow  # Disable users from acting as any default system group
 "
 
 # Setup SUDO
