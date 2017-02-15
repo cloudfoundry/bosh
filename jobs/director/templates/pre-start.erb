@@ -3,6 +3,12 @@
 set -e
 
 STORE_DIR=/var/vcap/store/director
+CONFIG_DIR=/var/vcap/jobs/director/config
 
 mkdir -p $STORE_DIR
 chown -R vcap:vcap $STORE_DIR
+
+chmod -R 0640 $CONFIG_DIR
+find $CONFIG_DIR -type d | xargs -n1 chmod 0750
+
+chown -R root:vcap $CONFIG_DIR

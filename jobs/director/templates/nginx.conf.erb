@@ -44,8 +44,8 @@ http {
     listen <%= p('director.port') %>;
 
     ssl                 on;
-    ssl_certificate     /var/vcap/store/director/nginx/director.pem;
-    ssl_certificate_key /var/vcap/store/director/nginx/director.key;
+    ssl_certificate     /var/vcap/jobs/director/config/ssl/director.pem;
+    ssl_certificate_key /var/vcap/jobs/director/config/ssl/director.key;
     ssl_session_timeout <%= p('director.timeout') %>;
     <% if p('director.nginx.ssl_prefer_server_ciphers') %>ssl_prefer_server_ciphers On;<% end %>
     ssl_protocols <%= p('director.nginx.ssl_protocols') %>;
