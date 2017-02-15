@@ -222,7 +222,7 @@ module Bosh::Stemcell
         :system_grub,
         :cron_config,
         :escape_ctrl_alt_del,
-        :bosh_audit,
+        :bosh_audit_centos,
         :bosh_log_audit_start,
       ].flatten
     end
@@ -268,7 +268,7 @@ module Bosh::Stemcell
         :cron_config,
         :escape_ctrl_alt_del,
         :system_users,
-        :bosh_audit,
+        :bosh_audit_ubuntu,
         :bosh_log_audit_start,
       ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end

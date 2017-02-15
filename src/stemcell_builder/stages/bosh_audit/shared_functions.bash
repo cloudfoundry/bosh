@@ -4,28 +4,9 @@ set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
-source $base_dir/lib/prelude_bosh.bash
 
-os_type=$(get_os_type)
-
-if [ "${os_type}" == "centos" ] ; then
-    pkg_mgr install audit
-
-    run_in_bosh_chroot $chroot "systemctl disable auditd.service"
-fi
-
-if [ "${os_type}" == "ubuntu" ] ; then
-    pkg_mgr install auditd
-
-    # Without this, auditd will read from /etc/audit/audit.rules instead
-    # of /etc/audit/rules.d/*.
-    sed -i 's/^USE_AUGENRULES="[Nn][Oo]"$/USE_AUGENRULES="yes"/' $chroot/etc/default/auditd
-
-    run_in_bosh_chroot $chroot "update-rc.d auditd disable"
-fi
-
-if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
-     echo '
+function write_shared_audit_rules {
+  echo '
 -w /sbin/insmod -p x -k modules
 -w /sbin/rmmod -p x -k modules
 -w /sbin/modprobe -p x -k modules
@@ -127,16 +108,15 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
 -a always,exit -F perm=x -F auid>=500 -F auid!=4294967295 -F path=/usr/sbin/usernetctl -k privileged
 
 ' >> $chroot/etc/audit/rules.d/audit.rules
+}
 
-    echo '
-# Record use of privileged commands' >> $chroot/etc/audit/rules.d/audit.rules
-    find $chroot/bin $chroot/sbin $chroot/usr/bin $chroot/usr/sbin $chroot/boot -xdev \( -perm -4000 -o -perm -2000 \) -type f | sed -e s:^${chroot}:: | awk '{print "-a always,exit -F path=" $1 " -F perm=x -F auid>=500 -F auid!=4294967295 -k privileged" }' >> $chroot/etc/audit/rules.d/audit.rules
-
-    # -e 2 option has to be on last line of audit.rules file
-    echo '
+function make_audit_rules_immutable {
+      echo '
 # Make audit rules immutable
 -e 2' >> $chroot/etc/audit/rules.d/audit.rules
+}
 
+function override_default_audit_variables {
     sed -i 's/^disk_error_action = .*$/disk_error_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
     sed -i 's/^disk_full_action = .*$/disk_full_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
     sed -i 's/^admin_space_left_action = .*$/admin_space_left_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
@@ -149,4 +129,10 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
     sed -i 's/^admin_space_left = .*$/admin_space_left = 50/g' $chroot/etc/audit/auditd.conf
 
     sed -i 's/^active = .*$/active = yes/g' $chroot/etc/audisp/plugins.d/syslog.conf
-fi
+}
+
+function record_use_of_privileged_binaries {
+    echo '
+# Record use of privileged commands' >> $chroot/etc/audit/rules.d/audit.rules
+    find $chroot/bin $chroot/sbin $chroot/usr/bin $chroot/usr/sbin $chroot/boot -xdev \( -perm -4000 -o -perm -2000 \) -type f | sed -e s:^${chroot}:: | awk '{print "-a always,exit -F path=" $1 " -F perm=x -F auid>=500 -F auid!=4294967295 -k privileged" }' >> $chroot/etc/audit/rules.d/audit.rules
+}
