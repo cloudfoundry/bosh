@@ -127,7 +127,6 @@ module Bosh::Director::DeploymentPlan
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
-    before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instance) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, vm_cid: 'vm-cid-1') }

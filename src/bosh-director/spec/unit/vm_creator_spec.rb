@@ -179,7 +179,7 @@ module Bosh
         Config.flush_arp = true
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         allow(job).to receive(:instance_plans).and_return([instance_plan])
-        allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
+        allow(job_renderer).to receive(:render_job_instances).with([instance_plan])
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
@@ -334,7 +334,7 @@ module Bosh
 
       it 'updates instance job templates with new IP' do
         allow(cloud).to receive(:create_vm)
-        expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
+        expect(job_renderer).to receive(:render_job_instances).with([instance_plan])
         expect(instance).to receive(:apply_initial_vm_state)
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

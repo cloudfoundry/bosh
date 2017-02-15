@@ -16,6 +16,8 @@ module Bosh::Director
       instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
     end
 
+    private
+
     def render_job_instance(instance_plan)
       instance = instance_plan.instance
 
