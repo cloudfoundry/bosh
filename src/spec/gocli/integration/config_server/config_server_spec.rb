@@ -452,7 +452,8 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
 
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'none'}])
+              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1',
+                                          'Team(s)' => '', 'Cloud Config' => 'none'}])
             end
           end
 
