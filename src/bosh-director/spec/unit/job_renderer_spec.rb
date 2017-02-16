@@ -2,17 +2,19 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { described_class.new(logger) }
+    subject(:renderer) { described_class.new(logger, caching_job_template_fetcher) }
+    let(:caching_job_template_fetcher) { Core::Templates::CachingJobTemplateFetcher.new }
     let(:instance_group) do
       instance_group = DeploymentPlan::InstanceGroup.new(logger)
       instance_group.name = 'test-instance-group'
       instance_group
     end
+    let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore_files) { [] }
 
     before do
-      job_tgz_path = File.join(File.dirname(__FILE__), '..', 'assets', 'dummy_job_with_single_template.tgz')
-      blobstore_client = instance_double(Bosh::Blobstore::BaseClient)
-      allow(blobstore_client).to receive(:get) { |_, f| f.write(File.read(job_tgz_path)) }
+      job_tgz_path = asset('dummy_job_with_single_template.tgz')
+      allow(blobstore_client).to receive(:get) { |_, f| blobstore_files << f.path; f.write(File.read(job_tgz_path)) }
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
     end
 
@@ -60,16 +62,32 @@ module Bosh::Director
         end
       end
 
-      it 'renders all templates for all instances of a instance_group' do
-        expect(instance_plan.rendered_templates).to be_nil
-        expect(instance.configuration_hash).to be_nil
-        expect(instance.template_hashes).to be_nil
+      context 'when instance plan has templates' do
+        it 'renders all templates for all instances of a instance_group' do
+          expect(instance_plan.rendered_templates).to be_nil
+          expect(instance.configuration_hash).to be_nil
+          expect(instance.template_hashes).to be_nil
 
-        perform
+          perform
 
-        expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
-        expect(instance.configuration_hash).to eq('8c0d7fac26d36e3b51de2d43f17302b4c04fa377')
-        expect(instance.template_hashes.keys).to eq(['dummy'])
+          expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
+          expect(instance.configuration_hash).to eq('8c0d7fac26d36e3b51de2d43f17302b4c04fa377')
+          expect(instance.template_hashes.keys).to eq(['dummy'])
+        end
+
+        context 'when a template has already been downloaded' do
+          it 'should reuse the downloaded template' do
+            perform
+
+            expect(blobstore_client).to have_received(:get).once
+          end
+
+          it 'should clean up all downloaded blobs after rendering all instance plans' do
+            perform
+
+            blobstore_files.each { |file| expect(File).to_not be_exist(file) }
+          end
+        end
       end
 
       context 'when getting the templates spec of an instance plan errors' do
