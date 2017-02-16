@@ -1,6 +1,5 @@
 Sequel.migration do
   change do
-
     if [:mysql2, :mysql].include?(adapter_scheme)
 
       alter_table(:packages) do
@@ -27,14 +26,16 @@ Sequel.migration do
         set_column_type :sha1, String, size: 512
       end
 
+      indexes = indexes(:local_dns_blobs).select { |_, value| value.fetch(:columns) == [:blobstore_id, :sha1] }
+      index_name = indexes.empty? ? 'blobstore_id_sha1_idx' : indexes.first.first
+
       alter_table(:local_dns_blobs) do
-        drop_index [:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx'
+        drop_index nil, name: index_name
         set_column_type :sha1, String, size: 512
         add_index :blobstore_id, unique: true, name: 'blobstore_id_idx'
       end
-
     else
-      indexes = indexes(:local_dns_blobs).select { |_, value| value.fetch(:columns) == [:blobstore_id, :sha1]}
+      indexes = indexes(:local_dns_blobs).select { |_, value| value.fetch(:columns) == [:blobstore_id, :sha1] }
       index_name = indexes.empty? ? 'blobstore_id_sha1_idx' : indexes.first.first
 
       alter_table(:local_dns_blobs) do
