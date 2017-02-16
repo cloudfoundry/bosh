@@ -1,25 +1,19 @@
 require 'bosh/director/core/templates/job_template_loader'
 require 'bosh/director/core/templates/job_instance_renderer'
-require 'bosh/director/core/templates/caching_job_template_fetcher'
 
 module Bosh::Director
   class JobRenderer
 
     def self.create
-      caching_job_template_fetcher = Core::Templates::CachingJobTemplateFetcher.new
-      new(Config.logger, caching_job_template_fetcher)
+      new(Config.logger)
     end
 
-    def initialize(logger, caching_job_template_fetcher)
+    def initialize(logger)
       @logger = logger
-      @caching_job_template_loader = caching_job_template_fetcher
-      @job_template_loader = Core::Templates::JobTemplateLoader.new(Config.logger, caching_job_template_fetcher)
     end
 
     def render_job_instances(instance_plans)
       instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
-    ensure
-      @caching_job_template_loader.clean_cache!
     end
 
     private
@@ -34,7 +28,9 @@ module Bosh::Director
 
       @logger.debug("Rendering templates for instance #{instance}")
 
-      instance_renderer = Core::Templates::JobInstanceRenderer.new(instance_plan.templates, @job_template_loader)
+      job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
+
+      instance_renderer = Core::Templates::JobInstanceRenderer.new(instance_plan.templates, job_template_loader)
       rendered_job_instance = instance_renderer.render(get_templates_spec(instance_plan))
 
       instance_plan.rendered_templates = rendered_job_instance
