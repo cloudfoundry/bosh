@@ -4,8 +4,9 @@ require 'bosh/director/core/templates/source_erb'
 
 module Bosh::Director::Core::Templates
   class JobTemplateLoader
-    def initialize(logger)
+    def initialize(logger, caching_job_template_fetcher)
       @logger = logger
+      @caching_job_template_fetcher = caching_job_template_fetcher
     end
 
     def process(job_template)
@@ -32,10 +33,10 @@ module Bosh::Director::Core::Templates
     private
 
     def extract_template(job_template)
-      temp_path = job_template.download_blob
+      cached_blob_path = @caching_job_template_fetcher.download_blob(job_template)
       template_dir = Dir.mktmpdir('template_dir')
 
-      output = `tar -C #{template_dir} -xzf #{temp_path} 2>&1`
+      output = `tar -C #{template_dir} -xzf #{cached_blob_path} 2>&1`
       if $?.exitstatus != 0
         raise JobTemplateUnpackFailed,
               "Cannot unpack '#{job_template.name}' job template, " +
@@ -44,8 +45,6 @@ module Bosh::Director::Core::Templates
       end
 
       template_dir
-    ensure
-      FileUtils.rm_f(temp_path) if temp_path
     end
   end
 end
