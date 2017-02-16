@@ -33,12 +33,13 @@ module Bosh::Director::Core::Templates
     private
 
     def extract_template(job_template)
+      @logger.debug("Extracting job #{job_template.name}")
       cached_blob_path = @caching_job_template_fetcher.download_blob(job_template)
       template_dir = Dir.mktmpdir('template_dir')
 
       output = `tar -C #{template_dir} -xzf #{cached_blob_path} 2>&1`
       if $?.exitstatus != 0
-        raise JobTemplateUnpackFailed,
+        raise Bosh::Director::JobTemplateUnpackFailed,
               "Cannot unpack '#{job_template.name}' job template, " +
                 "tar returned #{$?.exitstatus}, " +
                 "tar output: #{output}"

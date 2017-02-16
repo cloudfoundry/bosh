@@ -180,6 +180,8 @@ module Bosh::Director
           end
         end
         errors
+      ensure
+        job_renderer.clean_cache!
       end
 
       def snapshot_errands_variables_versions(errands_instance_groups)

@@ -28,7 +28,7 @@ module Bosh::Director::Jobs
       let(:compile_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep') }
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
-      let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
+      let(:job_renderer) { instance_double('Bosh::Director::JobRenderer', clean_cache!: nil) }
       let(:variables_interpolator) { instance_double('Bosh::Director::ConfigServer::VariablesInterpolator') }
       let(:planner_factory) do
         instance_double(

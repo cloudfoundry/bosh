@@ -12,6 +12,19 @@ module Bosh::Director
     let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:blobstore_files) { [] }
 
+    let(:instance_plan) do
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
+    end
+
+    let(:instance) do
+      deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
+      availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
+      DeploymentPlan::Instance.create_from_job(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
+    end
+
+    let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+
     before do
       job_tgz_path = asset('dummy_job_with_single_template.tgz')
       allow(blobstore_client).to receive(:get) { |_, f| blobstore_files << f.path; f.write(File.read(job_tgz_path)) }
@@ -23,18 +36,6 @@ module Bosh::Director
         renderer.render_job_instances([instance_plan])
       end
 
-      let(:instance_plan) do
-        DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
-      end
-
-      let(:instance) do
-        deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
-        availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-        DeploymentPlan::Instance.create_from_job(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
-      end
-
-      let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
-
       before do
         release_version = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'})
         job_1 = DeploymentPlan::Job.new(release_version, 'dummy', deployment_model.name)
@@ -45,10 +46,6 @@ module Bosh::Director
 
         allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return({'template' => 'spec'})
         allow(instance_plan).to receive(:templates).and_return([job_1, job_2])
-      end
-
-      let(:instance_model) do
-        Models::Instance.make(deployment: deployment_model)
       end
 
       context 'when instance plan does not have templates' do
@@ -81,12 +78,6 @@ module Bosh::Director
 
             expect(blobstore_client).to have_received(:get).once
           end
-
-          it 'should clean up all downloaded blobs after rendering all instance plans' do
-            perform
-
-            blobstore_files.each { |file| expect(File).to_not be_exist(file) }
-          end
         end
       end
 
@@ -114,6 +105,18 @@ module Bosh::Director
             expect(error.message).to eq(expected)
           }
         end
+      end
+    end
+
+    describe '#clean_cache!' do
+      it 'should clean up all downloaded blobs after rendering all instance plans' do
+        renderer.render_job_instances([instance_plan])
+
+        blobstore_files.each { |file| expect(File).to be_exist(file) }
+
+        renderer.clean_cache!
+
+        blobstore_files.each { |file| expect(File).to_not be_exist(file) }
       end
     end
   end

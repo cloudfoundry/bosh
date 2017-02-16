@@ -18,7 +18,9 @@ module Bosh::Director
 
     def render_job_instances(instance_plans)
       instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
-    ensure
+    end
+
+    def clean_cache!
       @caching_job_template_loader.clean_cache!
     end
 
