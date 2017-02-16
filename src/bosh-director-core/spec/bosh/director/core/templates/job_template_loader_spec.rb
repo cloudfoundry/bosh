@@ -65,7 +65,7 @@ module Bosh::Director::Core::Templates
   describe JobTemplateLoader do
     describe '#process' do
       subject(:job_template_loader) { JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new) }
-      let(:logger) { double('Logger') }
+      let(:logger) { double('Logger', debug: nil) }
 
       it 'returns the jobs template erb objects' do
         template_contents = create_job('foo', 'monit file',
