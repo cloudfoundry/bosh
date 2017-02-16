@@ -34,8 +34,11 @@ Sequel.migration do
       end
 
     else
+      indexes = indexes(:local_dns_blobs).select { |_, value| value.fetch(:columns) == [:blobstore_id, :sha1]}
+      index_name = indexes.empty? ? 'blobstore_id_sha1_idx' : indexes.first.first
+
       alter_table(:local_dns_blobs) do
-        drop_index [:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx'
+        drop_index(nil, name: index_name)
         add_index :blobstore_id, unique: true, name: 'blobstore_id_idx'
       end
     end
