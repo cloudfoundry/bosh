@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170203212124_add_variables.rb')
+      expect(latest_db_migration_file).to eq('20170216194502_remove_blobstore_id_idx_from_local_dns_blobs.rb')
     end
   end
 end
