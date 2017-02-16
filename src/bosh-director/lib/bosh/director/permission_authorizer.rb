@@ -32,6 +32,8 @@ module Bosh::Director
           # already allowed with initial expected_scope
         elsif :create_deployment == permission
           expected_scope << add_bosh_admin_scopes(user_scopes)
+        elsif :upload_stemcells == permission
+          expected_scope << director_permissions[:stemcells_upload]
         elsif [:read_releases, :list_deployments, :read_stemcells, :list_tasks].include?(permission)
           expected_scope << director_permissions[:read]
           expected_scope << add_bosh_admin_scopes(user_scopes)
@@ -78,6 +80,7 @@ module Bosh::Director
       {
         read: ['bosh.read', "bosh.#{@uuid_provider.uuid}.read"],
         admin: ['bosh.admin', "bosh.#{@uuid_provider.uuid}.admin"],
+        stemcells_upload: ['bosh.stemcells.upload'],
       }
     end
 

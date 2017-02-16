@@ -3,7 +3,8 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class StemcellsController < BaseController
-      post '/', :consumes => :json do
+
+      post '/', scope: :upload_stemcells, :consumes => :json do
         payload = json_decode(request.body.read)
         options = {
             fix: params['fix'] == 'true',
@@ -13,7 +14,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/', :consumes => :multipart do
+      post '/', scope: :upload_stemcells, :consumes => :multipart do
         options = {
             fix: params['fix'] == 'true',
             sha1: params['sha1']

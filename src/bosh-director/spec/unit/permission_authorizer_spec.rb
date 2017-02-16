@@ -132,6 +132,25 @@ module Bosh::Director
           it_behaves_like :admin_read_team_admin_scopes
         end
 
+        describe 'checking upload_stemcells rights' do
+          let(:acl_right) { :upload_stemcells }
+          it 'allows upload_stemcell scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.stemcells.upload'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.unexpected-uuid.admin',
+              'bosh.unexpected-uuid.read',
+              'bosh.teams.security.unexpected',
+            ])).to eq(false)
+          end
+        end
+
         describe 'checking for list_tasks rights' do
           let(:acl_right) { :list_tasks }
           it_behaves_like :admin_read_team_admin_scopes
