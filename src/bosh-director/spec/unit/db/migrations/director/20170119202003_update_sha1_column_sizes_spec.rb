@@ -116,20 +116,38 @@ module Bosh::Director
       }
       expect(db[:stemcells].where(sha1: a_512_len_str).count).to eq(1)
 
-      expect {
-        db[:local_dns_blobs] << {
-          sha1: 'c' * 512,
-          blobstore_id: 'blob_id',
-          created_at: Time.now
-        }
-      }.to raise_error(Sequel::UniqueConstraintViolation)
+      db[:local_dns_blobs] << {
+        sha1: 'c' * 512,
+        blobstore_id: 'blob_id_2',
+        created_at: Time.now
+      }
+      expect(db[:local_dns_blobs].where(sha1: 'c' * 512).count).to eq(1)
 
       db.tables.each do |t|
         if t == :local_dns_blobs
-          expect(db.indexes(t)[:blobstore_id_idx][:columns]).to contain_exactly(:blobstore_id)
-          expect(db.indexes(t)[:blobstore_id_idx][:unique]).to be_truthy
+          expect(db.indexes(t)).to be_empty
         else
           expect(db.indexes(t)).to eq(indexes_before[t])
+        end
+      end
+    end
+
+    it 'migrates when the index is not present' do
+      db.alter_table(:local_dns_blobs) do
+        drop_index [:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx'
+      end
+
+      db.tables.each do |t|
+        if t == :local_dns_blobs
+          expect(db.indexes(t)).to be_empty
+        end
+      end
+
+      expect { DBSpecHelper.migrate(migration_file) }.to_not raise_exception
+
+      db.tables.each do |t|
+        if t == :local_dns_blobs
+          expect(db.indexes(t)).to be_empty
         end
       end
     end

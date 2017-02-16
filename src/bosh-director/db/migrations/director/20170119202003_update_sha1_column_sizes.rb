@@ -27,16 +27,21 @@ Sequel.migration do
         set_column_type :sha1, String, size: 512
       end
 
+      index = indexes(:local_dns_blobs).detect { |name, _| name.to_s == 'blobstore_id_sha1_idx' }
+
+      if !index.nil?
+        alter_table(:local_dns_blobs) do
+          drop_index(nil, name: 'blobstore_id_sha1_idx')
+        end
+      end
+
       alter_table(:local_dns_blobs) do
-        drop_index [:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx'
         set_column_type :sha1, String, size: 512
-        add_index :blobstore_id, unique: true, name: 'blobstore_id_idx'
       end
 
     else
       alter_table(:local_dns_blobs) do
-        drop_index [:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx'
-        add_index :blobstore_id, unique: true, name: 'blobstore_id_idx'
+        drop_index([:blobstore_id, :sha1], name: 'blobstore_id_sha1_idx', if_exists: true)
       end
     end
   end
