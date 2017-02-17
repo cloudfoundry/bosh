@@ -30,7 +30,7 @@ module Bosh::Director
       )
     end
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
     let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
@@ -187,8 +187,8 @@ module Bosh::Director
             expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
             expect(fake_new_agent).to receive(:start).ordered
 
-            expect(dns_manager).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', 'name-1').and_return('index.record.name')
-            expect(dns_manager).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', 'name-1').and_return('uuid.record.name')
+            expect(dns_manager).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name).and_return('index.record.name')
+            expect(dns_manager).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name).and_return('uuid.record.name')
             expect(dns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' => nil, 'uuid.record.name' => nil})
             expect(dns_manager).to receive(:flush_dns_cache)
           end

@@ -37,6 +37,13 @@ module Bosh::Director::Core::Templates
 
         subject.clean_cache!
       end
+
+      it 'clears its internal cache list' do
+        subject.download_blob(job_template)
+        subject.clean_cache!
+        subject.download_blob(job_template)
+        expect(job_template).to have_received(:download_blob).twice
+      end
     end
   end
 end

@@ -28,7 +28,7 @@ module Bosh::Director::Jobs
       let(:compile_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep') }
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
-      let(:job_renderer) { instance_double('Bosh::Director::JobRenderer', clean_cache!: nil) }
+      let(:job_renderer) { Bosh::Director::JobRenderer.create }
       let(:variables_interpolator) { instance_double('Bosh::Director::ConfigServer::VariablesInterpolator') }
       let(:planner_factory) do
         instance_double(
@@ -41,7 +41,8 @@ module Bosh::Director::Jobs
           'Bosh::Director::DeploymentPlan::Planner',
           name: 'deployment-name',
           instance_groups_starting_on_deploy: [deployment_job],
-          errand_instance_groups: [errand_instance_group]
+          errand_instance_groups: [errand_instance_group],
+          job_renderer: job_renderer
         )
       end
 

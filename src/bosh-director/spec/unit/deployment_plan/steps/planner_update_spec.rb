@@ -156,7 +156,7 @@ module Bosh::Director::DeploymentPlan
     context 'when the director database contains no instances' do
       let(:multi_job_updater) do
         Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.new(
-            Bosh::Director::JobUpdaterFactory.new(logger)
+            Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.job_renderer)
         )
       end
       before do

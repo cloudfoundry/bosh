@@ -59,7 +59,8 @@ module Bosh::Director
 
       instance_plan_to_create = create_instance_plan(instance_model)
       tags = instance_model.deployment.tags
-      vm_creator.create_for_instance_plan(
+      job_renderer = JobRenderer.create
+      vm_creator(job_renderer).create_for_instance_plan(
         instance_plan_to_create,
         Array(instance_model.managed_persistent_disk_cid),
         tags
@@ -105,7 +106,6 @@ module Bosh::Director
     private
 
     def create_instance_plan(instance_model)
-      vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
       env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_models
@@ -163,10 +163,9 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
-    def vm_creator
+    def vm_creator(job_renderer)
       disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
-      job_renderer = JobRenderer.create
       @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
     end
 

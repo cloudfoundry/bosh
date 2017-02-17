@@ -27,74 +27,76 @@ module Bosh::Director
 
       with_deployment_lock(deployment_name) do
         deployment = nil
-        errand_instance_group = nil
+        begin
+          errand_instance_group = nil
 
-        event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
-        event_log_stage.advance_and_track('Preparing deployment') do
-          planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-          deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
-          deployment.bind_models
-          errand_instance_group = deployment.instance_group(@errand_name)
+          event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+          event_log_stage.advance_and_track('Preparing deployment') do
+            planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+            deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
+            deployment.bind_models
+            errand_instance_group = deployment.instance_group(@errand_name)
 
-          if errand_instance_group.nil?
-            raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"
-          end
+            if errand_instance_group.nil?
+              raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"
+            end
 
-          unless errand_instance_group.is_errand?
-            raise RunErrandError,
-              "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " +
-                "set its lifecycle to 'errand' in the deployment manifest."
-          end
+            unless errand_instance_group.is_errand?
+              raise RunErrandError,
+                "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " +
+                  "set its lifecycle to 'errand' in the deployment manifest."
+            end
 
-          if errand_instance_group.instances.empty?
-            raise InstanceNotFound, "Instance '#{@deployment_name}/#{@errand_name}/0' doesn't exist"
-          end
+            if errand_instance_group.instances.empty?
+              raise InstanceNotFound, "Instance '#{@deployment_name}/#{@errand_name}/0' doesn't exist"
+            end
 
-          logger.info('Starting to prepare for deployment')
-          errand_instance_group.bind_instances(deployment.ip_provider)
+            logger.info('Starting to prepare for deployment')
+            errand_instance_group.bind_instances(deployment.ip_provider)
 
-          JobRenderer.create.render_job_instances(errand_instance_group.needed_instance_plans)
-          deployment.compile_packages
+            deployment.job_renderer.render_job_instances(errand_instance_group.needed_instance_plans)
+            deployment.compile_packages
 
-          if @when_changed
-            logger.info('Errand run with --when-changed')
-            last_errand_run = Models::ErrandRun.where(instance_id: errand_instance_group.instances.first.model.id).first
+            if @when_changed
+              logger.info('Errand run with --when-changed')
+              last_errand_run = Models::ErrandRun.where(instance_id: errand_instance_group.instances.first.model.id).first
 
-            if last_errand_run
-              changed_instance_plans = errand_instance_group.needed_instance_plans.select do |plan|
-                if JSON.dump(plan.instance.current_packages) != last_errand_run.successful_packages_spec
-                  logger.info("Packages changed FROM: #{last_errand_run.successful_packages_spec} TO: #{plan.instance.current_packages}")
-                  next true
+              if last_errand_run
+                changed_instance_plans = errand_instance_group.needed_instance_plans.select do |plan|
+                  if JSON.dump(plan.instance.current_packages) != last_errand_run.successful_packages_spec
+                    logger.info("Packages changed FROM: #{last_errand_run.successful_packages_spec} TO: #{plan.instance.current_packages}")
+                    next true
+                  end
+
+                  if plan.instance.configuration_hash != last_errand_run.successful_configuration_hash
+                    logger.info("Configuration changed FROM: #{last_errand_run.successful_configuration_hash} TO: #{plan.instance.configuration_hash}")
+                    next true
+                  end
                 end
 
-                if plan.instance.configuration_hash != last_errand_run.successful_configuration_hash
-                  logger.info("Configuration changed FROM: #{last_errand_run.successful_configuration_hash} TO: #{plan.instance.configuration_hash}")
-                  next true
+                if last_errand_run.successful && changed_instance_plans.empty?
+                  logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
+                  return
                 end
-              end
-
-              if last_errand_run.successful && changed_instance_plans.empty?
-                logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-                return
               end
             end
           end
-        end
 
-        runner = Errand::Runner.new(errand_instance_group.instances.first, errand_instance_group.name, result_file, @instance_manager, @logs_fetcher)
+          runner = Errand::Runner.new(errand_instance_group.instances.first, errand_instance_group.name, result_file, @instance_manager, @logs_fetcher)
 
-        cancel_blk = lambda {
-          begin
-            task_checkpoint
-          rescue TaskCancelled => e
-            runner.cancel
-            raise e
+          cancel_blk = lambda {
+            begin
+              task_checkpoint
+            rescue TaskCancelled => e
+              runner.cancel
+              raise e
+            end
+          }
+
+          with_updated_instances(deployment, errand_instance_group) do
+            logger.info('Starting to run errand')
+            runner.run(&cancel_blk)
           end
-        }
-
-        with_updated_instances(deployment, errand_instance_group) do
-          logger.info('Starting to run errand')
-          runner.run(&cancel_blk)
         end
       end
     end

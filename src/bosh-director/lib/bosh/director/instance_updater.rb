@@ -4,10 +4,9 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider)
+    def self.new_instance_updater(ip_provider, job_renderer)
       logger = Config.logger
       disk_manager = DiskManager.new(logger)
-      job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       dns_manager = DnsManagerProvider.create
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)

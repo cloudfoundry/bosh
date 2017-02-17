@@ -13,6 +13,7 @@ module Bosh::Director::Core::Templates
       @downloaded_paths.values.each do |blob_path|
         FileUtils.rm_f(blob_path)
       end
+      @downloaded_paths = {}
     end
   end
 end
