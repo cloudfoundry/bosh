@@ -62,6 +62,15 @@ oauth:
       secret: "stemcells-secret"
       access-token-validity: 60
       refresh-token-validity: 3600
+    upload-releases-access:
+      id: upload-releases-access
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.releases.upload,bosh.read
+      secret: "releases-secret"
+      access-token-validity: 60
+      refresh-token-validity: 3600
     no-access:
       id: no-access
       override: true

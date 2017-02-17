@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
-      post '/', :consumes => :json do
+      post '/', scope: :upload_releases, :consumes => :json do
         payload = json_decode(request.body.read)
         if payload['sha1'] && params['sha1']
           message = 'Sha1 provided in multiple places'
@@ -22,7 +22,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/', :consumes => :multipart do
+      post '/', scope: :upload_releases, :consumes => :multipart do
         options = {
           rebase:         params['rebase'] == 'true',
           fix:            params['fix'] == 'true',
