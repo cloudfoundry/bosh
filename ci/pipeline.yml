@@ -298,6 +298,33 @@ jobs:
             icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
             text: {{slack_failure_message}}
 
+  - name: upgrade-tests
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+          trigger: true
+      - aggregate:
+        - task: upgrade-with-postgres
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: postgresql
+            RUBY_VERSION: 2.3.1
+
+        - task: upgrade-with-mysql
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: mysql
+            RUBY_VERSION: 2.3.1            
+
   - name: load-tests-postgres
     public: true
     serial: true
@@ -440,6 +467,7 @@ jobs:
       - load-tests-mysql
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
+      - upgrade-tests
     - get: bosh-cli
     - get: candidate-version
       params:
