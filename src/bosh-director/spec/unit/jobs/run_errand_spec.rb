@@ -147,6 +147,8 @@ module Bosh::Director
 
                 expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
+                expect(job_renderer).to receive(:clean_cache!).ordered
+
                 expect(called_after_block_check).to receive(:call).ordered
 
                 expect(subject.perform).to eq('fake-result-short-description')

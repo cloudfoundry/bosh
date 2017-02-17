@@ -125,6 +125,12 @@ module Bosh::Director::Jobs
           job.perform
         end
 
+        it 'should clean job blob cache at the end of the deploy' do
+          expect(job_renderer).to receive(:clean_cache!).ordered
+
+          job.perform
+        end
+
         context 'errands variables versioning' do
           let(:errand_properties) {{ 'some-key' => 'some-value'}}
           let(:resolved_links) {{ 'some-link-key' => 'some-link-value'}}

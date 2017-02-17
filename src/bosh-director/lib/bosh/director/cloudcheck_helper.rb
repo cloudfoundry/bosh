@@ -101,6 +101,8 @@ module Bosh::Director
         ).apply(update_config, run_post_start)
       end
       InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
+    ensure
+      job_renderer.clean_cache! if job_renderer
     end
 
     private

@@ -102,6 +102,8 @@ module Bosh::Director
 
               "/deployments/#{deployment_plan.name}"
             end
+          ensure
+            deployment_plan.job_renderer.clean_cache!
           end
         end
       rescue Exception => e
@@ -180,8 +182,6 @@ module Bosh::Director
           end
         end
         errors
-      ensure
-        job_renderer.clean_cache!
       end
 
       def snapshot_errands_variables_versions(errands_instance_groups)

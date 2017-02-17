@@ -22,6 +22,19 @@ module Bosh::Director::Core::Templates
 
           expect(job_template).to have_received(:download_blob).once
         end
+
+        it 'should be thread safe' do
+          subject # ensure this has been initiated before we launch threads
+          allow(job_template).to receive(:download_blob) { Thread.pass; '/template1' }
+
+          t1 = Thread.new { expect(subject.download_blob(job_template)).to eq('/template1') }
+          t2 = Thread.new { expect(subject.download_blob(job_template)).to eq('/template1') }
+
+          t1.join
+          t2.join
+
+          expect(job_template).to have_received(:download_blob).once
+        end
       end
     end
 
@@ -43,7 +56,7 @@ module Bosh::Director::Core::Templates
         subject.clean_cache!
         subject.download_blob(job_template)
         expect(job_template).to have_received(:download_blob).twice
-      end
+        end
     end
   end
 end

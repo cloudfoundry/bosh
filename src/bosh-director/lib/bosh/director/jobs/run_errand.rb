@@ -97,6 +97,8 @@ module Bosh::Director
             logger.info('Starting to run errand')
             runner.run(&cancel_blk)
           end
+        ensure
+          deployment.job_renderer.clean_cache!
         end
       end
     end
