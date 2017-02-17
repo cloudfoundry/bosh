@@ -32,6 +32,12 @@ namespace :spec do
       run_integration_specs(tags: 'hm')
     end
 
+    desc 'Run BOSH gocli upgrade tests against a local sandbox'
+    task :upgrade => :install_dependencies do
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
+    end
+
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
       unless ENV['SKIP_DEPS'] == 'true'
@@ -111,6 +117,8 @@ namespace :spec do
   task :integration => %w(spec:integration:agent)
 
   task :integration_gocli => %w(spec:integration:gocli)
+
+  task :upgrade => %w(spec:integration:upgrade)
 
   def unit_exec(build, log_file = nil)
     command = unit_cmd(build, log_file)
