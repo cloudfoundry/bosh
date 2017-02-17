@@ -134,7 +134,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
+      branch: master
 
   - name: cpi-release
     type: bosh-io-release
