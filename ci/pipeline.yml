@@ -16,7 +16,6 @@ groups:
       - fuzz-tests
       - candidate-release
       - finalize-bosh-release
-      - merge-master
       - bats-centos
       - bats-ubuntu
 
@@ -33,7 +32,6 @@ groups:
   - name: finalize
     jobs:
       - finalize-bosh-release
-      - merge-master
 
 shared:
   - &prepare-director
@@ -540,7 +538,7 @@ jobs:
     serial: true
     plan:
       - aggregate:
-        - get: bosh-src-develop
+        - get: bosh-src-master
           resource: bosh-src
           passed:
             - bats-centos
@@ -555,7 +553,7 @@ jobs:
           params:
             bump: major
       - task: promote-release
-        file: bosh-src-develop/ci/tasks/finalize-bosh-release.yml
+        file: bosh-src-master/ci/tasks/finalize-bosh-release.yml
         params:
           BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
           BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
@@ -568,29 +566,12 @@ jobs:
           tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
           annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
 
-  - name: merge-master
-    serial: true
-    plan:
-      - aggregate:
-        - get: bosh-src-develop
-          resource: bosh-src
-        - get: bosh-src-master
-          resource: bosh-master
-          trigger: true
-          passed:
-            - finalize-bosh-release
-      - task: merge-master
-        file: bosh-src-develop/ci/tasks/merge-master.yml
-      - put: bosh-src
-        params:
-          repository: bosh-src-develop-merged
-
 resources:
   - name: bosh-src
     type: git
     source:
       uri: {{bosh_src_url}}
-      branch: develop
+      branch: master
       private_key: {{github_deployment_key}}
 
   - name: candidate-version
