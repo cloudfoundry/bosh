@@ -28,6 +28,14 @@ module Bosh::Dev::Sandbox
       @runner.run("rm #{@db_name}")
     end
 
+    def load_db_initial_state(initial_state_assets_dir)
+      raise '"#load_db_initial_state" not supported for sqlite'
+    end
+
+    def load_db(dump_file_path)
+      raise '"#load_db" not supported for sqlite'
+    end
+
     def current_tasks
       raise '"#current_tasks" not supported for sqlite'
     end
