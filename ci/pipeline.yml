@@ -15,8 +15,6 @@ groups:
       - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
-      - finalize-bosh-release
-      - merge-master
       - bats-centos
       - bats-ubuntu
 
@@ -29,11 +27,6 @@ groups:
     jobs:
       - unit-2.3-postgres
       - integration-2.3-postgres
-
-  - name: finalize
-    jobs:
-      - finalize-bosh-release
-      - merge-master
 
 shared:
   - &prepare-director
@@ -443,9 +436,6 @@ jobs:
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
     - get: bosh-cli
-    - get: candidate-version
-      params:
-        bump: major
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
@@ -536,75 +526,19 @@ jobs:
         do:
         - {put: environment, params: {release: environment}}
 
-  - name: finalize-bosh-release
-    serial: true
-    plan:
-      - aggregate:
-        - get: bosh-src-develop
-          resource: bosh-src
-          passed:
-            - bats-centos
-            - bats-ubuntu
-        - get: bosh-dev-release
-          resource: bosh-candidate-release-tarballs
-          passed:
-            - bats-centos
-            - bats-ubuntu
-        - get: bosh-cli
-        - get: candidate-version
-          params:
-            bump: major
-      - task: promote-release
-        file: bosh-src-develop/ci/tasks/finalize-bosh-release.yml
-        params:
-          BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
-          BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
-      - put: candidate-version
-        params:
-          file: bumped-candidate-version/number
-      - put: bosh-master
-        params:
-          repository: bosh-src-with-final
-          tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
-          annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
-
-  - name: merge-master
-    serial: true
-    plan:
-      - aggregate:
-        - get: bosh-src-develop
-          resource: bosh-src
-        - get: bosh-src-master
-          resource: bosh-master
-          trigger: true
-          passed:
-            - finalize-bosh-release
-      - task: merge-master
-        file: bosh-src-develop/ci/tasks/merge-master.yml
-      - put: bosh-src
-        params:
-          repository: bosh-src-develop-merged
 
 resources:
   - name: bosh-src
     type: git
     source:
       uri: {{bosh_src_url}}
-      branch: develop
+      branch: 261.x
       private_key: {{github_deployment_key}}
-
-  - name: candidate-version
-    type: semver
-    source:
-      bucket: {{candidate_release_bucket}}
-      key: version
-      access_key_id: {{candidate_release_access_key_id}}
-      secret_access_key: {{candidate_release_secret_access_key}}
 
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
-      bucket: {{candidate_release_bucket}}
+      bucket: bosh-261.x-candidate-release-tarballs
       access_key_id: {{candidate_release_access_key_id}}
       secret_access_key: {{candidate_release_secret_access_key}}
       versioned_file: "bosh-dev-release.tgz"
@@ -620,13 +554,6 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
       branch: master
-
-  - name: bosh-master
-    type: git
-    source:
-      uri: {{bosh_src_url}}
-      branch: master
-      private_key: {{github_deployment_key}}
 
   - name: fuzz-interval-trigger
     type: time
