@@ -1,0 +1,2 @@
+The initial state of this snapshot is deployment simple with 2 instances, each instance has job `foobar` running. It uses a cloud config.
+You can get the deployment manifest, cloud-config by downloading them in an integration test.
