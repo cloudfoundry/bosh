@@ -56,6 +56,11 @@ run_in_chroot $chroot "
 chmod +x /usr/sbin/service
 "
 
+cat > $chroot/var/vcap/bosh/bin/bosh-start-logging-and-auditing <<BASH
+#!/bin/bash
+# "service auditd start" because there is no upstart in containers
+BASH
+
 # Configure go agent specifically for warden
 cat > $chroot/var/vcap/bosh/agent.json <<JSON
 {
@@ -64,7 +69,7 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
       "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
       "BindMountPersistentDisk": true,
-      "UseDirectoryAsEphemeralDisk": true
+      "SkipDiskSetup": true
     }
   },
   "Infrastructure": {
