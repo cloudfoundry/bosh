@@ -45,7 +45,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: {{branch}}
+      branch: 3363.x
 
   #
   # ubuntu-trusty
