@@ -6,15 +6,7 @@ module Bosh::Director
     class EventsController < BaseController
       EVENT_LIMIT = 200
 
-      def self.authorization(perm)
-        return unless :access_events == perm
-
-        condition do
-          @permission_authorizer.granted_or_raise(:events, perm, token_scopes)
-        end
-      end
-
-      get '/', authorization: :access_events, scope: :authorization do
+      get '/', scope: :read_events do
         content_type(:json)
 
         events = Models::Event.order_by(Sequel.desc(:id))
