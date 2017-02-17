@@ -11,7 +11,7 @@ module Bosh
       # @param [Hash] options blobstore specific options
       def initialize(options)
         @options = Bosh::Common.symbolize_keys(options)
-        @logger = Bosh::Director::Config.logger
+        @logger = Bosh::Director::TaggedLogger.new(Bosh::Director::Config.logger, 'blobstore')
       end
 
       # Saves a file or a string to the blobstore.
@@ -29,13 +29,13 @@ module Bosh
         log_message = id
 
         if contents.kind_of?(File)
-          logger.debug("blobstore: creating '#{log_message}' start: #{start_time}")
+          logger.debug("creating '#{log_message}' start: #{start_time}")
           create_file(id, contents)
         else
           temp_path do |path|
             log_message = path
 
-            logger.debug("blobstore: creating '#{log_message}' start: #{start_time}")
+            logger.debug("creating '#{log_message}' start: #{start_time}")
             File.open(path, 'w') do |file|
               file.write(contents)
             end
@@ -49,7 +49,7 @@ module Bosh
         raise BlobstoreError,
               sprintf('Failed to create object, underlying error: %s %s', e.inspect, e.backtrace.join("\n"))
       ensure
-        logger.debug("blobstore: creating '#{log_message}' (took #{Time.now - start_time})")
+        logger.debug("creating '#{log_message}' (took #{Time.now - start_time})")
       end
 
       # Get an object from the blobstore.
@@ -59,7 +59,7 @@ module Bosh
       # @return [String] the object contents if the file parameter is nil
       def get(id, file = nil, options = {})
         start_time = Time.now
-        logger.debug("blobstore: getting '#{id}' start: #{start_time}")
+        logger.debug("getting '#{id}' start: #{start_time}")
 
         if file
           get_file(id, file)
@@ -70,7 +70,7 @@ module Bosh
             File.open(path, 'w') { |f| get_file(id, f) }
             result = File.open(path, 'r') { |f| f.read }
           end
-          logger.debug("blobstore: getting '#{id}' (took #{Time.now - start_time})")
+          logger.debug("getting '#{id}' (took #{Time.now - start_time})")
           result
         end
       rescue BlobstoreError => e
@@ -79,32 +79,32 @@ module Bosh
         raise BlobstoreError,
               sprintf('Failed to fetch object, underlying error: %s %s', e.inspect, e.backtrace.join("\n"))
       ensure
-        logger.debug("blobstore: getting '#{id}' (took #{Time.now - start_time})")
+        logger.debug("getting '#{id}' (took #{Time.now - start_time})")
       end
 
       # @return [void]
       def delete(oid)
         start_time = Time.now
-        logger.debug("blobstore: deleting '#{oid}' start: #{start_time}")
+        logger.debug("deleting '#{oid}' start: #{start_time}")
         begin
           delete_object(oid)
         rescue Exception => e
           raise e
         ensure
-          logger.debug("blobstore: deleting '#{oid}' (took #{Time.now - start_time})")
+          logger.debug("deleting '#{oid}' (took #{Time.now - start_time})")
         end
       end
 
       # @return [Boolean]
       def exists?(oid)
         start_time = Time.now
-        logger.debug("blobstore: checking existence of '#{oid}' start: #{start_time}")
+        logger.debug("checking existence of '#{oid}' start: #{start_time}")
         begin
           object_exists?(oid)
         rescue Exception => e
             raise e
         ensure
-          logger.debug("blobstore: checking existence of '#{oid}' (took #{Time.now - start_time})")
+          logger.debug("checking existence of '#{oid}' (took #{Time.now - start_time})")
         end
       end
 
