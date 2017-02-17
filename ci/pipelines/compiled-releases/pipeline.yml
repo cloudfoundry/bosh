@@ -32,6 +32,11 @@ resources:
     source:
       repository: cloudfoundry/bosh
 
+  - name: bosh-release-261
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+
   - name: uaa-release # really -13
     type: bosh-io-release
     source:
@@ -60,6 +65,12 @@ resources:
   #
   # stemcells to compile on
   #
+  - name: ubuntu-trusty-3363-stemcell
+    type: s3
+    source:
+      bucket: bosh-aws-light-stemcells
+      regexp: "light-bosh-stemcell-(?P<version>3363(\\.[^-]+)?)-aws-xen-hvm-ubuntu-trusty-go_agent.tgz"
+
   - name: ubuntu-trusty-3263-stemcell
     type: s3
     source:
@@ -75,6 +86,48 @@ resources:
   #
   # compiled releases
   #
+
+  # ubuntu-trusty-3363
+
+  - name: bosh-on-ubuntu-trusty-3363
+    type: s3
+    source:
+      bucket: "bosh-compiled-release-tarballs"
+      access_key_id: {{aws_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+      regexp: "bosh-[\\d\\.]+-ubuntu-trusty-3363.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  - name: uaa-on-ubuntu-trusty-3363
+    type: s3
+    source:
+      bucket: "bosh-compiled-release-tarballs"
+      access_key_id: {{aws_key_id}}
+      secret_access_key: {{aws_secret_access_key}}
+      regexp: "uaa-[\\d\\.]+-ubuntu-trusty-3363.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  # - name: bosh-warden-cpi-release-ubuntu-trusty-3363
+  #   type: s3
+  #   source:
+  #     bucket: "bosh-compiled-release-tarballs"
+  #     access_key_id: {{aws_key_id}}
+  #     secret_access_key: {{aws_secret_access_key}}
+  #     regexp: "bosh-warden-cpi-[\\d\\.]+-ubuntu-trusty-3363.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  # - name: garden-linux-release-ubuntu-trusty-3363
+  #   type: s3
+  #   source:
+  #     bucket: "bosh-compiled-release-tarballs"
+  #     access_key_id: {{aws_key_id}}
+  #     secret_access_key: {{aws_secret_access_key}}
+  #     regexp: "garden-linux-[\\d\\.]+-ubuntu-trusty-3363.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
+
+  # - name: garden-runc-release-ubuntu-trusty-3363
+  #   type: s3
+  #   source:
+  #     bucket: "bosh-compiled-release-tarballs"
+  #     access_key_id: {{aws_key_id}}
+  #     secret_access_key: {{aws_secret_access_key}}
+  #     regexp: "garden-runc-[\\d\\.]+-ubuntu-trusty-3363.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
   # ubuntu-trusty-3312
 
@@ -137,6 +190,75 @@ resources:
       regexp: "uaa-[\\d\\.]+-ubuntu-trusty-stemcell-3263.*-(\\d+)-(\\d+)-(\\d+)-(\\d+).tgz"
 
 jobs:
+  # ubuntu-trusty-3363
+
+  - name: compile-bosh-release-latest-ubuntu-trusty-3363
+    plan:
+      - aggregate:
+          - get: bosh-src
+          - get: bosh-deployment
+          - get: bosh-release-261
+            trigger: true
+          - get: ubuntu-trusty-3363-stemcell
+            trigger: true
+      - task: deploy-director
+        file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
+        input_mapping:
+          stemcell: ubuntu-trusty-3363-stemcell
+          bosh-release: bosh-release-261
+        params:
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
+          BOSH_TARGET_IP: 10.0.2.21
+          BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.161, 10.0.2.170-10.0.2.255]
+      - do:
+        - task: export-release
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
+          input_mapping:
+            stemcell: ubuntu-trusty-3363-stemcell
+            release: bosh-release-261
+        - put: bosh-on-ubuntu-trusty-3363
+          params:
+            file: "compiled-release/*.tgz"
+        ensure:
+          task: teardown-director
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
+
+  - name: compile-uaa-release-latest-ubuntu-trusty-3363
+    plan:
+      - aggregate:
+          - get: bosh-src
+          - get: bosh-deployment
+          - get: uaa-release-20
+            trigger: true
+          - get: bosh-release-261
+          - get: ubuntu-trusty-3363-stemcell
+            trigger: true
+      - task: deploy-director
+        file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
+        input_mapping:
+          stemcell: ubuntu-trusty-3363-stemcell
+          bosh-release: bosh-release-261
+        params:
+          BOSH_access_key_id: {{bosh_init_access_key}}
+          BOSH_secret_access_key: {{bosh_init_secret_key}}
+          BOSH_private_key: {{bosh_ssh_tunnel_key}}
+          BOSH_TARGET_IP: 10.0.2.20
+          BOSH_RESERVED_RANGES: [10.0.2.0-10.0.2.171, 10.0.2.180-10.0.2.255]
+      - do:
+        - task: export-release
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.yml
+          input_mapping:
+            stemcell: ubuntu-trusty-3363-stemcell
+            release: uaa-release-20
+        - put: uaa-on-ubuntu-trusty-3363
+          params:
+            file: "compiled-release/*.tgz"
+        ensure:
+          task: teardown-director
+          file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
+
   # ubuntu-trusty-3312
 
   - name: compile-bosh-release-latest-ubuntu-trusty-3312
