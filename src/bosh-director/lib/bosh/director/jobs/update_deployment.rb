@@ -58,31 +58,31 @@ module Bosh::Director
         with_deployment_lock(@deployment_name) do
           deployment_plan = nil
 
+          if @options['deploy']
+            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now)
+          end
+
+          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
+
+          @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
+          @notifier.send_start_event unless dry_run?
+
+          event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
+          event_log_stage.advance_and_track('Preparing deployment') do
+            planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
+            generate_variables_values(deployment_plan.variables, @deployment_name)
+            deployment_plan.bind_models
+          end
+
+          if deployment_plan.instance_models.any?(&:ignore)
+            @event_log.warn('You have ignored instances. They will not be changed.')
+          end
+
+          next_releases, next_stemcells = get_stemcells_and_releases
+          context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
+
           begin
-            if @options['deploy']
-              Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now)
-            end
-
-            deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
-
-            @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
-            @notifier.send_start_event unless dry_run?
-
-            event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
-            event_log_stage.advance_and_track('Preparing deployment') do
-              planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-              deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
-              generate_variables_values(deployment_plan.variables, @deployment_name)
-              deployment_plan.bind_models
-            end
-
-            if deployment_plan.instance_models.any?(&:ignore)
-              @event_log.warn('You have ignored instances. They will not be changed.')
-            end
-
-            next_releases, next_stemcells = get_stemcells_and_releases
-            context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
-
             render_templates_and_snapshot_errand_variables(deployment_plan)
 
             if dry_run?
