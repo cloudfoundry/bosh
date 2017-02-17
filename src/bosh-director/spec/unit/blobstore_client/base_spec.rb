@@ -120,7 +120,7 @@ describe Bosh::Blobstore::BaseClient do
 
       context 'when the id is nil' do
         it 'creates and logs messages with start time and total time' do
-          expect(logger).to receive(:debug).with(/blobstore: creating \'.*temp-path.*\' start: #{start_time}/).ordered
+          expect(logger).to receive(:debug).with(/blobstore: creating \'.*temp-path.*\' start: #{Regexp.escape(start_time.to_s)}/).ordered
           expect(subject).to receive(:create_file).ordered
           expect(logger).to receive(:debug).with(/blobstore: creating \'.*temp-path.*\' \(took #{end_time - start_time}\)/).ordered
           subject.create('contents')
