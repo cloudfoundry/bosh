@@ -41,4 +41,39 @@ describe 'Azure Stemcell', stemcell_image: true do
       it { should contain('"CreatePartitionIfNoEphemeralDisk": true') }
     end
   end
+
+  context 'installed by the system_azure_network', {
+    exclude_on_aws: true,
+    exclude_on_google: true,
+    exclude_on_vcloud: true,
+    exclude_on_vsphere: true,
+    exclude_on_warden: true,
+    exclude_on_openstack: true,
+  } do
+    case ENV['OS_NAME']
+      when 'ubuntu'
+        describe file('/etc/network/interfaces') do
+          it { should be_file }
+          it { should contain 'auto eth0' }
+          it { should contain 'iface eth0 inet dhcp' }
+        end
+
+      when 'centos'
+        describe file('/etc/sysconfig/network') do
+          it { should be_file }
+          it { should contain 'NETWORKING=yes' }
+          it { should contain 'NETWORKING_IPV6=no' }
+          it { should contain 'HOSTNAME=bosh-stemcell' }
+          it { should contain 'NOZEROCONF=yes' }
+        end
+        describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
+          it { should be_file }
+          it { should contain 'DEVICE=eth0' }
+          it { should contain 'BOOTPROTO=dhcp' }
+          it { should contain 'ONBOOT=on' }
+          it { should contain 'TYPE="Ethernet"' }
+          it { should contain 'NM_CONTROLLED=no' }
+        end
+      end
+  end
 end
