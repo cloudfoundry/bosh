@@ -50,6 +50,8 @@ describe 'CIS test case verification', {stemcell_image: true, security_spec: tru
     it 'confirms that all CIS test cases ran' do
       expected_base_cis_test_cases = base_cis_test_cases
       expected_base_cis_test_cases << 'CIS-2.24'
+      expected_base_cis_test_cases = expected_base_cis_test_cases.reject { |s|
+        Bosh::Stemcell::Arch.ppc64le? and ['CIS-8.1.3'].include?(s) }
 
       expected_cis_test_cases = expected_base_cis_test_cases
       case ENV['OS_NAME']

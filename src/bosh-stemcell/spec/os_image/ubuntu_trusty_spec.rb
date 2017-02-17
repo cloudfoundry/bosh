@@ -303,8 +303,14 @@ EOF
   end
 
   context 'PAM configuration' do
-    describe file('/lib/x86_64-linux-gnu/security/pam_cracklib.so') do
-      it { should be_file }
+    if Bosh::Stemcell::Arch.ppc64le?
+      describe file('/lib/powerpc64le-linux-gnu/security/pam_cracklib.so') do
+        it { should be_file }
+      end
+    else
+      describe file('/lib/x86_64-linux-gnu/security/pam_cracklib.so') do
+        it { should be_file }
+      end
     end
 
     describe file('/etc/pam.d/common-password') do
