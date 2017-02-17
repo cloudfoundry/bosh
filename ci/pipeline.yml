@@ -18,6 +18,7 @@ groups:
       - finalize-bosh-release
       - bats-centos
       - bats-ubuntu
+      - upgrade-tests
 
   - name: mysql
     jobs:
