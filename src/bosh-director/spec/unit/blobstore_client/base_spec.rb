@@ -111,41 +111,41 @@ describe Bosh::Blobstore::BaseClient do
           allow(Time).to receive(:now).exactly(3)
           allow(Time).to receive(:now).and_return(Time.new(2016),start_time, end_time)
 
-          expect(logger).to receive(:debug).with("creating 'id' start: #{start_time}").ordered
+          expect(logger).to receive(:debug).with("blobstore: creating 'id' start: #{start_time}").ordered
           expect(subject).to receive(:create_file).ordered
-          expect(logger).to receive(:debug).with("creating 'id' (took #{end_time - start_time})").ordered
+          expect(logger).to receive(:debug).with("blobstore: creating 'id' (took #{end_time - start_time})").ordered
           subject.create(File.new(Tempfile.new().path, 'r'), 'id')
         end
       end
 
       context 'when the id is nil' do
         it 'creates and logs messages with start time and total time' do
-          expect(logger).to receive(:debug).with(/creating \'.*temp-path.*\' start: #{start_time}/).ordered
+          expect(logger).to receive(:debug).with(/blobstore: creating \'.*temp-path.*\' start: #{start_time}/).ordered
           expect(subject).to receive(:create_file).ordered
-          expect(logger).to receive(:debug).with(/creating \'.*temp-path.*\' \(took #{end_time - start_time}\)/).ordered
+          expect(logger).to receive(:debug).with(/blobstore: creating \'.*temp-path.*\' \(took #{end_time - start_time}\)/).ordered
           subject.create('contents')
         end
       end
     end
 
     it 'gets and logs messages with start time and total time' do
-      expect(logger).to receive(:debug).with("getting 'id' start: #{start_time}").ordered
-      expect(logger).to receive(:debug).with("getting 'id' (took #{end_time - start_time})").ordered
+      expect(logger).to receive(:debug).with("blobstore: getting 'id' start: #{start_time}").ordered
+      expect(logger).to receive(:debug).with("blobstore: getting 'id' (took #{end_time - start_time})").ordered
       allow(subject).to receive(:get_file).once
       subject.get('id')
     end
 
     it 'deletes and logs messages with start time and total time' do
-      expect(logger).to receive(:debug).with("deleting 'oid' start: #{start_time}").ordered
+      expect(logger).to receive(:debug).with("blobstore: deleting 'oid' start: #{start_time}").ordered
       expect(subject).to receive(:delete_object).ordered
-      expect(logger).to receive(:debug).with("deleting 'oid' (took #{end_time - start_time})").ordered
+      expect(logger).to receive(:debug).with("blobstore: deleting 'oid' (took #{end_time - start_time})").ordered
       subject.delete('oid')
     end
 
     it 'checks the existence of an object and logs messages with start time and total time' do
-      expect(logger).to receive(:debug).with("checking existence of 'oid' start: #{start_time}").ordered
+      expect(logger).to receive(:debug).with("blobstore: checking existence of 'oid' start: #{start_time}").ordered
       expect(subject).to receive(:object_exists?).ordered
-      expect(logger).to receive(:debug).with("checking existence of 'oid' (took #{end_time - start_time})").ordered
+      expect(logger).to receive(:debug).with("blobstore: checking existence of 'oid' (took #{end_time - start_time})").ordered
       subject.exists?('oid')
     end
   end
