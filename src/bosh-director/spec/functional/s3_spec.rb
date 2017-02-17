@@ -44,6 +44,12 @@ module Bosh::Blobstore
       key
     end
 
+    let(:logger) {Logging::Logger.new('test-logger')}
+
+    before do
+      allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+    end
+
     context 'External Endpoint', aws_s3: true do
       let(:s3_options) do
         {
