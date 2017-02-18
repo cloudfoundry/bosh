@@ -198,14 +198,6 @@ namespace :spec do
 
   desc "Run all unit tests"
   task :unit => %w(spec:release_unit spec:unit:ruby spec:unit:agent)
-
-  namespace :external do
-    desc 'AWS bootstrap CLI can provision and destroy resources'
-    RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
-      t.pattern = 'spec/external/aws_bootstrap_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-  end
 end
 
 desc 'Run unit and integration specs'
