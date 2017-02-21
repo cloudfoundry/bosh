@@ -8,7 +8,7 @@ require_relative '../../bosh-director/lib/bosh/director/config'
 
 module DBSpecHelper
   class << self
-    attr_reader :db
+    attr_reader :db, :director_migrations_dir
 
     def init
       @temp_dir = Bosh::Director::Config.generate_temp_dir
@@ -80,6 +80,10 @@ module DBSpecHelper
 
     def get_latest_migration_script
       Dir.entries(@director_migrations_dir).select {|f| !File.directory? f}.sort.last
+    end
+
+    def get_migrations
+      Dir.glob(File.join(@director_migrations_dir, '..', '**', '[0-9]*_*.rb'))
     end
   end
 end
