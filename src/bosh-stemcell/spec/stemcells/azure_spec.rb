@@ -39,6 +39,7 @@ describe 'Azure Stemcell', stemcell_image: true do
       it { should contain('"UseRegistry": true') }
       it { should contain('"DevicePathResolutionType": "scsi"') }
       it { should contain('"CreatePartitionIfNoEphemeralDisk": true') }
+      it { should contain('"PartitionerType": "parted"') }
     end
   end
 end
