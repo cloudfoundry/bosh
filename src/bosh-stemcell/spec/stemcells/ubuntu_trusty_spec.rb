@@ -272,6 +272,81 @@ HERE
       its (:content) { should eq("# UNCONFIGURED FSTAB FOR BASE SYSTEM\n") }
     end
   end
+
+  describe 'installed packages' do
+    let(:dpkg_list_aws_ubuntu) { File.read(spec_asset('dpkg-list-aws-ubuntu.txt')) }
+    let(:dpkg_list_vsphere_ubuntu) { File.read(spec_asset('dpkg-list-vsphere-ubuntu.txt')) }
+    let(:dpkg_list_vcloud_ubuntu) { File.read(spec_asset('dpkg-list-vsphere-ubuntu.txt')) }
+    let(:dpkg_list_warden_ubuntu) { File.read(spec_asset('dpkg-list-warden-ubuntu.txt')) }
+    let(:dpkg_list_google_ubuntu) { File.read(spec_asset('dpkg-list-google-ubuntu.txt')) }
+    let(:dpkg_list_openstack_ubuntu) { File.read(spec_asset('dpkg-list-openstack-ubuntu.txt')) }
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_aws: true,
+      exclude_on_google: true,
+      exclude_on_vcloud: true,
+      exclude_on_vsphere: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_openstack_ubuntu) }
+    end
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_aws: true,
+      exclude_on_vcloud: true,
+      exclude_on_vsphere: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_google_ubuntu) }
+    end
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_aws: true,
+      exclude_on_google: true,
+      exclude_on_vcloud: true,
+      exclude_on_vsphere: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_warden_ubuntu) }
+    end
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_aws: true,
+      exclude_on_google: true,
+      exclude_on_vsphere: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_vcloud_ubuntu) }
+    end
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_aws: true,
+      exclude_on_google: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_vsphere_ubuntu) }
+    end
+
+    describe command("dpkg --list | cut -f3 -d ' '"), {
+      exclude_on_google: true,
+      exclude_on_vcloud: true,
+      exclude_on_vsphere: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+    } do
+      its(:stdout) { should eq(dpkg_list_aws_ubuntu) }
+    end
+  end
 end
 
 describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do
