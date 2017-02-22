@@ -10,6 +10,8 @@ export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
 RUN_DIR=/var/vcap/sys/run/gonats
 LOG_DIR=/var/vcap/sys/log/gonats
 CONFIG_FILE=/var/vcap/jobs/gonats/config/go_nats.cfg
+CERT_FILE=/var/vcap/jobs/gonats/config/go_nats_cert.pem
+KEY_FILE=/var/vcap/jobs/gonats/config/go_nats_key.key
 PIDFILE=$RUN_DIR/gonats.pid
 RUNAS=vcap
 

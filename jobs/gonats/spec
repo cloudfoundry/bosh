@@ -4,6 +4,8 @@ name: gonats
 templates:
   go_nats_ctl.erb: bin/go_nats_ctl
   go_nats.cfg.erb: config/go_nats.cfg
+  go_nats_cert.pem.erb: config/go_nats_cert.pem
+  go_nats_key.key.erb: config/go_nats_key.key
 
 packages:
   - gonats
@@ -32,3 +34,7 @@ properties:
   gonats.http.port:
     description: TCP port NATS listens on for HTTP connections (optional)
     default: 9222
+  gonats.certificate:
+    description: go nats certificate for TLS
+  gonats.private_key:
+    description: go nats private key for TLS

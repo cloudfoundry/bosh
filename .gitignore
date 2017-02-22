@@ -33,6 +33,7 @@ create-vpc-output*.yml
 /src/go/src/code.google.com/p/go.tools
 /src/go/src/golang.org
 /src/go/src/github.com/golang
+/src/go/src/github.com/cloudfoundry/gnatsd/
 
 pkg/
 

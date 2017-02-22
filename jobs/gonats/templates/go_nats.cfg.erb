@@ -12,5 +12,11 @@ authorization {
   timeout: <%= p('gonats.auth_timeout') %>
 }
 
+tls {
+  cert_file:  "/var/vcap/jobs/gonats/config/go_nats_cert.pem"
+  key_file:   "/var/vcap/jobs/gonats/config/go_nats_key.key"
+  timeout:    2
+}
+
 ping_interval: <%= p('gonats.ping_interval') %>
 ping_max: <%= p('gonats.ping_max_outstanding') %>
