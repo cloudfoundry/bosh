@@ -8,6 +8,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `ITQtbWQJP3w2b2SsGZ8dzHXaEupaiC.X`
+  - USN-3209-1: SCSI operation restriction
+  - built from develop (523251dee4c4fae1713a3ec0e150f83900fa1efe)
+
 * `JjoQfIWyFrFsx5aeywnjxPyDrsCDrnP2`
   - Fixes OOM error in kernel
   - built from develop (1a86a1d40638067d918f0518975065db4b032f1a)
@@ -552,6 +556,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+* `pgI5yVzJBSn1SfDD568nJW8gGopmivPP`
+  - USN-3209-1: SCSI operation restriction
+  - built from develop (523251dee4c4fae1713a3ec0e150f83900fa1efe)
+
 * `t6TI5RQNOBrxuUcj5XRkJo1KfOWIUr55`
   - Periodic bump
   - built from develop (1a86a1d40638067d918f0518975065db4b032f1a)
