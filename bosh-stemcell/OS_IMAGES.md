@@ -6,6 +6,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 ## Ubuntu 14.04
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
+* `p..OgjjkEo9SMs6cRv8BK1.F_YbEJS2p`
+  - USN-3209-1: SCSI operation restriction
+  - built from 257.x-3263.x (2adb28970d7c399104a7f8c4d195f9b9dbdedf40)
+
 * `Naucw7eEL.ImoS1dJfwfO.qdEf09u.h5`
   - Fixes OOM error in kernel
   - built from 257.x-3263.x (3b92c901b429bcd6d9d376d23e82d034c9fb45c7)
