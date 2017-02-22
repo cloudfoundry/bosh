@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Hkixyxmp.wZV6JdMv7o2wEz33HRmttaN`
+  - Fixes OOM error in kernel
+  - built from 3312.x (ab44f427ff31f2b6ea7c40e9f1d6642af322ca6d)
+
 * `mnC1ygIEAgs2eKFdc_LPrQtDkxHPSP6e`
   - Backport DSA Host keys
   - built from 3312.x (2971f6103020f82ba84b92c9f55386c157b69273)
