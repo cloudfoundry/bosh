@@ -16,7 +16,7 @@ git init
 
 pushd /Users/pivotal/workspace/bosh
 fly -t production login
-IAAS=vsphere HYPERVISOR=esxi OS_NAME=ubuntu OS_VERSION=trusty time fly -t production execute -p -x -i version=/tmp/version -i bosh-src=. -c /Users/pivotal/workspace/bosh/ci/pipelines/stemcells/tasks/build.yml -o stemcell=/tmp/vsphere/dev/
+IAAS=vsphere HYPERVISOR=esxi OS_NAME=ubuntu OS_VERSION=trusty time fly -t production execute -p -x -i version=/tmp/version -i bosh-linux-stemcell-builder=/Users/pivotal/workspace/bosh-linux-stemcell-builder -i bosh-src=. -c /Users/pivotal/workspace/bosh-linux-stemcell-builder/ci/tasks/build.yml -o stemcell=/tmp/vsphere/dev/
 popd
 ```
 
