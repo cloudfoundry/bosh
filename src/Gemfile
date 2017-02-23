@@ -36,7 +36,6 @@ end
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
-  gem 'bosh-stemcell', path: 'bosh-stemcell'
   gem 'serverspec', '0.15.4'
 
   gem 'rspec', '~> 3.0.0'

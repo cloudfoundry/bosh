@@ -11,7 +11,6 @@ PATH
     bosh-dev (0.0.0)
       bosh-core
       bosh-director
-      bosh-stemcell
       bosh_common
       bundler
       fog-aws (~> 0.7.6)
@@ -81,12 +80,6 @@ PATH
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
       yajl-ruby (~> 1.2.0)
-
-PATH
-  remote: bosh-stemcell
-  specs:
-    bosh-stemcell (0.0.0)
-      bosh-core (~> 0.0.0)
 
 PATH
   remote: bosh-template
@@ -329,7 +322,6 @@ DEPENDENCIES
   bosh-director-core!
   bosh-monitor!
   bosh-registry!
-  bosh-stemcell!
   bosh-template!
   bosh_cli
   bosh_common!

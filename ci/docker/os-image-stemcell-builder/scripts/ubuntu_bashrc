@@ -1,2 +1,0 @@
-source /etc/profile.d/chruby.sh
-chruby "ruby-2.3.1"
