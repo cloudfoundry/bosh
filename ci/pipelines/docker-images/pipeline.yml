@@ -19,6 +19,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-postgres-9.3
         params:
           build: "bosh-src/ci/docker/main-postgres"
@@ -33,6 +35,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-postgres-9.4
         params:
           build: "bosh-src/ci/docker/main-postgres"
@@ -47,6 +51,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-postgres-9.5
         params:
           build: "bosh-src/ci/docker/main-postgres"
@@ -61,6 +67,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-postgres-9.6
         params:
           build: "bosh-src/ci/docker/main-postgres"
@@ -75,6 +83,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-mysql-5.5
         params:
           build: "bosh-src/ci/docker/main-mysql"
@@ -89,6 +99,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-mysql-5.6
         params:
           build: "bosh-src/ci/docker/main-mysql"
@@ -103,6 +115,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-base"
       - put: main-mysql-5.7
         params:
           build: "bosh-src/ci/docker/main-mysql"
@@ -118,7 +132,7 @@ jobs:
       - get: bosh-src
         trigger: true
         passed:
-          - "build-main-ruby-go"
+          - "build-main-base"
       - put: main-image
         params:
           build: "bosh-src/ci/docker/main"
@@ -131,6 +145,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+        passed:
+          - "build-main-ruby-go"
       - put: main-base
         params:
           build: "bosh-src/ci/docker/main-base"
