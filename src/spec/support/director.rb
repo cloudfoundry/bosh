@@ -107,7 +107,7 @@ module Bosh::Spec
 
       Thread.new do
         EventMachine.run do
-          @nats_client = NATS.connect(uri: nats_uri) do
+          @nats_client = NATS.connect(uri: nats_uri, ssl: true) do
             @nats_client.subscribe('>') do |msg, reply, sub|
               @nats_recording << [sub, msg]
             end

@@ -415,9 +415,10 @@ module Bosh::Dev::Sandbox
 
     def setup_nats
       @nats_log_path = File.join(@logs_path, 'nats.log')
+      gnatsd_path = File.join(REPO_ROOT, 'go', 'src', 'github.com', 'nats-io', 'gnatsd', 'out', 'bosh-gnatsd')
 
       @nats_process = Service.new(
-        %W[nats-server -p #{nats_port} -T -l #{@nats_log_path}],
+        %W[#{gnatsd_path} --tls --tlscert #{SANDBOX_ASSETS_DIR}/ca/certs/server.crt --tlskey #{SANDBOX_ASSETS_DIR}/ca/certs/server.key -p #{nats_port} -T -D -l #{@nats_log_path}],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )

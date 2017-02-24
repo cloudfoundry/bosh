@@ -1,0 +1,12 @@
+#!/bin/bash 
+
+set -e
+
+base=$( cd "$( dirname "$( dirname "$0" )")" && pwd )
+base_gopath=$( cd $base/../../../.. && pwd )
+
+export GOPATH=$base_gopath
+export GOBIN=$base_gopath/gobin
+export PATH=$PATH:$GOBIN:$base_gopath/bin
+
+exec $@

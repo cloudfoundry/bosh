@@ -36,6 +36,10 @@ RSpec.configure do |c|
       unless system(agent_build_cmd)
         raise 'Bosh agent build failed'
       end
+      gnatsd_build_cmd = File.expand_path('../../go/src/github.com/nats-io/gnatsd/bin/build', __FILE__)
+      unless system(gnatsd_build_cmd)
+        raise 'gnatsd build failed'
+      end
     end
 
     if ENV['DB'] == 'postgresql'
