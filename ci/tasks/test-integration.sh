@@ -43,7 +43,7 @@ esac
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
-agent_path=bosh-src/go/src/github.com/cloudfoundry/
+agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
 mkdir -p $agent_path
 cp -r bosh-agent $agent_path
 
