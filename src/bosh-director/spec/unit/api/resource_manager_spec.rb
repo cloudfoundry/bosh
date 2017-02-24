@@ -4,19 +4,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::ResourceManager do
-    before(:each) do
-      @blobstore_dir = File.join(Dir.tmpdir, 'blobstore')
-      FileUtils.mkdir(@blobstore_dir)
-    end
-
-    after(:each) do
-      FileUtils.rm_rf(@blobstore_dir)
-    end
-
-    let(:blobstore) { Bosh::Blobstore::Client.create('local', 'blobstore_path' => @blobstore_dir) }
+    let(:blobstore) { double('client') }
     let(:manager) { Api::ResourceManager.new(blobstore) }
 
     it 'raises an error when trying to get non-existing resource' do
+      allow(blobstore).to receive(:get).and_raise(Bosh::Blobstore::NotFound)
+
       expect {
         manager.get_resource('deadbeef')
       }.to raise_error(ResourceNotFound, "Resource 'deadbeef' not found in the blobstore")
@@ -32,8 +25,12 @@ module Bosh::Director
     end
 
     it 'saves resource to a local file' do
-      id = blobstore.create('some data')
-      path = manager.get_resource_path(id)
+      blobstore.define_singleton_method(:get) {|id, f|
+        if id == 99 then
+          f.write('some data')
+        end
+      }
+      path = manager.get_resource_path(99)
 
       expect(File.exists?(path)).to be(true)
       expect(File.read(path)).to eq('some data')
@@ -53,18 +50,19 @@ module Bosh::Director
     end
 
     it 'should return the contents of the blobstore id' do
-      contents = 'some data'
-      id = blobstore.create(contents)
-      expect(manager.get_resource(id)).to eq(contents)
+      blobstore.define_singleton_method(:get) {|id|
+        if id == 99 then
+          'some data'
+        end
+      }
+
+      expect(manager.get_resource(99)).to eq('some data')
     end
 
     it 'should delete a resource from the blobstore' do
-      contents = 'some data'
-      id = blobstore.create(contents)
-      manager.delete_resource(id)
-      expect {
-        manager.get_resource(id)
-      }.to raise_error Bosh::Director::ResourceNotFound
+      allow(blobstore).to receive(:delete).with(99)
+
+      manager.delete_resource(99)
     end
   end
 end

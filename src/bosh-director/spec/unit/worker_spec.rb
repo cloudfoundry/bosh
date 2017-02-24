@@ -10,8 +10,10 @@ describe 'worker' do
       },
       'verify_multidigest_path' => '/some/path',
       'blobstore' => {
-        'provider' => 'simple',
-        'options' => {}
+        'provider' => 's3cli',
+        'options' => {
+          's3cli_path' => true
+        }
       },
       'config_server' => {
         'enabled' => false
