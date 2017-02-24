@@ -8,7 +8,7 @@ module Bosh::Blobstore
     before do
       allow(Dir).to receive(:tmpdir).and_return(base_dir)
       allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
-      allow(Kernel).to receive(:system).with("/var/vcap/packages/s3cli/bin/s3cli --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+      allow(Kernel).to receive(:system).with("/var/vcap/packages/s3cli/bin/s3cli", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
     end
 
     let(:options) do
@@ -47,7 +47,7 @@ module Bosh::Blobstore
 
       context 'when there is no s3cli' do
         it 'raises an error' do
-          allow(Kernel).to receive(:system).with("/var/vcap/packages/s3cli/bin/s3cli --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
+          allow(Kernel).to receive(:system).with("/var/vcap/packages/s3cli/bin/s3cli", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
           expect { described_class.new(options) }.to raise_error(
               Bosh::Blobstore::BlobstoreError, 'Cannot find s3cli executable. Please specify s3cli_path parameter')
         end
@@ -89,7 +89,7 @@ module Bosh::Blobstore
     describe '#delete' do
       it 'should delete an object' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} delete #{object_id}")
+        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli", "-c", "#{expected_config_file}", "delete", "#{object_id}")
         client.delete(object_id)
       end
 
@@ -103,13 +103,14 @@ module Bosh::Blobstore
     describe '#exists?' do
       it 'should return true if s3cli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} exists #{object_id}")
+        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli", "-c", "#{expected_config_file}", "exists", "#{object_id}")
+
         expect(client.exists?(object_id)).to eq(true)
       end
 
       it 'should return false if s3cli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, not_existed_exit_status])
-        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} exists #{object_id}")
+        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli", "-c", "#{expected_config_file}", "exists", "#{object_id}")
         expect(client.exists?(object_id)).to eq(false)
       end
 
@@ -129,7 +130,7 @@ module Bosh::Blobstore
 
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} get #{object_id} #{file_path}")
+        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli", "-c", "#{expected_config_file}", "get", "#{object_id}", "#{file_path}")
         client.get(object_id)
       end
 
@@ -161,7 +162,7 @@ module Bosh::Blobstore
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
         file = File.open(Tempfile.new('file'))
-        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli -c #{expected_config_file} put #{file.path} FAKE_UUID")
+        expect(Open3).to receive(:capture3).with("/var/vcap/packages/s3cli/bin/s3cli", "-c", "#{expected_config_file}", "put", "#{file.path}", "FAKE_UUID")
         client.create(file)
       end
 

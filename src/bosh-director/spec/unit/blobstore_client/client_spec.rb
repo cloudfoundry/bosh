@@ -14,7 +14,7 @@ module Bosh::Blobstore
         end
 
         it 'returns s3cli client' do
-          allow(Kernel).to receive(:system).with("/path --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
           expect(Client.create('s3cli', {
               access_key_id: 'foo',
               secret_access_key: 'bar',

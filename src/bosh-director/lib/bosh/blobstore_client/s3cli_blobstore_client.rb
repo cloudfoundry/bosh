@@ -25,7 +25,7 @@ module Bosh
         super(options)
 
         @s3cli_path = @options.fetch(:s3cli_path)
-        unless Kernel.system("#{@s3cli_path} --v", out: "/dev/null", err: "/dev/null")
+        unless Kernel.system("#{@s3cli_path}", "--v", out: "/dev/null", err: "/dev/null")
           raise BlobstoreError, "Cannot find s3cli executable. Please specify s3cli_path parameter"
         end
 
@@ -71,7 +71,7 @@ module Bosh
       # @param [File] file file to store the retrived object in
       def get_file(object_id, file)
         begin
-          out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} get #{object_id} #{file.path}")
+          out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "get", "#{object_id}", "#{file.path}")
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -87,7 +87,7 @@ module Bosh
       # @param [String] object_id object id to delete
       def delete_object(object_id)
         begin
-          out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} delete #{object_id}")
+          out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "delete", "#{object_id}")
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -96,7 +96,7 @@ module Bosh
 
       def object_exists?(object_id)
         begin
-          out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} exists #{object_id}")
+          out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "exists", "#{object_id}")
           if status.exitstatus == 0
             return true
           end
@@ -114,7 +114,7 @@ module Bosh
       # @return [void]
       def store_in_s3(path, oid)
         begin
-        out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} put #{path} #{oid}")
+          out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "put", "#{path}", "#{oid}")
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
