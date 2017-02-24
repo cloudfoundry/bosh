@@ -339,6 +339,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true }
+    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
 
@@ -364,6 +365,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true }
+    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
 
@@ -389,6 +391,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - { get: bosh-src, trigger: true }
+    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
 
@@ -415,6 +418,7 @@ jobs:
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true }
+    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
 
@@ -441,6 +445,7 @@ jobs:
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true }
+    - { get: bosh-agent }
     - { get: bosh-fuzz-tests }
     - { get: bosh-cli }
 
