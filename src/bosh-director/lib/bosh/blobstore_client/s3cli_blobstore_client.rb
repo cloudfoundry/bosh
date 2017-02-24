@@ -71,12 +71,18 @@ module Bosh
       # @param [File] file file to store the retrived object in
       def get_file(object_id, file)
         begin
-        out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} get #{object_id} #{file.path}")
+          out, err, status = Open3.capture3("#{@s3cli_path} -c #{@config_file} get #{object_id} #{file.path}")
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
-        raise BlobstoreError, "Failed to download S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'" unless status.success?
+        if !status.success?
+          if err =~ /NoSuchKey/
+            raise NotFound, "Blobstore object '#{object_id}' not found"
+          end
+          raise BlobstoreError, "Failed to download S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
+        end
       end
+
 
       # @param [String] object_id object id to delete
       def delete_object(object_id)

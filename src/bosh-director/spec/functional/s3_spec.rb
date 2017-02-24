@@ -277,21 +277,29 @@ module Bosh::Blobstore
             end
 
             it 'should raise an error when the object is missing' do
-              id = 'foooooo'
-
-              expect { s3.get(id) }.to raise_error BlobstoreError, /performing operation get: NoSuchKey: The specified key does not exist./
+              expect { s3.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
             end
           end
 
           describe 'delete object' do
-            it 'should delete an object' do
-              @oid = s3.create('foobar')
+            let(:name) do
+              context 'when the key exists' do
+                it 'should delete an object' do
+                  @oid = s3.create('foobar')
 
-              expect { s3.delete(@oid) }.to_not raise_error
+                  expect { s3.delete(@oid) }.to_not raise_error
 
-              @oid = nil
+                  @oid = nil
+                end
+              end
+
+              context 'when the key does not exist' do
+                it 'should not raise an error' do
+                  expect { s3.delete('nonexistent-key') }.to_not raise_error
+                end
+              end
+
             end
-
           end
 
           describe 'object exists?' do
@@ -301,7 +309,7 @@ module Bosh::Blobstore
             end
 
             it 'should return false if object does not exist' do
-              expect(s3.exists?('foobar-fake')).to be false
+              expect(s3.exists?('nonexistent-key')).to be false
             end
           end
 
@@ -340,7 +348,7 @@ module Bosh::Blobstore
         end
 
         it 'should raise an error when the object is missing' do
-          expect { s3.get('foooooo') }.to raise_error BlobstoreError, /performing operation get: NoSuchKey: The specified key does not exist./
+          expect { s3.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
         end
       end
 
@@ -351,8 +359,16 @@ module Bosh::Blobstore
       end
 
       describe 'delete object' do
-        it 'should raise an error' do
-          expect { s3.delete('public') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+        context 'when the key exists' do
+          it 'should raise an error' do
+            expect { s3.delete('public') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+          end
+        end
+
+        context 'when the key does not exist' do
+          it 'should raise an error' do
+            expect { s3.delete('nonexistent-key') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+          end
         end
       end
 

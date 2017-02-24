@@ -121,6 +121,11 @@ module Bosh::Blobstore
     end
 
     describe '#get' do
+      it 'should raise on execution failure' do
+        allow(Open3).to receive(:capture3).and_raise(Exception.new('something bad happened'))
+        expect { client.get(object_id) }.to raise_error(
+          BlobstoreError, /something bad happened/)
+      end
 
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
@@ -132,6 +137,12 @@ module Bosh::Blobstore
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { client.get(object_id) }.to raise_error(
             BlobstoreError, /Failed to download S3 object/)
+      end
+
+      it 'should raise a NotFound error if the key does not exist' do
+        allow(Open3).to receive(:capture3).and_return([nil, 'NoSuchKey', failure_exit_status])
+        expect { client.get(object_id) }.to raise_error(
+          NotFound, "Blobstore object '#{object_id}' not found")
       end
     end
 
