@@ -189,15 +189,10 @@ namespace :spec do
         unit_exec(build)
       end
     end
-
-    task(:agent) do
-      # Do not use exec because this task is part of other tasks
-      sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
-    end
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby spec:unit:agent)
+  task :unit => %w(spec:release_unit spec:unit:ruby)
 end
 
 desc 'Run unit and integration specs'
