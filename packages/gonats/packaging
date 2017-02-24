@@ -9,4 +9,4 @@ mkdir $BOSH_INSTALL_TARGET/bin
 mv go/src ./src
 
 # Compile go-nats
-go build -o $BOSH_INSTALL_TARGET/bin/gnatsd github.com/cloudfoundry/gnatsd
+go build -o $BOSH_INSTALL_TARGET/bin/gnatsd github.com/nats-io/gnatsd

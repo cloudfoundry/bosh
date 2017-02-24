@@ -5,4 +5,4 @@ dependencies:
   - golang
 
 files:
-  - go/src/github.com/cloudfoundry/**/*.go
+  - go/src/github.com/nats-io/**/*.go
