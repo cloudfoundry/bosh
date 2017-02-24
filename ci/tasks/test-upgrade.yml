@@ -9,6 +9,7 @@ image_resource:
 inputs:
 - name: bosh-src
 - name: bosh-cli
+- name: bosh-agent
 
 run:
   path: bosh-src/ci/tasks/test-upgrade.sh

@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
 - name: bosh-src
+- name: bosh-agent
 
 run:
   path: bosh-src/ci/tasks/test-integration.sh
