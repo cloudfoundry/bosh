@@ -16,7 +16,7 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+    export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
 
     mkdir /tmp/postgres
     mount -t tmpfs -o size=256M tmpfs /tmp/postgres
@@ -24,7 +24,7 @@ case "$DB" in
     chown postgres:postgres /tmp/postgres/data
 
     su postgres -c '
-      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
       export PGDATA=/tmp/postgres/data
       export PGLOGS=/tmp/log/postgres
       mkdir -p $PGDATA

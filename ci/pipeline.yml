@@ -4,7 +4,9 @@ groups:
     jobs:
       - unit-2.3
       - unit-2.3-mysql
+      - unit-2.3-mysql-consolidated
       - unit-2.3-postgres
+      - unit-2.3-postgres-consolidated
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
@@ -121,6 +123,79 @@ jobs:
             icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
             text: {{slack_failure_message}}
 
+  - name: unit-2.3-mysql-consolidated
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - task: test-mysql-5.5
+          config:
+            privileged: true
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.5
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: mysql
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
+        - task: test-mysql-5.6
+          config:
+            privileged: true
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.6
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: mysql
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
+        - task: test-mysql-5.7
+          config:
+            privileged: true
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.7
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: mysql
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
   - name: unit-2.3-postgres
     public: true
     serial: true
@@ -134,12 +209,112 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: postgresql
+          DB_VERSION: 9.4
         on_failure:
           put: slack-alert
           params:
             channel: {{slack_channel_name}}
             icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
             text: {{slack_failure_message}}
+
+  - name: unit-2.3-postgres-consolidated
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - task: test-postgres-9.3
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-postgres-9.3
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            privileged: true
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: postgresql
+              DB_VERSION: 9.3
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
+        - task: test-postgres-9.4
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-postgres-9.4
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            privileged: true
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: postgresql
+              DB_VERSION: 9.4
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
+        - task: test-postgres-9.5
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-postgres-9.5
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            privileged: true
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: postgresql
+              DB_VERSION: 9.5
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
+
+        - task: test-postgres-9.6
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-postgres-9.6
+            inputs:
+              - name: bosh-src
+            run:
+              path: bosh-src/ci/tasks/test-unit.sh
+            privileged: true
+            params:
+              RUBY_VERSION: 2.3.1
+              DB: postgresql
+              DB_VERSION: 9.6
+            on_failure:
+              put: slack-alert
+              params:
+                channel: {{slack_channel_name}}
+                icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+                text: {{slack_failure_message}}
 
   - name: blobstore-client-integration
     public: true
