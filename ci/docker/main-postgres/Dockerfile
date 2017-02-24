@@ -10,5 +10,3 @@ RUN apt-get install -y \
 	postgresql-$DB_VERSION \
 	postgresql-client-$DB_VERSION \
 	&& apt-get clean
-
-
