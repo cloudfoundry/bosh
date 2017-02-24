@@ -131,8 +131,8 @@ jobs:
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-5.5
+          privileged: true
           config:
-            privileged: true
             platform: linux
             image_resource:
               type: docker-image
@@ -153,8 +153,8 @@ jobs:
                 text: {{slack_failure_message}}
 
         - task: test-mysql-5.6
+          privileged: true
           config:
-            privileged: true
             platform: linux
             image_resource:
               type: docker-image
@@ -175,8 +175,8 @@ jobs:
                 text: {{slack_failure_message}}
 
         - task: test-mysql-5.7
+          privileged: true
           config:
-            privileged: true
             platform: linux
             image_resource:
               type: docker-image
@@ -225,6 +225,7 @@ jobs:
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-postgres-9.3
+          privileged: true
           config:
             platform: linux
             image_resource:
@@ -235,7 +236,6 @@ jobs:
               - name: bosh-src
             run:
               path: bosh-src/ci/tasks/test-unit.sh
-            privileged: true
             params:
               RUBY_VERSION: 2.3.1
               DB: postgresql
@@ -248,6 +248,7 @@ jobs:
                 text: {{slack_failure_message}}
 
         - task: test-postgres-9.4
+          privileged: true
           config:
             platform: linux
             image_resource:
@@ -258,7 +259,6 @@ jobs:
               - name: bosh-src
             run:
               path: bosh-src/ci/tasks/test-unit.sh
-            privileged: true
             params:
               RUBY_VERSION: 2.3.1
               DB: postgresql
@@ -271,6 +271,7 @@ jobs:
                 text: {{slack_failure_message}}
 
         - task: test-postgres-9.5
+          privileged: true
           config:
             platform: linux
             image_resource:
@@ -281,7 +282,6 @@ jobs:
               - name: bosh-src
             run:
               path: bosh-src/ci/tasks/test-unit.sh
-            privileged: true
             params:
               RUBY_VERSION: 2.3.1
               DB: postgresql
@@ -294,6 +294,7 @@ jobs:
                 text: {{slack_failure_message}}
 
         - task: test-postgres-9.6
+          privileged: true
           config:
             platform: linux
             image_resource:
@@ -304,7 +305,6 @@ jobs:
               - name: bosh-src
             run:
               path: bosh-src/ci/tasks/test-unit.sh
-            privileged: true
             params:
               RUBY_VERSION: 2.3.1
               DB: postgresql
