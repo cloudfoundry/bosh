@@ -4,9 +4,7 @@ groups:
     jobs:
       - unit-2.3
       - unit-2.3-mysql
-      - unit-2.3-mysql-consolidated
       - unit-2.3-postgres
-      - unit-2.3-postgres-consolidated
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
