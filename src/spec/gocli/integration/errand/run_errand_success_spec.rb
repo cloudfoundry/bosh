@@ -310,6 +310,12 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       expect(output[0]['Exit Code']).to match('0')
 
       expect(@exit_code).to eq(0)
+      output = bosh_runner.run('events --object-type errand', deployment_name: 'errand', json: true)
+      events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+      expect(events).to contain_exactly(
+        {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'run', 'Object Type' => 'errand', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'fake-errand-name', 'Deployment' => 'errand', 'Instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => "exit_code: 0", 'Error' => ''},
+        {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'run', 'Object Type' => 'errand', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => 'fake-errand-name', 'Deployment' => 'errand', 'Instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
+      )
     end
 
     context 'when downloading logs' do

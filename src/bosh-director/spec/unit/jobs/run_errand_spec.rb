@@ -6,13 +6,31 @@ module Bosh::Director
     let(:keep_alive) { false }
     let(:when_changed) { false }
 
-    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before do
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(Config).to receive(:record_events).and_return(true)
+      allow(job).to receive(:event_manager).and_return(event_manager)
+      allow(Config).to receive(:current_job).and_return(job)
+    end
+
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       manifest_hash['name'] = 'fake-dep-name'
       manifest_hash
     end
+
+    let(:agent_run_errand_result) do
+      {
+        'exit_code' => 0,
+        'stdout' => 'fake-stdout',
+        'stderr' => 'fake-stderr',
+      }
+    end
+
+    let(:errand_result) {Errand::Result.from_agent_task_results(agent_run_errand_result, nil)}
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
@@ -36,6 +54,7 @@ module Bosh::Director
               'Bosh::Director::DeploymentPlan::PlannerFactory',
               create_from_manifest: planner,
             ))
+          allow(job).to receive(:task_id).and_return(task.id)
         end
         let(:planner) do
           ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
@@ -64,7 +83,7 @@ module Bosh::Director
 
             context 'when job has at least 1 instance' do
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
-              let(:instance_model) { Models::Instance.make }
+              let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
 
               before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
@@ -109,14 +128,14 @@ module Bosh::Director
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(instance, 'fake-errand-name', result_file, be_a(Api::InstanceManager), logs_fetcher).
+                  with(instance, 'fake-errand-name', result_file, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
               before do
                 allow(runner).to receive(:run).
                   with(no_args).
-                  and_return('fake-result-short-description')
+                  and_return(errand_result)
               end
 
               it 'binds models, validates packages, compiles packages' do
@@ -143,7 +162,7 @@ module Bosh::Director
                 expect(runner).to receive(:run).
                   with(no_args).
                   ordered.
-                  and_return('fake-result-short-description')
+                  and_return(errand_result)
 
                 expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
@@ -151,11 +170,33 @@ module Bosh::Director
 
                 expect(called_after_block_check).to receive(:call).ordered
 
-                expect(subject.perform).to eq('fake-result-short-description')
+                expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+              end
+
+              it 'should store event' do
+                subject.perform
+                event_1 = Bosh::Director::Models::Event.first
+                expect(event_1.user).to eq(task.username)
+                expect(event_1.action).to eq('run')
+                expect(event_1.object_type).to eq('errand')
+                expect(event_1.object_name).to eq('fake-errand-name')
+                expect(event_1.instance).to eq('foo-job/instance_id')
+                expect(event_1.deployment).to eq('fake-dep-name')
+                expect(event_1.task).to eq("#{task.id}")
+
+                event_2 = Bosh::Director::Models::Event.all.last
+                expect(event_2.parent_id).to eq(event_1.id)
+                expect(event_2.user).to eq(task.username)
+                expect(event_2.action).to eq('run')
+                expect(event_2.object_type).to eq('errand')
+                expect(event_2.object_name).to eq('fake-errand-name')
+                expect(event_2.instance).to eq('foo-job/instance_id')
+                expect(event_2.deployment).to eq('fake-dep-name')
+                expect(event_2.context).to eq({"exit_code" => 0})
+                expect(event_2.task).to eq("#{task.id}")
               end
 
               context 'when the errand fails to run' do
-                let(:task) { instance_double('Bosh::Director::Models::Task') }
                 let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
 
                 it 'cleans up the vms anyway' do
@@ -195,9 +236,6 @@ module Bosh::Director
                 let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
 
                 before { allow(task).to receive(:state).and_return('cancelling') }
-                let(:task) { instance_double('Bosh::Director::Models::Task') }
-
-                before { job.task_id = 'some-task' }
 
                 context 'when agent is able to cancel run_errand task successfully' do
                   it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
@@ -208,6 +246,8 @@ module Bosh::Director
                     expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(TaskCancelled)
+                    event_2 = Bosh::Director::Models::Event.all.last
+                    expect(event_2.error).to eq("Task 42 cancelled")
                   end
 
                   it 'does not allow cancellation while cleaning up errand VMs' do
@@ -241,7 +281,7 @@ module Bosh::Director
                 it 'does not delete instances' do
                   expect(job_manager).to_not receive(:delete_vms)
 
-                  expect(subject.perform).to eq('fake-result-short-description')
+                  expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                 end
               end
 
@@ -299,7 +339,7 @@ module Bosh::Director
                         expect(job_manager).to receive(:create_missing_vms)
                         expect(runner).to receive(:run)
 
-                        expect(subject.perform).to eq('fake-result-short-description')
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                       end
                     end
 
@@ -317,7 +357,7 @@ module Bosh::Director
                         expect(job_manager).to receive(:create_missing_vms)
                         expect(runner).to receive(:run)
 
-                        expect(subject.perform).to eq('fake-result-short-description')
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                       end
                     end
                   end
@@ -339,7 +379,7 @@ module Bosh::Director
                         expect(job_manager).to receive(:create_missing_vms)
                         expect(runner).to receive(:run)
 
-                        expect(subject.perform).to eq('fake-result-short-description')
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                       end
                     end
 
@@ -353,7 +393,7 @@ module Bosh::Director
                         expect(job_manager).to receive(:create_missing_vms)
                         expect(runner).to receive(:run)
 
-                        expect(subject.perform).to eq('fake-result-short-description')
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                       end
                     end
                   end

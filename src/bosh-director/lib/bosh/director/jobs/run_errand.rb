@@ -114,13 +114,16 @@ module Bosh::Director
 
       begin
         update_instances(job_manager)
+        parent_id = add_event(job.instances.first.model.name)
         block_result = blk.call
-      rescue Exception
+        add_event(job.instances.first.model.name, parent_id, block_result.exit_code)
+      rescue Exception => e
+        add_event(job.instances.first.model.name, parent_id, nil, e)
         cleanup_vms_and_log_error(job_manager)
         raise
       else
         cleanup_vms(job_manager)
-        return block_result
+        return block_result.short_description(job.name)
       end
     end
 
@@ -156,6 +159,26 @@ module Bosh::Director
       job_manager.delete_vms
 
       @ignore_cancellation = false
+    end
+
+    private
+
+    def add_event(instance_name, parent_id = nil, exit_code = nil, error = nil)
+      context = exit_code.nil? ? {} : {exit_code: exit_code}
+      event  = Config.current_job.event_manager.create_event(
+        {
+          parent_id:   parent_id,
+          user:        Config.current_job.username,
+          action:      'run',
+          object_type: 'errand',
+          object_name: @errand_name,
+          task:        Config.current_job.task_id,
+          deployment:  @deployment_name,
+          instance:    instance_name,
+          error:       error,
+          context:     context,
+        })
+      event.id
     end
   end
 end

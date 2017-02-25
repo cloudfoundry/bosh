@@ -67,7 +67,7 @@ module Bosh::Director
 
       raise @fetch_logs_error if @fetch_logs_error
 
-      errand_result.short_description(@job_name)
+      errand_result
     end
 
     def cancel
