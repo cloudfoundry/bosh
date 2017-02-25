@@ -15,11 +15,6 @@ export OUTER_CONTAINER_IP=$(ruby -rsocket -e 'puts Socket.ip_address_list
 
 export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
 
-#TODO remove when bosh-deployment/docker/cpi.yml has link to bosh.io
-pushd bosh-docker-cpi-release
-    bosh create-release --tarball /tmp/docker-cpi-release
-popd
-
 apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
