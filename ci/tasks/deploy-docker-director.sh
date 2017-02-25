@@ -43,7 +43,7 @@ sudo apt-get -y install docker-engine
 certs_dir=$(mktemp -d)
 start_docker $certs_dir
 
-docker network create -d bridge --subnet=10.10.0.0/16 director_network
+docker network create -d bridge --subnet=10.245.0.0/16 director_network
 
 pushd bosh-deployment
     bosh create-env bosh.yml \
@@ -53,16 +53,16 @@ pushd bosh-deployment
       --state=./state.json \
       --vars-store=./creds.yml\
       -v director_name=docker \
-      -v internal_cidr=10.10.0.0/16 \
-      -v internal_gw=10.10.0.1 \
-      -v internal_ip=10.10.0.3 \
+      -v internal_cidr=10.245.0.0/16 \
+      -v internal_gw=10.245.0.1 \
+      -v internal_ip=10.245.0.3 \
       -v docker_host=${DOCKER_HOST} \
       -v network=director_network \
       -v docker-cpi-tarball=/tmp/docker-cpi-release \
       -v docker_tls="{\"ca\": \"$(cat ${certs_dir}/ca_json_safe.pem)\"}" \
       -v local_bosh_release=../bosh-dev-release/bosh-dev-release.tgz
 
-    bosh -e 10.10.0.3 --ca-cert <(bosh int ./creds.yml --path /director_ssl/ca) alias-env bosh-1
+    bosh -e 10.245.0.3 --ca-cert <(bosh int ./creds.yml --path /director_ssl/ca) alias-env bosh-1
 
     export BOSH_CLIENT=admin
     export BOSH_CLIENT_SECRET=`bosh int ./creds.yml --path /admin_password`
