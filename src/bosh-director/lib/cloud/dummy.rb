@@ -368,6 +368,12 @@ module Bosh
 
       private
 
+      def method_missing(method, *args, &block)
+        @outer.send(method, *args, &block)
+      rescue NoMethodError
+        raise 'InvalidCall', "Method is not known, got: '#{method}'"
+      end
+
       def allocate_ips(ips)
         ips.each do |ip|
           begin

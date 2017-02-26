@@ -160,7 +160,7 @@ module Bosh::Director
           logger.info("There is no enough information to check if stemcell format is supported")
           return true
         end
-      rescue
+      rescue Bosh::Clouds::ExternalCpi::InvalidCall
         cpi_suffix = " (cpi: #{cloud[:name]})" unless cloud[:name].blank?
         logger.info("info method is not supported by cpi #{cpi_suffix}")
         return true

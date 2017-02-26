@@ -12,6 +12,8 @@ module Bosh::Clouds
     # Raised when the external CPI bin/cpi is not executable
     class NonExecutable < StandardError; end
 
+    class InvalidCall < StandardError; end
+
     KNOWN_RPC_ERRORS = %w(
     Bosh::Clouds::CpiError
     Bosh::Clouds::NotSupported
@@ -141,6 +143,11 @@ module Bosh::Clouds
     def handle_error(error_response, method_name)
       error_type = error_response['type']
       error_message = error_response['message']
+
+      if error_type == "InvalidCall"
+        raise InvalidCall, "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+      end
+
       unless KNOWN_RPC_ERRORS.include?(error_type)
         raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
       end
