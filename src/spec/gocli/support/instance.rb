@@ -64,7 +64,7 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@vm_cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(uri: "nats://localhost:#{@nats_port}", ssl: true) do
         msg = Yajl::Encoder.encode(
           method: 'set_dummy_status',
           status: 'failing',
@@ -76,7 +76,7 @@ module Bosh::Spec
 
     def fail_start_task
       @logger.info("Failing task #{@vm_cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(uri: "nats://localhost:#{@nats_port}", ssl: true) do
         msg = Yajl::Encoder.encode(
           method: 'set_task_fail',
           status: 'fail_task',

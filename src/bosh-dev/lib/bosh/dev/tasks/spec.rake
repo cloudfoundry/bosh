@@ -16,25 +16,25 @@ namespace :spec do
   namespace :integration do
     desc 'Run BOSH integration tests against a local sandbox'
     task :agent => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      compile_dependencies
       run_integration_specs
     end
 
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task :gocli => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      compile_dependencies
       run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
     task :health_monitor => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      compile_dependencies
       run_integration_specs(tags: 'hm')
     end
 
     desc 'Run BOSH gocli upgrade tests against a local sandbox'
     task :upgrade => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      compile_dependencies
       run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
@@ -121,6 +121,11 @@ namespace :spec do
       end
       puts command
       abort unless system(command)
+    end
+
+    def compile_dependencies
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      sh('go/src/github.com/nats-io/gnatsd/bin/build')
     end
   end
 
