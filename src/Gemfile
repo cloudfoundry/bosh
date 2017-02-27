@@ -19,7 +19,7 @@ gem 'json', '=1.8.3'
 
 gem 'talentbox-delayed_job_sequel', '~> 4.1'
 
-gem 'bundler', '~>1.11.0'
+gem 'bundler', '~>1.14'
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
@@ -48,8 +48,7 @@ group :development, :test do
   gem 'sinatra'
   gem 'sinatra-contrib'
 
-  # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
-  gem 'eventmachine', '1.0.4'
+  gem 'eventmachine', '~>1.2'
 
   # for director
   gem 'machinist', '~>1.0'

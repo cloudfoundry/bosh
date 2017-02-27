@@ -379,7 +379,7 @@ module Bosh
           begin
             network_dir = File.join(@base_dir, 'dummy_cpi_networks')
             FileUtils.makedirs(network_dir)
-            open(File.join(network_dir, ip['ip']), File::WRONLY|File::CREAT|File::EXCL).close
+            File.open(File.join(network_dir, ip['ip']), File::WRONLY|File::CREAT|File::EXCL).close
           rescue Errno::EEXIST
             # at this point we should actually free all the IPs we successfully allocated before the collision,
             # but in practice the tests only feed in one IP per VM so that cleanup code would never be exercised
