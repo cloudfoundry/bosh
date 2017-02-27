@@ -97,7 +97,7 @@ start_docker() {
 
   local mtu=$(cat /sys/class/net/$(ip route get 8.8.8.8|awk '{ print $5 }')/mtu)
 
-  local server_args="--mtu ${mtu} --host ${DOCKER_HOST} --tls --tlscacert=${certs_dir}/ca.pem --tlscert=${certs_dir}/server-cert.pem --tlskey=${certs_dir}/server-key.pem"
+  local server_args="--mtu ${mtu} --host ${DOCKER_HOST} --tlsverify --tlscacert=${certs_dir}/ca.pem --tlscert=${certs_dir}/server-cert.pem --tlskey=${certs_dir}/server-key.pem"
   local registry=""
 
   for registry in $1; do

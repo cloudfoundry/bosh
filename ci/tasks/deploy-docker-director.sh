@@ -39,6 +39,9 @@ pushd bosh-deployment
 
     export BOSH_CLIENT=admin
     export BOSH_CLIENT_SECRET=`bosh int ./creds.yml --path /admin_password`
+
+    bosh int creds.yml --path /jumpbox_ssh/private_key > $certs_dir/jumpbox_ssh_key.pem
+    chmod 400 $certs_dir/jumpbox_ssh_key.pem
 popd
 
 # pushd bosh-src/some/path/to/ginkgo/tests
