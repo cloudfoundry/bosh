@@ -1,0 +1,112 @@
+name: bosh
+version: "257.24"
+commit_hash: 5b9d545a
+uncommitted_changes: true
+jobs:
+- name: blobstore
+  version: 5f0fe7f89a1d30d98f45a670bb9c8e94f1dab6bf
+  fingerprint: 5f0fe7f89a1d30d98f45a670bb9c8e94f1dab6bf
+  sha1: 39f44251fe6ab9c918533cb608a7d0f7b5d82e94
+- name: director
+  version: 91bf180ebea3f2e16622c48215476ebf2f75a18e
+  fingerprint: 91bf180ebea3f2e16622c48215476ebf2f75a18e
+  sha1: 0f7a13e96137c6a3e340af2d08219a6410576477
+- name: health_monitor
+  version: 37631dcd68e79ca96ea9c801971a9689e11db339
+  fingerprint: 37631dcd68e79ca96ea9c801971a9689e11db339
+  sha1: 33bc59917ec0da14c71195ebf9d02c385194cbdf
+- name: nats
+  version: 329a9df8c4b7d3655c57e59d8fe2a03d65843cac
+  fingerprint: 329a9df8c4b7d3655c57e59d8fe2a03d65843cac
+  sha1: 73de8659da15387295b879d8190c2d6d79037ac8
+- name: postgres
+  version: 9ad09420dd12f830bfc54bb6891fca33e7ad4ff5
+  fingerprint: 9ad09420dd12f830bfc54bb6891fca33e7ad4ff5
+  sha1: 5a17f95475b5b3ac6fdda98b221ded63486c996f
+- name: postgres-9.4
+  version: 0c57c770101e1ee93da1ba2a32340fac1616e2cb
+  fingerprint: 0c57c770101e1ee93da1ba2a32340fac1616e2cb
+  sha1: e4f58ba92cf0bc3fff4bf97e449709bcd3f95c87
+- name: powerdns
+  version: df20bcfaa20062ef2e0136f6b6a5dbdc62f7b6a8
+  fingerprint: df20bcfaa20062ef2e0136f6b6a5dbdc62f7b6a8
+  sha1: 6758d5bd60c6f21a852a42fac9ed0bd52915b748
+- name: registry
+  version: 94e77e24ea259b3d9289a131f00ec80e4fd34f72
+  fingerprint: 94e77e24ea259b3d9289a131f00ec80e4fd34f72
+  sha1: 1b816c8b5ea3e3c2fb84bb6dff9bab96d3407523
+packages:
+- name: director
+  version: 175760fa5a748b133d60d4d478f228fe6346d156
+  fingerprint: 175760fa5a748b133d60d4d478f228fe6346d156
+  sha1: c8b1bd72120335bdfc425a177cb74fc191a34f75
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+  - s3cli
+- name: genisoimage
+  version: 008d332ba1471bccf9d9aeb64c258fdd4bf76201
+  fingerprint: 008d332ba1471bccf9d9aeb64c258fdd4bf76201
+  sha1: 2acf8da0250db31e762a23756fd0e12cfa947eb9
+  dependencies: []
+- name: health_monitor
+  version: 6ab97b6a93964daa66d1379c46fd6ad0c8e2a6fe
+  fingerprint: 6ab97b6a93964daa66d1379c46fd6ad0c8e2a6fe
+  sha1: a7f7e6ad97c97fbbbe926cd60003a105a561f413
+  dependencies:
+  - ruby
+- name: libpq
+  version: 09c8f60b87c9bd41b37b0f62159c9d77163f52b8
+  fingerprint: 09c8f60b87c9bd41b37b0f62159c9d77163f52b8
+  sha1: bea6de3f405e843638fc56b3e9d7f935792d1f4f
+  dependencies: []
+- name: mysql
+  version: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
+  fingerprint: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
+  sha1: 1f6d26944b9a05ceb2adab457882ce6397cb3ca2
+  dependencies: []
+- name: nats
+  version: 21febceff62291ea1c232d861c5af4b047951d63
+  fingerprint: 21febceff62291ea1c232d861c5af4b047951d63
+  sha1: 2e964615a5b7043a331ad9155cd96f1fef45cbce
+  dependencies:
+  - ruby
+- name: nginx
+  version: 2ec2f63293bf6f544e95969bf5e5242bc226a800
+  fingerprint: 2ec2f63293bf6f544e95969bf5e5242bc226a800
+  sha1: e3b0dabff5dc55bfb1f8d429d8e10ce5bedd8296
+  dependencies: []
+- name: postgres
+  version: 4b9f6514001f7c3f7d4394920d6aced9435a3bbd
+  fingerprint: 4b9f6514001f7c3f7d4394920d6aced9435a3bbd
+  sha1: 69478179c97b78643f9701dc73f202deb595b293
+  dependencies: []
+- name: postgres-9.4
+  version: 3329e2edba0b10723881ccf6feb9fb480d284034
+  fingerprint: 3329e2edba0b10723881ccf6feb9fb480d284034
+  sha1: 3a406540c8c01c0a4e254994b6ce198422bd29bd
+  dependencies: []
+- name: powerdns
+  version: 256336d00b1689138490c385c03ad3a8f54b4a9e
+  fingerprint: 256336d00b1689138490c385c03ad3a8f54b4a9e
+  sha1: caedada8f5a0fc37aaf0d816c5bcc428d6579440
+  dependencies: []
+- name: registry
+  version: 1a10c681ba8a5e1cd05f7aebd5aa9eaae5909e73
+  fingerprint: 1a10c681ba8a5e1cd05f7aebd5aa9eaae5909e73
+  sha1: 90b908098daabb0cdc53bc589800c1659defbf37
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+- name: ruby
+  version: 7420db001efcc467d1b99a53da7731e34e806540
+  fingerprint: 7420db001efcc467d1b99a53da7731e34e806540
+  sha1: 764cf99c7d0d693eb9b60dbfa0abbfad896927d3
+  dependencies: []
+- name: s3cli
+  version: b4e17d94eedc5c08978be29d1142b84f6d7bd0c2
+  fingerprint: b4e17d94eedc5c08978be29d1142b84f6d7bd0c2
+  sha1: 3cbb0f7cf8ed6c461304b86e10a698d3f49b13d8
+  dependencies: []
