@@ -153,6 +153,20 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-bosh-docker
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: main-bosh-docker
+        params:
+          build: "bosh-src/ci/docker/main-bosh-docker"
+        get_params:
+          skip_download: true
+
   - name: build-main-ruby-go
     public: true
     serial: true
@@ -270,6 +284,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-base
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-bosh-docker
+    type: docker-image
+    source:
+      repository: bosh/main-bosh-docker
       email: {{dockerhub_email}}
       username: {{dockerhub_username}}
       password: {{dockerhub_password}}
