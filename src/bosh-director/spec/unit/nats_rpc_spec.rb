@@ -3,17 +3,17 @@ require 'spec_helper'
 describe Bosh::Director::NatsRpc do
   let(:nats) { instance_double('NATS') }
   let(:nats_url) { 'fake-nats-url' }
+  let(:nats_options) { {uri: nats_url, autostart: false, ssl: true} }
   subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url) }
 
   before do
-    allow(NATS).to receive(:connect).and_return(nats)
+    expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
   end
 
   describe 'send_request' do
-
     it 'should publish a message to the client' do
       expect(nats).to receive(:subscribe).with('director.123.>')
       expect(nats).to receive(:publish) do |subject, message|
@@ -66,7 +66,6 @@ describe Bosh::Director::NatsRpc do
   end
 
   describe 'cancel_request' do
-
     it 'should not fire after cancel was called' do
       subscribe_callback = nil
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
@@ -84,7 +83,5 @@ describe Bosh::Director::NatsRpc do
       subscribe_callback.call('', nil, 'director.123.req1')
       expect(called).to be(false)
     end
-
   end
-
 end

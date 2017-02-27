@@ -55,7 +55,8 @@ group :development, :test do
 
   # for root level specs
   gem 'rest-client'
-  gem 'nats'
+  gem 'nats', '~>0.8'
+  gem 'rugged'
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'

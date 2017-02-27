@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'eventmachine',     '~>1.2.0'
   spec.add_dependency 'httpclient',       '=2.7.1'
   spec.add_dependency 'logging',          '~>1.8.2'
-  spec.add_dependency 'nats',             '=0.5.0.beta.12'
+  spec.add_dependency 'nats',             '~>0.8'
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
