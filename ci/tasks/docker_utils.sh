@@ -21,16 +21,25 @@ variables:
     common_name: $OUTER_CONTAINER_IP
     alternative_names: [$OUTER_CONTAINER_IP]
     ca: docker_ca
+- name: client_docker_tls
+  type: certificate
+  options:
+    common_name: $OUTER_CONTAINER_IP
+    alternative_names: [$OUTER_CONTAINER_IP]
+    ca: docker_ca
 EOF
 
    bosh int ./bosh-vars.yml --vars-store=./certs.yml
    bosh int ./certs.yml --path=/docker_ca/ca > ./ca.pem
    bosh int ./certs.yml --path=/docker_tls/certificate > ./server-cert.pem
    bosh int ./certs.yml --path=/docker_tls/private_key > ./server-key.pem
-
+   bosh int ./certs.yml --path=/client_docker_tls/certificate > ./client-cert.pem
+   bosh int ./certs.yml --path=/client_docker_tls/private_key > ./client-key.pem
     # generate certs in json format
     #
    ruby -e 'puts File.read("./ca.pem").split("\n").join("\\n")' > $certs_dir/ca_json_safe.pem
+   ruby -e 'puts File.read("./client-cert.pem").split("\n").join("\\n")' > $certs_dir/client_certificate_json_safe.pem
+   ruby -e 'puts File.read("./client-key.pem").split("\n").join("\\n")' > $certs_dir/client_private_key_json_safe.pem
   popd
 }
 
