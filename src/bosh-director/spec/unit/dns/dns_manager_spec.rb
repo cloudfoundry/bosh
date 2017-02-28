@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe DnsManager do
@@ -108,7 +107,7 @@ module Bosh::Director
 
     describe '#cleanup_dns_records' do
       context 'when dns_publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         it 'calls cleanup_blobs and publish on the dns_publisher' do
@@ -207,9 +206,8 @@ module Bosh::Director
         end
 
         context 'when local dns is enabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(true)
-          end
+          let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+          let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
           it 'calls the local dns methods' do
             expect(dns_manager).to receive(:delete_local_dns_record)
@@ -288,9 +286,8 @@ module Bosh::Director
         end
 
         context 'local dns is enabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(true)
-          end
+          let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+          let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
           it 'deletes old records and creates a new dns record' do
             expect(dns_manager).to receive(:create_or_delete_local_dns_record)
@@ -331,7 +328,7 @@ module Bosh::Director
       end
 
       context 'when blobstore DNS publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         describe '#publisher_enabled?' do
@@ -408,7 +405,7 @@ module Bosh::Director
       end
 
       context 'when blobstore DNS publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         describe '#publisher_enabled?' do

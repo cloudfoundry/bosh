@@ -56,7 +56,7 @@ module Bosh::Director
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       update_dns_records_for_instance_model(instance_model, dns_records)
-      if Config.local_dns_enabled?
+      if publisher_enabled?
         create_or_delete_local_dns_record(instance_model)
       end
     end
@@ -106,7 +106,7 @@ module Bosh::Director
         update_dns_records_for_instance_model(instance_model, [])
       end
 
-      if Config.local_dns_enabled?
+      if publisher_enabled?
         update_dns_records_for_instance_model(instance_model, [])
         delete_local_dns_record(instance_model)
       end
