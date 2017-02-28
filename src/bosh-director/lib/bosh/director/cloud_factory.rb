@@ -35,13 +35,8 @@ module Bosh::Director
       !@parsed_cpi_config.nil?
     end
 
-    # used when all cpis must be spoken to, i.e. when uploading stemcells.
-    def all_configured_clouds
-      if uses_cpi_config?
-        all_from_cpi_config
-      else
-        [ {name: '', cpi: default_from_director_config } ]
-      end
+    def all_clouds
+      [{name: '', cpi: default_from_director_config }].concat(all_from_cpi_config)
     end
 
     def for_availability_zone!(az_name)
@@ -58,13 +53,13 @@ module Bosh::Director
     end
 
     def for_availability_zone(az_name)
-      return all_configured_clouds_with_default if az_name.nil?
+      return all_clouds_collection if az_name.nil?
 
       az = lookup_az(az_name)
-      return all_configured_clouds_with_default if az.nil? || az.cpi.nil?
+      return all_clouds_collection if az.nil? || az.cpi.nil?
 
       cloud = for_cpi(az.cpi)
-      return all_configured_clouds_with_default if cloud.nil?
+      return all_clouds_collection if cloud.nil?
       cloud
     end
 
@@ -93,16 +88,8 @@ module Bosh::Director
       @cloud_planner.availability_zone(az_name)
     end
 
-    def all_configured_clouds_with_default
-      clouds = [{name: '', cpi: default_from_director_config }]
-
-      if uses_cpi_config?
-        all_from_cpi_config.each do |cpi|
-          clouds << cpi
-        end
-      end
-
-      CloudCollection.new(clouds)
+    def all_clouds_collection
+      CloudCollection.new(all_clouds)
     end
 
     def all_from_cpi_config

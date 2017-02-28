@@ -235,31 +235,37 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
         }
 
-        it 'creates multiple stemcell records with different cpi attributes' do
+        it 'creates multiple stemcell records with different cpi attributes and always contains "default" cpi' do
+          default_cloud = instance_double(Bosh::Cloud)
           cloud1 = instance_double(Bosh::Cloud)
           cloud2 = instance_double(Bosh::Cloud)
           cloud3 = instance_double(Bosh::Cloud)
 
+          expect(default_cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid0')
           expect(cloud1).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid1')
           expect(cloud2).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid2')
           expect(cloud3).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid3')
 
-          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([
+          expect(cloud_factory).to receive(:all_clouds).twice.and_return([
+                                                                                        {name: '', cpi: default_cloud},
                                                                                         {name: 'cloud1', cpi: cloud1},
                                                                                         {name: 'cloud2', cpi: cloud2},
-                                                                                        {name: 'cloud3', cpi: cloud3},
+                                                                                        {name: 'cloud3', cpi: cloud3}
                                                                                     ])
 
-          expected_steps = 11
+          expected_steps = 14
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
 
           step_messages = [
+              'Checking if this stemcell already exists (default-cpi)',
               'Checking if this stemcell already exists (cpi: cloud1)',
               'Checking if this stemcell already exists (cpi: cloud2)',
               'Checking if this stemcell already exists (cpi: cloud3)',
+              'Uploading stemcell jeos/5 to the cloud (default-cpi)',
               'Uploading stemcell jeos/5 to the cloud (cpi: cloud1)',
               'Uploading stemcell jeos/5 to the cloud (cpi: cloud2)',
               'Uploading stemcell jeos/5 to the cloud (cpi: cloud3)',
+              'Save stemcell jeos/5 (stemcell-cid0) (default-cpi)',
               'Save stemcell jeos/5 (stemcell-cid1) (cpi: cloud1)',
               'Save stemcell jeos/5 (stemcell-cid2) (cpi: cloud2)',
               'Save stemcell jeos/5 (stemcell-cid3) (cpi: cloud3)',
@@ -276,50 +282,31 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           stemcells = Bosh::Director::Models::Stemcell.where(:name => "jeos", :version => "5").all
 
-          expect(stemcells.count).to eq(3)
+          expect(stemcells.count).to eq(4)
+
           expect(stemcells[0]).not_to be_nil
           expect(stemcells[0].sha1).to eq("shawone")
           expect(stemcells[0].operating_system).to eq("jeos-5")
-          expect(stemcells[0].cpi).to eq("cloud1")
-          expect(stemcells[0].cid).to eq("stemcell-cid1")
+          expect(stemcells[0].cpi).to eq("")
+          expect(stemcells[0].cid).to eq("stemcell-cid0")
 
           expect(stemcells[1]).not_to be_nil
           expect(stemcells[1].sha1).to eq("shawone")
           expect(stemcells[1].operating_system).to eq("jeos-5")
-          expect(stemcells[1].cpi).to eq("cloud2")
-          expect(stemcells[1].cid).to eq("stemcell-cid2")
+          expect(stemcells[1].cpi).to eq("cloud1")
+          expect(stemcells[1].cid).to eq("stemcell-cid1")
 
           expect(stemcells[2]).not_to be_nil
           expect(stemcells[2].sha1).to eq("shawone")
           expect(stemcells[2].operating_system).to eq("jeos-5")
-          expect(stemcells[2].cpi).to eq("cloud3")
-          expect(stemcells[2].cid).to eq("stemcell-cid3")
-        end
+          expect(stemcells[2].cpi).to eq("cloud2")
+          expect(stemcells[2].cid).to eq("stemcell-cid2")
 
-        it 'still works with the default cpi' do
-          cloud = instance_double(Bosh::Cloud)
-          expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid')
-
-          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([{name: '', cpi: cloud}])
-
-          expected_steps = 5
-          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
-          expect(event_log_stage).to receive(:advance_and_track).with('Checking if this stemcell already exists')
-          expect(event_log_stage).to receive(:advance_and_track).with('Uploading stemcell jeos/5 to the cloud')
-          expect(event_log_stage).to receive(:advance_and_track).with('Save stemcell jeos/5 (stemcell-cid)')
-          # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
-          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - 3).times
-
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          update_stemcell_job.perform
-
-          stemcells = Bosh::Director::Models::Stemcell.where(:name => "jeos", :version => "5").all
-
-          expect(stemcells.count).to eq(1)
-          expect(stemcells[0]).not_to be_nil
-          expect(stemcells[0].sha1).to eq("shawone")
-          expect(stemcells[0].operating_system).to eq("jeos-5")
-          expect(stemcells[0].cpi).to eq('')
+          expect(stemcells[3]).not_to be_nil
+          expect(stemcells[3].sha1).to eq("shawone")
+          expect(stemcells[3].operating_system).to eq("jeos-5")
+          expect(stemcells[3].cpi).to eq("cloud3")
+          expect(stemcells[3].cid).to eq("stemcell-cid3")
         end
       end
     end

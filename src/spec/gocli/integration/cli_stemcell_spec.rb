@@ -32,7 +32,7 @@ describe 'cli: stemcell', type: :integration do
   end
 
   context 'if cpi config is used' do
-    it 'creates a stemcell for each configured cpi' do
+    it 'creates a stemcell for each configured cpi including the default cpi' do
       stemcell_filename = spec_asset('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
@@ -44,6 +44,13 @@ describe 'cli: stemcell', type: :integration do
       expect(out).to include('Succeeded')
 
       expect_table('stemcells', [
+          {
+              'Name' => 'ubuntu-stemcell',
+              'OS' => 'toronto-os',
+              'Version' => '1',
+              'CPI' => '',
+              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+          },
           {
               'Name' => 'ubuntu-stemcell',
               'OS' => 'toronto-os',

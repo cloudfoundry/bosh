@@ -167,7 +167,7 @@ module Bosh::Director
       }
 
       it 'returns the default cloud from director config when asking for all configured clouds' do
-        all_clouds = cloud_factory.all_configured_clouds
+        all_clouds = cloud_factory.all_clouds
         expect(all_clouds.count).to eq(1)
         expect(all_clouds.first[:name]).to eq('')
         expect(all_clouds.first[:cpi]).to eq(default_cloud)
@@ -194,26 +194,32 @@ module Bosh::Director
         ]
       }
 
-      before {
+      let(:cloud0) { clouds[0] }
+
+      before do
         expect(cloud_factory.uses_cpi_config?).to be_truthy
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(cloud0)
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
-      }
+      end
 
-      it 'returns all clouds from cpi config when asking for all configured clouds' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
+      context 'when default cpi is not part of cpi config' do
+        it 'returns all clouds from cpi config plus the default cpi when asking for all configured clouds' do
+          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
+          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
 
-        all_clouds = cloud_factory.all_configured_clouds
-        expect(all_clouds.count).to eq(3)
-        expect(all_clouds[0][:name]).to eq(cpis[0].name)
-        expect(all_clouds[0][:cpi]).to eq(clouds[0])
-        expect(all_clouds[1][:name]).to eq(cpis[1].name)
-        expect(all_clouds[1][:cpi]).to eq(clouds[1])
-        expect(all_clouds[2][:name]).to eq(cpis[2].name)
-        expect(all_clouds[2][:cpi]).to eq(clouds[2])
+          all_clouds = cloud_factory.all_clouds
+          expect(all_clouds.count).to eq(4)
+          expect(all_clouds[0][:name]).to eq('')
+          expect(all_clouds[0][:cpi]).to eq(default_cloud)
+          expect(all_clouds[1][:name]).to eq(cpis[0].name)
+          expect(all_clouds[1][:cpi]).to eq(clouds[0])
+          expect(all_clouds[2][:name]).to eq(cpis[1].name)
+          expect(all_clouds[2][:cpi]).to eq(clouds[1])
+          expect(all_clouds[3][:name]).to eq(cpis[2].name)
+          expect(all_clouds[3][:cpi]).to eq(clouds[2])
+        end
       end
 
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do

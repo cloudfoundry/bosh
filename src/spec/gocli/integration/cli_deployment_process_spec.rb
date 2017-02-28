@@ -206,7 +206,7 @@ lines'}
     end
 
     context 'when using cpi config for a new deployment' do
-      it 'deploys to multiple cpis' do
+      it 'deploys to multiple cpis including the default cpi' do
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
 
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
@@ -225,6 +225,13 @@ lines'}
         expect(output).to include('Succeeded')
 
         expect_table('stemcells', [
+            {
+                'Name' => 'ubuntu-stemcell',
+                'OS' => 'toronto-os',
+                'Version' => '1*',
+                'CPI' => '',
+                'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+            },
             {
                 'Name' => 'ubuntu-stemcell',
                 'OS' => 'toronto-os',
