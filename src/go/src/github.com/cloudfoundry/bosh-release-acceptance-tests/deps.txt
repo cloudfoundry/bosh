@@ -1,0 +1,7 @@
+github.com/onsi/ginkgo:bb93381
+github.com/onsi/gomega:c463cd2
+github.com/cloudfoundry/bosh-utils/system:f6c3861
+github.com/cloudfoundry/bosh-utils/logger:f6c3861
+github.com/charlievieth/fs:0551949
+github.com/cloudfoundry/bosh-utils/errors:f6c3861
+gopkg.in/yaml.v2:a3f3340
