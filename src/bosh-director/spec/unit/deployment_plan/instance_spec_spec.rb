@@ -121,7 +121,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
-
       let(:expected_links) do
         {'link_name' =>
            {
@@ -138,6 +137,10 @@ module Bosh::Director::DeploymentPlan
                             }
              ]}
         }
+      end
+
+      before do
+        allow(instance).to receive(:variable_set)
       end
 
       context 'links specs whitelisting' do
@@ -216,7 +219,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'resolves properties and links properties' do
-          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment').and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', nil).and_return(resolved_properties)
           expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links).and_return(resolved_links)
 
           spec = instance_spec.as_template_spec

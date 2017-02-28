@@ -325,21 +325,69 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#variable_set' do
+      let(:fixed_time) { Time.now }
+      let(:first_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1) }
+      let(:second_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1) }
+
+      before do
+        instance_model.update(variable_set: first_variable_set)
+        second_variable_set
+      end
+
+      context 'variable_set is not set' do
+        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
+        it 'should return the variable set from instance model' do
+          instance.bind_existing_instance_model(instance_model)
+          expect(instance.variable_set).to eq(first_variable_set)
+        end
+      end
+
+      context 'variable_set is set' do
+        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
+
+        it 'should return the set variable_set' do
+          instance.bind_existing_instance_model(instance_model)
+          instance.variable_set = second_variable_set
+          expect(instance.variable_set).to eq(second_variable_set)
+        end
+      end
+    end
+
     describe '#update_variable_set' do
       let(:fixed_time) { Time.now }
 
-      it 'updates the instance model with latest deployment variable_set' do
-        latest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
-        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
-        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+      context 'variable_set is set' do
+        it 'is updated on the model' do
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
+          selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
-        instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-        instance.bind_existing_instance_model(instance_model)
+          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+          instance.bind_existing_instance_model(instance_model)
 
-        instance.update_variable_set
+          instance.variable_set = selected_variable_set
 
-        instance_model = Bosh::Director::Models::Instance.all.first
-        expect(instance_model.variable_set).to eq(latest_variable_set)
+          instance.update_variable_set
+
+          instance_model = Bosh::Director::Models::Instance.all.first
+          expect(instance_model.variable_set).to eq(selected_variable_set)
+        end
+      end
+
+      context 'variable_set is not defined' do
+        it 'updates the instance model with the variable_set from the database' do
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+          oldest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+          instance_model.update(variable_set: oldest_variable_set)
+
+          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+          instance.bind_existing_instance_model(instance_model)
+
+          instance.update_variable_set
+
+          expect(instance_model.variable_set).to eq(oldest_variable_set)
+        end
       end
     end
   end

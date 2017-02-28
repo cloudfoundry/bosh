@@ -41,6 +41,7 @@ module Bosh::Director
           instance_double(
             DeploymentPlan::Planner,
             name: 'deployment-name',
+            instance_groups: [deployment_job],
             instance_groups_starting_on_deploy: [deployment_job],
             errand_instance_groups: [errand_instance_group],
             job_renderer: job_renderer
@@ -72,7 +73,7 @@ module Bosh::Director
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:compile_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
-            allow(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans_for_variable_resolution)
+            allow(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
             allow(notifier).to receive(:send_start_event)
             allow(notifier).to receive(:send_end_event).ordered
           end
@@ -129,7 +130,7 @@ module Bosh::Director
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
             expect(planner).to receive(:bind_models)
-            expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans_for_variable_resolution)
+            expect(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
             expect(planner).to receive(:compile_packages)
             expect(job).to_not receive(:run_post_deploys)
 

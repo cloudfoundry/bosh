@@ -540,7 +540,7 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate).with(env_hash, 'deployment_name').and_return(resolved_env_hash)
+          expect(config_server_client).to receive(:interpolate).with(env_hash, 'deployment_name', anything).and_return(resolved_env_hash)
 
           expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
             expect(env['foo']).to eq('bar')

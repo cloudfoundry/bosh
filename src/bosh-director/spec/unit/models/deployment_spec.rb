@@ -67,7 +67,7 @@ tags:
         end
 
         it 'substitutes the variables in the tags section' do
-          expect(mock_client).to receive(:interpolate).with(tags, deployment.name)
+          expect(mock_client).to receive(:interpolate).with(tags, deployment.name, anything)
           expect(deployment.tags).to eq(interpolated_tags)
         end
       end

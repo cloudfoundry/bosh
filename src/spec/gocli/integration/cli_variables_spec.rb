@@ -113,11 +113,13 @@ describe 'cli: variables', type: :integration do
             Bosh::Spec::Deployments.job_with_many_templates(
               name: 'job1',
               templates: [
-                {'name' => 'job_with_bad_template',
-                 'properties' => {
-                   'failure_index' => -1,
-                   'random_property' => '((random_property))'
-                 }
+                {
+                  'name' => 'job_with_bad_template',
+                  'properties' => {
+                    'gargamel' => {
+                      'color' => "((random_property))"
+                    }
+                  }
                 }
               ],
               instances: 1
@@ -125,12 +127,14 @@ describe 'cli: variables', type: :integration do
             Bosh::Spec::Deployments.job_with_many_templates(
               name: 'job2',
               templates: [
-                {'name' => 'job_with_bad_template',
-                 'properties' => {
-                   'failure_index' => -1,
-                   'random_property' => '((other_property))'
-                 }
-                }
+                {
+                  'name' => 'job_with_bad_template',
+                  'properties' => {
+                    'gargamel' => {
+                      'color' => "((other_property))",
+                    },
+                  }
+                },
               ],
               instances: 2
             )
@@ -160,7 +164,7 @@ describe 'cli: variables', type: :integration do
     end
 
     context 'when you have hard stopped VMs' do
-      it 'should not fetch new values for the variable on that VM' do
+      it 'should fetch new values for the variable on that VM' do
         config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop_now')
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
 
@@ -176,7 +180,7 @@ describe 'cli: variables', type: :integration do
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-        assert_count_variable_id_and_name(3, 2)
+        assert_count_variable_id_and_name(4, 2)
       end
     end
   end

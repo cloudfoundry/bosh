@@ -35,7 +35,7 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#interpolate' do
-      subject { client.interpolate(manifest_hash, deployment_name, interpolate_options) }
+      subject { client.interpolate(manifest_hash, deployment_name, nil, interpolate_options) }
       let(:interpolate_options) do
         {
           :subtrees_to_ignore => ignored_subtrees
@@ -100,6 +100,20 @@ module Bosh::Director::ConfigServer
         let(:response_body_name) { {'data' => [response_body_id]} }
         let(:mock_response) { generate_success_response(response_body_id.to_json) }
 
+        context 'when variable set is manually specified' do
+          let(:latest_variable_set) { 1500 }
+
+          it 'should request by id from the specified set' do
+            allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
+            Bosh::Director::Models::VariableSet.make(id: latest_variable_set, deployment: Bosh::Director::Models::Deployment.find(deployment_attrs))
+            Bosh::Director::Models::Variable.create(variable_set_id: variables_set_id, variable_name: variable_name, variable_id: variable_id)
+            Bosh::Director::Models::Variable.create(variable_set_id: latest_variable_set, variable_name: '/not/used', variable_id: 'unused id')
+            expect(http_client).to receive(:get_by_id).with("#{variable_id}").and_return(mock_response)
+            expected_variable_set = Bosh::Director::Models::VariableSet.find({id: variables_set_id})
+            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, expected_variable_set, interpolate_options)
+          end
+        end
+
         context 'when variable is already fetched for the current set' do
           before do
             allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
@@ -108,7 +122,7 @@ module Bosh::Director::ConfigServer
 
           it 'should request by id' do
             expect(http_client).to receive(:get_by_id).with("#{variable_id}").and_return(mock_response)
-            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, interpolate_options)
+            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
           end
         end
 
@@ -119,7 +133,7 @@ module Bosh::Director::ConfigServer
 
           it 'should add the name to id mapping for the current set to database' do
             expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to be_nil
-            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, interpolate_options)
+            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
             models = Bosh::Director::Models::Variable.all
             expect(models.length).to eq(1)
             expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to_not be_nil
@@ -147,7 +161,7 @@ module Bosh::Director::ConfigServer
               allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
 
               expect(http_client).to receive(:get_by_id).with(variable_id)
-              client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, interpolate_options)
+              client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
             end
           end
         end
@@ -235,13 +249,13 @@ module Bosh::Director::ConfigServer
       context 'when absolute path is required' do
         it 'should raise error when name is not absolute' do
           expect {
-            client.interpolate(manifest_hash, deployment_name, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true})
+            client.interpolate(manifest_hash, deployment_name, nil, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true})
           }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
 
       it 'should return a new copy of the original manifest' do
-        expect(client.interpolate(manifest_hash, deployment_name, {subtrees_to_ignore: ignored_subtrees})).to_not equal(manifest_hash)
+        expect(client.interpolate(manifest_hash, deployment_name, nil, {subtrees_to_ignore: ignored_subtrees})).to_not equal(manifest_hash)
       end
 
       it 'replaces all placeholders it finds in the hash passed' do
@@ -1155,7 +1169,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'returns src as is' do
-        expect(disabled_client.interpolate(src, deployment_name)).to eq(src)
+        expect(disabled_client.interpolate(src, deployment_name, nil)).to eq(src)
       end
     end
 

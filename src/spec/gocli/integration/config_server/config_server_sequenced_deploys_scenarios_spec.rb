@@ -102,4 +102,84 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       end
     end
   end
+
+  describe 'given a successful deployment that used config server values' do
+    let(:job_properties) do
+      {
+        'gargamel' => {
+          'color' => '((my_placeholder))'
+        },
+        'fail_instance_index' => 1,
+        'fail_on_job_start' => false,
+        'fail_on_template_rendering' => false,
+      }
+    end
+    let(:manifest_hash) do
+      Bosh::Spec::Deployments.test_release_manifest.merge(
+        {
+          'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+            name: 'our_instance_group',
+            templates: [
+              {
+                'name' => 'job_with_bad_template',
+                'properties' => job_properties
+              }
+            ],
+            instances: 2
+          )]
+        })
+    end
+    before do
+      manifest_hash['update']['canaries'] = 1
+      config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are more happy')
+    end
+
+    context 'failure on template rendering' do
+      before do
+        job_properties['fail_on_template_rendering'] = true
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
+      end
+
+      it 'should use previous variables set for non failing instance' do
+        bosh_runner.run('recreate our_instance_group/0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+      end
+
+      it 'should use previous variables set for failing instance' do
+        bosh_runner.run('recreate our_instance_group/1', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
+        instance = director.instance('our_instance_group', '1', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+      end
+    end
+
+    context 'failure on job start' do
+      before do
+        job_properties['fail_on_job_start'] = true
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
+      end
+
+      it 'should use latest variables set for successful instance' do
+        bosh_runner.run('recreate our_instance_group/0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('dogs are more happy')
+      end
+
+      it 'should use latest variables set for failing instance' do
+        bosh_runner.run('recreate our_instance_group/1', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
+        instance = director.instance('our_instance_group', '1', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('dogs are more happy')
+      end
+    end
+  end
 end
