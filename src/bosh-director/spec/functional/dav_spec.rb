@@ -5,7 +5,7 @@ require 'logging'
 require 'bosh/director'
 
 module Bosh::Blobstore
-  describe DavcliBlobstoreClient do
+  describe DavcliBlobstoreClient, davcli_integration: true do
     def create_user_file(users)
       temp = Tempfile.new('users')
       users.each { |u, p| temp.write("#{u}:{PLAIN}#{p}\n") }
@@ -99,7 +99,7 @@ module Bosh::Blobstore
       Client.create('davcli', dav_options)
     end
 
-    let(:logger) {Logging::Logger.new('test-logger')}
+    let(:logger) { Logging::Logger.new('test-logger') }
 
     before do
       allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
@@ -116,7 +116,7 @@ module Bosh::Blobstore
         end
 
         it 'raises a NotFound error if the key does not exist' do
-            expect { dav.get('nonexistent-key') }.to raise_error(Bosh::Blobstore::NotFound, /Blobstore object 'nonexistent-key' not found/)
+          expect { dav.get('nonexistent-key') }.to raise_error(Bosh::Blobstore::NotFound, /Blobstore object 'nonexistent-key' not found/)
         end
 
         it 'allows checking for existance' do

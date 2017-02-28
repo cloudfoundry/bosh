@@ -19,7 +19,7 @@ pushd bosh-src
     bundle install
 
     pushd bosh-director
-      bundle exec rspec spec/functional/dav_spec.rb
+      bundle exec rspec spec/functional/dav_spec.rb --tag davcli_integration
     popd
   popd
 popd
