@@ -9,7 +9,7 @@ image_resource:
 inputs:
   - name: bosh-src
 run:
-  path: bosh-src/ci/tasks/test-blobstore-client-integration.sh
+  path: bosh-src/ci/tasks/test-s3-blobstore-client-integration.sh
 params:
   access_key_id: replace-me
   secret_access_key: replace-me
