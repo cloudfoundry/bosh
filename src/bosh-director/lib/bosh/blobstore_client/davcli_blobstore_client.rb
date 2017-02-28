@@ -30,7 +30,7 @@ module Bosh::Blobstore
       end
 
       if !status.success?
-        if out !=~/404 Not Found/
+        if out =~/404 Not Found/
           raise NotFound, "Blobstore object '#{id}' not found"
         end
 
