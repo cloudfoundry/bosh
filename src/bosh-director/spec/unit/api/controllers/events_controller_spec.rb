@@ -93,6 +93,55 @@ module Bosh::Director
           end
         end
 
+        context 'event' do
+          before do
+            Models::Event.make(
+              'timestamp' => timestamp,
+              'user' => 'test',
+              'action' => 'create',
+              'object_type' => 'deployment',
+              'object_name' => 'depl1',
+              'task' => '1'
+            )
+            Models::Event.make(
+              'parent_id' => 1,
+              'timestamp' => timestamp,
+              'user' => 'test',
+              'action' => 'create',
+              'object_type' => 'deployment',
+              'object_name' => 'depl1',
+              'task' => '2',
+            )
+          end
+
+          it 'returns event' do
+            basic_authorize 'admin', 'admin'
+
+            get '/2'
+
+            expect(JSON.parse(last_response.body)).to eq(
+              {'id' => '2',
+                'parent_id' => '1',
+                'timestamp' => timestamp.to_i,
+                'user' => 'test',
+                'action' => 'create',
+                'object_type' => 'deployment',
+                'object_name' => 'depl1',
+                'task' => '2',
+                'context' => {}
+              })
+          end
+
+          it 'returns an error' do
+            basic_authorize 'admin', 'admin'
+
+            get '/3'
+
+            expect(last_response.status).to eq(404)
+            expect(last_response.body).to eq('Event not found')
+          end
+        end
+
         context 'when deployment is specified' do
           before do
             basic_authorize 'admin', 'admin'
