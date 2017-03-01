@@ -21,7 +21,7 @@ var _ = Describe("Brats", func() {
 				tempBlobstoreDir, err = ioutil.TempDir(os.TempDir(), "blobstore_access")
 				Expect(err).ToNot(HaveOccurred())
 
-				_, _, exitCode, err := cmdRunner.RunCommand(boshBinaryPath, "upload-release", "-n", "https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=11")
+				_, _, exitCode, err := cmdRunner.RunCommand(boshBinaryPath, "upload-release", "-n", boshRelease)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(exitCode).To(Equal(0))
 

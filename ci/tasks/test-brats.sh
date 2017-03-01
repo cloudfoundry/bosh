@@ -14,6 +14,7 @@ export OUTER_CONTAINER_IP=$(ruby -rsocket -e 'puts Socket.ip_address_list
                         .map { |addr| addr.ip_address }')
 
 export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
+export BOSH_RELEASE="$PWD/bosh-src/src/spec/assets/dummy-release.tgz"
 
 certs_dir=$(mktemp -d)
 start_docker $certs_dir
