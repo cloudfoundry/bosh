@@ -39,7 +39,6 @@ module Bosh::Blobstore
       file = object_file_path(id)
       FileUtils.rm(file)
     rescue Errno::ENOENT
-      raise NotFound, "Blobstore object '#{id}' not found"
     end
 
     def object_exists?(oid)
