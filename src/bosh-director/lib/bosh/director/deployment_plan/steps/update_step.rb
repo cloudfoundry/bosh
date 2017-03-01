@@ -20,6 +20,7 @@ module Bosh::Director
             @logger.info('Updating deployment')
             assemble
             update_jobs
+            update_errands
             @logger.info('Committing updates')
             @deployment_plan.persist_updates!
             @logger.info('Finished updating deployment')
@@ -48,6 +49,14 @@ module Bosh::Director
             @deployment_plan.ip_provider,
             @deployment_plan.instance_groups_starting_on_deploy,
           )
+        end
+
+        def update_errands
+          @deployment_plan.errand_instance_groups.each do |instance_group|
+            instance_group.unignored_instance_plans.each do |instance_plan|
+              instance_plan.instance.update_variable_set
+            end
+          end
         end
 
         def delete_unneeded_instances
