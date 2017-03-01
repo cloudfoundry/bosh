@@ -75,6 +75,21 @@ bundle exec rspec spec --tag ~vip_networking --tag ~dynamic_networking --tag ~ro
 
 There are two ways to run BATs - [using rake tasks](running_bats_using_rake_tasks.md) and [manually](running_bats_manually.md).
 
+### Release Acceptance Tests (BRATs)
+
+BRATs describe the behavior of BOSH as a BOSH release. They consume a BOSH release and cover specific properties in release. At present, BRATs validate the blobstore access log format as it is CEF format.
+
+Here is an example of running BRATs against a local BOSH director:
+```
+export BOSH_BINARY_PATH=`which bosh`
+export BOSH_DIRECTOR_IP='192.168.50.6'
+export BOSH_SSH_PRIVATE_KEY_PATH=<(bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /jumpbox_ssh/private_key)
+export BOSH_CLIENT=admin
+export BOSH_CLIENT_SECRET=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /admin_password`
+export BOSH_CA_CERT=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /director_ssl/ca`
+export BOSH_ENVIRONMENT='vbox'
+ginkgo -r src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests
+```
 
 ## Determining which tests suites to run
 
