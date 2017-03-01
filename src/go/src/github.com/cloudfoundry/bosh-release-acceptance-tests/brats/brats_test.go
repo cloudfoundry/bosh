@@ -25,7 +25,7 @@ var _ = Describe("Brats", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(exitCode).To(Equal(0))
 
-				_, _, exitCode, err = cmdRunner.RunCommand("scp", "-B", "-i", sshPrivateKeyPath, fmt.Sprintf("jumpbox@%s:%s", directorIp, BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
+				_, _, exitCode, err = cmdRunner.RunCommand("scp","-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", "-B", "-i", sshPrivateKeyPath, fmt.Sprintf("jumpbox@%s:%s", directorIp, BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(exitCode).To(Equal(0))
 

@@ -15,4 +15,4 @@ inputs:
 params: []
 
 run:
-  path: bosh-src/ci/tasks/deploy-docker-director.sh
+  path: bosh-src/ci/tasks/test-brats.sh

@@ -29,7 +29,6 @@ var _ = BeforeSuite(func() {
 	sshPrivateKeyPath = assertEnvExists("BOSH_SSH_PRIVATE_KEY_PATH")
 
 	assertEnvExists("BOSH_CLIENT")
-	assertEnvExists("BOSH_CLIENT")
 	assertEnvExists("BOSH_CLIENT_SECRET")
 	assertEnvExists("BOSH_CA_CERT")
 	assertEnvExists("BOSH_ENVIRONMENT")
