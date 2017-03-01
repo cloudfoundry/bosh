@@ -3,6 +3,7 @@ require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/socket_connector'
 require 'logging'
 require 'bosh/director'
+require_relative 'blobstore_shared_examples'
 
 module Bosh::Blobstore
   describe DavcliBlobstoreClient, davcli_integration: true do
@@ -47,11 +48,11 @@ module Bosh::Blobstore
       @root_dir = Dir.mktmpdir
       FileUtils.chmod(0777, @root_dir)
 
-      read_users = create_user_file('agent' => 'agentpass', 'director' => 'directorpass')
-      read_users_path = read_users.to_path
+      @read_users = create_user_file('agent' => 'agentpass', 'director' => 'directorpass')
+      read_users_path = @read_users.to_path
 
-      write_users = create_user_file('director' => 'directorpass')
-      write_users_path = write_users.to_path
+      @write_users = create_user_file('director' => 'directorpass')
+      write_users_path = @write_users.to_path
 
       nginx_config_file = NginxConfig.new(nginx_port, @root_dir, read_users_path, write_users_path).render
 
@@ -70,6 +71,10 @@ module Bosh::Blobstore
     after(:all) do
       @nginx_process.stop
       FileUtils.rm_rf(@root_dir)
+      @read_users.close
+      @write_users.close
+      @read_users.unlink
+      @write_users.unlink
     end
 
     before(:each) do
@@ -144,20 +149,8 @@ module Bosh::Blobstore
         let(:user) { 'director' }
         let(:password) { 'directorpass' }
 
-        it 'allows write' do
-          expect { dav.create('foo') }.to_not raise_error
-        end
-
-        it 'allows delete' do
-          expect { dav.delete('test') }.to_not raise_error
-        end
-
-        it 'should not raise NotFound error when deleting non-existing file' do
-          expect { dav.delete('non-exist-file') }.to_not raise_error
-        end
-
-        it 'allows checking for existance' do
-          expect(dav.exists?('test')).to be(true)
+        it_behaves_like 'any blobstore client' do
+          let(:blobstore) { Client.create('davcli', dav_options) }
         end
       end
 
