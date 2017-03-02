@@ -16,10 +16,8 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
-
     mkdir /tmp/postgres
-    mount -t tmpfs -o size=256M tmpfs /tmp/postgres
+    mount -t tmpfs -o size=512M tmpfs /tmp/postgres
     mkdir /tmp/postgres/data
     chown postgres:postgres /tmp/postgres/data
 
@@ -30,6 +28,13 @@ case "$DB" in
       mkdir -p $PGDATA
       mkdir -p $PGLOGS
       initdb -U postgres -D $PGDATA
+
+      if ([ $DB_VERSION == "9.5" ] || [ $DB_VERSION == "9.6" ]); then
+          echo "checkpoint_timeout=1h" >> $PGDATA/postgresql.conf
+          echo "min_wal_size=300MB" >> $PGDATA/postgresql.conf
+          echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
+      fi
+
       pg_ctl start -w -l $PGLOGS/server.log -o "-N 400"
     '
     ;;
