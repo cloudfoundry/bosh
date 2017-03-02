@@ -20,6 +20,7 @@ templates:
   mime.types: config/mime.types
   scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
+  nats_server_ca.cert.erb: config/nats_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   sync_dns_ctl.erb: bin/sync_dns_ctl
 
@@ -194,6 +195,8 @@ properties:
   nats.port:
     description: Port that the nats server listens on
     default: 4222
+  nats.cert.ca:
+    description: 'CA cert to trust when communicating with NATS server'
 
   # Director Database
   director.db.adapter:

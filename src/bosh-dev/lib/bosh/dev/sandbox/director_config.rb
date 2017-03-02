@@ -27,7 +27,8 @@ module Bosh::Dev::Sandbox
       :enable_nats_delivered_templates,
       :generate_vm_passwords,
       :remove_dev_tools,
-      :director_ips
+      :director_ips,
+      :nats_server_ca_path
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -69,6 +70,7 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])
+      @nats_server_ca_path = attrs.fetch(:nats_server_ca_path)
     end
 
     def render(template_path)

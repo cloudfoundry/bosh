@@ -67,7 +67,6 @@ module Bosh::Director
         @compiled_package_blobstore = nil
         @compiled_package_cache_options = nil
 
-        @nats = nil
         @nats_rpc = nil
         @cloud = nil
       end
@@ -118,6 +117,7 @@ module Bosh::Director
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
+        @nats_server_ca_path = config.fetch('nats_server_ca_path')
 
         @default_ssh_options = config['default_ssh_options']
 
@@ -314,7 +314,7 @@ module Bosh::Director
         if @nats_rpc.nil?
           @lock.synchronize do
             if @nats_rpc.nil?
-              @nats_rpc = NatsRpc.new(@nats_uri)
+              @nats_rpc = NatsRpc.new(@nats_uri, @nats_server_ca_path)
             end
           end
         end

@@ -3,14 +3,34 @@ require 'spec_helper'
 describe Bosh::Director::NatsRpc do
   let(:nats) { instance_double('NATS') }
   let(:nats_url) { 'fake-nats-url' }
-  let(:nats_options) { {uri: nats_url, autostart: false, ssl: true} }
-  subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url) }
+  let(:nats_server_ca_path) { '/path/to/happiness.pem' }
+  let(:nats_options) { {uri: nats_url, ssl: true, :tls => { :ca_file => nats_server_ca_path }} }
+  subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path) }
 
   before do
-    expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
+    allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
+  end
+
+  describe '#nats' do
+    it 'returns a NATs client' do
+      expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
+      expect(nats_rpc.nats).to eq(nats)
+    end
+
+    context 'when an error occurs while connecting' do
+      before do
+        allow(NATS).to receive(:connect).with(nats_options).and_raise('a NATS error has occurred')
+      end
+
+      it 'throws the error' do
+        expect{
+          nats_rpc.nats
+        }.to raise_error('An error has occurred while connecting to NATS: a NATS error has occurred')
+      end
+    end
   end
 
   describe 'send_request' do

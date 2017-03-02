@@ -10,6 +10,7 @@ params = {
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
+  'nats_server_ca_path' => '/var/vcap/jobs/director/config/nats_server_ca.cert',
   'dir' => '/var/vcap/store/director',
   'db' => {
     'adapter' => p('director.db.adapter'),

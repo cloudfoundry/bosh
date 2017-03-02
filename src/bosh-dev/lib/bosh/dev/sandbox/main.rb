@@ -94,7 +94,7 @@ module Bosh::Dev::Sandbox
 
       setup_database(db_opts)
 
-      director_config = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
+      director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(
         {
@@ -102,14 +102,14 @@ module Bosh::Dev::Sandbox
           director_port: director_ruby_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
-          director_config: director_config
+          director_config: director_config_path
         },
         @logger
       )
       setup_heath_monitor
 
       @scheduler_process = Service.new(
-        %W[bosh-director-scheduler -c #{director_config}],
+        %W[bosh-director-scheduler -c #{director_config_path}],
         {output: "#{base_log_path}.scheduler.out"},
         @logger,
       )
@@ -184,7 +184,8 @@ module Bosh::Dev::Sandbox
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
-        director_ips: @director_ips
+        director_ips: @director_ips,
+        nats_server_ca_path: get_nats_server_ca_path
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -295,6 +296,8 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
+      @with_invalid_nats_server_ca_path = options.fetch(:with_invalid_nats_server_ca_path, false)
+      @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
     end
 
     def certificate_path
@@ -418,13 +421,22 @@ module Bosh::Dev::Sandbox
       gnatsd_path = File.join(REPO_ROOT, 'go', 'src', 'github.com', 'nats-io', 'gnatsd', 'out', 'bosh-gnatsd')
 
       @nats_process = Service.new(
-        %W[#{gnatsd_path} -p #{nats_port} -T -D -l #{@nats_log_path}],
-        # %W[#{gnatsd_path} --tls --tlscert #{SANDBOX_ASSETS_DIR}/ca/certs/server.crt --tlskey #{SANDBOX_ASSETS_DIR}/ca/certs/server.key -p #{nats_port} -T -D -l #{@nats_log_path}],
+        %W[#{gnatsd_path} --tls --tlscert #{SANDBOX_ASSETS_DIR}/nats_server/certs/server.crt --tlskey #{SANDBOX_ASSETS_DIR}/nats_server/certs/server.key -p #{nats_port} -T -D -l #{@nats_log_path}],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )
 
       @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @nats_log_path, @logger)
+    end
+
+    def get_nats_server_ca_path
+      if @with_invalid_nats_server_ca_path
+        '/path/to/non/existent/certs'
+      elsif @with_incorrect_nats_server_ca
+        File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
+      else
+        File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+      end
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

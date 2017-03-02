@@ -83,7 +83,6 @@ describe 'director.yml.erb.erb' do
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 
-
   context 'given a generally valid manifest' do
     before do
       deployment_manifest_fragment['properties']['director']['cpi_job'] = 'vsphere'
@@ -130,6 +129,10 @@ describe 'director.yml.erb.erb' do
 
     it 'should keep dynamic, COMPONENT-based logging paths' do
       expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
+    end
+
+    it 'should have the path for nats server ca cert' do
+      expect(parsed_yaml['nats_server_ca_path']).to eq('/var/vcap/jobs/director/config/nats_server_ca.cert')
     end
 
     context 'when domain name specified without all other dns properties' do
@@ -210,7 +213,6 @@ describe 'director.yml.erb.erb' do
       end
 
     end
-
 
     context 'events configuration' do
       context 'when enabled' do

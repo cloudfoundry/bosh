@@ -52,3 +52,5 @@ config_server:
   enabled: false
 record_events: true
 version: '0.0.2'
+mbus : 'nats://some-user:some-pass@some-nats-uri:1234'
+nats_server_ca_path: 'some-nats-server-ca-path'

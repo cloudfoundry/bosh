@@ -17,7 +17,8 @@ describe 'worker' do
       },
       'config_server' => {
         'enabled' => false
-      }
+      },
+      'nats_server_ca_path' => '/path/to/nats/ca/cert'
     }
   end
   let(:config) { Bosh::Director::Config.load_hash(config_hash) }

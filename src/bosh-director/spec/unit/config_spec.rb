@@ -354,6 +354,18 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#nats_rpc' do
+    let(:some_client) { instance_double(Bosh::Director::NatsRpc)}
+
+    before do
+      described_class.configure(test_config)
+    end
+
+    it 'initializes a new nats rpc client with the appropriate params' do
+      expect(Bosh::Director::NatsRpc).to receive(:new).with(test_config['mbus'], test_config['nats_server_ca_path']).and_return(some_client)
+      expect(described_class.nats_rpc).to eq(some_client)
+    end
+  end
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do

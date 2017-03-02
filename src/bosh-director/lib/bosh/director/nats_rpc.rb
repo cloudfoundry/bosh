@@ -2,8 +2,9 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
 
-    def initialize(nats_uri)
+    def initialize(nats_uri, nats_server_ca_path)
       @nats_uri = nats_uri
+      @nats_server_ca_path = nats_server_ca_path
       @logger = Config.logger
       @lock = Mutex.new
       @inbox_name = "director.#{Config.process_uuid}"
@@ -12,15 +13,21 @@ module Bosh::Director
 
     # Returns a lazily connected NATS client
     def nats
-      @nats ||= connect
+      begin
+        @nats ||= connect
+      rescue Exception => e
+        raise "An error has occurred while connecting to NATS: #{e}"
+      end
     end
 
     # Publishes a payload (encoded as JSON) without expecting a response
     def send_message(client, payload)
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
+
+      nats_client = nats
       EM.schedule do
-        nats.publish(client, message)
+        nats_client.publish(client, message)
       end
     end
 
@@ -33,9 +40,11 @@ module Bosh::Director
       end
       message = JSON.generate(request)
       @logger.debug("SENT: #{client} #{message}")
+
+      nats_client = nats
       EM.schedule do
         subscribe_inbox
-        nats.publish(client, message)
+        nats_client.publish(client, message)
       end
       request_id
     end
@@ -56,7 +65,11 @@ module Bosh::Director
       if @nats.nil?
         @lock.synchronize do
           if @nats.nil?
-            @nats = NATS.connect(:uri => @nats_uri, :autostart => false, :ssl => false)
+            NATS.on_error do |e|
+              @logger.error("NATS client error: #{e}")
+            end
+
+            @nats = NATS.connect(uri: @nats_uri, ssl: true, tls: {ca_file: @nats_server_ca_path} )
           end
         end
       end
