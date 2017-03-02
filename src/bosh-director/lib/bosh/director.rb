@@ -226,6 +226,7 @@ require 'bosh/director/api/controllers/locks_controller'
 require 'bosh/director/api/controllers/restore_controller'
 require 'bosh/director/api/controllers/events_controller'
 require 'bosh/director/api/controllers/vms_controller'
+require 'bosh/director/api/controllers/task_configs_controller'
 require 'bosh/director/api/route_configuration'
 
 require 'common/common'

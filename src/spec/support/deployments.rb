@@ -954,5 +954,9 @@ module Bosh::Spec
       manifest['jobs'][1]['properties']['errand1']['stdout'] = "((placeholder))"
       manifest
     end
+
+    def self.simple_task_config(paused=false)
+      { 'paused' => paused }
+    end
   end
 end

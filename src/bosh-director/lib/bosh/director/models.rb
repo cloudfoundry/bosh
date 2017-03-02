@@ -26,6 +26,7 @@ require 'bosh/director/models/runtime_config'
 require 'bosh/director/models/snapshot'
 require 'bosh/director/models/stemcell'
 require 'bosh/director/models/task'
+require 'bosh/director/models/tasks_config'
 require 'bosh/director/models/team'
 require 'bosh/director/models/template'
 require 'bosh/director/models/user'
@@ -41,4 +42,3 @@ module Bosh::Director
     autoload :Dns, 'bosh/director/models/dns'
   end
 end
-

@@ -94,17 +94,25 @@ module Bosh::Director
 
       it 'sets normal queue to pause' do
         expect(db_job.queue_name).to eq(:normal)
-        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(true)
+        Bosh::Director::Models::TasksConfig.new(
+            properties: YAML.dump(Bosh::Spec::Deployments.simple_task_config(true))
+        ).save
         expect(db_job.queue_name).to eq(:pause)
-        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(false)
+        Bosh::Director::Models::TasksConfig.new(
+            properties: YAML.dump(Bosh::Spec::Deployments.simple_task_config)
+        ).save
         expect(db_job.queue_name).to eq(:normal)
       end
 
       it 'does not set urgent queue to pause' do
         expect(urgent_db_job.queue_name).to eq(:urgent)
-        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(true)
+        Bosh::Director::Models::TasksConfig.new(
+            properties: YAML.dump(Bosh::Spec::Deployments.simple_task_config(true))
+        ).save
         expect(urgent_db_job.queue_name).to eq(:urgent)
-        allow(Bosh::Director::Models::DirectorAttribute).to receive(:get_attribute).with('tasks_paused').and_return(false)
+        Bosh::Director::Models::TasksConfig.new(
+            properties: YAML.dump(Bosh::Spec::Deployments.simple_task_config)
+        ).save
         expect(urgent_db_job.queue_name).to eq(:urgent)
       end
     end

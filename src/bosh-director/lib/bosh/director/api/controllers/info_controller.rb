@@ -38,9 +38,6 @@ module Bosh::Director
               'extras' => {
                 'urls' => @config.config_server_urls
               }
-            },
-            'pause_tasks' => {
-              'status' => Models::DirectorAttribute.get_attribute('tasks_paused')
             }
           }
         }

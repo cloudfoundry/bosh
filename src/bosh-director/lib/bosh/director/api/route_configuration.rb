@@ -33,11 +33,10 @@ module Bosh
           controllers['/users'] = Bosh::Director::Api::Controllers::UsersController.new(@config)
           controllers['/events'] = Bosh::Director::Api::Controllers::EventsController.new(@config)
           controllers['/vms'] = Bosh::Director::Api::Controllers::VmsController.new(@config)
+          controllers['/task_configs'] = Bosh::Director::Api::Controllers::TaskConfigsController.new(@config)
           controllers
         end
       end
     end
   end
 end
-
-

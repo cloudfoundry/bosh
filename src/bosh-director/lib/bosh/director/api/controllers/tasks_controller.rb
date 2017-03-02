@@ -1,5 +1,4 @@
 require 'bosh/director/api/controllers/base_controller'
-require 'yaml'
 
 module Bosh::Director
   module Api::Controllers
@@ -110,10 +109,6 @@ module Bosh::Director
           task.save
         end
 
-        if Models::DirectorAttribute.get_attribute('tasks_paused')
-          task.state = :paused
-        end
-
         content_type(:json)
         json_encode(@task_manager.task_to_hash(task))
       end
@@ -162,27 +157,6 @@ module Bosh::Director
         else
           status(204)
         end
-      end
-
-      put '/', consumes: :json do
-        begin
-          tasks_paused = json_decode(request.body.read)['tasks_paused']
-          Models::DirectorAttribute.set_attribute('tasks_paused', tasks_paused)
-
-          if tasks_paused
-            Delayed::Job.filter(:locked_by => nil, :failed_at => nil).exclude(:queue => 'urgent').update(:queue => 'pause')
-          else
-            Delayed::Job.filter(:queue => 'pause', :locked_by => nil, :failed_at => nil).each do |delayed_job|
-              job_class= YAML.load_dj(delayed_job.handler)
-              delayed_job.update(:queue => job_class.queue_name)
-            end
-          end
-        rescue Exception => e
-          status(400)
-          body("Error: #{e.inspect}")
-          return
-        end
-        status(200)
       end
 
       private

@@ -64,20 +64,5 @@ module Bosh::Director::Models
         }.to raise_error(Sequel::DatabaseError, /(duplicate key value|Duplicate entry|column name is not unique|UNIQUE constraint failed)/)
       end
     end
-
-    describe 'boolean attribute' do
-      attr_name = 'attribute123'
-      it 'sets and gets attribute value false' do
-        described_class.set_attribute(attr_name, 'false')
-        expect(described_class.first(name: attr_name).value).to eq('false')
-        expect(described_class.get_attribute(attr_name)).to eq(false)
-      end
-
-      it 'sets and gets attribute value true' do
-        described_class.set_attribute(attr_name, 'true')
-        expect(described_class.first(name: attr_name).value).to eq('true')
-        expect(described_class.get_attribute(attr_name)).to eq(true)
-      end
-    end
   end
 end

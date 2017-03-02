@@ -47,7 +47,7 @@ module Bosh::Director
             @job_class.instance_variable_get(:@queue) ||
               (@job_class.respond_to?(:queue) && @job_class.queue)
           end
-        if Bosh::Director::Models::DirectorAttribute.get_attribute('tasks_paused') && queue != :urgent
+        if Bosh::Director::Api::TasksConfigManager.tasks_paused? && queue != :urgent
           :pause
         else
           queue

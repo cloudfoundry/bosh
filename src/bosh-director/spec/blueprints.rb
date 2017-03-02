@@ -261,4 +261,8 @@ module Bosh::Director::Models
       content  { Sham.name }
     end
   end
+
+  TasksConfig.blueprint do
+    manifest YAML.dump(Bosh::Spec::Deployments.simple_task_config)
+  end
 end

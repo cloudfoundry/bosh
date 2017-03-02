@@ -16,28 +16,32 @@ describe 'cli: tasks', type: :integration do
 
   it 'should pause/unpause tasks' do
     deploy_from_scratch
-    out = bosh_runner.run('pause-tasks')
-    expect(out).to include("Succeeded")
-    out = bosh_runner.run('env')
-    expect(out).to include("pause_tasks: enabled")
-
+    task_yaml = yaml_file('task', Bosh::Spec::Deployments.simple_task_config(true))
+    expect(bosh_runner.run("update-task-config #{task_yaml.path}")).to include("Succeeded")
+    output = bosh_runner.run("task-config")
+    expect(output).to include('paused: true')
     sleep 3
 
-    output = bosh_runner.run('delete-deployment', deployment_name: 'simple')
-    expect(output).to match(/Task \d+\. Paused/)
+    current_target = current_sandbox.director_url
+    pause_tasks = Thread.new do
+      output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_target)
+      expect(output).to match(/Task \d+\ done/)
+    end
+    sleep 1
 
     output = bosh_runner.run('tasks --recent', deployment_name: 'simple')
-    expect(output).to match(/\d+  queued .*  test  simple      delete deployment simple  -/)
-    expect(output).to match(/\d+  done   .*  test  simple      create deployment         \/deployments\/simple/)
+    expect(output).to match(/\d+\s+queued .*  test  simple      delete deployment simple  -/)
+    expect(output).to match(/\d+\s+done   .*  test  simple      create deployment         \/deployments\/simple/)
 
-    out = bosh_runner.run('unpause-tasks')
-    expect(out).to include("Succeeded")
-    out = bosh_runner.run('env')
-    expect(out).to include("pause_tasks: disabled")
+    task_yaml = yaml_file('task', Bosh::Spec::Deployments.simple_task_config(false))
+    expect(bosh_runner.run("update-task-config #{task_yaml.path}")).to include("Succeeded")
+    output = bosh_runner.run("task-config")
+    expect(output).to include('paused: false')
     sleep 3
 
+    pause_tasks.join
     output = bosh_runner.run('tasks --recent', deployment_name: 'simple')
-    expect(output).to match(/\d+  done   .*  test  simple      delete deployment simple  \/deployments\/simple/)
-    expect(output).to match(/\d+  done   .*  test  simple      create deployment         \/deployments\/simple/)
+    expect(output).to match(/\d+\s+done   .*  test  simple      delete deployment simple  \/deployments\/simple/)
+    expect(output).to match(/\d+\s+done   .*  test  simple      create deployment         \/deployments\/simple/)
   end
 end

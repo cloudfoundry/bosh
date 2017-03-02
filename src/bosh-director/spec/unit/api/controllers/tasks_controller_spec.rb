@@ -25,72 +25,6 @@ module Bosh::Director
 
       after { FileUtils.rm_rf(temp_dir) }
 
-      context 'info' do
-        class FakeJob < Jobs::BaseJob
-          def self.job_type
-            :snow
-          end
-          define_method :perform do
-            'foo'
-          end
-          @queue = :sample
-        end
-
-        let(:tmpdir) { Dir.mktmpdir }
-        after { FileUtils.rm_rf tmpdir }
-
-        let(:job_class) { FakeJob }
-        let(:description) { 'busy doing something' }
-        let(:task_remover) { instance_double('Bosh::Director::Api::TaskRemover') }
-
-        let(:teams) do
-          [Models::Team.make(name: 'security'), Models::Team.make(name: 'spies')]
-        end
-        let(:deployment1) { Models::Deployment.create_with_teams(name: deployment_name_1, teams: teams) }
-        let(:deployment2) { Models::Deployment.create_with_teams(name: deployment_name_2, teams: teams) }
-
-        before do
-          Config.base_dir = tmpdir
-          Config.max_tasks = 2
-          allow(Api::TaskRemover).to receive(:new).with(Config.max_tasks).and_return(task_remover)
-          allow(task_remover).to receive(:remove)
-        end
-
-        it 'allows to pause jobs' do
-          basic_authorize 'admin', 'admin'
-          JobQueue.new.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment1)
-          put '/', JSON.generate('tasks_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-          JobQueue.new.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment2)
-          expect(Delayed::Job.count).to eq(2)
-          Delayed::Job.all.each do |delayed_job|
-            expect(delayed_job[:queue]).to eq('pause')
-          end
-          put '/', JSON.generate('tasks_paused' => false), { 'CONTENT_TYPE' => 'application/json' }
-          expect(Delayed::Job.count).to eq(2)
-          Delayed::Job.all.each do |delayed_job|
-            expect(delayed_job[:queue]).to eq('sample')
-          end
-        end
-
-        it 'does not pause failed jobs' do
-          basic_authorize 'admin', 'admin'
-          JobQueue.new.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment1)
-          expect(Delayed::Job.count).to eq(1)
-          Delayed::Job.first.update(:failed_at => Time.current)
-          put '/', JSON.generate('tasks_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-          expect(Delayed::Job.first[:queue]).to eq('sample')
-        end
-
-        it 'does not pause locked jobs' do
-          basic_authorize 'admin', 'admin'
-          JobQueue.new.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment1)
-          expect(Delayed::Job.count).to eq(1)
-          Delayed::Job.first.update(:locked_by => 'some other worker')
-          put '/', JSON.generate('tasks_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-          expect(Delayed::Job.first[:queue]).to eq('sample')
-        end
-      end
-
       it 'requires auth' do
         get '/'
         expect(last_response.status).to eq(401)
@@ -686,47 +620,6 @@ module Bosh::Director
                   expect(last_response.status).to eq(401)
                 end
               end
-            end
-          end
-        end
-
-        describe 'paused and unpaused tasks' do
-
-          context 'when tasks_paused director attribute is set' do
-            before(:each) { basic_authorize 'admin', 'admin' }
-
-            it 'returns true' do
-              put '/', JSON.generate('tasks_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-              expect(last_response.status).to eq(200)
-              expect(Models::DirectorAttribute.first(name: 'tasks_paused').value).to eq('true')
-            end
-
-            it 'returns false' do
-              put '/', JSON.generate('tasks_paused' => false), { 'CONTENT_TYPE' => 'application/json' }
-              expect(last_response.status).to eq(200)
-              expect(Models::DirectorAttribute.first(name: 'tasks_paused').value).to eq('false')
-            end
-
-            it 'returns state paused' do
-              task = Models::Task.make(state: 'queued', description: 'fake-description')
-              Bosh::Director::Models::DirectorAttribute.make(name: 'tasks_paused', value: true)
-              get "/#{task.id}"
-              expect(last_response.status).to eq(200)
-              task_json = JSON.parse(last_response.body)
-              expect(task_json['id']).to eq(task.id)
-              expect(task_json['state']).to eq('paused')
-              expect(task_json['description']).to eq('fake-description')
-            end
-
-            it 'returns state queued' do
-              task = Models::Task.make(state: 'queued', description: 'fake-description')
-              Bosh::Director::Models::DirectorAttribute.make(name: 'tasks_paused', value: false)
-              get "/#{task.id}"
-              expect(last_response.status).to eq(200)
-              task_json = JSON.parse(last_response.body)
-              expect(task_json['id']).to eq(1)
-              expect(task_json['state']).to eq('queued')
-              expect(task_json['description']).to eq('fake-description')
             end
           end
         end
