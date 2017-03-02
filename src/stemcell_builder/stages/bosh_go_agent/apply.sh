@@ -37,14 +37,19 @@ cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 cd $assets_dir
 rm -rf davcli
 mkdir davcli
-current_version=0.0.6
+current_version=0.0.13
+
 if is_ppc64le; then
-  curl -L -o davcli/davcli http://ftp.unicamp.br/pub/ppc64el/ubuntu/14_04/cloud-foundry/davcli-${current_version}-linux-ppc64le
-  echo "8fdef53db8031c7941b0f0b00a0258084d39e3a0 davcli/davcli" | sha1sum -c -
+  url=https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-ppc64le
+  sha=102b9820e98e37586829f646a0f34533080e626d
 else
-  curl -L -o davcli/davcli https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-amd64
-  echo "6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08 davcli/davcli" | sha1sum -c -
+  url=https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-amd64
+  sha=6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
 fi
+
+curl -L -o davcli/davcli ${url}
+echo "${sha} davcli/davcli" | sha1sum -c -
+
 cd $assets_dir/davcli
 mv davcli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
