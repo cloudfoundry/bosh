@@ -14,7 +14,7 @@ module Bosh::Director::Digest
       context 'verification' do
         it 'logs the invocation' do
           process_status = instance_double('Process::Status', exitstatus: 0)
-          allow(Open3).to receive(:capture3).with("#{multi_digest_path} verify-multi-digest fake-file-path 'expected-sha'").
+          allow(Open3).to receive(:capture3).with(multi_digest_path, "verify-multi-digest", "fake-file-path", "'expected-sha'").
             and_return(['foo', 'bar', process_status])
           expect(logger).to receive(:info).with(/Verifying file shasum with command: "#{multi_digest_path} verify-multi-digest fake-file-path 'expected-sha'"/)
           expect(logger).to receive(:info).with(/Shasum matched for file: 'fake-file-path' digest: 'expected-sha'/)
@@ -23,7 +23,7 @@ module Bosh::Director::Digest
 
         it 'does not raise an error when expected sha is correct' do
           process_status = instance_double('Process::Status', exitstatus: 0)
-          allow(Open3).to receive(:capture3).with("#{multi_digest_path} verify-multi-digest fake-file-path 'expected-sha'").
+          allow(Open3).to receive(:capture3).with(multi_digest_path, "verify-multi-digest", "fake-file-path", "'expected-sha'").
             and_return(['foo', 'bar', process_status])
 
           expect { subject.verify(file_path, 'expected-sha') }.to_not raise_error
@@ -31,7 +31,7 @@ module Bosh::Director::Digest
 
         it 'does not raise an error when expected sha is incorrect' do
           process_status = instance_double('Process::Status', exitstatus: 1)
-          allow(Open3).to receive(:capture3).with("#{multi_digest_path} verify-multi-digest fake-file-path 'expected-sha'").
+          allow(Open3).to receive(:capture3).with(multi_digest_path, "verify-multi-digest", "fake-file-path", "'expected-sha'").
             and_return(['foo', 'bar', process_status])
 
           expect { subject.verify(file_path, 'expected-sha') }.to raise_error(ShaMismatchError, 'bar')
