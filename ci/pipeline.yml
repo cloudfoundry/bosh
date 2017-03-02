@@ -431,7 +431,7 @@ jobs:
           tags: ["bosh-integration"]
           params:
             DB: mysql
-            RUBY_VERSION: 2.3.1            
+            RUBY_VERSION: 2.3.1
 
   - name: load-tests-postgres
     public: true

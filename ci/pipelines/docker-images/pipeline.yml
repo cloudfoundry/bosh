@@ -157,13 +157,20 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-ruby-go"
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed:
+            - "build-main-ruby-go"
+        - get: bosh-cli
+          trigger: true
+        - get: bosh-deployment
+          trigger: true
+      - task: copy-dependencies
+        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-docker-dependencies.yml
       - put: main-bosh-docker
         params:
-          build: "bosh-src/ci/docker/main-bosh-docker"
+          build: "bosh-src-with-docker-dependencies/ci/docker/main-bosh-docker"
         get_params:
           skip_download: true
 
@@ -207,6 +214,19 @@ resources:
       branch: develop
       paths:
         - "ci/docker"
+
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment
+      branch: master
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
   - name: compiled-release-image
     type: docker-image
