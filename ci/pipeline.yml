@@ -760,8 +760,6 @@ jobs:
         - get: bosh-src
           passed:
           - candidate-release
-        - get: bosh-cli
-        - get: bosh-deployment
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -909,10 +907,3 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
-
-  - name: bosh-deployment
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-deployment
-      branch: master
-
