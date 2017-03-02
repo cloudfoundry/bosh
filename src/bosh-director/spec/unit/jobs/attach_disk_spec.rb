@@ -237,6 +237,7 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient,
             mount_disk: nil,
+            wait_until_ready: nil,
             list_disk: ['original-disk-cid'],
             stop: nil,
             unmount_disk: nil
@@ -275,7 +276,7 @@ module Bosh::Director
 
         let(:original_disk) { nil }
 
-        let(:agent_client) { instance_double(AgentClient, mount_disk: nil) }
+        let(:agent_client) { instance_double(AgentClient, mount_disk: nil, wait_until_ready: nil) }
         before do
           allow(Config.cloud).to receive(:attach_disk)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)

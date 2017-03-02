@@ -177,6 +177,7 @@ module Bosh::Director
     # @todo[multi-disks] the rescue is duplicated with migrate_disk
     def mount_disk(disk)
       agent_client = agent_client(disk.instance)
+      agent_client.wait_until_ready
       agent_client.mount_disk(disk.disk_cid)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
