@@ -47,6 +47,7 @@ module Bosh::Director
       allow(cloud_collection).to receive(:detach_disk)
       allow(agent_client).to receive(:stop)
       allow(agent_client).to receive(:mount_disk)
+      allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
       allow(agent_client).to receive(:update_settings)
@@ -59,6 +60,7 @@ module Bosh::Director
         it 'attaches + mounts disk' do
           expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).once.and_return(cloud_collection)
           expect(cloud_collection).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:wait_until_ready)
           expect(agent_client).to receive(:mount_disk).with('disk123')
           disk_manager.attach_disk(persistent_disk)
         end
