@@ -49,6 +49,7 @@ namespace :migrations do
   end
 
   def generate_migration_digest(migrations_dir, namespace, name)
+    require 'json'
     new_migration_path = File.join(migrations_dir, "#{namespace}","#{name}.rb")
     migration_digests = File.join(migrations_dir, "migration_digests.json")
 
@@ -63,7 +64,6 @@ namespace :migrations do
         '
     end
     digest_migration_json[name] = migration_digest
-
-    File.write(migration_digests, JSON.generate(digest_migration_json))
+    File.write(migration_digests, JSON.pretty_generate(digest_migration_json))
   end
 end

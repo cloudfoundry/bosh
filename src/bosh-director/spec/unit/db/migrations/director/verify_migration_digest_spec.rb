@@ -10,7 +10,7 @@ module Bosh::Director
 
         digest = digests.fetch(File.basename(migration, ".rb"))
 
-        expect(digest).to eq(Digest::SHA1.hexdigest(File.read(migration))), "A digest mismatch was detected in #{migration}"
+        expect(digest).to eq(::Digest::SHA1.hexdigest(File.read(migration))), "A digest mismatch was detected in #{migration}"
       end
     end
   end
