@@ -152,6 +152,10 @@ module Bosh::Director
             end
           end
 
+          it 'returns an errand result' do
+            expect(subject.run).to be_a(Bosh::Director::Errand::Result)
+          end
+
           it 'fetches the logs from agent with correct job type and filters' do
             expect(logs_fetcher).to receive(:fetch).with(instance.model, 'job', nil)
             subject.run
