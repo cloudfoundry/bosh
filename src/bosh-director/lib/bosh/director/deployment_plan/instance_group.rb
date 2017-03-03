@@ -173,8 +173,8 @@ module Bosh::Director
         needed_instance_plans.map(&:instance)
       end
 
-      def needed_instance_plans_for_variable_resolution
-        needed_instance_plans.select{ |instance_plan| !instance_plan.should_be_ignored? && instance_plan.instance.state != 'detached'}
+      def unignored_instance_plans
+        needed_instance_plans.select { |instance_plan| !instance_plan.should_be_ignored? }
       end
 
       def needed_instance_plans

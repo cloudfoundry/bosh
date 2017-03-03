@@ -23,7 +23,7 @@ module Bosh::Blobstore
       allow(Dir).to receive(:tmpdir).and_return(base_dir)
       allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
       allow(Open3).to receive(:capture3)
-      allow(Kernel).to receive(:system).with("/var/vcap/packages/davcli/bin/davcli -v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+      allow(Kernel).to receive(:system).with("/var/vcap/packages/davcli/bin/davcli", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
     end
 
     let(:file_path) { File.join(base_dir, "temp-path-FAKE_UUID") }
@@ -46,7 +46,7 @@ module Bosh::Blobstore
 
       context 'when there is no davcli' do
         it 'raises an error' do
-          allow(Kernel).to receive(:system).with("#{davcli_path} -v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
+          allow(Kernel).to receive(:system).with("#{davcli_path}", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
           expect { described_class.new(options) }.to raise_error(
             Bosh::Blobstore::BlobstoreError, 'Cannot find davcli executable. Please specify davcli_path parameter')
         end
@@ -79,7 +79,7 @@ module Bosh::Blobstore
     describe '#get' do
       it 'should have correct parameters' do
         expect(Open3).to receive(:capture3).
-          with("#{davcli_path} -c #{expected_config_file} get #{object_id} #{file_path}").
+          with("#{davcli_path}", "-c", "#{expected_config_file}", "get", "#{object_id}","#{file_path}").
           and_return([nil, nil, success_exit_status])
 
         subject.get(object_id)
@@ -89,6 +89,12 @@ module Bosh::Blobstore
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { subject.get(object_id) }.to raise_error(
           BlobstoreError, /Failed to download blob/)
+      end
+
+      it 'should raise a NotFound error when the key does not exist' do
+        allow(Open3).to receive(:capture3).and_return(['404 Not Found', nil, failure_exit_status])
+        expect { subject.get(object_id) }.to raise_error(
+          NotFound, "Blobstore object '#{object_id}' not found")
       end
     end
 
@@ -107,7 +113,7 @@ module Bosh::Blobstore
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
         file = File.open(Tempfile.new('file'))
-        expect(Open3).to receive(:capture3).with("#{davcli_path} -c #{expected_config_file} put #{file.path} FAKE_UUID")
+        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "put", "#{file.path}", "FAKE_UUID")
         subject.create(file)
       end
 
@@ -127,7 +133,7 @@ module Bosh::Blobstore
     describe '#delete' do
       it 'should delete an object' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path} -c #{expected_config_file} delete #{object_id}")
+        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "delete", "#{object_id}")
         subject.delete(object_id)
       end
 
@@ -141,13 +147,13 @@ module Bosh::Blobstore
     describe '#exists?' do
       it 'should return true if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path} -c #{expected_config_file} exists #{object_id}")
+        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "exists", "#{object_id}")
         expect(subject.exists?(object_id)).to eq(true)
       end
 
       it 'should return false if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, not_existed_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path} -c #{expected_config_file} exists #{object_id}")
+        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "exists", "#{object_id}")
         expect(subject.exists?(object_id)).to eq(false)
       end
 

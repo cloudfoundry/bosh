@@ -1,9 +1,8 @@
 require 'spec_helper'
-require 'bosh/blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe BlobstoreDnsPublisher do
-    let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+    let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
     subject(:dns) { BlobstoreDnsPublisher.new(blobstore, domain_name) }
     let(:dns_records) { DnsRecords.new([['fake-ip0', 'fake-name0'], ['fake-ip1', 'fake-name1']], 2)}
@@ -19,6 +18,7 @@ module Bosh::Director
             blobstore_id = dns.publish(dns_records)
             expect(blobstore_id).to_not be_nil
 
+            expect(blobstore).to receive(:exists?).and_return(false)
             expect(blobstore.exists?(blobstore_id)).to_not be_nil
           end
 
@@ -37,6 +37,7 @@ module Bosh::Director
             blobstore_id = dns.publish(DnsRecords.new)
             expect(blobstore_id).to_not be_nil
 
+            expect(blobstore).to receive(:exists?).and_return(false)
             expect(blobstore.exists?(blobstore_id)).to_not be_nil
           end
         end

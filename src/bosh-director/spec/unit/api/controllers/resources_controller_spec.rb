@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::ResourcesController do
       include Rack::Test::Methods
 
-      let(:temp_dir) { Dir.mktmpdir}
+      let(:temp_dir) { Dir.mktmpdir }
 
       let(:director_app) { App.new(config) }
 
@@ -14,7 +14,7 @@ module Bosh::Director
       let(:resource_manager) { ResourceManager.new(blobstore) }
       subject(:app) { described_class.new(config, resource_manager) }
 
-      let(:config) {
+      let(:config) do
         config = SpecHelper.spec_get_director_config
         config['dir'] = temp_dir
         config['blobstore'] = {
@@ -27,7 +27,7 @@ module Bosh::Director
           }
         }
         Config.load_hash(config)
-      }
+      end
 
       it 'requires auth' do
         get '/existing_resource_id'
@@ -54,6 +54,7 @@ module Bosh::Director
           get '/existing_resource_id'
           expect(last_response.status).to eq(200)
           expect(last_response.headers).to have_key('X-Accel-Redirect')
+          expect(last_response.headers['X-Accel-Redirect']).to match /\/x_accel_files\/.*/
           expect(last_response.body).to eq('')
         end
 

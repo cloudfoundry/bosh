@@ -7,8 +7,9 @@ module Bosh::Director::ConfigServer
 
     # @param [Hash] template_spec_properties Hash to be interpolated
     # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
+    # @param [VariableSet] variable_set The variable set which the interpolation will use. Default: nil
     # @return [Hash] A Deep copy of the interpolated template_spec_properties
-    def interpolate_template_spec_properties(template_spec_properties, deployment_name)
+    def interpolate_template_spec_properties(template_spec_properties, deployment_name, variable_set = nil)
       if template_spec_properties.nil?
         return template_spec_properties
       end
@@ -22,7 +23,7 @@ module Bosh::Director::ConfigServer
 
       template_spec_properties.each do |job_name, job_properties|
         begin
-          interpolated_hash = @config_server_client.interpolate(job_properties, deployment_name)
+          interpolated_hash = @config_server_client.interpolate(job_properties, deployment_name, variable_set)
           result[job_name] = interpolated_hash
         rescue Exception => e
           header = "- Unable to render templates for job '#{job_name}'. Errors are:"
@@ -49,7 +50,7 @@ module Bosh::Director::ConfigServer
       links_spec_copy.each do |link_name, link_spec|
         if link_spec.has_key?('properties') && !link_spec['properties'].nil?
           begin
-            interpolated_hash = @config_server_client.interpolate(link_spec['properties'], link_spec['deployment_name'])
+            interpolated_hash = @config_server_client.interpolate(link_spec['properties'], link_spec['deployment_name'], nil)
             link_spec['properties'] = interpolated_hash
           rescue Exception => e
             header = "- Unable to interpolate link '#{link_name}' properties; provided by '#{link_spec['deployment_name']}' deployment. Errors are:"
@@ -82,6 +83,7 @@ module Bosh::Director::ConfigServer
       @config_server_client.interpolate(
         deployment_manifest,
         deployment_manifest['name'],
+        nil,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}
       )
     end
@@ -101,6 +103,7 @@ module Bosh::Director::ConfigServer
       @config_server_client.interpolate(
         runtime_manifest,
         deployment_name,
+        nil,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
       )
     end

@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @variables_interpolator).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.variable_set).spec
       end
 
       def as_apply_spec
@@ -92,10 +92,11 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, variables_interpolator)
+      def initialize(full_spec, variables_interpolator, variable_set)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
         @variables_interpolator = variables_interpolator
+        @variable_set = variable_set
       end
 
       def spec
@@ -122,7 +123,7 @@ module Bosh::Director
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
-        template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'])
+        template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
         interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
 
         template_hash['links'] = {}

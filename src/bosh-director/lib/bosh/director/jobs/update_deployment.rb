@@ -83,6 +83,7 @@ module Bosh::Director
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
           begin
+            update_instance_plans_variable_set_id(deployment_plan)
             render_templates_and_snapshot_errand_variables(deployment_plan)
 
             if dry_run?
@@ -161,6 +162,18 @@ module Bosh::Director
         end
       end
 
+      def update_instance_plans_variable_set_id(deployment_plan)
+        deployment_plan.instance_groups.each do |instance_group|
+          instance_group.unignored_instance_plans.each do |instance_plan|
+            if @options['deploy']
+              instance_plan.instance.variable_set = deployment_plan.model.current_variable_set
+            else
+              instance_plan.instance.variable_set = instance_plan.instance.variable_set
+            end
+          end
+        end
+      end
+
       def render_templates_and_snapshot_errand_variables(deployment_plan)
         errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups)
@@ -176,7 +189,7 @@ module Bosh::Director
         errors = []
         instance_groups.each do |instance_group|
           begin
-            job_renderer.render_job_instances(instance_group.needed_instance_plans_for_variable_resolution)
+            job_renderer.render_job_instances(instance_group.unignored_instance_plans)
           rescue Exception => e
             errors.push e
           end

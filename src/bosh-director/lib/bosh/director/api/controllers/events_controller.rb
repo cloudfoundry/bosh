@@ -6,6 +6,17 @@ module Bosh::Director
     class EventsController < BaseController
       EVENT_LIMIT = 200
 
+      get '/:id' do
+        content_type(:json)
+
+        event_id = params[:id].to_i
+        event = Models::Event[event_id]
+        if event.nil?
+          not_found
+        end
+        json_encode(@event_manager.event_to_hash(event))
+      end
+
       get '/', scope: :read_events do
         content_type(:json)
 
@@ -112,6 +123,11 @@ module Bosh::Director
 
       def integer?(string)
         string =~ /\A[-+]?\d+\z/
+      end
+
+      not_found do
+        status(404)
+        "Event not found"
       end
     end
   end

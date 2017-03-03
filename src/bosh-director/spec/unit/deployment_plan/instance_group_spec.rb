@@ -546,7 +546,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#needed_instance_plans_for_variable_resolution' do
+  describe '#unignored_instance_plans' do
 
     let(:spec) do
       {
@@ -579,8 +579,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
       instance_group.add_instance_plans([instance_plan1, instance_plan2])
 
-      needed_instance_plans_for_variable_resolution = [instance_plan1]
-      expect(instance_group.needed_instance_plans_for_variable_resolution).to eq(needed_instance_plans_for_variable_resolution)
+      unignored_instance_plans = [instance_plan1]
+      expect(instance_group.unignored_instance_plans).to eq(unignored_instance_plans)
     end
   end
 

@@ -1,0 +1,19 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: ubuntu
+    tag: "14.04"
+
+inputs:
+  - name: bosh-src
+  - name: bosh-deployment
+  - name: bosh-cli
+
+run:
+  path: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-docker-dependencies.sh
+
+outputs:
+  - name: bosh-src-with-docker-dependencies

@@ -105,11 +105,10 @@ module Bosh::Blobstore
           expect(File.exist?(File.join(@tmp, id))).to be(false)
         end
 
-        it 'should raise NotFound error when trying to delete a missing id' do
-          expect { LocalClient.new(@options).delete('missing') }.to raise_error NotFound
+        it 'should not raise NotFound error when trying to delete a missing id' do
+          expect { LocalClient.new(@options).delete('missing') }.to_not raise_error
         end
       end
-
     end
   end
 end

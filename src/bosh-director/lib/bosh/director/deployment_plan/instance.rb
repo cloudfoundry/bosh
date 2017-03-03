@@ -242,8 +242,20 @@ module Bosh::Director
         @model.update(availability_zone: availability_zone_name)
       end
 
+      def variable_set=(variable_set)
+        @variable_set = variable_set
+      end
+
+      def variable_set
+        if @variable_set
+          @variable_set
+        else
+          @model.variable_set
+        end
+      end
+
       def update_variable_set
-        @model.update(variable_set: @deployment_model.current_variable_set)
+        @model.update(variable_set: variable_set)
       end
 
       def state

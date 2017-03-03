@@ -13,7 +13,7 @@ module Bosh
         def verify(file_path, expected_multi_digest_sha)
           cmd = "#{@multidigest_path} verify-multi-digest #{file_path} '#{expected_multi_digest_sha}'"
           @logger.info("Verifying file shasum with command: \"#{cmd}\"")
-          _, err, status = Open3.capture3(cmd)
+          _, err, status = Open3.capture3(@multidigest_path, "verify-multi-digest", file_path, "'#{expected_multi_digest_sha}'")
           unless status.exitstatus == 0
             raise ShaMismatchError, "#{err}"
           end

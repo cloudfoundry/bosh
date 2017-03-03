@@ -6,7 +6,8 @@ namespace :fly do
   desc 'Fly unit specs'
   task :unit do
     execute('test-unit', '-p', {
-        DB: (ENV['DB'] || 'postgresql')
+        DB: (ENV['DB'] || 'postgresql'),
+        DB_VERSION: (ENV['DB_VERSION'] || '9.4')
     })
   end
 

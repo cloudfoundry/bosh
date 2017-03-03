@@ -14,21 +14,23 @@ module Bosh::Director::ConfigServer
     # @param [String] deployment_name The deployment context in-which the interpolation
     # will occur (used mostly for links properties interpolation since they will be interpolated in
     # the context of the deployment providing these links)
+    # @param [VariableSet] variable_set The variable set to use with interpolation. If 'nil' it will
+    # use the default variable set from deployment.
     # @param [Hash] options Additional options
     #   Options include:
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
     #   - 'must_be_absolute_name': [Boolean] Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, deployment_name, options = {})
+    def interpolate(src, deployment_name, variable_set, options = {})
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
 
-      current_variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
+      variable_set = variable_set || @deployment_lookup.by_name(deployment_name).current_variable_set
 
       placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
       placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
 
-      retrieved_config_server_values = fetch_values(placeholders_list, deployment_name, current_variable_set, must_be_absolute_name)
+      retrieved_config_server_values = fetch_values(placeholders_list, deployment_name, variable_set, must_be_absolute_name)
 
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
     end
@@ -306,7 +308,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, deployment_name, options={})
+    def interpolate(src, deployment_name, variable_set, options={})
       Bosh::Common::DeepCopy.copy(src)
     end
 

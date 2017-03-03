@@ -4,19 +4,9 @@ require 'net/http'
 require 'erb'
 require 'tempfile'
 require 'bosh/director'
+require_relative 'blobstore_shared_examples'
 
 module Bosh::Blobstore
-  def asset(filename)
-    File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
-  end
-
-  def erb_asset(filename, binding)
-    file = Tempfile.new('erb_asset')
-    file.write(ERB.new(File.read(asset(filename))).result(binding))
-    file.flush
-    file
-  end
-
   describe S3cliBlobstoreClient do
     let(:access_key_id) do
       key = ENV['AWS_ACCESS_KEY_ID']
@@ -214,7 +204,6 @@ module Bosh::Blobstore
             expect(file.read).to eq 'foobar'
           end
         end
-
       end
 
       context 'Read/Write' do
@@ -233,86 +222,8 @@ module Bosh::Blobstore
           Client.create('s3cli', s3_options)
         end
 
-        after(:each) do
-          s3.delete(@oid) if @oid
-          s3.delete(@oid2) if @oid2
-        end
-
-        describe 'unencrypted' do
-          describe 'store object' do
-            it 'should upload a file' do
-              Tempfile.open('foo') do |file|
-                @oid = s3.create(file)
-                expect(@oid).to_not be_nil
-              end
-            end
-
-            it 'should upload a string' do
-              @oid = s3.create('foobar')
-              expect(@oid).to_not be_nil
-            end
-
-            it 'should handle uploading the same object twice' do
-              @oid = s3.create('foobar')
-              expect(@oid).to_not be_nil
-              @oid2 = s3.create('foobar')
-              expect(@oid2).to_not be_nil
-              expect(@oid).to_not eq @oid2
-            end
-          end
-
-          describe 'get object' do
-            it 'should save to a file' do
-              @oid = s3.create('foobar')
-              file = Tempfile.new('contents')
-              s3.get(@oid, file)
-              file.rewind
-              expect(file.read).to eq 'foobar'
-            end
-
-            it 'should return the contents' do
-              @oid = s3.create('foobar')
-
-              expect(s3.get(@oid)).to eq 'foobar'
-            end
-
-            it 'should raise an error when the object is missing' do
-              expect { s3.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
-            end
-          end
-
-          describe 'delete object' do
-            let(:name) do
-              context 'when the key exists' do
-                it 'should delete an object' do
-                  @oid = s3.create('foobar')
-
-                  expect { s3.delete(@oid) }.to_not raise_error
-
-                  @oid = nil
-                end
-              end
-
-              context 'when the key does not exist' do
-                it 'should not raise an error' do
-                  expect { s3.delete('nonexistent-key') }.to_not raise_error
-                end
-              end
-
-            end
-          end
-
-          describe 'object exists?' do
-            it 'should exist after create' do
-              @oid = s3.create('foobar')
-              expect(s3.exists?(@oid)).to be true
-            end
-
-            it 'should return false if object does not exist' do
-              expect(s3.exists?('nonexistent-key')).to be false
-            end
-          end
-
+        it_behaves_like 'any blobstore client' do
+          let(:blobstore) { s3 }
         end
       end
     end
@@ -377,7 +288,6 @@ module Bosh::Blobstore
           expect(s3.exists?('public')).to be true
         end
       end
-
     end
   end
 end

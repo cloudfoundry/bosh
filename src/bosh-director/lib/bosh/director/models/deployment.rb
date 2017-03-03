@@ -49,7 +49,7 @@ module Bosh::Director::Models
       return {} if tags.nil? || tags.empty?
 
       client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
-      client.interpolate(tags, name)
+      client.interpolate(tags, name, nil)
     end
 
     def current_variable_set
