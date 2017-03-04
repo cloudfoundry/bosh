@@ -547,13 +547,13 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
+      branch: 261.x
 
   - name: bosh-load-tests-workspace
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-      branch: master
+      branch: 261.x
 
   - name: fuzz-interval-trigger
     type: time
@@ -568,7 +568,7 @@ resources:
   - name: bosh-cli
     type: s3
     source:
-      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      regexp: alpha-bosh-cli-(0.0.203)-linux-amd64
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
