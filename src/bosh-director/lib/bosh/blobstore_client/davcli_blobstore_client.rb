@@ -8,7 +8,7 @@ module Bosh
       def initialize(options)
         super(options)
         @davcli_path = @options.fetch(:davcli_path)
-        unless Kernel.system("#{@davcli_path} -v", out: "/dev/null", err: "/dev/null")
+        unless Kernel.system(@davcli_path, '-v', out: "/dev/null", err: "/dev/null")
           raise BlobstoreError, "Cannot find davcli executable. Please specify davcli_path parameter"
         end
 
@@ -25,7 +25,7 @@ module Bosh
 
       def get_file(id, file)
         begin
-          out, err, status = Open3.capture3("#{@davcli_path} -c #{@config_file_path} get #{id} #{file.path}")
+          out, err, status = Open3.capture3(@davcli_path, '-c', @config_file_path, 'get', id, file.path)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -44,7 +44,7 @@ module Bosh
 
       def object_exists?(object_id)
         begin
-          out, err, status = Open3.capture3("#{@davcli_path} -c #{@config_file_path} exists #{object_id}")
+          out, err, status = Open3.capture3(@davcli_path, '-c', @config_file_path, 'exists', object_id)
           if status.exitstatus == 0
             return true
           end
@@ -59,7 +59,7 @@ module Bosh
 
       def delete_object(object_id)
         begin
-          out, err, status = Open3.capture3("#{@davcli_path} -c #{@config_file_path} delete #{object_id}")
+          out, err, status = Open3.capture3(@davcli_path, '-c', @config_file_path, 'delete', object_id)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -68,7 +68,7 @@ module Bosh
 
       def store_in_webdav(content_path, server_path)
         begin
-          out, err, status = Open3.capture3("#{@davcli_path} -c #{@config_file_path} put #{content_path} #{server_path}")
+          out, err, status = Open3.capture3(@davcli_path, '-c', @config_file_path, 'put', content_path, server_path)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
