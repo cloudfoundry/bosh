@@ -19,6 +19,7 @@ RUN apt-get install -y \
 	dnsutils \
 	xvfb \
 	jq \
+	realpath \
 	&& apt-get clean
 
 #global - ruby will need these
