@@ -152,20 +152,8 @@ module Bosh::Director
             end
           end
 
-          it 'returns a short description from errand result' do
-            errand_result = instance_double('Bosh::Director::Errand::Result', to_hash: {})
-            allow(errand_result).to receive(:exit_code)
-
-            expect(errand_result).to receive(:short_description).
-              with('fake-job-name').
-              and_return('fake-short-description')
-
-            expect(Errand::Result).to receive(:from_agent_task_results).
-              with(agent_task_result, 'fake-logs-blobstore-id').
-              and_return(errand_result)
-
-
-            expect(subject.run).to eq('fake-short-description')
+          it 'returns an errand result' do
+            expect(subject.run).to be_a(Bosh::Director::Errand::Result)
           end
 
           it 'fetches the logs from agent with correct job type and filters' do
