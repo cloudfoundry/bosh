@@ -14,7 +14,11 @@ module Bosh::Dev::Sandbox
 
     def install
       sync_release_blobs
-      compile
+      if blob_has_changed
+        compile
+      else
+        puts 'Skipping compiling nginx because shasums have not changed'
+      end
     end
 
     def executable_path
@@ -22,6 +26,22 @@ module Bosh::Dev::Sandbox
     end
 
     private
+
+    def blob_has_changed
+      release_nginx_path = File.join(RELEASE_ROOT, 'blobs', 'nginx')
+      blobs_shasum = shasum(release_nginx_path)
+      working_dir_nginx_path = "#{@working_dir}/nginx"
+      sandbox_copy_shasum = shasum(working_dir_nginx_path)
+
+      blobs_shasum.sort != sandbox_copy_shasum.sort
+    end
+
+    def shasum(directory)
+      output = @runner.run("find #{directory} \\! -type d -print0 | xargs -0 shasum -a 256")
+      output.split("\n").map do |line|
+        line.split(' ').first
+      end
+    end
 
     def sync_release_blobs
       Dir.chdir(RELEASE_ROOT) { @runner.run('bundle exec bosh sync blobs') }

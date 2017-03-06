@@ -99,7 +99,6 @@ module Bosh::Dev::Sandbox
       @director_service = DirectorService.new(
         {
           database: @database,
-          database_proxy: @database_proxy,
           director_port: director_ruby_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
