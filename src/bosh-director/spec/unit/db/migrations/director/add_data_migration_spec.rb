@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170303175054_expand_template_json_column_lengths.rb')
+      expect(latest_db_migration_file).to eq('20170306215659_expand_vms_json_column_lengths.rb')
     end
   end
 end
