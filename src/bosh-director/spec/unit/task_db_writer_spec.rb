@@ -13,6 +13,7 @@ module Bosh::Director
       end
 
       it 'adds data to existing information in record' do
+        expect(task[:result_output]).to eq(nil)
         task_db_writer.write("result")
         task_db_writer.write("-result1")
         expect(task[:result_output]).to eq("result-result1")

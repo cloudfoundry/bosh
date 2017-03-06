@@ -218,11 +218,15 @@ def gzip(string)
 end
 
 def check_event_log(task_id)
-  events = Bosh::Director::Models::Task.first(id: task_id).event_output.split("\n").map do |line|
-    JSON.parse(line)
-  end
+  unless Bosh::Director::Models::Task.first(id: task_id).event_output.nil?
+    events = Bosh::Director::Models::Task.first(id: task_id).event_output.split("\n").map do |line|
+      JSON.parse(line)
+    end
 
-  yield events
+    yield events
+  else
+    nil
+  end
 end
 
 module ManifestHelper
