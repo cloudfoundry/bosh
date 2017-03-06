@@ -186,6 +186,20 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-main-bats-aws
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: main-bats-aws
+        params:
+          build: "bosh-src/ci/docker/main-bats-aws"
+        get_params:
+          skip_download: true
+
   - name: build-bosh-utils
     public: true
     serial: true
@@ -312,6 +326,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-bosh-docker
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-bats-aws
+    type: docker-image
+    source:
+      repository: bosh/main-bats-aws
       email: {{dockerhub_email}}
       username: {{dockerhub_username}}
       password: {{dockerhub_password}}
