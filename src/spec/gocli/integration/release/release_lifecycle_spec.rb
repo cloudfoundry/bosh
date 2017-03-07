@@ -62,7 +62,7 @@ describe 'release lifecycle', type: :integration do
 
     bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 
-    expect_table('releases', [{'Name' => 'bosh-release', 'Version' => '2.0*', 'Commit Hash' => "#{commit_hash}+"}])
+    expect_table('releases', [{'name' => 'bosh-release', 'version' => '2.0*', 'commit_hash' => "#{commit_hash}+"}])
   end
 
   # ~57s
@@ -89,12 +89,12 @@ describe 'release lifecycle', type: :integration do
     end
 
     table_output = table(bosh_runner.run('releases', json: true))
-    expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.2', 'Commit Hash'=> String})
-    expect(table_output).to include({'Name'=> 'bosh-release', 'Version'=> '0+dev.1', 'Commit Hash'=> String})
+    expect(table_output).to include({'name'=> 'bosh-release', 'version'=> '0+dev.2', 'commit_hash'=> String})
+    expect(table_output).to include({'name'=> 'bosh-release', 'version'=> '0+dev.1', 'commit_hash'=> String})
     expect(table_output.length).to eq(2)
 
     bosh_runner.run('delete-release bosh-release/0+dev.2')
-    expect_table('releases', [{'Name' => 'bosh-release', 'Version' => '0+dev.1', 'Commit Hash' => "#{commit_hash}"}])
+    expect_table('releases', [{'name' => 'bosh-release', 'version' => '0+dev.1', 'commit_hash' => "#{commit_hash}"}])
 
     bosh_runner.run('delete-release bosh-release/0+dev.1')
     expect_table('releases', [])

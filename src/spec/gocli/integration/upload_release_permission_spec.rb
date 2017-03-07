@@ -19,7 +19,7 @@ describe 'upload releases with bosh.releases.upload permission', type: :integrat
       client_secret: 'secret',
       json: true,
     ))
-    expect(table_output).to include({'Name' => 'test_release', 'Version' => '1', 'Commit Hash' => String})
+    expect(table_output).to include({'name' => 'test_release', 'version' => '1', 'commit_hash' => String})
     expect(table_output.length).to eq(1)
   end
 

@@ -30,22 +30,22 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z2',
+                                'ips' => /.*/
                             }
                         )
 
@@ -62,34 +62,34 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'stopped',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'stopped',
+                                'az' => 'z2',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             }
                         )
     end
   end
 
-  context 'when VM is deployed to AZ that has been removed from cloud config' do
+  context 'when VM is deployed to az that has been removed from cloud config' do
     it 'falls back to existing CPIs and succeeds in deleting' do
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
       expect(output).to include("Using deployment 'simple'")
@@ -98,22 +98,22 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z2',
+                                'ips' => /.*/
                             }
                         )
 
@@ -134,28 +134,28 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             }
                         )
     end

@@ -537,7 +537,7 @@ describe 'migrated from', type: :integration do
 
     deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
     output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
-    dns_records = output[0]['DNS A Records'].split("\n")
+    dns_records = output[0]['dns_a_records'].split("\n")
     expect(dns_records).to include('0.etcd-z1.a.simple.bosh')
     expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
 
@@ -551,7 +551,7 @@ describe 'migrated from', type: :integration do
 
     deploy_simple_manifest(manifest_hash: new_manifest_hash)
     output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
-    dns_records = output[0]['DNS A Records'].split("\n")
+    dns_records = output[0]['dns_a_records'].split("\n")
     expect(dns_records).to include('0.etcd.a.simple.bosh')
     expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
     expect(dns_records).to include('0.etcd-z1.a.simple.bosh')

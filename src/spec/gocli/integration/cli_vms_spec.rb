@@ -18,7 +18,7 @@ describe 'cli: vms', type: :integration do
     expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
 
     # persistent disk was not deployed
-    expect(vitals[:persistent_disk_usage]).to eq("")
+    expect(vitals[:persistent_disk_usage]).to eq('')
   end
 
   it 'should return az with vms' do
@@ -64,40 +64,40 @@ describe 'cli: vms', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a'},
     )
 
 
     output = bosh_runner.run('vms --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'VM CID' => String, 'VM Type' => 'a', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
     )
 
     output = bosh_runner.run('vms --vitals', json: true, deployment_name: 'simple')
 
     output = scrub_random_ids(table(output))
     first_row = output.first
-    expect(first_row).to include('Instance')
-    expect(first_row).to include('Process State')
-    expect(first_row).to include('AZ')
-    expect(first_row).to include('IPs')
-    expect(first_row).to include('VM CID')
-    expect(first_row).to include('VM Type')
-    expect(first_row).to include('Uptime')
-    expect(first_row).to include("Load\n(1m, 5m, 15m)")
-    expect(first_row).to include("CPU\nTotal")
-    expect(first_row).to include("CPU\nUser")
-    expect(first_row).to include("CPU\nSys")
-    expect(first_row).to include("CPU\nWait")
-    expect(first_row).to include("Memory\nUsage")
-    expect(first_row).to include("Swap\nUsage")
-    expect(first_row).to include("System\nDisk Usage")
-    expect(first_row).to include("Ephemeral\nDisk Usage")
-    expect(first_row).to include("Persistent\nDisk Usage")
+    expect(first_row).to include('instance')
+    expect(first_row).to include('process_state')
+    expect(first_row).to include('az')
+    expect(first_row).to include('ips')
+    expect(first_row).to include('vm_cid')
+    expect(first_row).to include('vm_type')
+    expect(first_row).to include('uptime')
+    expect(first_row).to include('load_1m_5m_15m')
+    expect(first_row).to include('cpu_total')
+    expect(first_row).to include('cpu_user')
+    expect(first_row).to include('cpu_sys')
+    expect(first_row).to include('cpu_wait')
+    expect(first_row).to include('memory_usage')
+    expect(first_row).to include('swap_usage')
+    expect(first_row).to include('system_disk_usage')
+    expect(first_row).to include('ephemeral_disk_usage')
+    expect(first_row).to include('persistent_disk_usage')
     expect(output.length).to eq(3)
   end
 end

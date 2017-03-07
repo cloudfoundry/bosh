@@ -37,15 +37,15 @@ describe 'finalize release', type: :integration do
         Dir.chdir(ClientSandbox.test_release_dir) do
           out = table(bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force", json: true))
           expect(out).to include(
-            {"Job"=>"dummy/a2f501d07c3e96689185ee6ebe26c15d54d4849a", "Digest"=>"16baf0c24e2dac2a21ccdcd4655be403a602f573", "Packages"=>""},
-            {"Job"=>"dummy_with_bad_package/0c5fa6ab55ab9d030354a26c722fe3b6e83a775b", "Digest"=>"6c67d40fa0df7a0ccfd49c873db533cb555b5f9c", "Packages"=>""},
-            {"Job"=>"dummy_with_package/97a702673f3096a8251273cd7962ae39c0f63b7b", "Digest"=>"e1f50e9b1fd987e1c36c1cc322cbbcbf51a577a8", "Packages"=>""},
-            {"Job"=>"dummy_with_properties/c55e682be87812d0cb378c82150d619c0b9252e9", "Digest"=>"415b4a9f29c21c1e193b540536fd15550fcefad3", "Packages"=>""},
-            {"Job"=>"multi-monit-dummy/1441e36bc3a9888ae638baab4c6c19654cfdaf9e", "Digest"=>"0059f555ab6e1e70e419665e19926a2290ffdd20", "Packages"=>""}
+            {'job'=>"dummy/a2f501d07c3e96689185ee6ebe26c15d54d4849a", 'digest'=>"16baf0c24e2dac2a21ccdcd4655be403a602f573", 'packages'=>""},
+            {'job'=>"dummy_with_bad_package/0c5fa6ab55ab9d030354a26c722fe3b6e83a775b", 'digest'=>"6c67d40fa0df7a0ccfd49c873db533cb555b5f9c", 'packages'=>""},
+            {'job'=>"dummy_with_package/97a702673f3096a8251273cd7962ae39c0f63b7b", 'digest'=>"e1f50e9b1fd987e1c36c1cc322cbbcbf51a577a8", 'packages'=>""},
+            {'job'=>"dummy_with_properties/c55e682be87812d0cb378c82150d619c0b9252e9", 'digest'=>"415b4a9f29c21c1e193b540536fd15550fcefad3", 'packages'=>""},
+            {'job'=>"multi-monit-dummy/1441e36bc3a9888ae638baab4c6c19654cfdaf9e", 'digest'=>"0059f555ab6e1e70e419665e19926a2290ffdd20", 'packages'=>""}
           )
           expect(out).to include(
-            {"Package"=>"bad_package/e44d6e76a3cb74bfda0ec6d56dfbb334ca798209", "Digest"=>"19b574c0f3d0d4910d4a4db85ede41ab9c734469", "Dependencies"=>""},
-            {"Package"=>"dummy_package/a29b3b1174dc200826055732082bf21c7a765669", "Digest"=>"42ade2b5b3495a989a8ffeeacc7e08c2387d29ba", "Dependencies"=>""}
+            {'package'=>"bad_package/e44d6e76a3cb74bfda0ec6d56dfbb334ca798209", 'digest'=>"19b574c0f3d0d4910d4a4db85ede41ab9c734469", 'dependencies'=>""},
+            {'package'=>"dummy_package/a29b3b1174dc200826055732082bf21c7a765669", 'digest'=>"42ade2b5b3495a989a8ffeeacc7e08c2387d29ba", 'dependencies'=>""}
           )
         end
       end

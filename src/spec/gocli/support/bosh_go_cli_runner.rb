@@ -127,7 +127,7 @@ module Bosh::Spec
         raise 'No tasks found!'
       end
 
-      task_table[0]['#']
+      task_table[0]['0']
     end
 
     private

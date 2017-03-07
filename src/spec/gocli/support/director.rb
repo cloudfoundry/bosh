@@ -203,13 +203,13 @@ module Bosh::Spec
       parsed_table = table(output)
 
       parsed_table.map do |row|
-        combined_row = row.dup
+        converted_row = row.dup
 
         row.each do |key, value|
-          combined_row[key.sub(' %','').gsub(/[\%\(\),]/, '').gsub(/\n/,'_').downcase.tr('/ ', '_').to_sym] = value
+          converted_row[key.to_sym] = value
         end
 
-        combined_row
+        converted_row
       end
     end
 

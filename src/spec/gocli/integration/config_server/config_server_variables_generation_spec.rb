@@ -68,12 +68,12 @@ describe 'variable generation with config server', type: :integration do
 
         events_output = bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env)
         scrubbed_events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(events_output))))
-        scrubbed_variables_events = scrubbed_events.select{ | event | event['Object Type'] == 'variable'}
+        scrubbed_variables_events = scrubbed_events.select{ | event | event['object_type'] == 'variable'}
 
         expect(scrubbed_variables_events.size).to eq(2)
         expect(scrubbed_variables_events).to include(
-           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/TestDirector/simple/var_a', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'Error' => ''},
-           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/var_b', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'Error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_id' => '/TestDirector/simple/var_a', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_id' => '/var_b', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'error' => ''},
          )
       end
 

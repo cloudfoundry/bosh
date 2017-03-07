@@ -34,8 +34,8 @@ describe 'User authorization with UAA', type: :integration do
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
     expect(output).to include("Using deployment 'simple'")
-    expect(output).to include("Deleting instances")
-    expect(output).to include("Deleting properties: Destroying deployment")
+    expect(output).to include('Deleting instances')
+    expect(output).to include('Deleting properties: Destroying deployment')
   end
 
   it 'should return tasks that user is permitted to view' do
@@ -49,13 +49,13 @@ describe 'User authorization with UAA', type: :integration do
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
     expect(output).to include("Using deployment 'simple'")
-    expect(output).to include("Deleting instances")
-    expect(output).to include("Deleting properties: Destroying deployment")
+    expect(output).to include('Deleting instances')
+    expect(output).to include('Deleting properties: Destroying deployment')
     output = table(bosh_runner.run('tasks --recent', json: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false))
 
     expect(output).to contain_exactly(
-      {"#"=>"4",   "State"=>"done",  "Started At"=>/.*/,   "Last Activity At"=>/.*/,  "User"=>"production_team",  "Deployment"=>"simple",  "Description"=>"delete deployment simple",  "Result"=>"/deployments/simple"},
-      {"#"=>"3",  "State"=>"done",  "Started At"=>/.*/,  "Last Activity At"=>/.*/,  "User"=>"production_team",  "Deployment"=>"simple",  "Description"=>"create deployment",  "Result"=>"/deployments/simple"}
+      {'0'=> '4',   'state'=> 'done',  'started_at'=>/.*/,   'last_activity_at'=>/.*/,  'user'=> 'production_team',  'deployment'=> 'simple',  'description'=> 'delete deployment simple',  'result'=> '/deployments/simple'},
+      {'0'=> '3',  'state'=> 'done',  'started_at'=>/.*/,  'last_activity_at'=>/.*/,  'user'=> 'production_team',  'deployment'=> 'simple',  'description'=> 'create deployment',  'result'=> '/deployments/simple'}
     )
   end
 end

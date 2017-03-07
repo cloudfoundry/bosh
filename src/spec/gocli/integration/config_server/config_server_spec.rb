@@ -394,7 +394,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
               expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'latest'}])
+              expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
             end
 
             it 'should not log interpolated env values in the debug logs and deploy output' do
@@ -452,8 +452,8 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
 
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1',
-                                          'Team(s)' => '', 'Cloud Config' => 'none'}])
+              expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1',
+                                          'team_s' => '', 'cloud_config' => 'none'}])
             end
           end
 

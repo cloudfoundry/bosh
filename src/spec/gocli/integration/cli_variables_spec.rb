@@ -42,12 +42,12 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj['ID']
+      obj['id']
     }
     expect(variable_ids.uniq.length).to eq(count_variable_ids)
 
     variable_names = variables.map { |obj|
-      obj['Name']
+      obj['name']
     }
     expect(variable_names.uniq.length).to eq(count_variable_names)
     variable_names
@@ -62,12 +62,12 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj['ID']
+      obj['id']
     }
     expect(variable_ids.uniq.length).to eq(3)
 
     variable_names = variables.map { |obj|
-      obj['Name']
+      obj['name']
     }
     expect(variable_names.uniq.length).to eq(3)
 
@@ -91,12 +91,12 @@ describe 'cli: variables', type: :integration do
     variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
 
     variable_ids = variables.map { |obj|
-      obj['ID']
+      obj['id']
     }
     expect(variable_ids.uniq.length).to eq(5)
 
     variable_names = variables.map { |obj|
-      obj['Name']
+      obj['name']
     }
     expect(variable_names.uniq.length).to eq(5)
 

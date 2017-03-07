@@ -50,8 +50,8 @@ describe 'resurrector', type: :integration, hm: true do
       output = bosh_runner.run('events', json: true)
       data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
       expect(data).to include(
-        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /message: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out.(.*)\n  UTC, severity 2: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out'/, 'Error' => ''},
-        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /message: 'director - finish update deployment.(.*)UTC, severity\n  4: Finish update deployment for ''simple'' against Director ''deadbeef'''/, 'Error' => ''}
+        {'id' => /[0-9]{1,3}/, 'time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'user' => 'hm', 'action' => 'create', 'object_type' => 'alert', 'object_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'task_id' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => /message: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out.(.*)\n  UTC, severity 2: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out'/, 'error' => ''},
+        {'id' => /[0-9]{1,3}/, 'time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'user' => 'hm', 'action' => 'create', 'object_type' => 'alert', 'object_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'task_id' => '', 'deployment' => 'simple', 'instance' => '', 'context' => /message: 'director - finish update deployment.(.*)UTC, severity\n  4: Finish update deployment for ''simple'' against Director ''deadbeef'''/, 'error' => ''}
       )
     end
   end

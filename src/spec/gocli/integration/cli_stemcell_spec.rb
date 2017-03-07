@@ -19,11 +19,11 @@ describe 'cli: stemcell', type: :integration do
     out = table(bosh_runner.run('stemcells', json: true))
     expect(out).to eq([
       {
-        'Name' => 'ubuntu-stemcell',
-        'Version' => '1',
-        'OS' => 'toronto-os',
-        'CPI' => '',
-        'CID' => "#{expected_id}"
+        'name' => 'ubuntu-stemcell',
+        'version' => '1',
+        'os' => 'toronto-os',
+        'cpi' => '',
+        'cid' => "#{expected_id}"
       }
     ])
 
@@ -45,18 +45,18 @@ describe 'cli: stemcell', type: :integration do
 
       expect_table('stemcells', [
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name1',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name1',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name2',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name2',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
 
       ])
@@ -118,11 +118,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{expected_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{expected_id}"
             }
           ])
 
@@ -140,11 +140,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{new_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{new_id}"
             }
           ])
 
@@ -175,11 +175,11 @@ describe 'cli: stemcell', type: :integration do
         out = table(bosh_runner.run('stemcells', json: true))
         expect(out).to eq([
           {
-            'Name' => 'ubuntu-stemcell',
-            'Version' => '1',
-            'OS' => 'toronto-os',
-            'CPI' => '',
-            'CID' => "#{expected_id}"
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => "#{expected_id}"
           }
         ])
 
@@ -214,11 +214,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
               {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{expected_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{expected_id}"
               }
             ])
 
@@ -237,11 +237,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
             {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{new_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{new_id}"
               }
             ])
 

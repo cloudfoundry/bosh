@@ -106,22 +106,22 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
         stemcell_1 = table(bosh_runner.run('stemcells', :json => true)).last
-        expect(stemcell_1['Version']).to eq('1')
+        expect(stemcell_1['version']).to eq('1')
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
         invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         initial_count = invocations.count
         expect(initial_count).to be > 1
-        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_1['CID'])
+        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_1['cid'])
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
         stemcell_2 = table(bosh_runner.run('stemcells', :json => true)).first
-        expect(stemcell_2['Version']).to eq('2')
+        expect(stemcell_2['version']).to eq('2')
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
         invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(invocations.count).to be > initial_count
-        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_2['CID'])
+        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_2['cid'])
       end
     end
 
@@ -155,11 +155,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect_running_vms_with_names_and_count('foobar' => 3)
           expect_table('deployments', [
             {
-              'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
-              'Release(s)' => 'bosh-release/0+dev.1',
-              'Stemcell(s)' => 'ubuntu-stemcell/1',
-              'Team(s)' => '',
-              'Cloud Config' => 'none',
+              'name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+              'cloud_config' => 'none',
             }
           ])
         end
@@ -193,11 +193,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect_running_vms_with_names_and_count('foobar' => 3)
           expect_table('deployments', [
             {
-              'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
-              'Release(s)' => 'bosh-release/0+dev.1',
-              'Stemcell(s)' => 'ubuntu-stemcell/1',
-              'Team(s)' => '',
-              'Cloud Config' => 'none',
+              'name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+              'cloud_config' => 'none',
             }
           ])
         end
@@ -938,16 +938,16 @@ Error: Unable to render instance groups for deployment. Errors are:
             output = bosh_runner.run('inspect-release test_release/1', json: true)
             puts output.pretty_inspect
             expect(table(output)).to include({
-              'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
-              'Blobstore ID' => /[a-f0-9\-]{36}/,
-              'Digest' => '735987b52907d970106f38413825773eec7cc577',
-              'Compiled for' => 'centos-7/3001',
+              'package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
+              'blobstore_id' => /[a-f0-9\-]{36}/,
+              'digest' => '735987b52907d970106f38413825773eec7cc577',
+              'compiled_for' => 'centos-7/3001',
             })
             expect(table(output)).to include({
-              'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
-              'Blobstore ID' => '',
-              'Digest' => '',
-              'Compiled for' => '(source)',
+              'package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
+              'blobstore_id' => '',
+              'digest' => '',
+              'compiled_for' => '(source)',
             })
           end
         end

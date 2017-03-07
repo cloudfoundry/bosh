@@ -46,11 +46,11 @@ describe 'vm_types and stemcells', type: :integration do
     expect(create_vm_invocations.last.inputs['env']).to eq(env_hash)
     expect(table(bosh_runner.run('deployments', json: true))).to eq([
       {
-        'Name' => 'simple',
-        'Release(s)' => 'bosh-release/0+dev.1',
-        'Stemcell(s)' => 'ubuntu-stemcell/1',
-        'Team(s)' => '',
-        'Cloud Config' => 'latest'
+        'name' => 'simple',
+        'release_s' => 'bosh-release/0+dev.1',
+        'stemcell_s' => 'ubuntu-stemcell/1',
+        'team_s' => '',
+        'cloud_config' => 'latest'
       }
     ])
   end

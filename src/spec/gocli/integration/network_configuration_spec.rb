@@ -27,7 +27,7 @@ describe 'network configuration', type: :integration do
 
       # Available dynamic ips - 192.168.1.15 - 192.168.1.19
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
-      expect(output.map { |instance| instance['IPs'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
+      expect(output.map { |instance| instance['ips'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
       # expect(output).to include(/foobar.* 192\.168\.1\.15/)
       # expect(output).to match(/foobar.* 192\.168\.1\.16/)
       # expect(output).to match(/foobar.* 192\.168\.1\.17/)
@@ -47,7 +47,7 @@ describe 'network configuration', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
-      expect(output.first['IPs']).to eq('192.168.1.100')
+      expect(output.first['ips']).to eq('192.168.1.100')
     end
 
     context 'Network settings are changed' do
