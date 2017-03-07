@@ -32,7 +32,7 @@ module Bosh::Director
               cef_version = 0
               device_vendor = 'CloudFoundry'
               device_product = 'BOSH'
-              device_version = Bosh::Director::VERSION
+              device_version = @config.version
               signature_id = 'director_api'
               name = "#{request.path}"
               severity = response.status >= 400 ?  7 : 1

@@ -51,3 +51,4 @@ user_management:
 config_server:
   enabled: false
 record_events: true
+version: '0.0.2'

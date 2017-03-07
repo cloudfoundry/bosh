@@ -35,7 +35,7 @@ module Bosh::Director
       FileUtils.mkdir_p(log_dir)
 
       File.open(task_status_file, 'a') do |f|
-        f << format_log_message("Director Version: #{Bosh::Director::VERSION}")
+        f << format_log_message("Director Version: #{Config.version}")
         f << format_log_message("Enqueuing task: #{task.id}")
       end
 

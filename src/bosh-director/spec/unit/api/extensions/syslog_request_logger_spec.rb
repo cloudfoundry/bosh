@@ -76,7 +76,7 @@ module Bosh::Director
               end
 
               it 'includes Device Version' do
-                expect(log_string).to include("|#{Bosh::Director::VERSION}|")
+                expect(log_string).to include('|0.0.2|')
               end
 
               it 'includes Signature ID' do

@@ -55,7 +55,7 @@ module Bosh::Director
 
         expected = {
           'name' => 'Test Director',
-          'version' => "#{VERSION} (#{Config.revision})",
+          'version' => "#{Config.version} (#{Config.revision})",
           'uuid' => Config.uuid,
           'user' => 'admin',
           'cpi' => 'dummy',

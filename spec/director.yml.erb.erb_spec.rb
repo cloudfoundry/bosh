@@ -124,6 +124,10 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
+    it 'should contain the version' do
+      expect(parsed_yaml['version']).to eq('0.0.0')
+    end
+
     it 'should keep dynamic, COMPONENT-based logging paths' do
       expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
     end

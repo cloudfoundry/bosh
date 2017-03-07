@@ -2,7 +2,7 @@
 
 set -eux
 
-VERSION=$( cat candidate-version/number | sed 's/\.0$//;s/\.0$//' )
+VERSION=$( sed 's/\.0$//;s/\.0$//' candidate-version/number )
 cp candidate-version/number bumped-candidate-version/number
 
 export ROOT_PATH=$PWD

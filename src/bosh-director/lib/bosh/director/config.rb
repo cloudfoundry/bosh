@@ -40,7 +40,8 @@ module Bosh::Director
         :remove_dev_tools,
         :enable_virtual_delete_vms,
         :local_dns,
-        :verify_multidigest_path
+        :verify_multidigest_path,
+        :version
       )
 
       attr_reader(
@@ -113,8 +114,9 @@ module Bosh::Director
         @max_threads = config.fetch('max_threads', 32).to_i
 
         @revision = get_revision
+        @version = config['version']
 
-        @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
+        @logger.info("Starting BOSH Director: #{@version} (#{@revision})")
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
@@ -351,6 +353,10 @@ module Bosh::Director
 
     def port
       hash['port']
+    end
+
+    def version
+      hash['version']
     end
 
     def scheduled_jobs
