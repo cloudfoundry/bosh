@@ -22,7 +22,7 @@ describe 'cli: events', type: :integration do
     output = bosh_runner.run('events', json: true)
 
     data = table(output)
-    id = data[-1]["ID"]
+    id = data[-1]["id"]
     event_output =  bosh_runner.run("event #{id}")
     expect(event_output.split.join(" ")).to include("ID #{id}")
 
