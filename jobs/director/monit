@@ -19,6 +19,14 @@ check process director_scheduler
   start program "/var/vcap/jobs/director/bin/scheduler_ctl start"
   stop program "/var/vcap/jobs/director/bin/scheduler_ctl stop"
   group vcap
+<% if_p('director.local_dns.enabled') do |enabled| %>
+  <% if enabled %>
+check process director_sync_dns
+  with pidfile /var/vcap/sys/run/director/sync_dns.pid
+  start program "/var/vcap/jobs/director/bin/sync_dns_ctl start"
+  stop program "/var/vcap/jobs/director/bin/sync_dns_ctl stop"
+  group vcap
+<%end%><%end%>
 check process director_nginx
   with pidfile /var/vcap/sys/run/director/nginx.pid
   start program "/var/vcap/jobs/director/bin/nginx_ctl start"

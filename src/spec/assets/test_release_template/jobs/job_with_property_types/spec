@@ -2,9 +2,6 @@
 name: job_with_property_types
 templates:
   properties_displayer.yml.erb: properties_displayer.yml
-  generated_cert.pem.erb: generated_cert.pem
-  generated_key.key.erb: generated_key.key
-  root_ca.pem.erb: root_ca.pem
   hardcoded_cert.pem.erb: hardcoded_cert.pem
 
 packages: []
@@ -23,9 +20,6 @@ properties:
     description: The password I used for everything
     default: abc123
     type: password
-  gargamel.cert:
-    description: The certificate used for everything
-    type: certificate
   gargamel.hard_coded_cert:
     description: The hardcoded cert of gargamel
     default: good luck hardcoding certs and private keys

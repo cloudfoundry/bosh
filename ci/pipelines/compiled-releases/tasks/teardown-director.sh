@@ -3,6 +3,6 @@
 set -ex
 
 mv director-state/* .
-mv director-state/.bosh_init $HOME/
+mv director-state/.bosh $HOME/
 
-bosh-init delete bosh-init.yml
+bosh-cli delete-env director.yml -l director-creds.yml

@@ -2,6 +2,7 @@ require 'yaml'
 require 'yajl'
 require 'bosh/dev/sandbox/main'
 require 'bosh/dev/legacy_agent_manager'
+require 'bosh/dev/verify_multidigest_manager'
 
 module IntegrationExampleGroup
   def logger
@@ -31,13 +32,14 @@ module IntegrationExampleGroup
   end
 
   def make_a_bosh_runner(opts={})
-    Bosh::Spec::BoshRunner.new(
+    Bosh::Spec::BoshGoCliRunner.new(
       opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
       opts.fetch(:config_path, ClientSandbox.bosh_config),
       current_sandbox.cpi.method(:agent_log_path),
       current_sandbox.nats_log_path,
       current_sandbox.saved_logs_path,
-      logger
+      logger,
+      ENV['SHA2_MODE'] == 'true',
     )
   end
 
@@ -279,7 +281,7 @@ module IntegrationSandboxHelpers
           status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
           logger.info("\n  Stopping sandboxed environment for BOSH tests...")
           current_sandbox.stop
-          cleanup_sandbox_dir
+          cleanup_client_sandbox_dir
         rescue => e
           logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace.join("\n")}"
         ensure
@@ -305,7 +307,7 @@ module IntegrationSandboxHelpers
   end
 
   def prepare_sandbox
-    cleanup_sandbox_dir
+    cleanup_client_sandbox_dir
     setup_test_release_dir
     setup_bosh_work_dir
     setup_home_dir
@@ -368,7 +370,7 @@ module IntegrationSandboxHelpers
     ENV['HOME'] = ClientSandbox.home_dir
   end
 
-  def cleanup_sandbox_dir
+  def cleanup_client_sandbox_dir
     FileUtils.rm_rf(ClientSandbox.base_dir)
     FileUtils.mkdir_p(ClientSandbox.base_dir)
   end
@@ -398,10 +400,22 @@ module IntegrationSandboxBeforeHelpers
       end
     end
   end
+
+  def with_reset_hm_before_each
+    before do
+      current_sandbox.reconfigure_health_monitor
+    end
+    after do
+      current_sandbox.health_monitor_process.stop
+    end
+  end
 end
 
 RSpec.configure do |config|
   config.include(IntegrationExampleGroup, type: :integration)
+  config.include(IntegrationExampleGroup, type: :upgrade)
   config.include(IntegrationSandboxHelpers, type: :integration)
+  config.include(IntegrationSandboxHelpers, type: :upgrade)
   config.extend(IntegrationSandboxBeforeHelpers, type: :integration)
+  config.extend(IntegrationSandboxBeforeHelpers, type: :upgrade)
 end

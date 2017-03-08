@@ -52,7 +52,7 @@ module Bosh::Director
       @logger.info('Creating VM')
 
       create(
-        instance_model,
+        instance,
         instance.stemcell_cid,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
@@ -116,17 +116,18 @@ module Bosh::Director
       unless instance_plan.instance.compilation?
         # re-render job templates with updated dynamic network settings
         @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
-        @job_renderer.render_job_instance(instance_plan)
+        @job_renderer.render_job_instances([instance_plan])
       end
     end
 
-    def create(instance_model, stemcell_cid, cloud_properties, network_settings, disks, env)
+    def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env)
+      instance_model = instance.model
       deployment_name = instance_model.deployment.name
       parent_id = add_event(deployment_name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
 
-      config_server_client = @config_server_client_factory.create_client(deployment_name)
-      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name)
+      config_server_client = @config_server_client_factory.create_client
+      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name, instance.variable_set)
 
       options = {:agent_id => agent_id}
 

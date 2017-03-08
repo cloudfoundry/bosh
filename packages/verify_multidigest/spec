@@ -1,0 +1,5 @@
+---
+name: verify_multidigest
+
+files:
+- verify-multidigest/verify-multidigest-0.0.29-linux-amd64

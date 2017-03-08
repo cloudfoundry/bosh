@@ -55,7 +55,7 @@ module Bosh::Director
 
         expected = {
           'name' => 'Test Director',
-          'version' => "#{VERSION} (#{Config.revision})",
+          'version' => "#{Config.version} (#{Config.revision})",
           'uuid' => Config.uuid,
           'user' => 'admin',
           'cpi' => 'dummy',
@@ -74,6 +74,12 @@ module Bosh::Director
             },
             'snapshots' => {
               'status' => false
+            },
+            'config_server' => {
+              'status' => false,
+              'extras' => {
+                'urls' => []
+              }
             }
           }
         }
@@ -137,6 +143,28 @@ module Bosh::Director
               }
             )
           end
+        end
+      end
+
+      context 'when configured with a config server' do
+        let(:test_config) do
+          base_config.merge({
+            'config_server' => {
+              'enabled' => true,
+              'url' => 'https://config.example.com'
+            }
+          })
+        end
+
+        it 'reports that config server feature is enabled with the uri' do
+          get '/'
+          response_hash = JSON.parse(last_response.body)
+          expect(response_hash['features']['config_server']).to eq(
+            'status' => true,
+            'extras' => {
+              'urls' => ['https://config.example.com']
+            }
+          )
         end
       end
     end

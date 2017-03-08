@@ -4,10 +4,9 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider)
+    def self.new_instance_updater(ip_provider, job_renderer)
       logger = Config.logger
       disk_manager = DiskManager.new(logger)
-      job_renderer = JobRenderer.create
       agent_broadcaster = AgentBroadcaster.new
       dns_manager = DnsManagerProvider.create
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
@@ -60,6 +59,7 @@ module Bosh::Director
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
+            instance.update_variable_set
           end
 
           Preparer.new(instance_plan, agent(instance), @logger).prepare
@@ -112,6 +112,7 @@ module Bosh::Director
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
         @rendered_templates_persistor.persist(instance_plan)
+        instance.update_variable_set
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
@@ -122,7 +123,6 @@ module Bosh::Director
         )
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
-
 
       InstanceUpdater::InstanceState.with_instance_update_and_event_creation(instance.model, parent_id, instance.deployment_model.name, action, &update_procedure)
     end

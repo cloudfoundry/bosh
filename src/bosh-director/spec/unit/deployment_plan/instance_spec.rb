@@ -67,12 +67,15 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#bind_new_instance_model' do
-      it 'sets the instance model and uuid' do
+      it 'sets the instance model, uuid, and instance model variable_set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
         expect(instance.model).to be_nil
         expect(instance.uuid).to be_nil
 
         instance.bind_new_instance_model
         expect(instance.model).not_to be_nil
+        expect(instance.model.variable_set).to eq(variable_set_model)
         expect(instance.uuid).not_to be_nil
       end
     end
@@ -207,21 +210,18 @@ module Bosh::Director::DeploymentPlan
       describe 'when the cloud properties change' do
 
         describe 'logging' do
-          before do
-            availability_zone.cloud_properties['baz'] = 'bang'
-            vm_type.cloud_properties['abcd'] = 'wera'
-          end
+          let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
+          let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
+          let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
 
           it 'should log the change' do
-            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"a"=>"b", "baz"=>"bang", "abcd"=>"wera"}')
+            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
             instance.cloud_properties_changed?
           end
         end
 
         describe 'when the availability zone cloud properties change' do
-          before do
-            availability_zone.cloud_properties['baz'] = 'bang'
-          end
+          let(:availability_zone) { AvailabilityZone.new('az', {'naz' => 'bang'})}
 
           it 'should return true' do
             expect(instance.cloud_properties_changed?).to eq(true)
@@ -229,9 +229,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe 'when the resource pool cloud properties change' do
-          before do
-            vm_type.cloud_properties['abcd'] = 'wera'
-          end
+          let(:vm_type) { VmType.new({'name' =>'', 'cloud_properties' => {'abcd' => 'wera'}}) }
 
           it 'should return true' do
             expect(instance.cloud_properties_changed?).to eq(true)
@@ -253,95 +251,13 @@ module Bosh::Director::DeploymentPlan
           end
 
           describe 'when there is no availability zone and resource pool cloud properties change' do
-            before do
-              vm_type.cloud_properties['abcd'] = 'wera'
-            end
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'abcd' => 'wera'}}) }
 
             it 'should return true' do
               expect(instance.cloud_properties_changed?).to be(true)
             end
           end
         end
-      end
-    end
-
-    describe '#cloud_properties' do
-      context 'when the instance has an availability zone' do
-        it 'merges the resource pool cloud properties into the availability zone cloud properties' do
-          availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-          allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
-          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-
-          expect(instance.cloud_properties).to eq(
-              {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
-            )
-        end
-
-        context 'when the instance has vm_extensions' do
-          context 'when vm_type and vm_extensions and availability zones have some overlapping cloud properties' do
-            let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
-            let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
-            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
-
-            it 'uses the vm_type cloud_properties then the availability zones then rightmost vm_extension for overlapping values' do
-              availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-              allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one', 'other-stuff' => 'who-chares'})
-              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff', 'other-stuff' => 'i-chares'})
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'fooz' => 'bar', 'resources' => 'the-new-stuff', 'food' => 'drink'})
-              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz', 'food' => 'eat'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-new-stuff', 'foo' => 'baaaz', 'zone' => 'the-right-one', 'food' => 'eat', 'fooz' => 'bar', 'other-stuff' => 'i-chares'})
-            end
-          end
-        end
-      end
-
-      context 'when the instance does not have an availability zone' do
-        it 'uses just the resource pool cloud properties' do
-          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-          expect(instance.cloud_properties).to eq(
-              {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
-            )
-        end
-
-        context 'when the instance has vm_extensions' do
-          let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
-          let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
-
-          context 'when the same property exists in multiple vm_extensions' do
-            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
-
-            it 'uses the right most vm_extension\'s property value for overlapping values' do
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar', 'resources' => 'the-good-stuff'})
-              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'baaaz'})
-            end
-          end
-
-          context 'when vm_type and vm_extensions have some overlapping cloud properties' do
-            let(:vm_extensions) {[vm_extension_1]}
-
-            it 'uses the vm_type cloud_properties for overlapping values' do
-              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar'})
-
-              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
-
-              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'bar'})
-            end
-          end
-        end
-
       end
     end
 
@@ -367,7 +283,7 @@ module Bosh::Director::DeploymentPlan
         it 'tells the agent to update instance settings and updates the instance model' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [{'name' => 'some-disk', 'cid' => 'some-cid'}])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
 
@@ -379,11 +295,10 @@ module Bosh::Director::DeploymentPlan
         it 'does not send any disk associations to update' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
     end
-
 
     describe '#update_cloud_properties' do
       it 'saves the cloud properties' do
@@ -407,6 +322,72 @@ module Bosh::Director::DeploymentPlan
       it 'asks the stemcell business object to return the cid for the given az' do
         expect(stemcell).to receive(:cid_for_az).with(instance.availability_zone_name).and_return('test-cid')
         expect(instance.stemcell_cid).to eq('test-cid')
+      end
+    end
+
+    describe '#variable_set' do
+      let(:fixed_time) { Time.now }
+      let(:first_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1) }
+      let(:second_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1) }
+
+      before do
+        instance_model.update(variable_set: first_variable_set)
+        second_variable_set
+      end
+
+      context 'variable_set is not set' do
+        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
+        it 'should return the variable set from instance model' do
+          instance.bind_existing_instance_model(instance_model)
+          expect(instance.variable_set).to eq(first_variable_set)
+        end
+      end
+
+      context 'variable_set is set' do
+        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
+
+        it 'should return the set variable_set' do
+          instance.bind_existing_instance_model(instance_model)
+          instance.variable_set = second_variable_set
+          expect(instance.variable_set).to eq(second_variable_set)
+        end
+      end
+    end
+
+    describe '#update_variable_set' do
+      let(:fixed_time) { Time.now }
+
+      context 'variable_set is set' do
+        it 'is updated on the model' do
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
+          selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+
+          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+          instance.bind_existing_instance_model(instance_model)
+
+          instance.variable_set = selected_variable_set
+
+          instance.update_variable_set
+
+          instance_model = Bosh::Director::Models::Instance.all.first
+          expect(instance_model.variable_set).to eq(selected_variable_set)
+        end
+      end
+
+      context 'variable_set is not defined' do
+        it 'updates the instance model with the variable_set from the database' do
+          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+          oldest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+          instance_model.update(variable_set: oldest_variable_set)
+
+          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+          instance.bind_existing_instance_model(instance_model)
+
+          instance.update_variable_set
+
+          expect(instance_model.variable_set).to eq(oldest_variable_set)
+        end
       end
     end
   end

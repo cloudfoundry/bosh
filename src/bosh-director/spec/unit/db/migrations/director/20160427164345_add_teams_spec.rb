@@ -66,17 +66,5 @@ module Bosh::Director
       expect(tasks_fields).to eq([:id, :state, :timestamp, :description, :result, :output, :checkpoint_time, :type, :username, :deployment_name, :started_at])
     end
 
-    it 'removes the teams column from tasks' do
-      db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-04-14 11:53:42', description: 'descr', type: 'type', teams: 'prod,the-best' }
-      db[:tasks] << {id: 2, state: 'alabama', timestamp: '2016-04-14 11:53:42', description: 'descr', type: 'type',teams: 'prod,aspiring' }
-      db[:tasks] << {id: 3, state: 'alabama', timestamp: '2016-04-14 11:53:42', description: 'descr', type: 'type',}
-
-      DBSpecHelper.migrate(migration_file)
-
-      tasks = db[:tasks].all
-      tasks_fields = tasks.map(&:keys).uniq.flatten
-      expect(tasks.count).to eq(3)
-      expect(tasks_fields).to eq([:id, :state, :timestamp, :description, :result, :output, :checkpoint_time, :type, :username, :deployment_name, :started_at])
-    end
   end
 end

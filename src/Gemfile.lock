@@ -1,13 +1,4 @@
 PATH
-  remote: blobstore_client
-  specs:
-    blobstore_client (0.0.0)
-      aws-sdk-resources (= 2.2.0)
-      bosh_common (~> 0.0.0)
-      httpclient (= 2.7.1)
-      multi_json (~> 1.1)
-
-PATH
   remote: bosh-core
   specs:
     bosh-core (0.0.0)
@@ -20,11 +11,9 @@ PATH
     bosh-dev (0.0.0)
       bosh-core
       bosh-director
-      bosh-stemcell
-      bosh_cli
       bosh_common
       bundler
-      fog-aws
+      fog-aws (~> 0.7.6)
       logging
       peach
 
@@ -40,13 +29,11 @@ PATH
   specs:
     bosh-director (0.0.0)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 0.0.0)
       bosh-core (~> 0.0.0)
       bosh-director-core (~> 0.0.0)
       bosh-registry (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
-      bosh_cpi (~> 0.0.0)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -87,18 +74,12 @@ PATH
   specs:
     bosh-registry (0.0.0)
       aws-sdk
-      bosh_cpi (~> 0.0.0)
+      bosh_cpi
       fog-openstack
       sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
       yajl-ruby (~> 1.2.0)
-
-PATH
-  remote: bosh-stemcell
-  specs:
-    bosh-stemcell (0.0.0)
-      bosh-core (~> 0.0.0)
 
 PATH
   remote: bosh-template
@@ -107,39 +88,11 @@ PATH
       semi_semantic (~> 1.2.0)
 
 PATH
-  remote: bosh_cli
-  specs:
-    bosh_cli (0.0.0)
-      blobstore_client (~> 0.0.0)
-      bosh-template (~> 0.0.0)
-      bosh_common (~> 0.0.0)
-      cf-uaa-lib (~> 3.2.1)
-      highline (~> 1.6.2)
-      httpclient (= 2.7.1)
-      json_pure (~> 1.7)
-      minitar (~> 0.5.4)
-      net-scp (~> 1.1.0)
-      net-ssh (= 2.9.2)
-      net-ssh-gateway (~> 1.2.0)
-      netaddr (~> 1.5.0)
-      progressbar (~> 0.21.0)
-      sshkey (~> 1.7.0)
-      terminal-table (~> 1.4.3)
-
-PATH
   remote: bosh_common
   specs:
     bosh_common (0.0.0)
       logging (~> 1.8.2)
       semi_semantic (~> 1.2.0)
-
-PATH
-  remote: bosh_cpi
-  specs:
-    bosh_cpi (0.0.0)
-      bosh_common (~> 0.0.0)
-      logging (~> 1.8.2)
-      membrane (~> 1.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -165,6 +118,23 @@ GEM
     beefcake (1.0.0)
     blue-shell (0.3.0)
       rspec
+    bosh_cli (0.0.0)
+      aws-sdk-resources (= 2.2.0)
+      cf-uaa-lib (~> 3.2.1)
+      highline (~> 1.6.2)
+      httpclient (= 2.7.1)
+      json_pure (~> 1.7)
+      minitar (~> 0.5.4)
+      net-scp (~> 1.1.0)
+      net-ssh (= 2.9.2)
+      net-ssh-gateway (~> 1.2.0)
+      netaddr (~> 1.5.0)
+      progressbar (~> 0.21.0)
+      sshkey (~> 1.7.0)
+      terminal-table (~> 1.4.3)
+    bosh_cpi (1.3215.3.1)
+      logging (~> 1.8.2)
+      membrane (~> 1.1.0)
     builder (3.1.4)
     cf-uaa-lib (3.2.5)
       multi_json
@@ -345,7 +315,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client!
   blue-shell
   bosh-core!
   bosh-dev!
@@ -353,11 +322,9 @@ DEPENDENCIES
   bosh-director-core!
   bosh-monitor!
   bosh-registry!
-  bosh-stemcell!
   bosh-template!
-  bosh_cli!
+  bosh_cli
   bosh_common!
-  bosh_cpi!
   bundler (~> 1.11.0)
   codeclimate-test-reporter
   eventmachine (= 1.0.4)

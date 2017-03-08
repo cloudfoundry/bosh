@@ -22,13 +22,15 @@ module Bosh::Dev::Sandbox
   class Main
     REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
 
-    ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
+    SANDBOX_ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
     HM_CONFIG = 'health_monitor.yml'
-    HM_CONF_TEMPLATE = File.join(ASSETS_DIR, 'health_monitor.yml.erb')
+    DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
 
     EXTERNAL_CPI = 'cpi'
-    EXTERNAL_CPI_TEMPLATE = File.join(ASSETS_DIR, 'cpi.erb')
+    EXTERNAL_CPI_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi.erb')
+
+    UPGRADE_SPEC_ASSETS_DIR =  File.expand_path('spec/assets/upgrade', REPO_ROOT)
 
     attr_reader :name
     attr_reader :health_monitor_process
@@ -41,6 +43,7 @@ module Bosh::Dev::Sandbox
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
+    attr_reader :verify_multidigest_path
 
     attr_reader :logger, :logs_path
 
@@ -79,13 +82,14 @@ module Bosh::Dev::Sandbox
       @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
+      @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
 
       FileUtils.mkdir_p(@logs_path)
 
       setup_nats
 
-      @uaa_service = UaaService.new(@port_provider, base_log_path, @logger)
-      @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger)
+      @uaa_service = UaaService.new(@port_provider, sandbox_root, base_log_path, @logger)
+      @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
       setup_database(db_opts)
@@ -95,7 +99,6 @@ module Bosh::Dev::Sandbox
       @director_service = DirectorService.new(
         {
           database: @database,
-          database_proxy: @database_proxy,
           director_port: director_ruby_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
@@ -145,7 +148,10 @@ module Bosh::Dev::Sandbox
       @nats_socket_connector.try_to_connect
 
       @database.create_db
-      @database_created = true
+
+      unless @test_initial_state.nil?
+        load_db_and_populate_blobstore(@test_initial_state)
+      end
 
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
@@ -165,10 +171,10 @@ module Bosh::Dev::Sandbox
         sandbox_root: sandbox_root,
         database: @database,
         blobstore_storage_dir: blobstore_storage_dir,
+        verify_multidigest_path: verify_multidigest_path,
         director_fix_stateful_nodes: @director_fix_stateful_nodes,
         dns_enabled: @dns_enabled,
         local_dns: @local_dns,
-        external_cpi_enabled: @external_cpi_enabled,
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
         config_server_enabled: @config_server_enabled,
@@ -189,9 +195,9 @@ module Bosh::Dev::Sandbox
       @logger.info("Reset took #{time} seconds")
     end
 
-    def reconfigure_health_monitor(erb_template)
+    def reconfigure_health_monitor(erb_template=DEFAULT_HM_CONF_TEMPLATE_NAME)
       @health_monitor_process.stop
-      write_in_sandbox(HM_CONFIG, load_config_template(File.join(ASSETS_DIR, erb_template)))
+      write_in_sandbox(HM_CONFIG, load_config_template(File.join(SANDBOX_ASSETS_DIR, erb_template)))
       @health_monitor_process.start
     end
 
@@ -276,8 +282,9 @@ module Bosh::Dev::Sandbox
     def reconfigure(options)
       @user_authentication = options.fetch(:user_authentication, 'local')
       @config_server_enabled = options.fetch(:config_server_enabled, false)
+      @drop_database = options.fetch(:drop_database, false)
+      @test_initial_state = options.fetch(:test_initial_state, nil)
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
-      @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
       @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false})
@@ -292,17 +299,29 @@ module Bosh::Dev::Sandbox
     end
 
     def certificate_path
-      File.join(ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
-    end
-
-    def with_health_monitor_running
-      health_monitor_process.start
-      yield
-    ensure
-      health_monitor_process.stop
+      File.join(SANDBOX_ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
     private
+
+    def load_db_and_populate_blobstore(test_initial_state)
+      @database.load_db_initial_state(File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state))
+
+      if @database.adapter.eql? 'mysql2'
+        tar_filename = 'blobstore_snapshot_with_mysql.tar.gz'
+      elsif @database.adapter.eql? 'postgres'
+        tar_filename = 'blobstore_snapshot_with_postgres.tar.gz'
+      else
+        raise 'Pre-loading blobstore supported only for PostgresDB and MySQL'
+      end
+
+      blobstore_snapshot_path = File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state, tar_filename)
+      @logger.info("Pre-filling blobstore `#{blobstore_storage_dir}` with blobs from `#{blobstore_snapshot_path}`")
+      tar_out = `tar xzvf #{blobstore_snapshot_path} -C #{blobstore_storage_dir}  2>&1`
+      if $?.exitstatus != 0
+        raise "Cannot pre-fill blobstore: #{tar_out}"
+      end
+    end
 
     def external_cpi_config
       {
@@ -321,14 +340,24 @@ module Bosh::Dev::Sandbox
 
       @director_service.stop
 
-      @database.truncate_db
+      if @drop_database
+        @database.drop_db
+        @database.create_db
+      else
+        @database.truncate_db
+      end
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
 
+      unless @test_initial_state.nil?
+        load_db_and_populate_blobstore(@test_initial_state)
+      end
+
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
-      @director_service.start(director_config)
+
+      @director_service.start(director_config, @drop_database)
 
       @nginx_service.restart_if_needed
 
@@ -336,7 +365,8 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_sandbox_root
-      write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
+      hm_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
+      write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)

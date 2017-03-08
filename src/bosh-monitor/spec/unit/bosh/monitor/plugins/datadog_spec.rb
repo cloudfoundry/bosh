@@ -1,40 +1,40 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
-  let(:options) { { "api_key" => "api_key", "application_key" => "application_key" } }
+  let(:options) { {'api_key' => 'api_key', 'application_key' => 'application_key'} }
   subject { described_class.new(options) }
 
-  let(:dog_client) { double("DataDog Client") }
+  let(:dog_client) { double('DataDog Client') }
 
   before do
     allow(subject).to receive_messages(dog_client: dog_client)
   end
 
-  describe "validating the options" do
-    context "when we specify both the api keu and the application key" do
-      it "is valid" do
+  describe 'validating the options' do
+    context 'when we specify both the api keu and the application key' do
+      it 'is valid' do
         expect(subject.validate_options).to eq(true)
       end
     end
 
-    context "when we omit the application key " do
-      let(:options) { { "api_key" => "api_key" } }
+    context 'when we omit the application key ' do
+      let(:options) { {'api_key' => 'api_key'} }
 
-      it "is not valid" do
+      it 'is not valid' do
         expect(subject.validate_options).to eq(false)
       end
     end
 
-    context "when we omit the api key " do
-      let(:options) { { "application_key" => "application_key" } }
+    context 'when we omit the api key ' do
+      let(:options) { {'application_key' => 'application_key'} }
 
-      it "is not valid" do
+      it 'is not valid' do
         expect(subject.validate_options).to eq(false)
       end
     end
   end
 
-  describe "creating a data dog client" do
+  describe 'creating a data dog client' do
     before do
       datadog_plugin.run
     end
@@ -42,52 +42,56 @@ describe Bhm::Plugins::DataDog do
     let(:datadog_plugin) { described_class.new(options) }
     let(:client) { datadog_plugin.dog_client }
 
-    context "when we specify the pager duty service name" do
-      let(:options) { { "api_key" => "api_key", "application_key" => "application_key", "pagerduty_service_name" => "pdsn" } }
+    context 'when we specify the pager duty service name' do
+      let(:options) { {'api_key' => 'api_key', 'application_key' => 'application_key', 'pagerduty_service_name' => 'pdsn'} }
 
-      it "creates a paging client" do
+      it 'creates a paging client' do
         expect(client).to be_a PagingDatadogClient
       end
 
-      it "has the correct pager duty service name" do
-        expect(client.datadog_recipient).to eq("pdsn")
+      it 'has the correct pager duty service name' do
+        expect(client.datadog_recipient).to eq('pdsn')
       end
     end
 
-    context "when we do not specify the pager duty service name" do
-      it "creates a regular client" do
+    context 'when we do not specify the pager duty service name' do
+      it 'creates a regular client' do
         expect(client).to be_a Dogapi::Client
       end
     end
   end
 
-  context "processing metrics" do
+  context 'processing metrics' do
 
-    it "didn't freak out once timeout sendidng datadog metric" do
+    it "didn't freak out once timeout sending datadog metric" do
       expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
+      allow(dog_client).to receive(:batch_metrics).and_yield
       allow(dog_client).to receive(:emit_points).and_raise(Timeout::Error)
       expect { subject.process(heartbeat) }.to_not raise_error
     end
 
-    it "didn't freak out with exceptions while sendidng datadog event" do
+    it "didn't freak out with exceptions while sending datadog event" do
       expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
+      allow(dog_client).to receive(:batch_metrics).and_yield
       allow(dog_client).to receive(:emit_points).and_raise
       expect { subject.process(heartbeat) }.to_not raise_error
     end
 
-
-    it "sends datadog metrics" do
+    it 'batches metrics sent to datadog' do
       tags = %w[
           job:mysql_node
           index:0
           id:instance_id_abc
           deployment:oleg-cloud
           agent:deadbeef
+          team:ateam
+          team:bteam
       ]
       time = Time.now
-      expect(dog_client).to receive(:emit_points).with("bosh.healthmonitor.system.load.1m", [[Time.at(time.to_i) ,0.2]], tags: tags)
+      expect(dog_client).to receive(:emit_points).with('bosh.healthmonitor.system.load.1m', [[Time.at(time.to_i) , 0.2]], tags: tags)
+      expect(dog_client).to receive(:batch_metrics).and_yield
 
       expect(EM).to receive(:defer).and_yield
       %w[
@@ -120,35 +124,35 @@ describe Bhm::Plugins::DataDog do
     end
   end
 
-  context "processing alerts" do
+  context 'processing alerts' do
 
-    it "didn't freak out once timeout sendidng datadog event" do
+    it "didn't freak out once timeout sending datadog event" do
       expect(EM).to receive(:defer).and_yield
-      heartbeat = make_heartbeat
+      make_heartbeat
       allow(dog_client).to receive(:emit_event).and_raise(Timeout::Error)
       alert = make_alert
       expect { subject.process(alert) }.to_not raise_error
     end
 
-    it "didn't freak out with exceptions while sendidng datadog event" do
+    it "didn't freak out with exceptions while sending datadog event" do
       expect(EM).to receive(:defer).and_yield
-      heartbeat = make_heartbeat
+      make_heartbeat
       allow(dog_client).to receive(:emit_event).and_raise
       alert = make_alert
       expect { subject.process(alert) }.to_not raise_error
     end
 
-    it "sends datadog alerts" do
+    it 'sends datadog alerts' do
       expect(EM).to receive(:defer).and_yield
 
       time = Time.now.to_i - 10
-      fake_event = double("Datadog Event")
+      fake_event = double('Datadog Event')
       expect(Dogapi::Event).to receive(:new) { |msg, options|
-        expect(msg).to eq("Everything is down")
-        expect(options[:msg_title]).to eq("Test Alert")
+        expect(msg).to eq('Everything is down')
+        expect(options[:msg_title]).to eq('Test Alert')
         expect(options[:date_happened]).to eq(time)
-        expect(options[:tags]).to match_array(["source:mysql_node/instance_id_abc"])
-        expect(options[:priority]).to eq("normal")
+        expect(options[:tags]).to match_array(['source:mysql_node/instance_id_abc'])
+        expect(options[:priority]).to eq('normal')
       }.and_return(fake_event)
 
       expect(dog_client).to receive(:emit_event).with(fake_event)
@@ -157,11 +161,11 @@ describe Bhm::Plugins::DataDog do
       subject.process(alert)
     end
 
-    it "sends datadog a low priority event for warning alerts" do
+    it 'sends datadog a low priority event for warning alerts' do
       expect(EM).to receive(:defer).and_yield
 
       expect(Dogapi::Event).to receive(:new) do |_, options|
-        expect(options[:priority]).to eq("low")
+        expect(options[:priority]).to eq('low')
       end
 
       allow(dog_client).to receive(:emit_event)

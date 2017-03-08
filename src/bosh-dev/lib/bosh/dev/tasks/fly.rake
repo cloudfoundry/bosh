@@ -6,7 +6,8 @@ namespace :fly do
   desc 'Fly unit specs'
   task :unit do
     execute('test-unit', '-p', {
-        DB: (ENV['DB'] || 'postgresql')
+        DB: (ENV['DB'] || 'postgresql'),
+        DB_VERSION: (ENV['DB_VERSION'] || '9.4')
     })
   end
 
@@ -21,7 +22,7 @@ namespace :fly do
   # bundle exec rake fly:integration_gocli
   desc 'Fly integration gocli specs'
   task :integration_gocli do
-    execute('test-integration-gocli', '-p --inputs-from bosh/integration-2.3-postgres-gocli', {
+    execute('test-integration-gocli', '-p --inputs-from bosh/integration-postgres-gocli-sha2', {
         DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil)
     })
   end
@@ -71,7 +72,7 @@ namespace :fly do
     task_names = groups.each_with_index.map do |group, index|
       name = "integration_#{index + 1}"
       task name do
-        execute('test-integration-gocli', '-p --inputs-from bosh/integration-2.3-postgres-gocli', {
+        execute('test-integration-gocli', '-p --inputs-from=bosh/integration-postgres-gocli-sha2', {
             DB: (ENV['DB'] || 'postgresql'),
             SPEC_PATH: (ENV['SPEC_PATH'] || nil),
             GROUP: group,

@@ -4,7 +4,8 @@ module Bosh::Director
   describe InstanceUpdater do
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
+    let(:job_renderer) { JobRenderer.create }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, job_renderer) }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
     let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -16,7 +17,8 @@ module Bosh::Director
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
       vm_type = DeploymentPlan::VmType.new({'name' => 'small_vm'})
       stemcell = DeploymentPlan::Stemcell.new('ubuntu_stemcell', 'ubuntu_1', 'ubuntu', '8')
-      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, vm_type, [], stemcell, {}, false, deployment_model, {}, az, logger)
+      merged_cloud_properties = DeploymentPlan::MergedCloudProperties.new(az, vm_type, []).get
+      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, merged_cloud_properties, stemcell, {}, false, deployment_model, {}, az, logger)
       instance.bind_existing_instance_model(instance_model)
 
       instance
@@ -36,6 +38,7 @@ module Bosh::Director
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
     before do
+      Models::VariableSet.create(deployment: deployment_model)
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
@@ -43,6 +46,44 @@ module Bosh::Director
       allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
+    end
+
+    context 'for any state' do
+      let (:disk_manager) { instance_double(DiskManager) }
+      let (:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+
+      before do
+        allow(DiskManager).to receive(:new).and_return(disk_manager)
+        allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+
+        allow(state_applier).to receive(:apply)
+        allow(instance_plan).to receive(:changes).and_return([:state])
+        allow(instance_plan).to receive(:already_detached?).and_return(true)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(updater).to receive(:needs_recreate?).and_return(false)
+        allow(disk_manager).to receive(:update_persistent_disk)
+        allow(instance).to receive(:update_instance_settings)
+        allow(rendered_templates_persistor).to receive(:persist)
+        allow(job).to receive(:update)
+      end
+
+      context 'when rendered templates persist fails' do
+        before do
+          allow(rendered_templates_persistor).to receive(:persist).and_raise('random runtime error')
+        end
+
+        it 'does NOT update the variable set id for the instance' do
+          expect(instance).to_not receive(:update_variable_set)
+          expect {
+            updater.update(instance_plan)
+          }.to raise_error
+        end
+      end
+
+      it 'updates the variable_set_id on the instance' do
+        expect(instance).to receive(:update_variable_set)
+        updater.update(instance_plan)
+      end
     end
 
     context 'when stopping instances' do

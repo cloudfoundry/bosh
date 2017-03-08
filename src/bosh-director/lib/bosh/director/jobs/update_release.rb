@@ -31,7 +31,7 @@ module Bosh::Director
           # file already exists at the release_path
           @release_path = release_path
         end
-
+        @multi_digest_verifier = Digest::MultiDigest.new(logger)
         @rebase = !!options['rebase']
         @fix = !!options['fix']
       end
@@ -44,7 +44,7 @@ module Bosh::Director
 
         single_step_stage("Downloading remote release") { download_remote_release } if release_url
 
-        single_step_stage("Verifying remote release") { verify_sha1 } if sha1
+        single_step_stage("Verifying remote release") { verify_sha } if sha1
 
         release_dir = nil
         single_step_stage("Extracting release") { release_dir = extract_release }
@@ -109,10 +109,11 @@ module Bosh::Director
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
       end
 
-      def verify_sha1
-        release_hash = Digest::SHA1.file(release_path).hexdigest
-        if release_hash != sha1
-          raise ReleaseSha1DoesNotMatch, "Release SHA1 '#{release_hash}' does not match the expected SHA1 '#{sha1}'"
+      def verify_sha
+        begin
+          @multi_digest_verifier.verify(release_path, sha1)
+        rescue Bosh::Director::Digest::ShaMismatchError => e
+          raise Bosh::Director::ReleaseSha1DoesNotMatch.new(e)
         end
       end
 
@@ -205,6 +206,8 @@ module Bosh::Director
         registered_packages = []
 
         manifest_packages.each do |package_meta|
+          package_meta['compiled_package_sha1'] = package_meta['sha1']
+
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
           @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
             if package.fingerprint != package_meta['fingerprint']
@@ -234,7 +237,7 @@ module Bosh::Director
               existing_package.save
             end
 
-            if existing_package.release_versions.include? @release_version_model
+            if existing_package.release_versions.include?(@release_version_model)
               if existing_package.blobstore_id.nil?
                 packages.each do |package|
                   unless package.blobstore_id.nil?
@@ -391,7 +394,8 @@ module Bosh::Director
                   fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
                 end
               end
-              create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
+              package_sha1 = compiled_package_spec[:package_meta]['compiled_package_sha1']
+              create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
               had_effect = true
             end
           elsif @fix
@@ -413,12 +417,12 @@ module Bosh::Director
         other_compiled_packages
       end
 
-      def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
+      def create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_package)
         if other_compiled_package.nil?
           tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           validate_tgz(tgz, "#{package.name}.tgz")
           blobstore_id = BlobUtil.create_blob(tgz)
-          sha1 = Digest::SHA1.file(tgz).hexdigest
+          sha1 = package_sha1
         else
           blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
           sha1 = other_compiled_package.sha1
@@ -479,7 +483,7 @@ module Bosh::Director
           package.sha1 = sha1
 
           if package.blobstore_id != nil
-            delete_compiled_packages package
+            delete_compiled_packages(package)
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
             return true
@@ -669,18 +673,16 @@ with blobstore_id '#{package.blobstore_id}'")
 
       def delete_compiled_packages(package)
         package.compiled_packages.each do |compiled_pkg|
-          unless BlobUtil.verify_blob(compiled_pkg.blobstore_id, compiled_pkg.sha1)
-            logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
+          logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
 '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
-            begin
-              logger.info("Deleting compiled package '#{compiled_pkg.name}'")
-              BlobUtil.delete_blob(compiled_pkg.blobstore_id)
-            rescue Bosh::Blobstore::BlobstoreError => e
-              logger.info("Error deleting compiled package \
+          begin
+            logger.info("Deleting compiled package '#{compiled_pkg.name}'")
+            BlobUtil.delete_blob(compiled_pkg.blobstore_id)
+          rescue Bosh::Blobstore::BlobstoreError => e
+            logger.info("Error deleting compiled package \
 '#{compiled_pkg.blobstore_id}/#{compiled_pkg.name}' #{e.inspect}")
-            end
-            compiled_pkg.destroy
           end
+          compiled_pkg.destroy
         end
       end
 

@@ -14,11 +14,11 @@ module Bhm
     context 'stubbed config' do
 
       before do
-        Bhm.config = {"director" => {}}
+        Bhm.config = {'director' => {}}
 
         # Just use 2 loggers to test multiple agents without having to care
         # about stubbing delivery operations and providing well formed configs
-        Bhm.plugins = [{"name" => "logger"}, {"name" => "logger"}]
+        Bhm.plugins = [{'name' => 'logger'}, {'name' => 'logger'}]
         Bhm.intervals = OpenStruct.new(:agent_timeout => 10, :rogue_agent_alert => 10)
       end
 
@@ -30,11 +30,11 @@ module Bhm
             instance_3 = Bhm::Instance.create({'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node'})
 
             manager.sync_deployments([{'name' => 'mycloud'}])
-            manager.sync_agents("mycloud", [instance_1, instance_2, instance_3])
+            manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
 
             expect(manager.agents_count).to eq(3)
             expect(manager.analyze_agents).to eq(3)
-            manager.process_event(:shutdown, "hm.agent.shutdown.008")
+            manager.process_event(:shutdown, 'hm.agent.shutdown.008')
             expect(manager.agents_count).to eq(2)
             expect(manager.analyze_agents).to eq(2)
           end
@@ -43,9 +43,9 @@ module Bhm
         context 'heartbeats' do
           it 'can process' do
             expect(manager.agents_count).to eq(0)
-            manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
-            manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
-            manager.process_event(:heartbeat, "hm.agent.heartbeat.agent008")
+            manager.process_event(:heartbeat, 'hm.agent.heartbeat.agent007')
+            manager.process_event(:heartbeat, 'hm.agent.heartbeat.agent007')
+            manager.process_event(:heartbeat, 'hm.agent.heartbeat.agent008')
 
             expect(manager.agents_count).to eq(2)
           end
@@ -53,8 +53,8 @@ module Bhm
           it 'processes a valid populated heartbeat message' do
             instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
             cloud1 = [instance1]
-            manager.sync_deployments([{'name' => 'mycloud'}])
-            manager.sync_deployment_state("mycloud", cloud1)
+            manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam']}])
+            manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam']}, cloud1)
 
             expect(event_processor).to receive(:process).with(
                 :heartbeat,
@@ -63,18 +63,58 @@ module Bhm
                     'agent_id' => '007',
                     'deployment' => 'mycloud',
                     'instance_id' => 'iuuid1',
-                    'job' => 'mutator'
+                    'job' => 'mutator',
+                    'teams' => ['ateam'],
                 }
             )
 
-            manager.process_event(:heartbeat, "hm.agent.heartbeat.007")
+            manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
           end
 
           context 'when heartbeat information cannot be completed for instance_id, job, or deployment' do
             it 'does not process the heartbeat' do
               expect(event_processor).not_to receive(:process)
 
-              manager.process_event(:heartbeat, "hm.agent.heartbeat.007")
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
+            end
+          end
+
+          context 'when teams have changed between heartbeats' do
+            it 'updates teams in heartbeat event' do
+              instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
+              cloud1 = [instance1]
+              manager.sync_deployments([{'name' => 'mycloud', 'teams' => ['ateam']}])
+              manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam']}, cloud1)
+
+              expect(event_processor).to receive(:process).with(
+                  :heartbeat,
+                  {
+                      'timestamp' => Integer,
+                      'agent_id' => '007',
+                      'deployment' => 'mycloud',
+                      'instance_id' => 'iuuid1',
+                      'job' => 'mutator',
+                      'teams' => ['ateam'],
+                  }
+              )
+
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
+
+              manager.sync_deployment_state({'name' => 'mycloud', 'teams' => ['ateam', 'bteam']}, cloud1)
+
+              expect(event_processor).to receive(:process).with(
+                  :heartbeat,
+                  {
+                      'timestamp' => Integer,
+                      'agent_id' => '007',
+                      'deployment' => 'mycloud',
+                      'instance_id' => 'iuuid1',
+                      'job' => 'mutator',
+                      'teams' => ['ateam', 'bteam'],
+                  }
+              )
+
+              manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
             end
           end
         end
@@ -82,30 +122,29 @@ module Bhm
         context 'bad alert' do
           it 'does not increment alerts_processed' do
             expect(event_processor).to receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
-            alert = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i})
+            alert = Yajl::Encoder.encode({'id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
-              manager.process_event(:alert, "hm.agent.alert.007", alert)
-              manager.process_event(:alert, "hm.agent.alert.007", alert)
+              manager.process_event(:alert, 'hm.agent.alert.007', alert)
+              manager.process_event(:alert, 'hm.agent.alert.007', alert)
             }.to_not change(manager, :alerts_processed)
           end
         end
 
         context 'good alert' do
           it 'increments alerts_processed' do
-            good_alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i})
+            good_alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
-              manager.process_event(:alert, "hm.agent.alert.007", good_alert)
-              manager.process_event(:alert, "hm.agent.alert.007", good_alert)
+              manager.process_event(:alert, 'hm.agent.alert.007', good_alert)
+              manager.process_event(:alert, 'hm.agent.alert.007', good_alert)
             }.to change(manager, :alerts_processed).by(2)
           end
         end
       end
 
       describe '#sync_deployments' do
-
-        it "can sync deployments" do
+        it 'can sync deployments' do
           deployment_1 = {'name' => 'deployment_1'}
           deployment_2 = {'name' => 'deployment_2'}
           manager.sync_deployments([deployment_1, deployment_2])
@@ -116,7 +155,7 @@ module Bhm
           expect(manager.deployments_count).to eq(1)
         end
 
-        it "can sync deployments" do
+        it 'can sync deployments' do
           instance1 = {'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
           instance2 = {'id' => 'iuuid2', 'agent_id' => '008', 'index' => '1', 'job' => 'nats', 'expects_vm' => true}
           instance3 = {'id' => 'iuuid3', 'agent_id' => '009', 'index' => '2', 'job' => 'mysql_node', 'expects_vm' => true}
@@ -125,15 +164,15 @@ module Bhm
           cloud1 = [instance1, instance2]
           cloud2 = [instance3, instance4]
           manager.sync_deployments([{'name' => 'mycloud'}, {'name' => 'othercloud'}])
-          manager.sync_deployment_state("mycloud", cloud1)
-          manager.sync_deployment_state("othercloud", cloud2)
+          manager.sync_deployment_state({'name' => 'mycloud'}, cloud1)
+          manager.sync_deployment_state({'name' => 'othercloud'}, cloud2)
 
           expect(manager.deployments_count).to eq(2)
           expect(manager.agents_count).to eq(4)
           expect(manager.instances_count).to eq(4)
 
-          manager.sync_deployments([{"name" => "mycloud"}]) # othercloud is gone
-          manager.sync_deployment_state("mycloud", cloud1)
+          manager.sync_deployments([{'name' => 'mycloud'}]) # othercloud is gone
+          manager.sync_deployment_state({'name' => 'mycloud'}, cloud1)
           expect(manager.deployments_count).to eq(1)
           expect(manager.agents_count).to eq(2)
           expect(manager.instances_count).to eq(2)
@@ -141,24 +180,24 @@ module Bhm
       end
 
       describe '#sync_deployment_state' do
-        it "can sync deployment state" do
-          instance1 = {"id" => "007", 'agent_id' => '007', "index" => "0", "job" => "mutator", 'expects_vm' => true}
-          instance2 = {"id" => "008", 'agent_id' => '008', "index" => "0", "job" => "nats", 'expects_vm' => true}
-          instance3 = {"id" => "009", 'agent_id' => '009', "index" => "28", "job" => "mysql_node", 'expects_vm' => true}
+        it 'can sync deployment state' do
+          instance1 = {'id' => '007', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
+          instance2 = {'id' => '008', 'agent_id' => '008', 'index' => '0', 'job' => 'nats', 'expects_vm' => true}
+          instance3 = {'id' => '009', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true}
 
           instances = [instance1, instance2]
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state("mycloud", instances)
+          manager.sync_deployment_state({'name' => 'mycloud'}, instances)
           expect(manager.instances_count).to eq(2)
           expect(manager.agents_count).to eq(2)
 
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state("mycloud", instances - [instance1])
+          manager.sync_deployment_state({'name' => 'mycloud'}, instances - [instance1])
           expect(manager.instances_count).to eq(1)
           expect(manager.agents_count).to eq(1)
 
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_deployment_state("mycloud", [instance1, instance3])
+          manager.sync_deployment_state({'name' => 'mycloud'}, [instance1, instance3])
           expect(manager.instances_count).to eq(2)
           expect(manager.agents_count).to eq(2)
         end
@@ -171,7 +210,7 @@ module Bhm
           instance_3 = Bhm::Instance.create({'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node'})
 
           manager.sync_deployments([{'name' => 'mycloud'}])
-          manager.sync_agents("mycloud", [instance_1, instance_2, instance_3])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
 
           agents = manager.get_agents_for_deployment('mycloud')
           expect(agents.size).to eq(3)
@@ -241,7 +280,7 @@ module Bhm
           manager.analyze_agents
         end
 
-        it "can analyze all agents" do
+        it 'can analyze all agents' do
           expect(manager.analyze_agents).to eq(0)
 
           # 3 regular agents
@@ -249,28 +288,28 @@ module Bhm
           instance_2 = Bhm::Instance.create({'id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job:' => 'nats'})
           instance_3 = Bhm::Instance.create({'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node'})
 
-          manager.sync_agents("mycloud", [instance_1, instance_2, instance_3])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
           expect(manager.analyze_agents).to eq(3)
 
-          alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i})
+          alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
           # Alert for already managed agent
-          manager.process_event(:alert, "hm.agent.alert.007", alert)
+          manager.process_event(:alert, 'hm.agent.alert.007', alert)
           expect(manager.analyze_agents).to eq(3)
 
           # Alert for non managed agent
-          manager.process_event(:alert, "hm.agent.alert.256", alert)
+          manager.process_event(:alert, 'hm.agent.alert.256', alert)
           expect(manager.analyze_agents).to eq(4)
 
-          manager.process_event(:heartbeat, "256", nil) # Heartbeat from managed agent
-          manager.process_event(:heartbeat, "512", nil) # Heartbeat from unmanaged agent
+          manager.process_event(:heartbeat, '256', nil) # Heartbeat from managed agent
+          manager.process_event(:heartbeat, '512', nil) # Heartbeat from unmanaged agent
 
           expect(manager.analyze_agents).to eq(5)
 
           ts = Time.now
           allow(Time).to receive(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
 
-          manager.process_event(:heartbeat, "512", nil)
+          manager.process_event(:heartbeat, '512', nil)
           # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
           expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
           expect(manager.analyze_agents).to eq(5)
@@ -305,7 +344,7 @@ module Bhm
         expect(manager.analyze_instances).to eq(0)
       end
 
-      it "can analyze all instances" do
+      it 'can analyze all instances' do
         instance_data_1 = {'id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'cid' => 'cuuid', 'job:' => 'nats', 'expects_vm' => true}
         instance_data_2 = {'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'cid' => 'cuuid', 'job' => 'mysql_node', 'expects_vm' => true}
         manager.sync_instances('my_deployment', [instance_data_1, instance_data_2])
@@ -314,9 +353,9 @@ module Bhm
         expect(manager.analyze_instances).to eq(2)
       end
 
-      it "alerts on an instance without VM" do
+      it 'alerts on an instance without VM' do
         instance = {'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true}
-        manager.sync_instances("my_deployment", [instance])
+        manager.sync_instances('my_deployment', [instance])
         expect(event_processor).to receive(:process).with(
             :alert,
             {
@@ -334,7 +373,7 @@ module Bhm
       end
     end
 
-    context "real config" do
+    context 'real config' do
       let(:mock_nats) { double('nats') }
 
       before do
@@ -344,7 +383,7 @@ module Bhm
         allow(EM).to receive(:schedule).and_yield
       end
 
-      it "has the cloudwatch plugin" do
+      it 'has the cloudwatch plugin' do
         expect(Bhm::Plugins::CloudWatch).to receive(:new).with(
             {
                 'access_key_id' => 'access_key',
@@ -356,14 +395,14 @@ module Bhm
       end
     end
 
-    context "when loading plugin not found" do
+    context 'when loading plugin not found' do
       before do
         config = Psych.load_file(sample_config)
-        config["plugins"] << {"name" => "joes_plugin_thing", "events" => ["alerts", "heartbeats"]}
+        config['plugins'] << {'name' => 'joes_plugin_thing', 'events' => ['alerts', 'heartbeats']}
         Bhm::config = config
       end
 
-      it "raises an error" do
+      it 'raises an error' do
         expect {
           manager.setup_events
         }.to raise_error(Bhm::PluginError, "Cannot find 'joes_plugin_thing' plugin")

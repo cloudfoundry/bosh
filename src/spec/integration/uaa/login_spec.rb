@@ -176,8 +176,7 @@ CERT
     end
 
     describe 'health monitor', hm: true do
-      before { current_sandbox.health_monitor_process.start }
-      after { current_sandbox.health_monitor_process.stop }
+      with_reset_hm_before_each
 
       it 'resurrects vm' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}

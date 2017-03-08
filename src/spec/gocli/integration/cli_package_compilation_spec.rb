@@ -7,7 +7,7 @@ describe 'cli: package compilation', type: :integration do
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
 
-  it 'uses compile package cache for previously compiled packages' do
+  def uses_compile_package_cache_for_previously_compiled_packages(foo_sha, bar_sha)
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
     simple_blob_store_path = current_sandbox.blobstore_storage_dir
@@ -25,8 +25,8 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run("upload-release #{release_file.path}")
 
     output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-    expect(output).to match /Compiling packages: foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda/
-    expect(output).to match /Compiling packages: bar\/f1267e1d4e06b60c91ef648fb9242e33ddcffa73/
+    expect(output).to match /Compiling packages: foo\/#{foo_sha}/
+    expect(output).to match /Compiling packages: bar\/#{bar_sha}/
 
     bosh_runner.run("instances", deployment_name: 'simple')
     bosh_runner.run("vms", deployment_name: 'simple')
@@ -43,10 +43,17 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run("upload-release #{release_file.path}")
     output =  bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 
-    expect(output).to match /Preparing package compilation: Downloading 'foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda' from global cache/
-    expect(output).to_not match /Compiling packages: foo\/0ee95716c58cf7aab3ef7301ff907118552c2dda/
-    expect(output).to_not match /Compiling packages: bar\/f1267e1d4e06b60c91ef648fb9242e33ddcffa73/
+    expect(output).to match /Preparing package compilation: Downloading 'foo\/#{foo_sha}' from global cache/
+    expect(output).to_not match /Compiling packages: foo\/#{foo_sha}/
+    expect(output).to_not match /Compiling packages: bar\/#{bar_sha}/
+  end
 
+  it 'uses compile package cache for previously compiled packages in sha1 mode', sha1: true do
+    uses_compile_package_cache_for_previously_compiled_packages('0ee95716c58cf7aab3ef7301ff907118552c2dda', 'f1267e1d4e06b60c91ef648fb9242e33ddcffa73')
+  end
+
+  it 'uses compile package cache for previously compiled packages in sha2 mode', sha2: true do
+    uses_compile_package_cache_for_previously_compiled_packages('a915ffa8d7a3761a31dc613f1f39e1d80e03db07d173bb28ecf2e8d690cf5b20', '637044d11958dea0a9ce300dd4e24c2f5609d653fbcd7a3afb6c3adc82b39939')
   end
 
   RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(ASSETS_DIR, 'release_compilation_test_release')

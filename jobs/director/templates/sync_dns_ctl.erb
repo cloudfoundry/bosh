@@ -1,0 +1,65 @@
+#!/bin/bash
+
+INDEX=$2
+
+RUN_DIR=/var/vcap/sys/run/director
+LOG_DIR=/var/vcap/sys/log/director
+PIDFILE=$RUN_DIR/sync_dns.pid
+RUNAS=vcap
+
+export PATH=/var/vcap/packages/ruby/bin:/var/vcap/jobs/director/bin:$PATH
+
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+
+export TMPDIR=/var/vcap/data/tmp/director
+
+<% if_p('env.http_proxy') do |http_proxy| %>
+export HTTP_PROXY="<%= http_proxy %>"
+export http_proxy="<%= http_proxy %>"
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+export HTTPS_PROXY="<%= https_proxy %>"
+export https_proxy="<%= https_proxy %>"
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+export NO_PROXY="<%= no_proxy %>"
+export no_proxy="<%= no_proxy %>"
+<% end %>
+
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR $TMPDIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMPDIR
+
+    echo $$ > $PIDFILE
+
+    COMPONENT=sync_dns erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/sync_dns.yml
+
+    exec chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/director/bin/bosh-director-sync-dns \
+      -c /var/vcap/jobs/director/config/sync_dns.yml \
+      >>$LOG_DIR/sync_dns.stdout.log \
+      2>>$LOG_DIR/sync_dns.stderr.log
+    ;;
+
+  stop)
+    if [ -f $PIDFILE ]; then
+      kill -9 `cat $PIDFILE` || true
+      rm -f $PIDFILE
+    fi
+    ;;
+
+  force)
+    /var/vcap/packages/director/bin/bosh-director-trigger-one-time-sync-dns
+    ;;
+
+  *)
+  echo "Usage: sync_dns_ctl {start|stop}" ;;
+esac
+exit 0

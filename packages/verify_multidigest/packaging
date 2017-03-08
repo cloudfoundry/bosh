@@ -1,0 +1,6 @@
+set -e
+
+PLATFORM=`uname | tr '[:upper:]' '[:lower:]'`
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
+mv verify-multidigest/verify-multidigest-0.0.29-$PLATFORM-amd64 ${BOSH_INSTALL_TARGET}/bin/verify-multidigest
+chmod +x ${BOSH_INSTALL_TARGET}/bin/verify-multidigest

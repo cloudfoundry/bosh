@@ -12,12 +12,14 @@ db:
   connection_options:
     max_connections: 32
     pool_timeout: 10
+verify_multidigest_path: /some/path
 blobstore:
-  provider: simple
+  provider: davcli
   options:
     endpoint: http://127.0.0.1
     user: admin
     password:
+    davcli_path: true
 local_dns:
   enabled: false
   include_index: false
@@ -35,11 +37,12 @@ cloud:
     dir: ...
      # to be added
 backup_destination:
-  provider: s3
+  provider: s3cli
   options:
     bucket_name: foo
     access_key_id: asdf
     secret_access_key: zxcv
+    s3cli_path: true
 user_management:
   provider: local
   local:
@@ -48,3 +51,4 @@ user_management:
 config_server:
   enabled: false
 record_events: true
+version: '0.0.2'

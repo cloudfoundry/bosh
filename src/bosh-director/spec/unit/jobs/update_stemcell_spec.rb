@@ -13,11 +13,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     let(:event_log){ Bosh::Director::EventLog::Log.new }
     let(:event_log_stage){instance_double(Bosh::Director::EventLog::Stage)}
+    let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 0)}
 
     before do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
+      allow(Open3).to receive(:capture3).and_return([nil, 'some error', verify_multidigest_exit_status])
     end
 
     context 'when the stemcell tarball is valid' do
@@ -59,9 +62,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         context 'when provided an incorrect sha1' do
+          let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 1)}
+
           it "fails to upload a stemcell" do
             update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, { 'sha1' => 'abcd1234' })
-
             expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
           end
         end
@@ -117,6 +121,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         context 'when provided an incorrect sha1' do
+          let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 1)}
+
           it "fails to upload a stemcell" do
             update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new('fake-stemcell-url', {'remote' => true, 'sha1' => 'abcd1234'})
             expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|

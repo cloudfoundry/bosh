@@ -1,5 +1,0 @@
----
-blobstore:
-  provider: simple
-  options:
-    uid: bosh

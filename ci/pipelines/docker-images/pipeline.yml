@@ -1,0 +1,355 @@
+jobs:
+  - name: build-compiled-release
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: compiled-release-image
+        params:
+          build: "bosh-src/ci/docker/compiled-release"
+        get_params:
+          skip_download: true
+
+  - name: build-main-postgres-9.3
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-postgres-9.3
+        params:
+          build: "bosh-src/ci/docker/main-postgres"
+          build_args:
+            DB_VERSION: "9.3"
+        get_params:
+          skip_download: true
+
+  - name: build-main-postgres-9.4
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-postgres-9.4
+        params:
+          build: "bosh-src/ci/docker/main-postgres"
+          build_args:
+            DB_VERSION: "9.4"
+        get_params:
+          skip_download: true
+
+  - name: build-main-postgres-9.5
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-postgres-9.5
+        params:
+          build: "bosh-src/ci/docker/main-postgres"
+          build_args:
+            DB_VERSION: "9.5"
+        get_params:
+          skip_download: true
+
+  - name: build-main-postgres-9.6
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-postgres-9.6
+        params:
+          build: "bosh-src/ci/docker/main-postgres"
+          build_args:
+            DB_VERSION: "9.6"
+        get_params:
+          skip_download: true
+
+  - name: build-main-mysql-5.5
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-mysql-5.5
+        params:
+          build: "bosh-src/ci/docker/main-mysql"
+          build_args:
+            DB_VERSION: "-5.5"
+        get_params:
+          skip_download: true
+
+  - name: build-main-mysql-5.6
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-mysql-5.6
+        params:
+          build: "bosh-src/ci/docker/main-mysql"
+          build_args:
+            DB_VERSION: "-5.6"
+        get_params:
+          skip_download: true
+
+  - name: build-main-mysql-5.7
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-mysql-5.7
+        params:
+          build: "bosh-src/ci/docker/main-mysql"
+          build_args:
+            DB_VERSION: ""
+        get_params:
+          skip_download: true
+
+  - name: build-main
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-base"
+      - put: main-image
+        params:
+          build: "bosh-src/ci/docker/main"
+        get_params:
+          skip_download: true
+
+  - name: build-main-base
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: main-base
+        params:
+          build: "bosh-src/ci/docker/main-base"
+        get_params:
+          skip_download: true
+
+  - name: build-bosh-docker
+    public: true
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed:
+            - "build-main-ruby-go"
+        - get: bosh-cli
+          trigger: true
+        - get: bosh-deployment
+          trigger: true
+      - task: copy-dependencies
+        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-docker-dependencies.yml
+      - put: main-bosh-docker
+        params:
+          build: "bosh-src-with-docker-dependencies/ci/docker/main-bosh-docker"
+        get_params:
+          skip_download: true
+
+  - name: build-main-ruby-go
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: main-ruby-go-image
+        params:
+          build: "bosh-src/ci/docker/main-ruby-go"
+        get_params:
+          skip_download: true
+
+  - name: build-main-bats-aws
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - "build-main-ruby-go"
+      - put: main-bats-aws
+        params:
+          build: "bosh-src/ci/docker/main-bats-aws"
+        get_params:
+          skip_download: true
+
+  - name: build-bosh-utils
+    public: true
+    serial: true
+    plan:
+      - get: bosh-utils-src
+        trigger: true
+      - put: bosh-utils
+        params:
+          build: "bosh-utils-src/ci/docker/bosh-utils"
+        get_params:
+          skip_download: true
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: master
+      paths:
+        - "ci/docker"
+
+  - name: bosh-utils-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-utils
+      branch: develop
+      paths:
+        - "ci/docker"
+
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment
+      branch: master
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+
+  - name: compiled-release-image
+    type: docker-image
+    source:
+      repository: bosh/compiled-release
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-postgres-9.3
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.3
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-postgres-9.5
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.5
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-postgres-9.6
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.6
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-mysql-5.5
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.5
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-mysql-5.6
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.6
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-mysql-5.7
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.7
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-image
+    type: docker-image
+    source:
+      repository: bosh/main
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-base
+    type: docker-image
+    source:
+      repository: bosh/main-base
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-bosh-docker
+    type: docker-image
+    source:
+      repository: bosh/main-bosh-docker
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-bats-aws
+    type: docker-image
+    source:
+      repository: bosh/main-bats-aws
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: main-ruby-go-image
+    type: docker-image
+    source:
+      repository: bosh/main-ruby-go
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: bosh-utils
+    type: docker-image
+    source:
+      repository: bosh/utils
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}

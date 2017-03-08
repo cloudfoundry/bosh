@@ -3,10 +3,12 @@ module Bosh::Monitor
 
     attr_reader :name
     attr_reader :agent_id_to_agent
+    attr_reader :teams
 
     def initialize(deployment_data)
       @logger = Bhm.logger
       @name = deployment_data['name']
+      @teams = deployment_data['teams']
       @instance_id_to_instance = {}
       @agent_id_to_agent = {}
     end
@@ -106,5 +108,8 @@ module Bosh::Monitor
       @agent_id_to_agent.keys.to_set
     end
 
+    def update_teams(new_teams)
+      @teams = new_teams
+    end
   end
 end

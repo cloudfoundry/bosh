@@ -2,6 +2,7 @@
 # encoding is needed for correctly comparing expected ERB below
 require 'spec_helper'
 require 'bosh/director/core/templates/job_template_loader'
+require 'bosh/director/core/templates/caching_job_template_fetcher'
 require 'archive/tar/minitar'
 require 'stringio'
 require 'yaml'
@@ -63,8 +64,8 @@ end
 module Bosh::Director::Core::Templates
   describe JobTemplateLoader do
     describe '#process' do
-      subject(:job_template_loader) { JobTemplateLoader.new(logger) }
-      let(:logger) { double('Logger') }
+      subject(:job_template_loader) { JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new) }
+      let(:logger) { double('Logger', debug: nil) }
 
       it 'returns the jobs template erb objects' do
         template_contents = create_job('foo', 'monit file',
@@ -75,7 +76,7 @@ module Bosh::Director::Core::Templates
 
         tmp_file = Tempfile.new('blob')
         File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo')
+        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
 
         container = job_template_loader.process(job_template)
 
@@ -94,7 +95,7 @@ module Bosh::Director::Core::Templates
 
         tmp_file = Tempfile.new('blob')
         File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo')
+        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
 
         container = job_template_loader.process(job_template)
 

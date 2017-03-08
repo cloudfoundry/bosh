@@ -14,7 +14,7 @@ oauth:
       override: true
       authorized-grant-types: client_credentials,refresh_token
       scope: openid
-      authorities: bosh.admin
+      authorities: bosh.admin,config_server.admin
       secret: "secret"
 
     hm:

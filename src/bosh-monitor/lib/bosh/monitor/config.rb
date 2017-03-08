@@ -19,12 +19,12 @@ module Bosh::Monitor
     def config=(config)
       validate_config(config)
 
-      @logger = Logging.logger(config["logfile"] || STDOUT)
-      @intervals = OpenStruct.new(config["intervals"])
-      @director = Director.new(config["director"], @logger)
-      @mbus = OpenStruct.new(config["mbus"])
+      @logger = Logging.logger(config['logfile'] || STDOUT)
+      @intervals = OpenStruct.new(config['intervals'])
+      @director = Director.new(config['director'], @logger)
+      @mbus = OpenStruct.new(config['mbus'])
 
-      @em_threadpool_size = config["em_threadpool_size"]
+      @em_threadpool_size = config['em_threadpool_size']
 
       @event_processor = EventProcessor.new
       @instance_manager = InstanceManager.new(event_processor)
@@ -39,20 +39,20 @@ module Bosh::Monitor
       @intervals.agent_timeout ||= 60
       @intervals.rogue_agent_alert ||= 120
 
-      if config["http"].is_a?(Hash)
-        @http_port = config["http"]["port"]
+      if config['http'].is_a?(Hash)
+        @http_port = config['http']['port']
       end
 
-      if config["event_mbus"]
-        @event_mbus = OpenStruct.new(config["event_mbus"])
+      if config['event_mbus']
+        @event_mbus = OpenStruct.new(config['event_mbus'])
       end
 
-      if config["loglevel"].is_a?(String)
-        @logger.level = config["loglevel"].to_sym
+      if config['loglevel'].is_a?(String)
+        @logger.level = config['loglevel'].to_sym
       end
 
-      if config["plugins"].is_a?(Enumerable)
-        @plugins = config["plugins"]
+      if config['plugins'].is_a?(Enumerable)
+        @plugins = config['plugins']
       end
     end
 

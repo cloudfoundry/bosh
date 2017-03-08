@@ -15,22 +15,11 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       expect(runtime_config.properties).to eq(valid_runtime_manifest)
     end
 
-    it "throws an error if the version of a release is 'latest'" do
-      invalid_manifest = YAML.dump(Bosh::Spec::Deployments.runtime_config_latest_release)
-      expect {
+    it 'throws an error if runtime config is not valid YAML' do
+      invalid_manifest = ":"
+      expect{
         manager.update(invalid_manifest)
-      }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
-           "Runtime manifest contains the release 'test_release_2' with version as 'latest'. " +
-               "Please specify the actual version string."
-    end
-
-    it "throws an error if the a release used by an addon is not listed in the releases section" do
-      invalid_manifest = YAML.dump(Bosh::Spec::Deployments.runtime_config_release_missing)
-      expect {
-        manager.update(invalid_manifest)
-      }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,
-           "Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
-               "but 'release2' is not listed in the releases section."
+      }.to raise_error Bosh::Director::InvalidYamlError
     end
   end
 

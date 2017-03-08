@@ -118,6 +118,10 @@ module Bosh::Director
       send_nats_request(:sync_dns, args, &blk)
     end
 
+    def cancel_sync_dns(request_id)
+      @nats_rpc.cancel_request(request_id)
+    end
+
     def upload_blob(blob_id, payload_checksum, encoded_payload)
       begin
         send_message(:upload_blob, {

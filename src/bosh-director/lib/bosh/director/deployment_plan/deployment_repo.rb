@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module Bosh::Director
   module DeploymentPlan
     class DeploymentRepo

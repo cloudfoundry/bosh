@@ -1,6 +1,8 @@
 ---
 name: director
+
 templates:
+  pre-start.erb: bin/pre-start
   director_ctl.erb: bin/director_ctl
   director.yml.erb.erb: config/director.yml.erb
   worker_ctl.erb: bin/worker_ctl
@@ -19,6 +21,8 @@ templates:
   scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
+  sync_dns_ctl.erb: bin/sync_dns_ctl
+
 packages:
 - director
 - nginx
@@ -28,6 +32,7 @@ packages:
 - ruby
 - s3cli
 - davcli
+- verify_multidigest
 
 properties:
   env.http_proxy:
@@ -58,10 +63,10 @@ properties:
     default: true
   director.nginx.ssl_protocols:
     description: "SSL/TLS protocols to allow"
-    default: TLSv1 TLSv1.1 TLSv1.2
+    default: TLSv1.2
   director.nginx.ssl_ciphers:
-    description: "List of SSL ciphers to allow (format: https://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT)"
-    default: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+    description: "List of SSL ciphers to allow (format: https://www.openssl.org/docs/manmaster/man1/ciphers.html - CIPHER LIST FORMAT section)"
+    default: "DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
   director.timeout:
     description: Timeout for connection from bosh CLI to nginx
     default: 7200
@@ -125,9 +130,12 @@ properties:
   director.enable_virtual_delete_vms:
     description: When true, bosh will not delete vm from cloud when instance update, just destroy vm record in db
     default: false
-  director.local_dns:
+  director.local_dns.enabled:
     description: Enables local DNS, i.e., sending sync_dns messages with all names/IPs to all agents managed by this director
-    default: {}
+    default: false
+  director.local_dns.include_index:
+    description: If local DNS is enabled, then include_index will cause director to propagate dns records with instance index number as well as dns records with instance ID
+    default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:
@@ -393,10 +401,10 @@ properties:
     description: Address for agent to connect to nats
   registry.address:
     description: Address of the Registry to connect to
-  registry.http.port:
+  registry.port:
     description: Port of the Registry to connect to
     default: 25777
-  registry.http.user:
+  registry.username:
     description: User to access the Registry
-  registry.http.password:
+  registry.password:
     description: Password to access the Registry

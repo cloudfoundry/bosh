@@ -113,7 +113,7 @@ module Bosh::Spec
 
     def self.runtime_config_latest_release
       {
-        'releases' => [{'name' => 'test_release_2', 'version' => 'latest'}]
+        'releases' => [{'name' => 'bosh-release', 'version' => 'latest'}]
       }
     end
 
@@ -193,6 +193,26 @@ module Bosh::Spec
             'properties' => {'dummy_with_properties' => {'echo_value' => '((/addon_prop))'}}
           }]
       })
+    end
+
+    def self.runtime_config_with_job_placeholders
+      {
+        'releases' => [{'name' => '((/release_name))', 'version' => '0.1-dev'}],
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [
+              {
+                'name' => 'job_2_with_many_properties',
+                'release' => '((/release_name))',
+                'properties' => {
+                  'gargamel' => { 'color' => '((/gargamel_colour))'},
+                }
+              }
+            ]
+          }
+        ]
+      }
     end
 
     def self.runtime_config_with_links
@@ -367,7 +387,7 @@ module Bosh::Spec
     def self.vm_extension
       {
           'name' => 'vm-extension-name',
-          'cloud_properties' => {},
+          'cloud_properties' => {'my' => 'cloud_property'},
       }
     end
 

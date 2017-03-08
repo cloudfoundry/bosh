@@ -37,13 +37,13 @@ module Bosh::Director::ProblemScanner
     def scan_disk(disk)
       begin
         cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
-        unless cloud.has_disk?(disk.disk_cid)
+        unless cloud.has_disk(disk.disk_cid)
           @logger.info("Found missing disk: #{disk.id}")
           @problem_register.problem_found(:missing_disk, disk)
           return :missing
         end
       rescue Bosh::Clouds::NotImplemented
-        @logger.info('Ignored check for disk presence, CPI does not implement has_disk? method')
+        @logger.info('Ignored check for disk presence, CPI does not implement has_disk method')
       end
 
       # inactive disks

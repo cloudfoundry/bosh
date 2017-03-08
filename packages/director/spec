@@ -1,17 +1,15 @@
 ---
 name: director
+
 dependencies:
 - libpq
 - mysql
 - ruby
-- s3cli
-- davcli
+
 files:
 - bosh-director/**/*
 - bosh_common/**/*
-- bosh_cpi/**/*
 - bosh-registry/**/*
-- blobstore_client/**/*
 - bosh-core/**/*
 - bosh-director-core/**/*
 - bosh-template/**/*

@@ -51,6 +51,11 @@ module Bosh::Director
 
       attr_reader :uninterpolated_manifest_text
 
+      # @return [DeploymentPlan::Variables] Returns the variables object of deployment
+      attr_reader :variables
+
+      attr_reader :job_renderer
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -76,7 +81,10 @@ module Bosh::Director
         @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
+        @variables = Variables.new([])
+
         @logger = Config.logger
+        @job_renderer = JobRenderer.create
       end
 
       def_delegators :@cloud_planner,
@@ -120,11 +128,10 @@ module Bosh::Director
         validate_packages
 
         disk_manager = DiskManager.new(@logger)
-        job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create
         vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, @job_renderer, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
           InstanceReuser.new,
@@ -247,6 +254,11 @@ module Bosh::Director
         instance_groups
       end
 
+      # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
+      def errand_instance_groups
+        @instance_groups.select(&:is_errand?)
+      end
+
       def persist_updates!
         #prior updates may have had release versions that we no longer use.
         #remove the references to these stale releases.
@@ -285,6 +297,10 @@ module Bosh::Director
         @link_spec[instance_group_name][job_name] ||= {}
         @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
         @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
+      end
+
+      def set_variables(variables_obj)
+        @variables = variables_obj
       end
 
       private

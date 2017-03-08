@@ -13,10 +13,11 @@ module Bosh::Director
         blobstore_client = double('fake-blobstore-client')
         expect(Bosh::Blobstore::Client)
           .to receive(:safe_create)
-          .with('simple', {
+          .with('davcli', {
             'endpoint' => 'http://127.0.0.1',
-            'user'     => 'admin',
+            'user' => 'admin',
             'password' => nil,
+            'davcli_path' => true,
           })
           .and_return(blobstore_client)
         expect(blobstores.blobstore).to eq(blobstore_client)
@@ -28,10 +29,11 @@ module Bosh::Director
         blobstore_client = double('fake-blobstore-client')
         expect(Bosh::Blobstore::Client)
           .to receive(:safe_create)
-          .with('s3', {
+          .with('s3cli', {
             'bucket_name' => 'foo',
             'access_key_id' => 'asdf',
             'secret_access_key' => 'zxcv',
+            's3cli_path' => true,
           })
           .and_return(blobstore_client)
         expect(blobstores.backup_destination).to eq(blobstore_client)

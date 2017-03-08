@@ -17,64 +17,88 @@ oauth:
       scope: openid,bosh.admin
       authorities: uaa.none
       secret: ""
-      access-token-vaidity: 10
-      refresh-token-validity: 3600
     test:
       id: test
       override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid,bosh.admin
+      authorized-grant-types: client_credentials
+      scope: openid
       authorities: bosh.admin
       secret: "secret"
     short-lived-client:
       id: short-lived-client
       override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid,bosh.admin
+      authorized-grant-types: client_credentials
+      scope: openid
       authorities: bosh.admin
       secret: "short-lived-secret"
-      access-token-validity: 5
-      refresh-token-validity: 3600
+    team-client:
+      id: team-client
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.teams.ateam.admin
+      secret: "team-secret"
+    team-client-read-access:
+      id: team-client-read-access
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.teams.ateam.read
+      secret: "team-secret"
+    upload-stemcells-access:
+      id: upload-stemcells-access
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.stemcells.upload,bosh.read
+      secret: "stemcells-secret"
+    upload-releases-access:
+      id: upload-releases-access
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.releases.upload,bosh.read
+      secret: "releases-secret"
     no-access:
       id: no-access
       override: true
-      authorized-grant-types: client_credentials,refresh_token
+      authorized-grant-types: client_credentials
       scope: openid
       authorities: uaa.none
       secret: "secret"
     read-access:
       id: read-access
       override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid,bosh.read
+      authorized-grant-types: client_credentials
+      scope: openid
       authorities: bosh.read
       secret: "secret"
     director-access:
       id: director-access
       override: true
       authorized-grant-types: client_credentials
-      scope: openid,bosh.deadbeef.admin
+      scope: openid
       authorities: bosh.deadbeef.admin
       secret: "secret"
     hm:
       id: hm
       override: true
-      authorized-grant-types: client_credentials,refresh_token
+      authorized-grant-types: client_credentials
       scope: openid
       authorities: uaa.none,bosh.admin
       secret: "secret"
     production_team:
       id: production_team
       override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid,bosh.teams.production_team.admin
+      authorized-grant-types: client_credentials
+      scope: openid
       authorities: bosh.teams.production_team.admin
       secret: "secret"
     dev_team:
       id: dev_team
       override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid,bosh.teams.dev_team.admin
+      authorized-grant-types: client_credentials
+      scope: openid
       authorities: bosh.teams.dev_team.admin
       secret: "secret"
 jwt:

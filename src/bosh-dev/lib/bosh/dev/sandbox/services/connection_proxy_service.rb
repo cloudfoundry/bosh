@@ -45,7 +45,8 @@ module Bosh::Dev::Sandbox
     end
 
     def install
-      # Clean up old compiled nginx bits to stay up-to-date
+      return if File.exists?(executable_path)
+
       FileUtils.rm_rf(@install_dir)
       FileUtils.mkdir_p(@install_dir)
 

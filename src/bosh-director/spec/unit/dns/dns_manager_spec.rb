@@ -1,13 +1,11 @@
 require 'spec_helper'
-require 'blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe DnsManager do
-    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger) }
+    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, logger) }
 
     let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
     let(:deployment_model) { Models::Deployment.make(name: 'dep') }
-    let(:local_dns_repo) { LocalDnsRepo.new(logger) }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
     let(:dns_config) { {} }
     let(:dns_provider) { nil }
@@ -109,7 +107,7 @@ module Bosh::Director
 
     describe '#cleanup_dns_records' do
       context 'when dns_publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         it 'calls cleanup_blobs and publish on the dns_publisher' do
@@ -185,13 +183,13 @@ module Bosh::Director
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
         end
 
-        it 'deletes dns records from local repo' do
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
+        it 'deletes dns records from instance model' do
+          expect(instance_model.dns_record_names.to_a).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
           dns_manager.delete_dns_for_instance(instance_model)
-          expect(local_dns_repo.find(instance_model)).to eq([])
+          expect(instance_model.dns_record_names.to_a).to eq([])
         end
 
-        context 'when instance has records in dns provider but not in local repo' do
+        context 'when instance has records in dns provider but not in instance model' do
           before do
             dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-a.dep.bosh', '1.2.3.4')
           end
@@ -208,9 +206,8 @@ module Bosh::Director
         end
 
         context 'when local dns is enabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(true)
-          end
+          let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+          let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
           it 'calls the local dns methods' do
             expect(dns_manager).to receive(:delete_local_dns_record)
@@ -241,10 +238,10 @@ module Bosh::Director
           dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
-        it 'updates dns records for instance in local repo' do
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
+        it 'updates dns records for instance in database' do
+          expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
           dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
-          expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'fake-dns-name-3'])
+          expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'fake-dns-name-3'])
         end
 
         it 'appends the records to the model' do
@@ -289,9 +286,8 @@ module Bosh::Director
         end
 
         context 'local dns is enabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(true)
-          end
+          let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+          let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
           it 'deletes old records and creates a new dns record' do
             expect(dns_manager).to receive(:create_or_delete_local_dns_record)
@@ -308,10 +304,10 @@ module Bosh::Director
           dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-b.dep.bosh', '5.6.7.8')
         end
 
-        it 'saves instance dns records for all networks in local repo' do
+        it 'saves instance dns records for all networks in local instance model' do
           dns_manager.migrate_legacy_records(instance_model)
 
-          expect(local_dns_repo.find(instance_model)).to match_array([
+          expect(instance_model.dns_record_names).to match_array([
             '0.job-a.network-a.dep.bosh',
             'fake-uuid.job-a.network-a.dep.bosh',
             '0.job-a.network-b.dep.bosh',
@@ -319,20 +315,20 @@ module Bosh::Director
           ])
         end
 
-        context 'when local repo has dns records' do
+        context 'when instance model has dns records' do
           before do
-            local_dns_repo.create_or_update(instance_model, ['anything'])
+            instance_model.update(dns_record_names: ['anything'])
           end
 
           it 'does not migrate' do
             dns_manager.migrate_legacy_records(instance_model)
-            expect(local_dns_repo.find(instance_model)).to match_array(['anything'])
+            expect(instance_model.dns_record_names).to match_array(['anything'])
           end
         end
       end
 
       context 'when blobstore DNS publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         describe '#publisher_enabled?' do
@@ -371,7 +367,7 @@ module Bosh::Director
       describe '#migrate_legacy_records' do
         it 'does not migrate' do
           dns_manager.migrate_legacy_records(instance_model)
-          expect(local_dns_repo.find(instance_model)).to match_array([])
+          expect(instance_model.dns_record_names.to_a).to match_array([])
         end
       end
 
@@ -399,17 +395,17 @@ module Bosh::Director
         end
 
         context 'when IPs/hosts change' do
-          it 'updates dns records for instance in local repo' do
-            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
+          it 'updates dns records for instance' do
+            expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
             dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '11.22.33.44', 'new-fake-dns-name' => '99.88.77.66'})
-            expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'new-fake-dns-name'])
+            expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'new-fake-dns-name'])
             expect(Models::Dns::Record.all.count).to eq(0)
           end
         end
       end
 
       context 'when blobstore DNS publisher is enabled' do
-        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
         let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
 
         describe '#publisher_enabled?' do
@@ -465,10 +461,17 @@ module Bosh::Director
 
             dns_manager.create_or_delete_local_dns_record(instance_model)
 
-            all_records = Models::LocalDnsRecord.all
+            all_records = Models::LocalDnsRecord.exclude(instance_id: nil).all
             expect(all_records.size).to eq(4)
             expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-2.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
             expect(all_records.map(&:ip)).to contain_exactly('1234', '1234', '5678', '5678')
+          end
+
+          it 'should insert a tombstone record' do
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+
+            dns_manager.create_or_delete_local_dns_record(instance_model)
+            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(2)
           end
         end
 
@@ -485,6 +488,15 @@ module Bosh::Director
             expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh')
             expect(all_records.map(&:ip)).to contain_exactly('1234', '1234')
             expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
+          end
+
+          it 'should not insert a tombstone record' do
+            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
+            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(0)
           end
         end
       end
@@ -514,12 +526,20 @@ module Bosh::Director
 
             dns_manager.create_or_delete_local_dns_record(instance_model)
 
-            all_records = Models::LocalDnsRecord.all
+            all_records = Models::LocalDnsRecord.exclude(instance_id: nil).all
             # product says it is okay to keep index-based dns around if they previously had it enabled, but then
             # disabled it
             expect(all_records.size).to eq(3)
             expect(all_records.map(&:name).sort).to contain_exactly('fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
             expect(all_records.map(&:ip).sort).to contain_exactly('1234', '1234', '5678')
+          end
+
+          it 'should insert a tombstone record' do
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+
+            dns_manager.create_or_delete_local_dns_record(instance_model)
+            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(1)
+            expect(Models::LocalDnsRecord.where(instance_id: nil).first.name).to include('tombstone')
           end
         end
 
@@ -538,6 +558,15 @@ module Bosh::Director
             expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
 
           end
+
+          it 'should not insert a tombstone record' do
+            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
+            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+
+            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
+            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(0)
+          end
         end
       end
 
@@ -551,7 +580,7 @@ module Bosh::Director
         context 'when instance.spec is not nil' do
           context 'when spec[networks] is nil' do
             it 'skips the instance' do
-              test_validate_spec('{"networks": nil}')
+              test_validate_spec('{"networks": null}')
             end
           end
 
@@ -608,6 +637,31 @@ module Bosh::Director
         subject.delete_local_dns_record(instance_model)
       end
 
+      context 'when the record exists' do
+        it 'should insert a tombstone record' do
+          instance_model_to_be_deleted = Models::Instance.make(uuid: 'a-different-fake-uuid', index: 1, job: 'job-a', deployment: deployment_model)
+          Models::LocalDnsRecord.make({
+            name: "a-different-fake-uuid.job-name.name.bosh.bosh",
+            ip: '1234',
+            instance_id: instance_model_to_be_deleted.id
+          })
+
+          subject.delete_local_dns_record(instance_model_to_be_deleted)
+          tombstones = Models::LocalDnsRecord.where(instance_id: nil).all
+          expect(tombstones.size).to eq(1)
+        end
+      end
+
+      context 'when the record does not exists' do
+        let(:instance_model) { instance_double(Models::Instance, id: 8475) }
+
+        it 'should not insert a tombstone record' do
+          subject.delete_local_dns_record(instance_model)
+          tombstones = Models::LocalDnsRecord.where(instance_id: nil).all
+          expect(tombstones.size).to eq(0)
+        end
+      end
+
       context 'when include_index enabled' do
         before do
           allow(Config).to receive(:local_dns_include_index?).and_return(true)
@@ -625,7 +679,7 @@ module Bosh::Director
 
           subject.delete_local_dns_record(instance_model)
 
-          expect(Models::LocalDnsRecord.all.size).to eq(1)
+          expect(Models::LocalDnsRecord.exclude(instance_id: nil).all.size).to eq(1)
           expect(Models::LocalDnsRecord.first.instance_id).to eq(instance_model_not_to_be_deleted.id)
         end
       end

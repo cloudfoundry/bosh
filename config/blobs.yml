@@ -30,10 +30,10 @@ nats/vendor/cache/nats-0.5.0.beta.12.gem:
   size: 30208
   object_id: 714da93b-b55f-4adf-a5e5-b11ea991cd1f
   sha: f39b79844741d0019cd6e277ded2b2025b69bca3
-nats/vendor/cache/rack-1.5.2.gem:
-  size: 216576
-  object_id: 8e0440d6-d7cb-4085-9b33-2957bfb9a5bd
-  sha: a17f40c9beb03b458f537f42cf36dd90d8230625
+nats/vendor/cache/rack-1.5.4.gem:
+  size: 216064
+  object_id: 61e5a9ed-2a1a-41d4-5fa8-6ec6a966ff61
+  sha: d71ea9c90d7ef2a0787722f233da8fcbfb5e55d5
 nats/vendor/cache/thin-1.5.1.gem:
   size: 55296
   object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
@@ -54,18 +54,18 @@ nginx/nginx-upload-module-2.2.tar.gz:
   size: 28505
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
   sha: 74ccd116525a155db76f92a1cd484d9516a70398
-nginx/pcre-8.38.tar.gz:
-  size: 2053336
-  object_id: e875ffbb-b669-476a-bad8-fffe854adef5
-  sha: 3ab418d0026c2a4e693ec783bd60660debc32b8f
+nginx/pcre-8.40.tar.gz:
+  size: 2065161
+  object_id: 55ecdf7e-38b1-4fd8-68e8-e28285ec19eb
+  sha: 10384eb3d411794cc15f55b9d837d3f69e35391e
 postgres/postgresql-9.0.23.tar.gz:
   size: 19776342
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
-postgres/postgresql-9.4.9.tar.gz:
-  size: 23300245
-  object_id: 0c5a6fc6-2c99-4d7e-b73d-f4339356f40f
-  sha: c9d641eb69885672e5aacee413cd778d88b8420d
+postgres/postgresql-9.4.10.tar.gz:
+  size: 23333040
+  object_id: 703026d4-1eff-47f6-5bfd-f4cdcb5d5370
+  sha: 69f810b063f9b1fb569e99d722fa74c29363efc9
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
@@ -82,11 +82,15 @@ ruby/rubygems-2.6.4.tgz:
   size: 478582
   object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
   sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
-ruby/yaml-0.1.5.tar.gz:
-  size: 504897
-  object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
-  sha: 8b78cb9f759c7d80db8a7328c0ebecfe34fde737
+ruby/yaml-0.1.7.tar.gz:
+  size: 527518
+  object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
+  sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
 s3cli/s3cli-0.0.53-linux-amd64:
   size: 10330042
   object_id: 30b2b4f3-a8d3-4a2d-7881-17cece91574a
   sha: 4d6881fa390c6ecc1e5a0dd73af6951353857106
+verify-multidigest/verify-multidigest-0.0.29-linux-amd64:
+  size: 3277550
+  object_id: e5925f0e-d420-4759-4c4e-9b964183efc1
+  sha: 85ce851c90a5b13aa6482c3197025c77464ce971

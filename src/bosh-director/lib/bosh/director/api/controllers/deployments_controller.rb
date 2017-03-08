@@ -220,7 +220,8 @@ module Bosh::Director
                 'version' => sc.version
               }
             end,
-            'cloud_config' => cloud_config
+            'cloud_config' => cloud_config,
+            'teams' => deployment.teams.map { |t| t.name },
           }
         end
 
@@ -257,7 +258,7 @@ module Bosh::Director
         options = {}
         options['force'] = true if params['force'] == 'true'
         options['keep_snapshots'] = true if params['keep_snapshots'] == 'true'
-        task = @deployment_manager.delete_deployment(current_user, deployment, options)
+        task = @deployment_manager.delete_deployment(current_user, deployment, options, @current_context_id)
         redirect "/tasks/#{task.id}"
       end
 
@@ -297,10 +298,15 @@ module Bosh::Director
         status(204)
       end
 
-      # Config Vars
-      get '/:deployment/config_vars' do
-        mappings = Models::PlaceholderMapping.where(deployment_id: deployment.id)
-        JSON.generate(create_config_vars_response(mappings))
+      get '/:deployment/variables' do
+        result = deployment.variables.map { |variable|
+          {
+            'id' => variable.variable_id,
+            'name' => variable.variable_name,
+          }
+        }.uniq
+
+        json_encode(result)
       end
 
       # Cloud check
@@ -367,12 +373,13 @@ module Bosh::Director
 
         options['cloud_config'] = cloud_config
         options['runtime_config'] = runtime_config
+        options['deploy'] = true
 
         deployment_name = deployment['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options, @current_context_id)
 
         redirect "/tasks/#{task.id}"
       end
@@ -417,14 +424,17 @@ module Bosh::Director
 
       post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
-        keep_alive = json_decode(request.body.read)['keep-alive'] || FALSE
+        parsed_request_body = json_decode(request.body.read)
+        keep_alive = parsed_request_body['keep-alive'] || FALSE
+        when_changed = parsed_request_body['when-changed'] || FALSE
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
-          [deployment.name, errand_name, keep_alive],
-          deployment
+          [deployment.name, errand_name, keep_alive, when_changed],
+          deployment,
+          @current_context_id
         )
 
         redirect "/tasks/#{task.id}"
@@ -493,18 +503,19 @@ module Bosh::Director
             'cid' => instance.vm_cid,
             'job' => instance.job,
             'index' => instance.index,
-            'id' => instance.uuid
+            'id' => instance.uuid,
+            'az' => instance.availability_zone,
+            'ips' => ips(instance),
         }
       end
 
-      def create_config_vars_response(vars)
-        vars.map do |var|
-        {
-          'placeholder_name' => var.placeholder_name,
-          'placeholder_id' => var.placeholder_id
-        }
+      def ips(instance)
+        result = instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+        if result.empty? && instance.spec && instance.spec['networks']
+          result = instance.spec['networks'].map {|_, network| network['ip']}
         end
-      end
+        result
+       end
     end
   end
 end

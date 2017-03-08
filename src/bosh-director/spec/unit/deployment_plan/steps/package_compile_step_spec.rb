@@ -9,7 +9,7 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
+    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
     let(:disk_manager) {DiskManager.new(logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:reuse_compilation_vms) { false }
@@ -67,6 +67,8 @@ module Bosh::Director
     }
 
     before do
+      Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
@@ -691,9 +693,12 @@ module Bosh::Director
     describe '#prepare_vm' do
       let(:number_of_workers) { 2 }
       let(:plan) do
+        deployment_model = Models::Deployment.make
+        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+
         instance_double('Bosh::Director::DeploymentPlan::Planner',
           compilation: compilation_config,
-          model: Models::Deployment.make,
+          model: deployment_model,
           name: 'fake-deployment',
           ip_provider: ip_provider
         )

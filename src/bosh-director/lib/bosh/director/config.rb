@@ -40,6 +40,8 @@ module Bosh::Director
         :remove_dev_tools,
         :enable_virtual_delete_vms,
         :local_dns,
+        :verify_multidigest_path,
+        :version
       )
 
       attr_reader(
@@ -112,8 +114,9 @@ module Bosh::Director
         @max_threads = config.fetch('max_threads', 32).to_i
 
         @revision = get_revision
+        @version = config['version']
 
-        @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
+        @logger.info("Starting BOSH Director: #{@version} (#{@revision})")
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
@@ -186,6 +189,11 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+
+        if config['verify_multidigest_path'].nil?
+          raise ArgumentError, 'Multiple Digest binary must be specified'
+        end
+        @verify_multidigest_path = config['verify_multidigest_path']
       end
 
       def canonized_dns_domain_name
@@ -264,7 +272,7 @@ module Bosh::Director
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            @cloud = Bosh::Clouds::Provider.create(@cloud_options, @uuid)
+            @cloud = Bosh::Clouds::ExternalCpi.new(@cloud_options['provider']['path'], @uuid)
           end
         end
         @cloud
@@ -347,6 +355,10 @@ module Bosh::Director
       hash['port']
     end
 
+    def version
+      hash['version']
+    end
+
     def scheduled_jobs
       hash['scheduled_jobs'] || []
     end
@@ -373,6 +385,11 @@ module Bosh::Director
         Config.logger.debug("Director configured with '#{provider_name}' user management provider")
         provider_class.new(user_management[provider_name] || {})
       end
+    end
+
+    def config_server_urls
+      cfg_server_url = Config.config_server['url']
+      cfg_server_url ? [cfg_server_url] : []
     end
 
     def worker_logger

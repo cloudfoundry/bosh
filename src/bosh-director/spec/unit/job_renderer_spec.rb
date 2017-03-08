@@ -2,77 +2,50 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { described_class.new(logger) }
-    let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
+    subject(:renderer) { described_class.new(logger, caching_job_template_fetcher) }
+    let(:caching_job_template_fetcher) { Core::Templates::CachingJobTemplateFetcher.new }
+    let(:instance_group) do
+      instance_group = DeploymentPlan::InstanceGroup.new(logger)
+      instance_group.name = 'test-instance-group'
+      instance_group
+    end
+    let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore_files) { [] }
+
+    let(:instance_plan) do
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
+    end
+
+    let(:instance) do
+      deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
+      availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
+      DeploymentPlan::Instance.create_from_job(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
+    end
+
+    let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
 
     before do
-      job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
-      job.stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell-name', 'version' => '1.0'})
-      job.env = DeploymentPlan::Env.new({})
+      job_tgz_path = asset('dummy_job_with_single_template.tgz')
+      allow(blobstore_client).to receive(:get) { |_, f| blobstore_files << f.path; f.write(File.read(job_tgz_path)) }
+      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
     end
-
-    let(:template_1) { DeploymentPlan::Job.new(release_version, 'fake-template-1', deployment_model.name) }
-    let(:template_2) { DeploymentPlan::Job.new(release_version, 'fake-template-2', deployment_model.name) }
-    let(:release_version) { DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'}) }
-    let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
-
-    before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
-    let(:job_instance_renderer) { instance_double('Bosh::Director::Core::Templates::JobInstanceRenderer') }
-
-    before { allow(Core::Templates::JobTemplateLoader).to receive(:new).and_return(job_template_loader) }
-    let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
     describe '#render_job_instances' do
-      let(:instance_plan1) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
-      let(:instance_plan2) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
-
-      it 'renders each jobs instance' do
-        expect(renderer).to receive(:render_job_instance).with(instance_plan1)
-        expect(renderer).to receive(:render_job_instance).with(instance_plan2)
-        renderer.render_job_instances([instance_plan1, instance_plan2])
-      end
-    end
-
-    describe '#render_job_instance' do
       def perform
-        renderer.render_job_instance(instance_plan)
-      end
-
-      let(:instance_plan) do
-        DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(job), instance: instance)
-      end
-
-      let(:instance) do
-        deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
-        availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-        DeploymentPlan::Instance.create_from_job(job, 5, 'started', deployment, {}, availability_zone, logger)
+        renderer.render_job_instances([instance_plan])
       end
 
       before do
+        release_version = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'})
+        job_1 = DeploymentPlan::Job.new(release_version, 'dummy', deployment_model.name)
+        job_1.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))
+
+        job_2 = DeploymentPlan::Job.new(release_version, 'dummy', deployment_model.name)
+        job_2.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))
+
         allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return({'template' => 'spec'})
-        allow(instance_plan).to receive(:templates).and_return([template_1, template_2])
-      end
-
-      let(:instance_model) do
-        Models::Instance.make(deployment: deployment_model)
-      end
-
-      before { allow(job_instance_renderer).to receive(:render).and_return(rendered_job_instance) }
-      let(:rendered_job_instance) do
-        instance_double('Bosh::Director::Core::Templates::RenderedJobInstance', {
-          configuration_hash: configuration_hash,
-          template_hashes: { 'job-template-name' => 'rendered-job-template-hash' },
-        })
-      end
-
-      let(:configuration_hash) { 'fake-content-sha1' }
-
-      it 'correctly initializes JobInstanceRenderer' do
-        expect(Core::Templates::JobInstanceRenderer).to receive(:new) do |templates, template_loader|
-          expect(templates).to eq([template_1, template_2])
-          expect(template_loader).to eq(job_template_loader)
-        end.and_return(job_instance_renderer)
-        perform
+        allow(instance_plan).to receive(:templates).and_return([job_1, job_2])
       end
 
       context 'when instance plan does not have templates' do
@@ -81,33 +54,70 @@ module Bosh::Director
         end
 
         it 'does not render' do
-          expect(job_instance_renderer).to_not receive(:render)
-          perform
+          expect(logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5', no templates")
+          expect { perform }.not_to change { instance_plan.rendered_templates }
         end
       end
 
-      it 'renders all templates for all instances of a job' do
-        expect(job_instance_renderer).to receive(:render).with({'template' => 'spec'})
-        perform
+      context 'when instance plan has templates' do
+        it 'renders all templates for all instances of a instance_group' do
+          expect(instance_plan.rendered_templates).to be_nil
+          expect(instance.configuration_hash).to be_nil
+          expect(instance.template_hashes).to be_nil
+
+          perform
+
+          expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
+          expect(instance.configuration_hash).to eq('8c0d7fac26d36e3b51de2d43f17302b4c04fa377')
+          expect(instance.template_hashes.keys).to eq(['dummy'])
+        end
+
+        context 'when a template has already been downloaded' do
+          it 'should reuse the downloaded template' do
+            perform
+
+            expect(blobstore_client).to have_received(:get).once
+          end
+        end
       end
 
-      it 'sets the rendered_job_instance on the instance_plan' do
-        expect(job_instance_renderer).to receive(:render).and_return(rendered_job_instance)
+      context 'when getting the templates spec of an instance plan errors' do
+        before do
+          allow(instance).to receive(:job_name).and_return('my_instance_group')
+          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise Exception, <<-EOF
+- Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+- Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+- Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EOF
+        end
 
-        perform
+        it 'formats the error messages' do
+          expected = <<-EXPECTED.strip
+- Unable to render jobs for instance group 'my_instance_group'. Errors are:
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          EXPECTED
 
-        expect(instance_plan.rendered_templates).to eq(rendered_job_instance)
-
+          expect {
+            perform
+          }.to raise_error { |error|
+            expect(error.message).to eq(expected)
+          }
+        end
       end
+    end
 
-      it 'updates each instance with configuration and templates hashses' do
-        expect(instance).to receive(:configuration_hash=).with(configuration_hash)
-        expect(instance).to receive(:template_hashes=).with(rendered_job_instance.template_hashes)
-        perform
+    describe '#clean_cache!' do
+      it 'should clean up all downloaded blobs after rendering all instance plans' do
+        renderer.render_job_instances([instance_plan])
+
+        blobstore_files.each { |file| expect(File).to be_exist(file) }
+
+        renderer.clean_cache!
+
+        blobstore_files.each { |file| expect(File).to_not be_exist(file) }
       end
-
-
-
     end
   end
 end

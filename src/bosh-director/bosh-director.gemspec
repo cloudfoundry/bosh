@@ -23,6 +23,8 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-director-drain-workers'
   spec.executables << 'bosh-director-migrate'
   spec.executables << 'bosh-director-scheduler'
+  spec.executables << 'bosh-director-sync-dns'
+  spec.executables << 'bosh-director-trigger-one-time-sync-dns'
   spec.executables << 'bosh-director-worker'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
@@ -31,11 +33,9 @@ Gem::Specification.new do |spec|
   # Review this once CPIs are completely externalized and "micro" goes away.
   # ----------------------------------------------------------------------------
   spec.add_dependency 'bosh_common',        "~>#{version}"
-  spec.add_dependency 'bosh_cpi',           "~>#{version}"
   spec.add_dependency 'bosh-registry',      "~>#{version}"
   # ----------------------------------------------------------------------------
 
-  spec.add_dependency 'blobstore_client',   "~>#{version}"
   spec.add_dependency 'bosh-core',          "~>#{version}"
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"

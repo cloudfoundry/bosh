@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
   - name: bosh-src
+  - name: director-state
   - name: stemcell
   - name: release
 
@@ -16,8 +17,3 @@ outputs:
 
 run:
   path: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.sh
-
-params:
-  BOSH_TARGET_IP: required
-  BOSH_USERNAME: admin
-  BOSH_PASSWORD: admin

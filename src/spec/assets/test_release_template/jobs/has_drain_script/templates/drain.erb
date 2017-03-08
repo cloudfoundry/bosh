@@ -26,12 +26,6 @@ case $DRAIN_TYPE in
     # equals dynamic_drain_wait1 and dynamic_drain_wait2.
     case $1 in
 
-      job_unchanged)
-        touch $DRAIN_OUTPUT
-        echo $(date +%s) > $DRAIN_OUTPUT
-        echo $DYNAMIC_DRAIN_WAIT1
-        ;;
-
       job_check_status)
         echo $(date +%s) >> $DRAIN_OUTPUT
         lines=$(wc -l < $DRAIN_OUTPUT | tr -d ' ')
@@ -40,6 +34,12 @@ case $DRAIN_TYPE in
         else
           echo $DYNAMIC_DRAIN_WAIT2
         fi
+        ;;
+
+      *)
+        touch $DRAIN_OUTPUT
+        echo $(date +%s) > $DRAIN_OUTPUT
+        echo $DYNAMIC_DRAIN_WAIT1
         ;;
 
     esac

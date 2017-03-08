@@ -15,7 +15,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       releases: {}
     )
   end
-  let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
+  let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({'name' => 'dea'}) }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
 
@@ -63,6 +63,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     allow(foo_job).to receive(:add_properties)
     allow(bar_job).to receive(:add_properties)
+    allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
   end
 
   describe '#parse' do
@@ -542,6 +543,44 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       expect(instance_group.needed_instance_plans).to eq(needed_instance_plans)
       expect(instance_group.obsolete_instance_plans).to eq([instance_plan3])
+    end
+  end
+
+  describe '#unignored_instance_plans' do
+
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'release' => 'appcloud',
+        'instances' => 1,
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => {},
+        'template' => %w(foo bar),
+      }
+    end
+
+    it 'should NOT return instance plans for ignored and detached instances' do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
+
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1.bind_new_instance_model
+      instance1.mark_as_bootstrap
+      instance2 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2.bind_new_instance_model
+
+      instance2.model.update(ignore: true)
+
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
+      instance_group.add_instance_plans([instance_plan1, instance_plan2])
+
+      unignored_instance_plans = [instance_plan1]
+      expect(instance_group.unignored_instance_plans).to eq(unignored_instance_plans)
     end
   end
 

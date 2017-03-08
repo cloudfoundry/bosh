@@ -9,6 +9,7 @@ module SpecHelper
   class << self
     attr_accessor :logger
     attr_accessor :temp_dir
+    attr_reader :registry_migrations_dir
 
     def init
       ENV["RACK_ENV"] = "test"
@@ -17,6 +18,7 @@ module SpecHelper
 
       require "bosh/registry"
       init_database
+      @registry_migrations_dir = File.expand_path('../../db/migrations', __FILE__)
     end
 
     def configure_logging
@@ -70,6 +72,10 @@ module SpecHelper
         @db.drop_table(table)
       end
       @db.execute("PRAGMA foreign_keys = ON")
+    end
+
+    def get_migrations
+      Dir.glob(File.join(@registry_migrations_dir, '[0-9]*_*.rb'))
     end
 
     def reset

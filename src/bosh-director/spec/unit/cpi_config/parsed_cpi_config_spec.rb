@@ -20,7 +20,6 @@ module Bosh::Director
                           }
                       })
         ]
-
       }
 
       subject(:parsed_cpi_config) { described_class.new(cpis) }

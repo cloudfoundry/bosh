@@ -22,9 +22,9 @@ module Bosh::Monitor
         end
 
         case kind.to_s
-        when "heartbeat"
+        when 'heartbeat'
           klass = Bhm::Events::Heartbeat
-        when "alert"
+        when 'alert'
           klass = Bhm::Events::Alert
         else
           raise InvalidEvent, "Cannot find '#{kind}' event handler"
@@ -57,7 +57,7 @@ module Bosh::Monitor
       end
 
       def error_message
-        @errors.to_a.join(", ")
+        @errors.to_a.join(', ')
       end
 
       [:validate, :to_plain_text, :to_hash, :to_json, :metrics].each do |method|

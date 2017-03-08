@@ -2,7 +2,6 @@
 
 RUN_DIR=/var/vcap/sys/run/director
 LOG_DIR=/var/vcap/sys/log/director
-STORE_DIR=/var/vcap/store/director
 
 PIDFILE=$RUN_DIR/director.pid
 RUNAS=vcap
@@ -49,8 +48,8 @@ function pid_exists() {
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR
-    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMPDIR
+    mkdir -p $RUN_DIR $LOG_DIR $TMPDIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMPDIR
 
     # This hackery is needed until we have a way to manage things outside
     # the /var/vcap directory. Requires stemcell 0.5.4 or later

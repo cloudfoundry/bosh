@@ -6,7 +6,8 @@ module Bosh
           runtime_config = Bosh::Director::Models::RuntimeConfig.new(
             properties: runtime_config_yaml
           )
-          validate_manifest!(runtime_config)
+
+          validate_yml(runtime_config_yaml)
           runtime_config.save
         end
 
@@ -24,9 +25,10 @@ module Bosh
 
         private
 
-        def validate_manifest!(runtime_config)
-          runtime_manifest = runtime_config.manifest
-          Bosh::Director::RuntimeConfig::RuntimeManifestParser.new.parse(runtime_manifest)
+        def validate_yml(runtime_config)
+          YAML.load(runtime_config)
+        rescue Exception => e
+          raise InvalidYamlError, e.message
         end
       end
     end

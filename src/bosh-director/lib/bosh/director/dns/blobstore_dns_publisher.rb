@@ -6,10 +6,7 @@ module Bosh::Director
     end
 
     def broadcast
-      blob = nil
-      Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
-        blob = Models::LocalDnsBlob.order(Sequel.desc(:id)).limit(1).first
-      end
+      blob = Models::LocalDnsBlob.latest
       AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
     end
 
@@ -17,7 +14,7 @@ module Bosh::Director
       json_records = dns_records.to_json
       blobstore_id = @blobstore.create(json_records)
         Models::LocalDnsBlob.create(:blobstore_id => blobstore_id,
-                                    :sha1 => Digest::SHA1.hexdigest(json_records),
+                                    :sha1 => ::Digest::SHA1.hexdigest(json_records),
                                     :version => dns_records.version,
                                     :created_at => Time.new)
       blobstore_id
@@ -26,11 +23,11 @@ module Bosh::Director
     def export_dns_records
       hosts = []
       records = nil
+      version = nil
       Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
-        records = Models::LocalDnsRecord.all
+        version = Models::LocalDnsRecord.max(:id) || 0
+        records = Models::LocalDnsRecord.exclude(instance_id: nil).all
       end
-      version = records.max_by{|r| r.id }
-      version = version.nil? ? 0 : version.id
       records.each do |dns_record|
           hosts << [dns_record.ip, dns_record.name]
       end
@@ -51,7 +48,7 @@ module Bosh::Director
           raise e unless (error_message.include?('unique') || error_message.include?('duplicate'))
         end
       end
-      Models::LocalDnsBlob.where('id != ?', last_record.id).delete
+      Models::LocalDnsBlob.where('id < ?', last_record.id).delete
     end
   end
 end

@@ -1,0 +1,20 @@
+---
+name: job_with_bad_template
+templates:
+  config.yml.erb: config/config.yml
+  pre-start.erb: bin/pre-start
+
+packages: []
+
+properties:
+  fail_instance_index:
+    description: 'Fail for instance #. Failure type must be set for failure'
+    default: -1
+  fail_on_template_rendering:
+    description: "Fail for instance <fail_instance_index> during template rendering"
+    default: false
+  fail_on_job_start:
+    description: "Fail for instance <fail_instance_index> on job start"
+    default: false
+  gargamel.color:
+    description: 'gargamels color'

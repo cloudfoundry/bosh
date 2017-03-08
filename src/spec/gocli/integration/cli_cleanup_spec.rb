@@ -45,16 +45,16 @@ describe 'cli: cleanup', type: :integration do
 
       bosh_runner.run(clean_command)
 
-      expect(table(bosh_runner.run('disks --orphaned', json: true))[0]['Disk CID']).to eq(disk_cid)
+      expect(table(bosh_runner.run('disks --orphaned', json: true))[0]['disk_cid']).to eq(disk_cid)
 
       releases_output = table(bosh_runner.run('releases', json: true))
-      release_versions = releases_output.map{|r| r['Version']}
+      release_versions = releases_output.map{|r| r['version']}
       expect(release_versions).to_not include('0+dev.1')
       expect(release_versions).to include('0+dev.2')
       expect(release_versions).to include('0+dev.3')
 
       stemcell_output = table(bosh_runner.run('stemcells', json: true ))
-      stemcells = stemcell_output.map{|r| r['Name']}
+      stemcells = stemcell_output.map{|r| r['name']}
       expect(stemcells).to include('ubuntu-stemcell')
       expect(stemcells.length).to eq(1)
     end

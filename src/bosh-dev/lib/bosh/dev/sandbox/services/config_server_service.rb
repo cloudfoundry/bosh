@@ -6,9 +6,9 @@ module Bosh::Dev::Sandbox
 
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
 
-    CONFIG_SERVER_VERSION = "0.0.79"
-    DARWIN_CONFIG_SERVER_SHA256 = "4b76c6b2e4abfcf0fad127716b8b6e0de72b48ae7c634b008200bac0c0844f2f"
-    LINUX_CONFIG_SERVER_SHA256 = "dbf749c75bff7d6506b43249a4d9b9f5b3b7f1016d6cef5d2c9c966559c38109"
+    CONFIG_SERVER_VERSION = "0.0.114"
+    DARWIN_CONFIG_SERVER_SHA256 = "eb29c6486b4d02120bc6754c9d9475878b8ddf3585b5dc08d81099e32d9119f3"
+    LINUX_CONFIG_SERVER_SHA256 = "85402eff3da5490e84d98e5fbd45f0ced721753a9db9a9b488e9c0cccef338cc"
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
@@ -26,16 +26,16 @@ module Bosh::Dev::Sandbox
     ROOT_PRIVATE_KEY = File.join(CERTS_DIR, 'rootCA.key')
     JWT_VERIFICATION_KEY = File.join(CERTS_DIR, 'jwtVerification.key')
     UAA_CA_CERT = File.join(CERTS_DIR, 'server.crt')
-    CONFIG_SERVER_CONFIG_FILE = File.join(INSTALL_DIR, 'config-server-config.json')
 
-    def initialize(port_provider, base_log_path, logger)
+    def initialize(port_provider, base_log_path, logger, test_env_number)
       @port = port_provider.get_port(:config_server_port)
       @logger = logger
       @log_location = "#{base_log_path}.config-server.out"
+      @config_server_config_file= File.join(INSTALL_DIR, "config-server-config#{test_env_number}.json")
       @config_server_socket_connector = SocketConnector.new('config-server', 'localhost', @port, @log_location, logger)
 
       @config_server_process = Bosh::Dev::Sandbox::Service.new(
-        [executable_path, CONFIG_SERVER_CONFIG_FILE],
+        [executable_path, @config_server_config_file],
         {
           output: @log_location
         },
@@ -112,7 +112,7 @@ module Bosh::Dev::Sandbox
 
     def setup_config_file(with_trusted_certs = true)
       config = with_trusted_certs ? config_json : config_with_untrusted_cert_json
-      File.open(CONFIG_SERVER_CONFIG_FILE, 'w') { |file| file.write(config) }
+      File.open(@config_server_config_file, 'w') { |file| file.write(config) }
     end
 
     def config_json

@@ -99,6 +99,7 @@ module Bosh::Director::Models
     vm_cid      { Sham.vm_cid }
     agent_id    { Sham.agent_id }
     uuid        { Sham.uuid }
+    variable_set { VariableSet.make }
   end
 
   IpAddress.blueprint do
@@ -170,7 +171,7 @@ module Bosh::Director::Models
   end
 
   RuntimeConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_runtime_config }
+    raw_manifest { Bosh::Spec::Deployments.simple_runtime_config }
   end
 
   CpiConfig.blueprint do
@@ -206,6 +207,11 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
+  ErrandRun.blueprint do
+    instance_id    { Instance.make.id }
+    successful  { false }
+  end
+
   LocalDnsBlob.blueprint do
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
@@ -217,6 +223,12 @@ module Bosh::Director::Models
     ip          { Sham.ip }
     instance_id { Sham.instance_id }
   end
+
+  VariableSet.blueprint {
+    deployment { Deployment.make }
+  }
+
+  Variable.blueprint {}
 
   module Dns
     Domain.blueprint do

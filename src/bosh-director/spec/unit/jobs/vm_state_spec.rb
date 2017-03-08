@@ -22,6 +22,7 @@ module Bosh::Director
           },
         )
     end
+
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     before do
       @deployment = Models::Deployment.make
@@ -45,7 +46,7 @@ module Bosh::Director
         Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => {'test' => {'ip' => '1.1.1.1'}},
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
           'resource_pool' => {}
@@ -135,8 +136,6 @@ module Bosh::Director
       it 'should return DNS A records ordered by instance id records first' do
         instance.update(dns_record_names: ['0.job.network.deployment.microbosh', 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh'])
         stub_agent_get_state_to_return_state_with_vitals
-
-
 
         job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform

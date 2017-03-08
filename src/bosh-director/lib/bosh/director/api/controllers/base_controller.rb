@@ -70,6 +70,12 @@ module Bosh::Director
               throw(:halt, [401, message])
             end
           end
+
+          @current_context_id = request.env.fetch('HTTP_X_BOSH_CONTEXT_ID', '')
+
+          if @current_context_id.length > 64
+              raise ContextIdViolatedMax, "X-Bosh-Context-Id cannot be more than 64 characters in length"
+          end
         end
 
         def requires_authentication?
@@ -82,6 +88,11 @@ module Bosh::Director
           set(:show_exceptions, false)
           set(:raise_errors, false)
           set(:dump_errors, false)
+        end
+
+        not_found do
+          status(404)
+          "Endpoint '#{request.path}' not found. Please consider upgrading your director"
         end
 
         error do

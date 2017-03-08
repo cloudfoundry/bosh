@@ -3,6 +3,7 @@ require_relative '../spec_helper'
 describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
 
+
   it 'can upload a runtime config' do
     runtime_config = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.simple_runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config.path}")).to include('Succeeded')
@@ -14,7 +15,7 @@ describe 'cli runtime config', type: :integration do
     # not logged in
     expect(bosh_runner.run("update-runtime-config #{__FILE__}", failure_expected: true)).to include('Please log in first')
 
-    bosh_runner.run('log-in', user: 'test', password: 'test')
+    bosh_runner.run('log-in', client: 'test', client_secret: 'test')
 
     # no file
     expect(bosh_runner.run('update-runtime-config /some/nonsense/file', failure_expected: true)).to include("Cannot find file '/some/nonsense/file'")
@@ -37,7 +38,7 @@ describe 'cli runtime config', type: :integration do
   it 'can download a runtime config' do
 
     # none present yet
-    expect(bosh_runner.run('runtime-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as user 'test'/)
+    expect(bosh_runner.run('runtime-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as client 'test'/)
 
     runtime_config = Bosh::Spec::Deployments.simple_runtime_config
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
@@ -48,15 +49,25 @@ describe 'cli runtime config', type: :integration do
   end
 
   it "gives an error when release version is 'latest'" do
-    runtime_config = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_latest_release)
-    expect(bosh_runner.run("update-runtime-config #{runtime_config.path}", failure_expected: true)).to include(
-      "Runtime manifest contains the release 'test_release_2' with version as 'latest'. Please specify the actual version string.")
+    runtime_config = Bosh::Spec::Deployments.runtime_config_latest_release
+    upload_runtime_config(runtime_config_hash: runtime_config)
+    output, exit_code = deploy_from_scratch(failure_expected: true,
+                                            return_exit_code: true)
+
+    expect(exit_code).to_not eq(0)
+    expect(output).to include(
+      "Runtime manifest contains the release 'bosh-release' with version as 'latest'. Please specify the actual version string.")
   end
 
   it 'gives an error when release for addon does not exist in releases section' do
-    runtime_config = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_release_missing)
-    expect(bosh_runner.run("update-runtime-config #{runtime_config.path}", failure_expected: true)).to include(
-      "Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
+    runtime_config = Bosh::Spec::Deployments.runtime_config_release_missing
+
+    upload_runtime_config(runtime_config_hash: runtime_config)
+    output, exit_code = deploy_from_scratch(failure_expected: true,
+                                            return_exit_code: true)
+
+    expect(exit_code).to_not eq(0)
+    expect(output).to include("Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
 end
 
   it 'does not fail when runtime config is very large' do

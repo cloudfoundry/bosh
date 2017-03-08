@@ -9,6 +9,7 @@ module Bosh::Director::Models
     many_to_one  :cloud_config
     many_to_one  :runtime_config
     many_to_many :teams
+    one_to_many  :variable_sets, :class => 'Bosh::Director::Models::VariableSet'
 
     def validate
       validates_presence :name
@@ -42,16 +43,21 @@ module Bosh::Director::Models
     end
 
     def tags
-      tags = {}
+      return {} unless manifest
 
-      if manifest
-        tags = YAML.load(manifest)['tags'] || {}
-      end
+      tags = YAML.load(manifest)['tags']
+      return {} if tags.nil? || tags.empty?
 
-      tags
+      client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
+      client.interpolate(tags, name, nil)
+    end
+
+    def current_variable_set
+      variable_sets_dataset.order(Sequel.desc(:created_at)).limit(1).first
     end
   end
 
   Deployment.plugin :association_dependencies
   Deployment.add_association_dependencies :stemcells => :nullify, :problems => :destroy
+  Deployment.many_to_many :variables, :join_table=>:variable_sets, :right_key=>:id,  :right_primary_key=>:variable_set_id
 end

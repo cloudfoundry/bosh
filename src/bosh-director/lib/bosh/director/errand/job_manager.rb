@@ -1,19 +1,15 @@
 module Bosh::Director
   class Errand::JobManager
-    # @param [Bosh::Director::DeploymentPlan::Planner] deployment
-    # @param [Bosh::Director::DeploymentPlan::Job] job
-    # @param [Bosh::Clouds] cloud
-    # @param [Logger] logger
     def initialize(deployment, job, logger)
       @deployment = deployment
       @job = job
       @logger = logger
       @disk_manager = DiskManager.new(logger)
-      @job_renderer = JobRenderer.create
+      @job_renderer = @deployment.job_renderer
       agent_broadcaster = AgentBroadcaster.new
       @dns_manager = DnsManagerProvider.create
-      vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
+      @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
+      @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
     end
 
     def create_missing_vms
@@ -23,23 +19,24 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_updater = JobUpdater.new(@deployment, @job, @disk_manager)
+      job_updater = JobUpdater.new(@deployment.ip_provider, @job, @disk_manager, @job_renderer)
       job_updater.update
     end
 
-    # Deletes all errand job instances
-    # @return [void]
-    def delete_instances
-      instance_plans = bound_instance_plans
-      if instance_plans.empty?
-        @logger.info('No errand instances to delete')
+    def delete_vms
+      bound_instance_plans = @job.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
+      if bound_instance_plans.empty?
+        @logger.info('No errand vms to delete')
         return
       end
 
-      @logger.info('Deleting errand instances')
-      event_log_stage = Config.event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
-      instance_deleter = InstanceDeleter.new(@deployment.ip_provider, @dns_manager, @disk_manager)
-      instance_deleter.delete_instance_plans(instance_plans, event_log_stage)
+      bound_instance_plans.each do |instance_plan|
+        unless instance_plan.already_detached?
+          @disk_manager.unmount_disk_for(instance_plan)
+        end
+
+        @vm_deleter.delete_for_instance(instance_plan.instance.model)
+      end
     end
 
     private

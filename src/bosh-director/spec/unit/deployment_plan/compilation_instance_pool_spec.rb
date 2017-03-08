@@ -29,7 +29,7 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
+    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:compilation_config) do
       compilation_spec = {
@@ -112,6 +112,7 @@ module Bosh::Director
       allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
     end
     let(:availability_zone) { nil }
 
@@ -154,7 +155,7 @@ module Bosh::Director
         action
 
         compilation_instance = Models::Instance.find(uuid: 'instance-uuid-1')
-        expect(compilation_instance.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
+        expect(compilation_instance.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(trusted_certs))
       end
 
       it 'should record creation event' do

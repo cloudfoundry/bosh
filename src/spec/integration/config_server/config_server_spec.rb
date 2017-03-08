@@ -54,7 +54,7 @@ describe 'using director with config server', type: :integration do
                                               return_exit_code: true, env: client_env)
 
       expect(exit_code).to_not eq(0)
-      expect(output).to include('Config Server SSL error')
+      expect(output).to include('certificate verify failed')
     end
   end
 
@@ -72,7 +72,7 @@ describe 'using director with config server', type: :integration do
                                                 return_exit_code: true, env: client_env)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Failed to load placeholder names from the config server: #{prepend_namespace('my_placeholder')}")
+        expect(output).to include("Failed to find variable '#{prepend_namespace('my_placeholder')}' from config server: HTTP code '404'")
       end
 
       it 'does not log interpolated properties in the task debug logs and deploy output' do
@@ -146,8 +146,7 @@ describe 'using director with config server', type: :integration do
       end
 
       context 'when health monitor is around and resurrector is enabled' do
-        before { current_sandbox.health_monitor_process.start }
-        after { current_sandbox.health_monitor_process.stop }
+        with_reset_hm_before_each
 
         it 'interpolates values correctly when resurrector kicks in' do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
@@ -163,12 +162,12 @@ describe 'using director with config server', type: :integration do
 
           new_vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(new_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
         end
       end
 
       context 'when config server values changes post deployment' do
-        it 'updates the job on bosh redeploy' do
+        before do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           manifest_hash['jobs'].first['instances'] = 1
@@ -179,7 +178,9 @@ describe 'using director with config server', type: :integration do
           expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
+        end
 
+        it 'updates the job on bosh redeploy' do
           output = bosh_runner.run('deploy', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
@@ -188,46 +189,32 @@ describe 'using director with config server', type: :integration do
           expect(new_template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
         end
 
-        it 'updates the job on start/restart/recreate' do
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-
-          manifest_hash['jobs'].first['instances'] = 1
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
-
-          # ============================================
-          # Restart
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are happy')
-          output = bosh_runner.run('restart', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
-
-          # ============================================
-          # Recreate
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'smurfs are happy')
-          output = bosh_runner.run('recreate', env: client_env)
-          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-
-          vm = director.vm('our_instance_group', '0', env: client_env)
-          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('smurfs are happy')
-
-          # ============================================
-          # start
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'kittens are happy')
+        it 'does NOT update the job on start' do
           bosh_runner.run('stop', env: client_env)
           output = bosh_runner.run('start', env: client_env)
           expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
 
           vm = director.vm('our_instance_group', '0', env: client_env)
           template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('kittens are happy')
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+        end
+
+        it 'does NOT update the job on restart' do
+          output = bosh_runner.run('restart', env: client_env)
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+        end
+
+        it 'does NOT update the job on recreate' do
+          output = bosh_runner.run('recreate', env: client_env)
+          expect(scrub_random_ids(output)).to include('Started updating instance our_instance_group > our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
         end
       end
 
@@ -453,10 +440,13 @@ describe 'using director with config server', type: :integration do
       context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
-        it 'will throw a valid error when uploading runtime config' do
-          output, exit_code = upload_runtime_config(runtime_config_hash: runtime_config, failure_expected: true, return_exit_code: true, env: client_env)
+        it 'will throw a valid error for the runtime config on deploy' do
+          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+
+          output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, env: client_env)
+
           expect(exit_code).to_not eq(0)
-          expect(output).to include('Error 540000: Failed to load placeholder names from the config server: /release_name')
+          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
         end
 
         # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
@@ -497,7 +487,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include('Failed to load placeholder names from the config server: /placeholder_used_at_render_time')
+            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP code '404'")
           end
         end
       end
@@ -555,10 +545,11 @@ describe 'using director with config server', type: :integration do
 
         it 'throws errors when placeholders do not start with slash' do
           runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
+          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
 
           expect {
-            upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
-          }.to raise_error(RuntimeError, /Error 540005: Names must be absolute path: addon_release_version_placeholder/)
+            deploy_from_scratch(no_login: true, env: client_env)
+          }.to raise_error(RuntimeError, /Error 540004: Names must be absolute path: 'addon_release_version_placeholder'/)
         end
       end
     end
@@ -578,7 +569,7 @@ describe 'using director with config server', type: :integration do
       end
     end
 
-    context 'when release job spec properties have types' do
+    xcontext 'when release job spec properties have types' do
       let(:manifest_hash) do
         Bosh::Spec::Deployments.test_release_manifest.merge(
           {
@@ -594,64 +585,174 @@ describe 'using director with config server', type: :integration do
           })
       end
 
-      context 'when types are generatable' do
-        context 'when type is password or certificate' do
-          context 'when these properties are defined in deployment manifest as placeholders' do
-            context 'when these properties are NOT defined in the config server' do
+      context 'when these properties are defined in deployment manifest as placeholders' do
+        context 'when these properties are NOT defined in the config server' do
+          let(:job_properties) do
+            {
+              'smurfs' => {
+                'phone_password' => '((smurfs_phone_password_placeholder))',
+                'happiness_level' => 5
+              },
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                'cert' => '((gargamel_certificate_placeholder))'
+              }
+            }
+          end
+
+          context 'when the properties have default values defined' do
+
+            before do
+              job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
+              job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
+            end
+
+            it 'uses the default values defined' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+              vm = director.vm('our_instance_group', '0', env: client_env)
+
+              template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+              expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+
+              hardcoded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+              expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
+            end
+          end
+
+          context 'when the properties do NOT have default values defined' do
+            it 'generates values for these properties' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+              vm = director.vm('our_instance_group', '0', env: client_env)
+
+              # Passwords generation
+              template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+              expect(
+                template_hash['properties_list']['smurfs_phone_password']
+              ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
+              expect(
+                template_hash['properties_list']['gargamel_secret_recipe']
+              ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
+
+              # Certificate generation
+              generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+              generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+              root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+              generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
+
+              expect(generated_cert).to eq(generated_cert_response['certificate'])
+              expect(generated_private_key).to eq(generated_cert_response['private_key'])
+              expect(root_ca).to eq(generated_cert_response['ca'])
+
+              certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
+              expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
+
+              subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
+              expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
+            end
+
+            context 'when config server raises an error while generating' do
+              let(:job_properties) do
+                {
+                  'gargamel' => {
+                    'secret_recipe' => 'stuff'
+                  },
+                  'smurfs' => {
+                    'phone_password' => 'anything',
+                    'happiness_level' => '((happy_level_placeholder))'
+                  }
+                }
+              end
+
+              it 'propagates that error back to the user and fails to deploy' do
+                output, exit_code =  deploy_from_scratch(
+                  no_login: true,
+                  manifest_hash: manifest_hash,
+                  cloud_config_hash: cloud_config,
+                  failure_expected: true,
+                  return_exit_code: true,
+                  env: client_env
+                )
+
+                expect(exit_code).to_not eq(0)
+                expect(output).to include ("Config Server failed to generate value for '/TestDirector/simple/happy_level_placeholder' with type 'happy'.")
+              end
+            end
+
+            context 'when an instance group has multiple networks' do
               let(:job_properties) do
                 {
                   'smurfs' => {
-                    'phone_password' => '((smurfs_phone_password_placeholder))',
+                    'phone_password' => 'vroom',
                     'happiness_level' => 5
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                    'secret_recipe' => 'hello',
                     'cert' => '((gargamel_certificate_placeholder))'
                   }
                 }
               end
 
-              context 'when the properties have default values defined' do
+              let(:cloud_config) {
+                cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+                cloud_config_hash['resource_pools'].first['size'] = 1
+                cloud_config_hash['networks'] = [
+                  {
+                    'name' => 'a',
+                    'subnets' => [
+                      {
+                        'range' => '192.168.1.0/24',
+                        'gateway' => '192.168.1.1',
+                        'dns' => ['192.168.1.2'],
+                        'static' => '192.168.1.10-192.168.1.15',
+                        'reserved' => [],
+                        'cloud_properties' => {},
+                      }
+                    ]
+                  },
+                  {
+                    'name' => 'b',
+                    'subnets' => [
+                      {
+                        'range' => '192.168.2.0/24',
+                        'gateway' => '192.168.2.1',
+                        'dns' => ['192.168.2.2'],
+                        'static' => '192.168.2.10-192.168.2.15',
+                        'reserved' => [],
+                        'cloud_properties' => {},
+                      }
+                    ]
+                  }
+                ]
+                cloud_config_hash
+              }
 
-                before do
-                  job_properties['gargamel']['password'] = '((config_server_has_no_value_for_me))'
-                  job_properties['gargamel']['hard_coded_cert'] = '((config_server_has_no_value_for_me_either))'
-                end
-
-                it 'uses the default values defined' do
-                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-                  vm = director.vm('our_instance_group', '0', env: client_env)
-
-                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                  expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
-
-                  hardcoded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
-                  expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
-                end
+              before do
+                manifest_hash['jobs'].first['networks'] = [
+                  {
+                    'name' => 'a',
+                    'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),
+                    'default' => %w(dns gateway addressable)},
+                  {
+                    'name' => 'b',
+                    'static_ips' => %w(192.168.2.10 192.168.2.11 192.168.2.12),
+                  }
+                ]
               end
 
-              context 'when the properties do NOT have default values defined' do
-                it 'generates values for these properties' do
-                  deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+              it 'generates cert with SAN including all the networks with no duplicates' do
+                deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
-                  vm = director.vm('our_instance_group', '0', env: client_env)
+                generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
-                  # Passwords generation
-                  template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                  expect(
-                    template_hash['properties_list']['smurfs_phone_password']
-                  ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
-                  expect(
-                    template_hash['properties_list']['gargamel_secret_recipe']
-                  ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
+                vms = director.vms('simple', env: client_env).select{ |vm|  vm.job_name == 'our_instance_group' }
 
-                  # Certificate generation
+                vms.each do |vm|
                   generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
                   generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
                   root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                  generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
                   expect(generated_cert).to eq(generated_cert_response['certificate'])
                   expect(generated_private_key).to eq(generated_cert_response['private_key'])
@@ -662,285 +763,161 @@ describe 'using director with config server', type: :integration do
 
                   subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
                   expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
-                end
-
-                context 'when an instance group has multiple networks' do
-                  let(:job_properties) do
-                    {
-                      'smurfs' => {
-                        'phone_password' => 'vroom',
-                        'happiness_level' => 5
-                      },
-                      'gargamel' => {
-                        'secret_recipe' => 'hello',
-                        'cert' => '((gargamel_certificate_placeholder))'
-                      }
-                    }
-                  end
-
-                  let(:cloud_config) {
-                    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-                    cloud_config_hash['resource_pools'].first['size'] = 1
-                    cloud_config_hash['networks'] = [
-                      {
-                        'name' => 'a',
-                        'subnets' => [
-                          {
-                            'range' => '192.168.1.0/24',
-                            'gateway' => '192.168.1.1',
-                            'dns' => ['192.168.1.2'],
-                            'static' => '192.168.1.10-192.168.1.15',
-                            'reserved' => [],
-                            'cloud_properties' => {},
-                          }
-                        ]
-                      },
-                      {
-                        'name' => 'b',
-                        'subnets' => [
-                          {
-                            'range' => '192.168.2.0/24',
-                            'gateway' => '192.168.2.1',
-                            'dns' => ['192.168.2.2'],
-                            'static' => '192.168.2.10-192.168.2.15',
-                            'reserved' => [],
-                            'cloud_properties' => {},
-                          }
-                        ]
-                      }
-                    ]
-                    cloud_config_hash
-                  }
-
-                  before do
-                    manifest_hash['jobs'].first['networks'] = [
-                      {
-                        'name' => 'a',
-                        'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),
-                        'default' => %w(dns gateway addressable)},
-                      {
-                        'name' => 'b',
-                        'static_ips' => %w(192.168.2.10 192.168.2.11 192.168.2.12),
-                      }
-                    ]
-                  end
-
-                  it 'generates cert with SAN including all the networks with no duplicates' do
-                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
-
-                    vms = director.vms('simple', env: client_env).select{ |vm|  vm.job_name == 'our_instance_group' }
-
-                    vms.each do |vm|
-                      generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                      generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                      root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                      expect(generated_cert).to eq(generated_cert_response['certificate'])
-                      expect(generated_private_key).to eq(generated_cert_response['private_key'])
-                      expect(root_ca).to eq(generated_cert_response['ca'])
-
-                      certificate_object = OpenSSL::X509::Certificate.new(generated_cert)
-                      expect(certificate_object.subject.to_s).to include('CN=*.our-instance-group.a.simple.bosh')
-
-                      subject_alt_name = certificate_object.extensions.find {|e| e.oid == 'subjectAltName'}
-                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
-                      expect(subject_alt_name.to_s.scan(/\*.our-instance-group.b.simple.bosh/).count).to eq(1)
-                    end
-                  end
-                end
-
-                context 'when placeholders start with exclamation mark' do
-                  let(:job_properties) do
-                    {
-                      'smurfs' => {
-                        'phone_password' => '((!smurfs_phone_password_placeholder))',
-                        'happiness_level' => 9
-                      },
-                      'gargamel' => {
-                        'secret_recipe' => '((!gargamel_secret_recipe_placeholder))',
-                        'cert' => '((!gargamel_certificate_placeholder))'
-                      }
-                    }
-                  end
-
-                  it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
-                    deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-                    vm = director.vm('our_instance_group', '0', env: client_env)
-
-                    template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                    expect(
-                      template_hash['properties_list']['smurfs_phone_password']
-                    ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
-                    expect(
-                      template_hash['properties_list']['gargamel_secret_recipe']
-                    ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
-
-                    generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
-                    generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
-                    root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
-
-                    generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
-
-                    expect(generated_cert).to eq(generated_cert_response['certificate'])
-                    expect(generated_private_key).to eq(generated_cert_response['private_key'])
-                    expect(root_ca).to eq(generated_cert_response['ca'])
-                  end
+                  expect(subject_alt_name.to_s.scan(/\*.our-instance-group.b.simple.bosh/).count).to eq(1)
                 end
               end
             end
 
-            context 'when these properties are defined in config server' do
+            context 'when placeholders start with exclamation mark' do
               let(:job_properties) do
                 {
                   'smurfs' => {
-                    'phone_password' => '((smurfs_phone_password_placeholder))',
-                    'happiness_level' => 5
+                    'phone_password' => '((!smurfs_phone_password_placeholder))',
+                    'happiness_level' => 9
                   },
                   'gargamel' => {
-                    'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
-                    'cert' => '((gargamel_certificate_placeholder))'
+                    'secret_recipe' => '((!gargamel_secret_recipe_placeholder))',
+                    'cert' => '((!gargamel_certificate_placeholder))'
                   }
                 }
               end
 
-              let(:certificate_payload) do
-                {
-                  'certificate' => 'cert123',
-                  'private_key' => 'adb123',
-                  'ca' => 'ca456'
-                }
-              end
-
-              it 'uses the values defined in config server' do
-                config_server_helper.put_value(prepend_namespace('smurfs_phone_password_placeholder'), 'i am smurf')
-                config_server_helper.put_value(prepend_namespace('gargamel_secret_recipe_placeholder'), 'banana and jaggery')
-                config_server_helper.put_value(prepend_namespace('gargamel_certificate_placeholder'), certificate_payload)
-
+              it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
 
                 vm = director.vm('our_instance_group', '0', env: client_env)
 
                 template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
-                expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+                expect(
+                  template_hash['properties_list']['smurfs_phone_password']
+                ).to eq(config_server_helper.get_value(prepend_namespace('smurfs_phone_password_placeholder')))
+                expect(
+                  template_hash['properties_list']['gargamel_secret_recipe']
+                ).to eq(config_server_helper.get_value(prepend_namespace('gargamel_secret_recipe_placeholder')))
 
                 generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
                 generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
                 root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
 
-                expect(generated_cert).to eq('cert123')
-                expect(generated_private_key).to eq('adb123')
-                expect(root_ca).to eq('ca456')
-              end
-            end
-          end
+                generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
-          context 'when these properties are NOT defined in deployment manifest' do
-            context 'when these properties have defaults' do
-              let(:certificate_payload) do
-                {
-                  'certificate' => 'cert123',
-                  'private_key' => 'adb123',
-                  'ca' => 'ca456'
-                }
-              end
-
-              let(:job_properties) do
-                {
-                  'gargamel' => {
-                    'secret_recipe' => 'stuff',
-                    'cert' => certificate_payload
-                  },
-                  'smurfs' => {
-                    'phone_password' => 'anything',
-                    'happiness_level' => 5
-                  }
-                }
-              end
-
-              it 'does not ask config server to generate values and uses default values to deploy' do
-                deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
-
-                vm = director.vm('our_instance_group', '0', env: client_env)
-                template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
-                expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
-
-                hard_coded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
-                expect(hard_coded_cert).to eq('good luck hardcoding certs and private keys')
-              end
-            end
-
-            context 'when these properties DO NOT have defaults' do
-              let(:job_properties) do
-                # set this property so that it only complains about one missing property
-                {
-                  'gargamel' => {
-                    'secret_recipe' => 'anything',
-                  },
-                  'smurfs' => {
-                    'happiness_level' => 5
-                  }
-                }
-              end
-
-              it 'does not ask config server to generate values and fails to deploy while rendering templates' do
-                output, exit_code =  deploy_from_scratch(
-                  no_login: true,
-                  manifest_hash: manifest_hash,
-                  cloud_config_hash: cloud_config,
-                  failure_expected: true,
-                  return_exit_code: true,
-                  env: client_env
-                )
-
-                expect(exit_code).to_not eq(0)
-                expect(output).to include("Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '[\"smurfs.phone_password\"]')")
-                expect(output).to include("Error filling in template 'generated_cert.pem.erb' (line 1: Can't find property '[\"gargamel.cert.certificate\"]')")
-                expect(output).to include("Error filling in template 'generated_key.key.erb' (line 1: Can't find property '[\"gargamel.cert.private_key\"]')")
-                expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
+                expect(generated_cert).to eq(generated_cert_response['certificate'])
+                expect(generated_private_key).to eq(generated_cert_response['private_key'])
+                expect(root_ca).to eq(generated_cert_response['ca'])
               end
             end
           end
         end
-      end
 
-      context 'when types are NOT generatable' do
-        context 'when these properties are defined in deployment manifest' do
-
+        context 'when these properties are defined in config server' do
           let(:job_properties) do
             {
-              'gargamel' => {
-                'secret_recipe' => 'stuff'
-              },
               'smurfs' => {
-                'phone_password' => 'anything',
-                'happiness_level' => '((happy_level_placeholder))'
+                'phone_password' => '((smurfs_phone_password_placeholder))',
+                'happiness_level' => 5
+              },
+              'gargamel' => {
+                'secret_recipe' => '((gargamel_secret_recipe_placeholder))',
+                'cert' => '((gargamel_certificate_placeholder))'
               }
             }
           end
 
-          context 'when these properties are NOT defined in the config server' do
-            context 'when the properties do NOT have default values defined' do
-              it 'fails to deploy when not finding property in config server' do
-                output, exit_code =  deploy_from_scratch(
-                  no_login: true,
-                  manifest_hash: manifest_hash,
-                  cloud_config_hash: cloud_config,
-                  failure_expected: true,
-                  return_exit_code: true,
-                  env: client_env
-                )
+          let(:certificate_payload) do
+            {
+              'certificate' => 'cert123',
+              'private_key' => 'adb123',
+              'ca' => 'ca456'
+            }
+          end
 
-                expect(exit_code).to_not eq(0)
-                expect(output).to include <<-EOF
-Error 100: Unable to render instance groups for deployment. Errors are:
-   - Failed to load placeholder names from the config server: /TestDirector/simple/happy_level_placeholder
-                EOF
-              end
-            end
+          it 'uses the values defined in config server' do
+            config_server_helper.put_value(prepend_namespace('smurfs_phone_password_placeholder'), 'i am smurf')
+            config_server_helper.put_value(prepend_namespace('gargamel_secret_recipe_placeholder'), 'banana and jaggery')
+            config_server_helper.put_value(prepend_namespace('gargamel_certificate_placeholder'), certificate_payload)
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+            vm = director.vm('our_instance_group', '0', env: client_env)
+
+            template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['smurfs_phone_password']).to eq('i am smurf')
+            expect(template_hash['properties_list']['gargamel_secret_recipe']).to eq('banana and jaggery')
+
+            generated_cert = vm.read_job_template('job_with_property_types', 'generated_cert.pem')
+            generated_private_key = vm.read_job_template('job_with_property_types', 'generated_key.key')
+            root_ca = vm.read_job_template('job_with_property_types', 'root_ca.pem')
+
+            expect(generated_cert).to eq('cert123')
+            expect(generated_private_key).to eq('adb123')
+            expect(root_ca).to eq('ca456')
+          end
+        end
+      end
+
+      context 'when these properties are NOT defined in deployment manifest' do
+        context 'when these properties have defaults' do
+          let(:certificate_payload) do
+            {
+              'certificate' => 'cert123',
+              'private_key' => 'adb123',
+              'ca' => 'ca456'
+            }
+          end
+
+          let(:job_properties) do
+            {
+              'gargamel' => {
+                'secret_recipe' => 'stuff',
+                'cert' => certificate_payload
+              },
+              'smurfs' => {
+                'phone_password' => 'anything',
+                'happiness_level' => 5
+              }
+            }
+          end
+
+          it 'does not ask config server to generate values and uses default values to deploy' do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+            vm = director.vm('our_instance_group', '0', env: client_env)
+            template_hash = YAML.load(vm.read_job_template('job_with_property_types', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_password']).to eq('abc123')
+
+            hard_coded_cert = vm.read_job_template('job_with_property_types', 'hardcoded_cert.pem')
+            expect(hard_coded_cert).to eq('good luck hardcoding certs and private keys')
+          end
+        end
+
+        context 'when these properties DO NOT have defaults' do
+          let(:job_properties) do
+            # set this property so that it only complains about one missing property
+            {
+              'gargamel' => {
+                'secret_recipe' => 'anything',
+              },
+              'smurfs' => {
+                'happiness_level' => 5
+              }
+            }
+          end
+
+          it 'does not ask config server to generate values and fails to deploy while rendering templates' do
+            output, exit_code =  deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              failure_expected: true,
+              return_exit_code: true,
+              env: client_env
+            )
+
+            expect(exit_code).to_not eq(0)
+            expect(output).to include("Error filling in template 'properties_displayer.yml.erb' (line 3: Can't find property '[\"smurfs.phone_password\"]')")
+            expect(output).to include("Error filling in template 'generated_cert.pem.erb' (line 1: Can't find property '[\"gargamel.cert.certificate\"]')")
+            expect(output).to include("Error filling in template 'generated_key.key.erb' (line 1: Can't find property '[\"gargamel.cert.private_key\"]')")
+            expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
           end
         end
       end

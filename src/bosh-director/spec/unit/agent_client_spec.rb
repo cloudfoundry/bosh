@@ -273,32 +273,44 @@ module Bosh::Director
     end
 
     describe '#sync_dns' do
+      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
+
       before do
         allow(Config).to receive(:nats_rpc)
         allow(Api::ResourceManager).to receive(:new)
       end
 
+      it 'sends sync_dns to the agent' do
+        expect(client).to receive(:send_nats_request) do |message_name, args|
+          expect(message_name).to eq(:sync_dns)
+          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1'])
+        end
+        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1')
+      end
+
+      it 'sends sync_dns to the agent with version parameter' do
+        expect(client).to receive(:send_nats_request) do |message_name, args|
+          expect(message_name).to eq(:sync_dns)
+          expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1])
+        end
+        client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1)
+      end
+    end
+
+    describe '#cancel_sync_dns' do
       subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
-        before do
-          allow(Config).to receive(:nats_rpc)
-          allow(Api::ResourceManager).to receive(:new)
-        end
+      let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc) }
 
-        it 'sends sync_dns to the agent' do
-          expect(client).to receive(:send_nats_request) do |message_name, args|
-            expect(message_name).to eq(:sync_dns)
-            expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fake-sha1'])
-          end
-          client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1')
-        end
+      before do
+        allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
+        allow(Api::ResourceManager).to receive(:new)
+      end
 
-        it 'sends sync_dns to the agent with version parameter' do
-          expect(client).to receive(:send_nats_request) do |message_name, args|
-            expect(message_name).to eq(:sync_dns)
-            expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fake-sha1', version: 1])
-          end
-          client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fake-sha1', version: 1)
-        end
+      it 'cancels the specified nats rpc request' do
+        expect(nats_rpc).to receive(:cancel_request).with('some-id')
+
+        client.cancel_sync_dns('some-id')
+      end
     end
 
     context 'task is synchronous' do

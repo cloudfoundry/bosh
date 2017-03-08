@@ -30,12 +30,12 @@ module Bosh::Director
       )
     end
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
     let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer) }
+    let(:job_renderer) { JobRenderer.create }
     let(:agent_client) { instance_double(AgentClient) }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
@@ -44,6 +44,7 @@ module Bosh::Director
 
     before do
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
+      allow(JobRenderer).to receive(:create).and_return(job_renderer)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(Config).to receive(:current_job).and_return(update_job)
@@ -119,7 +120,7 @@ module Bosh::Director
         end
 
         it 'whines on invalid spec format' do
-          instance.update(spec: 'error')
+          instance.update(spec_json: 'error')
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -166,7 +167,6 @@ module Bosh::Director
 
 
         context 'recreates the vm' do
-
           before { fake_job_context }
 
           def expect_vm_gets_created
@@ -187,10 +187,12 @@ module Bosh::Director
             expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
             expect(fake_new_agent).to receive(:start).ordered
 
-            expect(dns_manager).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', 'name-1').and_return('index.record.name')
-            expect(dns_manager).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', 'name-1').and_return('uuid.record.name')
+            expect(dns_manager).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name).and_return('index.record.name')
+            expect(dns_manager).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name).and_return('uuid.record.name')
             expect(dns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' => nil, 'uuid.record.name' => nil})
             expect(dns_manager).to receive(:flush_dns_cache)
+
+            expect(job_renderer).to receive(:clean_cache!)
           end
 
           it 'recreates the VM' do

@@ -117,6 +117,7 @@ module Bosh::Director::DeploymentPlan
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     before do
+      Bosh::Director::Models::VariableSet.make(deployment: deployment)
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
@@ -129,7 +130,6 @@ module Bosh::Director::DeploymentPlan
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
-    before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instance) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, vm_cid: 'vm-cid-1') }
@@ -159,7 +159,7 @@ module Bosh::Director::DeploymentPlan
     context 'when the director database contains no instances' do
       let(:multi_job_updater) do
         Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.new(
-            Bosh::Director::JobUpdaterFactory.new(logger)
+            Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.job_renderer)
         )
       end
       before do

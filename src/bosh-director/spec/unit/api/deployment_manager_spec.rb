@@ -21,6 +21,7 @@ module Bosh::Director
 
           expect(create_task.description).to eq('create deployment')
           expect(create_task.deployment_name).to eq('DEPLOYMENT_NAME')
+          expect(create_task.context_id).to eq('')
         end
 
         it 'passes a nil cloud config id and runtime config id if there is no cloud config or runtime config' do
@@ -31,6 +32,15 @@ module Bosh::Director
 
           subject.create_deployment(username, 'manifest', nil, nil, deployment, options)
         end
+
+        it 'passes context id' do
+          cloud_config = Models::CloudConfig.make
+          runtime_config = Models::RuntimeConfig.make
+          context_id = 'example-context-id'
+          create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_config, deployment, options, context_id)
+
+          expect(create_task.context_id).to eq context_id
+        end
     end
 
     describe '#delete_deployment' do
@@ -39,6 +49,12 @@ module Bosh::Director
 
         expect(delete_task.description).to eq('delete deployment DEPLOYMENT_NAME')
         expect(delete_task.deployment_name).to eq('DEPLOYMENT_NAME')
+      end
+
+      it 'passes context id' do
+        context_id = 'example-context-id'
+        delete_task = subject.delete_deployment(username, deployment, options, context_id)
+        expect(delete_task.context_id).to eq context_id
       end
     end
 

@@ -31,6 +31,7 @@ module Bosh::Director
         parse_releases
         parse_update(parse_options)
         parse_instance_groups(parse_options)
+        parse_variables
 
         @deployment
       end
@@ -99,6 +100,11 @@ module Bosh::Director
           job_spec = job_spec.recursive_merge(state_overrides)
           @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
         end
+      end
+
+      def parse_variables
+        variables_spec = safe_property(@deployment_manifest, 'variables', :class => Array, :default => [])
+        @deployment.set_variables(VariablesSpecParser.new(@logger).parse(variables_spec))
       end
     end
   end

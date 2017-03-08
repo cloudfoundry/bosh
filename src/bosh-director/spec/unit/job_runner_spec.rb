@@ -66,8 +66,8 @@ module Bosh::Director
 
       allow(EventLog::Log)
         .to receive(:new)
-          .with(task_writer)
-          .and_return(event_log)
+        .with(task_writer)
+        .and_return(event_log)
 
       allow(TaskDBWriter).to receive(:new).
         with(:result_output, task).

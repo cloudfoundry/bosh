@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require 'bosh/director'
+require 'bosh/director/sync_dns_scheduler'
+require 'bosh/director/dns/dns_version_converger'
+
+config_file = '/var/vcap/jobs/director/config/director.yml'
+
+config = Bosh::Director::Config.load_file(config_file)
+Bosh::Director::App.new(config)
+logger = Logger.new(STDOUT)
+Bosh::Director::Config.logger = logger
+
+dns_converger = Bosh::Director::DnsVersionConverger.new(
+  logger,
+  Bosh::Director::Config.max_threads,
+  Bosh::Director::DnsVersionConverger::ALL_INSTANCES_WITH_VMS_SELECTOR
+)
+
+EventMachine.run do
+  Thread.new { dns_converger.update_instances_based_on_strategy; EM.stop }
+end

@@ -11,7 +11,7 @@ module Bosh
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
-        let(:runtime_config_model) { Models::RuntimeConfig.make(manifest: runtime_config_hash) }
+        let(:runtime_config_model) { Models::RuntimeConfig.make(raw_manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
@@ -33,6 +33,7 @@ module Bosh
         end
 
         before do
+          allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).and_return(runtime_config_hash)
           allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
           upload_releases
           upload_stemcell
@@ -129,7 +130,15 @@ LOGMESSAGE
                 hybrid_manifest_hash['tags'] = {'deployment_tag' => 'sears'}
                 runtime_config_hash['tags'] = {'runtime_tag' => 'dryer'}
 
-                expect(planner.tags).to eq({'deployment_tag' => 'sears' ,'runtime_tag' => 'dryer'})
+                expect(planner.tags).to eq({'deployment_tag' => 'sears', 'runtime_tag' => 'dryer'})
+              end
+
+              it 'passes deployment name to get interpolated runtime_config tags' do
+                runtime_config_hash['tags'] = {'runtime_tag' => '((some_variable))'}
+
+                allow(runtime_config_model).to receive(:tags).with('simple').and_return({'runtime_tag' => 'some_interpolated_value'})
+
+                expect(planner.tags).to eq({'runtime_tag' => 'some_interpolated_value'})
               end
 
               it 'gives deployment manifest tags precedence over runtime_config tags' do
@@ -379,6 +388,30 @@ LOGMESSAGE
                     planner
                   end
                 end
+              end
+          end
+
+          context 'runtime config' do
+              it "throws an error if the version of a release is 'latest'" do
+                invalid_manifest = Bosh::Spec::Deployments.runtime_config_latest_release
+                allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).with(String).and_return(invalid_manifest)
+
+                expect {
+                  planner
+                }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
+                                 "Runtime manifest contains the release 'bosh-release' with version as 'latest'. " +
+                                   "Please specify the actual version string."
+              end
+
+              it "throws an error if the release used by an addon is not listed in the releases section" do
+                invalid_manifest = Bosh::Spec::Deployments.runtime_config_release_missing
+                allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).with(String).and_return(invalid_manifest)
+
+                expect {
+                  planner
+                }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,
+                                 "Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
+                                   "but 'release2' is not listed in the releases section."
               end
           end
         end

@@ -37,7 +37,7 @@ describe 'local DNS', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_deployment)
 
         etc_hosts = parse_agent_etc_hosts(9)
-        expect(etc_hosts.size).to eq(10)
+        expect(etc_hosts.size).to eq(10), "expected etc_hosts to have 10 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
       end
     end
@@ -46,17 +46,16 @@ describe 'local DNS', type: :integration do
       let(:manifest_deployment) { initial_deployment(10, 5) }
 
       it 'deploys and downgrades with max_in_flight' do
-        pending("#126335577")
         manifest_deployment['jobs'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(4)
-        expect(etc_hosts.size).to eq(5)
+        expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
 
         manifest_deployment['jobs'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(5)
-        expect(etc_hosts.size).to eq(6)
+        expect(etc_hosts.size).to eq(6), "expected etc_hosts to have 6 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
       end
     end
@@ -70,7 +69,7 @@ describe 'local DNS', type: :integration do
 
           deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
           etc_hosts = parse_agent_etc_hosts(4)
-          expect(etc_hosts.size).to eq(5)
+          expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
           expect(etc_hosts).to match_array(generate_instance_dns)
         end
       end
@@ -96,7 +95,7 @@ describe 'local DNS', type: :integration do
           end
 
           etc_hosts = parse_agent_etc_hosts(4)
-          expect(etc_hosts.size).to eq(5)
+          expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
           expect(etc_hosts).to match_array(generate_instance_dns)
         end
       end
@@ -151,7 +150,7 @@ describe 'local DNS', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_deployment)
 
     etc_hosts = parse_agent_etc_hosts(number_of_instances - 1)
-    expect(etc_hosts.size).to eq(number_of_instances)
+    expect(etc_hosts.size).to eq(number_of_instances), "expected etc_hosts to have #{number_of_instances} lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
     manifest_deployment
   end
 

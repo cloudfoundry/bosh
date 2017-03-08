@@ -25,10 +25,13 @@ require 'bosh/director/models/persistent_disk'
 require 'bosh/director/models/rendered_templates_archive'
 require 'bosh/director/models/lock'
 require 'bosh/director/models/ephemeral_blob'
-require 'bosh/director/models/placeholder_mapping'
+require 'bosh/director/models/variable_set'
+require 'bosh/director/models/variable'
 require 'delayed_job_sequel'
 require 'bosh/director/models/event'
+require 'bosh/director/models/agent_dns_version'
 require 'bosh/director/models/team'
+require 'bosh/director/models/errand_run'
 
 module Bosh::Director
   module Models

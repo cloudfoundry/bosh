@@ -93,6 +93,55 @@ module Bosh::Director
           end
         end
 
+        context 'event' do
+          before do
+            Models::Event.make(
+              'timestamp' => timestamp,
+              'user' => 'test',
+              'action' => 'create',
+              'object_type' => 'deployment',
+              'object_name' => 'depl1',
+              'task' => '1'
+            )
+            Models::Event.make(
+              'parent_id' => 1,
+              'timestamp' => timestamp,
+              'user' => 'test',
+              'action' => 'create',
+              'object_type' => 'deployment',
+              'object_name' => 'depl1',
+              'task' => '2',
+            )
+          end
+
+          it 'returns event' do
+            basic_authorize 'admin', 'admin'
+
+            get '/2'
+
+            expect(JSON.parse(last_response.body)).to eq(
+              {'id' => '2',
+                'parent_id' => '1',
+                'timestamp' => timestamp.to_i,
+                'user' => 'test',
+                'action' => 'create',
+                'object_type' => 'deployment',
+                'object_name' => 'depl1',
+                'task' => '2',
+                'context' => {}
+              })
+          end
+
+          it 'returns an error' do
+            basic_authorize 'admin', 'admin'
+
+            get '/3'
+
+            expect(last_response.status).to eq(404)
+            expect(last_response.body).to eq('Event not found')
+          end
+        end
+
         context 'when deployment is specified' do
           before do
             basic_authorize 'admin', 'admin'
@@ -138,6 +187,67 @@ module Bosh::Director
           end
         end
 
+        context 'when user is specified' do
+          before do
+            basic_authorize 'admin', 'admin'
+            Models::Event.make('user' => 'admin')
+            Models::Event.make('user' => 'user')
+          end
+
+          it 'returns a filtered list of events' do
+            get '?user=admin'
+            events = JSON.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events[0]['user']).to eq('admin')
+          end
+        end
+
+        context 'when action is specified' do
+          before do
+            basic_authorize 'admin', 'admin'
+            Models::Event.make('action' => 'delete')
+            Models::Event.make('action' => 'update')
+          end
+
+          it 'returns a filtered list of events' do
+            get '?action=delete'
+            events = JSON.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events[0]['action']).to eq('delete')
+          end
+        end
+
+        context 'when object_type is specified' do
+          before do
+            basic_authorize 'admin', 'admin'
+            Models::Event.make('object_type' => 'deployment')
+            Models::Event.make('object_type' => 'instance')
+          end
+
+          it 'returns a filtered list of events' do
+            get '?object_type=deployment'
+            events = JSON.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events[0]['object_type']).to eq('deployment')
+          end
+        end
+
+        context 'when object_id is specified' do
+          before do
+            basic_authorize 'admin', 'admin'
+            Models::Event.make('object_name' => 'fake_name')
+            Models::Event.make('object_name' => 'another_name')
+          end
+
+          it 'returns a filtered list of events' do
+            get '?object_id=fake_name'
+            events = JSON.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events[0]['object_name']).to eq('fake_name')
+          end
+        end
+
+
         context 'when several filters are specified' do
           before do
             basic_authorize 'admin', 'admin'
@@ -160,6 +270,27 @@ module Bosh::Director
               expect(events[0]['deployment']).to eq('name')
             end
           end
+
+          context 'when user, action, object_id and object_type are specified' do
+            before do
+              Models::Event.make('user' => 'admin')
+              Models::Event.make('user' => 'admin', 'action' => 'update', 'object_name' => 'test', 'object_type' => 'deployment')
+              Models::Event.make('user' => 'admin', 'action' => 'update', 'object_name' => 'test', 'object_type' => 'deployment1')
+              Models::Event.make('object_name' => 'something')
+              Models::Event.make('object_type' => 'deployment')
+            end
+
+            it 'returns the ended results' do
+              get '?user=admin&action=update&object_id=test&object_type=deployment'
+              events = JSON.parse(last_response.body)
+              expect(events.size).to eq(1)
+              expect(events[0]['user']).to eq('admin')
+              expect(events[0]['action']).to eq('update')
+              expect(events[0]['object_name']).to eq('test')
+              expect(events[0]['object_type']).to eq('deployment')
+            end
+          end
+
 
           context 'when before and after are specified' do
             before do

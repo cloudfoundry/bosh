@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe DnsRecords do

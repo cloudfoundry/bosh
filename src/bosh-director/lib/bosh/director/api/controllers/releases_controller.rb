@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
-      post '/', :consumes => :json do
+      post '/', scope: :upload_releases, :consumes => :json do
         payload = json_decode(request.body.read)
         if payload['sha1'] && params['sha1']
           message = 'Sha1 provided in multiple places'
@@ -22,7 +22,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/', :consumes => :multipart do
+      post '/', scope: :upload_releases, :consumes => :multipart do
         options = {
           rebase:         params['rebase'] == 'true',
           fix:            params['fix'] == 'true',
@@ -46,9 +46,10 @@ module Bosh::Director
         release_version = body_params['release_version']
         stemcell_os = body_params['stemcell_os']
         stemcell_version = body_params['stemcell_version']
+        sha2 = body_params['sha2']
 
         task = @release_manager.export_release(
-            current_user, deployment_name, release_name, release_version, stemcell_os, stemcell_version)
+            current_user, deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2)
 
         redirect "/tasks/#{task.id}"
       end

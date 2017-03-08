@@ -1,4 +1,5 @@
 require 'open3'
+require 'fileutils'
 
 describe 'postgres_ctl.erb' do
   context 'running postgres_db_backup.sh' do
@@ -18,7 +19,7 @@ describe 'postgres_ctl.erb' do
     end
 
     it 'should create a backup directory before migrating' do
-      stdout, stderr, status = Open3.capture3('jobs/postgres-9.4/templates/postgres_db_backup.sh.erb')
+      stdout, stderr, status = Open3.capture3(File.join(File.dirname(__FILE__), '../jobs/postgres-9.4/templates/postgres_db_backup.sh.erb'))
 
       expect(status).to eq(0), "Expected to not receive an error. STDOUT: #{stdout} STDERR: #{stderr}"
       expect(Dir.exists?('tmp/store/postgres-previous'))

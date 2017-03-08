@@ -9,6 +9,7 @@ require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/legacy_agent_manager'
+require 'bosh/dev/verify_multidigest_manager'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -29,6 +30,12 @@ namespace :spec do
     task :health_monitor => :install_dependencies do
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs(tags: 'hm')
+    end
+
+    desc 'Run BOSH gocli upgrade tests against a local sandbox'
+    task :upgrade => :install_dependencies do
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
@@ -54,6 +61,10 @@ namespace :spec do
 
         unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
           Bosh::Dev::LegacyAgentManager.install
+        end
+
+        unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+          Bosh::Dev::VerifyMultidigestManager.install
         end
       end
     end
@@ -107,6 +118,8 @@ namespace :spec do
 
   task :integration_gocli => %w(spec:integration:gocli)
 
+  task :upgrade => %w(spec:integration:upgrade)
+
   def unit_exec(build, log_file = nil)
     command = unit_cmd(build, log_file)
 
@@ -143,6 +156,12 @@ namespace :spec do
     @cpi_builds ||= unit_builds.select { |f| File.directory?(f) && f.end_with?("_cpi") }
   end
 
+  desc 'Run all release unit tests (ERB templates)'
+  task :release_unit do
+    puts "Release unit tests (ERB templates)"
+    system("cd .. && rspec --tty --backtrace -c -f p spec/")
+  end
+
   namespace :unit do
     desc 'Run all unit tests for ruby components'
     task :ruby do
@@ -170,29 +189,10 @@ namespace :spec do
         unit_exec(build)
       end
     end
-
-    desc "Run unit tests for the cpi component"
-    task :cpi do
-      trap('INT') { exit }
-      unit_exec('bosh_cpi')
-    end
-
-    task(:agent) do
-      # Do not use exec because this task is part of other tasks
-      sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
-    end
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:unit:ruby spec:unit:agent)
-
-  namespace :external do
-    desc 'AWS bootstrap CLI can provision and destroy resources'
-    RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
-      t.pattern = 'spec/external/aws_bootstrap_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-  end
+  task :unit => %w(spec:release_unit spec:unit:ruby)
 end
 
 desc 'Run unit and integration specs'

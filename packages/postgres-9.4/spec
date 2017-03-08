@@ -2,4 +2,4 @@
 name: postgres-9.4
 
 files:
-- postgres/postgresql-9.4.9.tar.gz
+- postgres/postgresql-9.4.10.tar.gz

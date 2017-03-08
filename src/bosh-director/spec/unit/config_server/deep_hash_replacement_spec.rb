@@ -48,7 +48,12 @@ module Bosh::Director::ConfigServer
               {'name' => 'mysql', 'template' => 'template1', 'properties' => job_props},
               {'name' => '((job_name))', 'template' => 'template1'}
             ],
-            'properties' => {'a' => ['123', 45, '((secret_key))']}
+            'properties' => {
+              'a' => ['123', 45, '((secret_key))'],
+              'b' => 'vroom.((my_domain)).com',
+              'c' => 'vroom.((my_domain)).com:((port))',
+              'd' => [0, 1, 2, '((my_index)) vroom ((/smurf/hello))']
+            }
           }
         ],
           'properties' => global_props
@@ -61,15 +66,18 @@ module Bosh::Director::ConfigServer
 
       it 'creates replacement map for all necessary placeholders' do
         expected_result = [
-          {'placeholder'=>'((director_uuid_placeholder))', 'path'=>['director_uuid']},
-          {'placeholder'=>'((my_db_passwd))', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-          {'placeholder'=>'((secret2))', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-          {'placeholder'=>'((nuclear_launch_code))', 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
-          {'placeholder'=>'((job_name))', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-          {'placeholder'=>'((bla))', 'path'=>['properties', 'b']},
-          {'placeholder'=>'((secret_key))', 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
-          {'placeholder'=>'((/my/name/is/smurf/12-3))', 'path'=>['smurf']},
-          {'placeholder'=>'((my/name/is/gar_gamel))', 'path'=>['gargamel']}
+          {'placeholders'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
+          {'placeholders'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+          {'placeholders'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+          {'placeholders'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
+          {'placeholders'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+          {'placeholders'=>['((bla))'], 'path'=>['properties', 'b']},
+          {'placeholders'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
+          {'placeholders'=>['((my_domain))'], 'path'=>['instance_groups', 0, 'properties', 'b']},
+          {'placeholders'=>['((my_domain))', '((port))'], 'path'=>['instance_groups', 0, 'properties', 'c']},
+          {'placeholders'=>['((my_index))', '((/smurf/hello))'], 'path'=>['instance_groups', 0, 'properties', 'd', 3]},
+          {'placeholders'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
+          {'placeholders'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
         ]
 
         expect(replacement_list).to match_array(expected_result)
@@ -87,8 +95,8 @@ module Bosh::Director::ConfigServer
 
         it 'handles it correctly and removes ! from key (for spiff)' do
           expected_result = [
-            {'placeholder'=>'((!blue))', 'path'=>['smurf']},
-            {'placeholder'=>'((!what_is_my_color))', 'path'=>['gargamel', 'color']}
+            {'placeholders'=>['((!blue))'], 'path'=>['smurf']},
+            {'placeholders'=>['((!what_is_my_color))'], 'path'=>['gargamel', 'color']}
           ]
 
           expect(replacement_list).to match_array(expected_result)
@@ -132,13 +140,13 @@ module Bosh::Director::ConfigServer
           replacements = DeepHashReplacement.new.placeholders_paths(sample_hash, ignored_subtrees)
 
           expected_replacements = [
-            {'placeholder'=>'((my_db_passwd))', 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-            {'placeholder'=>'((secret2))', 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-            {'placeholder'=>'((job_name))', 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-            {'placeholder'=>'((address_placeholder))', 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
-            {'placeholder'=>'((director_uuid_placeholder))', 'path'=>['director_uuid']},
-            {'placeholder'=>'((/my/name/is/smurf/12-3))', 'path'=>['smurf']},
-            {'placeholder'=>'((my/name/is/gar_gamel))', 'path'=>['gargamel']}
+            {'placeholders'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+            {'placeholders'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+            {'placeholders'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+            {'placeholders'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
+            {'placeholders'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
+            {'placeholders'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
+            {'placeholders'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
           ]
           expect(replacements).to match_array(expected_replacements)
         end
@@ -147,44 +155,192 @@ module Bosh::Director::ConfigServer
 
     describe "#replace_placeholders" do
       let(:values) do
-        { "((key))" => "smurf" }
+        {
+          '((key_1))' => 'smurf_1',
+          '((key_2))' => 'smurf_2',
+          '((key_3))' => 'smurf_3',
+          '((key_4))' => {
+            'name' => 'papa-smurf'
+          },
+          '((key_5))' => 504,
+          '((key_6))' => nil,
+          '((key_7))' => '((key_8))',
+          '((key_8))' => '((key_7))',
+        }
       end
 
       it 'replaces placeholders in simple unnested objects' do
-        obj = {"bla" => "((key))"}
+        obj = {
+          'bla' => '((key_1))',
+          'test' => '((key_4))'
+        }
+
         paths = [
           {
-            'placeholder' => '((key))',
+            'placeholders' => ['((key_1))'],
             'path' => ['bla']
+          },
+          {
+            'placeholders' => ['((key_4))'],
+            'path' => ['test']
           }
         ]
+
         result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
-        expect(result).to eq({"bla" => "smurf"})
+        expect(result).to eq({
+                               'bla' => 'smurf_1',
+                               'test' => {
+                                 'name' => 'papa-smurf'
+                               }
+                             })
       end
 
       it 'replaces placeholders in nested objects' do
         obj = {
-          "bla" => "((key))",
-          "a" => {
-            "b" => ["bla", "((key))", {"c" => "((key))"}]
+          'bla' => '((key_1))',
+          'a' => {
+            'b' => ['bla', '((key_1))', '((key_2))', {'c' => '((key_3))'}]
+          },
+          'deep' => {
+            'deeper' => {
+              'deepest' => {
+                'hello' => 'smile',
+                'state' => '((key_4))',
+                'number' => '((key_5))',
+              }
+            }
           }
         }
 
         expected = {
-          "bla" => "smurf",
-          "a" => {
-            "b" => ["bla", "smurf", {"c" => "smurf"}]
+          'bla' => 'smurf_1',
+          'a' => {
+            'b' => ['bla', 'smurf_1', 'smurf_2', {'c' => 'smurf_3'}]
+          },
+          'deep' => {
+            'deeper' => {
+              'deepest' => {
+                'hello' => 'smile',
+                'state' => {
+                  'name' => 'papa-smurf'
+                },
+                'number' => 504,
+              }
+            }
           }
         }
 
-        paths = [{'placeholder' => '((key))', 'path' => ['bla']},
-                 {'placeholder' => '((key))', 'path' => ['a', 'b', 1]},
-                 {'placeholder' => '((key))', 'path' => ['a', 'b', 2, "c"]}
+        paths = [
+          {'placeholders' => ['((key_1))'], 'path' => ['bla']},
+          {'placeholders' => ['((key_1))'], 'path' => ['a', 'b', 1]},
+          {'placeholders' => ['((key_2))'], 'path' => ['a', 'b', 2]},
+          {'placeholders' => ['((key_3))'], 'path' => ['a', 'b', 3, 'c']},
+          {'placeholders' => ['((key_4))'], 'path' => ['deep', 'deeper', 'deepest', 'state']},
+          {'placeholders' => ['((key_5))'], 'path' => ['deep', 'deeper', 'deepest', 'number']}
         ]
 
         result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
 
         expect(result).to eq(expected)
+      end
+
+      context 'when having mid-string interpolation' do
+        it 'supports multiple placeholders in one value' do
+          obj = {
+            'bla' => 'delimiter1-((key_1))-delimiter2-((key_2))-delimiter3',
+            'combinations' => '((key_1)) age is ((key_5))',
+            'a' => {
+              'b' => [
+                'bla',
+                'delimiter1-((key_3))-delimiter2-((key_2))-delimiter3',
+                'delimiter1-((key_2))-delimiter2-((key_2))',
+                {
+                  'c' => 'delimiter1-((key_3))-delimiter2-((key_1))-delimiter3-((key_2))'
+                }
+              ]
+            }
+          }
+
+          expected = {
+            'bla' => 'delimiter1-smurf_1-delimiter2-smurf_2-delimiter3',
+            'combinations' => 'smurf_1 age is 504',
+            'a' => {
+              'b' => [
+                'bla',
+                'delimiter1-smurf_3-delimiter2-smurf_2-delimiter3',
+                'delimiter1-smurf_2-delimiter2-smurf_2',
+                {
+                  'c' => 'delimiter1-smurf_3-delimiter2-smurf_1-delimiter3-smurf_2'
+                }
+              ]
+            }
+          }
+
+          paths = [
+            {'placeholders' => ['((key_1))', '((key_2))'], 'path' => ['bla']},
+            {'placeholders' => ['((key_1))', '((key_5))'], 'path' => ['combinations']},
+            {'placeholders' => ['((key_2))', '((key_3))'], 'path' => ['a', 'b', 1]},
+            {'placeholders' => ['((key_2))'], 'path' => ['a', 'b', 2]},
+            {'placeholders' => ['((key_1))', '((key_2))', '((key_3))'], 'path' => ['a', 'b', 3, 'c']},
+          ]
+
+          result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+          expect(result).to eq(expected)
+        end
+
+        it 'replaces the placeholders only once' do
+          input = {
+            'smurf' => '((key_7)) meow ((key_8))'
+          }
+
+          expected_output = {
+            'smurf' => '((key_8)) meow ((key_7))'
+          }
+
+          paths = [
+            {'placeholders' => ['((key_7))', '((key_8))'], 'path' => ['smurf']},
+          ]
+
+          result = DeepHashReplacement.new.replace_placeholders(input, paths, values)
+          expect(result).to eq(expected_output)
+        end
+
+        context 'when value returned by config server is not an integer or a string' do
+          it 'throws an error' do
+            obj = {
+              'name' => '((key_1))',
+              'url' => 'http://((key_4))',
+              'link' => 'visit us at http://((key_6))'
+            }
+
+            paths = [
+              {
+                'placeholders' => ['((key_1))'],
+                'path' => ['name']
+              },
+              {
+                'placeholders' => ['((key_4))'],
+                'path' => ['url']
+              },
+              {
+                'placeholders' => ['((key_6))'],
+                'path' => ['link']
+              }
+            ]
+
+            expected_error_msg = <<-EXPECTED.strip
+- Failed to substitute placeholder: Can not replace '((key_4))' in 'http://((key_4))'. The value should be a String or an Integer.
+- Failed to substitute placeholder: Can not replace '((key_6))' in 'visit us at http://((key_6))'. The value should be a String or an Integer.
+            EXPECTED
+
+            expect {
+              DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+            }.to raise_error { |e|
+              expect(e.is_a?(Bosh::Director::ConfigServerIncorrectPlaceholderPlacement)).to be_truthy
+              expect(e.message).to eq(expected_error_msg)
+            }
+          end
+        end
       end
     end
   end

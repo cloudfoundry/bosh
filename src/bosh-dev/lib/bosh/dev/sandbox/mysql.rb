@@ -29,6 +29,16 @@ module Bosh::Dev::Sandbox
       @runner.run(%Q{mysql --user=#{@username} --password=#{@password} -e 'drop database `#{db_name}`;' > /dev/null 2>&1})
     end
 
+    def load_db_initial_state(initial_state_assets_dir)
+      sql_dump_path = File.join(initial_state_assets_dir, 'mysql_db_snapshot.sql')
+      load_db(sql_dump_path)
+    end
+
+    def load_db(dump_file_path)
+      @logger.info("Loading dump '#{dump_file_path}' into mysql database #{db_name}")
+      @runner.run(%Q{mysql --user=#{@username} --password=#{@password} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
+    end
+
     def current_tasks
       tasks_list_cmd = %Q{mysql --user=#{@username} --password=#{@password} -e "select description, output from tasks where state='processing';" #{db_name} 2> /dev/null}
       task_lines = `#{tasks_list_cmd}`.lines.to_a[1..-1] || []

@@ -48,11 +48,11 @@ module Bosh::Director
       def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-        @config_server_client = ConfigServer::ClientFactory.create(Config.logger).create_client(@instance.deployment_model.name)
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @config_server_client).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.variable_set).spec
       end
 
       def as_apply_spec
@@ -92,10 +92,11 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, config_server_client)
+      def initialize(full_spec, variables_interpolator, variable_set)
         @full_spec = full_spec
         @dns_manager = DnsManagerProvider.create
-        @config_server_client = config_server_client
+        @variables_interpolator = variables_interpolator
+        @variable_set = variable_set
       end
 
       def spec
@@ -122,13 +123,12 @@ module Bosh::Director
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
-        template_hash['properties'] =  @config_server_client.interpolate(@full_spec['properties'], @full_spec['deployment'])
-        template_hash['links'] = {}
+        template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
+        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
 
-        # TODO: Only interpolate the properties of the links, no need to interpolate the whole Hash
-        @full_spec.fetch('links', {}).each do |link_name, link_spec|
-          interpolated_values = @config_server_client.interpolate(link_spec, link_spec['deployment_name'])
-          template_hash['links'][link_name] = interpolated_values.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+        template_hash['links'] = {}
+        interpolated_links_spec.each do |link_name, link_spec|
+          template_hash['links'][link_name] = link_spec.select {|k,v| whitelisted_link_spec_keys.include?(k) }
         end
 
         networks_hash = template_hash['networks']

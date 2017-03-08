@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'securerandom'
 
 module Bosh
   module Director

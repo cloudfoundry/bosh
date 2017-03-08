@@ -16,7 +16,9 @@ describe Bosh::Director::Config do
     config['dir'] = temp_dir
     config['blobstore'] = {
         'provider' => 'local',
-        'options' => {'blobstore_path' => blobstore_dir}
+        'options' => {
+            'blobstore_path' => blobstore_dir,
+        }
     }
     config['snapshots']['enabled'] = true
     config
@@ -189,6 +191,14 @@ describe Bosh::Director::Config do
           expect(described_class.config_server['uaa']['ca_cert_path']).to eq('fake-uaa-ca-cert-path')
         end
 
+        context 'config server urls' do
+          it 'should return an array of urls' do
+            described_class.configure(test_config)
+            config = Bosh::Director::Config.new(test_config)
+            expect(config.config_server_urls).to eq(['https://127.0.0.1:8080'])
+          end
+        end
+
         context 'when url is not https' do
           before {
             test_config["config_server"]["url"] = "http://127.0.0.1:8080"
@@ -237,6 +247,14 @@ describe Bosh::Director::Config do
             expect(described_class.enable_nats_delivered_templates).to be_falsey
           end
         end
+      end
+    end
+
+    describe 'director version' do
+      it 'sets the expected version/revision' do
+        described_class.configure(test_config)
+        expect(described_class.revision).to match /^[0-9a-f]{8}$/
+        expect(described_class.version).to eq('0.0.2')
       end
     end
   end
@@ -298,7 +316,7 @@ describe Bosh::Director::Config do
     context 'when no dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {}}) }
       it 'returns formatted DNS domain' do
-        config = described_class.configure(test_config)
+        described_class.configure(test_config)
         expect(described_class.canonized_dns_domain_name).to eq('bosh')
       end
     end
@@ -306,8 +324,52 @@ describe Bosh::Director::Config do
     context 'when dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {'domain_name' => 'test-domain-name'}}) }
       it 'returns formatted DNS domain' do
-        config = described_class.configure(test_config)
+        described_class.configure(test_config)
         expect(described_class.canonized_dns_domain_name).to eq('test-domain-name')
+      end
+    end
+  end
+
+  describe '#name' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the name specified in the config' do
+      expect(config.name).to eq('Test Director')
+    end
+  end
+
+  describe '#port' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the port specified in the config' do
+      expect(config.port).to eq(8081)
+    end
+  end
+
+  describe '#version' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the version specified in the config' do
+      expect(config.version).to eq('0.0.2')
+    end
+  end
+
+
+  context 'multiple digest' do
+    context 'when verify multidigest is provided' do
+      it 'allows access to multidigest path' do
+        described_class.configure(base_config)
+        expect(described_class.verify_multidigest_path).to eq('/some/path')
+      end
+    end
+
+    context 'when verify multidigest is not provided' do
+      before do
+        base_config['verify_multidigest_path'] = nil
+      end
+
+      it 'raises an error' do
+        expect{ described_class.configure(base_config) }.to raise_error(ArgumentError)
       end
     end
   end

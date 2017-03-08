@@ -173,6 +173,10 @@ module Bosh::Director
         needed_instance_plans.map(&:instance)
       end
 
+      def unignored_instance_plans
+        needed_instance_plans.select { |instance_plan| !instance_plan.should_be_ignored? }
+      end
+
       def needed_instance_plans
         sorted_instance_plans
       end

@@ -106,6 +106,7 @@ module Bosh::Director::DeploymentPlan
       fake_job
       allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
 
+      Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
       release = Bosh::Director::Models::Release.make(name: 'bosh-release')
       template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
       release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)

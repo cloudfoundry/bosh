@@ -74,7 +74,7 @@ module Bosh::Director
           }
         end
         let(:resource_pools) { [ResourcePool.new(resource_pool_spec)] }
-        let(:vm_type) { nil }
+        let(:vm_type) { VmType.new({'name' => 'vm_type'}) }
 
         before do
           deployment_model.add_stemcell(stemcell_model)
@@ -178,6 +178,45 @@ module Bosh::Director
             it 'returns only the regular job' do
               expect(subject.instance_groups_starting_on_deploy).to eq([job1])
             end
+          end
+        end
+
+        describe '#errand_instance_groups' do
+          let(:instance_group_1) do
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+              name: 'fake-instance-group-1-name',
+              canonical_name: 'fake-instance-group-1-cname',
+              is_service?: true,
+              is_errand?: false,
+            })
+          end
+
+          let(:instance_group_2) do
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+              name: 'fake-instance-group-2-name',
+              canonical_name: 'fake-instance-group-2-cname',
+              is_service?: false,
+              is_errand?: true,
+            })
+          end
+
+          let(:instance_group_3) do
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+              name: 'fake-instance-group-3-name',
+              canonical_name: 'fake-instance-group-3-cname',
+              is_service?: false,
+              is_errand?: true,
+            })
+          end
+
+          before do
+            subject.add_instance_group(instance_group_1)
+            subject.add_instance_group(instance_group_2)
+            subject.add_instance_group(instance_group_3)
+          end
+
+          it 'return instance groups with errand lifecylce' do
+            expect(subject.errand_instance_groups).to match_array([instance_group_2, instance_group_3])
           end
         end
 

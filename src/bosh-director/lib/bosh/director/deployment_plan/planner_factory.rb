@@ -83,7 +83,7 @@ module Bosh
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_hybrid_manifest_hash, plan_options)
 
           if runtime_config
-            parsed_runtime_config =  RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.manifest)
+            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.interpolated_manifest_for_deployment(name))
 
             #TODO: only add releases for runtime jobs that will be added.
             parsed_runtime_config.releases.each do |release|
@@ -102,6 +102,7 @@ module Bosh
         end
 
         def parse_tags(manifest_hash, runtime_config)
+          deployment_name = manifest_hash['name']
           tags = {}
 
           if manifest_hash.has_key?('tags')
@@ -110,7 +111,7 @@ module Bosh
             end
           end
 
-          runtime_config.nil? ? tags : runtime_config.tags.merge!(tags)
+          runtime_config.nil? ? tags : runtime_config.tags(deployment_name).merge!(tags)
         end
 
         def process_links(deployment)
@@ -146,11 +147,9 @@ module Bosh
           end
 
           if errors.length > 0
-            message = 'Unable to process links for deployment. Errors are:'
-
-            errors.each do |e|
-              message = "#{message}\n   - #{e.message.gsub(/\n/, "\n     ")}"
-            end
+            combined_errors = errors.map{|error| "- #{error.message.strip}"}.join("\n")
+            header = 'Unable to process links for deployment. Errors are:'
+            message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
 
             raise message
           end

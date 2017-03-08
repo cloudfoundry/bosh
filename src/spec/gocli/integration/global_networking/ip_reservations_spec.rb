@@ -216,6 +216,19 @@ describe 'global networking', type: :integration do
       expect(first_deployment_instances.first.ips).to eq(['192.168.1.3'])
     end
 
+    it 'reserved range can be specified as a cidr range' do
+      subnet = cloud_config_hash['networks'].first['subnets'].first
+      subnet['static'] = []
+      subnet['reserved'] = ['192.168.1.1/28'] # 192.168.1.1-192.168.1.15
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      first_deployment_instances = director.instances
+      expect(first_deployment_instances.size).to eq(1)
+      expect(first_deployment_instances.first.ips).to eq(['192.168.1.16'])
+    end
+
     it 'only recreates VMs that change when the list of static IPs changes' do
       cloud_config_hash['networks'].first['subnets'].first['static'] << '192.168.1.12'
       upload_cloud_config(cloud_config_hash: cloud_config_hash)

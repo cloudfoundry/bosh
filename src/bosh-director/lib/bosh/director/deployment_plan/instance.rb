@@ -34,8 +34,7 @@ module Bosh::Director
           job.name,
           index,
           virtual_state,
-          job.vm_type,
-          job.vm_extensions,
+          MergedCloudProperties.new(availability_zone, job.vm_type, job.vm_extensions).get,
           job.stemcell,
           job.env,
           job.compilation?,
@@ -50,8 +49,7 @@ module Bosh::Director
         job_name,
         index,
         virtual_state,
-        vm_type,
-        vm_extensions,
+        merged_cloud_properties,
         stemcell,
         env,
         compilation,
@@ -65,11 +63,10 @@ module Bosh::Director
         @logger = logger
         @deployment_model = deployment_model
         @job_name = job_name
-        @vm_type = vm_type
-        @vm_extensions = vm_extensions
         @stemcell = stemcell
         @env = env
         @compilation = compilation
+        @merged_cloud_properties = merged_cloud_properties
 
         @configuration_hash = nil
         @template_hashes = nil
@@ -118,17 +115,10 @@ module Bosh::Director
             compilation: @compilation,
             uuid: SecureRandom.uuid,
             availability_zone: availability_zone_name,
-            bootstrap: false
+            bootstrap: false,
+            variable_set_id: @deployment_model.current_variable_set.id
           })
         @uuid = @model.uuid
-      end
-
-      def vm_type
-        @vm_type
-      end
-
-      def vm_extensions
-        @vm_extensions
       end
 
       def stemcell
@@ -193,7 +183,7 @@ module Bosh::Director
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -246,9 +236,26 @@ module Bosh::Director
         @model.update(bootstrap: false)
       end
 
-      def assign_availability_zone(availability_zone)
+      def assign_availability_zone_and_update_cloud_properties(availability_zone, vm_type, vm_extensions)
         @availability_zone = availability_zone
+        @merged_cloud_properties = MergedCloudProperties.new(availability_zone, vm_type, vm_extensions).get
         @model.update(availability_zone: availability_zone_name)
+      end
+
+      def variable_set=(variable_set)
+        @variable_set = variable_set
+      end
+
+      def variable_set
+        if @variable_set
+          @variable_set
+        else
+          @model.variable_set
+        end
+      end
+
+      def update_variable_set
+        @model.update(variable_set: variable_set)
       end
 
       def state
@@ -269,7 +276,7 @@ module Bosh::Director
       #
       # @return [Boolean] true if the VM needs to be sent a new set of trusted certificates
       def trusted_certs_changed?
-        config_trusted_certs = Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
+        config_trusted_certs = ::Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
         changed = config_trusted_certs != @model.trusted_certs_sha1
         log_changes(__method__, @model.trusted_certs_sha1, config_trusted_certs) if changed
         changed
@@ -280,19 +287,7 @@ module Bosh::Director
       end
 
       def cloud_properties
-        merged_cloud_properties = nil
-
-        if !@availability_zone.nil?
-          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, @availability_zone.cloud_properties)
-        end
-
-        merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_type.cloud_properties)
-
-        Array(vm_extensions).each do |vm_extension|
-          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_extension.cloud_properties)
-        end
-
-        merged_cloud_properties
+        @merged_cloud_properties
       end
 
       def availability_zone_name
@@ -312,11 +307,6 @@ module Bosh::Director
       end
 
       private
-
-      def merge_cloud_properties(merged_cloud_properties, new_cloud_properties)
-        merged_cloud_properties.nil? ? new_cloud_properties : merged_cloud_properties.merge(new_cloud_properties)
-      end
-
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
@@ -334,6 +324,7 @@ module Bosh::Director
           model.state = 'started'
           model.compilation = @compilation
           model.uuid = SecureRandom.uuid
+          model.variable_set_id = @deployment_model.current_variable_set.id
         end
       end
 

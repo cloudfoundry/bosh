@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+STORE_DIR=/var/vcap/store/director
+
+mkdir -p $STORE_DIR
+chown -R vcap:vcap $STORE_DIR

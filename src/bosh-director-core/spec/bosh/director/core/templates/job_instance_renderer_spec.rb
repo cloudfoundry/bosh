@@ -11,7 +11,7 @@ module Bosh::Director::Core::Templates
       let(:spec) do
         {
           'job' => {
-            'name' => 'fake-job-name'
+            'name' => 'fake-instance-group-name'
           }
         }
       end
@@ -78,6 +78,47 @@ module Bosh::Director::Core::Templates
         it 'returns the rendered templates for an instance' do
           job_instance_renderer.render(spec)
           expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
+        end
+
+        context 'when job renderer returns an error' do
+          let(:err_msg_1) do
+            <<-MESSAGE.strip
+- Unable to render templates for job 'fake-job-name-1'. Errors are:
+  - Error filling something in the template
+  - Error filling something in the template
+            MESSAGE
+          end
+
+          let(:err_msg_2) do
+            <<-MESSAGE.strip
+- Unable to render templates for job 'fake-job-name-2'. Errors are:
+  - Error filling something in the template
+  - Error filling something in the template
+            MESSAGE
+          end
+
+          before do
+            allow(job_template_renderer).to receive(:render).and_raise(err_msg_1)
+            allow(job_template_renderer2).to receive(:render).and_raise(err_msg_2)
+          end
+
+          it 'formats the error messages is a generic way' do
+            expected_error_msg = <<-EXPECTED.strip
+- Unable to render jobs for instance group 'fake-instance-group-name'. Errors are:
+  - Unable to render templates for job 'fake-job-name-1'. Errors are:
+    - Error filling something in the template
+    - Error filling something in the template
+  - Unable to render templates for job 'fake-job-name-2'. Errors are:
+    - Error filling something in the template
+    - Error filling something in the template
+            EXPECTED
+
+            expect {
+              job_instance_renderer.render(spec)
+            }.to raise_error { |error|
+              expect(error.message).to eq(expected_error_msg)
+            }
+          end
         end
       end
     end

@@ -21,7 +21,7 @@ module Bosh::Director
 
     describe 'save_to_global_cache' do
       it 'copies from the local blobstore to the compiled package cache' do
-        fake_local_blobstore = instance_double('Bosh::Blobstore::LocalClient')
+        fake_local_blobstore = instance_double('Bosh::Blobstore::S3cliBlobstoreClient')
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
 
         expect(fake_local_blobstore).to receive(:get).with('blob_id', an_instance_of(File))
@@ -71,7 +71,7 @@ module Bosh::Director
 
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(double('Bosh::Blobstore::Client', create: blob_id))
 
-        allow(Digest::SHA1).to receive_message_chain(:file, :hexdigest).and_return('cp sha1')
+        allow(::Digest::SHA1).to receive_message_chain(:file, :hexdigest).and_return('cp sha1')
         allow(Models::CompiledPackage).to receive(:generate_build_number).with(package, 'chrome-os', 'latest')
 
         expect(compiled_package_cache_blobstore).to receive(:get) do |sha, file|
@@ -83,7 +83,7 @@ module Bosh::Director
     end
 
     describe '#delete_blob' do
-      let(:fake_local_blobstore) { instance_double('Bosh::Blobstore::LocalClient') }
+      let(:fake_local_blobstore) { instance_double('Bosh::Blobstore::S3cliBlobstoreClient') }
       before do
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
       end

@@ -1,11 +1,9 @@
 module Bosh::Director
   class JobUpdater
-    # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
-    # @param [Bosh::Director::DeploymentPlan::Job] job
-    # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, disk_manager)
-      @deployment_plan = deployment_plan
+    def initialize(ip_provider, job, disk_manager, job_renderer)
+      @ip_provider = ip_provider
       @job = job
+      @job_renderer = job_renderer
 
       @logger = Config.logger
       @event_log = Config.event_log
@@ -92,7 +90,7 @@ module Bosh::Director
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
       dns_manager = DnsManagerProvider.create
-      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
+      deleter = InstanceDeleter.new(@ip_provider, dns_manager, @disk_manager)
       deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight(unneeded_instances.size))
 
       @logger.info('Deleted no longer needed instances')
@@ -109,7 +107,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
         with_thread_name("canary_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan, :canary => true)
+            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -128,7 +126,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
         with_thread_name("instance_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan)
+            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

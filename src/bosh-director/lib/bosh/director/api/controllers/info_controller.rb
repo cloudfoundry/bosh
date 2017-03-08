@@ -11,7 +11,7 @@ module Bosh::Director
         status = {
           'name' => Config.name,
           'uuid' => Config.uuid,
-          'version' => "#{VERSION} (#{Config.revision})",
+          'version' => "#{Config.version} (#{Config.revision})",
           'user' => current_user,
           'cpi' => Config.cloud_type,
           'user_authentication' => @config.identity_provider.client_info,
@@ -26,9 +26,16 @@ module Bosh::Director
             },
             'snapshots' => {
               'status' => Config.enable_snapshots
+            },
+            'config_server' => {
+              'status' => Config.config_server_enabled,
+              'extras' => {
+                'urls' => @config.config_server_urls
+              }
             }
           }
         }
+
         content_type(:json)
         json_encode(status)
       end

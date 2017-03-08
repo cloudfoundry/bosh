@@ -19,11 +19,11 @@ describe 'cli: stemcell', type: :integration do
     out = table(bosh_runner.run('stemcells', json: true))
     expect(out).to eq([
       {
-        'Name' => 'ubuntu-stemcell',
-        'Version' => '1',
-        'OS' => 'toronto-os',
-        'CPI' => '',
-        'CID' => "#{expected_id}"
+        'name' => 'ubuntu-stemcell',
+        'version' => '1',
+        'os' => 'toronto-os',
+        'cpi' => '',
+        'cid' => "#{expected_id}"
       }
     ])
 
@@ -45,18 +45,18 @@ describe 'cli: stemcell', type: :integration do
 
       expect_table('stemcells', [
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name1',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name1',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name2',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name2',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
 
       ])
@@ -118,11 +118,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{expected_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{expected_id}"
             }
           ])
 
@@ -140,11 +140,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{new_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{new_id}"
             }
           ])
 
@@ -175,11 +175,11 @@ describe 'cli: stemcell', type: :integration do
         out = table(bosh_runner.run('stemcells', json: true))
         expect(out).to eq([
           {
-            'Name' => 'ubuntu-stemcell',
-            'Version' => '1',
-            'OS' => 'toronto-os',
-            'CPI' => '',
-            'CID' => "#{expected_id}"
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => "#{expected_id}"
           }
         ])
 
@@ -214,11 +214,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
               {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{expected_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{expected_id}"
               }
             ])
 
@@ -237,11 +237,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
             {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{new_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{new_id}"
               }
             ])
 
@@ -267,8 +267,36 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Error: Stemcell SHA1 '.*' does not match the expected SHA1 'shawone'/)
+          expect(output).to match(/Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
           expect(exit_code).to eq(1)
+        end
+
+        it 'rejects the release when the sha1 is an unknown algorithm' do
+          expect {
+            bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 'shaxyz:abcd1234'")
+          }.to raise_error(RuntimeError, /Computing digest from stream: Unable to create digest of unknown algorithm 'shaxyz'/)
+        end
+
+        context 'when multiple digests are provided' do
+          context 'when the digest is valid' do
+            let(:multidigest_string) { 'sha256:5ca766c62c8eb49d698810096f091ad5b19167d6c2fcd592eb0a99a553b70526;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+
+            it 'accepts and verifies the multiple digests' do
+              output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
+              expect(output).to match /Save stemcell/
+              expect(output).to match /Succeeded/
+            end
+          end
+
+          context 'when the digest is valid' do
+            let(:multidigest_string) { 'sha256:bad256;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+
+            it 'accepts and verifies the multiple digests' do
+              expect {
+                bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
+              }.to raise_error(RuntimeError, /Error: Expected stream to have digest 'sha256:bad256' but was '/)
+            end
+          end
         end
       end
     end

@@ -16,7 +16,7 @@
 .tags
 .vagrant
 .yardoc
-
+src/go/src/github.com/cloudfoundry/bosh-agent
 
 Checkfile
 TAGS

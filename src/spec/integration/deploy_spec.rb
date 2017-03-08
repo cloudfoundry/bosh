@@ -25,10 +25,10 @@ describe 'deploy', type: :integration do
 
         expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'foobar'. Errors are:
-     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
-       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+  - Unable to render jobs for instance group 'foobar'. Errors are:
+    - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
         expect(bosh_runner.run('events')).not_to include 'create'
@@ -451,8 +451,10 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
         end
 
-        it 'runs the post-deploy script when a vm is resurrected', hm: true do
-          current_sandbox.with_health_monitor_running do
+        context 'when hm is running', hm: true do
+          with_reset_hm_before_each
+
+          it 'runs the post-deploy script when a vm is resurrected' do
             deploy({})
 
             agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
@@ -735,9 +737,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).to_not eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
-     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+    - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end
@@ -892,9 +894,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exist_code).to_not eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'worker_2'. Errors are:
-     - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'worker_2'. Errors are:
+    - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end
@@ -1312,21 +1314,6 @@ Deployed 'simple' to '#{current_sandbox.director_name}'
           cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config_hash['resource_pools'].first['env'] = {}
           cloud_config_hash
-        end
-
-        context 'director deployment does not set generate_vm_passwords' do
-          it 'does not override default VM password' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
-
-            instance = director.instances.first
-            agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
-            user_password_exists = File.exist?("#{agent_dir}/bosh/vcap/password")
-            root_password_exists = File.exist?("#{agent_dir}/bosh/root/password")
-
-            expect(user_password_exists).to be_falsey
-            expect(root_password_exists).to be_falsey
-          end
         end
 
         context 'director deployment sets generate_vm_passwords as true' do

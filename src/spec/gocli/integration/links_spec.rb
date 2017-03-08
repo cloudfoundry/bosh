@@ -425,9 +425,9 @@ describe 'Links', type: :integration do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(out).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'my_api'. Errors are:
-     - Unable to render templates for job 'api_server_with_bad_optional_links'. Errors are:
-       - Error filling in template 'config.yml.erb' (line 3: Can't find link 'optional_link_name')
+  - Unable to render jobs for instance group 'my_api'. Errors are:
+    - Unable to render templates for job 'api_server_with_bad_optional_links'. Errors are:
+      - Error filling in template 'config.yml.erb' (line 3: Can't find link 'optional_link_name')
           EOF
         end
       end
@@ -456,9 +456,9 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
 Error: Unable to process links for deployment. Errors are:
-   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-        simple.mysql.database.db
-        simple.postgres.backup_database.backup_db
+  - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+     simple.mysql.database.db
+     simple.postgres.backup_database.backup_db
           EOF
         end
       end
@@ -479,7 +479,40 @@ Error: Unable to process links for deployment. Errors are:
         manifest
       end
 
-      it 'should successfully compile a release without complaining about missing links' do
+      it 'should successfully compile a release without complaining about missing links in sha2 mode', sha2: true do
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
+
+        expect(out).to include('Preparing package compilation: Finding packages to compile')
+        expect(out).to include('Compiling packages: pkg_2/8320802768871474e5630206aa606e3a22ae14096b5c7a836224c8480018cb8b')
+        expect(out).to include('Compiling packages: pkg_3_depends_on_2/b34bd09030e9d6eff29b4cce9948ccbd7d8833bf757e64e4905b1d574bb7b849')
+        expect(out).to include('copying packages: pkg_1/bb9cd0b267e39192bb6728192834f694a6199347b9b9528219c68e8bd1785cbe')
+        expect(out).to include('copying packages: pkg_2/8320802768871474e5630206aa606e3a22ae14096b5c7a836224c8480018cb8b')
+        expect(out).to include('copying packages: pkg_3_depends_on_2/b34bd09030e9d6eff29b4cce9948ccbd7d8833bf757e64e4905b1d574bb7b849')
+        expect(out).to include('copying jobs: addon/33e54f840bf107e3ed940fda30336d89a654ef6903ebd64ab4731998e47f1a06')
+        expect(out).to include('copying jobs: api_server/87508488cc2295169483f58302f001e7dbc97529f3b12809845259154faa521a')
+        expect(out).to include('copying jobs: api_server_with_bad_link_types/d86da5e1b821668455a5bda4f3d6ef1d03995f3bb685236dbefecac59e79372c')
+        expect(out).to include('copying jobs: api_server_with_bad_optional_links/a8a20ada9008ada7720bd74061de0a44c59cf81e0a2827c2b93873afee7b47fd')
+        expect(out).to include('copying jobs: api_server_with_optional_db_link/2ba41548a719665e679f834243916fcdb8c03eaebb69a0d3f806d9c157c372f7')
+        expect(out).to include('copying jobs: api_server_with_optional_links_1/2c64d33e3b4a941e2dba4f86e7568f6c9a954c7b313b6a6d69552bd7741325a7')
+        expect(out).to include('copying jobs: api_server_with_optional_links_2/d67d7780b76c04a01403048c2565ef6fe871e0268596678d9bff355aecc314da')
+        expect(out).to include('copying jobs: backup_database/d04ace47dcaa65e69fac6a3688b866845352a163d0dcfde0f2a0d02dd0293d8f')
+        expect(out).to include('copying jobs: consumer/494eab835be50838c15f0ff6952fd1b10c79a99f3c593391679b5f0f2a2d305d')
+        expect(out).to include('copying jobs: database/f6acdd0dc09c90a9a9d06032d176d479839ed52484ea31dbea72b9450e994136')
+        expect(out).to include('copying jobs: database_with_two_provided_link_of_same_type/9e200cea9e07f1a92da7c5fd4735281b9d14817e220d97c909301f1895e5373b')
+        expect(out).to include('copying jobs: http_endpoint_provider_with_property_types/11abffb51dc49ee44a1825f8911629c4cb7c02dd17057247826c8601cd234118')
+        expect(out).to include('copying jobs: http_proxy_with_requires/fb01af8736f1ff43db6e507cc0f11cbba4ca75408a6f4ea614637f01ce2f93a4')
+        expect(out).to include('copying jobs: http_server_with_provides/46f5cd44ad799db2be2624266c9a9487200ffa18a23bc83df64a19e1413f1e37')
+        expect(out).to include('copying jobs: kv_http_server/11c28a822aa698ee9aa9af81ccf6dc67232e2ab25338aca252bac3e90d4e1d95')
+        expect(out).to include('copying jobs: mongo_db/740fcbd346be1d9895d727608c66c2e73e2e850e888aa24f78830eb94d53de7a')
+        expect(out).to include('copying jobs: node/2b6b3ec34ad9738007a6b861d776b2916e8868986cbe166d6225c508e320e4ad')
+        expect(out).to include('copying jobs: provider/b9f01ed6fc017ab7f3bf4fc098828176685a40bc2cd1e786e04a978465c949d7')
+        expect(out).to include('copying jobs: provider_fail/43ab3579d49542b999641880cb3f357f605758924a8ad1cefb52d10d03e49916')
+
+        expect(out).to include('Succeeded')
+      end
+
+      it 'should successfully compile a release without complaining about missing links in sha1 mode', sha1: true do
         deploy_simple_manifest(manifest_hash: manifest)
         out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
 
@@ -1312,7 +1345,7 @@ Error: Unable to process links for deployment. Errors are:
 
         current_deployments = bosh_runner.run("deployments", json: true)
         #THERE IS WHITESPACE AT THE END OF THE TABLE. DO NOT REMOVE IT
-        expect(table(current_deployments)).to eq([{"Name"=>"simple", "Release(s)"=>"release_with_minimal_links/0+dev.2", "Stemcell(s)"=>"ubuntu-stemcell/1", "Cloud Config"=>"latest"}])
+        expect(table(current_deployments)).to eq([{'name' => 'simple', 'release_s' => 'release_with_minimal_links/0+dev.2', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
 
 
         # ####################################################################
@@ -1343,8 +1376,7 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     context 'when resurrector tries to resurrect an VM with jobs that consume links', hm: true do
-      before { current_sandbox.health_monitor_process.start }
-      after { current_sandbox.health_monitor_process.stop }
+      with_reset_hm_before_each
 
       let(:links) do
         {

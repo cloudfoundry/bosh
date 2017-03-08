@@ -30,19 +30,19 @@ module Bosh::Monitor
     def setup_events
       @processor.enable_pruning(Bhm.intervals.prune_events)
       Bhm.plugins.each do |plugin|
-        @processor.add_plugin(lookup_plugin(plugin["name"], plugin["options"]), plugin["events"])
+        @processor.add_plugin(lookup_plugin(plugin['name'], plugin['options']), plugin['events'])
       end
 
       EM.schedule do
-        Bhm.nats.subscribe("hm.agent.heartbeat.*") do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.heartbeat.*') do |message, reply, subject|
           process_event(:heartbeat, subject, message)
         end
 
-        Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.alert.*') do |message, reply, subject|
           process_event(:alert, subject, message)
         end
 
-        Bhm.nats.subscribe("hm.agent.shutdown.*") do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.shutdown.*') do |message, reply, subject|
           process_event(:shutdown, subject, message)
         end
       end
@@ -66,7 +66,9 @@ module Bosh::Monitor
       remove_inactive_deployments(active_deployment_names)
     end
 
-    def sync_deployment_state(deployment_name, instances_data)
+    def sync_deployment_state(deployment, instances_data)
+      deployment_name = deployment['name']
+      sync_teams(deployment)
       sync_instances(deployment_name, instances_data)
       sync_agents(deployment_name, get_instances_for_deployment(deployment_name))
     end
@@ -89,10 +91,10 @@ module Bosh::Monitor
     end
 
     def analyze_agents
-      @logger.info("Analyzing agents...")
+      @logger.info('Analyzing agents...')
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
-      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "agent"), Time.now - started])
+      @logger.info('Analyzed %s, took %s seconds' % [pluralize(count, 'agent'), Time.now - started])
       count
     end
 
@@ -130,7 +132,7 @@ module Bosh::Monitor
     end
 
     def analyze_instances
-      @logger.info("Analyzing instances...")
+      @logger.info('Analyzing instances...')
       started = Time.now
       count = 0
 
@@ -141,7 +143,7 @@ module Bosh::Monitor
         end
       end
 
-      @logger.info("Analyzed %s, took %s seconds" % [pluralize(count, "instance"), Time.now - started])
+      @logger.info('Analyzed %s, took %s seconds' % [pluralize(count, 'instance'), Time.now - started])
       count
     end
 
@@ -173,7 +175,7 @@ module Bosh::Monitor
         # There might be more than a single shutdown event,
         # we are only interested in processing it if agent
         # is still managed
-        return if kind == "shutdown"
+        return if kind == 'shutdown'
 
         @logger.warn("Received #{kind} from unmanaged agent: #{agent_id}")
         agent = Agent.new(agent_id)
@@ -189,12 +191,13 @@ module Bosh::Monitor
           message = payload
       end
 
+      deployment = @deployment_name_to_deployments[agent.deployment]
       case kind.to_s
-        when "alert"
+        when 'alert'
           on_alert(agent, message)
-        when "heartbeat"
-          on_heartbeat(agent, message)
-        when "shutdown"
+        when 'heartbeat'
+          on_heartbeat(agent, deployment, message)
+        when 'shutdown'
           on_shutdown(agent)
         else
           @logger.warn("No handler found for '#{kind}' event")
@@ -215,7 +218,7 @@ module Bosh::Monitor
     def lookup_plugin(name, options = {})
       plugin_class = nil
       begin
-        class_name = name.to_s.split("_").map(&:capitalize).join
+        class_name = name.to_s.split('_').map(&:capitalize).join
         plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
       rescue NameError => e
         raise PluginError, "Cannot find '#{name}' plugin"
@@ -237,8 +240,11 @@ module Bosh::Monitor
     end
 
     def on_alert(agent, message)
-      if message.is_a?(Hash) && !message.has_key?("source")
-        message["source"] = agent.name
+      if message.is_a?(Hash) && !message.has_key?('source')
+        message['source'] = agent.name
+        message['deployment'] = agent.deployment
+        message['job'] = agent.job
+        message['instance_id'] = agent.instance_id
       end
 
       @processor.process(:alert, message)
@@ -250,17 +256,18 @@ module Bosh::Monitor
       remove_agent(agent.id)
     end
 
-    def on_heartbeat(agent, message)
+    def on_heartbeat(agent, deployment, message)
       agent.updated_at = Time.now
 
       if message.is_a?(Hash)
-        message["timestamp"] = Time.now.to_i if message["timestamp"].nil?
-        message["agent_id"] = agent.id
-        message["deployment"] = agent.deployment
-        message["job"] = agent.job
-        message["instance_id"] = agent.instance_id
+        message['timestamp'] = Time.now.to_i if message['timestamp'].nil?
+        message['agent_id'] = agent.id
+        message['deployment'] = agent.deployment
+        message['job'] = agent.job
+        message['instance_id'] = agent.instance_id
+        message['teams'] = deployment ? deployment.teams : []
 
-        if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
+        if message['instance_id'].nil? || message['job'].nil? || message['deployment'].nil?
           return
         end
       end
@@ -360,6 +367,13 @@ module Bosh::Monitor
 
     def update_rogue_agents(deployment_agents)
       deployment_agents.each { |agent_id| @rogue_agents.delete(agent_id) }
+    end
+
+    def sync_teams(deployment)
+      deployment_name = deployment['name']
+      deployment_model = @deployment_name_to_deployments[deployment_name]
+      deployment_model.update_teams(deployment['teams'])
+      @deployment_name_to_deployments[deployment_name] = deployment_model
     end
   end
 end

@@ -9,7 +9,7 @@ module Bosh::Director
           @multi_job_updater = multi_job_updater
           @disk_manager = DiskManager.new(@logger)
           @dns_manager = DnsManagerProvider.create
-          job_renderer = JobRenderer.create
+          job_renderer = @deployment_plan.job_renderer
           agent_broadcaster = AgentBroadcaster.new
           @vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @vm_creator = Bosh::Director::VmCreator.new(@logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster)
@@ -20,6 +20,7 @@ module Bosh::Director
             @logger.info('Updating deployment')
             assemble
             update_jobs
+            update_errands
             @logger.info('Committing updates')
             @deployment_plan.persist_updates!
             @logger.info('Finished updating deployment')
@@ -35,7 +36,7 @@ module Bosh::Director
           delete_unneeded_instances
 
           @logger.info('Creating missing VMs')
-          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm? check?
+          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm check?
           @vm_creator.create_for_instance_plans(@deployment_plan.instance_plans_with_missing_vms, @deployment_plan.ip_provider, @deployment_plan.tags)
 
           @base_job.task_checkpoint
@@ -45,9 +46,17 @@ module Bosh::Director
           @logger.info('Updating instances')
           @multi_job_updater.run(
             @base_job,
-            @deployment_plan,
+            @deployment_plan.ip_provider,
             @deployment_plan.instance_groups_starting_on_deploy,
           )
+        end
+
+        def update_errands
+          @deployment_plan.errand_instance_groups.each do |instance_group|
+            instance_group.unignored_instance_plans.each do |instance_plan|
+              instance_plan.instance.update_variable_set
+            end
+          end
         end
 
         def delete_unneeded_instances

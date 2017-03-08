@@ -2,7 +2,6 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class DeepHashReplacement
-    include ConfigServerHelper
 
     def placeholders_paths(obj, subtrees_to_ignore = [])
       map = []
@@ -15,10 +14,14 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    def replace_placeholders(obj_to_be_resolved, config_map, config_values)
+    def replace_placeholders(obj_to_be_resolved, placeholders_paths, placeholder_values)
       result = Bosh::Common::DeepCopy.copy(obj_to_be_resolved)
-      config_map.each do |config_loc|
-        config_path = config_loc['path']
+      errors = []
+
+      placeholders_paths.each do |placeholders_path|
+        config_path = placeholders_path['path']
+        placeholder_values_copy = Bosh::Common::DeepCopy.copy(placeholder_values)
+
         ret = result
 
         if config_path.length > 1
@@ -26,7 +29,35 @@ module Bosh::Director::ConfigServer
             obj[el]
           end
         end
-        ret[config_path.last] = config_values[config_loc['placeholder']]
+
+        placeholders_list = placeholders_path['placeholders']
+        target_to_replace = ret[config_path.last]
+
+        if placeholders_list.size == 1 && placeholders_list.first == target_to_replace
+          ret[config_path.last] = placeholder_values_copy[placeholders_list.first]
+        else
+          current_errors = []
+
+          placeholders_list.each do |placeholder|
+            placeholder_value = placeholder_values_copy[placeholder]
+            unless placeholder_value.is_a?(String) || placeholder_value.is_a?(Fixnum)
+              current_errors <<  "- Failed to substitute placeholder: Can not replace '#{placeholder}' in '#{target_to_replace}'. The value should be a String or an Integer."
+            end
+          end
+
+          if current_errors.empty?
+            replacement_regex = Regexp.new(placeholder_values_copy.keys.map { |x| Regexp.escape(x) }.join('|'))
+            needed_placeholders = placeholder_values_copy.select { |key, _| placeholders_list.include? key }
+            ret[config_path.last] = target_to_replace.gsub(replacement_regex, needed_placeholders)
+          else
+            errors << current_errors
+          end
+        end
+      end
+
+      if errors.length > 0
+        message = errors.join("\n")
+        raise Bosh::Director::ConfigServerIncorrectPlaceholderPlacement, message
       end
 
       result
@@ -49,9 +80,8 @@ module Bosh::Director::ConfigServer
         end
       else
         path ||= []
-        if is_placeholder?(obj.to_s)
-          result << {'placeholder' => obj.to_s, 'path' => path}
-        end
+        placeholders = ConfigServerHelper.extract_placeholders_from_string(obj.to_s)
+        result << {'placeholders' => placeholders, 'path' => path} unless placeholders.empty?
       end
     end
 

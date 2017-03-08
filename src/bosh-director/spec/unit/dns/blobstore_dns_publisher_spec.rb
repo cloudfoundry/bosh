@@ -1,9 +1,8 @@
 require 'spec_helper'
-require 'blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe BlobstoreDnsPublisher do
-    let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+    let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
     subject(:dns) { BlobstoreDnsPublisher.new(blobstore, domain_name) }
     let(:dns_records) { DnsRecords.new([['fake-ip0', 'fake-name0'], ['fake-ip1', 'fake-name1']], 2)}
@@ -19,13 +18,14 @@ module Bosh::Director
             blobstore_id = dns.publish(dns_records)
             expect(blobstore_id).to_not be_nil
 
+            expect(blobstore).to receive(:exists?).and_return(false)
             expect(blobstore.exists?(blobstore_id)).to_not be_nil
           end
 
           it 'adds new entry to LocalDnsBlob table' do
             blobstore_id = dns.publish(dns_records)
             local_dns_blob = Bosh::Director::Models::LocalDnsBlob.find(:blobstore_id => blobstore_id)
-            expect(local_dns_blob.sha1).to eq(Digest::SHA1.hexdigest(dns_records.to_json))
+            expect(local_dns_blob.sha1).to eq(::Digest::SHA1.hexdigest(dns_records.to_json))
             expect(local_dns_blob.version).to eq(2)
           end
         end
@@ -37,6 +37,7 @@ module Bosh::Director
             blobstore_id = dns.publish(DnsRecords.new)
             expect(blobstore_id).to_not be_nil
 
+            expect(blobstore).to receive(:exists?).and_return(false)
             expect(blobstore.exists?(blobstore_id)).to_not be_nil
           end
         end
@@ -46,11 +47,11 @@ module Bosh::Director
         context 'when LocalDnsBlob has records' do
             before {
               Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id0',
-                                          sha1: 'fake-sha0',
+                                          sha1: 'fakesha0',
                                           version: 1,
                                           :created_at => Time.new)
               Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id1',
-                                          sha1: 'fake-sha1',
+                                          sha1: 'fakesha1',
                                           version: 2,
                                           :created_at => Time.new)
             }
@@ -59,7 +60,7 @@ module Bosh::Director
 
             it 'retrieves the last blob' do
               expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
-              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fake-sha1', 2)
+              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fakesha1', 2)
               dns.broadcast
             end
           end
@@ -135,6 +136,20 @@ module Bosh::Director
           it 'exports the record' do
             expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
             expect(dns.export_dns_records.version).to eq(1)
+          end
+        end
+
+        context 'when there are tombstone records' do
+          before do
+            Bosh::Director::Models::LocalDnsRecord.make(
+              instance_id: nil,
+              name: 'foo',
+              ip: '192.0.2.102')
+          end
+
+          it 'does not include the tombstone records' do
+            expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
+            expect(dns.export_dns_records.version).to eq(2)
           end
         end
       end

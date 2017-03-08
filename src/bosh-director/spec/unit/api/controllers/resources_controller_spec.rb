@@ -6,35 +6,36 @@ module Bosh::Director
     describe Controllers::ResourcesController do
       include Rack::Test::Methods
 
-      let(:temp_dir) { Dir.mktmpdir}
+      let(:temp_dir) { Dir.mktmpdir }
 
       let(:director_app) { App.new(config) }
 
-      after { FileUtils.rm_rf(temp_dir) }
-
-      let(:existing_resource_id) { director_app.blobstores.blobstore.create('some data') }
-      let(:resource_manager) { ResourceManager.new(director_app.blobstores.blobstore) }
+      let(:blobstore) { double('client') }
+      let(:resource_manager) { ResourceManager.new(blobstore) }
       subject(:app) { described_class.new(config, resource_manager) }
 
-      let(:config) {
+      let(:config) do
         config = SpecHelper.spec_get_director_config
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
         config['dir'] = temp_dir
         config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
+          'provider' => 'davcli',
+          'options' => {
+            'endpoint' => 'http://127.0.0.1',
+            'user' => 'admin',
+            'password' => nil,
+            'davcli_path' => true,
+          }
         }
         Config.load_hash(config)
-      }
+      end
 
       it 'requires auth' do
-        get "/#{existing_resource_id}"
+        get '/existing_resource_id'
         expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
-        get "/#{existing_resource_id}"
+        get '/existing_resource_id'
         expect(last_response.headers['Date']).not_to be_nil
       end
 
@@ -42,14 +43,18 @@ module Bosh::Director
         before(:each) { basic_authorize 'admin', 'admin' }
 
         it '404 on missing resource' do
+          allow(blobstore).to(receive(:get)).with('missing_resource', anything).and_raise(Bosh::Blobstore::NotFound)
           get '/missing_resource'
           expect(last_response.status).to eq(404)
         end
 
         it 'uses NGINX X-Accel-Redirect to fetch resources from blobstore' do
-          get "/#{existing_resource_id}"
+          allow(blobstore).to(receive(:get)).with('existing_resource_id', anything)
+
+          get '/existing_resource_id'
           expect(last_response.status).to eq(200)
           expect(last_response.headers).to have_key('X-Accel-Redirect')
+          expect(last_response.headers['X-Accel-Redirect']).to match /\/x_accel_files\/.*/
           expect(last_response.body).to eq('')
         end
 

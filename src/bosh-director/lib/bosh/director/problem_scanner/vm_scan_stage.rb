@@ -21,8 +21,10 @@ module Bosh::Director
           @instance_manager.find_by_name(@deployment, job, index)
         end
       else
-        instances = Models::Instance.filter(deployment: @deployment).all.select{|instance| instance.expects_vm?}
+        instances = Models::Instance.filter(deployment: @deployment).all
       end
+
+      instances = instances.reject {|instance| !instance.expects_vm?}
 
       @event_logger.begin_stage("Scanning #{instances.size} VMs", 2)
       results = Hash.new(0)
@@ -95,7 +97,7 @@ module Bosh::Director
 
     def has_vm?(instance)
       cloud = cloud_factory.for_availability_zone(instance.availability_zone)
-      instance.vm_cid && cloud.has_vm?(instance.vm_cid)
+      instance.vm_cid && cloud.has_vm(instance.vm_cid)
     end
 
     def add_disk_owner(disk_cid, vm_cid)

@@ -2,38 +2,36 @@
 
 set -eu
 
-set +e
-( cd stemcell; mv *.tgz stemcell.tgz )
-set -e
+cat > director-creds.yml <<EOF
+internal_ip: $BOSH_TARGET_IP
+EOF
 
-sed \
-  -e "s%{{access_key_id}}%$BOSH_INIT_ACCESS_KEY%g" \
-  -e "s%{{secret_key_id}}%$BOSH_INIT_SECRET_KEY%g" \
-  -e "s%{{bosh_username}}%$BOSH_USERNAME%g" \
-  -e "s%{{bosh_password}}%$BOSH_PASSWORD%g" \
-  -e "s%{{bosh_target_ip}}%$BOSH_TARGET_IP%g" \
-  bosh-src/ci/pipelines/compiled-releases/tasks/bosh-init-template.yml \
-  > bosh-init.yml
+echo "$BOSH_private_key" > /tmp/private_key
 
-if [ "$BOSH_REDIS" = "false" ]; then
-  sed -i '/name: redis/d' bosh-init.yml
-fi
+bosh-cli interpolate bosh-deployment/bosh.yml \
+  -o bosh-deployment/aws/cpi.yml \
+  --vars-store director-creds.yml \
+  -v region=us-east-1 \
+  -v az=us-east-1a \
+  -v default_key_name=compiled-release \
+  -v default_security_groups=[bosh] \
+  -v subnet_id=subnet-20d8bf56 \
+  -v director_name=release-compiler \
+  -v internal_cidr=10.0.2.0/24 \
+  -v internal_gw=10.0.2.1 \
+  --var-file private_key=/tmp/private_key \
+  --vars-env "BOSH" > director.yml
 
-echo "$BOSH_SSH_TUNNEL_KEY" > ssh_tunnel_key
-chmod 600 ssh_tunnel_key
-
-bosh-init deploy bosh-init.yml
+bosh-cli create-env director.yml -l director-creds.yml
 
 # occasionally we get a race where director process hasn't finished starting
 # before nginx is reachable causing "Cannot talk to director..." messages.
 sleep 10
 
-bosh -n target "https://$BOSH_TARGET_IP:25555"
-bosh login "$BOSH_USERNAME" "$BOSH_PASSWORD"
-
-#
-# create/upload cloud config
-#
+export BOSH_ENVIRONMENT=`bosh-cli int director-creds.yml --path /internal_ip`
+export BOSH_CA_CERT=`bosh-cli int director-creds.yml --path /director_ssl/ca`
+export BOSH_CLIENT=admin
+export BOSH_CLIENT_SECRET=`bosh-cli int director-creds.yml --path /admin_password`
 
 cat > /tmp/cloud-config <<EOF
 ---
@@ -53,7 +51,7 @@ networks:
     dns: [169.254.169.253]
     reserved: $BOSH_RESERVED_RANGES
     cloud_properties:
-        subnet: "subnet-20d8bf56"
+      subnet: "subnet-20d8bf56"
 
 compilation:
   workers: 8
@@ -62,7 +60,7 @@ compilation:
   network: private
 EOF
 
-bosh update cloud-config /tmp/cloud-config
+bosh-cli -n update-cloud-config /tmp/cloud-config
 
-mv $HOME/.bosh_init director-state/
-mv bosh-init.yml bosh-init-state.json director-state/
+mv $HOME/.bosh director-state/
+mv director.yml director-creds.yml director-state.json director-state/

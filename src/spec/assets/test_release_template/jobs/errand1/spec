@@ -43,3 +43,6 @@ properties:
   errand1.logs.custom:
     description: 'Output to place into sys/log/custom.log'
     default: 'errand1-custom-log'
+
+  errand1.gargamel_color:
+    description: 'Gargamels color'

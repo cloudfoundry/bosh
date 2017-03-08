@@ -25,10 +25,10 @@ describe 'deploy', type: :integration do
 
         expect(output).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'foobar'. Errors are:
-     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
-       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+  - Unable to render jobs for instance group 'foobar'. Errors are:
+    - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
+      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
         expect(director.instances.length).to eq(0)
@@ -106,22 +106,22 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
         stemcell_1 = table(bosh_runner.run('stemcells', :json => true)).last
-        expect(stemcell_1['Version']).to eq('1')
+        expect(stemcell_1['version']).to eq('1')
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
         invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         initial_count = invocations.count
         expect(initial_count).to be > 1
-        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_1['CID'])
+        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_1['cid'])
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
         stemcell_2 = table(bosh_runner.run('stemcells', :json => true)).first
-        expect(stemcell_2['Version']).to eq('2')
+        expect(stemcell_2['version']).to eq('2')
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
         invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(invocations.count).to be > initial_count
-        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_2['CID'])
+        expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_2['cid'])
       end
     end
 
@@ -155,10 +155,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect_running_vms_with_names_and_count('foobar' => 3)
           expect_table('deployments', [
             {
-              'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
-              'Release(s)' => 'bosh-release/0+dev.1',
-              'Stemcell(s)' => 'ubuntu-stemcell/1',
-              'Cloud Config' => 'none',
+              'name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+              'cloud_config' => 'none',
             }
           ])
         end
@@ -192,10 +193,11 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect_running_vms_with_names_and_count('foobar' => 3)
           expect_table('deployments', [
             {
-              'Name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
-              'Release(s)' => 'bosh-release/0+dev.1',
-              'Stemcell(s)' => 'ubuntu-stemcell/1',
-              'Cloud Config' => 'none',
+              'name' => Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+              'cloud_config' => 'none',
             }
           ])
         end
@@ -403,8 +405,10 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
         end
 
-        it 'runs the post-deploy script when a vm is resurrected', hm: true do
-          current_sandbox.with_health_monitor_running do
+        context 'when hm is running', hm: true do
+          with_reset_hm_before_each
+
+          it 'runs the post-deploy script when a vm is resurrected' do
             deploy(manifest_hash: manifest)
 
             agent_id = director.instance('job_with_post_deploy_script', '0').agent_id
@@ -686,9 +690,9 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).to_not eq(0)
           expect(output).to include <<-EOF.strip
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
-     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+    - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end
@@ -839,9 +843,9 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).to_not eq(0)
           expect(output).to include <<-EOF.strip
 Error: Unable to render instance groups for deployment. Errors are:
-   - Unable to render jobs for instance group 'worker_2'. Errors are:
-     - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
+  - Unable to render jobs for instance group 'worker_2'. Errors are:
+    - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
+      - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
           EOF
         end
       end
@@ -919,10 +923,10 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'it supports compiled releases' do
       context 'release and stemcell have been uploaded' do
-        before {
+        before do
           bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
           bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-        }
+        end
 
         context 'it uploads the compiled release when there is no corresponding stemcell' do
           it 'should not raise an error' do
@@ -934,16 +938,16 @@ Error: Unable to render instance groups for deployment. Errors are:
             output = bosh_runner.run('inspect-release test_release/1', json: true)
             puts output.pretty_inspect
             expect(table(output)).to include({
-              'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
-              'Blobstore ID' => /[a-f0-9\-]{36}/,
-              'SHA1' => '735987b52907d970106f38413825773eec7cc577',
-              'Compiled for' => 'centos-7/3001',
+              'package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
+              'blobstore_id' => /[a-f0-9\-]{36}/,
+              'digest' => '735987b52907d970106f38413825773eec7cc577',
+              'compiled_for' => 'centos-7/3001',
             })
             expect(table(output)).to include({
-              'Package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
-              'Blobstore ID' => '',
-              'SHA1' => '',
-              'Compiled for' => '(source)',
+              'package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
+              'blobstore_id' => '',
+              'digest' => '',
+              'compiled_for' => '(source)',
             })
           end
         end
@@ -1250,21 +1254,6 @@ Error: Unable to render instance groups for deployment. Errors are:
           cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config_hash['resource_pools'].first['env'] = {}
           cloud_config_hash
-        end
-
-        context 'director deployment does not set generate_vm_passwords' do
-          it 'does not override default VM password' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
-
-            instance = director.instances.first
-            agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
-            user_password_exists = File.exist?("#{agent_dir}/bosh/vcap/password")
-            root_password_exists = File.exist?("#{agent_dir}/bosh/root/password")
-
-            expect(user_password_exists).to be_falsey
-            expect(root_password_exists).to be_falsey
-          end
         end
 
         context 'director deployment sets generate_vm_passwords as true' do

@@ -7,6 +7,7 @@ module Bosh::Director::Models
     one_to_many :rendered_templates_archives
     one_to_many :ip_addresses
     many_to_many :templates
+    many_to_one :variable_set, :class => 'Bosh::Director::Models::VariableSet'
 
     def validate
       validates_presence [:deployment_id, :job, :index, :state]
@@ -112,11 +113,7 @@ module Bosh::Director::Models
       if spec.nil?
         self.spec_json = nil
       else
-        begin
-          self.spec_json = JSON.generate(spec)
-        rescue JSON::GeneratorError
-          self.spec_json = 'error'
-        end
+        self.spec_json = JSON.generate(spec)
       end
     end
 

@@ -6,22 +6,23 @@ module Bosh
           self.created_at ||= Time.now
         end
 
-        def manifest=(runtime_config_hash)
+        def raw_manifest=(runtime_config_hash)
           self.properties = YAML.dump(runtime_config_hash)
-        end
-
-        def manifest
-          manifest_hash = YAML.load(properties)
-          config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(Config.logger).create_client
-          config_server_client.interpolate_runtime_manifest(manifest_hash)
         end
 
         def raw_manifest
           YAML.load(properties)
         end
 
-        def tags
-          manifest['tags'] ? manifest['tags']: {}
+        def interpolated_manifest_for_deployment(deployment_name)
+          manifest_hash = YAML.load(properties)
+          variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+          variables_interpolator.interpolate_runtime_manifest(manifest_hash, deployment_name)
+        end
+
+        def tags(deployment_name)
+          interpolated_manifest = interpolated_manifest_for_deployment(deployment_name)
+          interpolated_manifest['tags'] ? interpolated_manifest['tags']: {}
         end
       end
     end

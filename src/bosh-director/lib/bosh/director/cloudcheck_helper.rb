@@ -46,17 +46,7 @@ module Bosh::Director
       validate_spec(instance_model.spec)
       validate_env(instance_model.vm_env)
 
-      begin
-        vm_deleter.delete_for_instance(instance_model)
-      rescue Bosh::Clouds::VMNotFound
-        # One situation where this handler is actually useful is when
-        # VM has already been deleted but something failed after that
-        # and it is still referenced in DB. In that case it makes sense
-        # to ignore "VM not found" errors in `delete_vm` and let the method
-        # proceed creating a new VM. Other errors are not forgiven.
-
-        @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
-      end
+      vm_deleter.delete_for_instance(instance_model)
     end
 
     def recreate_vm_skip_post_start(instance_model)
@@ -69,7 +59,8 @@ module Bosh::Director
 
       instance_plan_to_create = create_instance_plan(instance_model)
       tags = instance_model.deployment.tags
-      vm_creator.create_for_instance_plan(
+      job_renderer = JobRenderer.create
+      vm_creator(job_renderer).create_for_instance_plan(
         instance_plan_to_create,
         Array(instance_model.managed_persistent_disk_cid),
         tags
@@ -110,12 +101,13 @@ module Bosh::Director
         ).apply(update_config, run_post_start)
       end
       InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
+    ensure
+      job_renderer.clean_cache! if job_renderer
     end
 
     private
 
     def create_instance_plan(instance_model)
-      vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
       env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_models
@@ -131,8 +123,7 @@ module Bosh::Director
         instance_model.job,
         instance_model.index,
         instance_model.state,
-        vm_type,
-        nil,
+        instance_model.cloud_properties_hash,
         stemcell,
         env,
         false,
@@ -174,10 +165,9 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
-    def vm_creator
+    def vm_creator(job_renderer)
       disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
-      job_renderer = JobRenderer.create
       @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
     end
 

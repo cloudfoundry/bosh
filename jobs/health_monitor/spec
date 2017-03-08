@@ -5,7 +5,6 @@ templates:
   health_monitor_ctl.erb: bin/health_monitor_ctl
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
-  syslog_event_forwarder.conf.erb: config/syslog_event_forwarder.conf
 
 packages:
   - health_monitor
@@ -232,21 +231,8 @@ properties:
     description: Should we treat all heartbeats as alerts as well?
     default: false
 
-  # Send alerts to a syslog drain
   hm.syslog_event_forwarder_enabled:
-    description: Enable syslog forwarder plugin
-    default: false
-  hm.syslog_event_forwarder.address:
-    description: IP address of the syslog drain
-  hm.syslog_event_forwarder.port:
-    description: Port of the syslog drain
-    default: 5514
-  hm.syslog_event_forwarder.transport:
-    description: One of ["udp", "tcp", "relp"]
-    default: tcp
-  hm.syslog_event_forwarder.custom_rule:
-    description: Custom rule for syslog event forwarder
-    default: ""
+    description: Removed. Please co-locate the syslog-release instead to forward your logs.
 
   env.http_proxy:
     description: HTTP proxy that the health monitor should use

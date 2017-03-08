@@ -15,3 +15,4 @@ run:
 params:
   RUBY_VERSION: replace-me
   DB:           replace-me
+  DB_VERSION:   replace-me

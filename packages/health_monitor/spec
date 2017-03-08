@@ -5,4 +5,3 @@ dependencies:
 files:
 - bosh-monitor/**/*
 - vendor/cache/*.gem
-- syslog_event_forwarder/setup_syslog_event_forwarder.sh

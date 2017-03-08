@@ -71,8 +71,8 @@ jobs:
         file: certification/aws/tasks/prepare-director.yml
         input_mapping: {pipelines: certification}
         params:
-            BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
+            BOSH_CLIENT:            {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_CLIENT_SECRET:     {{BOSH_DIRECTOR_PASSWORD}}
             AWS_ACCESS_KEY:         {{aws_access_key__primary}}
             AWS_SECRET_KEY:         {{aws_secret_key__primary}}
             AWS_REGION_NAME:        {{aws_region__primary}}
@@ -96,8 +96,8 @@ jobs:
             AWS_REGION_NAME:        {{aws_region__primary}}
             BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
             PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-            BOSH_USER:              {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_PASSWORD:          {{BOSH_DIRECTOR_PASSWORD}}
+            BOSH_CLIENT:            {{BOSH_DIRECTOR_USERNAME}}
+            BOSH_CLIENT_SECRET:     {{BOSH_DIRECTOR_PASSWORD}}
             STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 
         - task: run-bats
@@ -134,37 +134,12 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
-
-  - name: bosh-cpi-dev-artifacts
-    type: s3
-    source:
-      regexp: bosh-aws-cpi-(\d+\.\d+\.\d+)\.tgz
-      bucket: {{s3_aws_bats_pipeline_bucket}}
-      region_name: {{aws_region__primary}}
-      access_key_id: {{aws_access_key__primary}}
-      secret_access_key: {{aws_secret_key__primary}}
+      branch: master
 
   - name: cpi-release
     type: bosh-io-release
     source:
       repository: cloudfoundry-incubator/bosh-aws-cpi-release
-
-  - name: version-semver
-    type: semver
-    source:
-      key:               current-version # dev-release version
-      bucket:            {{s3_aws_bats_pipeline_bucket}}
-      access_key_id:     {{aws_access_key__primary}}
-      secret_access_key: {{aws_secret_key__primary}}
-
-  - name: release-version-semver
-    type: semver
-    source:
-      key:               release-current-version
-      bucket:            {{s3_aws_bats_pipeline_bucket}}
-      access_key_id:     {{aws_access_key__primary}}
-      secret_access_key: {{aws_secret_key__primary}}
 
   - name: environment
     type: pool

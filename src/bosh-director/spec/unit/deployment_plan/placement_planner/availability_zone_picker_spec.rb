@@ -24,9 +24,9 @@ module Bosh::Director::DeploymentPlan
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
       instance_double(InstanceRepository,
-        fetch_existing: instance_double(Instance, update_description: nil, model: Bosh::Director::Models::Instance.make),
+        fetch_existing: instance_double(Instance, uuid: 'existing-uuid', update_description: nil, model: Bosh::Director::Models::Instance.make),
         fetch_obsolete_existing: instance_double(Instance, update_description: nil, model: Bosh::Director::Models::Instance.make),
-        create: instance_double(Instance, model: Bosh::Director::Models::Instance.make)
+        create: instance_double(Instance, uuid: 'create-uuid', model: Bosh::Director::Models::Instance.make)
       )
     end
     let(:az1) { AvailabilityZone.new('1', {}) }

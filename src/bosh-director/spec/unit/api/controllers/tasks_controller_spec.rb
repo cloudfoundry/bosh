@@ -276,6 +276,27 @@ module Bosh::Director
               end
             end
           end
+
+          context 'when context id is passed' do
+            before do
+              Models::Task.make(type: 'create_snapshot', context_id: 'example-context-id')
+              Models::Task.make(type: 'delete_release', context_id: 'example-context-id')
+              Models::Task.make(type: 'delete_snapshot')
+              Models::Task.make(type: 'delete_stemcell', context_id: 'some-other-context-id')
+            end
+
+            before do
+              basic_authorize 'admin', 'admin'
+            end
+
+            it 'only returns tasks with the same context' do
+              context_id = 'example-context-id'
+              get "/?context_id=#{context_id}"
+              expect(last_response.status).to eq(200)
+              expect(parsed_body.size).to eq(2)
+              expect(parsed_body.all?{ |e| e['context_id'] == context_id }).to eq(true)
+            end
+          end
         end
 
         describe 'get task by id' do
@@ -312,6 +333,18 @@ module Bosh::Director
               expect(task_json['id']).to eq(1)
               expect(task_json['state']).to eq('processed')
               expect(task_json['description']).to eq('fake-description')
+            end
+
+            context 'when the task has a context id' do
+              it 'has API call that returns task context id' do
+                context_id = 'example-context-id'
+                task = Models::Task.make(context_id: context_id)
+
+                get "/#{task.id}"
+                expect(last_response.status).to eq(200)
+                task_json = JSON.parse(last_response.body)
+                expect(task_json['context_id']).to eq context_id
+              end
             end
 
             context 'user has access to task' do

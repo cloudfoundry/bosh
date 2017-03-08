@@ -50,50 +50,50 @@ describe 'cli: deployment process', type: :integration do
 
     output = scrub_random_ids(table(output))
     expect(output).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '0', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'true', 'Ignore' => 'false'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '1', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'false', 'Ignore' => 'false'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'State' => 'started', 'VM CID' => /\d+/, 'VM Type' => 'a', 'Disk CIDs' => '', 'Agent ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Index' => '2', "Resurrection\nPaused"=> 'false', 'Bootstrap' => 'false', 'Ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '0', 'resurrection_paused'=> 'false', 'bootstrap' => 'true', 'ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '1', 'resurrection_paused'=> 'false', 'bootstrap' => 'false', 'ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '2', 'resurrection_paused'=> 'false', 'bootstrap' => 'false', 'ignore' => 'false'},
     )
 
     first_row = output.first
-    expect(first_row).to have_key('VM CID')
-    expect(first_row).to have_key('Disk CIDs')
-    expect(first_row).to have_key('Agent ID')
-    expect(first_row).to have_key("Resurrection\nPaused")
-    expect(first_row).to have_key('Ignore')
+    expect(first_row).to have_key('vm_cid')
+    expect(first_row).to have_key('disk_cids')
+    expect(first_row).to have_key('agent_id')
+    expect(first_row).to have_key('resurrection_paused')
+    expect(first_row).to have_key('ignore')
     expect(output.length).to eq(3)
 
     output = bosh_runner.run('instances --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2', 'DNS A Records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
     )
 
     output = bosh_runner.run('instances --ps', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-1', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-2', 'Process State' => 'running', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
     )
 
     output = bosh_runner.run('instances --ps --failing', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-1', 'IPs' => '192.168.1.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-2', 'IPs' => '192.168.2.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => '', 'Process State' => 'running', 'AZ' => 'zone-3', 'IPs' => '192.168.3.2'},
-      {'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process' => 'process-3', 'Process State' => 'failing', 'AZ' => '', 'IPs' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => ''},
     )
   end
 

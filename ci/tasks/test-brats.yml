@@ -1,0 +1,16 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+  - name: bosh-dev-release
+  - name: bosh-src
+
+params: []
+
+run:
+  path: bosh-src/ci/tasks/test-brats.sh

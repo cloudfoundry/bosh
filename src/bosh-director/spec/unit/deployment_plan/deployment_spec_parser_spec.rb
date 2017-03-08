@@ -483,6 +483,36 @@ module Bosh::Director
           end
         end
       end
+
+      describe 'variables key' do
+        context 'when variables spec is valid' do
+          it 'parses provided variables' do
+            variables_spec = [{'name' => 'var_a', 'type' => 'a'}, {'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}}]
+            manifest_hash.merge!('variables' => variables_spec)
+
+            result_obj = parsed_deployment.variables
+
+            expect(result_obj.spec.count).to eq(2)
+            expect(result_obj.get_variable('var_a')).to eq({'name' => 'var_a', 'type' => 'a'})
+            expect(result_obj.get_variable('var_b')).to eq({'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}})
+          end
+
+          it 'allows to not include variables key' do
+            result_obj = parsed_deployment.variables
+
+            expect(result_obj.spec.count).to eq(0)
+          end
+        end
+
+        context 'when variables spec is NOT valid' do
+          it 'throws an error' do
+            variables_spec = [{'name' => 'var_a', 'value' => 'a'}]
+            manifest_hash.merge!('variables' => variables_spec)
+
+            expect{ parsed_deployment.variables }.to raise_error Bosh::Director::VariablesInvalidFormat
+          end
+        end
+      end
     end
   end
 end

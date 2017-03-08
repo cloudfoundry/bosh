@@ -21,59 +21,64 @@ describe 'cli: events', type: :integration do
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
     output = bosh_runner.run('events', json: true)
 
-    data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
-    stable_data = get_details(data, ['ID', 'Time', 'User', 'Task ID'])
-    flexible_data = get_details(data, [ 'Action', 'Object Type', 'Object ID', 'Deployment', 'Instance', 'Context', 'Error'])
+    data = table(output)
+    id = data[-1]["id"]
+    event_output =  bosh_runner.run("event #{id}")
+    expect(event_output.split.join(" ")).to include("ID #{id}")
 
-    expect(stable_data).to all(include('Time' => /xxx xxx xx xx:xx:xx UTC xxxx|^$/))
-    expect(stable_data).to all(include('User' => /test|^$/))
-    expect(stable_data).to all(include('Task ID' => /[0-9]{1,3}|-|^$/))
-    expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
+    data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+    stable_data = get_details(data, ['id', 'time', 'user', 'task_id'])
+    flexible_data = get_details(data, [ 'action', 'object_type', 'object_id', 'deployment', 'instance', 'context', 'error'])
+
+    expect(stable_data).to all(include('time' => /xxx xxx xx xx:xx:xx UTC xxxx|^$/))
+    expect(stable_data).to all(include('user' => /test|^$/))
+    expect(stable_data).to all(include('task_id' => /[0-9]{1,3}|-|^$/))
+    expect(stable_data).to all(include('id' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
-      {'Action' => 'delete', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => '', 'Error' => ''},
-      {'Action' => 'update', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'Error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
-      {'Action' => 'start', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
-      {'Action' => 'start', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'update', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore: {}", 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'disk', 'Object ID' => '', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'vm', 'Object ID' => '', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'instance', 'Object ID' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'delete', 'Object Type' => 'instance', 'Object ID' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'instance', 'Object ID' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'vm', 'Object ID' => '', 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'instance', 'Object ID' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Deployment' => 'simple', 'Instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '', 'Error' => ''},
-      {'Action' => 'create', 'Object Type' => 'deployment', 'Object ID' => 'simple', 'Deployment' => 'simple', 'Instance' => '', 'Context' => '', 'Error' => ''},
-      {'Action' => 'update', 'Object Type' => 'runtime-config', 'Object ID' => '', 'Deployment' => '', 'Instance' => '', 'Context' => '', 'Error' => ''},
-      {'Action' => 'update', 'Object Type' => 'cloud-config', 'Object ID' => '', 'Deployment' => '', 'Instance' => '', 'Context' => '', 'Error' => ''},
+      {'action' => 'delete', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'disk', 'object_id' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'disk', 'object_id' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'update', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
+      {'action' => 'start', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
+      {'action' => 'start', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'update', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore: {}", 'error' => ''},
+      {'action' => 'create', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'disk', 'object_id' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'disk', 'object_id' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'instance', 'object_id' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_id' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'instance', 'object_id' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'instance', 'object_id' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'instance', 'object_id' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_id' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_id' => '', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'instance', 'object_id' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'update', 'object_type' => 'runtime-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'update', 'object_type' => 'cloud-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
     )
 
     instance_name = parse_first_instance_name(output)
-    output = bosh_runner.run("events --task 6 --instance #{instance_name}", deployment_name: 'simple', json: true)
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action delete", deployment_name: 'simple', json: true)
     data = table(output)
-    columns = ['Action', 'Object Type', 'Deployment', 'Instance', 'Task ID']
+    columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
     expect(get_details(data, columns)).to contain_exactly(
-        {'Action' => 'delete', 'Object Type' => 'instance', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name},
-        {'Action' => 'delete', 'Object Type' => 'disk', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name},
-        {'Action' => 'delete', 'Object Type' => 'disk', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name},
-        {'Action' => 'delete', 'Object Type' => 'vm', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name},
-        {'Action' => 'delete', 'Object Type' => 'vm', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name},
-        {'Action' => 'delete', 'Object Type' => 'instance', 'Task ID' => '6', 'Deployment' => 'simple', 'Instance' => instance_name})
+        {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'delete', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'delete', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
   end
 
   def get_details(table, keys)

@@ -5,9 +5,17 @@ describe 'create-release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
   SHA1_REGEXP = /^[0-9a-f]{40}$/
+  SHA2_REGEXP = /^[0-9a-f]{64}$/
+  SHA2_PREFIXED_REGEXP = /^sha256:[0-9a-f]{64}$/
 
-  before { setup_test_release_dir }
+  before do
+    setup_test_release_dir
+  end
 
+  let(:sha_generator) do
+    path = File.expand_path('../../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
+    Bosh::Director::Digest::MultiDigest.new(logger, path)
+  end
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
 
@@ -38,6 +46,7 @@ describe 'create-release', type: :integration do
         'jobs/job_that_modifies_properties.tgz',
         'jobs/transitive_deps.tgz',
         'jobs/id_job.tgz',
+        'jobs/job_with_bad_template.tgz',
         'packages/a.tgz',
         'packages/b.tgz',
         'packages/bar.tgz',
@@ -64,7 +73,7 @@ describe 'create-release', type: :integration do
     end
   end
 
-  describe 'release creation' do
+  shared_examples_for :release_creation do
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir("create-release --final --tarball=#{release_file.path}")
@@ -123,25 +132,25 @@ describe 'create-release', type: :integration do
         expect(release_manifest['version']).to eq('1')
 
         expect(release_manifest['packages']).to match(a_collection_containing_exactly(
-            package_desc('a', ['b']),
-            package_desc('b', ['c']),
-            package_desc('bar', ['foo']),
-            package_desc('blocking_package', []),
-            package_desc('c', []),
-            package_desc('errand1', []),
-            package_desc('fails_with_too_much_output', []),
-            package_desc('foo', []),
-            package_desc('foo_1', []),
-            package_desc('foo_2', []),
-            package_desc('foo_3', []),
-            package_desc('foo_4', []),
-            package_desc('foo_5', []),
-            package_desc('foo_6', []),
-            package_desc('foo_7', []),
-            package_desc('foo_8', []),
-            package_desc('foo_9', []),
-            package_desc('foo_10', []),
-          ))
+          package_desc('a', ['b']),
+          package_desc('b', ['c']),
+          package_desc('bar', ['foo']),
+          package_desc('blocking_package', []),
+          package_desc('c', []),
+          package_desc('errand1', []),
+          package_desc('fails_with_too_much_output', []),
+          package_desc('foo', []),
+          package_desc('foo_1', []),
+          package_desc('foo_2', []),
+          package_desc('foo_3', []),
+          package_desc('foo_4', []),
+          package_desc('foo_5', []),
+          package_desc('foo_6', []),
+          package_desc('foo_7', []),
+          package_desc('foo_8', []),
+          package_desc('foo_9', []),
+          package_desc('foo_10', []),
+        ))
 
         expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
           job_desc('errand1'),
@@ -165,7 +174,8 @@ describe 'create-release', type: :integration do
           job_desc('job_with_property_types'),
           job_desc('job_with_post_start_script'),
           job_desc('transitive_deps'),
-          job_desc('id_job')
+          job_desc('id_job'),
+          job_desc('job_with_bad_template')
         ))
 
         expect(release_manifest['uncommitted_changes']).to eq(false)
@@ -178,13 +188,27 @@ describe 'create-release', type: :integration do
         builds = index['builds']
         uuid, _ = builds.first
         expect(index).to eq(
-            'builds' => {
-              uuid => {'version' => '1'}
-            },
-            'format-version' => '2',
-          )
+          'builds' => {
+            uuid => {'version' => '1'}
+          },
+          'format-version' => '2',
+        )
       end
     end
+  end
+
+  describe 'release creation in sha1 mode', sha1: true do
+    let(:sha_regex) {SHA1_REGEXP}
+    let(:sha_regex_prefixed) {SHA1_REGEXP}
+    let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA1] }
+    it_behaves_like :release_creation
+  end
+
+  describe 'release creation in sha2 mode', sha2: true do
+    let(:sha_regex) {SHA2_REGEXP}
+    let(:sha_regex_prefixed) {SHA2_PREFIXED_REGEXP}
+    let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA256] }
+    it_behaves_like :release_creation
   end
 
   describe 'release creation from manifest' do
@@ -413,19 +437,31 @@ describe 'create-release', type: :integration do
     end
   end
 
-  def package_desc(name, dependencies)
-    sha = SHA1_REGEXP
-    match({ 'name' => name, 'version' => sha, 'fingerprint' => sha, 'dependencies' => dependencies, 'sha1' => sha })
+   def package_desc(name, dependencies)
+    match({
+      'name' => name,
+      'version' => sha_regex,
+      'fingerprint' => sha_regex,
+      'dependencies' => dependencies,
+      'sha1' => sha_regex_prefixed
+    })
   end
 
   def job_desc(name)
-    sha = SHA1_REGEXP
-    match({ 'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha })
+    match({
+      'name' => name,
+      'version' => sha_regex,
+      'fingerprint' => sha_regex,
+      'sha1' => sha_regex_prefixed
+    })
   end
 
   def license_desc
-    sha = SHA1_REGEXP
-    match({ 'version' => sha, 'fingerprint' => sha, 'sha1' => sha })
+    match({
+      'version' => sha_regex,
+      'fingerprint' => sha_regex,
+      'sha1' => sha_regex_prefixed
+    })
   end
 
   def latest_release_manifest
@@ -439,7 +475,7 @@ describe 'create-release', type: :integration do
       'builds' => {
         fingerprint => {
           'version' => fingerprint,
-          'sha1' => SHA1_REGEXP,
+          'sha1' => sha_regex_prefixed,
           'blobstore_id' => kind_of(String),
         }
       },
@@ -452,7 +488,8 @@ describe 'create-release', type: :integration do
 
     tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
     expect(File.exist?(tarblob)).to eq(true)
-    expect(Digest::SHA1.file(tarblob)).to eq(sha1)
+    actual_digest = sha_generator.create(digest_algorithms, tarblob)
+    expect(actual_digest).to eq(sha1)
 
     unless expected_files.empty?
       expect(list_tar_files(tarblob)).to match_array(expected_files)

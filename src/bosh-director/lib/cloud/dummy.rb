@@ -2,6 +2,8 @@ require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
 require 'membrane'
+require 'netaddr'
+require_relative '../cloud/errors'
 
 module Bosh
   module Clouds
@@ -44,7 +46,7 @@ module Bosh
         content = File.read(image_path)
         data = YAML.load(content)
         data.merge!('image' => image_path)
-        stemcell_id = Digest::SHA1.hexdigest(content)
+        stemcell_id = ::Digest::SHA1.hexdigest(content)
 
         File.write(stemcell_file(stemcell_id), YAML.dump(data))
         stemcell_id
@@ -70,7 +72,7 @@ module Bosh
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
         # rubocop:enable ParameterLists
-        @logger.info('Dummy: create_vm')
+        @logger.debug('Dummy: create_vm')
         validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
         ips = []
@@ -144,13 +146,13 @@ module Bosh
       end
 
       HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
-      def has_vm?(vm_cid)
+      def has_vm(vm_cid)
         validate_and_record_inputs(HAS_VM_SCHEMA, __method__, vm_cid)
         @vm_repo.exists?(vm_cid)
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
-      def has_disk?(disk_id)
+      def has_disk(disk_id)
         validate_and_record_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
         File.exists?(disk_file(disk_id))
       end
@@ -165,7 +167,7 @@ module Bosh
         FileUtils.mkdir_p(File.dirname(file))
         FileUtils.touch(file)
 
-        @logger.info("Attached disk: '#{disk_id}' to vm: '#{vm_cid}' at attachment file: #{file}")
+        @logger.debug("Attached disk: '#{disk_id}' to vm: '#{vm_cid}' at attachment file: #{file}")
 
         agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
@@ -453,9 +455,9 @@ module Bosh
       end
 
       def detach_disks_attached_to_vm(vm_cid)
-        @logger.info("Detaching disks for vm #{vm_cid}")
+        @logger.debug("Detaching disks for vm #{vm_cid}")
         Dir.glob(attachment_file(vm_cid, '*')) do |file_path|
-          @logger.info("Detaching found attachment #{file_path}")
+          @logger.debug("Detaching found attachment #{file_path}")
           FileUtils.rm_rf(File.dirname(file_path))
         end
       end
@@ -504,20 +506,20 @@ module Bosh
         end
 
         def pause_delete_vms
-          @logger.info('Pausing delete_vms')
+          @logger.debug('Pausing delete_vms')
           path = File.join(@cpi_commands, 'pause_delete_vms')
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, 'marker')
         end
 
         def unpause_delete_vms
-          @logger.info('Unpausing delete_vms')
+          @logger.debug('Unpausing delete_vms')
           FileUtils.rm_rf File.join(@cpi_commands, 'pause_delete_vms')
           FileUtils.rm_rf File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
         end
 
         def wait_for_delete_vms
-          @logger.info('Wait for delete_vms')
+          @logger.debug('Wait for delete_vms')
           path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
           sleep(0.1) until File.exists?(path)
         end
@@ -529,36 +531,36 @@ module Bosh
 
           path = File.join(@cpi_commands, 'pause_delete_vms')
           if File.exists?(path)
-            @logger.info('Wait for unpausing delete_vms')
+            @logger.debug('Wait for unpausing delete_vms')
           end
           sleep(0.1) while File.exists?(path)
         end
 
         def make_create_vm_always_use_dynamic_ip(ip_address)
-          @logger.info("Making create_vm method to set ip address #{ip_address}")
+          @logger.debug("Making create_vm method to set ip address #{ip_address}")
           FileUtils.mkdir_p(File.dirname(always_path))
           File.write(always_path, ip_address)
         end
 
         def set_dynamic_ips_for_azs(az_to_ips)
-          @logger.info("Making create_vm method to set #{az_to_ips.inspect}")
+          @logger.debug("Making create_vm method to set #{az_to_ips.inspect}")
           FileUtils.mkdir_p(File.dirname(azs_path))
           File.write(azs_path, JSON.generate(az_to_ips))
         end
 
         def make_create_vm_always_fail
-          @logger.info('Making create_vm method always fail')
+          @logger.debug('Making create_vm method always fail')
           FileUtils.mkdir_p(File.dirname(failed_path))
           File.write(failed_path, '')
         end
 
         def allow_create_vm_to_succeed
-          @logger.info('Allowing create_vm method to succeed (removing any mandatory failures)')
+          @logger.debug('Allowing create_vm method to succeed (removing any mandatory failures)')
           FileUtils.rm(failed_path)
         end
 
         def next_create_vm_cmd
-          @logger.info('Reading create_vm configuration')
+          @logger.debug('Reading create_vm configuration')
           ip_address = File.read(always_path) if File.exists?(always_path)
           azs_to_ip = File.exists?(azs_path) ? JSON.load(File.read(azs_path)) : {}
           failed = File.exists?(failed_path)
@@ -608,19 +610,19 @@ module Bosh
         def record(method, args)
           FileUtils.mkdir_p(@cpi_inputs_dir)
           data = {method_name: method, inputs: args}
-          @logger.info("Saving input for #{method} #{data} #{ordered_file_path}")
+          @logger.debug("Saving input for #{method} <redacted> #{ordered_file_path}")
           File.open(ordered_file_path, 'a') { |f| f.puts(JSON.dump(data)) }
         end
 
         def read(method_name)
-          @logger.info("Reading input for #{method_name}")
+          @logger.debug("Reading input for #{method_name}")
           read_all.select do |invocation|
             invocation.method_name == method_name
           end
         end
 
         def read_all
-          @logger.info("Reading all inputs: #{File.read(ordered_file_path)}")
+          @logger.debug("Reading all inputs: #{File.read(ordered_file_path)}")
           result = []
           File.read(ordered_file_path).split("\n").each do |request|
             data = JSON.parse(request)

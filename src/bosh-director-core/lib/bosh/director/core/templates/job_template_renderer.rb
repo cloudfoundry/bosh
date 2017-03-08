@@ -2,10 +2,12 @@ require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 require 'bosh/template/evaluation_context'
+require 'bosh/director/formatter_helper'
 require 'common/deep_copy'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
+
     attr_reader :monit_erb, :source_erbs
 
     def initialize(name, template_name, monit_erb, source_erbs, logger)
@@ -39,11 +41,9 @@ module Bosh::Director::Core::Templates
       end
 
       if errors.length > 0
-        message = "Unable to render templates for job '#{@name}'. Errors are:"
-
-        errors.each do |e|
-          message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
-        end
+        combined_errors = errors.map{|error| "- #{error.message.strip}"}.join("\n")
+        header = "- Unable to render templates for job '#{@name}'. Errors are:"
+        message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
 
         raise message
       end

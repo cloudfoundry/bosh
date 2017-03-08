@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/os-image-stemcell-builder}
-
-docker login
-docker push $DOCKER_IMAGE

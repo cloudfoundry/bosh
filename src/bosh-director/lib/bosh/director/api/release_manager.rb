@@ -93,12 +93,12 @@ module Bosh::Director
         JobQueue.new.enqueue(username, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options])
       end
 
-      def export_release(username, deployment_name, release_name, release_version, stemcell_os, stemcell_version)
+      def export_release(username, deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2)
         JobQueue.new.enqueue(
             username,
             Jobs::ExportRelease,
             "export release: '#{release_name}/#{release_version}' for '#{stemcell_os}/#{stemcell_version}'",
-            [deployment_name, release_name, release_version, stemcell_os, stemcell_version])
+            [deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2])
       end
     end
   end

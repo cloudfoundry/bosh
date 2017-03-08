@@ -10,7 +10,7 @@ describe 'cli: locks', type: :integration do
 
       with_blocking_deploy do
         locks_json = JSON.parse(bosh_runner.run_until_succeeds('locks --json', number_of_retries: 30))
-        expect(locks_json['Tables'][0]['Rows']).to include(['deployment', 'blocking', anything])
+        expect(locks_json['Tables'][0]['Rows']).to include({'type' => 'deployment', 'resource' => 'blocking', 'expires_at' => anything})
       end
     end
   end

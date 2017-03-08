@@ -612,12 +612,12 @@ describe 'CPI calls', type: :integration do
 
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(pre_cck_invocations.size)
 
-        expect(second_deploy_invocations[0].method_name).to eq('has_vm?')
+        expect(second_deploy_invocations[0].method_name).to eq('has_vm')
         expect(second_deploy_invocations[0].inputs).to match({
           'vm_cid' => vm_cid
         })
 
-        expect(second_deploy_invocations[1].method_name).to eq('has_disk?')
+        expect(second_deploy_invocations[1].method_name).to eq('has_disk')
         expect(second_deploy_invocations[1].inputs).to match({
           'disk_id' => disk_cid
         })
@@ -671,7 +671,7 @@ describe 'CPI calls', type: :integration do
           'disk_id' => disk_cid
         })
 
-        expect(second_deploy_invocations[6].method_name).to eq('has_disk?')
+        expect(second_deploy_invocations[6].method_name).to eq('has_disk')
         expect(second_deploy_invocations[6].inputs).to match({
           'disk_id' => disk_cid
         })

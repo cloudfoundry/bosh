@@ -92,7 +92,31 @@ module Bosh
               it 'skips authorization for invalid routes' do
                 get '/invalid_route'
                 expect(last_response.status).to eq(404)
+                expect(last_response.body).to eq("Endpoint '/invalid_route' not found. Please consider upgrading your director")
               end
+            end
+          end
+
+          context 'when specifying X-Bosh-Context-Id' do
+            let(:authenticates_successfully) { true }
+            before { basic_authorize 'admin', 'admin' }
+
+            it 'succeeds when the header is below 64 chars' do
+              valid_context_id = "x" * 64
+              header('X-Bosh-Context-Id', 'something')
+
+              get '/test_route'
+              expect(last_response.status).to eq(200)
+            end
+
+            it 'fails when the header is above 64 chars' do
+              invalid_context_id = "x" * 65
+              header('X-Bosh-Context-Id', invalid_context_id)
+
+              get '/test_route'
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(70010)
+              expect(JSON.parse(last_response.body)['description']).to eq('X-Bosh-Context-Id cannot be more than 64 characters in length')
             end
           end
         end

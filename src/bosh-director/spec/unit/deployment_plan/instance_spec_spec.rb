@@ -121,7 +121,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
-
       let(:expected_links) do
         {'link_name' =>
            {
@@ -140,9 +139,36 @@ module Bosh::Director::DeploymentPlan
         }
       end
 
+      before do
+        allow(instance).to receive(:variable_set)
+      end
+
+      context 'links specs whitelisting' do
+        let(:expected_links) do
+          {'link_name' =>
+             {
+              "properties"=> {
+                "listen_port"=> "Kittens"
+              },
+              "instances"=> [{
+                               "name"=> "provider",
+                               "index"=> 0,
+                               "bootstrap"=> true,
+                               "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
+                               "az"=> "z1",
+                               "address"=> "10.244.0.4"
+                             }
+              ]}
+          }
+        end
+
+        it 'respects whitelist for links spec' do
+          expect((instance_spec.as_template_spec)['links']).to eq(expected_links)
+        end
+      end
+
       context 'properties interpolation' do
-        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
         let(:properties) do
           {
@@ -189,14 +215,12 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-          allow(client_factory).to receive(:create_client).with(deployment_name).and_return(config_server_client)
+          allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         end
 
         it 'resolves properties and links properties' do
-          expect(config_server_client).to receive(:interpolate).with(properties, 'fake-deployment').and_return(resolved_properties)
-          expect(config_server_client).to receive(:interpolate).with(first_link, 'dep1').and_return(resolved_first_link)
-          expect(config_server_client).to receive(:interpolate).with(second_link, 'dep2').and_return(resolved_second_link)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', nil).and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links).and_return(resolved_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)

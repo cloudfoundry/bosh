@@ -21,10 +21,7 @@ module Support
         table_entries = []
 
         table_data['Tables'].each do |table|
-          head = table['Header']
-
-          table_rows = table['Rows'] || []
-          table_entries += table_rows.map { |row| Hash[head.zip(row)] } if head
+          table_entries += table['Rows'] || []
         end
 
         table_entries

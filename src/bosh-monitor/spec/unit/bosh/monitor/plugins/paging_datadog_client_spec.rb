@@ -1,4 +1,4 @@
-require "spec_helper"
+require 'spec_helper'
 
 class FakeDatadogClient
   def emit_points_called?
@@ -19,48 +19,48 @@ class FakeDatadogClient
 end
 
 describe PagingDatadogClient do
-  let(:datadog_recipient) { "pagerduty-bosh-service" }
+  let(:datadog_recipient) { 'pagerduty-bosh-service' }
   let(:wrapped_client) { FakeDatadogClient.new }
   let(:paging_client) { PagingDatadogClient.new(datadog_recipient, wrapped_client) }
 
-  describe "delegating to the wrapped client" do
-    describe "unmodified calls" do
+  describe 'delegating to the wrapped client' do
+    describe 'unmodified calls' do
       it "doesn't modify the #emit_points calls and passes them through" do
-        paging_client.emit_points("fake.metric", [Time.now.to_i, 25], {})
+        paging_client.emit_points('fake.metric', [Time.now.to_i, 25], {})
         expect(wrapped_client.emit_points_called?).to be(true)
       end
     end
 
-    describe "modified calls" do
-      let(:priority) { "normal" }
+    describe 'modified calls' do
+      let(:priority) { 'normal' }
       let(:alert) {
         Dogapi::Event.new(
-          "message",
-          :date_happened => Time.now.to_i - 300,
-          :priority => priority,
-          :tags => ["some", "tags"]
+            'message',
+            :date_happened => Time.now.to_i - 300,
+            :priority => priority,
+            :tags => ['some', 'tags']
         )
       }
 
-      context "with a normal priority alert" do
-        let(:priority) { "normal" }
+      context 'with a normal priority alert' do
+        let(:priority) { 'normal' }
 
-        it "adds the datadog recipient to the end of the message" do
+        it 'adds the datadog recipient to the end of the message' do
           paging_client.emit_event(alert)
           expect(wrapped_client.last_event.msg_text).to eq("message @#{datadog_recipient}")
         end
       end
 
-      context "with a low prioity alert" do
-        let(:priority) { "low" }
+      context 'with a low prioity alert' do
+        let(:priority) { 'low' }
 
-        it "does not add the datadog recipient to the end of the message" do
+        it 'does not add the datadog recipient to the end of the message' do
           paging_client.emit_event(alert)
           expect(wrapped_client.last_event.msg_text).not_to include("@#{datadog_recipient}")
         end
       end
 
-      it "keeps the rest of the attributes the same" do
+      it 'keeps the rest of the attributes the same' do
         alert_hash = alert.to_hash
         alert_hash.delete(:msg_text)
         paging_client.emit_event(alert)

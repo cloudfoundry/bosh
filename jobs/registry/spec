@@ -13,12 +13,12 @@ packages:
   - ruby
 
 properties:
-  registry.http.port:
+  registry.port:
     description: TCP port Registry daemon listens on
     default: 25777
-  registry.http.user:
+  registry.username:
     description: Username clients must use to access Registry via HTTP Basic Auth
-  registry.http.password:
+  registry.password:
     description: Password clients must use to access Registry via HTTP Basic Auth
 
   env.http_proxy:

@@ -2,15 +2,12 @@ require_relative '../../spec_helper'
 
 describe 'resurrector', type: :integration, hm: true do
   with_reset_sandbox_before_each
+  with_reset_hm_before_each
 
   before do
-    current_sandbox.health_monitor_process.start
-
     create_and_upload_test_release
     upload_stemcell
   end
-
-  after { current_sandbox.health_monitor_process.stop }
 
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -42,8 +39,9 @@ describe 'resurrector', type: :integration, hm: true do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       original_instance = director.instance('foobar', '0', deployment_name: 'simple')
-      original_instance.kill_agent
-      resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')
+      director.kill_vm_and_wait_for_resurrection(original_instance)
+
+      resurrected_instance = director.instance('foobar', '0', deployment_name: 'simple')
       expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
       instances = director.instances(deployment_name: 'simple')
       expect(instances.size).to eq(1)
@@ -51,10 +49,9 @@ describe 'resurrector', type: :integration, hm: true do
 
       output = bosh_runner.run('events', json: true)
       data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
-
       expect(data).to include(
-        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => 'simple', 'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => /message: 'Alert @ .* severity 2: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n  has timed out'/, 'Error' => ''},
-        {'ID' => /[0-9]{1,3}/, 'Time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'User' => 'hm', 'Action' => 'create', 'Object Type' => 'alert', 'Object ID' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Task ID' => '', 'Deployment' => '', 'Instance' => '', 'Context' => /message: 'Alert @ .* severity 4: Finish update deployment for\n  ''simple'' against Director ''deadbeef'''/, 'Error' => ''}
+        {'id' => /[0-9]{1,3}/, 'time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'user' => 'hm', 'action' => 'create', 'object_type' => 'alert', 'object_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'task_id' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => /message: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out.(.*)\n  UTC, severity 2: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx has timed out'/, 'error' => ''},
+        {'id' => /[0-9]{1,3}/, 'time' => /xxx xxx xx xx:xx:xx UTC xxxx/, 'user' => 'hm', 'action' => 'create', 'object_type' => 'alert', 'object_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'task_id' => '', 'deployment' => 'simple', 'instance' => '', 'context' => /message: 'director - finish update deployment.(.*)UTC, severity\n  4: Finish update deployment for ''simple'' against Director ''deadbeef'''/, 'error' => ''}
       )
     end
   end

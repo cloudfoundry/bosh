@@ -2,16 +2,13 @@ require 'spec_helper'
 
 describe 'resurrector', type: :integration, hm: true do
   with_reset_sandbox_before_each
+  with_reset_hm_before_each
 
   before do
-    current_sandbox.health_monitor_process.start
-
     target_and_login
     create_and_upload_test_release
     upload_stemcell
   end
-
-  after { current_sandbox.health_monitor_process.stop }
 
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

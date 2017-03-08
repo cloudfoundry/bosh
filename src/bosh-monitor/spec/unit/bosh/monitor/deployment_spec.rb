@@ -4,7 +4,7 @@ describe Bhm::Deployment do
 
   describe '.create' do
     context 'from valid hash' do
-      let(:deployment_data) { {'name' => 'deployment_name'} }
+      let(:deployment_data) { {'name' => 'deployment_name', 'teams' => ['ateam'] } }
 
       it 'creates a deployment' do
         deployment = Bhm::Deployment.create(deployment_data)
@@ -37,14 +37,14 @@ describe Bhm::Deployment do
   describe '#add_instance' do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
 
-    it "add instance with well formed director instance data" do
+    it 'add instance with well formed director instance data' do
       expect(deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))).to be(true)
       expect(deployment.instance('iuuid')).to be_a(Bhm::Instance)
       expect(deployment.instance('iuuid').id).to eq('iuuid')
       expect(deployment.instance('iuuid').deployment).to eq('deployment-name')
     end
 
-    it "add only new instances" do
+    it 'add only new instances' do
       deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
       deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
 
@@ -73,11 +73,11 @@ describe Bhm::Deployment do
       deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
     end
 
-    it "returns all instance ids" do
+    it 'returns all instance ids' do
       expect(deployment.instance_ids).to eq(['iuuid1', 'iuuid2'].to_set)
     end
 
-    it "removes ids from removed instances" do
+    it 'removes ids from removed instances' do
       deployment.remove_instance('iuuid1')
       expect(deployment.instance_ids).to eq(['iuuid2'].to_set)
     end
@@ -86,7 +86,7 @@ describe Bhm::Deployment do
   describe '#remove_instance' do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
 
-    it "remove instance with id" do
+    it 'remove instance with id' do
       deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
 
       expect(deployment.instance('iuuid')).to be_a(Bhm::Instance)
@@ -99,14 +99,14 @@ describe Bhm::Deployment do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
     let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
 
-    it "adds agent" do
+    it 'adds agent' do
       expect(deployment.upsert_agent(instance)).to be(true)
       expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
       expect(deployment.agent('auuid').id).to eq('auuid')
       expect(deployment.agent('auuid').deployment).to eq('deployment-name')
     end
 
-    it "updates existing agents" do
+    it 'updates existing agents' do
       updated_instance = Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'new_job', 'index' => '0', 'expects_vm' => true})
 
       deployment.upsert_agent(instance)
@@ -119,7 +119,7 @@ describe Bhm::Deployment do
 
     context 'Instance has no agent id' do
       let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
-      it "refuses to add agent" do
+      it 'refuses to add agent' do
         expect(deployment.upsert_agent(instance)).to be_falsey
       end
     end
@@ -129,7 +129,7 @@ describe Bhm::Deployment do
     let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name'}) }
     let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
 
-    it "remove agent with id" do
+    it 'remove agent with id' do
       deployment.upsert_agent(instance)
 
       expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
@@ -146,14 +146,35 @@ describe Bhm::Deployment do
       deployment.upsert_agent(Bhm::Instance.create({'id' => 'iuuid2', 'agent_id' => 'auuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}))
     end
 
-    it "returns all agent ids" do
+    it 'returns all agent ids' do
       expect(deployment.agent_ids).to eq(['auuid1', 'auuid2'].to_set)
     end
 
-    it "removes ids from removed agents" do
+    it 'removes ids from removed agents' do
       deployment.remove_agent('auuid1')
 
       expect(deployment.agent_ids).to eq(['auuid2'].to_set)
+    end
+  end
+
+  describe '#teams' do
+    let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name', 'teams' => ['ateam', 'bteam']}) }
+    let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
+
+    it 'returns teams provided in intialization' do
+      expect(deployment.teams).to eq(['ateam', 'bteam'])
+    end
+  end
+
+  describe '#update_teams' do
+    let(:deployment) { Bhm::Deployment.create({'name' => 'deployment-name', 'teams' => ['ateam', 'bteam']}) }
+    let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
+
+    it 'updates teams with given values' do
+      expect(deployment.teams).to eq(['ateam', 'bteam'])
+
+      deployment.update_teams(['anotherteam'])
+      expect(deployment.teams).to eq(['anotherteam'])
     end
   end
 end

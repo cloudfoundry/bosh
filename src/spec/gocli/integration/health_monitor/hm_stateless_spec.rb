@@ -2,9 +2,7 @@ require_relative '../../spec_helper'
 
 describe 'health_monitor: 1', type: :integration, hm: true do
   with_reset_sandbox_before_each
-
-  before { current_sandbox.health_monitor_process.start }
-  after { current_sandbox.health_monitor_process.stop }
+  with_reset_hm_before_each
 
   # ~1m20s
   it 'resurrects stateless nodes if agent is not responding' do
@@ -136,12 +134,19 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   end
 
   context 'when the vm is launching and has incomplete heartbeats' do
+    with_reset_sandbox_before_each(user_authentication: 'uaa')
+
     it 'only outputs complete heartbeats' do
+      team_client_env = {'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret'}
+      director_client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+
       current_sandbox.reconfigure_health_monitor('health_monitor_with_json_logging.yml.erb')
 
       deployment_hash = Bosh::Spec::Deployments.simple_manifest
       deployment_hash['jobs'][0]['instances'] = 1
-      deploy_from_scratch(manifest_hash: deployment_hash)
+
+      prepare_for_deploy(manifest_hash: deployment_hash, no_login: true, env: director_client_env, include_credentials: false)
+      deploy_simple_manifest(manifest_hash: deployment_hash, no_login: true, env: team_client_env, include_credentials: false)
 
       start_time = Time.now
       while Time.now < start_time + 60
@@ -157,7 +162,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       heartbeat_hashes = heartbeat_lines.map {|json_line| JSON.parse(json_line) }
 
-      instance = director.instances.first
+      instances = director.instances(no_login: true, env: team_client_env, include_credentials: false)
+      instance = instances.first
       expected_hash = {
           'kind' => 'heartbeat',
           'id' => anything,
@@ -168,7 +174,9 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'index' => instance.index,
           'instance_id' => instance.id,
           'job_state' => 'running',
-          'vitals' => anything
+          'vitals' => anything,
+          'teams' => ['ateam'],
+          'metrics' => anything,
       }
 
       expect(heartbeat_hashes.length).to be > 0

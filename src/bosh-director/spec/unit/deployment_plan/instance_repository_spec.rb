@@ -7,6 +7,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
     ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
     model = BD::Models::Deployment.make
+    BD::Models::VariableSet.create(deployment: model)
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       network: network,
       ip_provider: ip_provider,
@@ -128,10 +129,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.uuid).to eq(existing_instance.uuid)
       expect(instance.state).to eq(existing_instance.state)
       expect(instance.index).to eq(existing_instance.index)
-      expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+      expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
       expect(instance.compilation?).to eq(existing_instance.compilation)
       expect(instance.job_name).to eq(existing_instance.job)
-      expect(instance.vm_type.name).to eq('vm-type')
       expect(instance.stemcell.models.first).to eq(stemcell)
       expect(instance.env).to eq(env)
     end
@@ -150,10 +150,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         expect(instance.uuid).to eq(existing_instance.uuid)
         expect(instance.state).to eq(existing_instance.state)
         expect(instance.index).to eq(existing_instance.index)
-        expect(instance.availability_zone).to eq(existing_instance.availability_zone)
+        expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
         expect(instance.compilation?).to eq(existing_instance.compilation)
         expect(instance.job_name).to eq(existing_instance.job)
-        expect(instance.vm_type).to be_nil
         expect(instance.stemcell).to be_nil
         expect(instance.env).to eq({})
       end

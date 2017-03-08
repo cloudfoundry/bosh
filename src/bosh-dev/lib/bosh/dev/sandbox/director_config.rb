@@ -5,7 +5,7 @@ module Bosh::Dev::Sandbox
       :nats_port,
       :sandbox_root,
       :blobstore_storage_dir,
-      :external_cpi_enabled,
+      :verify_multidigest_path,
       :external_cpi_config,
       :database,
       :director_fix_stateful_nodes,
@@ -39,13 +39,13 @@ module Bosh::Dev::Sandbox
       @database = attrs.fetch(:database)
 
       @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
+      @verify_multidigest_path = attrs.fetch(:verify_multidigest_path)
 
       @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
 
       @dns_enabled = attrs.fetch(:dns_enabled, true)
       @local_dns = attrs.fetch(:local_dns, {'enabled' => false, 'include_index' => false})
 
-      @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
       @external_cpi_config = attrs.fetch(:external_cpi_config)
 
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)

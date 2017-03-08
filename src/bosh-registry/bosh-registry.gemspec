@@ -1,14 +1,12 @@
 # coding: utf-8
 require File.expand_path('../lib/bosh/registry/version', __FILE__)
 
-version = Bosh::Registry::VERSION
-
 Gem::Specification.new do |spec|
   spec.name         = 'bosh-registry'
   spec.version      = Bosh::Registry::VERSION
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH Registry'
-  spec.description  = "BOSH Registry"
+  spec.description  = 'BOSH Registry'
   spec.author       = 'VMware'
   spec.homepage     = 'https://github.com/cloudfoundry/bosh'
   spec.license      = 'Apache 2.0'
@@ -26,5 +24,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'yajl-ruby', '~>1.2.0'
   spec.add_dependency 'fog-openstack'
   spec.add_dependency 'aws-sdk'
-  spec.add_dependency 'bosh_cpi', "~>#{version}"
+  spec.add_dependency 'bosh_cpi'
 end

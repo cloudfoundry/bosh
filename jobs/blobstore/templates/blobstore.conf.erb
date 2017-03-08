@@ -2,7 +2,7 @@ server {
   listen      <%= p("blobstore.port") %>;
   server_name "";
 
-  access_log  /var/vcap/sys/log/blobstore/blobstore_access.log;
+  access_log  /var/vcap/sys/log/blobstore/blobstore_access.log common_event_format;
   error_log   /var/vcap/sys/log/blobstore/blobstore_error.log;
 
   client_max_body_size <%= p("blobstore.max_upload_size") %>;

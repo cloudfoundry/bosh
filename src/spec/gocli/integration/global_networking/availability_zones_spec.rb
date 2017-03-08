@@ -64,8 +64,10 @@ describe 'availability zones', type: :integration do
           })
     end
 
-    it 'resurrects VMs with the correct AZs cloud_properties', hm: true do
-      current_sandbox.with_health_monitor_running do
+    context 'when hm is running', hm: true do
+      with_reset_hm_before_each
+
+      it 'resurrects VMs with the correct AZs cloud_properties' do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
@@ -187,8 +189,8 @@ describe 'availability zones', type: :integration do
       expect(director.instances.count).to eq(2)
 
       expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-        {'Instance' => String, 'Process State' => 'running', 'AZ' => 'my-az', 'IPs' => '192.168.1.1', 'VM CID' => String, 'VM Type' => 'a'},
-        {'Instance' => String, 'Process State' => 'running', 'AZ' => 'my-az2', 'IPs' => '192.168.2.1', 'VM CID' => String, 'VM Type' => 'a'},
+        {'instance' => String, 'process_state' => 'running', 'az' => 'my-az', 'ips' => '192.168.1.1', 'vm_cid' => String, 'vm_type' => 'a'},
+        {'instance' => String, 'process_state' => 'running', 'az' => 'my-az2', 'ips' => '192.168.2.1', 'vm_cid' => String, 'vm_type' => 'a'},
       )
     end
 

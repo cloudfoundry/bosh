@@ -27,6 +27,7 @@ module Bosh::Director
               'source' => 'director',
               'title' => 'director - begin update deployment',
               'summary' => "Begin update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
+              'deployment' => 'Blorgh',
               'created_at' => Time.now.to_i
             }
           end
@@ -48,6 +49,7 @@ module Bosh::Director
               'source' => 'director',
               'title'      => 'director - finish update deployment',
               'summary'    => "Finish update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
+              'deployment' => 'Blorgh',
               'created_at' => Time.now.to_i
             }
           end
@@ -69,6 +71,7 @@ module Bosh::Director
               'source' => 'director',
               'title'      => 'director - error during update deployment',
               'summary'    => "Error during update deployment for '#{planner.canonical_name}' against Director '#{uuid}': #<Exception: This is an exception>",
+              'deployment' => 'Blorgh',
               'created_at' => Time.now.to_i
             }
           end

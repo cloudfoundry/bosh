@@ -9,6 +9,9 @@ module Bosh::Director
     let(:event_log) { Bosh::Director::Config.event_log }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
+    let(:errand_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+    let(:errand_instance_plan) {  instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: errand_instance)  }
+    let(:errand_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', unignored_instance_plans: [errand_instance_plan]) }
 
     let(:deployment_plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
@@ -16,12 +19,15 @@ module Bosh::Director
         persist_updates!: nil,
         instance_groups_starting_on_deploy: [],
         instance_plans_with_missing_vms: [],
+        errand_instance_groups: [errand_instance_group],
         ip_provider: ip_provider,
+        job_renderer: JobRenderer.create,
         skip_drain: skip_drain,
         recreate: false,
         tags: {}
       )
     end
+
     let(:cloud) { Config.cloud }
     let(:manifest) { ManifestHelper.default_legacy_manifest }
     let(:releases) { [] }
@@ -77,7 +83,8 @@ module Bosh::Director
 
         it_deletes_unneeded_instances.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
-        expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
+        expect(multi_job_updater).to receive(:run).with(base_job, ip_provider, [job1, job2]).ordered
+        expect(errand_instance).to receive(:update_variable_set).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
         subject.perform
       end

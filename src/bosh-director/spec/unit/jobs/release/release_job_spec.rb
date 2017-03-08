@@ -71,9 +71,9 @@ module Bosh::Director
 
         expect(blobstore).to receive(:create) do |f|
           f.rewind
-          expect(Digest::SHA1.hexdigest(f.read)).to eq(Digest::SHA1.hexdigest(job_bits))
+          expect(::Digest::SHA1.hexdigest(f.read)).to eq(::Digest::SHA1.hexdigest(job_bits))
 
-          Digest::SHA1.hexdigest(f.read)
+          ::Digest::SHA1.hexdigest(f.read)
         end
 
         expect(Models::Template.count).to eq(0)

@@ -5,12 +5,15 @@ module Bosh::Director::DeploymentPlan
     subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, tags: tags) }
 
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
+
+    let(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         uuid: 'fake-uuid-1',
         bootstrap: true,
         deployment: deployment_model,
-        spec: spec
+        spec: spec,
+        variable_set: variable_set_model
       )
       instance_model
     end
@@ -66,6 +69,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:network_settings) { { 'obsolete' => 'network'} }
     before do
+      BD::Models::VariableSet.make(deployment: deployment_model)
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)

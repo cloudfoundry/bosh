@@ -12,5 +12,14 @@ module Bosh::Monitor
       @timestamp = timestamp
       @tags = tags
     end
+
+    def to_hash
+      {
+          :name => @name,
+          :value => @value.to_s,
+          :timestamp => @timestamp.to_i,
+          :tags => @tags
+      }
+    end
   end
 end

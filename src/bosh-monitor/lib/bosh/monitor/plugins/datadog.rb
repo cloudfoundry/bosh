@@ -7,15 +7,15 @@ module Bosh::Monitor
       NORMAL_PRIORITY = [:alert, :critical, :error]
 
       def validate_options
-        !!(options.kind_of?(Hash) && options["api_key"] && options["application_key"])
+        !!(options.kind_of?(Hash) && options['api_key'] && options['application_key'])
       end
 
       def run
-        @api_key = options["api_key"]
-        @application_key = options["application_key"]
-        @pagerduty_service_name = options["pagerduty_service_name"]
+        @api_key = options['api_key']
+        @application_key = options['application_key']
+        @pagerduty_service_name = options['pagerduty_service_name']
 
-        logger.info("DataDog plugin is running...")
+        logger.info('DataDog plugin is running...')
       end
 
       def dog_client
@@ -48,14 +48,18 @@ module Bosh::Monitor
           agent:#{heartbeat.agent_id}
         ]
 
-        heartbeat.metrics.each do |metric|
-          begin
-            point = [Time.at(metric.timestamp), metric.value]
-            dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
-          rescue Timeout::Error => e
-            logger.warn('Could not emit points to Datadog, request timed out.')
-          rescue => e
-            logger.info("Could not emit points to Datadog: #{e.inspect}")
+        heartbeat.teams.each { |team| tags << "team:#{team}" }
+
+        dog_client.batch_metrics do
+          heartbeat.metrics.each do |metric|
+            begin
+              point = [Time.at(metric.timestamp), metric.value]
+              dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
+            rescue Timeout::Error => e
+              logger.warn('Could not emit points to Datadog, request timed out.')
+            rescue => e
+              logger.info("Could not emit points to Datadog: #{e.inspect}")
+            end
           end
         end
       end
@@ -69,7 +73,7 @@ module Bosh::Monitor
 
         # DataDog only supports "low" and "normal" priority
         begin
-          priority = normal_priority?(alert.severity) ? "normal" : "low"
+          priority = normal_priority?(alert.severity) ? 'normal' : 'low'
           dog_client.emit_event(
             Dogapi::Event.new(msg,
                               msg_title: title,

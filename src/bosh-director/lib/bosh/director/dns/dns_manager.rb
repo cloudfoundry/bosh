@@ -4,13 +4,12 @@ module Bosh::Director
       dns_config = Config.dns || {}
 
       logger = Config.logger
-      local_dns_repo = LocalDnsRepo.new(logger)
       canonized_dns_domain_name = Config.canonized_dns_domain_name
 
       dns_publisher = BlobstoreDnsPublisher.new(App.instance.blobstores.blobstore, canonized_dns_domain_name) if Config.local_dns_enabled?
       dns_provider = PowerDns.new(canonized_dns_domain_name, logger) if !!Config.dns_db
 
-      DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
+      DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, logger)
     end
   end
 
@@ -19,14 +18,13 @@ module Bosh::Director
   class DnsManager
     attr_reader :dns_domain_name
 
-    def initialize(dns_domain_name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
+    def initialize(dns_domain_name, dns_config, dns_provider, dns_publisher, logger)
       @dns_domain_name = dns_domain_name
       @dns_provider = dns_provider
       @dns_publisher = dns_publisher
       @default_server = dns_config['server']
       @flush_command = dns_config['flush_command']
       @ip_address = dns_config['address']
-      @local_dns_repo = local_dns_repo
       @logger = logger
     end
 
@@ -47,7 +45,7 @@ module Bosh::Director
     end
 
     def update_dns_record_for_instance(instance_model, dns_names_to_ip)
-      current_dns_records = @local_dns_repo.find(instance_model)
+      current_dns_records = find_dns_record_names_by_instance(instance_model)
       new_dns_records = []
       dns_names_to_ip.each do |record_name, ip_address|
         new_dns_records << record_name
@@ -57,14 +55,14 @@ module Bosh::Director
         end
       end
       dns_records = (current_dns_records + new_dns_records).uniq
-      @local_dns_repo.create_or_update(instance_model, dns_records)
-      if Config.local_dns_enabled?
+      update_dns_records_for_instance_model(instance_model, dns_records)
+      if publisher_enabled?
         create_or_delete_local_dns_record(instance_model)
       end
     end
 
     def migrate_legacy_records(instance_model)
-      return if @local_dns_repo.find(instance_model).any?
+      return if find_dns_record_names_by_instance(instance_model).any?
       return unless dns_enabled?
 
       index_pattern_for_all_networks = dns_record_name(
@@ -85,30 +83,33 @@ module Bosh::Director
         .flatten
         .map(&:name)
 
-      @local_dns_repo.create_or_update(instance_model, legacy_record_names)
+      update_dns_records_for_instance_model(instance_model, legacy_record_names)
     end
 
     def delete_dns_for_instance(instance_model)
-      return if !dns_enabled?
+      if dns_enabled?
+        current_dns_records = find_dns_record_names_by_instance(instance_model)
+        if current_dns_records.empty?
+          # for backwards compatibility when old instances
+          # did not have records in local repo
+          # we cannot migrate them because powerdns can be different database
+          # those instance only had index-based dns records (before global-net)
+          index_record_pattern = dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
+          @dns_provider.delete(index_record_pattern)
+          return
+        end
 
-      current_dns_records = @local_dns_repo.find(instance_model)
-      if current_dns_records.empty?
-        # for backwards compatibility when old instances
-        # did not have records in local repo
-        # we cannot migrate them because powerdns can be different database
-        # those instance only had index-based dns records (before global-net)
-        index_record_pattern = dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
-        @dns_provider.delete(index_record_pattern)
-        return
+        current_dns_records.each do |record_name|
+          @logger.info("Removing DNS for: #{record_name}")
+          @dns_provider.delete(record_name)
+        end
+        update_dns_records_for_instance_model(instance_model, [])
       end
 
-      current_dns_records.each do |record_name|
-        @logger.info("Removing DNS for: #{record_name}")
-        @dns_provider.delete(record_name)
+      if publisher_enabled?
+        update_dns_records_for_instance_model(instance_model, [])
+        delete_local_dns_record(instance_model)
       end
-
-      @local_dns_repo.delete(instance_model)
-      delete_local_dns_record(instance_model) if Config.local_dns_enabled?
     end
 
     # build a list of dns servers to use
@@ -193,7 +194,8 @@ module Bosh::Director
       @logger.debug('Deleting local dns records')
 
       @logger.debug("Removing local dns record for instance #{instance_model.id}")
-      Models::LocalDnsRecord.where(:instance_id => instance_model.id ).delete
+      deleted_record = Models::LocalDnsRecord.where(:instance_id => instance_model.id ).delete
+      insert_tombstone unless deleted_record == 0
     end
 
     def create_or_delete_local_dns_record(instance_model)
@@ -201,7 +203,8 @@ module Bosh::Director
 
       with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
-        Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
+        deleted_record = Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
+        insert_tombstone unless deleted_record == 0
         begin
           Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
         rescue Sequel::UniqueConstraintViolation
@@ -209,7 +212,8 @@ module Bosh::Director
         end
         if Config.local_dns_include_index?
           @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-          Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
+          deleted_record = Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
+          insert_tombstone unless deleted_record == 0
           begin
             Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id)
           rescue Sequel::UniqueConstraintViolation
@@ -220,6 +224,14 @@ module Bosh::Director
     end
 
     private
+
+    def insert_tombstone
+      Models::LocalDnsRecord.create(:name => "#{SecureRandom.uuid}-tombstone", :ip => SecureRandom.uuid)
+    end
+
+    def update_dns_records_for_instance_model(instance_model, dns_record_names)
+      instance_model.update(dns_record_names: dns_record_names)
+    end
 
     def with_valid_instance_spec_in_transaction(instance_model, &block)
       spec = instance_model.spec

@@ -160,7 +160,7 @@ module Bosh::Monitor
 
         @logger.debug("Fetching instances information for '#{deployment_name}'...")
         instances_data = @director.get_deployment_instances(deployment_name)
-        @instance_manager.sync_deployment_state(deployment_name, instances_data)
+        @instance_manager.sync_deployment_state(deployment, instances_data)
       end
 
     rescue Bhm::DirectorError => e

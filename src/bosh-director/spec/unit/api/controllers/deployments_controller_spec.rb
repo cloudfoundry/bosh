@@ -51,6 +51,20 @@ module Bosh::Director
               expect_redirect_to_queued_task(last_response)
             end
 
+            it 'accepts a context ID header' do
+              context_id = 'example-context-id'
+              header('X-Bosh-Context-Id', context_id)
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              task = expect_redirect_to_queued_task(last_response)
+              expect(task.context_id).to eq(context_id)
+            end
+
+            it 'defaults to no context ID' do
+              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              task = expect_redirect_to_queued_task(last_response)
+              expect(task.context_id).to eq('')
+            end
+
             it 'only consumes text/yaml' do
               post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/plain'}
               expect(last_response.status).to eq(404)
@@ -106,7 +120,7 @@ module Bosh::Director
 
                 allow_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything, anything, cloud_config, runtime_config, anything, anything)
+                  .with(anything, anything, cloud_config, runtime_config, anything, anything, anything)
                   .and_return(Models::Task.make)
 
                 post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -160,7 +174,7 @@ module Bosh::Director
             it 'does not skip draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -171,7 +185,7 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'),  anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -182,7 +196,7 @@ module Bosh::Director
             it 'skips draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -193,7 +207,7 @@ module Bosh::Director
             it 'passes the parameter' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true), anything())
                 .and_return(OpenStruct.new(:id => 1))
               post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
@@ -204,7 +218,7 @@ module Bosh::Director
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'), anything())
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -215,7 +229,7 @@ module Bosh::Director
             it 'to false' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false), anything())
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
@@ -223,13 +237,12 @@ module Bosh::Director
             it 'to true' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true))
+                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true), anything())
                           .and_return(OpenStruct.new(:id => 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
           end
-
         end
 
         describe 'deleting deployment' do
@@ -239,13 +252,31 @@ module Bosh::Director
             delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
           end
+
+          it 'accepts a context id' do
+            context_id = 'example-context-id'
+            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
+
+            header('X-Bosh-Context-Id', context_id)
+            delete '/test_deployment'
+
+            task = expect_redirect_to_queued_task(last_response)
+            expect(task.context_id).to eq(context_id)
+          end
         end
 
         describe 'job management' do
           shared_examples 'change state' do
             it 'allows to change state' do
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
-              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
@@ -260,7 +291,14 @@ module Bosh::Director
                   with(anything(), not_to_have_body(manifest), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
-              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                variable_set: Models::VariableSet.create(deployment: deployment)
+              )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
               match = last_response.location.match(%r{/tasks/no_content_length})
@@ -297,7 +335,7 @@ module Bosh::Director
           it 'allows putting the job instance into different resurrection_paused values' do
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started')
+                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
             put '/foo/jobs/dea/0/resurrection', JSON.generate('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.resurrection_paused).to be(true)
@@ -306,7 +344,8 @@ module Bosh::Director
           it 'allows putting the job instance into different ignore state' do
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
+                       :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21',
+                       :variable_set => Models::VariableSet.create(deployment: deployment))
             expect(instance.ignore).to be(false)
             put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', JSON.generate('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
@@ -320,7 +359,7 @@ module Bosh::Director
           it 'gives a nice error when uploading non valid manifest' do
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started')
+                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -332,7 +371,7 @@ module Bosh::Director
           it 'should not validate body content when content.length is zero' do
             Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started')
+                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
 
@@ -346,7 +385,14 @@ module Bosh::Director
           end
 
           it 'can get job information' do
-            instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', uuid: 'fake_uuid', state: 'started')
+            instance = Models::Instance.create(
+              deployment: deployment,
+              job: 'nats',
+              index: '0',
+              uuid: 'fake_uuid',
+              state: 'started',
+              :variable_set => Models::VariableSet.create(deployment: deployment)
+            )
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
             get '/foo/jobs/nats/0', {}
@@ -410,7 +456,7 @@ module Bosh::Director
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
-            let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started') }
+            let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', :variable_set => Models::VariableSet.create(deployment: deployment)) }
             before do
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
@@ -473,6 +519,7 @@ module Bosh::Director
               :job => 'nats',
               :index => '0',
               :state => 'started',
+              :variable_set => Models::VariableSet.create(deployment: deployment)
             )
             get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
@@ -485,6 +532,7 @@ module Bosh::Director
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
             )
             get '/foo/jobs/nats/*/logs', {}
             expect_redirect_to_queued_task(last_response)
@@ -497,6 +545,7 @@ module Bosh::Director
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
             )
             get '/foo/jobs/*/*/logs', {}
             expect_redirect_to_queued_task(last_response)
@@ -532,9 +581,14 @@ module Bosh::Director
             old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
             new_cloud_config = Models::CloudConfig.make(manifest: {})
 
+            good_team = Models::Team.create(name: 'dabest')
+            bad_team = Models::Team.create(name: 'daworst')
+
             deployment_3 = Models::Deployment.create(
               name: 'deployment-3',
-            )
+            ).tap do |deployment|
+              deployment.teams = [bad_team]
+            end
 
             deployment_2 = Models::Deployment.create(
               name: 'deployment-2',
@@ -544,6 +598,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell_1_2)
               deployment.add_release_version(release_1_1)
               deployment.add_release_version(release_2_1)
+              deployment.teams = [good_team]
             end
 
             deployment_1 = Models::Deployment.create(
@@ -554,6 +609,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell_2_1)
               deployment.add_release_version(release_1_1)
               deployment.add_release_version(release_1_2)
+              deployment.teams = [good_team, bad_team]
             end
 
             get '/', {}, {}
@@ -572,6 +628,7 @@ module Bosh::Director
                       {'name' => 'stemcell-2', 'version' => '1'},
                     ],
                     'cloud_config' => 'outdated',
+                    'teams' => ['dabest', 'daworst'],
                   },
                   {
                     'name' => 'deployment-2',
@@ -584,12 +641,14 @@ module Bosh::Director
                       {'name' => 'stemcell-1', 'version' => '2'},
                     ],
                     'cloud_config' => 'latest',
+                    'teams' => ['dabest'],
                   },
                   {
                     'name' => 'deployment-3',
                     'releases' => [],
                     'stemcells' => [],
                     'cloud_config' => 'none',
+                    'teams' => ['daworst'],
                   }
                 ])
           end
@@ -613,11 +672,9 @@ module Bosh::Director
         describe 'getting deployment vms info' do
           before { basic_authorize 'reader', 'reader' }
 
-          it 'returns a list of instances with vms (vm_cid != nil)' do
-            deployment = Models::Deployment.
-                create(:name => 'test_deployment',
-                       :manifest => YAML.dump({'foo' => 'bar'}))
+          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
+          it 'returns a list of instances with vms (vm_cid != nil)' do
             15.times do |i|
               instance_params = {
                 'deployment_id' => deployment.id,
@@ -626,9 +683,12 @@ module Bosh::Director
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
                 'agent_id' => "agent-#{i}",
+                'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
               }
 
               instance_params['vm_cid'] = "cid-#{i}" if i < 8
+              instance_params['availability_zone'] = "az0" if i == 0
+              instance_params['availability_zone'] = "az1" if i == 1
               Models::Instance.create(instance_params)
             end
 
@@ -640,12 +700,98 @@ module Bosh::Director
 
             body.each_with_index do |instance_with_vm, i|
               expect(instance_with_vm).to eq(
+                'agent_id' => "agent-#{i}",
+                'job' => "job-#{i}",
+                'index' => i,
+                'cid' => "cid-#{i}",
+                'id' => "instance-#{i}",
+                'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                'ips' => [],
+              )
+            end
+          end
+
+          context 'ips' do
+            it 'returns instance ip addresses' do
+              15.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
+                  'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
+                }
+
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
+                instance = Models::Instance.create(instance_params)
+
+                ip_addresses_params  = {
+                  'instance_id' => instance.id,
+                  'task_id' => "#{i}",
+                  'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                }
+                Models::IpAddress.create(ip_addresses_params)
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(8)
+
+              body.each_with_index do |instance_with_vm, i|
+                expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
-                  'id' => "instance-#{i}"
-              )
+                  'id' => "instance-#{i}",
+                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                  'ips' => ["1.2.3.#{i}"],
+                )
+              end
+            end
+
+            it 'returns network spec ip addresses' do
+              15.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
+                  'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
+                  'spec_json' => "{ \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
+                }
+
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
+                Models::Instance.create(instance_params)
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(8)
+
+              body.each_with_index do |instance_with_vm, i|
+                expect(instance_with_vm).to eq(
+                  'agent_id' => "agent-#{i}",
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'cid' => "cid-#{i}",
+                  'id' => "instance-#{i}",
+                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                  'ips' => ["1.2.3.#{i}"],
+                )
+              end
             end
           end
         end
@@ -682,11 +828,14 @@ module Bosh::Director
                     'job' => "job-#{i}",
                     'index' => i,
                     'state' => 'started',
+                    'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                     'uuid' => "instance-#{i}",
                     'agent_id' => "agent-#{i}",
                     'spec_json' => '{ "lifecycle": "service" }',
                 }
 
+                instance_params['availability_zone'] = "az0" if i == 0
+                instance_params['availability_zone'] = "az1" if i == 1
                 Models::Instance.create(instance_params)
               end
 
@@ -703,8 +852,95 @@ module Bosh::Director
                                         'job' => "job-#{i}",
                                         'index' => i,
                                         'id' => "instance-#{i}",
+                                        'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                        'ips' => [],
                                         'expects_vm' => true
                                     )
+              end
+            end
+
+            context 'ips' do
+              it 'returns instance ip addresses' do
+                15.times do |i|
+                  instance_params = {
+                      'deployment_id' => deployment.id,
+                      'job' => "job-#{i}",
+                      'index' => i,
+                      'state' => 'started',
+                      'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
+                      'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
+                      'spec_json' => '{ "lifecycle": "service" }',
+                  }
+
+                  instance_params['availability_zone'] = "az0" if i == 0
+                  instance_params['availability_zone'] = "az1" if i == 1
+                  instance = Models::Instance.create(instance_params)
+
+                  ip_addresses_params  = {
+                    'instance_id' => instance.id,
+                    'task_id' => "#{i}",
+                    'address' => NetAddr::CIDR.create("1.2.3.#{i}"),
+                  }
+                  Models::IpAddress.create(ip_addresses_params)
+                end
+
+                get '/test_deployment/instances'
+
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+                expect(body.size).to eq(15)
+
+                body.each_with_index do |instance, i|
+                  expect(instance).to eq(
+                                          'agent_id' => "agent-#{i}",
+                                          'cid' => nil,
+                                          'job' => "job-#{i}",
+                                          'index' => i,
+                                          'id' => "instance-#{i}",
+                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'ips' => ["1.2.3.#{i}"],
+                                          'expects_vm' => true
+                                      )
+                end
+              end
+
+              it 'returns network spec ip addresses' do
+                15.times do |i|
+                  instance_params = {
+                      'deployment_id' => deployment.id,
+                      'job' => "job-#{i}",
+                      'index' => i,
+                      'state' => 'started',
+                      'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
+                      'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
+                      'spec_json' => "{ \"lifecycle\": \"service\", \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
+                  }
+
+                  instance_params['availability_zone'] = "az0" if i == 0
+                  instance_params['availability_zone'] = "az1" if i == 1
+                  Models::Instance.create(instance_params)
+                end
+
+                get '/test_deployment/instances'
+
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+                expect(body.size).to eq(15)
+
+                body.each_with_index do |instance, i|
+                  expect(instance).to eq(
+                                          'agent_id' => "agent-#{i}",
+                                          'cid' => nil,
+                                          'job' => "job-#{i}",
+                                          'index' => i,
+                                          'id' => "instance-#{i}",
+                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'ips' => ["1.2.3.#{i}"],
+                                          'expects_vm' => true
+                                      )
+                end
               end
             end
           end
@@ -717,6 +953,7 @@ module Bosh::Director
                                           'job' => 'job',
                                           'index' => 1,
                                           'state' => job_state,
+                                          'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                                           'uuid' => 'instance-1',
                                           'agent_id' => 'agent-1',
                                           'spec_json' => "{ \"lifecycle\": \"#{instance_lifecycle}\" }",
@@ -742,6 +979,8 @@ module Bosh::Director
                                          'job' => 'job',
                                          'index' => 1,
                                          'id' => 'instance-1',
+                                         'az' => nil,
+                                         'ips' => [],
                                          'expects_vm' => true
                                      )
                 end
@@ -763,6 +1002,8 @@ module Bosh::Director
                                          'job' => 'job',
                                          'index' => 1,
                                          'id' => 'instance-1',
+                                         'az' => nil,
+                                         'ips' => [],
                                          'expects_vm' => false
                                      )
                 end
@@ -786,6 +1027,8 @@ module Bosh::Director
                                        'job' => 'job',
                                        'index' => 1,
                                        'id' => 'instance-1',
+                                       'az' => nil,
+                                       'ips' => [],
                                        'expects_vm' => false
                                    )
               end
@@ -1075,11 +1318,33 @@ module Bosh::Director
                     'admin',
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', false],
-                    deployment
+                    ['fake-dep-name', 'fake-errand-name', false, false],
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({})
+                end
+
+                it 'sets context id on the RunErrand task' do
+                  context_id = 'example-context-id'
+                  expect(job_queue).to receive(:enqueue).with(
+                    'admin',
+                    Jobs::RunErrand,
+                    'run errand fake-errand-name from deployment fake-dep-name',
+                    ['fake-dep-name', 'fake-errand-name', false, false],
+                    deployment,
+                    context_id
+                  ).and_return(task)
+
+                  header('X-Bosh-Context-Id', context_id)
+                  post(
+                    '/fake-dep-name/errands/fake-errand-name/runs',
+                    JSON.dump({}),
+                    {
+                      'CONTENT_TYPE' => 'application/json'
+                    }
+                  )
                 end
 
                 it 'enqueues a keep-alive task' do
@@ -1087,11 +1352,25 @@ module Bosh::Director
                     'admin',
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
-                    ['fake-dep-name', 'fake-errand-name', true],
-                    deployment
+                    ['fake-dep-name', 'fake-errand-name', true, false],
+                    deployment,
+                    ""
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
+                end
+
+                it 'enqueues a when-changed task' do
+                  expect(job_queue).to receive(:enqueue).with(
+                    'admin',
+                    Jobs::RunErrand,
+                    'run errand fake-errand-name from deployment fake-dep-name',
+                    ['fake-dep-name', 'fake-errand-name', false, true],
+                    deployment,
+                    ""
+                  ).and_return(task)
+
+                  perform({'when-changed' => true})
                 end
               end
             end
@@ -1116,7 +1395,7 @@ module Bosh::Director
             )
           end
           let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
-          let(:runtime_config) { Models::RuntimeConfig.make(manifest: {'addons' => []}) }
+          let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: {'addons' => []}) }
 
           before do
             Models::Deployment.create(
@@ -1197,70 +1476,59 @@ module Bosh::Director
           end
         end
 
-        describe 'config server variables' do
-          before { basic_authorize 'admin', 'admin' }
+        describe 'variables' do
+          let(:deployment_1) { Models::Deployment.make(name: 'test_deployment_1', manifest: '') }
+          let(:deployment_2) { Models::Deployment.make(name: 'test_deployment_2', manifest: '') }
 
-          it 'should return a list of config server variables with ids only for the deployment to which it belongs' do
-            deployment = Models::Deployment.
-              create(:name => 'test_deployment',
-                     :manifest => YAML.dump({'foo' => '((bar-1))', 'bar' => '((bar-2))'}))
+          let(:variable_set_1) { Models::VariableSet.make(id: 1, deployment: deployment_1) }
+          let(:variable_set_2) { Models::VariableSet.make(id: 2, deployment: deployment_1) }
+          let(:variable_set_3) { Models::VariableSet.make(id: 12, deployment: deployment_2) }
+          let(:variable_set_4) { Models::VariableSet.make(id: 13, deployment: deployment_2) }
 
-            deployment2 = Models::Deployment.
-              create(:name => 'test_deployment2',
-                     :manifest => YAML.dump({'random' => '((random))'}))
+          before do
+            basic_authorize 'admin', 'admin'
 
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'bar-1',
-              placeholder_id: "1",
-              deployment: deployment
-            )
+            Models::Variable.make(id: 1, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_1.id)
+            Models::Variable.make(id: 2, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_1.id)
+            Models::Variable.make(id: 3, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_2.id)
+            Models::Variable.make(id: 4, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_2.id)
 
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'bar-2',
-              placeholder_id: "2",
-              deployment: deployment
-            )
-
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'random',
-              placeholder_id: "3",
-              deployment: deployment2
-            )
-
-            get '/test_deployment/config_vars'
-
-            expect(last_response.status).to eq(200)
-            body = JSON.parse(last_response.body)
-            expect(body.size).to eq(2)
-
-            body.each_with_index do |config_var, i|
-              expect(config_var).to eq(
-                'placeholder_name' => "bar-#{i+1}",
-                'placeholder_id' => "#{i+1}"
-              )
-            end
+            Models::Variable.make(id: 5, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_3.id)
+            Models::Variable.make(id: 6, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_3.id)
+            Models::Variable.make(id: 7, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_4.id)
+            Models::Variable.make(id: 8, variable_id: 'var_id_4', variable_name: 'var_name_4', variable_set_id: variable_set_4.id)
           end
 
-          it 'does not return config server variables for other deployments' do
-            deployment = Models::Deployment.
-              create(:name => 'test_deployment',
-                     :manifest => YAML.dump({'foo' => 'blah', 'bar' => 'blah2'}))
-
-            deployment2 = Models::Deployment.
-              create(:name => 'test_deployment2',
-                     :manifest => YAML.dump({'random' => '((random))'}))
-
-            Models::PlaceholderMapping.create(
-              placeholder_name: 'random',
-              placeholder_id: "3",
-              deployment: deployment2
-            )
-
-            get '/test_deployment/config_vars'
-
+          it 'returns a unique list of variable ids and names' do
+            get '/test_deployment_1/variables'
             expect(last_response.status).to eq(200)
-            body = JSON.parse(last_response.body)
-            expect(body.size).to eq(0)
+            vars_1 = JSON.parse(last_response.body)
+            expect(vars_1).to match_array([
+              {'id' => 'var_id_1', 'name' => 'var_name_1'},
+              {'id' => 'var_id_2', 'name' => 'var_name_2'},
+              {'id' => 'var_id_3', 'name' => 'var_name_3'}
+            ])
+
+            get '/test_deployment_2/variables'
+            expect(last_response.status).to eq(200)
+            vars_2 = JSON.parse(last_response.body)
+            expect(vars_2).to match_array([
+              {'id' => 'var_id_1', 'name' => 'var_name_1'},
+              {'id' => 'var_id_2', 'name' => 'var_name_2'},
+              {'id' => 'var_id_3', 'name' => 'var_name_3'},
+              {'id' => 'var_id_4', 'name' => 'var_name_4'}
+            ])
+          end
+
+          context 'when deployment does not have variables' do
+            before { Models::Deployment.make(name: 'test_deployment_3', manifest: '') }
+
+            it 'returns an empty array' do
+              get '/test_deployment_3/variables'
+              expect(last_response.status).to eq(200)
+              vars_3 = JSON.parse(last_response.body)
+              expect(vars_3).to be_empty
+            end
           end
         end
       end
@@ -1282,8 +1550,8 @@ module Bosh::Director
         describe 'when a user has dev team admin membership' do
 
           before {
-            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C')
-            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6')
+            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
+            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6', :variable_set => Models::VariableSet.create(deployment: other_deployment))
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']

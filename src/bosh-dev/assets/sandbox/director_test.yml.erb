@@ -46,6 +46,8 @@ local_dns:
   enabled: <%= local_dns['enabled'] %>
   include_index: <%= local_dns['include_index'] %>
 
+verify_multidigest_path: <%= verify_multidigest_path %>
+
 blobstore: &director_blobstore
   provider: local
   options:
@@ -68,13 +70,9 @@ snapshots:
 flush_arp: true
 
 cloud:
-  <% if external_cpi_enabled %>
   provider:
     name: <%= external_cpi_config[:name] %>
     path: <%= external_cpi_config[:job_path] %>
-  <% else %>
-  plugin: dummy
-  <% end %>
   properties:
     nats: nats://localhost:<%= nats_port %>
     dir: <%= cloud_storage_dir %>

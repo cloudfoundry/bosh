@@ -1,5 +1,0 @@
----
-blobstore:
-  simple:
-    user: foo
-    password: bar

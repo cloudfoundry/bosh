@@ -27,7 +27,8 @@ module Bosh::Director
           "started_at" => task.started_at ? task.started_at.to_i: nil,
           "result" => task.result,
           "user" => task.username || "admin",
-          "deployment" => task.deployment_name
+          "deployment" => task.deployment_name,
+          "context_id" => task.context_id
         }
       end
 

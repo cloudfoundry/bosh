@@ -17,9 +17,10 @@ apt-get install -y \
 	realpath
 apt-get clean
 
-# Install bosh-init
-wget https://s3.amazonaws.com/bosh-init-artifacts/bosh-init-0.0.81-linux-amd64 -O /bin/bosh-init
-chmod +x /bin/bosh-init
+# Install bosh-cli
+wget https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-0.0.147-linux-amd64 -O /bin/bosh-cli
+echo "533342d7663c3e5dc731769e157608c74dd9eccb  /bin/bosh-cli" | sha1sum -c -
+chmod +x /bin/bosh-cli
 
 # Install BOSH CLI
 gem install bosh_cli --no-ri --no-rdoc

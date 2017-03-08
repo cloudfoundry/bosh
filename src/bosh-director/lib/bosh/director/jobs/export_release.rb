@@ -16,12 +16,14 @@ module Bosh::Director
         :export_release
       end
 
-      def initialize(deployment_name, release_name, release_version, stemcell_os, stemcell_version, options = {})
+      def initialize(deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2, options = {})
         @deployment_name = deployment_name
         @release_name = release_name
         @release_version = release_version
         @stemcell_os = stemcell_os
         @stemcell_version = stemcell_version
+        @sha2 = sha2
+        @multi_digest = Digest::MultiDigest.new(logger)
       end
 
       # @return [void]
@@ -29,9 +31,9 @@ module Bosh::Director
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
         deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({
-            "os" => @stemcell_os,
-            "version" => @stemcell_version
-          })
+          "os" => @stemcell_os,
+          "version" => @stemcell_version
+        })
 
         deployment_manager = Bosh::Director::Api::DeploymentManager.new
         targeted_deployment = deployment_manager.find_by_name(@deployment_name)
@@ -54,7 +56,7 @@ module Bosh::Director
 
         export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, deployment_plan_stemcell)
         planner.add_instance_group(export_release_job)
-        planner.bind_models({:should_bind_links=>false, :should_bind_properties=>false})
+        planner.bind_models({:should_bind_links => false, :should_bind_properties => false})
 
         lock_timeout = 15 * 60 # 15 minutes
 
@@ -104,16 +106,17 @@ module Bosh::Director
 
         oid = blobstore_client.create(tarball_file)
 
-        tarball_hexdigest = Digest::SHA1.file(output_path).hexdigest
+        algorithm = @sha2 ? Digest::MultiDigest::SHA256 : Digest::MultiDigest::SHA1
+        tarball_hexdigest = @multi_digest.create([algorithm], output_path)
 
         Bosh::Director::Models::EphemeralBlob.new(
             blobstore_id: oid,
-            sha1: tarball_hexdigest
+            sha1: tarball_hexdigest,
         ).save
 
         {
-            :blobstore_id => oid,
-            :sha1 => tarball_hexdigest,
+          :blobstore_id => oid,
+          :sha1 => tarball_hexdigest,
         }
       ensure
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?

@@ -15,6 +15,15 @@ namespace :migrations do
       FileUtils.touch(new_migration_path)
       FileUtils.touch(new_migration_spec_path)
     end
+
+    desc 'Generate digest for a migration file'
+    task :generate_migration_digest, :name, :namespace do |_, args|
+      args = args.to_hash
+      name = args.fetch(:name)
+      namespace = args.fetch(:namespace)
+
+      generate_migration_digest("bosh-director/db/migrations", namespace, name)
+    end
   end
 
   namespace :bosh_registry do
@@ -29,5 +38,32 @@ namespace :migrations do
       puts "Creating #{new_migration_path}"
       FileUtils.touch(new_migration_path)
     end
+
+    desc 'Generate digest for a migration file'
+    task :generate_migration_digest, :name do |_, args|
+      args = args.to_hash
+      name = args.fetch(:name)
+
+      generate_migration_digest("bosh-registry/db/migrations", "", name)
+    end
+  end
+
+  def generate_migration_digest(migrations_dir, namespace, name)
+    require 'json'
+    new_migration_path = File.join(migrations_dir, "#{namespace}","#{name}.rb")
+    migration_digests = File.join(migrations_dir, "migration_digests.json")
+
+    migration_digest = Digest::SHA1.hexdigest(File.read(new_migration_path))
+
+    digest_migration_json = JSON.parse(File.read(migration_digests))
+    if digest_migration_json[name] != nil then
+      puts '
+        YOU ARE MODIFIFYING A DB MIGRATION DIGEST.
+        IF THIS MIGRATION HAS ALREADY BEEN RELEASED, IT MIGHT RESULT IN UNDESIRABLE BEHAVIOR.
+        YOU HAVE BEEN WARNED.
+        '
+    end
+    digest_migration_json[name] = migration_digest
+    File.write(migration_digests, JSON.pretty_generate(digest_migration_json))
   end
 end

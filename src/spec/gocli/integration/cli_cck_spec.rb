@@ -250,7 +250,7 @@ describe 'cli: cloudcheck', type: :integration do
       vm = director.instance('foobar', '0', env: client_env)
 
       template = vm.read_job_template('foobar', 'bin/foobar_ctl')
-      expect(template).to include('test_property=smurfs are happy')
+      expect(template).to include('test_property=cats are happy')
     end
   end
 

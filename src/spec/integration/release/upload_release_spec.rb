@@ -118,7 +118,7 @@ describe 'upload release', type: :integration do
       expect(out).to match /Release repacked/
       expect(out).to match /Started creating new packages > bar.*Done/
       expect(out).to match /Started processing 17 existing packages > Processing 17 existing packages.*Done/
-      expect(out).to match /Started processing 22 existing jobs > Processing 22 existing jobs.*Done/
+      expect(out).to match /Started processing 23 existing jobs > Processing 23 existing jobs.*Done/
       expect(out).to match /Release uploaded/
 
       out = bosh_runner.run('releases')
@@ -251,7 +251,7 @@ describe 'upload release', type: :integration do
     it 'rejects the release when the sha1 does not match' do
       expect {
         bosh_runner.run("upload release #{release_url} --sha1 abcd1234")
-      }.to raise_error(RuntimeError, /Error 30015: Release SHA1 '#{sha1}' does not match the expected SHA1 'abcd1234'/)
+      }.to raise_error(RuntimeError, /Error 30015: Expected stream to have digest 'abcd1234' but was '#{sha1}'/)
     end
   end
 

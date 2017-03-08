@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Stdout and stderr
-echo -n "<%= properties.errand1.stdout * properties.errand1.stdout_multiplier %>"
+echo -ne "<%= properties.errand1.stdout * properties.errand1.stdout_multiplier %>"
 
 <% if properties.errand1.run_package_file %>
 ./packages/errand1/file.sh
 <% end %>
 
-echo -n "<%= properties.errand1.stderr * properties.errand1.stderr_multiplier %>" 1>&2
+echo -ne "<%= properties.errand1.stderr * properties.errand1.stderr_multiplier %>" 1>&2
 
 # Log files
 mkdir -p sys/log/errand1

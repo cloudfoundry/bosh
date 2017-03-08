@@ -5,8 +5,9 @@ module Bosh::Director
     # @param [Bosh::Director::Api::InstanceManager] instance_manager
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Bosh::Director::LogsFetcher] logs_fetcher
-    def initialize(job, task_result, instance_manager, logs_fetcher)
-      @job = job
+    def initialize(instance, job_name, task_result, instance_manager, logs_fetcher)
+      @instance = instance
+      @job_name = job_name
       @task_result = task_result
       @instance_manager = instance_manager
       @agent_task_id = nil
@@ -16,15 +17,20 @@ module Bosh::Director
     # Runs errand on job instances
     # @return [String] short description of the errand result
     def run(&blk)
-      unless instance
+      unless @instance
         raise DirectorError, 'Must have at least one instance group instance to run an errand'
       end
+      errand_run = Models::ErrandRun.find_or_create(instance_id: @instance.model.id)
+      errand_run.update(successful: false,
+        successful_configuration_hash: '',
+        successful_packages_spec: ''
+      )
 
       agent_task_result = nil
       event_log_stage = Config.event_log.begin_stage('Running errand', 1)
 
       begin
-        event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
+        event_log_stage.advance_and_track("#{@job_name}/#{@instance.index}") do
           run_errand_result = agent.run_errand
           @agent_task_id = run_errand_result['agent_task_id']
           agent_task_result = agent.wait_for_task(agent_task_id, &blk)
@@ -37,7 +43,7 @@ module Bosh::Director
       end
 
       begin
-        logs_blobstore_id = @logs_fetcher.fetch(instance.model, 'job', nil)
+        logs_blobstore_id = @logs_fetcher.fetch(@instance.model, 'job', nil)
       rescue DirectorError => e
         @fetch_logs_error = e
       end
@@ -47,13 +53,21 @@ module Bosh::Director
         @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
       end
 
+      if errand_result && errand_result.exit_code == 0
+        errand_run.update(
+          successful: true,
+          successful_configuration_hash: @instance.configuration_hash,
+          successful_packages_spec: JSON.dump(@instance.current_packages)
+        )
+      end
+
       # Prefer to raise cancel error because
       # it was triggered before trying to fetch logs
       raise @cancel_error if @cancel_error
 
       raise @fetch_logs_error if @fetch_logs_error
 
-      errand_result.short_description(@job.name)
+      errand_result
     end
 
     def cancel
@@ -65,11 +79,7 @@ module Bosh::Director
     attr_reader :agent_task_id
 
     def agent
-      @agent ||= @instance_manager.agent_client_for(instance.model)
-    end
-
-    def instance
-      @instance ||= @job.instances.first
+      @agent ||= @instance_manager.agent_client_for(@instance.model)
     end
   end
 end

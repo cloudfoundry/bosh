@@ -24,7 +24,7 @@ module Bosh
         )
       end
       let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager ).to_hash }
-      let(:dns_manager) { DnsManager.new('bosh', {}, nil, nil, nil, nil) }
+      let(:dns_manager) { DnsManager.new('bosh', {}, nil, nil, nil) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -181,7 +181,7 @@ module Bosh
         Config.flush_arp = true
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         allow(job).to receive(:instance_plans).and_return([instance_plan])
-        allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
+        allow(job_renderer).to receive(:render_job_instances).with([instance_plan])
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
@@ -337,7 +337,7 @@ module Bosh
 
       it 'updates instance job templates with new IP' do
         allow(cloud).to receive(:create_vm)
-        expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
+        expect(job_renderer).to receive(:render_job_instances).with([instance_plan])
         expect(instance).to receive(:apply_initial_vm_state)
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -543,7 +543,7 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate).with(env_hash, 'deployment_name').and_return(resolved_env_hash)
+          expect(config_server_client).to receive(:interpolate).with(env_hash, 'deployment_name', anything).and_return(resolved_env_hash)
 
           expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
             expect(env['foo']).to eq('bar')

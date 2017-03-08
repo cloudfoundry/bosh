@@ -90,8 +90,8 @@ module Bosh::Monitor
           end
         end
 
-        @logger.debug("Pruned %s" % [ pluralize(pruned_count, "old event") ])
-        @logger.debug("Total %s" % [ pluralize(total_count, "event") ])
+        @logger.debug('Pruned %s' % [pluralize(pruned_count, 'old event') ])
+        @logger.debug('Total %s' % [pluralize(total_count, 'event') ])
       end
     rescue => e
       @logger.error("Error pruning events: #{e}")

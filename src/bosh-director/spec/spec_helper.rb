@@ -18,7 +18,7 @@ require 'support/buffered_logger'
 Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 DIRECTOR_TEST_CERTS="these\nare\nthe\ncerts"
-DIRECTOR_TEST_CERTS_SHA1=Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
+DIRECTOR_TEST_CERTS_SHA1=::Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
 
 RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
@@ -194,7 +194,11 @@ RSpec.configure do |rspec|
 
   rspec.before(:each) do
     SpecHelper.reset(logger)
-    allow(Bosh::Director::Config).to receive(:cloud).and_return(instance_double(Bosh::Cloud))
+    @event_buffer = StringIO.new
+    @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
+    Bosh::Director::Config.event_log = @event_log
+
+    allow(Bosh::Director::Config).to receive(:cloud).and_return(instance_double(Bosh::Clouds::ExternalCpi))
 
     threadpool = instance_double(Bosh::Director::ThreadPool)
     allow(Bosh::Director::ThreadPool).to receive(:new).and_return(threadpool)

@@ -2,23 +2,40 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::RunErrand do
-    subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive) }
+    subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive, when_changed) }
     let(:keep_alive) { false }
+    let(:when_changed) { false }
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, 42)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
-    before {
+    before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(Config).to receive(:record_events).and_return(true)
+      allow(job).to receive(:event_manager).and_return(event_manager)
+      allow(Config).to receive(:current_job).and_return(job)
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
-    }
+    end
+
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       manifest_hash['name'] = 'fake-dep-name'
       manifest_hash
     end
+
+    let(:agent_run_errand_result) do
+      {
+        'exit_code' => 0,
+        'stdout' => 'fake-stdout',
+        'stderr' => 'fake-stderr',
+      }
+    end
+
+    let(:errand_result) {Errand::Result.from_agent_task_results(agent_run_errand_result, nil)}
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
@@ -38,26 +55,26 @@ module Bosh::Director
 
         before do
           allow(DeploymentPlan::PlannerFactory).to receive(:new).
-              and_return(planner_factory)
-        end
-        let(:planner_factory) do
-          instance_double(
-            'Bosh::Director::DeploymentPlan::PlannerFactory',
-            create_from_manifest: planner,
-          )
+              and_return(instance_double(
+              'Bosh::Director::DeploymentPlan::PlannerFactory',
+              create_from_manifest: planner,
+            ))
+          allow(job).to receive(:task_id).and_return(task.id)
         end
         let(:planner) do
-          ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-          ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
+          ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
+          ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
             bind_models: nil,
             validate_packages: nil,
             compile_packages: nil,
-            ip_provider: ip_provider
+            ip_provider: ip_provider,
+            job_renderer: job_renderer,
           )
         end
+        let(:job_renderer) { JobRenderer.create.tap {|jr| allow(jr).to receive(:render_job_instances) } }
 
         let(:cloud_config) { Models::CloudConfig.make }
 
@@ -71,7 +88,9 @@ module Bosh::Director
 
             context 'when job has at least 1 instance' do
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
-              let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+              let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
+              let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
+
               before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
@@ -104,21 +123,21 @@ module Bosh::Director
               let(:job_manager) do
                 instance_double('Bosh::Director::Errand::JobManager', {
                   update_instances: nil,
-                  delete_instances: nil,
+                  delete_vms: nil,
                   create_missing_vms: nil,
                 })
               end
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(deployment_job, task_result, be_a(Api::InstanceManager), logs_fetcher).
+                  with(instance, 'fake-errand-name', task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
               before do
                 allow(runner).to receive(:run).
                   with(no_args).
-                  and_return('fake-result-short-description')
+                  and_return(errand_result)
               end
 
               it 'binds models, validates packages, compiles packages' do
@@ -145,46 +164,70 @@ module Bosh::Director
                 expect(runner).to receive(:run).
                   with(no_args).
                   ordered.
-                  and_return('fake-result-short-description')
+                  and_return(errand_result)
 
-                expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                expect(job_manager).to receive(:delete_vms).with(no_args).ordered
+
+                expect(job_renderer).to receive(:clean_cache!).ordered
 
                 expect(called_after_block_check).to receive(:call).ordered
 
-                expect(subject.perform).to eq('fake-result-short-description')
+                expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+              end
+
+              it 'should store event' do
+                subject.perform
+                event_1 = Bosh::Director::Models::Event.first
+                expect(event_1.user).to eq(task.username)
+                expect(event_1.action).to eq('run')
+                expect(event_1.object_type).to eq('errand')
+                expect(event_1.object_name).to eq('fake-errand-name')
+                expect(event_1.instance).to eq('foo-job/instance_id')
+                expect(event_1.deployment).to eq('fake-dep-name')
+                expect(event_1.task).to eq("#{task.id}")
+
+                event_2 = Bosh::Director::Models::Event.all.last
+                expect(event_2.parent_id).to eq(event_1.id)
+                expect(event_2.user).to eq(task.username)
+                expect(event_2.action).to eq('run')
+                expect(event_2.object_type).to eq('errand')
+                expect(event_2.object_name).to eq('fake-errand-name')
+                expect(event_2.instance).to eq('foo-job/instance_id')
+                expect(event_2.deployment).to eq('fake-dep-name')
+                expect(event_2.context).to eq({"exit_code" => 0})
+                expect(event_2.task).to eq("#{task.id}")
               end
 
               context 'when the errand fails to run' do
-                let(:task) { instance_double('Bosh::Director::Models::Task') }
                 let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
 
-                it 'cleans up the instances anyway' do
+                it 'cleans up the vms anyway' do
                   error = Exception.new
                   allow(job_manager).to receive(:create_missing_vms).with(no_args).ordered
                   expect(runner).to receive(:run).with(no_args).and_raise(error)
-                  expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                  expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
                   expect { subject.perform }.to raise_error(error)
                 end
 
                 context 'when cleanup fails' do
                   it 'raises the original exception and warns about the clean up failure' do
-                    original_error = Exception.new("original error")
-                    cleanup_error = Exception.new("cleanup error")
+                    original_error = Exception.new('original error')
+                    cleanup_error = Exception.new('cleanup error')
                     expect(runner).to receive(:run).with(no_args).and_raise(original_error)
-                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered.and_raise(cleanup_error)
+                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                     expect { subject.perform }.to raise_error(original_error)
-                    expect(log_string).to include("cleanup error")
+                    expect(log_string).to include('cleanup error')
                   end
                 end
               end
 
               context 'when the errand runs but cleanup fails' do
                 it 'raises clean up error' do
-                  cleanup_error = Exception.new("cleanup error")
+                  cleanup_error = Exception.new('cleanup error')
                   expect(runner).to receive(:run).with(no_args)
-                  expect(job_manager).to receive(:delete_instances).with(no_args).ordered.and_raise(cleanup_error)
+                  expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                   expect { subject.perform }.to raise_error(cleanup_error)
                 end
@@ -195,9 +238,6 @@ module Bosh::Director
                 let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
 
                 before { allow(task).to receive(:state).and_return('cancelling') }
-                let(:task) { instance_double('Bosh::Director::Models::Task') }
-
-                before { job.task_id = 'some-task' }
 
                 context 'when agent is able to cancel run_errand task successfully' do
                   it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
@@ -205,9 +245,11 @@ module Bosh::Director
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
-                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(TaskCancelled)
+                    event_2 = Bosh::Director::Models::Event.all.last
+                    expect(event_2.error).to eq("Task 42 cancelled")
                   end
 
                   it 'does not allow cancellation while cleaning up errand VMs' do
@@ -215,7 +257,7 @@ module Bosh::Director
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
-                    expect(job_manager).to(receive(:delete_instances).with(no_args).ordered) { job.task_checkpoint }
+                    expect(job_manager).to(receive(:delete_vms).with(no_args).ordered) { job.task_checkpoint }
 
                     expect { subject.perform }.to raise_error(TaskCancelled)
                   end
@@ -228,7 +270,7 @@ module Bosh::Director
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)
-                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(error)
                   end
@@ -239,9 +281,138 @@ module Bosh::Director
                 let(:keep_alive) { true }
 
                 it 'does not delete instances' do
-                  expect(job_manager).to_not receive(:delete_instances)
+                  expect(job_manager).to_not receive(:delete_vms)
 
-                  expect(subject.perform).to eq('fake-result-short-description')
+                  expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                end
+              end
+
+              context 'when errand is run with when-changed' do
+                before do
+                  allow(JobRenderer).to receive_message_chain(:create, :render_job_instances).with([instance_plan])
+                  allow(deployment_job).to receive(:needed_instance_plans).and_return([instance_plan])
+                end
+
+                let(:when_changed) { true }
+                let(:instance_model) { Models::Instance.make }
+                context 'when errand has been run before' do
+                  let!(:errand_model) do
+                    Models::ErrandRun.make(
+                      successful: errand_success,
+                      instance_id: instance_model.id,
+                      successful_configuration_hash: successful_configuration_hash,
+                      successful_packages_spec: JSON.dump(successful_packages_spec)
+                    )
+                  end
+
+                  context 'when errand succeeded on the previous run' do
+                    let(:errand_success) { true }
+
+                    context 'when the errand configuration has NOT changed' do
+                      let(:successful_configuration_hash) { 'last_successful_config'}
+                      let(:successful_packages_spec) { {'packages' => 'last_successful_packages'} }
+
+                      before do
+                        allow(instance).to receive(:current_packages).and_return(successful_packages_spec)
+                        allow(instance).to receive(:configuration_hash).and_return(successful_configuration_hash)
+                      end
+                      let(:instance_plan){ instance_double(DeploymentPlan::InstancePlan, instance: instance) }
+
+                      it 'does not run the errand and does not output ' do
+                        expect(job_manager).to_not receive(:create_missing_vms)
+                        expect(runner).to_not receive(:run)
+
+                        subject.perform
+                      end
+
+                    end
+
+                    context 'when the errand packages has changed' do
+                      let(:successful_configuration_hash) { 'last_successful_config'}
+                      let(:successful_packages_spec) { 'last_successful_packages' }
+
+                      let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
+                      before do
+                        allow(instance).to receive(:current_packages).and_return({'packages' => 'new_packages'})
+                        allow(instance).to receive(:configuration_hash).and_return(successful_configuration_hash)
+                      end
+
+                      it 'runs the errands' do
+                        expect(job_manager).to receive(:create_missing_vms)
+                        expect(runner).to receive(:run)
+
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                      end
+                    end
+
+                    context 'when the errand configuration has changed' do
+                      let(:successful_configuration_hash) { 'last_successful_config'}
+                      let(:successful_packages_spec) { 'last_successful_packages' }
+
+                      let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
+                      before do
+                        allow(instance).to receive(:current_packages).and_return(successful_packages_spec)
+                        allow(instance).to receive(:configuration_hash).and_return('new_config')
+                      end
+
+                      it 'runs the errands' do
+                        expect(job_manager).to receive(:create_missing_vms)
+                        expect(runner).to receive(:run)
+
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                      end
+                    end
+                  end
+
+                  context 'when errand failed on the previous run' do
+                    let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
+                    let(:errand_success) { false }
+                    let(:successful_configuration_hash) { ''}
+                    let(:successful_packages_spec) { '' }
+
+
+                    context 'when the errand configuration has NOT changed' do
+                      before do
+                        allow(instance).to receive(:current_packages).and_return({})
+                        allow(instance).to receive(:configuration_hash).and_return('')
+                      end
+
+                      it 'runs the errand' do
+                        expect(job_manager).to receive(:create_missing_vms)
+                        expect(runner).to receive(:run)
+
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                      end
+                    end
+
+                    context 'when the errand configuration has changed' do
+                      before do
+                        allow(instance).to receive(:current_packages).and_return({'packages' => 'new_packages'})
+                        allow(instance).to receive(:configuration_hash).and_return('new_config')
+                      end
+
+                      it 'runs the errands' do
+                        expect(job_manager).to receive(:create_missing_vms)
+                        expect(runner).to receive(:run)
+
+                        expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                      end
+                    end
+                  end
+                end
+
+                context 'when errand has never been run before' do
+                  let(:instance_plan){ instance_double(DeploymentPlan::InstancePlan, instance: instance) }
+
+                  it 'always runs the errand' do
+                      allow(instance).to receive(:current_packages).and_return({'packages' => 'successful_packages_spec'})
+                      allow(instance).to receive(:configuration_hash).and_return('successful_configuration_hash')
+
+                      expect(job_manager).to receive(:create_missing_vms)
+                      expect(runner).to receive(:run)
+
+                      subject.perform
+                  end
                 end
               end
             end
