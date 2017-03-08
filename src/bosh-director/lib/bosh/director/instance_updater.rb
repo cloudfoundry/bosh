@@ -88,6 +88,7 @@ module Bosh::Director
           end
           release_obsolete_ips(instance_plan)
           instance.update_state
+          instance.update_variable_set
           return
         end
 

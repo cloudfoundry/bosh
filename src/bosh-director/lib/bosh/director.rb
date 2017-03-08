@@ -128,6 +128,7 @@ require 'bosh/director/config_server/retryable_http_client'
 require 'bosh/director/config_server/config_server_http_client'
 require 'bosh/director/config_server/client'
 require 'bosh/director/config_server/client_factory'
+require 'bosh/director/config_server/variables_handler'
 require 'bosh/director/config_server/variables_interpolator'
 require 'bosh/director/config_server/config_server_helper'
 

@@ -48,6 +48,9 @@ module Bosh::Director
 
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)
         planner = planner_factory.create_from_model(targeted_deployment)
+
+        planner.model.add_variable_set(:created_at => Time.now)
+
         deployment_plan_stemcell.bind_model(planner.model)
 
         logger.info "Will compile with stemcell: #{deployment_plan_stemcell.desc}"

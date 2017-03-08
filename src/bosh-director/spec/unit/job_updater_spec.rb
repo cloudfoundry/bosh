@@ -34,9 +34,10 @@ module Bosh::Director
       before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
       context 'when job is up to date' do
+        let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
-            instance: instance_double(DeploymentPlan::Instance),
+            instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
             existing_instance: nil
           )
@@ -44,6 +45,8 @@ module Bosh::Director
           allow(instance_plan).to receive(:should_be_ignored?) { false }
           allow(instance_plan).to receive(:changes) { [] }
           allow(instance_plan).to receive(:persist_current_spec)
+          allow(instance_plan).to receive(:instance).and_return(needed_instance)
+          allow(needed_instance).to receive(:update_variable_set)
           [instance_plan]
         end
 
@@ -62,9 +65,10 @@ module Bosh::Director
       end
 
       context 'when instance plans should be ignored' do
+        let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
-            instance: instance_double(DeploymentPlan::Instance),
+            instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
             existing_instance: nil
           )
@@ -124,6 +128,8 @@ module Bosh::Director
           allow(plan).to receive(:should_be_ignored?) { false }
           allow(plan).to receive(:changes) { [] }
           allow(plan).to receive(:persist_current_spec)
+          allow(plan).to receive(:instance).and_return(unchanged_instance)
+          allow(unchanged_instance).to receive(:update_variable_set)
           plan
         end
 
