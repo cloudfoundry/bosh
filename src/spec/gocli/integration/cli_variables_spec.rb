@@ -181,12 +181,12 @@ describe 'cli: variables', type: :integration do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
         variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
-        variable_ids = variables.map { |obj| obj['ID'] }
+        variable_ids = variables.map { |obj| obj['id'] }
         expect(variable_ids.uniq.length).to eq(2)
         expect(variable_ids[0]).to eq("3")
         expect(variable_ids[1]).to eq("2")
 
-        expect(variables.map{ |obj| obj['Name'] }.uniq.length).to eq(2)
+        expect(variables.map{ |obj| obj['name'] }.uniq.length).to eq(2)
       end
     end
   end
