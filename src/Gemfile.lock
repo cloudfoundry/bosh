@@ -74,7 +74,7 @@ PATH
   specs:
     bosh-registry (0.0.0)
       aws-sdk
-      bosh_cpi (~> 2.0.6)
+      bosh_cpi
       fog-openstack
       sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
@@ -132,8 +132,7 @@ GEM
       progressbar (~> 0.21.0)
       sshkey (~> 1.7.0)
       terminal-table (~> 1.4.3)
-    bosh_cpi (2.0.6)
-      httpclient (= 2.7.1)
+    bosh_cpi (1.3215.3.1)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
     builder (3.1.4)

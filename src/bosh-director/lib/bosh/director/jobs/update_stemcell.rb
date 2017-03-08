@@ -82,47 +82,45 @@ module Bosh::Director
         stemcell = nil
         cloud_factory.all_configured_clouds.each do |cloud|
           cpi_suffix = " (cpi: #{cloud[:name]})" unless cloud[:name].blank?
-          supported = true
+          if !is_supported?(cloud)
+            logger.info("#{cpi_suffix} cpi does not support stemcell format")
+            next
+          end
           track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
             begin
               stemcell = @stemcell_manager.find_by_name_and_version_and_cpi @name, @version, cloud[:name]
             rescue StemcellNotFound => e
-              if is_supported?(cloud)
-                stemcell = Models::Stemcell.new
-                stemcell.name = @name
-                stemcell.operating_system = @operating_system
-                stemcell.version = @version
-                stemcell.sha1 = @sha1
-                stemcell.cpi = cloud[:name]
-              else
-                logger.info("#{cpi_suffix} cpi does not support stemcell format")
-                supported = false
-              end
+              stemcell = Models::Stemcell.new
+              stemcell.name = @name
+              stemcell.operating_system = @operating_system
+              stemcell.version = @version
+              stemcell.sha1 = @sha1
+              stemcell.cpi = cloud[:name]
             end
           end
-          if supported
-            needs_upload = @fix || !stemcell.cid
-            upload_suffix = " (already exists, skipped)" unless needs_upload
-            track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
-              if needs_upload
-                stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
-                logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
-              else
-                logger.info("Skipping stemcell upload, already exists#{cpi_suffix}")
-              end
-            end
 
-            track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}#{upload_suffix}") do
-              if needs_upload
-                stemcell.save
-              else
-                logger.info("Skipping stemcell save, already exists#{cpi_suffix}")
-              end
+          needs_upload = @fix || !stemcell.cid
+          upload_suffix = " (already exists, skipped)" unless needs_upload
+          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
+            if needs_upload
+              stemcell.cid = cloud[:cpi].create_stemcell(@stemcell_image, @cloud_properties)
+              logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
+            else
+              logger.info("Skipping stemcell upload, already exists#{cpi_suffix}")
+            end
+          end
+
+          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}#{upload_suffix}") do
+            if needs_upload
+              stemcell.save
+            else
+              logger.info("Skipping stemcell save, already exists#{cpi_suffix}")
             end
           end
         end
+
         if stemcell.nil?
-          raise StemcellNotSupported, "stemcell_formats of this stemcell does not support by available cpis"
+          raise StemcellNotSupported, "stemcell_formats of this stemcell are not supported by available cpis"
         else
           "/stemcells/#{stemcell.name}/#{stemcell.version}"
         end
@@ -154,8 +152,8 @@ module Bosh::Director
 
       def is_supported?(cloud)
         info = cloud[:cpi].info
-        unless @stemcell_formats.nil? || info["stemcell_formats"].nil?
-          return (info["stemcell_formats"] & @stemcell_formats).empty? ? false : true
+        if @stemcell_formats && info["stemcell_formats"]
+          return (info["stemcell_formats"] & @stemcell_formats).any?
         else
           logger.info("There is no enough information to check if stemcell format is supported")
           return true

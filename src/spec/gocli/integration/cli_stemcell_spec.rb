@@ -31,18 +31,22 @@ describe 'cli: stemcell', type: :integration do
     expect(File).to be_exists(stemcell_path)
   end
 
+  context 'when cpi does not have corresponding stemcell_formats value' do
+    it 'fails' do
+      stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
+
+      out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
+      expect(out).to match /stemcell_formats of this stemcell are not supported by available cpis/
+    end
+  end
+
   context 'if cpi config is used' do
-    it 'creates a stemcell for each configured cpi if it matches stemcell format' do
+    it 'creates a stemcell for each configured cpi' do
       stemcell_filename = spec_asset('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
       cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
-
-      stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
-
-      out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
-      expect(out).to include("stemcell_formats of this stemcell does not support by available cpis")
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
       expect(out).to include('Save stemcell')
