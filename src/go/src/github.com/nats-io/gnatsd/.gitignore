@@ -41,3 +41,8 @@ coverage.out
 # Cross compiled binaries
 pkg
 
+# BOSH
+out/
+
+# Jetbrains
+.idea/

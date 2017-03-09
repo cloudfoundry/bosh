@@ -581,6 +581,32 @@ func (s *Server) createClient(conn net.Conn) *client {
 	// Re-Grab lock
 	c.mu.Lock()
 
+	if tlsRequired {
+		peekConn := NewPeekableConn(conn)
+
+		hdr, err := peekConn.PeekFirst(7)
+
+		if err != nil {
+			c.Errorf("An error occurred while peeking connection: %v", err)
+		}
+
+		tls_detected, err := TLSDetector{}.Detect(hdr)
+
+		if err != nil {
+			c.Errorf("An error occurred while detecting if client requested TLS: %v", err)
+		}
+
+		if tls_detected {
+			c.Debugf("Detected TLS connection while peeking, moving on")
+		} else {
+			c.Debugf("Detected NON TLS connection while peeking, setting 'tlsRequired' to false")
+			tlsRequired = false
+		}
+
+		conn = peekConn
+		c.nc = conn
+	}
+
 	// Check for TLS
 	if tlsRequired {
 		c.Debugf("Starting TLS client connection handshake")

@@ -196,6 +196,12 @@ func doConnect(t tLogger, c net.Conn, verbose, pedantic, ssl bool) {
 	sendProto(t, c, cs)
 }
 
+func doConnectWithAuth(t tLogger, c net.Conn, user, pass string, verbose, pedantic, ssl bool) {
+	checkInfoMsg(t, c)
+	cs := fmt.Sprintf("CONNECT {\"verbose\":%v,\"pedantic\":%v,\"ssl_required\":%v,\"user\":\"%s\",\"pass\":\"%s\"}\r\n", verbose, pedantic, ssl, user, pass)
+	sendProto(t, c, cs)
+}
+
 func doDefaultConnect(t tLogger, c net.Conn) {
 	// Basic Connect
 	doConnect(t, c, false, false, false)
@@ -224,6 +230,11 @@ func setupRoute(t tLogger, c net.Conn, opts *server.Options) (sendFun, expectFun
 
 func setupConn(t tLogger, c net.Conn) (sendFun, expectFun) {
 	doDefaultConnect(t, c)
+	return sendCommand(t, c), expectCommand(t, c)
+}
+
+func setupConnWithAuth(t tLogger, c net.Conn, user, pass string) (sendFun, expectFun) {
+	doConnectWithAuth(t, c, user, pass, true, false, false)
 	return sendCommand(t, c), expectCommand(t, c)
 }
 
