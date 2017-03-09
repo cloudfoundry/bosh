@@ -14,5 +14,6 @@ The contents of docs include:
 		* [Setup for Openstack](running_bats_rake_task_against_openstack.md)
 		* [Setup for vSphere](running_bats_rake_task_against_vsphere.md)
 	* [Running BATs manually](running_bats_manually.md)
+* [NATS Server](nats.md)
 * [Director Database Schema Diagram](director_schema/README.md)
 * [Code style](code_style.md)
