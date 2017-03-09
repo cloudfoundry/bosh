@@ -83,7 +83,7 @@ module Bosh::Director
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
           begin
-            update_instance_plans_variable_set_id(deployment_plan)
+            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, @options['deploy'], deployment_plan.model.current_variable_set)
             render_templates_and_snapshot_errand_variables(deployment_plan)
 
             if dry_run?
@@ -95,6 +95,12 @@ module Bosh::Director
 
               if check_for_changes(deployment_plan)
                 PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+              end
+
+              # only in the case of a deploy should you be cleaning up
+              if @options['deploy']
+                ConfigServer::VariablesHandler.mark_new_current_variable_set(deployment_plan.model)
+                ConfigServer::VariablesHandler.remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end
 
               @notifier.send_end_event
@@ -159,18 +165,6 @@ module Bosh::Director
       def multi_job_updater(deployment_plan)
         @multi_job_updater ||= begin
           DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.job_renderer))
-        end
-      end
-
-      def update_instance_plans_variable_set_id(deployment_plan)
-        deployment_plan.instance_groups.each do |instance_group|
-          instance_group.unignored_instance_plans.each do |instance_plan|
-            if @options['deploy']
-              instance_plan.instance.variable_set = deployment_plan.model.current_variable_set
-            else
-              instance_plan.instance.variable_set = instance_plan.instance.variable_set
-            end
-          end
         end
       end
 

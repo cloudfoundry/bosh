@@ -11,6 +11,8 @@ module Bosh::Director
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task) }
+    let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
+
     before do
       fake_locks
       allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
@@ -24,6 +26,7 @@ module Bosh::Director
       allow(App).to receive(:instance).and_return(app)
       allow(multi_digest).to receive(:create).and_return('expected-sha1')
       allow(Config).to receive(:result).and_return(task_result)
+      allow(planner_model).to receive(:add_variable_set)
     end
 
     subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2) }

@@ -22,7 +22,10 @@ module Bosh::Director
         else
           # no changes necessary for the agent, but some metadata may have
           # changed (i.e. vm_type.name), so push state to the db regardless
+          # variable set on instance should also be updated at this point as
+          # instance updater will not do so
           instance_plan.persist_current_spec
+          instance_plan.instance.update_variable_set
           false
         end
       end

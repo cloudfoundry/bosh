@@ -37,6 +37,7 @@ module Bosh::Director
             create_from_manifest: planner,
           )
         end
+        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: 'dep', manifest: '{}') }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -44,7 +45,8 @@ module Bosh::Director
             instance_groups: [deployment_job],
             instance_groups_starting_on_deploy: [deployment_job],
             errand_instance_groups: [errand_instance_group],
-            job_renderer: job_renderer
+            job_renderer: job_renderer,
+            model: deployment_model
           )
         end
 
@@ -54,6 +56,7 @@ module Bosh::Director
 
         before do
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
+          allow(job).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make(deployment: deployment_model))
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -64,6 +67,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_template_spec_properties) { |properties, _| properties }
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
+          allow(deployment_model).to receive(:current_variables_set).and_return(1)
         end
 
         context 'when variables need to be interpolated from config server' do
@@ -84,9 +88,12 @@ module Bosh::Director
 
             before do
               allow(Time).to receive(:now).and_return(fixed_time)
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
             end
 
-            it 'should create a new variable set for the deployment' do
+            it 'should create a new variable set for the deployment and mark variable sets' do
               deployment_model = Models::Deployment.make
 
               expect(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
@@ -98,8 +105,13 @@ module Bosh::Director
           context "when options hash does NOT contain 'deploy'" do
             let (:options) { {'deploy' => false} }
 
-            it 'should NOT create a new variable set for the deployment' do
+            it 'should NOT mark new variable set or remove unused variable sets' do
               expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
+
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:mark_new_current_variable_set)
+              expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:remove_unused_variable_sets)
+
               job.perform
             end
           end
@@ -128,7 +140,7 @@ module Bosh::Director
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
           end
 
-          it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
+          it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(planner).to receive(:bind_models)
             expect(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
             expect(planner).to receive(:compile_packages)

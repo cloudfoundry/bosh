@@ -180,7 +180,147 @@ describe 'cli: variables', type: :integration do
 
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
-        assert_count_variable_id_and_name(4, 2)
+        variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+        variable_ids = variables.map { |obj| obj['id'] }
+        expect(variable_ids.uniq.length).to eq(2)
+        expect(variable_ids[0]).to eq("3")
+        expect(variable_ids[1]).to eq("2")
+
+        expect(variables.map{ |obj| obj['name'] }.uniq.length).to eq(2)
+      end
+    end
+  end
+
+  context 'when you have unused variable sets' do
+    it 'should only have the versions of the variables used by the deployment' do
+      config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_group')
+      config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
+      config_server_helper.put_value('/phone_password', '11')
+
+      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+      job_properties['gargamel']['secret_recipe'] = 'Nainamo Bars'
+      config_server_helper.put_value(prepend_namespace('ig_placeholder'), 'my_2nd_group')
+      config_server_helper.put_value(prepend_namespace('happiness_level'), '11')
+      config_server_helper.put_value('/phone_password', '12')
+
+      variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+      expect(variables.size).to eq(3)
+
+      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+
+      variable_ids = variables.map{ |obj| obj['ID'] }
+      expect(variable_ids.size).to eq(3)
+    end
+
+    context 'when you have failed deploys' do
+      let(:manifest_hash) do
+        Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+            'releases'=>[{'name'=>'bosh-release', 'version'=>'0.1-dev'}],
+            'jobs' => [
+              Bosh::Spec::Deployments.job_with_many_templates(
+                name: 'job1',
+                templates: [
+                  {
+                    'name' => 'job_with_bad_template',
+                    'properties' => {
+                      'gargamel' => {
+                        'color' => "((random_property))"
+                      },
+                      'fail_on_job_start' => false,
+                      'fail_instance_index' => -1,
+                    }
+                  }
+                ],
+                instances: 1
+              ),
+              Bosh::Spec::Deployments.job_with_many_templates(
+                name: 'job2',
+                templates: [
+                  {
+                    'name' => 'job_with_bad_template',
+                    'properties' => {
+                      'gargamel' => {
+                        'color' => "((other_property))",
+                      },
+                      'fail_on_job_start' => false,
+                      'fail_instance_index' => -1,
+                    }
+                  },
+                ],
+                instances: 2
+              )
+            ]
+          })
+      end
+
+      before do
+        config_server_helper.put_value(prepend_namespace('random_property'), 'one two')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'buckle my shoe')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env, failure_expected: true)
+
+        props = manifest_hash['jobs'][1]['templates'][0]['properties']
+        props['fail_on_job_start'] = true
+        props['fail_instance_index'] = 1
+        config_server_helper.put_value(prepend_namespace('random_property'), 'three four')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'shut the door')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env, failure_expected: true)
+
+        props = manifest_hash['jobs'][1]['templates'][0]['properties']
+        props['fail_on_job_start'] = true
+        props['fail_instance_index'] = 0
+
+        config_server_helper.put_value(prepend_namespace('random_property'), 'five six')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'pick up the sticks')
+
+        deploy_from_scratch(no_login: true, failure_expected: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+      end
+
+      it 'should keep all variables for deployed or partly deployed revisions' do
+        variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+        expect(variables.size).to eq(6)
+
+        job1_vm1 = director.instance('job1', '0', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job1_vm1_template = job1_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job1_vm1_template).to include("five six")
+
+        job2_vm1 = director.instance('job2', '0', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job2_vm1_template = job2_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job2_vm1_template).to include("pick up the sticks")
+
+        job2_vm2 = director.instance('job2', '1', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job2_vm2_template = job2_vm2.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job2_vm2_template).to include("shut the door")
+      end
+
+      it 'should clean up unused variables after the next successful deploy' do
+        props = manifest_hash['jobs'][1]['templates'][0]['properties']
+        props['fail_on_job_start'] = false
+        props['fail_instance_index'] = -1
+
+        config_server_helper.put_value(prepend_namespace('random_property'), 'seven eight')
+        config_server_helper.put_value(prepend_namespace('other_property'), 'lay them straight')
+
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+        variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+        expect(variables.size).to eq(2)
+
+        job1_vm1 = director.instance('job1', '0', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job1_vm1_template = job1_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job1_vm1_template).to include("seven eight")
+
+        job2_vm1 = director.instance('job2', '0', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job2_vm1_template = job2_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job2_vm1_template).to include("lay them straight")
+
+        job2_vm2 = director.instance('job2', '1', deployment: manifest_hash['name'], include_credentials: false,  env: client_env, no_login: true)
+        job2_vm2_template = job2_vm2.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(job2_vm2_template).to include("lay them straight")
       end
     end
   end
