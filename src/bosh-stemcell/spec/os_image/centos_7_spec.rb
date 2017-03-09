@@ -88,8 +88,7 @@ describe 'CentOS 7 OS image', os_image: true do
   end
 
   context 'installed by system_initramfs' do
-    describe command("zcat /boot/initramfs-3.10.0-514.6.1.el7.x86_64.img | cpio -t | grep '/lib/modules/3.10.0-514.6.1.el7.x86_64'") do
-      let(:kernel_version) { "3.10.0-514.6.1.el7.x86_64" }
+    describe command("zcat /boot/initramfs-3.10.*.el7.x86_64.img | cpio -t | grep '/lib/modules/3.10.*.el7.x86_64'") do
 
       modules = [
         #ata
