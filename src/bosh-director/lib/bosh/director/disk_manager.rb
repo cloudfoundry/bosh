@@ -117,8 +117,6 @@ module Bosh::Director
       end
 
       if agent_mounted_disks(instance_model).include?(disk_cid)
-        @logger.info("Stopping instance '#{instance_model}' before unmount")
-        agent_client(instance_model).stop
         @logger.info("Unmounting disk '#{disk_cid}'")
         agent_client(instance_model).unmount_disk(disk_cid)
       end
