@@ -15,7 +15,8 @@
 * Roadmap: [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/956238)
 
 * Related repos:
-	- [bosh-init](https://github.com/cloudfoundry/bosh-init)
+	- [bosh-cli](https://github.com/cloudfoundry/bosh-cli)
+	- [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
 	- [bosh-agent](https://github.com/cloudfoundry/bosh-agent)
 	- [bosh-utils](https://github.com/cloudfoundry/bosh-utils)
 	- [bosh-lite](https://github.com/cloudfoundry/bosh-lite)
