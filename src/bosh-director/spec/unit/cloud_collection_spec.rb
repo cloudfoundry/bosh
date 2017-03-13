@@ -2,9 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CloudCollection do
-    subject(:collection) { CloudCollection.new([nimbus, cumulus])}
-    let(:nimbus) { {name: 'nimbus', cpi: instance_double('Bosh::Clouds::ExternalCpi')} }
-    let(:cumulus) { {name: 'cumulus', cpi: instance_double('Bosh::Clouds::ExternalCpi')} }
+    subject(:collection) { CloudCollection.new([nimbus, cumulus], logger) }
+    let(:logger) { double(:logger, debug: nil) }
+    let(:nimbus) { { name: 'nimbus', cpi: instance_double('Bosh::Clouds::ExternalCpi') } }
+    let(:cumulus) { { name: 'cumulus', cpi: instance_double('Bosh::Clouds::ExternalCpi') } }
 
     describe '#initialize' do
       it 'takes a list of clouds and sets a reader' do
@@ -85,6 +86,38 @@ module Bosh::Director
       let(:method_args) { ['tuber_id', 'flat_potato_id'] }
 
       it_behaves_like 'a delegator'
+    end
+
+    describe 'set_disk_metadata' do
+      let(:method_name) { :set_disk_metadata }
+      let(:method_args) { ['tuber_id', 'flat_potato_id'] }
+
+      context 'when all clouds implement the method' do
+        it_behaves_like 'a delegator'
+      end
+
+      context 'when a cloud does not implement the method' do
+        it 'delegates to all elements in collection and logs an error for the not-implementing cloud' do
+          expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
+          expect(cumulus[:cpi]).to receive(method_name).with(*method_args)
+
+          expect(logger).to receive(:debug).with(/nimbus/, kind_of(String))
+
+          collection.send(method_name, *method_args)
+        end
+      end
+
+      context 'when no cloud implements the method' do
+        it 'delegates to all elements in collection and logs errors for each non-implementing cloud' do
+          expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
+          expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
+
+          expect(logger).to receive(:debug).with(/nimbus/, kind_of(String))
+          expect(logger).to receive(:debug).with(/cumulus/, kind_of(String))
+
+          collection.send(method_name, *method_args)
+        end
+      end
     end
 
     describe 'delete_snapshot' do

@@ -7,13 +7,14 @@ module Bosh::Director
     let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) {[]}
+    let(:logger) { double(:logger, debug: nil) }
     let(:all_cpis) do
       clouds = [{name: '', cpi: default_cloud}]
       cpis.each do |cpi|
         clouds << {name: cpi.name, cpi: Bosh::Clouds::ExternalCpi.new(cpi.exec_path, Config.uuid, cpi.properties)}
       end
 
-      CloudCollection.new(clouds)
+      CloudCollection.new(clouds, logger)
     end
 
     context 'factory methods' do
