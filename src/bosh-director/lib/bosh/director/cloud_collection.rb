@@ -2,9 +2,8 @@ module Bosh::Director
   class CloudCollection
     attr_reader :clouds
 
-    def initialize(clouds, logger)
+    def initialize(clouds)
       @clouds = clouds
-      @logger = logger
     end
 
     def delete_stemcell(stemcell_id)
@@ -35,10 +34,6 @@ module Bosh::Director
       call_method_for_clouds(:attach_disk, vm_id, disk_id)
     end
 
-    def set_disk_metadata(disk_cid, metadata)
-      call_method_for_clouds(:set_disk_metadata, disk_cid, metadata)
-    end
-
     def delete_snapshot(snapshot_id)
       call_method_for_clouds(:delete_snapshot, snapshot_id)
     end
@@ -55,11 +50,7 @@ module Bosh::Director
 
     def call_method_for_clouds(method, *args)
       clouds.each do |cloud|
-        begin
-          cloud[:cpi].send(method, *args)
-        rescue Bosh::Clouds::NotImplemented => e
-          @logger.debug("CPI '#{cloud[:name]}' doesn't implement this method, trying other CPIs", e.inspect)
-        end
+        cloud[:cpi].send(method, *args)
       end
     end
 

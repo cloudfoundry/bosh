@@ -55,7 +55,6 @@ module Bosh::Director
       def reattach_disk(reboot = false)
         cloud = cloud_factory.for_availability_zone(@instance.availability_zone)
         cloud.attach_disk(@vm_cid, @disk_cid)
-        MetadataUpdater.build.update_disk_metadata(cloud, @disk, @disk.instance.deployment.tags)
         if reboot
           reboot_vm(@instance)
         else

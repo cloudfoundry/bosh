@@ -29,7 +29,6 @@ module Bosh::Director
       @cloud_planner = cloud_planner
       @parsed_cpi_config = parsed_cpi_config
       @default_cloud = Config.cloud
-      @logger = Config.logger
     end
 
     def uses_cpi_config?
@@ -103,7 +102,7 @@ module Bosh::Director
         end
       end
 
-      CloudCollection.new(clouds, @logger)
+      CloudCollection.new(clouds)
     end
 
     def all_from_cpi_config

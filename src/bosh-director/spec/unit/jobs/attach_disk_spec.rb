@@ -3,8 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::AttachDisk do
 
-    let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
-    let(:deployment) { Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest)) }
+    let(:deployment) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }
@@ -246,13 +245,11 @@ module Bosh::Director
         end
         before do
           allow(Config.cloud).to receive(:attach_disk)
-          allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         end
 
-        it 'attaches the new disk and sets disk metadata' do
+        it 'attaches the new disk' do
           expect(Config.cloud).to receive(:attach_disk)
-          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           expect(Config.cloud).to receive(:detach_disk)
           attach_disk_job.perform
 
@@ -282,13 +279,11 @@ module Bosh::Director
         let(:agent_client) { instance_double(AgentClient, mount_disk: nil, wait_until_ready: nil) }
         before do
           allow(Config.cloud).to receive(:attach_disk)
-          allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         end
 
         it 'attaches the new disk' do
           expect(Config.cloud).to receive(:attach_disk)
-          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
