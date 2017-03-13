@@ -582,6 +582,7 @@ jobs:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
+      - unit-2.3-rds
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - integration-postgres-gocli-sha2
