@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
     describe '#drop_db' do
       it 'drops a database' do
         expect(runner).to receive(:run).with(
-          %Q{echo 'revoke connect on database "fake_db_name" from public; drop database "fake_db_name";' | PGPASSWORD=my-pgpassword psql -h host -p 9922 -U my-pguser})
+          %Q{echo 'revoke connect on database "fake_db_name" from public; drop database "fake_db_name";' | PGPASSWORD=my-pgpassword psql -h host -p 9922 -U my-pguser > /dev/null 2>&1})
         postgresql.drop_db
       end
     end
