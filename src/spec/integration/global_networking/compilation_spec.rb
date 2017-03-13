@@ -158,7 +158,6 @@ describe 'global networking', type: :integration do
         current_sandbox.director_service.start(current_sandbox.director_config)
         bosh_runner.run("cancel task #{blocking_task_id}")
 
-
         sleep 240
 
         deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 2)
