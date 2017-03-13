@@ -3,7 +3,7 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Sqlite
-    attr_reader :db_name, :username, :password, :port, :adapter
+    attr_reader :db_name, :username, :password, :port, :adapter, :host
 
     def initialize(db_name, logger, runner = Bosh::Core::Shell.new)
       @db_name = db_name
@@ -11,6 +11,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
       @username = nil
       @password = nil
+      @host = '127.0.0.1'
       @port = nil
       @adapter = 'sqlite'
     end
