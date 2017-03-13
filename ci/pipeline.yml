@@ -5,6 +5,7 @@ groups:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
+      - unit-2.3-rds
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
@@ -24,11 +25,13 @@ groups:
   - name: mysql
     jobs:
       - unit-2.3-mysql
+      - unit-2.3-rds
       - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
       - unit-2.3-postgres
+      - unit-2.3-rds
       - integration-2.3-postgres
 
   - name: finalize
