@@ -16,7 +16,7 @@ module Bosh::Director
       @name = name
       @uid = SecureRandom.uuid
       @timeout = opts[:timeout] || 1.0
-      @expiration = opts[:expiration] || 10.0
+      @expiration = opts[:expiration] || 240.0
       @logger = Config.logger
       @refresh_thread = nil
     end
