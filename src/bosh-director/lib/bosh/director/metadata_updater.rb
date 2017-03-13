@@ -1,5 +1,5 @@
 module Bosh::Director
-  class VmMetadataUpdater
+  class MetadataUpdater
     include CloudFactoryHelper
 
     def self.build
@@ -11,7 +11,7 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update(instance, metadata)
+    def update_vm_metadata(instance, metadata)
       cloud = cloud_factory.for_availability_zone!(instance.availability_zone)
 
       if cloud.respond_to?(:set_vm_metadata)

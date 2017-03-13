@@ -61,7 +61,7 @@ module Bosh::Director
       )
 
       begin
-        VmMetadataUpdater.build.update(instance_model, tags)
+        MetadataUpdater.build.update_vm_metadata(instance_model, tags)
         agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
         agent_client.wait_until_ready
 

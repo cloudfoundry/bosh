@@ -241,11 +241,11 @@ module Bosh::Director
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
-        vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
-        allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
-        expect(vm_metadata_updater).to receive(:update).with(anything, {compiling: 'common'})
-        expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
+        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, {compiling: 'common'})
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling)).exactly(10).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
         allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
@@ -370,9 +370,9 @@ module Bosh::Director
       before do
         prepare_samples
 
-        vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
-        allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
-        expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling))
+        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
+        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling))
 
         initial_state = {
             'deployment' => 'mycloud',
