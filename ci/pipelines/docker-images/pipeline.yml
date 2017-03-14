@@ -174,7 +174,7 @@ jobs:
         get_params:
           skip_download: true
 
-- name: build-main-ubuntu-chroot
+  - name: build-main-ubuntu-chroot
     public: true
     serial: true
     plan:
