@@ -14,8 +14,6 @@ case $1 in
   start)
     mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
-    echo $$ > $PIDFILE
-
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
     # workaround. nginx upload module ignores the proxy_temp_path directive
