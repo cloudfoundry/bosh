@@ -15,8 +15,8 @@ module Bosh::Director
     def initialize(name, opts = {})
       @name = name
       @uid = SecureRandom.uuid
-      @timeout = opts[:timeout] || 60.0
-      @expiration = opts[:expiration] || 10.0
+      @timeout = opts[:timeout] || 1.0
+      @expiration = opts[:expiration] || 240.0
       @logger = Config.logger
       @refresh_thread = nil
     end

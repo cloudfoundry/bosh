@@ -289,6 +289,21 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
+        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[5].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+          }
+        })
+
         # force a recreate by changing IP address
         manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11']
         deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -355,6 +370,21 @@ describe 'CPI calls', type: :integration do
         expect(second_deploy_invocations[4].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
+        })
+
+        expect(second_deploy_invocations[5].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[5].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+          }
         })
       end
     end
@@ -439,6 +469,20 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
+        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[5].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+          }
+        })
+
         # force a recreate by changing IP address
         manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11']
         manifest_hash.merge!({
@@ -511,6 +555,21 @@ describe 'CPI calls', type: :integration do
         expect(second_deploy_invocations[4].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
+        })
+
+        expect(second_deploy_invocations[5].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[5].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+          }
         })
       end
     end
@@ -603,6 +662,21 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
+        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[5].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+          }
+        })
+
         current_sandbox.cpi.vm_cids.each do |vm_cid|
           current_sandbox.cpi.delete_vm(vm_cid)
         end
@@ -683,8 +757,23 @@ describe 'CPI calls', type: :integration do
           'disk_id' => disk_cid
         })
 
-        expect(second_deploy_invocations[6].method_name).to eq('has_disk')
+        expect(second_deploy_invocations[6].method_name).to eq('set_disk_metadata')
         expect(second_deploy_invocations[6].inputs).to match({
+          'disk_cid' => disk_cid,
+          'metadata' => {
+            'director' => current_sandbox.director_name,
+            'attached_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => 'first-job',
+            'instance_index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1'
+          }
+        })
+
+        expect(second_deploy_invocations[7].method_name).to eq('has_disk')
+        expect(second_deploy_invocations[7].inputs).to match({
           'disk_id' => disk_cid
         })
       end

@@ -157,13 +157,13 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     describe 'error response' do
-      def self.it_raises_an_error(error_class)
+      def self.it_raises_an_error(error_class, error_type = error_class.name, message = 'fake-error-message')
         let(:cpi_response) do
           JSON.dump(
             result: nil,
             error: {
-              type: error_class.name,
-              message: 'fake-error-message',
+              type: error_type,
+              message: message,
               ok_to_retry: false,
             },
             log: 'fake-log',
@@ -171,7 +171,7 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         it 'raises an error constructed from error response' do
-          expect { call_cpi_method }.to raise_error(error_class, "CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
+          expect { call_cpi_method }.to raise_error(error_class, /CPI error '#{error_type}' with message '#{message}' in '#{method}' CPI method/)
         end
 
         it 'saves log and stderr' do
@@ -217,12 +217,28 @@ describe Bosh::Clouds::ExternalCpi do
         it_raises_an_error(Bosh::Clouds::NotImplemented)
       end
 
+      context 'when cpi returns InvalidCall error' do
+        it_raises_an_error(Bosh::Clouds::ExternalCpi::UnknownError, 'InvalidCall')
+
+        context 'when method not implemented by the cpi' do
+          it_raises_an_error(Bosh::Clouds::NotImplemented, 'InvalidCall', 'Method is not known, got something')
+        end
+      end
+
       context 'when cpi returns NotSupported error' do
         it_raises_an_error(Bosh::Clouds::NotSupported)
+
+        context 'when method not implemented by the cpi' do
+          it_raises_an_error(Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotSupported', 'Method foo not supported in photon CPI')
+        end
       end
 
       context 'when cpi returns CloudError error' do
         it_raises_an_error(Bosh::Clouds::CloudError)
+
+        context 'when method not implemented by the cpi' do
+          it_raises_an_error(Bosh::Clouds::NotImplemented, 'Bosh::Clouds::CloudError', 'Invalid Method: something')
+        end
       end
 
       context 'when cpi returns VMNotFound error' do
@@ -246,26 +262,7 @@ describe Bosh::Clouds::ExternalCpi do
       end
 
       context 'when cpi raises unrecognizable error' do
-        let(:cpi_response) do
-          JSON.dump(
-            result: nil,
-            error: {
-              type: 'FakeUnrecognizableError',
-              message: 'Something went \'wrong\'',
-              ok_to_retry: true
-            },
-            log: 'fake-log'
-          )
-        end
-
-        it 'raises an error constructed from error response' do
-          expect {
-            call_cpi_method
-          }.to raise_error(
-            Bosh::Clouds::ExternalCpi::UnknownError,
-            "Unknown CPI error 'FakeUnrecognizableError' with message 'Something went 'wrong'' in '#{method}' CPI method",
-          )
-        end
+        it_raises_an_error(Bosh::Clouds::ExternalCpi::UnknownError, 'FakeUnrecognizableError', 'Something went \'wrong\'')
       end
     end
 

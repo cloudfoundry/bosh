@@ -3,6 +3,7 @@ require 'bosh/director/core/templates/rendered_job_instance'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 require 'bosh/director/agent_client'
+require 'securerandom'
 
 module Bosh::Director::Core::Templates
   describe RenderedJobInstance do

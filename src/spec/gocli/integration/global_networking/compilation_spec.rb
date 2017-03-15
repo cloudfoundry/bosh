@@ -156,6 +156,8 @@ describe 'global networking', type: :integration do
         current_sandbox.director_service.start(current_sandbox.director_config)
         bosh_runner.run("cancel-task #{blocking_task_id}")
 
+        sleep 240
+
         deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
         expect(director.instances(deployment_name: 'blocking').map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.4')
