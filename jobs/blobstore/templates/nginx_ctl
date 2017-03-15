@@ -17,8 +17,6 @@ case $1 in
   start)
     mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
-    echo $$ > $PIDFILE
-
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
     exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/nginx/sbin/nginx -c /var/vcap/jobs/blobstore/config/nginx.conf >>$LOG_DIR/nginx.stdout.log 2>>$LOG_DIR/nginx.stderr.log
