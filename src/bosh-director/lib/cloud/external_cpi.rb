@@ -141,6 +141,10 @@ module Bosh::Clouds
     def handle_error(error_response, method_name)
       error_type = error_response['type']
       error_message = error_response['message']
+
+      # backwards compatibility for CPIs returning different errors than 'NotImplemented' for not implemented methods
+      handle_method_not_implemented(error_message, error_type, method_name)
+
       unless KNOWN_RPC_ERRORS.include?(error_type)
         raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
       end
@@ -154,6 +158,14 @@ module Bosh::Clouds
       end
 
       raise error, "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+    end
+
+    def handle_method_not_implemented(error_message, error_type, method_name)
+      message = "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+
+      raise Bosh::Clouds::NotImplemented, message if error_type == "InvalidCall" && error_message.start_with?('Method is not known, got')
+      raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::CloudError' && error_message.start_with?('Invalid Method:')
+      raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::NotSupported' && error_message =~ /^Method .+ not supported in photon CPI/
     end
 
     def save_cpi_log(output)
