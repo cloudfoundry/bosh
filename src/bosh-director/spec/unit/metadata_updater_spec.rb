@@ -108,7 +108,7 @@ describe Bosh::Director::MetadataUpdater do
   end
 
   describe '#update_disk_metadata' do
-    let(:disk) { BD::Models::PersistentDisk.make(instance_id: 'fake-vm-cid', disk_cid: 'fake-disk-cid')}
+    let(:disk) { BD::Models::PersistentDisk.make(instance: instance, disk_cid: 'fake-disk-cid')}
     before do
       instance.add_persistent_disk(disk) if disk
     end
