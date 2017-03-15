@@ -75,7 +75,7 @@ module Bosh::Director
         end
 
         if instance.state == 'stopped'
-          @disk_manager.attach_disk(disk)
+          @disk_manager.attach_disk(disk, instance.deployment.tags)
         end
       end
     end

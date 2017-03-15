@@ -32,7 +32,7 @@ module Bosh::Director
         if new_disk
           new_disk_model = create_disk(instance_model, new_disk)
 
-          attach_disk(new_disk_model)
+          attach_disk(new_disk_model, instance_plan.tags)
 
           if new_disk.managed? && old_disk_model
             migrate_disk(instance_model, new_disk_model, old_disk_model)
@@ -69,7 +69,7 @@ module Bosh::Director
       end
 
       instance_plan.instance.model.active_persistent_disks.collection.each do |disk|
-        attach_disk(disk.model)
+        attach_disk(disk.model, instance_plan.tags)
       end
     end
 
@@ -86,9 +86,10 @@ module Bosh::Director
       end
     end
 
-    def attach_disk(disk)
+    def attach_disk(disk, tags)
       cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
       cloud.attach_disk(disk.instance.vm_cid, disk.disk_cid)
+      MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
       mount_disk(disk) if disk.managed?
     end
 
