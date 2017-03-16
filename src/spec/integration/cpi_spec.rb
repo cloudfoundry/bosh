@@ -289,8 +289,8 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
-        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
-        expect(first_deploy_invocations[5].inputs).to match({
+        expect(first_deploy_invocations[6].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[6].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => current_sandbox.director_name,
@@ -469,8 +469,8 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
-        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
-        expect(first_deploy_invocations[5].inputs).to match({
+        expect(first_deploy_invocations[6].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[6].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => current_sandbox.director_name,
@@ -662,8 +662,8 @@ describe 'CPI calls', type: :integration do
         })
         disk_cid = first_deploy_invocations[5].inputs['disk_id']
 
-        expect(first_deploy_invocations[5].method_name).to eq('set_disk_metadata')
-        expect(first_deploy_invocations[5].inputs).to match({
+        expect(first_deploy_invocations[6].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[6].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => current_sandbox.director_name,

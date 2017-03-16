@@ -390,7 +390,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           @stemcell_file = Tempfile.new("stemcell_contents")
 
           File.open(@stemcell_file.path, "w") { |f| f.write(stemcell_contents) }
-          expect(cloud).to receive(:info).and_raise(Bosh::Clouds::ExternalCpi::InvalidCall)
+          expect(cloud).to receive(:info).and_raise(Bosh::Clouds::NotImplemented)
           expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
             contents = File.open(image) { |f| f.read }
             expect(contents).to eql("image contents")

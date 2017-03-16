@@ -372,11 +372,6 @@ module Bosh
       end
 
       private
-
-      def method_missing(method, *args, &block)
-        raise 'InvalidCall'
-      end
-
       def allocate_ips(ips)
         ips.each do |ip|
           begin
