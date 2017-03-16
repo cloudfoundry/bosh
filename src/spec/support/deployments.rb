@@ -485,6 +485,60 @@ module Bosh::Spec
       }
     end
 
+    def self.deployment_manifest_with_addon
+      minimal_manifest.merge(
+        'name' => DEFAULT_DEPLOYMENT_NAME,
+        'releases' => [
+          {
+            'name' => 'bosh-release',
+            'version' => '0.1-dev',
+          },
+          {'name' => 'dummy2',
+            'version' => '0.2-dev'}
+        ],
+        'jobs' => [{
+          'name' => 'foobar',
+          'templates' => [{'name' => 'foobar', 'release' => 'bosh-release'}],
+          'instances' => 1,
+          'resource_pool' => 'a',
+          'networks' => [{'name' => 'a'}]
+        }],
+        'addons' => [{
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
+          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+        }]
+      )
+    end
+
+    def self.complex_deployment_manifest_with_addon
+      minimal_manifest.merge(
+        'name' => DEFAULT_DEPLOYMENT_NAME,
+        'releases' => [
+          {
+            'name' => 'bosh-release',
+            'version' => '0.1-dev',
+          },
+          {'name' => 'dummy2',
+            'version' => '0.2-dev'}
+        ],
+        'jobs' => [
+          simple_job(resource_pool: 'b', name: 'has-rc-addon-vm', templates: [{"name" => "foobar", "release" => "bosh-release"}], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-rc-addons-vm', templates: [{"name" => "foobar", "release" => 'bosh-release'}], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-addon-vm', templates: [{"name" => "foobar_without_packages", "release" => 'bosh-release'}], instances: 1),
+        ],
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'include' => {
+            'stemcell' => [
+              {'os' => 'toronto-os'}
+            ]
+          }
+        ]
+      )
+    end
+
     def self.test_deployment_manifest
       {
           'name' => 'test_deployment',

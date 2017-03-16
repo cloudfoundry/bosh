@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  module RuntimeConfig
+  module Addon
     describe Addon do
       subject(:addon) { Addon.new(addon_name, jobs, properties, includes, excludes) }
       let(:addon_name) { 'addon-name' }
@@ -155,8 +155,8 @@ module Bosh::Director
           } }
 
           it 'returns addon' do
-            expect(AddonFilter).to receive(:parse).with(include_hash, :include)
-            expect(AddonFilter).to receive(:parse).with(nil, :exclude)
+            expect(AddonFilter).to receive(:parse).with(include_hash, :include, false)
+            expect(AddonFilter).to receive(:parse).with(nil, :exclude, false)
             addon = Addon.parse(addon_hash)
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(2)

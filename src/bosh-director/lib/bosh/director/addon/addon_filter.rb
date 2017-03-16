@@ -1,5 +1,5 @@
 module Bosh::Director
-  module RuntimeConfig
+  module Addon
     class AddonFilter
 
       extend ValidationHelper
@@ -11,8 +11,11 @@ module Bosh::Director
         @filter_type = filter_type
       end
 
-      def self.parse(addon_filter_hash, filter_type)
+      def self.parse(addon_filter_hash, filter_type, deployment_level = false)
         applicable_deployment_names = safe_property(addon_filter_hash, 'deployments', :class => Array, :default => [])
+        if deployment_level && !applicable_deployment_names.empty?
+          raise DeploymentFilterNotAllowed, 'Deployment filter is not allowed for deployment level addons.'
+        end
         applicable_jobs = safe_property(addon_filter_hash, 'jobs', :class => Array, :default => [])
         applicable_stemcells = safe_property(addon_filter_hash, 'stemcell', :class => Array, :default => [])
 
@@ -48,7 +51,7 @@ module Bosh::Director
           name = safe_property(job, 'name', :class => String, :default => '')
           release = safe_property(job, 'release', :class => String, :default => '')
           if name.empty? || release.empty?
-            raise RuntimeIncompleteFilterJobSection.new("Job #{job} in runtime config's #{filter_type} section must " +
+            raise IncompleteFilterJobSection.new("Job #{job} in config's #{filter_type} section must " +
               'have both name and release.')
           end
         end
@@ -57,7 +60,7 @@ module Bosh::Director
       def self.verify_stemcells_section(applicable_stemcells, filter_type)
         applicable_stemcells.each do |stemcell|
           if safe_property(stemcell, 'os', :class => String, :default => '').empty?
-            raise RuntimeIncompleteFilterStemcellSection.new("Stemcell #{stemcell} in runtime config's #{filter_type} " +
+            raise IncompleteFilterStemcellSection.new("Stemcell #{stemcell} in config's #{filter_type} " +
               'section must have an os name.')
           end
         end

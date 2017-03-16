@@ -38,8 +38,6 @@ describe 'deploy job with addons', type: :integration do
     expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
   end
 
-
-
   it 'allows addons to be added for specific stemcell operating systems' do
     target_and_login
 
@@ -159,7 +157,6 @@ describe 'deploy job with addons', type: :integration do
 
     # ensure that the diff only contains one instance of the release
     expect(deploy_output.scan(/test_release_2/).count).to eq(1)
-
   end
 
   context 'when version of uploaded release is same as one used in addon and one is an integer' do
@@ -178,7 +175,6 @@ describe 'deploy job with addons', type: :integration do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'] = [{'name'    => 'test_release_2',
                                       'version' => '2'}]
-
       manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(
         name: 'job',
         templates: [{'name' => 'job_using_pkg_1'}],

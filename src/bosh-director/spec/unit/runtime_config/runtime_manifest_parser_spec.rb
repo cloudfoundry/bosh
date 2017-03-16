@@ -22,15 +22,15 @@ module Bosh::Director
       it "raises RuntimeReleaseNotListedInReleases if addon job's release is not listed in releases" do
         runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
         runtime_manifest['releases'][0]['name'] = 'weird_name'
-        expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeReleaseNotListedInReleases)
+        expect { subject.parse(runtime_manifest) }.to raise_error(ReleaseNotListedInReleases)
       end
 
       context 'when runtime manifest does not have an include or exclude section' do
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :include)
-          expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :exclude)
+          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :include)
+          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :exclude)
 
           result = subject.parse(runtime_manifest)
 
@@ -64,44 +64,10 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], ['dep1'], [], :include)
-            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :exclude)
+            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], ['dep1'], [], :include)
+            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :exclude)
 
             subject.parse(runtime_manifest)
-          end
-        end
-
-        context 'when jobs section present' do
-          context 'when only job name is provided' do
-            let(:runtime_manifest) do
-              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
-              runtime_manifest['addons'].first.merge!(
-                  {
-                    'include' => {
-                      'jobs' => [{'name' => 'foobar'}]
-                    }
-                  })
-              runtime_manifest
-            end
-            it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
-            end
-          end
-
-          context 'when only release is provided' do
-            let(:runtime_manifest) do
-              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
-              runtime_manifest['addons'].first.merge!(
-                  {
-                    'include' => {
-                      'jobs' => [{'release' => 'foobar'}]
-                    }
-                  })
-              runtime_manifest
-            end
-            it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
-            end
           end
         end
       end
@@ -122,8 +88,8 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], [], [], :include)
-            expect(RuntimeConfig::AddonFilter).to receive(:new).with([], ['dep1'], [], :exclude)
+            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :include)
+            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], ['dep1'], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
@@ -142,7 +108,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(IncompleteFilterJobSection)
             end
           end
 
@@ -158,7 +124,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(RuntimeIncompleteFilterJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(IncompleteFilterJobSection)
             end
           end
         end

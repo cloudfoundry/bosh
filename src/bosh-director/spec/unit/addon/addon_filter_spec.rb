@@ -1,10 +1,11 @@
 require 'spec_helper'
 
 module Bosh::Director
-  module RuntimeConfig
+  module Addon
     describe AddonFilter do
-      subject(:addon_include) { AddonFilter.parse(filter_hash, type) }
+      subject(:addon_include) { AddonFilter.parse(filter_hash, type, deployment_level) }
       let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
+      let(:deployment_level) { false }
 
       shared_examples :common_filter_checks do
         describe 'when the filter has a job with an empty job name' do
@@ -13,8 +14,8 @@ module Bosh::Director
           it 'raises' do
             expect {
               addon_include.applies?('anything', instance_group)
-            }.to raise_error RuntimeIncompleteFilterJobSection,
-              "Job {\"name\"=>\"\", \"release\"=>\"release_name\"} in runtime config's #{type} section must have both name and release."
+            }.to raise_error IncompleteFilterJobSection,
+              "Job {\"name\"=>\"\", \"release\"=>\"release_name\"} in config's #{type} section must have both name and release."
           end
         end
 
@@ -24,8 +25,8 @@ module Bosh::Director
           it 'raises' do
             expect {
               addon_include.applies?('anything', instance_group)
-            }.to raise_error RuntimeIncompleteFilterJobSection,
-              "Job {\"name\"=>\"job-name\", \"release\"=>\"\"} in runtime config's #{type} section must have both name and release."
+            }.to raise_error IncompleteFilterJobSection,
+              "Job {\"name\"=>\"job-name\", \"release\"=>\"\"} in config's #{type} section must have both name and release."
           end
         end
 
@@ -36,8 +37,8 @@ module Bosh::Director
             it 'raises' do
               expect {
                 addon_include.applies?('anything', instance_group)
-              }.to raise_error RuntimeIncompleteFilterStemcellSection,
-                "Stemcell {\"os\"=>\"\"} in runtime config's #{type} section must have an os name."
+              }.to raise_error IncompleteFilterStemcellSection,
+                "Stemcell {\"os\"=>\"\"} in config's #{type} section must have an os name."
             end
           end
 
@@ -162,11 +163,32 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when there is a deployment filter' do
+          let(:filter_hash) { {'deployments' => ['deployment_1', 'deployment_2']} }
+          context 'when addon is in deployment manifest' do
+            let(:deployment_level) { true }
+            it 'raises' do
+              expect {
+                addon_include
+              }.to raise_error DeploymentFilterNotAllowed,
+                "Deployment filter is not allowed for deployment level addons."
+            end
+          end
+          context 'when addon is not in deployment manifest' do
+            let(:deployment_level) { false }
+            it 'raises' do
+              expect {
+                addon_include
+              }.not_to raise_error
+            end
+          end
+        end
       end
 
       describe 'include' do
+        let (:type) { :include }
         describe 'applies?' do
-          let (:type) { :include }
           describe 'when the include hash is nil' do
             let(:filter_hash) { nil }
 
@@ -181,8 +203,8 @@ module Bosh::Director
       end
 
       describe 'exclude' do
+        let (:type) { :exclude }
         describe 'applies?' do
-          let (:type) { :exclude }
           describe 'when the include hash is nil' do
             let(:filter_hash) { nil }
 

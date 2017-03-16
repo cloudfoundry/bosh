@@ -289,10 +289,11 @@ module Bosh::Director
   # Addons
   RuntimeAmbiguousReleaseSpec = err(530000)
   RuntimeInvalidReleaseVersion = err(530001)
-  RuntimeReleaseNotListedInReleases = err(530002)
+  ReleaseNotListedInReleases = err(530002)
   RuntimeInvalidDeploymentRelease = err(530003)
-  RuntimeIncompleteFilterJobSection = err(530004)
-  RuntimeIncompleteFilterStemcellSection = err(530005)
+  IncompleteFilterJobSection = err(530004)
+  IncompleteFilterStemcellSection = err(530005)
+  DeploymentFilterNotAllowed = err(530006)
 
   # Config server errors
   ConfigServerFetchError = err(540001)
