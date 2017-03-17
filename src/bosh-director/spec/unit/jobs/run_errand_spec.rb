@@ -89,7 +89,7 @@ module Bosh::Director
               before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
               let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
-              before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
+              before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', { timeout: 10, deployment_name: 'fake-dep-name' }).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
               before { allow(lock).to receive(:lock).and_yield }

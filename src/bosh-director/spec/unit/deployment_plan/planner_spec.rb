@@ -228,7 +228,7 @@ module Bosh::Director
             setup_global_config_and_stubbing
           end
 
-          context 'given prior deployment with old release versions' do
+          context 'given prior deployment with old release versions', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
             let(:stale_release_version) do
               release = Bosh::Director::Models::Release.create(name: 'stale')
               Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
@@ -256,7 +256,7 @@ module Bosh::Director
               planner.bind_models
             end
 
-            it 'updates the release version on the deployment to be the ones from the provided manifest' do
+            it 'updates the release version on the deployment to be the ones from the provided manifest', ENV do
               expect(deployment_model.release_versions).to include(stale_release_version)
               planner.persist_updates!
               expect(deployment_model.release_versions).to_not include(stale_release_version)

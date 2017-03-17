@@ -762,7 +762,7 @@ module Bosh::Director
         expect(rv.templates.map { |t| t.version }).to match_array(%w(0.2-dev 33 666))
       end
 
-      it 'performs the rebase if same release is being rebased twice' do
+      it 'performs the rebase if same release is being rebased twice', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
         allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
         task = Models::Task.make(state: 'processing')
         allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)

@@ -66,6 +66,22 @@ describe 'cli: events', type: :integration do
       {'action' => 'create', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'update', 'object_type' => 'runtime-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'update', 'object_type' => 'cloud-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' =>'lock:deployment:simple', 'object_type'=> 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' =>'lock:deployment:simple', 'object_type'=> 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' =>'', 'object_id' =>'lock:deployment:simple', 'object_type'=> 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => '', 'error' =>'', 'instance' =>'', 'object_id' =>'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' =>'', 'instance' =>'', 'object_id' =>'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:deployment:simple', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:deployment:simple', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:compile:3:toronto-os/1', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:compile:3:toronto-os/1', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:compile:8:toronto-os/1', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:compile:8:toronto-os/1', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_id' => 'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_id' => 'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' => 'lock:deployment:simple', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_id' => 'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_id' => 'lock:release:bosh-release', 'object_type' => 'lock'},
     )
 
     instance_name = parse_first_instance_name(output)

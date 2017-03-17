@@ -17,7 +17,7 @@ module Bosh::Director
         allow(deployment).to receive(:name).and_return('foo')
 
         lock = double(:lock)
-        allow(Lock).to receive(:new).with('lock:deployment:foo', { timeout: 10 }).
+        allow(Lock).to receive(:new).with('lock:deployment:foo', { timeout: 10, deployment_name: 'foo' }).
           and_return(lock)
         expect(lock).to receive(:lock).and_yield
 
@@ -30,7 +30,7 @@ module Bosh::Director
 
       it 'should support a deployment name' do
         lock = double(:lock)
-        allow(Lock).to receive(:new).with('lock:deployment:bar', { timeout: 5 }).
+        allow(Lock).to receive(:new).with('lock:deployment:bar', { timeout: 5, deployment_name: 'bar' }).
           and_return(lock)
         expect(lock).to receive(:lock).and_yield
 
@@ -101,12 +101,12 @@ module Bosh::Director
     describe :with_compile_lock do
       it 'should support a package and stemcell id' do
         lock = double(:lock)
-        allow(Lock).to receive(:new).with('lock:compile:3:4', { timeout: 900 }).
+        allow(Lock).to receive(:new).with('lock:compile:3:4', { timeout: 900, deployment_name: 'foo' }).
           and_return(lock)
         expect(lock).to receive(:lock).and_yield
 
         called = false
-        @test_instance.with_compile_lock(3, 4) do
+        @test_instance.with_compile_lock(3, 4, 'foo') do
           called = true
         end
         expect(called).to be(true)

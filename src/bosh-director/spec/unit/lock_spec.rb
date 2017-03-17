@@ -109,16 +109,20 @@ module Bosh::Director
       end
 
       context 'when a lock is lost' do
+        def destroy_lock_record(lock_name)
+          Thread.new do
+            until false
+              x = Models::Lock.where(name: lock_name).delete
+              break if x > 0
+              sleep 0.1
+            end
+          end
+        end
+
         it 'should record an event' do
           lock = Lock.new('foo', deployment_name: 'my-deployment', expiration: 1)
 
-          Thread.new do
-            until false
-              x = Models::Lock.where(name: 'foo').delete
-              sleep 0.1
-              break if x > 0
-            end
-          end
+          destroy_lock_record('foo')
 
           expect(Models::Event.where(action: 'lost').count).to eq 0
 
@@ -132,13 +136,7 @@ module Bosh::Director
         it 'should cancel the running task' do
           lock = Lock.new('foo', deployment_name: 'my-deployment', expiration: 1)
 
-          Thread.new do
-            until false
-              x = Models::Lock.where(name: 'foo').delete
-              sleep 0.1
-              break if x > 0
-            end
-          end
+          destroy_lock_record('foo')
 
           expect(Models::Task.where(state: 'cancelling').count).to eq 0
 

@@ -20,6 +20,7 @@ module Bosh::Director
       @logger = Config.logger
       @refresh_thread = nil
       @deployment_name = opts.fetch(:deployment_name, nil)
+      @task_id = opts.fetch(:task_id, Config.current_job.task_id)
       @event_manager = Api::EventManager.new(Config.record_events)
       @unlock = false
       @refresh_mutex = Mutex.new
@@ -61,13 +62,13 @@ module Bosh::Director
               action: 'lost',
               object_type: 'lock',
               object_name: @name,
-              task: Config.current_job.task_id,
+              task: @task_id,
               deployment: @deployment_name,
               error: 'Lock renewal thread exiting',
               timestamp: Time.now,
             )
 
-            Models::Task[Config.current_job.task_id].update(state: 'cancelling')
+            Models::Task[@task_id].update(state: 'cancelling')
 
             @logger.debug('Lock renewal thread exiting')
           end
@@ -102,7 +103,7 @@ module Bosh::Director
               action: 'release',
               object_type: 'lock',
               object_name: @name,
-              task: Config.current_job.task_id,
+              task: @task_id,
               deployment: @deployment_name,
           }
       )
@@ -143,7 +144,7 @@ module Bosh::Director
               action: 'acquire',
               object_type: 'lock',
               object_name: @name,
-              task: Config.current_job.task_id,
+              task: @task_id,
               deployment: @deployment_name,
           }
       )
