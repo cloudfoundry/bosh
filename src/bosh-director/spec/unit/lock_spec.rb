@@ -19,6 +19,24 @@ module Bosh::Director
       expect(ran_once).to be(true)
     end
 
+    it 'should renew a lock' do
+      lock = Lock.new('foo', expiration: 1)
+
+      expected = false
+
+      lock.lock do
+        initial_expired_at = Models::Lock.where(name: 'foo').first.expired_at
+
+        sleep 3
+
+        expect(Models::Lock.where(name: 'foo').first.expired_at).to be > initial_expired_at
+
+        expected = true
+      end
+
+      expect(expected).to be(true)
+    end
+
     it 'should not let two clients to acquire the same lock at the same time' do
       lock_a = Lock.new('foo')
       lock_b = Lock.new('foo', timeout: 0.1)

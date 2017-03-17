@@ -22,6 +22,8 @@ module Bosh::Director
       @deployment_name = opts.fetch(:deployment_name, nil)
       @event_manager = Api::EventManager.new(Config.record_events)
       @unlock = false
+      @refresh_mutex = Mutex.new
+      @refresh_signal = ConditionVariable.new
     end
 
     # Acquire a lock.
@@ -34,23 +36,23 @@ module Bosh::Director
 
       @refresh_thread = Thread.new do
         renew_interval = [1.0, @expiration/2].max
+
         begin
-          next_renew = Time.now.to_f + renew_interval
-
-          until @unlock
-            now = Time.now.to_f
-
-            if next_renew < now
-              @logger.debug("Renewing lock: #@name")
-              lock_expiration = now + @expiration + 1
-              next_renew = now + renew_interval
-
-              if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
+          until false
+            @refresh_mutex.synchronize {
+              if @unlock
                 break
               end
-            end
 
-            sleep(0.2)
+              @refresh_signal.wait(@refresh_mutex, renew_interval)
+            }
+
+            @logger.debug("Renewing lock: #@name")
+            lock_expiration = Time.now.to_f + @expiration + 1
+
+            if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
+              break
+            end
           end
         ensure
           if !@unlock
@@ -85,7 +87,12 @@ module Bosh::Director
     #
     # @return [void]
     def release
-      @unlock = true
+      @refresh_mutex.synchronize {
+        @unlock = true
+
+        @refresh_signal.signal
+      }
+
       delete
 
       @refresh_thread.join if @refresh_thread
