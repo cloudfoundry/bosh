@@ -1,4 +1,3 @@
-# Copyright (c) 2012 VMware, Inc.
 require 'common/errors'
 require 'common/retryable'
 

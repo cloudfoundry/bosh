@@ -1,5 +1,4 @@
 # BOSH Registry
-Copyright (c) 2009-2013 VMware, Inc.
 
 For online documentation see: http://rubydoc.info/gems/bosh-registry/
 

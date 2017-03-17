@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 Sequel.migration do
   change do
     create_table :registry_instances do

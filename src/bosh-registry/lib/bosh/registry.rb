@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 module Bosh
   module Registry
     autoload :Models, "bosh/registry/models"
