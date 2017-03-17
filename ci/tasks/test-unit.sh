@@ -5,6 +5,16 @@ set -e
 source bosh-src/ci/tasks/utils.sh
 check_param RUBY_VERSION
 
+cleanup() {
+  echo "Cleaning up"
+
+  if [ "$DB" = "mysql" ]; then
+    sudo service mysql stop
+  fi
+}
+
+trap cleanup EXIT
+
 echo "Starting $DB..."
 case "$DB" in
   mysql)
@@ -56,7 +66,3 @@ export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/go
 bundle install --local
 bundle exec rake --trace spec:unit
-
-if [ "$DB" = "mysql" ]; then
-  sudo service mysql stop
-fi
