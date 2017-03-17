@@ -15,3 +15,4 @@ RUN echo /tmp /tmp/ubuntu-chroot/tmp none rbind 0 0 >> /etc/fstab
 RUN echo /var/lib /tmp/ubuntu-chroot/var/lib none rbind 0 0 >> /etc/fstab
 
 ENV SHELLOUT_CHROOT_DIR /tmp/ubuntu-chroot
+ENV LC_ALL C
