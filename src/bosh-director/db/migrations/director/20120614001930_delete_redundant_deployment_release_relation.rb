@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 Sequel.migration do
   up do
     drop_table :deployments_releases

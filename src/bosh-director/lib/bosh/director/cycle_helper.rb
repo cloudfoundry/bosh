@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director::CycleHelper
 
   def self.check_for_cycle(vertices, options = {}, &block)
