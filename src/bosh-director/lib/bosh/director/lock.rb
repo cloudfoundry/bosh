@@ -19,6 +19,9 @@ module Bosh::Director
       @expiration = opts[:expiration] || 240.0
       @logger = Config.logger
       @refresh_thread = nil
+      @deployment_name = opts.fetch(:deployment_name, nil)
+      @event_manager = Api::EventManager.new(Config.record_events)
+      @unlock = false
     end
 
     # Acquire a lock.
@@ -30,21 +33,42 @@ module Bosh::Director
       acquire
 
       @refresh_thread = Thread.new do
-        sleep_interval = [1.0, @expiration/2].max
+        renew_interval = [1.0, @expiration/2].max
         begin
-          stopped = false
-          until stopped
-            @logger.debug("Renewing lock: #@name")
-            lock_expiration = Time.now.to_f + @expiration + 1
+          next_renew = Time.now.to_f + renew_interval
 
-            if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
-              stopped = true
+          until @unlock
+            now = Time.now.to_f
+
+            if next_renew < now
+              @logger.debug("Renewing lock: #@name")
+              lock_expiration = now + @expiration + 1
+              next_renew = now + renew_interval
+
+              if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
+                break
+              end
             end
 
-            sleep(sleep_interval) unless stopped
+            sleep(0.2)
           end
         ensure
-          @logger.debug("Lock renewal thread exiting")
+          if !@unlock
+            Models::Event.create(
+              user: Config.current_job.username,
+              action: 'lost',
+              object_type: 'lock',
+              object_name: @name,
+              task: Config.current_job.task_id,
+              deployment: @deployment_name,
+              error: 'Lock renewal thread exiting',
+              timestamp: Time.now,
+            )
+
+            Models::Task[Config.current_job.task_id].update(state: 'cancelling')
+
+            @logger.debug('Lock renewal thread exiting')
+          end
         end
       end
 
@@ -61,14 +85,26 @@ module Bosh::Director
     #
     # @return [void]
     def release
-      @refresh_thread.exit if @refresh_thread
+      @unlock = true
       delete
+
+      @refresh_thread.join if @refresh_thread
+      @event_manager.create_event(
+          {
+              user: Config.current_job.username,
+              action: 'release',
+              object_type: 'lock',
+              object_name: @name,
+              task: Config.current_job.task_id,
+              deployment: @deployment_name,
+          }
+      )
     end
 
     private
 
     def acquire
-      @logger.debug("Acquiring lock: #@name")
+      @logger.debug("Acquiring lock: #{@name}")
       started = Time.now
 
       lock_expiration = Time.now.to_f + @expiration + 1
@@ -78,7 +114,7 @@ module Bosh::Director
           Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
           acquired = true
         rescue Sequel::DatabaseError
-          affected_locks = Models::Lock.where(name: @name).where{ expired_at < Time.now }.update(uid: @uid, expired_at: Time.at(lock_expiration))
+          affected_locks = Models::Lock.where(name: @name).where { expired_at < Time.now }.update(uid: @uid, expired_at: Time.at(lock_expiration))
           if affected_locks == 1
             acquired = true
           end
@@ -92,7 +128,18 @@ module Bosh::Director
       end
 
       @lock_expiration = lock_expiration
-      @logger.debug("Acquired lock: #@name")
+      @logger.debug("Acquired lock: #{@name}")
+
+      @event_manager.create_event(
+          {
+              user: Config.current_job.username,
+              action: 'acquire',
+              object_type: 'lock',
+              object_name: @name,
+              task: Config.current_job.task_id,
+              deployment: @deployment_name,
+          }
+      )
     end
 
 

@@ -513,14 +513,7 @@ module Bosh::Director
       end
     end
 
-    # mysql2 seems to have an issue when starting a thread inside a transaction
-    # after the thread exits, the connection isn't immediately reaped and when
-    # the example wrapper tries to disconnect from the database it sees
-    # "connection is still in use <Thread .... dead>". Additionally, when debugging
-    # we didn't see any of the transaction data inside of the thread suggesting the
-    # thread's connection was outside the scope of the transaction.
-    # so... we're ignoring these tests which rely on that behavior...
-    describe 'rebasing release', :if => ENV['DB'] != 'mysql' do
+    describe 'rebasing release' do
       let(:manifest) do
         {
           'name' => 'appcloud',
@@ -770,6 +763,10 @@ module Bosh::Director
       end
 
       it 'performs the rebase if same release is being rebased twice' do
+        allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
+        task = Models::Task.make(state: 'processing')
+        allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
+
         Config.configure(SpecHelper.spec_get_director_config)
         @job.perform
 

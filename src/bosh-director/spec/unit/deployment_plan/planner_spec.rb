@@ -91,6 +91,9 @@ module Bosh::Director
           })
           planner.cloud_planner = cloud_planner
           allow(Config).to receive(:dns_enabled?).and_return(false)
+          allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
+          task = Models::Task.make(state: 'processing')
+          allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
         end
 
         it 'should parse recreate' do
@@ -220,8 +223,7 @@ module Bosh::Director
           end
         end
 
-        # '@todo mysql2 seems to have issues with transactions and threads (i.e. example is wrapped in transaction, but locks are threaded in the test)'
-        describe '#persist_updates!', :if => ENV['DB'] != "mysql" do
+        describe '#persist_updates!' do
           before do
             setup_global_config_and_stubbing
           end

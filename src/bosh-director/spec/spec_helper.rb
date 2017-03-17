@@ -173,7 +173,13 @@ module SpecHelper
     end
 
     def reset_database(example)
-      Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
+      if example.metadata[:truncation]
+        example.run
+      else
+        Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) do
+          example.run
+        end
+      end
 
       if Bosh::Director::Config.db != nil; then
         Bosh::Director::Config.db.disconnect
