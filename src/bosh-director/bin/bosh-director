@@ -34,4 +34,5 @@ end
 end
 
 Bosh::Director::Config.logger.info("Listening on port #{config.port}")
+Bosh::Director::Config.log_director_start
 thin_server.start!
