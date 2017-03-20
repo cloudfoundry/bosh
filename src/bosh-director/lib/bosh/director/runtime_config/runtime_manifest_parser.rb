@@ -18,7 +18,7 @@ module Bosh::Director
       end
 
       def parse_addons(runtime_config_releases, runtime_manifest)
-        Bosh::Director::Addon::AddonParser.new(runtime_config_releases,runtime_manifest).parse
+        Addon::Parser.new(runtime_config_releases,runtime_manifest).parse
       end
     end
   end

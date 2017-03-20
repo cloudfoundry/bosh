@@ -19,18 +19,18 @@ module Bosh::Director
         expect { subject.parse(runtime_manifest) }.to raise_error(Bosh::Director::RuntimeInvalidReleaseVersion)
       end
 
-      it "raises RuntimeReleaseNotListedInReleases if addon job's release is not listed in releases" do
+      it "raises AddonReleaseNotListedInReleases if addon job's release is not listed in releases" do
         runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
         runtime_manifest['releases'][0]['name'] = 'weird_name'
-        expect { subject.parse(runtime_manifest) }.to raise_error(ReleaseNotListedInReleases)
+        expect { subject.parse(runtime_manifest) }.to raise_error(AddonReleaseNotListedInReleases)
       end
 
       context 'when runtime manifest does not have an include or exclude section' do
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :include)
-          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :exclude)
+          expect(Addon::Filter).to receive(:new).with([], [], [], :include)
+          expect(Addon::Filter).to receive(:new).with([], [], [], :exclude)
 
           result = subject.parse(runtime_manifest)
 
@@ -64,8 +64,8 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], ['dep1'], [], :include)
-            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :exclude)
+            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], :include)
+            expect(Addon::Filter).to receive(:new).with([], [], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
@@ -88,8 +88,8 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :include)
-            expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], ['dep1'], [], :exclude)
+            expect(Addon::Filter).to receive(:new).with([], [], [], :include)
+            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
@@ -108,7 +108,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(IncompleteFilterJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(AddonIncompleteFilterJobSection)
             end
           end
 
@@ -124,7 +124,7 @@ module Bosh::Director
               runtime_manifest
             end
             it 'throws an error' do
-              expect { subject.parse(runtime_manifest) }.to raise_error(IncompleteFilterJobSection)
+              expect { subject.parse(runtime_manifest) }.to raise_error(AddonIncompleteFilterJobSection)
             end
           end
         end

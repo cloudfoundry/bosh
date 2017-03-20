@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   module Addon
-    describe AddonParser do
+    describe Parser do
       subject(:parser) { described_class.new(releases, manifest) }
       let(:manifest) {
         {
@@ -26,14 +26,14 @@ module Bosh::Director
         context 'when no release in release section' do
           let(:releases) { [] }
           it 'returns an error' do
-            expect { parser.parse() }.to raise_error(Bosh::Director::ReleaseNotListedInReleases,
-              "Manifest specifies job 'dummy_with_properties' which is defined in 'dummy2', but 'dummy2' is not listed in the releases section.")
+            expect { parser.parse() }.to raise_error(Bosh::Director::AddonReleaseNotListedInReleases,
+              "Manifest specifies job 'dummy_with_properties' which is defined in 'dummy2', but 'dummy2' is not listed in the runtime releases section.")
           end
         end
 
         it 'parses manifest addon section to create addon object' do
-          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :include)
-          expect(Bosh::Director::Addon::AddonFilter).to receive(:new).with([], [], [], :exclude)
+          expect(Bosh::Director::Addon::Filter).to receive(:new).with([], [], [], :include)
+          expect(Bosh::Director::Addon::Filter).to receive(:new).with([], [], [], :exclude)
 
           result = parser.parse()
 

@@ -554,7 +554,7 @@ module Bosh::Director
             ]
             manifest_hash.merge!('releases' => [{'name' => 'dummy2', 'version' => '2'}]).merge!('addons' => addon_spec)
 
-            expect{ parsed_deployment.addons }.to raise_error Bosh::Director::DeploymentFilterNotAllowed
+            expect{ parsed_deployment.addons }.to raise_error Bosh::Director::AddonDeploymentFilterNotAllowed
           end
         end
       end

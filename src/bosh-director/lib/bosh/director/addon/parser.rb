@@ -1,18 +1,18 @@
 module Bosh::Director
   module Addon
-    class AddonParser
+    class Parser
       include ValidationHelper
 
-      def initialize(releases, manifest, deployment_level=false)
+      def initialize(releases, manifest, addon_level = RUNTIME_LEVEL)
         @releases = releases
         @manifest = manifest
-        @deployment_level = deployment_level
+        @addon_level = addon_level
       end
 
       def parse
         raw_addons = safe_property(@manifest, 'addons', :class => Array, :default => [])
         raw_addons.inject([]) do |parsed_addons, addon_hash|
-          parsed_addon = Bosh::Director::Addon::Addon.parse(addon_hash, @deployment_level)
+          parsed_addon = Bosh::Director::Addon::Addon.parse(addon_hash, @addon_level)
           validate(parsed_addon)
           parsed_addons << parsed_addon
         end
@@ -23,8 +23,8 @@ module Bosh::Director
       def validate(addon)
         addon.jobs.each do |addon_job|
           if release_not_listed_in_release_spec(addon_job)
-            raise ReleaseNotListedInReleases,
-              "Manifest specifies job '#{addon_job['name']}' which is defined in '#{addon_job['release']}', but '#{addon_job['release']}' is not listed in the releases section."
+            raise AddonReleaseNotListedInReleases,
+              "Manifest specifies job '#{addon_job['name']}' which is defined in '#{addon_job['release']}', but '#{addon_job['release']}' is not listed in the #{@addon_level} releases section."
           end
         end
       end

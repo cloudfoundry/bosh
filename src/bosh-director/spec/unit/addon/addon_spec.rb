@@ -42,8 +42,8 @@ module Bosh::Director
         planner
       end
 
-      let(:includes) { AddonFilter.parse(include_spec, :include) }
-      let(:excludes) { AddonFilter.parse(exclude_spec, :exclude) }
+      let(:includes) { Filter.parse(include_spec, :include) }
+      let(:excludes) { Filter.parse(exclude_spec, :exclude) }
 
       let(:exclude_spec) { nil }
 
@@ -155,8 +155,8 @@ module Bosh::Director
           } }
 
           it 'returns addon' do
-            expect(AddonFilter).to receive(:parse).with(include_hash, :include, false)
-            expect(AddonFilter).to receive(:parse).with(nil, :exclude, false)
+            expect(Filter).to receive(:parse).with(include_hash, :include, RUNTIME_LEVEL)
+            expect(Filter).to receive(:parse).with(nil, :exclude, RUNTIME_LEVEL)
             addon = Addon.parse(addon_hash)
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(2)

@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       def parse_addons
-        @deployment.addons = Bosh::Director::Addon::AddonParser.new(@deployment.releases, @deployment_manifest, true).parse
+        @deployment.addons = Addon::Parser.new(@deployment.releases, @deployment_manifest, Addon::DEPLOYMENT_LEVEL).parse
       end
 
       def parse_releases
