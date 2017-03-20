@@ -201,12 +201,20 @@ module Bosh::Director
     def create_or_delete_local_dns_record(instance_model)
       @logger.debug('Creating local dns records')
 
-      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip, network_name|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
         deleted_record = Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
         insert_tombstone unless deleted_record == 0
         begin
-          Models::LocalDnsRecord.create(:name => name_uuid, :ip => ip, :instance_id => instance_model.id )
+          Models::LocalDnsRecord.create(
+            :name => name_uuid,
+            :ip => ip,
+            :instance_id => instance_model.id,
+            :az => instance_model.availability_zone,
+            :network => network_name,
+            :deployment => instance_model.deployment.name,
+            :instance_group => instance_model.job
+          )
         rescue Sequel::UniqueConstraintViolation
           @logger.info('Ignoring duplicate DNS record for performance reason')
         end
@@ -215,7 +223,15 @@ module Bosh::Director
           deleted_record = Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
           insert_tombstone unless deleted_record == 0
           begin
-            Models::LocalDnsRecord.create(:name => name_index, :ip => ip, :instance_id => instance_model.id)
+            Models::LocalDnsRecord.create(
+              :name => name_index,
+              :ip => ip,
+              :instance_id => instance_model.id,
+              :az => instance_model.availability_zone,
+              :network => network_name,
+              :deployment => instance_model.deployment.name,
+              :instance_group => instance_model.job,
+            )
           rescue Sequel::UniqueConstraintViolation
             @logger.info('Ignoring duplicate DNS record for performance reason')
           end
@@ -243,7 +259,7 @@ module Bosh::Director
             name_rest = '.' + Canonicalizer.canonicalize(spec['job']['name']) + '.' + network_name + '.' + Canonicalizer.canonicalize(spec['deployment']) + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
-            block.call(name_uuid, name_index, ip)
+            block.call(name_uuid, name_index, ip, network_name)
           end
         end
       end
