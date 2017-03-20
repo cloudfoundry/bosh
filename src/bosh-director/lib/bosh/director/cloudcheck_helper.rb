@@ -60,7 +60,8 @@ module Bosh::Director
       vm_creator(job_renderer).create_for_instance_plan(
         instance_plan_to_create,
         Array(instance_model.managed_persistent_disk_cid),
-        instance_plan_to_create.tags
+        instance_plan_to_create.tags,
+        true
       )
 
       dns_manager = DnsManagerProvider.create

@@ -11,8 +11,8 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_vm_metadata(instance, metadata)
-      cloud = cloud_factory.for_availability_zone!(instance.availability_zone)
+    def update_vm_metadata(instance, metadata, factory = cloud_factory)
+      cloud = factory.for_availability_zone!(instance.availability_zone)
 
       if cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)

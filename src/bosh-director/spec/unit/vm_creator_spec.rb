@@ -184,7 +184,47 @@ module Bosh
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
-        expect(cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
+        allow(cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).and_return(cloud)
+      end
+
+      context 'with existing cloud config' do
+        let(:non_default_cloud_factory) { instance_double(CloudFactory) }
+        let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'something') }
+        let(:stemcell) do
+          stemcell_model
+          stemcell_model_cpi
+          stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
+          stemcell.add_stemcell_models
+          stemcell
+        end
+
+        before do
+          expect(non_default_cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
+        end
+
+        it 'uses the outdated cloud config from the existing deployment' do
+          expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+          expect(non_default_cloud_factory).to receive(:lookup_cpi_for_az).and_return 'something'
+          expect(cloud).to receive(:create_vm).with(
+            kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
+          ).and_return('new-vm-cid')
+
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags, true)
+        end
+
+        context 'when cloud-config/azs are not used' do
+          let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
+
+          it 'uses any cloud config if availability zones are not used, even though requested' do
+            expect(non_default_cloud_factory).to receive(:lookup_cpi_for_az).and_return ''
+            expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
+            ).and_return('new-vm-cid')
+
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags, true)
+          end
+        end
       end
 
       it 'should create a vm' do

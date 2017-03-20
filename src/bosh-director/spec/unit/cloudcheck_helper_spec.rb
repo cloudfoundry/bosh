@@ -175,10 +175,11 @@ module Bosh::Director
               expect(instance.vm_env).to eq({'key1' => 'value1'})
             end
 
-            expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
+            expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan,_,_,use_existing|
               expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
               expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
               expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
+              expect(use_existing).to eq(true)
             end
 
             expect(rendered_templates_persister).to receive(:persist)
