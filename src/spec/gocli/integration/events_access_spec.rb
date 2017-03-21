@@ -29,27 +29,27 @@ describe 'events endpoint access', type: :integration do
     output, exit_code = run_events_cmd(team_client_read_env)
 
     expect(exit_code).to eq(0)
-    expect(output).to include '23 events'
+    expect(output).to include '33 events'
   end
 
   it 'bosh.teams.X.admin should be able to see all events in the director' do
     output, exit_code = run_events_cmd(team_client_admin_env)
 
     expect(exit_code).to eq(0)
-    expect(output).to include '23 events'
+    expect(output).to include '33 events'
   end
 
   it 'bosh.X.admin should be able to see all events in the director' do
     output, exit_code = run_events_cmd(director_client_env)
 
     expect(exit_code).to eq(0)
-    expect(output).to include '23 events'
+    expect(output).to include '33 events'
   end
 
   it 'no-access should not be able to see all events in the director' do
     output, exit_code = run_events_cmd(no_access_client_env)
 
     expect(exit_code).to_not eq(0)
-    expect(output).to_not include '23 events'
+    expect(output).to_not include '33 events'
   end
 end

@@ -173,16 +173,26 @@ module SpecHelper
     end
 
     def reset_database(example)
-      Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
+      if example.metadata[:truncation]
+        example.run
+      else
+        Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) do
+          example.run
+        end
+      end
 
       if Bosh::Director::Config.db != nil; then
         Bosh::Director::Config.db.disconnect
       end
 
       @director_db_helper.truncate_db
+
+      # when truncating, we must be sure to trash the dns db. for everything else,
       # leaving this commented doesn't seem to impact our tests and
       # has the benefit of avoiding the extra time for shelling out
-      #@dns_db_helper.truncate_db
+      if example.metadata[:truncation]
+        @dns_db_helper.truncate_db
+      end
     end
   end
 end

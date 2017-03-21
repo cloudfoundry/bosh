@@ -10,7 +10,7 @@ module Bosh::Director
       end
       timeout = opts[:timeout] || 10
       Config.logger.info("Acquiring deployment lock on #{name}")
-      Lock.new("lock:deployment:#{name}", :timeout => timeout).lock { yield }
+      Lock.new("lock:deployment:#{name}", {:timeout => timeout, :deployment_name => name }).lock { yield }
     end
 
     def with_stemcell_lock(name, version, opts = {})
@@ -39,13 +39,13 @@ module Bosh::Director
       end
     end
 
-    def with_compile_lock(package_id, stemcell_id, opts = {})
+    def with_compile_lock(package_id, stemcell_id, deployment_name, opts = {})
       timeout = opts[:timeout] || 15 * 60 # 15 minutes
 
       Config.logger.info("Acquiring compile lock on " +
                              "#{package_id} #{stemcell_id}")
       Lock.new("lock:compile:#{package_id}:#{stemcell_id}",
-               :timeout => timeout).lock { yield }
+               { :timeout => timeout, :deployment_name => deployment_name } ).lock { yield }
     end
   end
 end

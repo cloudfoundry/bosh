@@ -91,6 +91,9 @@ module Bosh::Director
           })
           planner.cloud_planner = cloud_planner
           allow(Config).to receive(:dns_enabled?).and_return(false)
+          allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
+          task = Models::Task.make(state: 'processing')
+          allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
         end
 
         it 'should parse recreate' do
@@ -220,13 +223,12 @@ module Bosh::Director
           end
         end
 
-        # '@todo mysql2 seems to have issues with transactions and threads (i.e. example is wrapped in transaction, but locks are threaded in the test)'
-        describe '#persist_updates!', :if => ENV['DB'] != "mysql" do
+        describe '#persist_updates!' do
           before do
             setup_global_config_and_stubbing
           end
 
-          context 'given prior deployment with old release versions' do
+          context 'given prior deployment with old release versions', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
             let(:stale_release_version) do
               release = Bosh::Director::Models::Release.create(name: 'stale')
               Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
@@ -254,7 +256,7 @@ module Bosh::Director
               planner.bind_models
             end
 
-            it 'updates the release version on the deployment to be the ones from the provided manifest' do
+            it 'updates the release version on the deployment to be the ones from the provided manifest', ENV do
               expect(deployment_model.release_versions).to include(stale_release_version)
               planner.persist_updates!
               expect(deployment_model.release_versions).to_not include(stale_release_version)

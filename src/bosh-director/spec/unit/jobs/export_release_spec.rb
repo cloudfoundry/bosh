@@ -143,7 +143,7 @@ module Bosh::Director
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
+            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |_, job, config, _, _|
               expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
               expect(job.first.release.name).to eq(release_name)
               expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
@@ -181,7 +181,7 @@ module Bosh::Director
             end
 
             it 'succeeds' do
-              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
+              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |_, job, config, _, _|
                 expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
                 expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
               end.and_return(package_compile_step)
