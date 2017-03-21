@@ -4,7 +4,8 @@ module Bosh::Director
   class Lock
 
     # Error returned when Lock could not be acquired.
-    class TimeoutError < StandardError; end
+    class TimeoutError < StandardError;
+    end
 
     # Creates new lock with the given name.
     #
@@ -39,20 +40,18 @@ module Bosh::Director
         renew_interval = [1.0, @expiration/2].max
 
         begin
-          until false
-            @refresh_mutex.synchronize {
-              if @unlock
-                break
-              end
-
+          done_refreshing = false
+          until @unlock || done_refreshing
+            @refresh_mutex.synchronize do
               @refresh_signal.wait(@refresh_mutex, renew_interval)
-            }
+              break if @unlock
 
-            @logger.debug("Renewing lock: #@name")
-            lock_expiration = Time.now.to_f + @expiration + 1
+              @logger.debug("Renewing lock: #@name")
+              lock_expiration = Time.now.to_f + @expiration + 1
 
-            if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
-              break
+              if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
+                done_refreshing = true
+              end
             end
           end
         ensure
@@ -91,21 +90,22 @@ module Bosh::Director
       @refresh_mutex.synchronize {
         @unlock = true
 
+        delete
+
         @refresh_signal.signal
       }
 
-      delete
 
       @refresh_thread.join if @refresh_thread
       @event_manager.create_event(
-          {
-              user: Config.current_job.username,
-              action: 'release',
-              object_type: 'lock',
-              object_name: @name,
-              task: @task_id,
-              deployment: @deployment_name,
-          }
+        {
+          user: Config.current_job.username,
+          action: 'release',
+          object_type: 'lock',
+          object_name: @name,
+          task: @task_id,
+          deployment: @deployment_name,
+        }
       )
     end
 
@@ -139,14 +139,14 @@ module Bosh::Director
       @logger.debug("Acquired lock: #{@name}")
 
       @event_manager.create_event(
-          {
-              user: Config.current_job.username,
-              action: 'acquire',
-              object_type: 'lock',
-              object_name: @name,
-              task: @task_id,
-              deployment: @deployment_name,
-          }
+        {
+          user: Config.current_job.username,
+          action: 'acquire',
+          object_type: 'lock',
+          object_name: @name,
+          task: @task_id,
+          deployment: @deployment_name,
+        }
       )
     end
 

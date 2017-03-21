@@ -186,9 +186,13 @@ module SpecHelper
       end
 
       @director_db_helper.truncate_db
+
+      # when truncating, we must be sure to trash the dns db. for everything else,
       # leaving this commented doesn't seem to impact our tests and
       # has the benefit of avoiding the extra time for shelling out
-      #@dns_db_helper.truncate_db
+      if example.metadata[:truncation]
+        @dns_db_helper.truncate_db
+      end
     end
   end
 end
