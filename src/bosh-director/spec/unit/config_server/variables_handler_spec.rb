@@ -65,6 +65,8 @@ module Bosh::Director::ConfigServer
     context '#remove_unused_variable_sets' do
       before do
         allow(deployment).to receive(:variable_sets).and_return([variable_set, variable_set2, variable_set3])
+        allow(deployment).to receive(:current_variable_set).and_return(variable_set)
+
         allow(ig1).to receive(:needed_instance_plans).and_return([ip1, ip2])
         allow(ig2).to receive(:needed_instance_plans).and_return([ip3])
 

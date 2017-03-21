@@ -124,6 +124,8 @@ module Bosh::Director::ConfigServer
           saved_variable_mapping = Bosh::Director::Models::Variable[variable_set_id: variable_set.id, variable_name: name_root]
 
           if saved_variable_mapping.nil?
+            raise Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{name_root} was previously defined, but does not exist on the director" unless variable_set.writable
+
             fetched_variable_from_cfg_srv = get_variable_by_name(name)
 
             begin
@@ -232,6 +234,8 @@ module Bosh::Director::ConfigServer
         'type' => type,
         'parameters' => parameters
       }
+
+      raise Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{get_name_root(name)} was previously defined, but does not exist on the director" unless variable_set.writable
 
       response = @config_server_http_client.post(request_body)
       unless response.kind_of? Net::HTTPSuccess

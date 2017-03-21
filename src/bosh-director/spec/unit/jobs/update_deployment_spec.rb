@@ -49,6 +49,7 @@ module Bosh::Director
             model: deployment_model
           )
         end
+        let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
 
         let(:mock_manifest) do
           Manifest.new(YAML.load(manifest_content), nil, nil)
@@ -56,7 +57,7 @@ module Bosh::Director
 
         before do
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
-          allow(job).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make(deployment: deployment_model))
+          allow(job).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -67,7 +68,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_template_spec_properties) { |properties, _| properties }
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
-          allow(deployment_model).to receive(:current_variables_set).and_return(1)
+          allow(deployment_model).to receive(:current_variables_set).and_return(variable_set)
         end
 
         context 'when variables need to be interpolated from config server' do
@@ -87,6 +88,7 @@ module Bosh::Director
             let(:fixed_time) { Time.now }
 
             before do
+              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
               expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
@@ -94,10 +96,7 @@ module Bosh::Director
             end
 
             it 'should create a new variable set for the deployment and mark variable sets' do
-              deployment_model = Models::Deployment.make
-
-              expect(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-              expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time})
+              expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time, :writable => true})
               job.perform
             end
           end
@@ -128,6 +127,8 @@ module Bosh::Director
         end
 
         context 'when all steps complete' do
+          let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet) }
+
           before do
             expect(notifier).to receive(:send_start_event).ordered
             expect(update_step).to receive(:perform).ordered
@@ -264,7 +265,6 @@ module Bosh::Director
 
           context 'when there are releases and stemcells' do
             before do
-              deployment_model = Models::Deployment.make
               deployment_stemcell = Models::Stemcell.make(name: 'stemcell', version: 'version-1')
               deployment_release = Models::Release.make(name: 'release')
               deployment_release_version = Models::ReleaseVersion.make(version: 'version-1')
@@ -307,6 +307,25 @@ module Bosh::Director
               expect(Models::Event.order(:id).last.action).to eq('update')
             end
           end
+
+          context 'when option deploy is set' do
+            let(:options) { {'deploy' => true} }
+            before do
+              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+              allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
+              allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+
+            end
+            it 'should mark variable_set.writable to false' do
+              allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
+              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
+
+              expect(variable_set_1).to receive(:update).with({:writable => false})
+
+              job.perform
+            end
+          end
+
         end
 
         context 'when rendering templates fails' do
@@ -325,6 +344,7 @@ Unable to render instance groups for deployment. Errors are:
       - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
             EXPECTED
           end
+          let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet) }
 
           let(:error_msgs) do
             <<-ERROR_MSGS.strip
@@ -354,6 +374,21 @@ Unable to render instance groups for deployment. Errors are:
             }.to raise_error { |error|
               expect(error.message).to eq(expected_result)
             }
+          end
+
+          context 'when option deploy is set' do
+            let(:options) { {'deploy' => true} }
+            it 'should mark variable_set.writable to false' do
+              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+              allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
+
+              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
+              expect(variable_set_1).to receive(:update).with({:writable => false})
+
+              expect {
+                job.perform
+              }.to raise_error
+            end
           end
 
           context 'errand variable versioning fails' do

@@ -28,7 +28,7 @@ module Bosh::Director::ConfigServer
 
     before do
       deployment_model = Bosh::Director::Models::Deployment.make(deployment_attrs)
-      Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model)
+      Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model, writable: true)
 
       allow(logger).to receive(:info)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
@@ -151,6 +151,7 @@ module Bosh::Director::ConfigServer
               allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
               allow(variable_set).to receive(:add_variable).and_raise(Sequel::UniqueConstraintViolation)
               allow(variable_set).to receive(:id)
+              allow(variable_set).to receive(:writable).and_return(true)
               allow(variable).to receive(:variable_id).and_return(variable_id)
               allow(variable).to receive(:variable_name).and_return(variable_name)
 
@@ -162,6 +163,33 @@ module Bosh::Director::ConfigServer
 
               expect(http_client).to receive(:get_by_id).with(variable_id)
               client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
+            end
+          end
+
+          context 'but variable set is not writable' do
+            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
+            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:variable) { instance_double(Bosh::Director::Models::Variable) }
+
+            before do
+              allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
+              allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
+              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
+              allow(variable_set).to receive(:writable).and_return(false)
+              allow(variable_set).to receive(:id)
+
+              allow(Bosh::Director::Models::Variable).to receive(:[]).and_return(nil, variable)
+            end
+
+            it 'should raise an error' do
+              models = Bosh::Director::Models::Variable.all
+
+              expect(models.length).to eq(0)
+              expect{
+                client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
+              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, 'Variable /boo was previously defined, but does not exist on the director')
+              expect(models.length).to eq(0)
             end
           end
         end
@@ -806,6 +834,31 @@ module Bosh::Director::ConfigServer
                       end
                     end
                   end
+
+                  context 'but variable set is not writable' do
+                    let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
+                    let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+                    let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+                    before do
+                      allow(http_client).to receive(:post).and_return(success_post_response)
+                      allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
+                      allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
+                      allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
+                      allow(variable_set).to receive(:writable).and_return(false)
+                    end
+
+                    it 'should raise an error' do
+                      models = Bosh::Director::Models::Variable.all
+
+                      expect(models.length).to eq(0)
+                      expect{
+                        client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+                      }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{prepend_namespace('my_smurf')} was previously defined, but does not exist on the director")
+                      expect(models.length).to eq(0)
+                    end
+                  end
+
                 end
 
                 context 'when the release spec property does NOT define a type' do
@@ -1080,6 +1133,7 @@ module Bosh::Director::ConfigServer
 
 
           end
+
           context 'when config server throws an error while generating' do
             before do
               allow(http_client).to receive(:post).with(
@@ -1134,6 +1188,31 @@ module Bosh::Director::ConfigServer
                    )
             end
           end
+
+          context 'but variable set is not writable' do
+            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
+            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+            before do
+              allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
+              allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
+              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
+              allow(variable_set).to receive(:writable).and_return(false)
+            end
+
+            it 'should raise an error' do
+              models = Bosh::Director::Models::Variable.all
+
+              expect(models.length).to eq(0)
+              expect{
+                client.generate_values(variables_obj, deployment_name)
+              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{prepend_namespace('placeholder_a')} was previously defined, but does not exist on the director")
+              expect(models.length).to eq(0)
+            end
+          end
+
+
         end
       end
     end
