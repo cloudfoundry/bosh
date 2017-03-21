@@ -165,7 +165,7 @@ module Bosh::Director
         }.to change {
           Bosh::Director::Models::Event.count }.from(0).to(4)
 
-        event_1 = Bosh::Director::Models::Event.first
+        event_1 = Bosh::Director::Models::Event.order(:id).first
         expect(event_1.user).to eq('user')
         expect(event_1.action).to eq('create')
         expect(event_1.object_type).to eq('instance')
