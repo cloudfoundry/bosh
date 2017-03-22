@@ -118,12 +118,15 @@ module Bosh::Spec
     end
 
     def get_state
-      spec_path = File.join(@agent_base_dir, 'bosh', 'spec.json')
-      Yajl::Parser.parse(File.read(spec_path))
+      Yajl::Parser.parse(read_file(File.join('bosh', 'spec.json')))
     end
 
     def read_etc_hosts
       read_file(File.join('bosh', 'etc_hosts'))
+    end
+
+    def dns_records
+      Yajl::Parser.parse(read_file(File.join('instance', 'dns', 'records.json')))
     end
 
     private

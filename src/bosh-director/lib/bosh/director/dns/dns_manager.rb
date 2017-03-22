@@ -203,43 +203,36 @@ module Bosh::Director
 
       with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip, network_name|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
-        deleted_record = Models::LocalDnsRecord.where(:name => name_uuid, :instance_id => instance_model.id ).exclude(:ip => ip.to_s).delete
-        insert_tombstone unless deleted_record == 0
-        begin
-          Models::LocalDnsRecord.create(
-            :name => name_uuid,
-            :ip => ip,
-            :instance_id => instance_model.id,
-            :az => instance_model.availability_zone,
-            :network => network_name,
-            :deployment => instance_model.deployment.name,
-            :instance_group => instance_model.job
-          )
-        rescue Sequel::UniqueConstraintViolation
-          @logger.info('Ignoring duplicate DNS record for performance reason')
-        end
+        insert_local_dns_record(instance_model, ip, name_uuid, network_name)
         if Config.local_dns_include_index?
           @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-          deleted_record = Models::LocalDnsRecord.where(:name => name_index, :instance_id => instance_model.id).exclude(:ip => ip.to_s).delete
-          insert_tombstone unless deleted_record == 0
-          begin
-            Models::LocalDnsRecord.create(
-              :name => name_index,
-              :ip => ip,
-              :instance_id => instance_model.id,
-              :az => instance_model.availability_zone,
-              :network => network_name,
-              :deployment => instance_model.deployment.name,
-              :instance_group => instance_model.job,
-            )
-          rescue Sequel::UniqueConstraintViolation
-            @logger.info('Ignoring duplicate DNS record for performance reason')
-          end
+          insert_local_dns_record(instance_model, ip, name_index, network_name)
         end
       end
     end
 
     private
+
+    def insert_local_dns_record(instance_model, ip, name, network_name)
+      deleted_record = Models::LocalDnsRecord
+                         .where(:name => name, :instance_id => instance_model.id)
+                         .exclude(:ip => ip.to_s)
+                         .delete
+      insert_tombstone unless deleted_record == 0
+      begin
+        Models::LocalDnsRecord.create(
+          :name => name,
+          :ip => ip,
+          :instance => instance_model,
+          :az => instance_model.availability_zone,
+          :network => network_name,
+          :deployment => instance_model.deployment.name,
+          :instance_group => instance_model.job
+        )
+      rescue Sequel::UniqueConstraintViolation
+        @logger.info('Ignoring duplicate DNS record for performance reason')
+      end
+    end
 
     def insert_tombstone
       Models::LocalDnsRecord.create(:name => "#{SecureRandom.uuid}-tombstone", :ip => SecureRandom.uuid)

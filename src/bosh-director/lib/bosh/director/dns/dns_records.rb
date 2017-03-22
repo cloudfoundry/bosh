@@ -1,14 +1,22 @@
 module Bosh::Director
   class DnsRecords
-    attr_reader :records, :version
 
-    def initialize(records = [], version = 0)
-      @records = records
+    attr_reader :version
+
+    def initialize(version = 0)
       @version = version
+      @record_keys = ['id', 'instance_group', 'az', 'network', 'deployment', 'ip']
+      @record_infos = []
+      @records = []
+    end
+
+    def add_record(instance_id, instance_group_name, az_name, network_name, deployment_name, ip, fqdn)
+      @records << [ip, fqdn]
+      @record_infos << [instance_id, instance_group_name, az_name, network_name, deployment_name, ip]
     end
 
     def to_json
-      {:records => @records, :version => @version}.to_json
+      {records: @records, version: @version, record_keys: @record_keys, record_infos: @record_infos}.to_json
     end
   end
 end

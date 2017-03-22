@@ -15,12 +15,19 @@ module Bosh::Director::Models
 
     def info
       instance_info = "#{self.instance.deployment.name}.#{self.instance.job}/#{self.instance.index}"
-      formatted_ip = NetAddr::CIDR.create(self.address).ip
       "#{instance_info} - #{self.network_name} - #{formatted_ip} (#{type})"
+    end
+
+    def formatted_ip
+      NetAddr::CIDR.create(self.address).ip
     end
 
     def type
       self.static ? 'static' : 'dynamic'
+    end
+
+    def to_s
+      info
     end
   end
 end
