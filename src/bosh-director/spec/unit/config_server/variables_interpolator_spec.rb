@@ -296,11 +296,20 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
       context 'when the properties of a link is present' do
         it 'interpolates the hash given to it' do
-          expect(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', anything).and_return(interpolated_link_1_properties)
-          expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_2', anything).and_return(interpolated_link_2_properties)
+          expect(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', nil).and_return(interpolated_link_1_properties)
+          expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_2', nil).and_return(interpolated_link_2_properties)
           result = subject.interpolate_link_spec_properties(links_spec)
           expect(result).to eq(interpolated_links_spec)
           expect(result).to_not equal(interpolated_links_spec)
+        end
+
+        context 'when an variable set is provided' do
+          let(:variable_set){ instance_double(Bosh::Director::Models::VariableSet)}
+          it 'it calls interpolate with the provided variable_set' do
+            expect(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', variable_set).and_return(interpolated_link_1_properties)
+            expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_2', variable_set).and_return(interpolated_link_2_properties)
+            result = subject.interpolate_link_spec_properties(links_spec, variable_set)
+          end
         end
       end
 

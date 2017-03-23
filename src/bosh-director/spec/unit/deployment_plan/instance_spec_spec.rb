@@ -54,7 +54,12 @@ module Bosh::Director::DeploymentPlan
     end
     let(:index) { 0 }
     let(:instance_state) { {} }
-    let(:instance) { Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger) }
+    let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:instance) {
+      instance = Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
+      instance.variable_set = variable_set
+      instance
+    }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
@@ -139,10 +144,6 @@ module Bosh::Director::DeploymentPlan
         }
       end
 
-      before do
-        allow(instance).to receive(:variable_set)
-      end
-
       context 'links specs whitelisting' do
         let(:expected_links) do
           {'link_name' =>
@@ -219,8 +220,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'resolves properties and links properties' do
-          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', nil).and_return(resolved_properties)
-          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links).and_return(resolved_links)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', variable_set).and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links, variable_set).and_return(resolved_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)
