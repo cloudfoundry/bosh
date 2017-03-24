@@ -64,6 +64,7 @@ module Bosh::Clouds
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def info; invoke_cpi_method(__method__.to_s); end
 
     private
 

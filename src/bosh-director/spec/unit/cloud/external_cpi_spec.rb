@@ -356,4 +356,8 @@ describe Bosh::Clouds::ExternalCpi do
   describe '#ping' do
     it_calls_cpi_method(:ping)
   end
+
+  describe '#info' do
+    it_calls_cpi_method(:info)
+  end
 end

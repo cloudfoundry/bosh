@@ -151,6 +151,11 @@ module Bosh
         @vm_repo.exists?(vm_cid)
       end
 
+      def info
+        record_inputs(__method__, nil)
+        {stemcell_formats: ["dummy"]}
+      end
+
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
       def has_disk(disk_id)
         validate_and_record_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
@@ -367,7 +372,6 @@ module Bosh
       end
 
       private
-
       def allocate_ips(ips)
         ips.each do |ip|
           begin

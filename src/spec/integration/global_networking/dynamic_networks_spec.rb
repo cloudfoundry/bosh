@@ -37,14 +37,14 @@ describe 'dynamic networks', type: :integration do
     expect(original_ip).to be_truthy
 
     invocations = current_sandbox.cpi.invocations
-    expect(invocations[9].method_name).to eq('create_vm')
-    expect(invocations[9].inputs['networks']['a']['ip']).to be_nil
+    expect(invocations[10].method_name).to eq('create_vm')
+    expect(invocations[10].inputs['networks']['a']['ip']).to be_nil
 
     runner.run('recreate foobar 0')
 
     invocations = current_sandbox.cpi.invocations
-    expect(invocations[12].method_name).to eq('create_vm')
-    expect(invocations[12].inputs['networks']['a']['ip']).to match(original_ip)
+    expect(invocations[13].method_name).to eq('create_vm')
+    expect(invocations[13].inputs['networks']['a']['ip']).to match(original_ip)
 
     new_vms = director.vms
     expect(new_vms.size).to eq(1)
