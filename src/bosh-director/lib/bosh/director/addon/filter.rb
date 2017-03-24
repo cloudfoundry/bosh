@@ -1,6 +1,6 @@
 module Bosh::Director
-  module RuntimeConfig
-    class AddonFilter
+  module Addon
+    class Filter
 
       extend ValidationHelper
 
@@ -11,15 +11,18 @@ module Bosh::Director
         @filter_type = filter_type
       end
 
-      def self.parse(addon_filter_hash, filter_type)
+      def self.parse(addon_filter_hash, filter_type, addon_level =  RUNTIME_LEVEL)
         applicable_deployment_names = safe_property(addon_filter_hash, 'deployments', :class => Array, :default => [])
+        if addon_level == DEPLOYMENT_LEVEL && !applicable_deployment_names.empty?
+          raise AddonDeploymentFilterNotAllowed, 'Deployment filter is not allowed for deployment level addons.'
+        end
         applicable_jobs = safe_property(addon_filter_hash, 'jobs', :class => Array, :default => [])
         applicable_stemcells = safe_property(addon_filter_hash, 'stemcell', :class => Array, :default => [])
 
         #TODO throw an exception with all wrong jobs
-        verify_jobs_section(applicable_jobs, filter_type)
+        verify_jobs_section(applicable_jobs, filter_type, addon_level)
 
-        verify_stemcells_section(applicable_stemcells, filter_type)
+        verify_stemcells_section(applicable_stemcells, filter_type, addon_level)
 
         new(applicable_jobs, applicable_deployment_names, applicable_stemcells, filter_type)
       end
@@ -43,21 +46,21 @@ module Bosh::Director
 
       private
 
-      def self.verify_jobs_section(applicable_jobs, filter_type)
+      def self.verify_jobs_section(applicable_jobs, filter_type, addon_level =  RUNTIME_LEVEL)
         applicable_jobs.each do |job|
           name = safe_property(job, 'name', :class => String, :default => '')
           release = safe_property(job, 'release', :class => String, :default => '')
           if name.empty? || release.empty?
-            raise RuntimeIncompleteFilterJobSection.new("Job #{job} in runtime config's #{filter_type} section must " +
+            raise AddonIncompleteFilterJobSection.new("Job #{job} in #{addon_level} config's #{filter_type} section must " +
               'have both name and release.')
           end
         end
       end
 
-      def self.verify_stemcells_section(applicable_stemcells, filter_type)
+      def self.verify_stemcells_section(applicable_stemcells, filter_type, addon_level =  RUNTIME_LEVEL)
         applicable_stemcells.each do |stemcell|
           if safe_property(stemcell, 'os', :class => String, :default => '').empty?
-            raise RuntimeIncompleteFilterStemcellSection.new("Stemcell #{stemcell} in runtime config's #{filter_type} " +
+            raise AddonIncompleteFilterStemcellSection.new("Stemcell #{stemcell} in #{addon_level} config's #{filter_type} " +
               'section must have an os name.')
           end
         end

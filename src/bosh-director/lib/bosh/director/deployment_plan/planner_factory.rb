@@ -82,6 +82,11 @@ module Bosh
 
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_hybrid_manifest_hash, plan_options)
 
+          unless deployment.addons.empty?
+            deployment.addons.each do |addon|
+              addon.add_to_deployment(deployment)
+            end
+          end
           if runtime_config
             parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.interpolated_manifest_for_deployment(name))
 

@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe RuntimeConfig::AddonFilter do
+  describe Addon::Filter do
 
-    subject(:addon_filter) { RuntimeConfig::AddonFilter.parse(filter_spec, filter_type) }
+    subject(:addon_filter) { Addon::Filter.parse(filter_spec, filter_type) }
     let(:deployment_name) { 'dep1' }
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
