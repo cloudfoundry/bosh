@@ -26,7 +26,7 @@ describe 'cli: events', type: :integration do
     flexible_data = get_details(data, [ 'Action', 'Object type', 'Object ID', 'Dep', 'Inst', 'Context'])
 
     expect(stable_data).to all(include('Time' => /xxx xxx xx xx:xx:xx UTC xxxx|^$/))
-    expect(stable_data).to all(include('User' => /test|^$/))
+    expect(stable_data).to all(include('User' => /test|_director|^$/))
     expect(stable_data).to all(include('Task' => /[0-9]{1,3}|-|^$/))
     expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
@@ -64,6 +64,7 @@ describe 'cli: events', type: :integration do
       {'Action' => 'create', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'runtime-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'cloud-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'start', 'Object type' => 'director', 'Object ID' => 'deadbeef', 'Dep' => '-', 'Inst' => '-', 'Context' => 'version: 0.0.0'},
       {'Action' => 'release', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'acquire', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'release', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},

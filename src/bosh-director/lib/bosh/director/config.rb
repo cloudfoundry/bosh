@@ -196,6 +196,18 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
       end
 
+      def log_director_start
+        event_manager = Api::EventManager.new(record_events)
+        event_manager.create_event(
+          {
+            user: '_director',
+            action: 'start',
+            object_type: 'director',
+            object_name: uuid,
+            context: { version: @version }
+          })
+      end
+
       def canonized_dns_domain_name
         dns_config = Config.dns || {}
         Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
