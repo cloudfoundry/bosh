@@ -56,6 +56,8 @@ module Bosh::Director
 
       attr_reader :job_renderer
 
+      attr_accessor :addons
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -82,6 +84,8 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
+
+        @addons = []
 
         @logger = Config.logger
         @job_renderer = JobRenderer.create
