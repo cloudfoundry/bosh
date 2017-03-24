@@ -373,4 +373,22 @@ describe Bosh::Director::Config do
       end
     end
   end
+
+  context 'when director starts' do
+    it 'stores start event' do
+      allow(SecureRandom).to receive(:uuid).and_return('director-uuid')
+      described_class.configure(test_config)
+      expect {
+        described_class.log_director_start
+      }.to change {
+        Bosh::Director::Models::Event.count }.from(0).to(1)
+      expect(Bosh::Director::Models::Event.count).to eq(1)
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('director')
+      expect(event.object_name).to eq('director-uuid')
+      expect(event.context).to eq({'version' => '0.0.2'})
+    end
+  end
 end
