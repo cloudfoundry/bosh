@@ -36,6 +36,7 @@ describe 'CPI calls', type: :integration do
         'cloud_properties' => {},
         'networks' => {
           'a' => {
+            'type' => 'manual',
             'ip' => '192.168.1.3',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
@@ -99,6 +100,7 @@ describe 'CPI calls', type: :integration do
         'cloud_properties' => {},
         'networks' => {
           'a' => {
+            'type' => 'manual',
             'ip' => '192.168.1.3',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
@@ -163,6 +165,7 @@ describe 'CPI calls', type: :integration do
         'cloud_properties' => {},
         'networks' => {
           'a' => {
+            'type' => 'manual',
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
             'default' => ['dns', 'gateway'],
@@ -246,6 +249,7 @@ describe 'CPI calls', type: :integration do
           'cloud_properties' => {},
           'networks' => {
             'a' => {
+              'type' => 'manual',
               'ip' => '192.168.1.10',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
@@ -335,6 +339,7 @@ describe 'CPI calls', type: :integration do
           'cloud_properties' => {},
           'networks' => {
             'a' => {
+              'type' => 'manual',
               'ip' => '192.168.1.11',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
