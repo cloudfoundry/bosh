@@ -118,7 +118,7 @@ module Bosh::Spec
     end
 
     def get_state
-      Yajl::Parser.parse(read_file(File.join('bosh', 'spec.json')))
+      JSON.parse(read_file(File.join('bosh', 'spec.json')))
     end
 
     def read_etc_hosts
@@ -126,7 +126,7 @@ module Bosh::Spec
     end
 
     def dns_records
-      Yajl::Parser.parse(read_file(File.join('instance', 'dns', 'records.json')))
+      JSON.parse(read_file(File.join('instance', 'dns', 'records.json')))
     end
 
     private

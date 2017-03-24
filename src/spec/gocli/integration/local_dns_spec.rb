@@ -191,7 +191,8 @@ describe 'local DNS', type: :integration do
 
   def generate_instance_record_infos
     director.instances(deployment_name: deployment_name).map do |instance|
-      [instance.id, instance.job_name, instance.availability_zone, 'local_dns', 'simple.local_dns', instance.ips[0]]
+      az = instance.availability_zone.empty? ? nil : instance.availability_zone
+      [instance.id, instance.job_name, az, 'local_dns', 'simple.local_dns', instance.ips[0]]
     end
   end
 

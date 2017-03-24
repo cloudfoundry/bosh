@@ -16,7 +16,7 @@ module Bosh::Director
     end
 
     def to_json
-      {records: @records, version: @version, record_keys: @record_keys, record_infos: @record_infos}.to_json
+      JSON.dump({records: @records, version: @version, record_keys: @record_keys, record_infos: @record_infos})
     end
   end
 end
