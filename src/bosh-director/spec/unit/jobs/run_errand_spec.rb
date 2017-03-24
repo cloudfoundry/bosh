@@ -91,7 +91,7 @@ module Bosh::Director
               let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
 
-              before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
+              before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', { timeout: 10, deployment_name: 'fake-dep-name' }).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
               before { allow(lock).to receive(:lock).and_yield }

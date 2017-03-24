@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Registry::ApiController do

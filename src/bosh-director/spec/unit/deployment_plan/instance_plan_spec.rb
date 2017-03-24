@@ -630,7 +630,6 @@ module Bosh::Director::DeploymentPlan
         let(:spec) do
           {'configuration_hash' => {'old' => 'config'}}
         end
-        let(:uuid) { BD::Models::Instance.all.last.uuid }
 
         it 'should return true' do
           instance.configuration_hash = {'changed' => 'config'}
@@ -640,7 +639,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = {'changed' => 'config'}
 
-          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{uuid})")
+          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{instance.model.uuid})")
           instance_plan.configuration_changed?
         end
       end

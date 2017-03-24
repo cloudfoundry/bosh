@@ -227,6 +227,11 @@ module Bosh
         validate_and_record_inputs(SET_VM_METADATA_SCHEMA, __method__, vm_cid, metadata)
       end
 
+      SET_DISK_METADATA_SCHEMA = Membrane::SchemaParser.parse { {disk_cid: String, metadata: Hash} }
+      def set_disk_metadata(disk_cid, metadata)
+        validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
+      end
+
       # Additional Dummy test helpers
 
       def prepare

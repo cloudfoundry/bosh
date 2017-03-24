@@ -141,6 +141,7 @@ module Bosh::Director
           instance_deleter,
           compilation.workers)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
+          @name,
           instance_groups,
           compilation,
           compilation_instance_pool,

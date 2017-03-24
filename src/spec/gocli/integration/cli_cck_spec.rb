@@ -92,6 +92,49 @@ describe 'cli: cloudcheck', type: :integration do
       end
     end
 
+    context 'when deployment uses an old cloud config' do
+      let(:initial_cloud_config) {
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'before'
+        cloud_config
+      }
+
+      let(:new_cloud_config) do
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+        cloud_config['azs'].pop
+        cloud_config['networks'][0]['subnets'].pop
+        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'after'
+        cloud_config
+      end
+
+      let(:deployment_manifest) do
+        manifest = Bosh::Spec::Deployments::simple_manifest
+        manifest['jobs'][0]['azs'] = ['z1', 'z2']
+        manifest['jobs'][0]['instances'] = 2
+        manifest
+      end
+
+      it 'reuses the old config on update', hm: false do
+        upload_cloud_config(cloud_config_hash: initial_cloud_config)
+        create_and_upload_test_release
+        upload_stemcell
+
+        deploy_simple_manifest(manifest_hash: deployment_manifest)
+
+        upload_cloud_config(cloud_config_hash: new_cloud_config)
+
+        current_sandbox.cpi.vm_cids.each do |cid|
+          current_sandbox.cpi.delete_vm(cid)
+        end
+
+        bosh_runner.run('cloud-check --auto', deployment_name: 'simple')
+
+        expect_table('deployments', [{"cloud_config"=>"outdated", "name"=>"simple", "release_s"=>"bosh-release/0+dev.1", "stemcell_s"=>"ubuntu-stemcell/1", "team_s"=>""}])
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').last.inputs['cloud_properties']['stage']).to eq('before')
+      end
+    end
+
+
     context 'deployment has missing VMs' do
       before {
         current_sandbox.cpi.delete_vm(current_sandbox.cpi.vm_cids.first)

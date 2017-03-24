@@ -210,8 +210,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         it 'returns link from another deployment' do
           links_resolver.resolve(api_server_job)
-          instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
-          instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+
+          provider_dep = Bosh::Director::Models::Deployment.where(name: other_deployment_manifest['name']).first
+          instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0, deployment: provider_dep).first
+          instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1, deployment: provider_dep).first
 
           spec = {
             'deployment_name' => other_deployment_manifest['name'],

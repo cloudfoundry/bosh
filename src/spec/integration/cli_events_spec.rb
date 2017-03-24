@@ -64,6 +64,22 @@ describe 'cli: events', type: :integration do
       {'Action' => 'create', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'runtime-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'cloud-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:compile:3:toronto-os/1', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:compile:3:toronto-os/1', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:compile:8:toronto-os/1', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:compile:8:toronto-os/1', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-','Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-','Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'release', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-','Inst' => '-', 'Context' => '-'},
+      {'Action' => 'acquire', 'Object type' => 'lock', 'Object ID' => 'lock:release:bosh-release', 'Dep' => '-','Inst' => '-', 'Context' => '-'},
     )
 
     instance_name = parse_first_instance_name(output)

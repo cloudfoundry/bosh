@@ -9,7 +9,7 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
+        def initialize(deployment_name, jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
           @event_log_stage = nil
           @logger = logger
           @director_job = director_job
@@ -23,6 +23,7 @@ module Bosh::Director
           @compilations_performed = 0
           @jobs_to_compile = jobs_to_compile
           @compilation_config = compilation_config
+          @deployment_name = deployment_name
         end
 
         def perform
@@ -56,7 +57,7 @@ module Bosh::Director
           package = task.package
           stemcell = task.stemcell
 
-          with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}") do
+          with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}", @deployment_name) do
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log_stage)
             if compiled_package.nil?
@@ -64,7 +65,7 @@ module Bosh::Director
               task_result = nil
 
               prepare_vm(stemcell) do |instance|
-                vm_metadata_updater.update(instance.model, :compiling => package.name)
+                metadata_updater.update_vm_metadata(instance.model, :compiling => package.name)
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,
@@ -225,8 +226,8 @@ module Bosh::Director
           counter
         end
 
-        def vm_metadata_updater
-          @vm_metadata_updater ||= VmMetadataUpdater.build
+        def metadata_updater
+          @metadata_updater ||= MetadataUpdater.build
         end
       end
     end

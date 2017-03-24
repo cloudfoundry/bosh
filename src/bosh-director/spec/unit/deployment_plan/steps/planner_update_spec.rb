@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe 'deployment prepare & update' do
+  describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
     before do
       release = Bosh::Director::Models::Release.make(name: 'fake-release')
 

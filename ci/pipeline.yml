@@ -5,6 +5,7 @@ groups:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
+      - unit-2.3-rds
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
@@ -24,11 +25,13 @@ groups:
   - name: mysql
     jobs:
       - unit-2.3-mysql
+      - unit-2.3-rds
       - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
       - unit-2.3-postgres
+      - unit-2.3-rds
       - integration-2.3-postgres
 
   - name: finalize
@@ -248,7 +251,35 @@ jobs:
               DB_VERSION: 9.6
             on_failure:
               <<: *slack-alert
-
+  - name: unit-2.3-rds
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - task: test-mysql-rds
+          privileged: true
+          file: bosh-src/ci/tasks/test-unit-remote-db.yml
+          params:
+            RUBY_VERSION: 2.3.1
+            DB: mysql
+            DB_HOST: {{mysql-rds-host}}
+            DB_USER: {{mysql-rds-user}}
+            DB_PASSWORD: {{mysql-rds-password}}
+          on_failure:
+            <<: *slack-alert
+        - task: test-postgresql-rds
+          privileged: true
+          file: bosh-src/ci/tasks/test-unit-remote-db.yml
+          params:
+            RUBY_VERSION: 2.3.1
+            DB: postgresql
+            DB_HOST: {{postgresql-rds-host}}
+            DB_USER: {{postgresql-rds-user}}
+            DB_PASSWORD: {{postgresql-rds-password}}
+          on_failure:
+            <<: *slack-alert
   - name: blobstore-client-integration
     public: true
     serial: true
@@ -551,6 +582,7 @@ jobs:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
+      - unit-2.3-rds
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - integration-postgres-gocli-sha2

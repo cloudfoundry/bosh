@@ -39,7 +39,7 @@ module Bosh::Director::ConfigServer
     # Note: The links properties will be interpolated in the context of the deployment that provides them
     # @param [Hash] links_spec Hash to be interpolated
     # @return [Hash] A Deep copy of the interpolated links_spec. Only the properties for the links will be interpolated
-    def interpolate_link_spec_properties(links_spec)
+    def interpolate_link_spec_properties(links_spec, variable_set = nil)
       if links_spec.nil?
         return links_spec
       end
@@ -50,7 +50,7 @@ module Bosh::Director::ConfigServer
       links_spec_copy.each do |link_name, link_spec|
         if link_spec.has_key?('properties') && !link_spec['properties'].nil?
           begin
-            interpolated_hash = @config_server_client.interpolate(link_spec['properties'], link_spec['deployment_name'], nil)
+            interpolated_hash = @config_server_client.interpolate(link_spec['properties'], link_spec['deployment_name'], variable_set)
             link_spec['properties'] = interpolated_hash
           rescue Exception => e
             header = "- Unable to interpolate link '#{link_name}' properties; provided by '#{link_spec['deployment_name']}' deployment. Errors are:"

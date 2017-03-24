@@ -43,6 +43,7 @@ describe 'attach disk', type: :integration do
       # disk_migrations.json example: "[{'FromDiskCid': 'foo-cid', 'ToDiskCid': 'bar-cid'}]"
       expect(first_disk_migration['FromDiskCid']).to eq('disk-cid-abc123')
       expect(instance.disk_cids[0]).to eq(first_disk_migration['ToDiskCid'])
+      expect(current_sandbox.cpi.invocations_for_method('set_disk_metadata').last['inputs']['disk_cid']).to eq(instance.disk_cids[0])
     end
 
     it 'attaches the disk to a soft stopped instance' do
@@ -65,6 +66,7 @@ describe 'attach disk', type: :integration do
       first_disk_migration = disk_migrations.first
       expect(first_disk_migration['FromDiskCid']).to eq('disk-cid-abc123')
       expect(instance.disk_cids[0]).to eq(first_disk_migration['ToDiskCid'])
+      expect(current_sandbox.cpi.invocations_for_method('set_disk_metadata').last['inputs']['disk_cid']).to eq(instance.disk_cids[0])
     end
   end
 
@@ -97,6 +99,7 @@ describe 'attach disk', type: :integration do
       started_instance = director.instances.first
 
       expect(current_sandbox.cpi.disk_attached_to_vm?(started_instance.vm_cid, @orphan_disk_cid)).to eq(true)
+      expect(current_sandbox.cpi.invocations_for_method('set_disk_metadata').last['inputs']['disk_cid']).to eq(@orphan_disk_cid)
     end
 
     it 'attaches the orphaned disk to a soft stopped instance' do
@@ -110,6 +113,7 @@ describe 'attach disk', type: :integration do
       started_instance = director.instances.first
 
       expect(current_sandbox.cpi.disk_attached_to_vm?(started_instance.vm_cid, @orphan_disk_cid)).to eq(true)
+      expect(current_sandbox.cpi.invocations_for_method('set_disk_metadata').last['inputs']['disk_cid']).to eq(@orphan_disk_cid)
     end
   end
 end

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Blobstore
   class LocalClient < BaseClient
     CHUNK_SIZE = 1024 * 1024

@@ -59,7 +59,7 @@ module Bosh::Director
           deployment_plan = nil
 
           if @options['deploy']
-            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now)
+            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
           deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
@@ -121,6 +121,14 @@ module Bosh::Director
         ensure
           add_event(context, parent_id, e)
           raise e
+        end
+      ensure
+        if @options['deploy']
+          deployment = current_deployment
+          variable_set = deployment == nil ? nil : deployment.current_variable_set
+          if variable_set
+            variable_set.update(:writable => false)
+          end
         end
       end
 

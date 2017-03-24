@@ -95,7 +95,7 @@ module Bosh::Director
           { 'job' => 'job', 'index' => 0, 'uuid' => '12abdc456','snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
           { 'job' => 'job', 'index' => 1, 'uuid' => '12xyz456','snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
         ]
-        expect(subject.snapshots(deployment)).to eq response
+        expect(subject.snapshots(deployment)).to match_array response
       end
 
       describe 'when index is supplied' do

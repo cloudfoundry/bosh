@@ -124,7 +124,7 @@ module Bosh::Director
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
         template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
-        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
+        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}), @variable_set)
 
         template_hash['links'] = {}
         interpolated_links_spec.each do |link_name, link_spec|

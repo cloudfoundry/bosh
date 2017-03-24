@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require_relative '../../spec/support/deployments'
 
 Sham.define do

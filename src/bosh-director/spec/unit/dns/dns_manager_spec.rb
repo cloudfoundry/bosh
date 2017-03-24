@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, logger) }
 
     let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
-    let(:deployment_model) { Models::Deployment.make(name: 'dep') }
+    let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
     let(:dns_config) { {} }
     let(:dns_provider) { nil }
@@ -298,20 +298,22 @@ module Bosh::Director
 
       describe '#migrate_legacy_records' do
         before do
-          dns_provider.create_or_update_dns_records('0.job-a.network-a.dep.bosh', '1.2.3.4')
-          dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-a.dep.bosh', '1.2.3.4')
-          dns_provider.create_or_update_dns_records('0.job-a.network-b.dep.bosh', '5.6.7.8')
-          dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-b.dep.bosh', '5.6.7.8')
+          dns_provider.create_or_update_dns_records('0.job-a.network-a.bosh1.bosh', '1.2.3.4')
+          dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-a.bosh1.bosh', '1.2.3.4')
+          dns_provider.create_or_update_dns_records('0.job-a.network-b.bosh1.bosh', '5.6.7.8')
+          dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-b.bosh1.bosh', '5.6.7.8')
         end
 
         it 'saves instance dns records for all networks in local instance model' do
+          expect(instance_model.dns_record_names).to be_nil
+
           dns_manager.migrate_legacy_records(instance_model)
 
           expect(instance_model.dns_record_names).to match_array([
-            '0.job-a.network-a.dep.bosh',
-            'fake-uuid.job-a.network-a.dep.bosh',
-            '0.job-a.network-b.dep.bosh',
-            'fake-uuid.job-a.network-b.dep.bosh'
+            '0.job-a.network-a.bosh1.bosh',
+            'fake-uuid.job-a.network-a.bosh1.bosh',
+            '0.job-a.network-b.bosh1.bosh',
+            'fake-uuid.job-a.network-b.bosh1.bosh'
           ])
         end
 
@@ -428,10 +430,21 @@ module Bosh::Director
 
     describe '#create_or_delete_local_dns_record' do
       it 'creates canonicalized records' do
-        expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
+        instance_model.update(
+          index: 0,
+          availability_zone: 'az-1',
+          job: 'job_Name',
+          spec_json: '{"networks":[["net-name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}'
+        )
+
         subject.create_or_delete_local_dns_record(instance_model)
+
         local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-        expect(local_dns_record_first.name).to eq("fake-uuid.job-name.name.bosh1.bosh")
+        expect(local_dns_record_first.name).to eq('fake-uuid.job-name.net-name.bosh1.bosh')
+        expect(local_dns_record_first.az).to eq('az-1')
+        expect(local_dns_record_first.instance_group).to eq('job_Name')
+        expect(local_dns_record_first.deployment).to eq('bosh.1')
+        expect(local_dns_record_first.network).to eq('net-name')
       end
 
       context 'when include_index enabled' do
@@ -440,7 +453,12 @@ module Bosh::Director
         end
 
         it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
+          instance_model.update(
+            index: 0,
+            availability_zone: 'az-1',
+            job: 'job_Name',
+            spec_json: '{"networks":[["net-name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}'
+          )
 
           subject.create_or_delete_local_dns_record(instance_model)
 
@@ -449,6 +467,21 @@ module Bosh::Director
 
           expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
           expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job-name.*"))
+
+          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
+          expect(local_dns_record_first.name).to eq('fake-uuid.job-name.net-name.bosh1.bosh')
+          expect(local_dns_record_first.az).to eq('az-1')
+          expect(local_dns_record_first.instance_group).to eq('job_Name')
+          expect(local_dns_record_first.deployment).to eq('bosh.1')
+          expect(local_dns_record_first.network).to eq('net-name')
+
+          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
+          expect(local_dns_record_second.name).to eq('0.job-name.net-name.bosh1.bosh')
+          expect(local_dns_record_second.az).to eq('az-1')
+          expect(local_dns_record_second.instance_group).to eq('job_Name')
+          expect(local_dns_record_second.deployment).to eq('bosh.1')
+          expect(local_dns_record_second.network).to eq('net-name')
+
         end
         context 'when an instance is created with a new ip' do
           before do

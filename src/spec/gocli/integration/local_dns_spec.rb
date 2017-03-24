@@ -31,7 +31,7 @@ describe 'local DNS', type: :integration do
 
   context 'upgrade and downgrade increasing concurrency' do
     context 'upgrade deployment from 1 to 10 instances' do
-      it 'sends sync_dns action to all agents and updates all /etc/hosts' do
+      it 'sends sync_dns action to all agents and updates agent dns config' do
         manifest_deployment = initial_deployment(1, 5)
         manifest_deployment['jobs'][0]['instances'] = 10
         deploy_simple_manifest(manifest_hash: manifest_deployment)
@@ -39,6 +39,12 @@ describe 'local DNS', type: :integration do
         etc_hosts = parse_agent_etc_hosts(9)
         expect(etc_hosts.size).to eq(10), "expected etc_hosts to have 10 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
+
+        records_json = parse_agent_records_json(9)
+        expect(records_json['records']).to match_array(generate_instance_records)
+        expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip'])
+        expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
+        expect(records_json['version']).to eq(10)
       end
     end
 
@@ -133,18 +139,18 @@ describe 'local DNS', type: :integration do
   def initial_deployment(number_of_instances, max_in_flight=1)
     manifest_deployment = Bosh::Spec::Deployments.test_release_manifest
     manifest_deployment.merge!(
-        {
-            'update' => {
-                'canaries'          => 2,
-                'canary_watch_time' => 4000,
-                'max_in_flight'     => max_in_flight,
-                'update_watch_time' => 20
-            },
+      {
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => max_in_flight,
+          'update_watch_time' => 20
+        },
 
-            'jobs' => [Bosh::Spec::Deployments.simple_job(
-                name: job_name,
-                instances: number_of_instances)]
-        })
+        'jobs' => [Bosh::Spec::Deployments.simple_job(
+          name: job_name,
+          instances: number_of_instances)]
+      })
     manifest_deployment['name'] = deployment_name
     manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
     deploy_simple_manifest(manifest_hash: manifest_deployment)
@@ -159,8 +165,13 @@ describe 'local DNS', type: :integration do
 
     instance.read_etc_hosts.lines.map do |line|
       words = line.strip.split(' ')
-      { 'hostname' => words[1], 'ip' => words[0]}
+      {'hostname' => words[1], 'ip' => words[0]}
     end
+  end
+
+  def parse_agent_records_json(instance_index)
+    instance = director.instance('job_to_test_local_dns', instance_index.to_s, deployment_name: deployment_name)
+    instance.dns_records
   end
 
   def generate_instance_dns
@@ -172,14 +183,27 @@ describe 'local DNS', type: :integration do
     end
   end
 
+  def generate_instance_records
+    director.instances(deployment_name: deployment_name).map do |instance|
+      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh"]
+    end
+  end
+
+  def generate_instance_record_infos
+    director.instances(deployment_name: deployment_name).map do |instance|
+      [instance.id, instance.job_name, instance.availability_zone, 'local_dns', 'simple.local_dns', instance.ips[0]]
+    end
+  end
+
+
   def check_ip(ip, ips)
     case ips
-    when String
-      return true if ip == ips
-    when Array
-      return ips.include?(ip)
-    else
-      return false
+      when String
+        return true if ip == ips
+      when Array
+        return ips.include?(ip)
+      else
+        return false
     end
   end
 

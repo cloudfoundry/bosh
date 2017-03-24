@@ -1,0 +1,10 @@
+#!/bin/bash
+
+<% if p('http_proxy_with_requires.fail_instance_index') == spec.index && p('http_proxy_with_requires.fail_on_template_rendering') == true %>
+    <% raise "Failed for index #{spec.index} because fail_on_template_rendering was set" %>
+<% end %>
+
+if [ "true" == "<%= p('http_proxy_with_requires.fail_on_job_start') %>" ] && [ "<%= spec.index %>" == "<%= p('http_proxy_with_requires.fail_instance_index') %>" ]; then
+  echo "Failed for index <%= spec.index %> because fail_on_job_start was set"
+  exit 1
+fi

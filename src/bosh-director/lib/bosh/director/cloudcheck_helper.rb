@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module CloudcheckHelper
     include CloudFactoryHelper
@@ -58,12 +56,12 @@ module Bosh::Director
       delete_vm_from_cloud(instance_model)
 
       instance_plan_to_create = create_instance_plan(instance_model)
-      tags = instance_model.deployment.tags
       job_renderer = JobRenderer.create
       vm_creator(job_renderer).create_for_instance_plan(
         instance_plan_to_create,
         Array(instance_model.managed_persistent_disk_cid),
-        tags
+        instance_plan_to_create.tags,
+        true
       )
 
       dns_manager = DnsManagerProvider.create
@@ -138,7 +136,8 @@ module Bosh::Director
         existing_instance: instance_model,
         instance: instance_from_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
-        recreate_deployment: true
+        recreate_deployment: true,
+        tags: instance_from_model.deployment_model.tags
       )
     end
 

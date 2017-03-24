@@ -8,12 +8,14 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
   let(:cloud) { Bosh::Director::Config.cloud }
   let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+  let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
 
   before(:each) do
     @agent = double('agent')
-
+    deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
+    deployment.add_instance(@instance)
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
@@ -23,6 +25,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     allow(@handler).to receive(:cloud).and_return(@cloud)
     allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
     allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+    allow(cloud_factory).to receive(:for_availability_zone!)
   end
 
   it 'registers under inactive_disk type' do
@@ -65,6 +68,15 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
         expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
         expect(@agent).to receive(:wait_until_ready)
         expect(@agent).not_to receive(:mount_disk)
+        @handler.apply_resolution(:reattach_disk_and_reboot)
+      end
+
+      it 'sets disk metadata with deployment information' do
+        expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+        expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+        expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
+        expect(@agent).to receive(:wait_until_ready)
+        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, @disk, hash_including(manifest['tags']))
         @handler.apply_resolution(:reattach_disk_and_reboot)
       end
     end
