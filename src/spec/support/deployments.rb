@@ -19,6 +19,48 @@ module Bosh::Spec
       }
     end
 
+    def self.cloud_config_with_placeholders
+      {
+          'azs' => [
+              { 'name' => 'z1', 'cloud_properties' => '((z1_cloud_properties))' },
+              { 'name' => 'z2', 'cloud_properties' => '((z2_cloud_properties))' },
+          ],
+
+          'vm_types' => [{
+              'name' => 'small',
+              'cloud_properties' => {
+                  'instance_type' => 't2.micro',
+                  'ephemeral_disk' => '((ephemeral_disk_placeholder))'
+              }
+          }, {
+              'name' => 'medium',
+              'cloud_properties' => {
+                  'instance_type' => 'm3.medium',
+                  'ephemeral_disk' => '((ephemeral_disk_placeholder))'
+              }
+          }],
+
+          'disk_types' => '((disk_types_placeholder))',
+
+          'networks' => [{
+              'name' => 'private',
+              'type' => 'manual',
+              'subnets' => '((subnets_placeholder))'
+          }, {
+              'name' => 'vip',
+              'type' => 'vip'
+          }],
+
+          'compilation' => {
+              'workers' => '((workers_placeholder))',
+              'reuse_compilation_vms' => 'true',
+              'az' => 'z1',
+              'vm_type' => 'medium',
+              'network' => 'private'
+          }
+      }
+    end
+
     def self.simple_cloud_config
       minimal_cloud_config.merge({
           'networks' => [network],
