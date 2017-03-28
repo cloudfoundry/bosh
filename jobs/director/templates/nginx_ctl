@@ -9,10 +9,16 @@ SSL_DIR=/var/vcap/jobs/director/config/ssl
 TMP_DIR=/var/vcap/data/director/tmp
 RUNAS=vcap
 
+source /var/vcap/packages/common/utils.sh
+
 case $1 in
 
   start)
     mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+
+    pid_guard $PIDFILE "nginx"
+
+    echo $$ > $PIDFILE
 
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 

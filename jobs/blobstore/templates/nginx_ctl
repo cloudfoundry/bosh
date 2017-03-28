@@ -12,10 +12,16 @@ function pid_exists() {
   ps -p $1 &> /dev/null
 }
 
+source /var/vcap/packages/common/utils.sh
+
 case $1 in
 
   start)
     mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+
+    pid_guard $PIDFILE "nginx"
+
+    echo $$ > $PIDFILE
 
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
 
