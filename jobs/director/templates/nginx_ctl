@@ -9,7 +9,7 @@ SSL_DIR=/var/vcap/jobs/director/config/ssl
 TMP_DIR=/var/vcap/data/director/tmp
 RUNAS=vcap
 
-source /var/vcap/packages/common/utils.sh
+source $JOB_DIR/helpers/utils.sh
 
 case $1 in
 

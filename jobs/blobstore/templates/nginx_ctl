@@ -12,7 +12,7 @@ function pid_exists() {
   ps -p $1 &> /dev/null
 }
 
-source /var/vcap/packages/common/utils.sh
+source $JOB_DIR/helpers/utils.sh
 
 case $1 in
 

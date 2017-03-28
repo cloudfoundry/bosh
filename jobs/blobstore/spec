@@ -8,6 +8,7 @@ templates:
   mime.types:         config/mime.types
   read_users.erb:     config/read_users
   write_users.erb:    config/write_users
+  utils.sh:           helpers/utils.sh
 
 packages:
 - nginx
