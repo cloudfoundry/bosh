@@ -36,13 +36,13 @@ module Bosh::Director
       # @param [Models::Instance] instance Instance
       # @return [AgentClient] Agent client to talk to instance
       def agent_client_for(instance)
-        unless instance.vm_cid
+        unless instance.active_vm
           raise InstanceVmMissing,
                 "'#{instance}' doesn't reference a VM"
         end
 
-        unless instance.agent_id
-          raise VmAgentIdMissing, "VM '#{instance.vm_cid}' doesn't have an agent id"
+        unless instance.active_vm.agent_id
+          raise VmAgentIdMissing, "VM '#{instance.active_vm.cid}' doesn't have an agent id"
         end
 
         AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)

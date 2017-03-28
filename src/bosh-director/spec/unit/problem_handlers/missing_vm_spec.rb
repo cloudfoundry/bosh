@@ -5,16 +5,21 @@ module Bosh::Director
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
     let!(:instance) do
-      Models::Instance.make(
+      vm = Models::Vm.make(
+        agent_id: 'agent-007',
+        cid: vm_cid
+      )
+      instance = Models::Instance.make(
         job: manifest['jobs'].first['name'],
         index: 0,
         uuid: '1234-5678',
         deployment: deployment_model,
         cloud_properties_hash: {'foo' => 'bar'},
         spec: spec.merge({env: {'key1' => 'value1'}}),
-        agent_id: 'agent-007',
-        vm_cid: vm_cid
       )
+      instance.add_vm vm
+      instance.active_vm = vm
+      instance.save
     end
     let(:vm_cid) { 'vm-cid' }
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, instance.id, {}) }
@@ -97,15 +102,15 @@ module Bosh::Director
 
         fake_job_context
 
-        expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
-        expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
+        expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).not_to be_nil
+        expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).to be_nil
       end
 
       it 'recreates a VM ' do
         expect_vm_to_be_created
         handler.apply_resolution(:recreate_vm)
-        expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-        expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+        expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+        expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
       end
 
       context 'when update is specified' do
@@ -141,8 +146,8 @@ module Bosh::Director
             expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
             handler.apply_resolution(:recreate_vm_skip_post_start)
 
-            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+            expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+            expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
           end
         end
 
@@ -160,8 +165,8 @@ module Bosh::Director
             expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
             handler.apply_resolution(:recreate_vm)
 
-            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+            expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+            expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
           end
         end
 
@@ -170,7 +175,10 @@ module Bosh::Director
       it 'deletes VM reference' do
         expect {
           handler.apply_resolution(:delete_vm_reference)
-        }.to change { Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+        }.to change {
+          vm = Models::Vm.where(cid: 'vm-cid').first
+          vm.nil? ? 0 : Models::Instance.where(active_vm_id: vm.id).count
+        }.from(1).to(0)
       end
     end
   end

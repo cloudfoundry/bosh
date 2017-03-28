@@ -4,6 +4,8 @@ require 'rspec'
 require 'rspec/its'
 require 'sequel'
 require 'logging'
+require 'securerandom'
+
 require_relative '../../bosh-director/lib/bosh/director/config'
 
 module DBSpecHelper

@@ -13,14 +13,21 @@ module Bosh::Director
     end
 
     describe '#perform' do
-      let(:instance) { Models::Instance.make(deployment: deployment, vm_cid: nil, job: 'fake-job-name', index: '42', uuid: 'uuid-1') }
+      let(:instance) do
+        Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
+      end
+
       let(:deployment) { Models::Deployment.make }
 
       context 'when only one instance to get logs' do
         let(:instances) { [instance.id] }
 
         context 'when instance is associated with a vm' do
-          before { instance.update(vm_cid: 'vm-1') }
+          before do
+            vm = Models::Vm.make(cid: 'vm-1')
+            instance.add_vm vm
+            instance.update(active_vm: vm)
+          end
 
           before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent) }
           let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'new-fake-blobstore-id'}) }
@@ -99,9 +106,23 @@ module Bosh::Director
       end
 
       context 'when several isntances to get logs' do
-        let(:instance_1) { Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '44', vm_cid: 'vm-1', uuid: 'uuid-2') }
-        let(:instance_2) { Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '43', vm_cid: 'vm-2', uuid: 'uuid-3') }
-        let(:instances) { [instance_1.id, instance_2.id] }
+        let(:instance_1) do
+          vm = Models::Vm.make(cid: 'vm-1')
+          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
+          is.add_vm vm
+          is.active_vm = vm
+          is.save
+        end
+        let(:instance_2) do
+          vm = Models::Vm.make(cid: 'vm-2')
+          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
+          is.add_vm vm
+          is.active_vm = vm
+          is.save
+        end
+        let(:instances) do
+          [instance_1.id, instance_2.id]
+        end
 
         before do
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_1.credentials, instance_1.agent_id).and_return(agent_1)
@@ -137,7 +158,7 @@ module Bosh::Director
         end
 
         it 'raises an exception because there is no agent to contact' do
-          instance_1.update(vm_cid: nil)
+          instance_1.update(active_vm: nil)
           expect {
             fetch_logs.perform
           }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_1.uuid} (44)' doesn't reference a VM")

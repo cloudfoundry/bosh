@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170321151400_add_writable_to_variable_set.rb')
+      expect(latest_db_migration_file).to eq('20170328224049_associate_vm_info_with_vms_table.rb')
     end
   end
 end

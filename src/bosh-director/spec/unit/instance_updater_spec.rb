@@ -9,7 +9,14 @@ module Bosh::Director
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
     let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
-    let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
+    let(:credentials) { {'user' => 'secret'} }
+    let(:credentials_json) { JSON.generate(credentials) }
+    let(:vm_model) { Models::Vm.make(agent_id: 'scool', credentials_json: credentials_json) }
+    let(:instance_model) do
+      instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
+      instance.add_vm vm_model
+      instance.update(active_vm: vm_model)
+    end
     let(:instance_model_state) { 'started' }
     let(:dns_manager) { DnsManagerProvider.create }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }

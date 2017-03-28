@@ -23,8 +23,11 @@ module Bosh::Director
     end
 
     before do
-      Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment, uuid: 'fake-uuid-1', vm_cid: 'cid')
-      Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment, uuid: 'fake-uuid-2', vm_cid: nil)
+      vm = Models::Vm.make(cid: 'cid')
+      is = Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment, uuid: 'fake-uuid-1')
+      is.add_vm vm
+      is.update(active_vm: vm)
+      Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment, uuid: 'fake-uuid-2', active_vm: nil)
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})
@@ -51,8 +54,8 @@ module Bosh::Director
       let(:target) { {'job' => 'fake-job', 'indexes' => [1, 2]} }
 
       it 'performs only for instances with vm' do
-        instance_with_vm = Models::Instance.exclude(vm_cid: nil).first
-        instance_witout_vm =  Models::Instance.filter(vm_cid: nil).first
+        instance_with_vm = Models::Instance.exclude(active_vm_id: nil).first
+        instance_witout_vm =  Models::Instance.filter(active_vm_id: nil).first
         expect(instance_manager).to_not receive(:agent_client_for).with(instance_witout_vm)
         expect(instance_manager).to receive(:agent_client_for).with(instance_with_vm)
         job.perform

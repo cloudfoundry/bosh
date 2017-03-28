@@ -17,7 +17,7 @@ module Bosh::Director
 
       def perform
         instances = Models::Instance.filter(:deployment_id => @deployment_id)
-        instances = instances.exclude(vm_cid: nil) unless @state_for_missing_vms
+        instances = instances.exclude(active_vm_id: nil) unless @state_for_missing_vms
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           instances.each do |instance|
             pool.process do

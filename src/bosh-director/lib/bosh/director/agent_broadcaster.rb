@@ -26,9 +26,9 @@ module Bosh::Director
 
     def filter_instances(vm_cid_to_exclude)
       Models::Instance
-          .exclude(vm_cid: nil)
-          .exclude(vm_cid: vm_cid_to_exclude)
-          .exclude(compilation: true).all
+          .exclude(active_vm_id: nil)
+          .exclude(compilation: true)
+          .all.select {|instance| instance.active_vm.cid != vm_cid_to_exclude }
     end
 
     private
@@ -41,7 +41,7 @@ module Bosh::Director
           end
         end
       end
-    end 
+    end
 
     def broadcast_with_retry(instances, timeout, method, *args)
       lock = Mutex.new

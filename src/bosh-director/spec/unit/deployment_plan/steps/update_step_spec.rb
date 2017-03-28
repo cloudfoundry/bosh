@@ -90,7 +90,10 @@ module Bosh::Director
         let(:some_error) { RuntimeError.new('oops') }
 
         before do
-          existing_instance = Models::Instance.make(vm_cid: 'vm_cid')
+          existing_vm = Models::Vm.make(cid: 'vm_cid')
+          existing_instance = Models::Instance.make
+          existing_instance.add_vm existing_vm
+          existing_instance.update(active_vm: existing_vm)
           existing_instance_plan = instance_double(DeploymentPlan::InstancePlan, existing_instance: existing_instance, new?: false, needs_to_fix?: true)
           allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
 

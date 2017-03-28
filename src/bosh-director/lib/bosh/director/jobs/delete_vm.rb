@@ -18,7 +18,7 @@ module Bosh::Director
       def perform
         logger.info("deleting vm: #{@vm_cid}")
         begin
-          instance = Bosh::Director::Api::InstanceLookup.new.by_filter(vm_cid: @vm_cid).first
+          instance = Bosh::Director::Api::InstanceLookup.new.by_vm_cid(@vm_cid).first
           @deployment_name = instance.deployment.name
           @instance_name = instance.name
           parent_id = add_event

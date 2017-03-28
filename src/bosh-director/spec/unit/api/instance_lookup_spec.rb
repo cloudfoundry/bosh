@@ -74,9 +74,7 @@ module Bosh::Director
       end
 
       describe '#by_deployment' do
-
         context 'when multiple deployments have instances' do
-
           before do
             other_deployment = Models::Deployment.make(name: 'other_deployment')
             Models::Instance.make(deployment: other_deployment)
@@ -94,6 +92,34 @@ module Bosh::Director
             deployment = Models::Deployment.make(name: 'deployment_without_instance')
 
             expect(subject.by_deployment(deployment)).to eq []
+          end
+        end
+      end
+
+      describe '#by_vm_cid' do
+        context 'when vm with cid is active vm for instance' do
+          before do
+            vm = Models::Vm.make(cid: 'vm-cid')
+            instance.add_vm vm
+            instance.update(active_vm: vm)
+          end
+
+          it 'finds the instance with the vm' do
+            expect(subject.by_vm_cid('vm-cid').all).to eq([instance])
+          end
+        end
+
+        context 'when the vm is not found as active on instance' do
+          before do
+            vm = Models::Vm.make(cid: 'vm-cid')
+            instance.add_vm vm
+            instance.save
+          end
+
+          it 'finds no instances' do
+            expect {
+              instance_lookup.by_vm_cid('vm-cid')
+            }.to raise_error(InstanceNotFound, "No instances matched vm cid 'vm-cid'")
           end
         end
       end
