@@ -43,6 +43,22 @@ module Bosh::Director
         )
       end
 
+      post '/diff', :consumes => :yaml do
+        new_config_hash = validate_manifest_yml(request.body.read, nil)
+        old_config_hash = Bosh::Director::Api::CloudConfigManager.new.latest.manifest
+
+        result = {}
+        begin
+          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff cloud-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        end
+
+        json_encode(result)
+      end
+
       private
       def create_event(error = nil)
         @event_manager.create_event({
