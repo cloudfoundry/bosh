@@ -67,23 +67,24 @@ module Bosh::Director
         db[:instances] << {id: 0, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 99, vm_cid: 100, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
         db[:instances] << {id: 1, job: 'blah', index: 1, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 100, vm_cid: 101, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
         db[:instances] << {id: 2, job: 'blah', index: 2, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 101, vm_cid: 102, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
-        db[:instances] << {id: 3, job: 'blah', index: 3, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 102, vm_cid: 103, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
-        db[:instances] << {id: 4, job: 'blah', index: 3, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 103, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
+        db[:instances] << {id: 3, job: 'blah', index: 3, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 103, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
+        db[:instances] << {id: 4, job: 'blah', index: 3, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 102, vm_cid: 103, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
       end
 
       it 'uses existing values in the instances table when instance has vm_cid' do
         DBSpecHelper.migrate(migration_file)
         expect(db[:vms].all).to contain_exactly(
-          {id: 1,instance_id: db[:instances].all[0][:id], agent_id: '99', cid: '100', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
-          {id: 2,instance_id: db[:instances].all[1][:id], agent_id: '100', cid: '101', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
-          {id: 3,instance_id: db[:instances].all[2][:id], agent_id: '101', cid: '102', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
-          {id: 4,instance_id: db[:instances].all[3][:id], agent_id: '102', cid: '103', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
+          {id: 1, instance_id: 0, agent_id: '99', cid: '100', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
+          {id: 2, instance_id: 1, agent_id: '100', cid: '101', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
+          {id: 3, instance_id: 2, agent_id: '101', cid: '102', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" },
+          {id: 4, instance_id: 4, agent_id: '102', cid: '103', credentials_json: '{"foo":"bar"}', trusted_certs_sha1: "some-trusted-cert-sha1" }
         )
 
         expect(db[:instances].where(id: 0).first[:active_vm_id]).to eq(1)
         expect(db[:instances].where(id: 1).first[:active_vm_id]).to eq(2)
         expect(db[:instances].where(id: 2).first[:active_vm_id]).to eq(3)
-        expect(db[:instances].where(id: 3).first[:active_vm_id]).to eq(4)
+        expect(db[:instances].where(id: 3).first[:active_vm_id]).to be_nil
+        expect(db[:instances].where(id: 4).first[:active_vm_id]).to eq(4)
       end
     end
 

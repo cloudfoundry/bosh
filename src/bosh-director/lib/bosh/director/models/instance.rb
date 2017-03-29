@@ -168,6 +168,14 @@ module Bosh::Director::Models
       lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
     end
 
+    def has_important_vm?
+      active_vm_id != nil && state != 'stopped' && !ignore
+    end
+
+    def trusted_certs_sha1
+      active_vm.nil? ? ::Digest::SHA1.hexdigest('') : active_vm.trusted_certs_sha1
+    end
+
     private
 
     def object_or_nil(value)

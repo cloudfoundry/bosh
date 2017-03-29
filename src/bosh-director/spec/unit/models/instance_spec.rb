@@ -391,7 +391,7 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid')
+        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha')
         subject.add_vm vm
         subject.active_vm = vm
         subject.save
@@ -399,7 +399,7 @@ module Bosh::Director::Models
 
       describe 'credentials' do
         it 'references credentials from active vm' do
-          expect(subject.credentials).to eq({ "something" => "jsony" })
+          expect(subject.credentials).to eq({ 'something' => 'jsony'})
         end
       end
 
@@ -412,6 +412,12 @@ module Bosh::Director::Models
       describe 'vm_cid' do
         it 'returns active vms cid' do
           expect(subject.vm_cid).to eq('my-cid')
+        end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns active vms trusted_certs_sha1' do
+          expect(subject.trusted_certs_sha1).to eq('trusted-sha')
         end
       end
     end
@@ -433,6 +439,26 @@ module Bosh::Director::Models
         it 'is nil' do
           expect(subject.vm_cid).to be_nil
         end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns sha1 digest of empty string' do
+          expect(subject.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(''))
+        end
+      end
+    end
+
+    describe '#has_important_vm?' do
+      let(:instance_with_important_vm) { BD::Models::Instance.new(state: 'running', ignore: false, active_vm_id: 'id') }
+      let(:ignored_instance) { BD::Models::Instance.new(state: 'running', ignore: true, active_vm_id: 'id') }
+      let(:stopped_instance) { BD::Models::Instance.new(state: 'stopped', active_vm_id: 'id', ignore: false) }
+      let(:instance_with_no_active_vm) { BD::Models::Instance.new(state: 'running', ignore: false) }
+
+      it 'only returns true when model has active vm and is not stopped and is not ignored' do
+        expect(instance_with_important_vm.has_important_vm?).to eq(true)
+        expect(ignored_instance.has_important_vm?).to eq(false)
+        expect(stopped_instance.has_important_vm?).to eq(false)
+        expect(instance_with_no_active_vm.has_important_vm?).to eq(false)
       end
     end
   end

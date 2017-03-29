@@ -1,8 +1,7 @@
 Sequel.migration do
   up do
     alter_table(:instances) do
-      # drop_foreign_key :vm_id
-      drop_column(:vm_id)
+      drop_foreign_key :vm_id
     end
 
     drop_table :vms
@@ -10,10 +9,10 @@ Sequel.migration do
     create_table :vms do
       primary_key :id
       foreign_key :instance_id, :instances, null: true
-      text :agent_id, unique: true
-      text :cid, unique: true
-      text :credentials_json
-      text :trusted_certs_sha1, { :default => ::Digest::SHA1.hexdigest('') }
+      String :agent_id, unique: true
+      String :cid, unique: true
+      String :credentials_json
+      String :trusted_certs_sha1, {:default => ::Digest::SHA1.hexdigest('')}
     end
 
     if [:mysql2, :mysql].include?(adapter_scheme)
