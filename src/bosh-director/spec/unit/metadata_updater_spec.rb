@@ -5,7 +5,15 @@ require 'timecop'
 describe Bosh::Director::MetadataUpdater do
   subject(:metadata_updater) { described_class.new(director_metadata, logger) }
   let(:director_metadata) { {} }
-  let(:instance) { BD::Models::Instance.make(deployment: deployment, vm_cid: 'fake-vm-cid', uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1') }
+  let(:vm) {
+    BD::Models::Vm.make(cid: 'fake-vm-cid')
+  }
+  let(:instance) {
+    instance = BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
+    instance.add_vm vm
+    instance.active_vm = vm
+    instance.save
+  }
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
   let(:cloud) { Bosh::Director::Config.cloud }
 

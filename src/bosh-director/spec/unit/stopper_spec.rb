@@ -4,7 +4,12 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
-    let(:instance_model) { Models::Instance.make(vm_cid: 'vm-cid', spec: spec) }
+    let(:vm_model) { Models::Vm.make(cid: 'vm-cid') }
+    let(:instance_model) do
+      is = Models::Instance.make(spec: spec)
+      is.add_vm vm_model
+      is.update(active_vm: vm_model)
+    end
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
@@ -95,7 +100,7 @@ module Bosh::Director
       end
 
       context 'when it instance does not have vm' do
-        before { instance_model.vm_cid = nil }
+        before { instance_model.active_vm_id = nil }
 
         it 'does not drain and stop' do
           expect(agent_client).to_not receive(:drain)

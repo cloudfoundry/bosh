@@ -6,10 +6,30 @@ module Bosh::Director
     let(:deployment_manager) { instance_double('Bosh::Director::Api::DeploymentManager') }
     let(:deployment_name) { 'deployment' }
     let!(:deployment) { Models::Deployment.make(name: deployment_name) }
-    let!(:instance1) { Models::Instance.make(deployment: deployment) }
-    let!(:instance2) { Models::Instance.make(deployment: deployment) }
-    let!(:instance3) { Models::Instance.make(deployment: deployment) }
-    let!(:instance4) { Models::Instance.make }
+    let!(:instance1) do
+      is = Models::Instance.make(deployment: deployment)
+      vm = Models::Vm.make
+      is.add_vm vm
+      is.update(active_vm: vm)
+    end
+    let!(:instance2) do
+      is = Models::Instance.make(deployment: deployment)
+      vm = Models::Vm.make
+      is.add_vm vm
+      is.update(active_vm: vm)
+    end
+    let!(:instance3) do
+      is = Models::Instance.make(deployment: deployment)
+      vm = Models::Vm.make
+      is.add_vm vm
+      is.update(active_vm: vm)
+    end
+    let!(:instance4) do
+      is = Models::Instance.make
+      vm = Models::Vm.make
+      is.add_vm vm
+      is.update(active_vm: vm)
+    end
 
     subject { described_class.new(deployment_name) }
 
@@ -38,7 +58,7 @@ module Bosh::Director
       end
 
       context 'when vm is not attached' do
-        let!(:instance5) { Models::Instance.make(deployment: deployment, vm_cid: nil) }
+        let!(:instance5) { Models::Instance.make(deployment: deployment, active_vm: nil) }
 
         it 'should snapshot all instance that have a vms attached' do
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {})

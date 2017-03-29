@@ -7,6 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
 
     let(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
+    let(:vm_model) { BD::Models::Vm.make }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         uuid: 'fake-uuid-1',
@@ -15,7 +16,8 @@ module Bosh::Director::DeploymentPlan
         spec: spec,
         variable_set: variable_set_model
       )
-      instance_model
+      instance_model.add_vm vm_model
+      instance_model.update(active_vm: vm_model)
     end
     let(:spec) do
       { 'vm_type' =>

@@ -24,9 +24,9 @@ module Bosh::Director
 
       def verify_state(instance, state)
         unless state.kind_of?(Hash)
-          @logger.error("Invalid state for '#{instance.vm_cid}': #{state.pretty_inspect}")
+          @logger.error("Invalid state for '#{instance.active_vm.cid}': #{state.pretty_inspect}")
           raise AgentInvalidStateFormat,
-            "VM '#{instance.vm_cid}' returns invalid state: " +
+            "VM '#{instance.active_vm.cid}' returns invalid state: " +
               "expected Hash, got #{state.class}"
         end
       end

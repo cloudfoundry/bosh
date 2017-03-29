@@ -63,6 +63,9 @@ module Bosh::Dev::Sandbox
     def truncate_db
       @logger.info("Truncating mysql database #{db_name}")
       table_name_cmd = %Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e "show tables;" #{db_name} 2>/dev/null}
+      puts '########################'
+      puts table_name_cmd
+      puts '########################'
       table_names = `#{table_name_cmd}`.lines.to_a[1..-1].map(&:strip)
       table_names.reject!{|name| name == "schema_migrations" }
       truncates = table_names.map{|name| 'truncate table `' + name + '`' }.join(';')

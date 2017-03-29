@@ -38,7 +38,12 @@ module Bosh::Director::DeploymentPlan
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
 
-    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
+    let(:vm_model) { Bosh::Director::Models::Vm.make() }
+    let(:instance_model) do
+      instance = Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1')
+      instance.add_vm vm_model
+      instance.update(active_vm: vm_model)
+    end
 
     let(:current_state) { {'current' => 'state'} }
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
@@ -283,7 +288,7 @@ module Bosh::Director::DeploymentPlan
         it 'tells the agent to update instance settings and updates the instance model' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [{'name' => 'some-disk', 'cid' => 'some-cid'}])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
 
@@ -295,7 +300,7 @@ module Bosh::Director::DeploymentPlan
         it 'does not send any disk associations to update' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
     end

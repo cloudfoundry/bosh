@@ -47,6 +47,18 @@ module Bosh::Director
       def by_deployment(deployment)
         Models::Instance.filter(deployment: deployment).all
       end
+
+      def by_vm_cid(vm_cid)
+        vm = Models::Vm.filter(cid: vm_cid).first
+        if vm.nil?
+          raise InstanceNotFound, "No instances matched vm cid '#{vm_cid}'"
+        end
+        instances = Models::Instance.filter(active_vm_id: vm.id)
+        if instances.empty?
+          raise InstanceNotFound, "No instances matched vm cid '#{vm_cid}'"
+        end
+        instances
+      end
     end
   end
 end

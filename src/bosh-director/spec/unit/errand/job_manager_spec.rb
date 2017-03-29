@@ -44,8 +44,15 @@ module Bosh::Director
       let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
       let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
 
-      let(:instance1_model) { Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, vm_cid: 'vm_cid1', ignore: true) }
-      let(:instance2_model) { Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, vm_cid: nil, ignore: true, state: 'detached') }
+      let(:instance1_model) do
+        is = Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)
+        is.add_vm vm1_model
+        is.update(active_vm: vm1_model)
+      end
+      let(:instance2_model) do
+        Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true, state: 'detached')
+      end
+      let(:vm1_model) { Models::Vm.make(cid: 'vm_cid1') }
 
       let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
       let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }
@@ -71,7 +78,7 @@ module Bosh::Director
 
           subject.delete_vms
 
-          expect(instance1_model.vm_cid).to be_nil
+          expect(instance1_model.active_vm_id).to be_nil
         end
       end
 
