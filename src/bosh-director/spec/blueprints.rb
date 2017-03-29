@@ -169,7 +169,7 @@ module Bosh::Director::Models
   end
 
   CloudConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_cloud_config }
+    raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
   RuntimeConfig.blueprint do

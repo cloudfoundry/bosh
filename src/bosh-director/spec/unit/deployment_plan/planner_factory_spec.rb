@@ -10,12 +10,12 @@ module Bosh
         let(:raw_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-        let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
+        let(:cloud_config_model) { Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
         let(:runtime_config_model) { Models::RuntimeConfig.make(raw_manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
-        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
+        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -33,7 +33,6 @@ module Bosh
         end
 
         before do
-          allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).and_return(runtime_config_hash)
           allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
           upload_releases
           upload_stemcell
@@ -440,7 +439,7 @@ LOGMESSAGE
         end
 
         def upload_stemcell
-          stemcell_entry = cloud_config_model.manifest['resource_pools'].first['stemcell']
+          stemcell_entry = cloud_config_model.raw_manifest['resource_pools'].first['stemcell']
           Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
         end
       end

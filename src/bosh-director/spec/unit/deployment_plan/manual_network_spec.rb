@@ -8,7 +8,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
    manifest_hash['networks'].first['subnets'].first['static'] = static_ips
    manifest_hash
   end
-  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, nil, nil, nil) }
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
   let(:network_spec) { manifest_hash['networks'].first }
@@ -51,7 +51,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         manifest['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
             'range' => '192.168.1.0/28',
           })
-        Bosh::Director::Manifest.new(manifest, manifest, nil, nil, nil)
+        Bosh::Director::Manifest.new(manifest, manifest, nil, nil, nil, nil)
       end
 
       it 'should raise an error' do

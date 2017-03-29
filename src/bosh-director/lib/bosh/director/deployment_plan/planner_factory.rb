@@ -46,9 +46,9 @@ module Bosh
         private
 
         def parse_from_manifest(manifest, cloud_config, runtime_config, options)
-          @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.cloud_config_hash)
+          @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.hybrid_cloud_config_hash)
 
-          migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
+          migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.hybrid_cloud_config_hash)
           manifest.resolve_aliases
           migrated_hybrid_manifest_hash = migrated_manifest_object.hybrid_manifest_hash
           @logger.debug("Migrated deployment manifest:\n#{migrated_manifest_object.raw_manifest_hash}")

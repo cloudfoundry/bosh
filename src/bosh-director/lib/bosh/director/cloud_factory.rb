@@ -7,7 +7,7 @@ module Bosh::Director
         cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
 
       planner = nil
-      planner = create_cloud_planner(deployment.cloud_config) unless deployment.nil?
+      planner = create_cloud_planner(deployment.cloud_config, deployment.name) unless deployment.nil?
 
       new(planner, parse_cpi_config(cpi_config))
     end
@@ -17,12 +17,12 @@ module Bosh::Director
       Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.manifest)
     end
 
-    def self.create_cloud_planner(cloud_config)
+    def self.create_cloud_planner(cloud_config, deployment_name = nil)
       return nil if cloud_config.nil?
 
       global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
       parser = DeploymentPlan::CloudManifestParser.new(Config.logger)
-      parser.parse(cloud_config.manifest, global_network_resolver, nil)
+      parser.parse(cloud_config.interpolated_manifest(deployment_name), global_network_resolver, nil)
     end
 
     def initialize(cloud_planner, parsed_cpi_config)

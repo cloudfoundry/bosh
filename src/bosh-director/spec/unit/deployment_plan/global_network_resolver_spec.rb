@@ -58,7 +58,7 @@ module Bosh::Director
       context 'when deploying with cloud config after legacy deployments' do
         let(:cloud_config) do
           Models::CloudConfig.make({
-            manifest: {
+            raw_manifest: {
               'networks' => [{
                 'name' => 'manual',
                 'type' => 'manual',

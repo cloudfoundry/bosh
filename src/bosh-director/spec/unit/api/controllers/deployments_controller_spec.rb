@@ -578,8 +578,8 @@ module Bosh::Director
             stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
             stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
 
-            old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
-            new_cloud_config = Models::CloudConfig.make(manifest: {})
+            old_cloud_config = Models::CloudConfig.make(raw_manifest: {}, created_at: Time.now - 60)
+            new_cloud_config = Models::CloudConfig.make(raw_manifest: {})
 
             good_team = Models::Team.create(name: 'dabest')
             bad_team = Models::Team.create(name: 'daworst')
@@ -1415,7 +1415,7 @@ module Bosh::Director
               { 'CONTENT_TYPE' => 'text/yaml' },
             )
           end
-          let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
+          let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'azs' => []}) }
           let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: {'addons' => []}) }
 
           before do
@@ -1475,7 +1475,7 @@ module Bosh::Director
                   runtime_config: runtime_config
                 )
 
-                Models::CloudConfig.make(manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
+                Models::CloudConfig.make(raw_manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
 
                 manifest_hash['networks'] = [{'name'=> 'network2'}]
                 diff = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}

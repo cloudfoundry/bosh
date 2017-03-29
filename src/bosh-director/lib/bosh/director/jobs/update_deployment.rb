@@ -38,7 +38,7 @@ module Bosh::Director
           if cloud_config_model.nil?
             logger.debug("No cloud config uploaded yet.")
           else
-            logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
+            logger.debug("Cloud config:\n#{cloud_config_model.raw_manifest}")
           end
         end
 

@@ -377,53 +377,53 @@ Unable to process links for deployment. Errors are:
 
       let(:cloud_config) do
         Bosh::Director::Models::CloudConfig.make(manifest: {
-          'azs' => [
-            {
-              'name' => 'az1',
-              'cloud_properties' => {}
-            },
-            {
-              'name' => 'az2',
-              'cloud_properties' => {}
-            }
-          ],
-          'networks' => [
-            {
-              'name' => 'fake-manual-network',
-              'type' => 'manual',
-              'subnets' => [
+            'azs' => [
                 {
-                  'name' => 'fake-subnet',
-                  'range' => '127.0.0.0/20',
-                  'gateway' => '127.0.0.1',
-                  'az' => 'az1',
-                  'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
+                    'name' => 'az1',
+                    'cloud_properties' => {}
+                },
+                {
+                    'name' => 'az2',
+                    'cloud_properties' => {}
                 }
-              ]
+            ],
+            'networks' => [
+                {
+                    'name' => 'fake-manual-network',
+                    'type' => 'manual',
+                    'subnets' => [
+                        {
+                            'name' => 'fake-subnet',
+                            'range' => '127.0.0.0/20',
+                            'gateway' => '127.0.0.1',
+                            'az' => 'az1',
+                            'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
+                        }
+                    ]
+                },
+                {
+                    'name' => 'fake-dynamic-network',
+                    'type' => 'dynamic',
+                    'subnets' => [
+                        {'az' => 'az1'}
+                    ]
+                }
+            ],
+            'compilation' => {
+                'workers' => 1,
+                'network' => 'fake-manual-network',
+                'az' => 'az1',
             },
-            {
-              'name' => 'fake-dynamic-network',
-              'type' => 'dynamic',
-              'subnets' => [
-                {'az' => 'az1'}
-              ]
-            }
-          ],
-          'compilation' => {
-            'workers' => 1,
-            'network' => 'fake-manual-network',
-            'az' => 'az1',
-          },
-          'resource_pools' => [
-            {
-              'name' => 'fake-resource-pool',
-              'stemcell' => {
-                'name' => 'fake-stemcell',
-                'version' => 'fake-stemcell-version',
-              },
-              'network' => 'fake-manual-network',
-            }
-          ],
+            'resource_pools' => [
+                {
+                    'name' => 'fake-resource-pool',
+                    'stemcell' => {
+                        'name' => 'fake-stemcell',
+                        'version' => 'fake-stemcell-version',
+                    },
+                    'network' => 'fake-manual-network',
+                }
+            ],
         })
       end
 

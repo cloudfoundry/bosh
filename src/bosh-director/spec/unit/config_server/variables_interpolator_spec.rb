@@ -518,4 +518,33 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       expect(result).to eq({'name' => 'smurf'})
     end
   end
+
+  describe '#interpolate_cloud_manifest' do
+    let(:deployment_name) { 'some_deployment_name' }
+    let(:cloud_manifest) { {'name' => '((placeholder))'} }
+    let(:interpolated_cloud_manifest) { {'name' => 'kobu'} }
+
+    let(:ignored_subtrees) do
+      index_type = Integer
+      any_String = String
+
+      ignored_subtrees = []
+      ignored_subtrees << ['azs', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['networks', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['networks', index_type, 'subnets', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['vm_types', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['vm_extensions', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['disk_types', index_type, 'cloud_properties', any_String]
+      ignored_subtrees << ['compilation', 'cloud_properties', any_String]
+      ignored_subtrees
+    end
+
+    it 'should call interpolate with the correct arguments' do
+      expect(config_server_client).to receive(:interpolate).
+          with(cloud_manifest, deployment_name, anything, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).
+          and_return(interpolated_cloud_manifest)
+      result = subject.interpolate_cloud_manifest(cloud_manifest, deployment_name)
+      expect(result).to eq(interpolated_cloud_manifest)
+    end
+  end
 end

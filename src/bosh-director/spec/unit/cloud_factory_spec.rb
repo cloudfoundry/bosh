@@ -27,7 +27,8 @@ module Bosh::Director
 
       before {
         allow(deployment).to receive(:cloud_config).and_return(cloud_config)
-        allow(cloud_config).to receive(:manifest).and_return({})
+        allow(deployment).to receive(:name).and_return('happy')
+        allow(cloud_config).to receive(:interpolated_manifest).with('happy').and_return({})
         allow(CpiConfig::CpiManifestParser).to receive(:new).and_return(cpi_manifest_parser)
         allow(cpi_manifest_parser).to receive(:parse).and_return(parsed_cpi_config)
         allow(cpi_config).to receive(:manifest).and_return({})
