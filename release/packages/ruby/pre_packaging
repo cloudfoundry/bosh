@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# This pre_packaging script runs only for IBM Power platform
+# It updates old versions of build configuration (config.guess and config.sub files)
+
+function update_build_config {
+  local blob_path=$1
+  local archive_file=$(basename $blob_path);
+  local folder_with_sources="${archive_file%.tar.gz}"
+  tar -xzvf $blob_path
+  pushd $folder_with_sources
+    local config_guess_path=`find . -name config.guess`
+    if [ ! -z "$config_guess_path" ]; then
+      curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f=config.guess" > "${config_guess_path}"
+    fi
+    local config_sub_path=`find . -name config.sub`
+    if [ ! -z "$config_sub_path" ]; then
+      curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f=config.sub" > "${config_sub_path}"
+    fi  
+  popd
+  tar -czvf $blob_path $folder_with_sources
+}
+
+if [ "`uname -m`" == "ppc64le" ]; then
+  cd ${BUILD_DIR}
+  update_build_config ruby/yaml-0.1.5.tar.gz
+  update_build_config ruby/ruby-2.1.4.tar.gz
+fi
