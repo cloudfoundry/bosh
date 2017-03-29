@@ -74,7 +74,7 @@ module Bosh::Director
             network['ip']
           end.compact
 
-          @agent_broadcaster.delete_arp_entries(instance_model.active_vm.cid, ip_addresses)
+          @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
         @disk_manager.attach_disks_if_needed(instance_plan)
@@ -82,7 +82,7 @@ module Bosh::Director
         instance.update_instance_settings
         instance.update_cloud_properties!
       rescue Exception => e
-        @logger.error("Failed to create/contact VM #{instance_model.active_vm.cid}: #{e.inspect}")
+        @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
         if Config.keep_unreachable_vms
           @logger.info('Keeping the VM for debugging')
         else
@@ -150,8 +150,7 @@ module Bosh::Director
       config_server_client = @config_server_client_factory.create_client
       env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name, instance.variable_set)
 
-      vm_options = {instance: instance_model, agent_id: agent_id}
-      options = {}
+      options = {:agent_id => agent_id}
 
       if Config.encryption?
         credentials = generate_agent_credentials
@@ -191,19 +190,14 @@ module Bosh::Director
         raise e
       end
 
-      vm_options[:cid] = vm_cid
-      vm_model = Models::Vm.create(vm_options)
-      vm_model.save
-
-      options[:active_vm_id] = vm_model.id
-      instance_model.refresh
-      instance_model.active_vm_id = vm_model.id
+      options[:vm_cid] = vm_cid
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")
       if vm_cid
         parent_id = add_event(deployment_name, instance_model.name, 'delete', vm_cid)
-        @vm_deleter.delete_vm_by_cid(vm_cid)
+        instance_model.vm_cid = vm_cid
+        @vm_deleter.delete_vm(instance_model)
         add_event(deployment_name, instance_model.name, 'delete', vm_cid, parent_id)
       end
       raise e

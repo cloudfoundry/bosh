@@ -13,13 +13,8 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 
   let(:instance) do
-    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid')
-    instance = Bosh::Director::Models::Instance.
-      make(job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1')
-    instance.add_vm vm
-    instance.active_vm = vm
-    instance.credentials = {'secret' => 'things'}
-    instance.save
+    Bosh::Director::Models::Instance.
+      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'}, uuid: "uuid-42", availability_zone: 'az1')
   end
 
   let!(:disk) do
@@ -202,7 +197,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is destroyed' do
         before do
-          instance.update(active_vm: nil)
+          instance.update(vm_cid: nil)
         end
 
         it 'deletes disk related info from database directly' do

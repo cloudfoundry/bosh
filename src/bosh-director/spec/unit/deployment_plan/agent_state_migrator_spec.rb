@@ -7,12 +7,7 @@ module Bosh::Director
     let(:client) { instance_double(AgentClient) }
     let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
 
-    let(:vm_model) { Models::Vm.make(credentials_json: JSON.generate(credentials), agent_id: 'agent-1') }
-    let(:instance_model) do
-      instance = Models::Instance.make
-      instance.add_vm(vm_model)
-      instance.update(active_vm: vm_model)
-    end
+    let(:instance_model) { Models::Instance.make(credentials: credentials, agent_id: 'agent-1')}
 
     describe '#get_state' do
       before do
@@ -150,9 +145,8 @@ module Bosh::Director
       end
 
       it 'should do nothing when instance is ok' do
-        instance = Models::Instance.make(:deployment => @deployment, :job => 'bar', :index => 11)
-        instance.add_vm(vm_model)
-        instance.update(active_vm: vm_model)
+        Models::Instance.make(
+          :deployment => @deployment, :vm_cid => 'foo-vm', :job => 'bar', :index => 11)
         agent_state_migrator.verify_state(instance_model, {
             'deployment' => 'foo',
             'job' => {

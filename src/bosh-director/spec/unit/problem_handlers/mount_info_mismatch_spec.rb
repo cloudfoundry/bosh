@@ -13,12 +13,8 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   before(:each) do
     @agent = double('agent')
     deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
-    @vm = Bosh::Director::Models::Vm.make
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
-    @instance.add_vm(@vm)
-    @instance.active_vm = @vm
-    @instance.save
     deployment.add_instance(@instance)
 
     @disk = Bosh::Director::Models::PersistentDisk.
@@ -51,7 +47,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     end
 
     it 'is invalid if disk no longer has associated instance' do
-      @instance.update(active_vm: nil)
+      @instance.update(vm_cid: nil)
       expect {
         make_handler(@disk.id)
       }.to raise_error("Can't find corresponding vm-cid for disk 'disk-cid'")

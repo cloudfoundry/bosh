@@ -156,7 +156,7 @@ module Bosh::Director
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
                   model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm_id: 'foo-1234',
+                    vm_cid: 'foo-1234',
                   })
                 })
               ])
@@ -172,7 +172,7 @@ module Bosh::Director
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
                   model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm_id: nil,
+                    vm_cid: nil,
                   })
                 })
               ])

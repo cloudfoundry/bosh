@@ -18,15 +18,12 @@ module Bosh::Director
 
       before { allow(instance).to receive(:model).with(no_args).and_return(instance_model) }
       let(:instance_model) do
-        is = Models::Instance.make(
+        Models::Instance.make(
           job: 'fake-job-name',
           index: 0,
           deployment: deployment,
         )
-        is.add_vm vm_model
-        is.update(active_vm: vm_model)
       end
-      let(:vm_model) { Models::Vm.make(agent_id: 'agent-id') }
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
 
@@ -273,7 +270,7 @@ module Bosh::Director
         end
 
         context 'when job instance is not associated with any VM yet' do
-          before { instance_model.update(active_vm_id: nil) }
+          before { instance_model.update(vm_cid: nil) }
 
           it 'raises an error' do
             expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_model.uuid} (#{instance_model.index})' doesn't reference a VM")

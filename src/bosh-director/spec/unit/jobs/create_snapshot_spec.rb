@@ -2,12 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::CreateSnapshot do
-    let(:vm) { Models::Vm.make }
-    let(:instance) do
-      is = Models::Instance.make
-      is.add_vm vm
-      is.update(active_vm: vm)
-    end
+    let(:instance) { Models::Instance.make }
     let(:options) { {} }
     let(:instance_manager) { instance_double('Bosh::Director::Api::InstanceManager') }
     let(:cids) { %w[snap0 snap1] }

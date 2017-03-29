@@ -13,15 +13,9 @@ module Bosh::Director
     end
 
     def create_vm(i, options = {})
-      options = {state: 'started', lifecycle: 'service', ignore: false}.merge(options)
+      options = {state: 'started', lifecycle: 'service', ignore: false, vm_cid: "vm-cid-#{i}"}.merge(options)
       job_name = "job-#{i}"
-      instance = Models::Instance.make(deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
-      unless options[:no_vm]
-        vm = Models::Vm.make(cid: "vm-cid-#{i}", agent_id: "agent-#{i}", instance_id: instance.id)
-        instance.refresh
-        instance.active_vm = vm
-      end
-      instance.save
+      Models::Instance.make(vm_cid: options[:vm_cid], agent_id: "agent-#{i}", deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
     end
 
     let(:instance_manager) { instance_double(Api::InstanceManager) }
@@ -79,7 +73,7 @@ module Bosh::Director
       end
 
       context 'when service instance is detached' do
-        let!(:detached_instance) { create_vm(0, state: 'detached', no_vm: true) }
+        let!(:detached_instance) { create_vm(0, state: 'detached', vm_cid: nil) }
 
         before(:each) do
           unresponsive_agent = double(AgentClient)
@@ -114,7 +108,7 @@ module Bosh::Director
       end
 
       context "when instance lifecycle is 'errand'" do
-        let!(:errand_vm) { create_vm(0, lifecycle: 'errand', no_vm: true) }
+        let!(:errand_vm) { create_vm(0, lifecycle: 'errand', vm_cid: nil) }
 
         before(:each) do
           unresponsive_agent = double(AgentClient)
@@ -163,7 +157,7 @@ module Bosh::Director
         end
 
         context 'when instance has no VM assigned' do
-          let!(:instance_without_vm) {create_vm(4, no_vm: true)}
+          let!(:instance_without_vm) {create_vm(4, vm_cid: nil)}
 
           before(:each) {
             unresponsive_agent = double(AgentClient)

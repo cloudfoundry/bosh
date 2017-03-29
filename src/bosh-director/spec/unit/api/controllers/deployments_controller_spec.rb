@@ -676,28 +676,20 @@ module Bosh::Director
 
           it 'returns a list of instances with vms (vm_cid != nil)' do
             15.times do |i|
-              vm_params = {
-                'agent_id' => "agent-#{i}",
-                'cid' => "cid-#{i}",
-              }
-              vm = Models::Vm.create(vm_params)
-
               instance_params = {
                 'deployment_id' => deployment.id,
                 'job' => "job-#{i}",
                 'index' => i,
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
+                'agent_id' => "agent-#{i}",
                 'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
               }
 
+              instance_params['vm_cid'] = "cid-#{i}" if i < 8
               instance_params['availability_zone'] = "az0" if i == 0
               instance_params['availability_zone'] = "az1" if i == 1
-              instance = Models::Instance.create(instance_params)
-              if i < 8
-                instance.add_vm(vm)
-                instance.update(active_vm: vm)
-              end
+              Models::Instance.create(instance_params)
             end
 
             get '/test_deployment/vms'
@@ -722,28 +714,20 @@ module Bosh::Director
           context 'ips' do
             it 'returns instance ip addresses' do
               15.times do |i|
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                }
-                vm = Models::Vm.create(vm_params)
-
                 instance_params = {
                   'deployment_id' => deployment.id,
                   'job' => "job-#{i}",
                   'index' => i,
                   'state' => 'started',
                   'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
                   'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
                 }
 
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
                 instance = Models::Instance.create(instance_params)
-                if i < 8
-                  instance.add_vm(vm)
-                  instance.update(active_vm: vm)
-                end
 
                 ip_addresses_params  = {
                   'instance_id' => instance.id,
@@ -774,12 +758,6 @@ module Bosh::Director
 
             it 'returns network spec ip addresses' do
               15.times do |i|
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                }
-                vm = Models::Vm.create(vm_params)
-
                 instance_params = {
                   'deployment_id' => deployment.id,
                   'job' => "job-#{i}",
@@ -787,16 +765,14 @@ module Bosh::Director
                   'state' => 'started',
                   'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                   'uuid' => "instance-#{i}",
+                  'agent_id' => "agent-#{i}",
                   'spec_json' => "{ \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
                 }
 
+                instance_params['vm_cid'] = "cid-#{i}" if i < 8
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
-                instance = Models::Instance.create(instance_params)
-                if i < 8
-                  instance.add_vm(vm)
-                  instance.update(active_vm: vm)
-                end
+                Models::Instance.create(instance_params)
               end
 
               get '/test_deployment/vms'
@@ -854,6 +830,7 @@ module Bosh::Director
                     'state' => 'started',
                     'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                     'uuid' => "instance-#{i}",
+                    'agent_id' => "agent-#{i}",
                     'spec_json' => '{ "lifecycle": "service" }',
                 }
 
@@ -870,7 +847,7 @@ module Bosh::Director
 
               body.each_with_index do |instance, i|
                 expect(instance).to eq(
-                                        'agent_id' => nil,
+                                        'agent_id' => "agent-#{i}",
                                         'cid' => nil,
                                         'job' => "job-#{i}",
                                         'index' => i,
@@ -892,6 +869,7 @@ module Bosh::Director
                       'state' => 'started',
                       'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                       'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
                       'spec_json' => '{ "lifecycle": "service" }',
                   }
 
@@ -915,7 +893,7 @@ module Bosh::Director
 
                 body.each_with_index do |instance, i|
                   expect(instance).to eq(
-                                          'agent_id' => nil,
+                                          'agent_id' => "agent-#{i}",
                                           'cid' => nil,
                                           'job' => "job-#{i}",
                                           'index' => i,
@@ -936,6 +914,7 @@ module Bosh::Director
                       'state' => 'started',
                       'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                       'uuid' => "instance-#{i}",
+                      'agent_id' => "agent-#{i}",
                       'spec_json' => "{ \"lifecycle\": \"service\", \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
                   }
 
@@ -952,7 +931,7 @@ module Bosh::Director
 
                 body.each_with_index do |instance, i|
                   expect(instance).to eq(
-                                          'agent_id' => nil,
+                                          'agent_id' => "agent-#{i}",
                                           'cid' => nil,
                                           'job' => "job-#{i}",
                                           'index' => i,
@@ -976,6 +955,7 @@ module Bosh::Director
                                           'state' => job_state,
                                           'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                                           'uuid' => 'instance-1',
+                                          'agent_id' => 'agent-1',
                                           'spec_json' => "{ \"lifecycle\": \"#{instance_lifecycle}\" }",
                                       })
             end
@@ -994,7 +974,7 @@ module Bosh::Director
                   expect(body.size).to eq(1)
 
                   expect(body[0]).to eq(
-                                         'agent_id' => nil,
+                                         'agent_id' => 'agent-1',
                                          'cid' => nil,
                                          'job' => 'job',
                                          'index' => 1,
@@ -1017,7 +997,7 @@ module Bosh::Director
                   expect(body.size).to eq(1)
 
                   expect(body[0]).to eq(
-                                         'agent_id' => nil,
+                                         'agent_id' => 'agent-1',
                                          'cid' => nil,
                                          'job' => 'job',
                                          'index' => 1,
@@ -1042,7 +1022,7 @@ module Bosh::Director
                 expect(body.size).to eq(1)
 
                 expect(body[0]).to eq(
-                                       'agent_id' => nil,
+                                       'agent_id' => 'agent-1',
                                        'cid' => nil,
                                        'job' => 'job',
                                        'index' => 1,

@@ -97,6 +97,5 @@
   "20170303175054_expand_template_json_column_lengths": "bb1868c23d48020990e23b25a8c5fcb1f93eb6fc",
   "20170306215659_expand_vms_json_column_lengths": "544410b869c44f6af0f748cf74da4e12f1919289",
   "20170320171505_add_id_group_az_network_deployment_columns_to_local_dns_records": "0a5296c0d3de35d3c3921e2f36c124f56a0a7e94",
-  "20170321151400_add_writable_to_variable_set": "b4a4ab1ce8b4788402cd5b55dff5a1c05d621dc9",
-  "20170328224049_associate_vm_info_with_vms_table": "7e7effb641a143f89826c681dbc5d9b9cefd6778"
+  "20170321151400_add_writable_to_variable_set": "b4a4ab1ce8b4788402cd5b55dff5a1c05d621dc9"
 }

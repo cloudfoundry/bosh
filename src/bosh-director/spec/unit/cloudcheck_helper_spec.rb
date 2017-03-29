@@ -20,17 +20,15 @@ module Bosh::Director
     end
 
     let(:instance) do
-      instance = Models::Instance.make(
+      Models::Instance.make(
         deployment: deployment_model,
         job: 'mysql_node',
         index: 0,
+        vm_cid: 'vm-cid',
         spec: spec,
         availability_zone: 'az1'
       )
-      instance.add_vm(vm)
-      instance.update(active_vm: vm)
     end
-    let(:vm) { Models::Vm.make }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
@@ -63,7 +61,7 @@ module Bosh::Director
       let(:cloud_factory) { instance_double(CloudFactory) }
       before do
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
-        expect(cloud).to receive(:reboot_vm).with(vm.cid)
+        expect(cloud).to receive(:reboot_vm).with(instance.vm_cid)
         expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
       end
 

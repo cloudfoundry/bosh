@@ -14,7 +14,7 @@ module Bosh::Director
       end
 
       def perform
-        logger.info("taking snapshot of: #{@instance.job}/#{@instance.index} (#{@instance.active_vm.cid})")
+        logger.info("taking snapshot of: #{@instance.job}/#{@instance.index} (#{@instance.vm_cid})")
         snapshot_cids = Bosh::Director::Api::SnapshotManager.take_snapshot(@instance, @options)
         "snapshot(s) #{snapshot_cids.join(', ')} created"
       end
