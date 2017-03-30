@@ -129,7 +129,12 @@ module Bosh::Director::DeploymentPlan
     before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
-      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, vm_cid: 'vm-cid-1') }
+      let(:vm_model) { Bosh::Director::Models::Vm.make(cid: 'vm-cid-1') }
+      let(:instance_model) do
+        instance = Bosh::Director::Models::Instance.make(deployment: deployment)
+        instance.add_vm(vm_model)
+        instance.update(active_vm: vm_model)
+      end
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -144,8 +149,10 @@ module Bosh::Director::DeploymentPlan
                 .ordered
 
             update_step.perform
-            expect(Bosh::Director::Models::Instance.find(vm_cid: 'vm-cid-1')).to be_nil
-            expect(Bosh::Director::Models::Instance.find(vm_cid: 'vm-cid-2')).not_to be_nil
+            expect(Bosh::Director::Models::Vm.find(cid: 'vm-cid-1')).to be_nil
+            vm2 = Bosh::Director::Models::Vm.find(cid: 'vm-cid-2')
+            expect(vm2).not_to be_nil
+            expect(Bosh::Director::Models::Instance.find(active_vm_id: vm2.id)).not_to be_nil
 
             expect(agent_client).to have_received(:drain).with('shutdown', {})
           end
@@ -170,7 +177,8 @@ module Bosh::Director::DeploymentPlan
       it "creates an instance with 'lifecycle' in the spec" do
         update_step.perform
 
-        expect(Bosh::Director::Models::Instance.find(vm_cid: 'vm-cid-2').spec['lifecycle']).to eq('service')
+        vm = Bosh::Director::Models::Vm.find(cid: 'vm-cid-2')
+        expect(Bosh::Director::Models::Instance.find(active_vm_id: vm.id).spec['lifecycle']).to eq('service')
       end
     end
   end
