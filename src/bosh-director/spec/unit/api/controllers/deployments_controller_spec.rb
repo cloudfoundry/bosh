@@ -706,7 +706,7 @@ module Bosh::Director
             body = JSON.parse(last_response.body)
             expect(body.size).to eq(8)
 
-            body.each_with_index do |instance_with_vm, i|
+            body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
               expect(instance_with_vm).to eq(
                 'agent_id' => "agent-#{i}",
                 'job' => "job-#{i}",
@@ -759,7 +759,7 @@ module Bosh::Director
               body = JSON.parse(last_response.body)
               expect(body.size).to eq(8)
 
-              body.each_with_index do |instance_with_vm, i|
+              body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
                 expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
@@ -805,7 +805,7 @@ module Bosh::Director
               body = JSON.parse(last_response.body)
               expect(body.size).to eq(8)
 
-              body.each_with_index do |instance_with_vm, i|
+              body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
                 expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
@@ -868,7 +868,7 @@ module Bosh::Director
               body = JSON.parse(last_response.body)
               expect(body.size).to eq(15)
 
-              body.each_with_index do |instance, i|
+              body.sort_by{|instance| instance['index']}.each_with_index do |instance, i|
                 expect(instance).to eq(
                                         'agent_id' => nil,
                                         'cid' => nil,
@@ -913,7 +913,7 @@ module Bosh::Director
                 body = JSON.parse(last_response.body)
                 expect(body.size).to eq(15)
 
-                body.each_with_index do |instance, i|
+                body.sort_by{|instance| instance['index']}.each_with_index do |instance, i|
                   expect(instance).to eq(
                                           'agent_id' => nil,
                                           'cid' => nil,
@@ -950,7 +950,7 @@ module Bosh::Director
                 body = JSON.parse(last_response.body)
                 expect(body.size).to eq(15)
 
-                body.each_with_index do |instance, i|
+                body.sort_by{|instance| instance['index']}.each_with_index do |instance, i|
                   expect(instance).to eq(
                                           'agent_id' => nil,
                                           'cid' => nil,
