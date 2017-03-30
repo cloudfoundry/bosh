@@ -43,6 +43,26 @@ module Bosh::Director
         )
       end
 
+      post '/diff', :consumes => :yaml do
+        cpi_configs_text = request.body.read
+        new_cpi_configs_hash = validate_manifest_yml(cpi_configs_text, nil)
+        old_cpi_configs = Bosh::Director::Api::CpiConfigManager.new.latest
+
+        old_cpi_configs_hash = old_cpi_configs ? old_cpi_configs.manifest : {}
+
+        result = {}
+
+        begin
+          redact =  params['redact'] != 'false'
+          diff = Changeset.new(old_cpi_configs_hash, new_cpi_configs_hash).diff(redact).order
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff cpi_config: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        end
+        json_encode(result)
+      end
+
       private
       def create_event(error = nil)
         @event_manager.create_event({
