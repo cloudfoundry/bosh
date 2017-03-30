@@ -5,8 +5,8 @@ module Bosh::Director
     subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive, when_changed) }
     let(:keep_alive) { false }
     let(:when_changed) { false }
-    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, 42)}
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
     before do

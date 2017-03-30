@@ -18,7 +18,7 @@ module Bosh::Director
       end
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
       let(:task) { Models::Task.make(id: 42) }
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       describe '#parse' do

@@ -1,14 +1,14 @@
 module Bosh::Director
   class TaskDBWriter
-    def initialize(column, task)
+    def initialize(column, task_id)
       @column_name = column
-      @task = task
+      @task_id = task_id
       @transactor = Transactor.new
     end
 
     def write(text)
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
-        @task.update({@column_name => "#{@task[@column_name]}#{text}"})
+        Models::Task.where(:id => @task_id).update({@column_name => Sequel.join([@column_name, text])})
       end
     end
   end

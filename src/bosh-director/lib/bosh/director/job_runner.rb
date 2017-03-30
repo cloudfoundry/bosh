@@ -65,8 +65,8 @@ module Bosh::Director
     # Sets up job logging.
     # @return [void]
     def setup_task_logging_for_db
-      Config.event_log = EventLog::Log.new(TaskDBWriter.new(:event_output, @task))
-      Config.result = TaskDBWriter.new(:result_output, @task)
+      Config.event_log = EventLog::Log.new(TaskDBWriter.new(:event_output, @task.id))
+      Config.result = TaskDBWriter.new(:result_output, @task.id)
     end
 
     # Instantiates and performs director job.
@@ -157,6 +157,7 @@ module Bosh::Director
     # @param [Symbol] state Task completion state
     # @param [#to_s] result
     def finish_task(state, result)
+      @task.refresh
       @task.state = state
       @task.result = truncate(result.to_s)
       @task.timestamp = Time.now

@@ -7,8 +7,8 @@ module Bosh::Director
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
-    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     before  do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:result).and_return(task_result)

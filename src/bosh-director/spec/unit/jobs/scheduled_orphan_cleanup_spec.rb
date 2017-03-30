@@ -17,7 +17,7 @@ module Bosh::Director
     let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
     let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
     let(:task) { Models::Task.make(id: 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
     before {

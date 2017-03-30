@@ -10,7 +10,7 @@ module Bosh::Director
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:task) { Models::Task.make(id: 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
     before {

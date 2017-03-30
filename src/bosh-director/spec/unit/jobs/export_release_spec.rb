@@ -10,7 +10,7 @@ module Bosh::Director
     let(:sha2) { nil }
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task) }
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
 
     before do

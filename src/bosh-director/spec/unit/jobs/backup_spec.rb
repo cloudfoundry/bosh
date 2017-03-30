@@ -17,7 +17,7 @@ module Bosh::Director
       let(:tar_gzipper) { instance_double('Bosh::Director::Core::TarGzipper') }
       let(:db_adapter) { double('db adapter') }
       let(:task) { Models::Task.make(id: 42) }
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       subject(:backup_task) do

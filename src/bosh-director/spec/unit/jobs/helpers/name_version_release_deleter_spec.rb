@@ -24,7 +24,7 @@ module Bosh::Director
       let(:act) { name_version_release_deleter.find_and_delete_release(release_name, version, force) }
       let(:force) { false }
       let(:task) { Models::Task.make(id: 42) }
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       before do

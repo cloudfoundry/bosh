@@ -7,7 +7,7 @@ module Bosh::Director
       layout: Logging.layouts.pattern(:pattern => '%m\n')) }
     let(:logger) { Logging::Logger.new('Log') }
 
-    let(:task_db_writer) { TaskDBWriter.new(column_name, task) }
+    let(:task_db_writer) { TaskDBWriter.new(column_name, task.id) }
     let(:task) { Bosh::Director::Models::Task.make(:id => 42) }
     let(:column_name) { :event_output }
 
@@ -18,6 +18,7 @@ module Bosh::Director
     it 'formats with layout' do
       entry = {:task => :foo, :index => 1, :state => "started", :progress => 0}
       logger.info(JSON.generate(entry))
+      task.refresh
       expect(task[:event_output]).to eq("#{JSON.generate(entry)}\n")
     end
   end

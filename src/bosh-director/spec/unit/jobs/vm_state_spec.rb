@@ -27,7 +27,7 @@ module Bosh::Director
     before do
       @deployment = Models::Deployment.make
       allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
-      allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task))
+      allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task.id))
     end
 
     describe 'DJ job class expectations' do

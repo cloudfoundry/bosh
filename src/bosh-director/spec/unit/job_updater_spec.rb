@@ -33,7 +33,7 @@ module Bosh::Director
       let(:update_error) { RuntimeError.new('update failed') }
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
       let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task)}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       context 'when job is up to date' do

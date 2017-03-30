@@ -450,8 +450,8 @@ module Bosh::Director
               expect(last_response.headers['Content-Range']).to eq('bytes 5-10/11')
             end
 
-            it 'supports returning different types of output (debug, cpi, event)' do
-              %w(debug cpi result).each do |log_type|
+            it 'supports returning different types of output (debug, cpi, event, result) from file' do
+              %w(debug event cpi result).each do |log_type|
                 output_file = File.new(File.join(temp_dir, log_type), 'w+')
                 output_file.print("Test output #{log_type}")
                 output_file.close
@@ -463,14 +463,9 @@ module Bosh::Director
               task.timestamp = Time.now
               task.description = 'description'
               task.output = temp_dir
-              task.event_output = "Test output event from db"
               task.save
 
-               get "/#{task.id}/output?type=event"
-               expect(last_response.status).to eq(200)
-               expect(last_response.body).to eq("Test output event from db")
-
-              %w(debug cpi result).each do |log_type|
+              %w(debug event cpi result).each do |log_type|
                 get "/#{task.id}/output?type=#{log_type}"
                 expect(last_response.status).to eq(200)
                 expect(last_response.body).to eq("Test output #{log_type}")
@@ -480,6 +475,24 @@ module Bosh::Director
               get "/#{task.id}/output"
               expect(last_response.status).to eq(200)
               expect(last_response.body).to eq('Test output debug')
+            end
+
+            it 'supports returning different types of output (event, result) from db' do
+              task = Models::Task.new
+              task.state = 'done'
+              task.type = :update_deployment
+              task.timestamp = Time.now
+              task.description = 'description'
+              task.output = temp_dir
+              task.result_output = 'Test output result from db'
+              task.event_output = 'Test output event from db'
+              task.save
+
+              %w(event result).each do |log_type|
+                get "/#{task.id}/output?type=#{log_type}"
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq("Test output #{log_type} from db")
+              end
             end
 
             context "task's deployment doesn't exist" do

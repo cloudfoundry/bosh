@@ -12,7 +12,7 @@ module Bosh::Director
     let (:agent) { double(AgentClient)}
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
-    let(:task_result) { TaskDBWriter.new(:result_output, task) }
+    let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
     describe 'DJ job class expectations' do

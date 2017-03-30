@@ -60,9 +60,9 @@ module Bosh::Director
       event_log = double('event log')
       task_result = double('result file')
 
-      task_writer = TaskDBWriter.new(:event_output, task)
+      task_writer = TaskDBWriter.new(:event_output, task.id)
       allow(TaskDBWriter).to receive(:new).
-        with(:event_output, task).and_return(task_writer)
+        with(:event_output, task.id).and_return(task_writer)
 
       allow(EventLog::Log)
         .to receive(:new)
@@ -70,7 +70,7 @@ module Bosh::Director
         .and_return(event_log)
 
       allow(TaskDBWriter).to receive(:new).
-        with(:result_output, task).
+        with(:result_output, task.id).
         and_return(task_result)
 
       make_runner(sample_job_class, 42)
