@@ -601,6 +601,250 @@ module Bosh::Director::ConfigServer
       end
     end
 
+    describe '#interpolate_cross_deployment_link' do
+      def prepend_provider_namespace(name)
+        "/#{director_name}/#{provider_deployment_name}/#{name}"
+      end
+
+      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
+
+      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
+      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('cert_placeholder')}", 'value' => {'ca' => 'ca_value', 'private_key' => 'abc123'}, 'id' => '2'}]} }
+      let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('nil_placeholder')}", 'value' => nil, 'id' => '3'}]} }
+      let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('empty_placeholder')}", 'value' => '', 'id' => '4'}]} }
+      let(:string_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '5'}]} }
+      let(:absolute_placeholder) { {'data' => [{'name' => '/absolute_placeholder', 'value' => 'I am absolute', 'id' => '6'}]} }
+      let(:hash_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('cert_placeholder')}", 'value' => {'cat' => 'meow', 'dog' => 'woof'}, 'id' => '7'}]} }
+
+      let(:mock_config_store) do
+        {
+          prepend_provider_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
+          prepend_provider_namespace('cert_placeholder') => generate_success_response(cert_placeholder.to_json),
+          prepend_provider_namespace('nil_placeholder') => generate_success_response(nil_placeholder.to_json),
+          prepend_provider_namespace('empty_placeholder') => generate_success_response(empty_placeholder.to_json),
+          prepend_provider_namespace('string_placeholder') => generate_success_response(string_placeholder.to_json),
+          '/absolute_placeholder' => generate_success_response(absolute_placeholder.to_json),
+          prepend_provider_namespace('hash_placeholder') => generate_success_response(hash_placeholder.to_json)
+        }
+      end
+
+      let(:links_properties_spec) do
+        {
+          'age' => '((integer_placeholder))',
+          'hash_value' => '((cert_placeholder))',
+          'dots_allowed' => '((hash_placeholder.cat))',
+          'nil_allowed' => '((nil_placeholder))',
+          'empty_allowed' => '((empty_placeholder))',
+          'nested_allowed' => {
+            'level_1' => '((!string_placeholder))'
+          },
+          'absolute_allowed' => '((/absolute_placeholder))'
+        }
+      end
+
+      let(:interpolated_links_properties_spec) do
+        {
+          'age' => 123,
+          'hash_value' => {'ca' => 'ca_value', 'private_key' => 'abc123'},
+          'dots_allowed' => 'meow',
+          'nil_allowed' => nil,
+          'empty_allowed' => '',
+          'nested_allowed' => {
+            'level_1' => 'test1'
+          },
+          'absolute_allowed' => 'I am absolute'
+        }
+      end
+
+      let(:consumer_deployment_name) { 'consumer_deployment_name' }
+      let(:provider_deployment_name) { 'provider_deployment_name' }
+
+      let(:consumer_deployment) { instance_double(Bosh::Director::Models::Deployment) }
+      let(:provider_deployment) { instance_double(Bosh::Director::Models::Deployment) }
+
+      let(:consumer_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+      let(:provider_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+      before do
+        allow(consumer_deployment).to receive(:name).and_return(consumer_deployment_name)
+        allow(provider_deployment).to receive(:name).and_return(provider_deployment_name)
+        allow(consumer_variable_set).to receive(:deployment).and_return(consumer_deployment)
+        allow(provider_variable_set).to receive(:deployment).and_return(provider_deployment)
+      end
+
+      context 'when links spec passed is nil' do
+        it 'returns it as nil' do
+          actual_interpolated_link_spec = client.interpolate_cross_deployment_link(nil, consumer_variable_set, provider_variable_set)
+          expect(actual_interpolated_link_spec).to be_nil
+        end
+      end
+
+      context 'when links spec passed is not a hash' do
+        it 'throws an error' do
+          expect {
+            client.interpolate_cross_deployment_link('vroooom', consumer_variable_set, provider_variable_set)
+          }.to raise_error "Unable to interpolate cross deployment link properties. Expected a 'Hash', got 'String'"
+        end
+      end
+
+      context 'when links spec passed is a hash' do
+        context 'when the consumer variable_set already has all the variables' do
+          before do
+            mock_config_store.each do |name, value|
+              result_data = JSON.parse(value.body)['data'][0]
+              variable_id = result_data['id']
+
+              variable_model = instance_double(Bosh::Director::Models::Variable)
+              allow(variable_model).to receive(:variable_name).and_return(name)
+              allow(variable_model).to receive(:variable_id).and_return(variable_id)
+              allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(variable_model)
+
+              allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
+            end
+          end
+
+          it 'fetches the value from the config server with correct ID and return the interpolated hash' do
+            actual_interpolated_link_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+            expect(actual_interpolated_link_spec).to eq(interpolated_links_properties_spec)
+            expect(actual_interpolated_link_spec).to_not equal(interpolated_links_properties_spec)
+          end
+
+          context 'when an error occurs while requesting values from config server' do
+            before do
+              mock_config_store.each do |_, value|
+                result_data = JSON.parse(value.body)['data'][0]
+                variable_id = result_data['id']
+
+                allow(http_client).to receive(:get_by_id).with(variable_id).and_return(SampleNotFoundResponse.new)
+              end
+            end
+
+            it 'returns a formatted error message' do
+              expected_error_msg = <<-EXPECTED.strip
+- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/absolute_placeholder' from config server: HTTP code '404'
+              EXPECTED
+
+              expect {
+                client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+              }.to raise_error { |e|
+                expect(e.message).to eq(expected_error_msg)
+              }
+            end
+          end
+        end
+
+        context 'when the consumer variable_set does not have all the variables' do
+
+          context 'when consumer variable set is NOT writable' do
+            before do
+              allow(consumer_variable_set).to receive(:writable).and_return(false)
+
+              mock_config_store.each do |name, _|
+                allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
+              end
+            end
+
+            it 'should raise an exception with formatted error messages' do
+              expected_error_msg = <<-EXPECTED.strip
+- Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+- Expected variable '/absolute_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+              EXPECTED
+
+              expect {
+                client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+              }.to raise_error { |e|
+                expect(e.message).to eq(expected_error_msg)
+              }
+            end
+          end
+
+          context 'when consumer variable set is writable' do
+            before do
+              allow(consumer_variable_set).to receive(:writable).and_return(true)
+            end
+
+            context 'when the provider variable set has the variable' do
+              before do
+                mock_config_store.each do |name, value|
+                  result_data = JSON.parse(value.body)['data'][0]
+                  variable_id = result_data['id']
+
+                  variable_model = instance_double(Bosh::Director::Models::Variable)
+                  allow(variable_model).to receive(:variable_name).and_return(name)
+                  allow(variable_model).to receive(:variable_id).and_return(variable_id)
+
+                  allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
+                  # expecting here because we can !
+                  expect(consumer_variable_set).to receive(:add_variable).with({variable_name:name, variable_id: variable_id})
+                  allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(variable_model)
+
+                  allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
+                end
+              end
+
+              it 'should copy the variable to the consumer variable set and fetches the values from config server' do
+                actual_interpolated_link_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+                expect(actual_interpolated_link_spec).to eq(interpolated_links_properties_spec)
+              end
+
+              context 'when the consumer variable_set throws unique constraint violation while copying variable to it (concurrency possibility)' do
+                before do
+                  allow(consumer_variable_set).to receive(:add_variable).with({variable_name: '/smurf_director_name/provider_deployment_name/string_placeholder', variable_id: '5'}).and_raise(Sequel::UniqueConstraintViolation.new)
+                  allow(consumer_variable_set).to receive(:id).and_return('my_id')
+                end
+
+                it 'should catch the exception, log a debug message, and interpolates as correctly' do
+                  expect(logger).to receive(:debug).with("Variable '/smurf_director_name/provider_deployment_name/string_placeholder' was already added to consumer variable set 'my_id'")
+                  expect {
+                    actual_interpolated_link_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+                    expect(actual_interpolated_link_spec).to eq(interpolated_links_properties_spec)
+                  }.to_not raise_error
+                end
+              end
+            end
+
+            context 'when the provider variable set does NOT have the variable' do
+              before do
+                mock_config_store.each do |name, value|
+                  allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
+                  allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
+                end
+              end
+
+              it 'should raise an exception' do
+                expected_error_msg = <<-EXPECTED.strip
+- Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+- Expected variable '/absolute_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                EXPECTED
+
+                expect {
+                  client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+                }.to raise_error { |e|
+                  expect(e.message).to eq(expected_error_msg)
+                }
+              end
+            end
+          end
+        end
+      end
+    end
+
     describe '#prepare_and_get_property' do
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
       let(:ok_response) do
@@ -878,7 +1122,6 @@ module Bosh::Director::ConfigServer
       let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
       context 'when given a variables object' do
-
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
             [
@@ -897,7 +1140,6 @@ module Bosh::Director::ConfigServer
               }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
             end
           end
-
         end
 
         context 'when ALL variable names syntax are correct' do
@@ -1249,6 +1491,22 @@ module Bosh::Director::ConfigServer
 
       it 'returns src as is' do
         expect(disabled_client.interpolate(src, deployment_name, nil)).to eq(src)
+      end
+    end
+
+    describe '#interpolate_cross_deployment_link' do
+      let(:link_spec) do
+        {
+          'test' => 'smurf',
+          'test2' => '((placeholder))'
+        }
+      end
+
+      let(:consumer_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+      let(:provider_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+      it 'returns src as is' do
+        expect(disabled_client.interpolate_cross_deployment_link(link_spec, consumer_variable_set, provider_variable_set)).to eq(link_spec)
       end
     end
 

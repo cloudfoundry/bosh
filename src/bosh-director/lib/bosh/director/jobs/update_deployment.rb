@@ -83,8 +83,11 @@ module Bosh::Director
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
           begin
-            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, @options['deploy'], deployment_plan.model.current_variable_set)
-            render_templates_and_snapshot_errand_variables(deployment_plan)
+            current_variable_set = deployment_plan.model.current_variable_set
+
+            # TODO:ConfigServer This class ConfigServer::VariablesHandler is weirdly modifying the instance groups objects. Need to do something about it.
+            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, @options['deploy'], current_variable_set)
+            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
 
             if dry_run?
               return "/deployments/#{deployment_plan.name}"
@@ -176,9 +179,9 @@ module Bosh::Director
         end
       end
 
-      def render_templates_and_snapshot_errand_variables(deployment_plan)
+      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
         errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
-        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups)
+        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
         unless errors.empty?
           message = errors.map { |error| error.message.strip }.join("\n")
@@ -199,7 +202,7 @@ module Bosh::Director
         errors
       end
 
-      def snapshot_errands_variables_versions(errands_instance_groups)
+      def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
         variables_interpolator = ConfigServer::VariablesInterpolator.new
 
@@ -213,7 +216,7 @@ module Bosh::Director
           end
 
           begin
-            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {})
+            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {}, current_variable_set)
           rescue Exception => e
             instance_group_errors.push e
           end

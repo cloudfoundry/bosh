@@ -7,5 +7,10 @@ module Bosh::Director::Models
     def before_create
       self.created_at ||= Time.now
     end
+
+    def find_variable_by_name(variable_name)
+      variables_dataset.where(variable_name: variable_name).limit(1).first
+    end
+
   end
 end

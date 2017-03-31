@@ -35,6 +35,22 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
     end
 
+    # @param [Hash] link_properties_hash Link spec properties to be interpolated
+    # @param [VariableSet] consumer_variable_set The variable set of the consumer deployment
+    # @param [VariableSet] provider_variable_set The variable set of the provider deployment
+    # @return [Hash] A Deep copy of the interpolated links spec
+    def interpolate_cross_deployment_link(link_properties_hash, consumer_variable_set, provider_variable_set)
+      return link_properties_hash if link_properties_hash.nil?
+      raise "Unable to interpolate cross deployment link properties. Expected a 'Hash', got '#{link_properties_hash.class}'" unless link_properties_hash.is_a?(Hash)
+
+      placeholders_paths = @deep_hash_replacer.placeholders_paths(link_properties_hash)
+      placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
+
+      retrieved_config_server_values = resolve_cross_deployments_variables(placeholders_list, consumer_variable_set, provider_variable_set)
+
+      @deep_hash_replacer.replace_placeholders(link_properties_hash, placeholders_paths, retrieved_config_server_values)
+    end
+
     # Refer to unit tests for full understanding of this method
     # @param [Object] provided_prop property value
     # @param [Object] default_prop property value
@@ -140,6 +156,58 @@ module Bosh::Director::ConfigServer
             config_values[variable] = get_value_by_id(name, saved_variable_mapping.variable_id)
           end
         rescue Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
+          errors << e
+        end
+      end
+
+      if errors.length > 0
+        message = errors.map{|error| "- #{error.message}"}.join("\n")
+        raise Bosh::Director::ConfigServerFetchError, message
+      end
+
+      config_values
+    end
+
+    def resolve_cross_deployments_variables(variables, consumer_variable_set, provider_variable_set)
+      provider_deployment_name = provider_variable_set.deployment.name
+
+      errors = []
+      config_values = {}
+
+      variables.each do |variable|
+        raw_variable_name = ConfigServerHelper.add_prefix_if_not_absolute(
+          ConfigServerHelper.extract_placeholder_name(variable),
+          @director_name,
+          provider_deployment_name
+        )
+
+        variable_composed_name = get_name_root(raw_variable_name)
+        consumer_variable_model = consumer_variable_set.find_variable_by_name(variable_composed_name)
+
+        begin
+          if !consumer_variable_model.nil?
+            variable_id_to_fetch = consumer_variable_model.variable_id
+          elsif !consumer_variable_set.writable
+            consumer_deployment_name = consumer_variable_set.deployment.name
+            raise Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '#{variable_composed_name}' to be already versioned in deployment '#{consumer_deployment_name}'"
+          else
+            provider_variable_model = provider_variable_set.find_variable_by_name(variable_composed_name)
+            raise Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '#{variable_composed_name}' to be already versioned in link provider deployment '#{provider_deployment_name}'" if provider_variable_model.nil?
+
+            variable_id = provider_variable_model.variable_id
+            variable_name = provider_variable_model.variable_name
+
+            begin
+              consumer_variable_set.add_variable(variable_name: variable_name, variable_id: variable_id)
+            rescue Sequel::UniqueConstraintViolation
+              @logger.debug("Variable '#{variable_name}' was already added to consumer variable set '#{consumer_variable_set.id}'")
+            end
+
+            variable_id_to_fetch = provider_variable_model.variable_id
+          end
+
+          config_values[variable] = get_value_by_id(raw_variable_name, variable_id_to_fetch)
+        rescue Bosh::Director::ConfigServerInconsistentVariableState, Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
           errors << e
         end
       end
@@ -314,6 +382,10 @@ module Bosh::Director::ConfigServer
   class DisabledClient
     def interpolate(src, deployment_name, variable_set, options={})
       Bosh::Common::DeepCopy.copy(src)
+    end
+
+    def interpolate_cross_deployment_link(link_spec, consumer_variable_set, provider_variable_set)
+      Bosh::Common::DeepCopy.copy(link_spec)
     end
 
     def prepare_and_get_property(manifest_provided_prop, default_prop, type, deployment_name, options = {})

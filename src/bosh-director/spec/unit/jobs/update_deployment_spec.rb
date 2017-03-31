@@ -139,6 +139,8 @@ module Bosh::Director
             allow(planner).to receive(:validate_packages)
             allow(planner).to receive(:compile_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
+            allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
+            allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
           end
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
@@ -167,7 +169,7 @@ module Bosh::Director
 
             it 'versions the variables in errands' do
               expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name')
-              expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links)
+              expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links, variable_set_1)
 
               job.perform
             end
@@ -314,12 +316,8 @@ module Bosh::Director
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
               allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
-
             end
             it 'should mark variable_set.writable to false' do
-              allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
-              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
-
               expect(variable_set_1).to receive(:update).with({:writable => false})
 
               job.perform

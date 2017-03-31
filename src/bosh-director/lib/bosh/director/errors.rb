@@ -111,6 +111,7 @@ module Bosh::Director
   SnapshotNotFound = err(70008)
   JobNotFound = err(70009, NOT_FOUND)
   ContextIdViolatedMax = err(70010)
+  VariableSetNotFound = err(70011)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)
