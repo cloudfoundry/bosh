@@ -49,7 +49,7 @@ module Bosh::Director
       context 'when job is provided' do
         it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id], options], deployment).and_return(task)
+              username, Jobs::FetchLogs, 'fetch logs', [contain_exactly(instance.id, instance_1.id), options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, nil, options)).to eq(task)
         end
@@ -60,7 +60,7 @@ module Bosh::Director
         let(:job_2) { 'FAKE_JOB_2' }
         it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id, instance_2.id], options], deployment).and_return(task)
+              username, Jobs::FetchLogs, 'fetch logs', [contain_exactly(instance.id, instance_1.id, instance_2.id), options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, nil, nil, options)).to eq(task)
         end
