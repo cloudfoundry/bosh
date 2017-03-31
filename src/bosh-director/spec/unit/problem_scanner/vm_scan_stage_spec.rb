@@ -398,7 +398,7 @@ module Bosh::Director
         it 'returns all owners' do
           expect(problem_register).to_not receive(:problem_found)
           vm_scanner.scan
-          expect(vm_scanner.agent_disks['fake-disk-cid']).to eq(['vm-cid-0', 'vm-cid-1'])
+          expect(vm_scanner.agent_disks['fake-disk-cid']).to match_array(['vm-cid-0', 'vm-cid-1'])
         end
       end
 
