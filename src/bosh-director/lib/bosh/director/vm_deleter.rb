@@ -12,15 +12,16 @@ module Bosh::Director
       if instance_model.active_vm
         begin
           vm_model = instance_model.active_vm
+          vm_cid = vm_model.cid
           instance_name = "#{instance_model.job}/#{instance_model.uuid}"
-          parent_id = add_event(instance_model.deployment.name, instance_name, vm_model.cid) if store_event
+          parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance_model)
           instance_model.update(active_vm: nil)
           vm_model.delete
         rescue Exception => e
           raise e
         ensure
-          add_event(instance_model.deployment.name, instance_name, vm_model.cid, parent_id, e) if store_event
+          add_event(instance_model.deployment.name, instance_name, vm_cid, parent_id, e) if store_event
         end
       end
     end
