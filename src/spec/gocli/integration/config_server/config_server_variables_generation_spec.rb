@@ -210,6 +210,29 @@ describe 'variable generation with config server', type: :integration do
           expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
         end
 
+        it 'should not regenerate values when calling restart/stop/start/recreate' do
+          max_variables_events_count = 2
+
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          expect(deploy_events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
+
+          var_a = config_server_helper.get_value(prepend_namespace('var_a'))
+          var_b = config_server_helper.get_value('/var_b')
+
+          ['stop', 'start', 'restart', 'recreate'].each do |command|
+            bosh_runner.run(command, deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+            expect(events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq(var_a)
+            expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
+          end
+        end
+
         xcontext 'when variable is referenced by a property that has a type in release spec' do
           let(:manifest_hash) do
             Bosh::Spec::Deployments.test_release_manifest.merge(

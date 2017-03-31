@@ -54,11 +54,12 @@ module Bosh::Director
         previous_releases, previous_stemcells = get_stemcells_and_releases
         context = {}
         parent_id = add_event
+        is_deploy_action = @options['deploy']
 
         with_deployment_lock(@deployment_name) do
           deployment_plan = nil
 
-          if @options['deploy']
+          if is_deploy_action
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
@@ -71,7 +72,7 @@ module Bosh::Director
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
-            generate_variables_values(deployment_plan.variables, @deployment_name)
+            generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
             deployment_plan.bind_models
           end
 
@@ -86,7 +87,7 @@ module Bosh::Director
             current_variable_set = deployment_plan.model.current_variable_set
 
             # TODO:ConfigServer This class ConfigServer::VariablesHandler is weirdly modifying the instance groups objects. Need to do something about it.
-            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, @options['deploy'], current_variable_set)
+            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, is_deploy_action, current_variable_set)
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
 
             if dry_run?
@@ -101,7 +102,7 @@ module Bosh::Director
               end
 
               # only in the case of a deploy should you be cleaning up
-              if @options['deploy']
+              if is_deploy_action
                 ConfigServer::VariablesHandler.mark_new_current_variable_set(deployment_plan.model)
                 ConfigServer::VariablesHandler.remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end

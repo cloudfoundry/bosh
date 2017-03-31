@@ -190,10 +190,29 @@ module Bosh::Director
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
             end
 
-            it 'tries to generate the values through config server' do
-              expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name')
+            context 'when it is a deploy action' do
+              let (:options)  { {'deploy' => true} }
 
-              job.perform
+              before do
+                allow(variable_set_1).to receive(:update)
+                allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+                allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
+                allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+              end
+
+              it 'generates the values through config server' do
+                expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name')
+                job.perform
+              end
+            end
+
+            context 'when it is a NOT a deploy action' do
+              let (:options)  { {'deploy' => false} }
+
+              it 'should NOT generate the variables' do
+                expect(config_server_client).to_not receive(:generate_values).with(variables, 'deployment-name')
+                job.perform
+              end
             end
           end
 
