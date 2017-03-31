@@ -188,7 +188,7 @@ module Bosh::Director::ConfigServer
               expect(models.length).to eq(0)
               expect{
                 client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
-              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, 'Variable /boo was previously defined, but does not exist on the director')
+              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '/boo' to be already versioned in deployment 'deployment_name'")
               expect(models.length).to eq(0)
             end
           end
@@ -1098,7 +1098,7 @@ module Bosh::Director::ConfigServer
                       expect(models.length).to eq(0)
                       expect{
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
-                      }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{prepend_namespace('my_smurf')} was previously defined, but does not exist on the director")
+                      }.to raise_error(Bosh::Director::ConfigServerGenerationError, "Variable '#{prepend_namespace('my_smurf')}' cannot be generated. Variable generation allowed only during deploy action")
                       expect(models.length).to eq(0)
                     end
                   end
@@ -1449,7 +1449,7 @@ module Bosh::Director::ConfigServer
               expect(models.length).to eq(0)
               expect{
                 client.generate_values(variables_obj, deployment_name)
-              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Variable #{prepend_namespace('placeholder_a')} was previously defined, but does not exist on the director")
+              }.to raise_error(Bosh::Director::ConfigServerGenerationError, "Variable '#{prepend_namespace('placeholder_a')}' cannot be generated. Variable generation allowed only during deploy action")
               expect(models.length).to eq(0)
             end
           end
