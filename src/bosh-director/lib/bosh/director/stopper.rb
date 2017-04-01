@@ -9,7 +9,7 @@ module Bosh::Director
     end
 
     def stop
-      return if @instance_model.compilation || @instance_model.vm_cid.nil? || @instance_plan.needs_to_fix?
+      return if @instance_model.compilation || @instance_model.active_vm_id.nil? || @instance_plan.needs_to_fix?
 
       if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")

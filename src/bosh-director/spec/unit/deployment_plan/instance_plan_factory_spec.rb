@@ -9,14 +9,16 @@ module Bosh::Director
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
       let(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
+      let(:existing_vm_model) { Models::Vm.make(cid: 'vm-cid') }
       let(:existing_instance_model) do
-        Models::Instance.make(
+        instance_model = Models::Instance.make(
           deployment: deployment_model,
           job: 'foobar',
           index: 0,
-          vm_cid: 'vm-cid',
           spec: spec
         )
+        instance_model.add_vm(existing_vm_model)
+        instance_model.update(active_vm_id: existing_vm_model.id)
       end
       let(:spec) do
         {

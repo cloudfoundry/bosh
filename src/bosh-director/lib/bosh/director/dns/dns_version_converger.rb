@@ -3,14 +3,15 @@ module Bosh::Director
 
     ONLY_OUT_OF_DATE_SELECTOR = lambda do |current_version, logger|
       logger.info('Selected strategy: ONLY_OUT_OF_DATE_SELECTOR')
-      Models::Instance.left_outer_join(:agent_dns_versions, agent_dns_versions__agent_id: :instances__agent_id)
-        .select_append(Sequel.expr(:instances__agent_id).as(:agent_id))
-        .where { ((dns_version < current_version) | Sequel.expr(dns_version: nil)) & Sequel.~(vm_cid: nil) }
+      Models::Instance.inner_join(:vms, vms__id: :instances__active_vm_id)
+        .left_outer_join(:agent_dns_versions, agent_dns_versions__agent_id: :vms__agent_id)
+        .select_append(Sequel.expr(:vms__agent_id).as(:agent_id))
+        .where { ((dns_version < current_version) | Sequel.expr(dns_version: nil)) }
     end
 
     ALL_INSTANCES_WITH_VMS_SELECTOR = lambda do |current_version, logger|
       logger.info('Selected strategy: ALL_INSTANCES_WITH_VMS_SELECTOR')
-      Models::Instance.exclude(vm_cid: nil)
+      Models::Instance.exclude(active_vm_id: nil)
     end
 
     def initialize(logger, max_threads, strategy_selector=ONLY_OUT_OF_DATE_SELECTOR)
@@ -35,7 +36,7 @@ module Bosh::Director
 
       ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
         instances.each do |instance|
-        @logger.info("Updating instance '#{instance}' with agent id '#{instance.agent_id}' to dns version '#{dns_blob.version}'")
+          @logger.info("Updating instance '#{instance}' with agent id '#{instance.agent_id}' to dns version '#{dns_blob.version}'")
           pool.process do
             update_dns_for_instance(dns_blob, instance)
           end
@@ -77,7 +78,7 @@ module Bosh::Director
 
     def delete_orphaned_agent_dns_versions
       Models::AgentDnsVersion.exclude(
-        :agent_dns_versions__agent_id => Models::Instance.select(:instances__agent_id)).delete
+        :agent_dns_versions__agent_id => Models::Vm.select(:vms__agent_id)).delete
     end
   end
 end

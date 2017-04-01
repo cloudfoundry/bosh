@@ -86,10 +86,10 @@ ruby/yaml-0.1.7.tar.gz:
   size: 527518
   object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
   sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
-s3cli/s3cli-0.0.53-linux-amd64:
+s3cli/s3cli-0.0.55-linux-amd64:
   size: 10330042
-  object_id: 30b2b4f3-a8d3-4a2d-7881-17cece91574a
-  sha: 4d6881fa390c6ecc1e5a0dd73af6951353857106
+  object_id: 7131652f-fdc7-4a84-4437-c22c908e0148
+  sha: 2b345d8476970bc9668af6d602e1c3fa65cff89a
 verify-multidigest/verify-multidigest-0.0.29-linux-amd64:
   size: 3277550
   object_id: e5925f0e-d420-4759-4c4e-9b964183efc1

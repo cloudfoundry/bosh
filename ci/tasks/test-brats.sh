@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -eu
 
 start-bosh -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=$PWD/bosh-dev-release/bosh-dev-release.tgz
 

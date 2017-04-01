@@ -67,7 +67,7 @@ describe 'cli runtime config', type: :integration do
                                             return_exit_code: true)
 
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the releases section.")
+    expect(output).to include("Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the runtime releases section.")
 end
 
   it 'does not fail when runtime config is very large' do

@@ -343,5 +343,123 @@ module Bosh::Director::Models
         end
       end
     end
+
+    it 'has a one-to-many relationship to vms' do
+      vm1 = BD::Models::Vm.make(instance_id: subject.id)
+      vm2 = BD::Models::Vm.make(instance_id: subject.id)
+
+      expect(subject.vms).to contain_exactly(vm1, vm2)
+
+      new_instance = BD::Models::Instance.make
+
+      new_instance.add_vm vm1
+      subject.refresh
+      expect(subject.vms).to contain_exactly(vm2)
+      expect(new_instance.vms).to contain_exactly(vm1)
+    end
+
+    it 'requires the active_vm to be in vms' do
+      vm = BD::Models::Vm.make
+
+      expect do
+        subject.active_vm = vm
+        subject.save
+      end.to raise_error(Sequel::ValidationFailed, 'Integrity error: active_vm must be among vms')
+    end
+
+    it 'behaves as if it has a one-to-one relationship to its active vm' do
+      vm = BD::Models::Vm.make
+      subject.add_vm vm
+      subject.active_vm = vm
+      subject.save
+      expect(subject.active_vm_id).to eq(vm.id)
+
+      instance_model = BD::Models::Instance[subject.id]
+
+      expect(instance_model.active_vm_id).to eq(vm.id)
+      expect(instance_model.vms).to contain_exactly(vm)
+      expect(vm.instance).to eq(instance_model)
+
+      new_instance = BD::Models::Instance.make
+
+      expect do
+        new_instance.add_vm vm
+        subject.refresh
+        subject.save
+      end.to raise_error
+    end
+
+    context 'with active vm' do
+      before do
+        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha')
+        subject.add_vm vm
+        subject.active_vm = vm
+        subject.save
+      end
+
+      describe 'credentials' do
+        it 'references credentials from active vm' do
+          expect(subject.credentials).to eq({ 'something' => 'jsony'})
+        end
+      end
+
+      describe 'agent_id' do
+        it 'references agent_id from active vm' do
+          expect(subject.agent_id).to eq('my-agent-id')
+        end
+      end
+
+      describe 'vm_cid' do
+        it 'returns active vms cid' do
+          expect(subject.vm_cid).to eq('my-cid')
+        end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns active vms trusted_certs_sha1' do
+          expect(subject.trusted_certs_sha1).to eq('trusted-sha')
+        end
+      end
+    end
+
+    context 'without active vm' do
+      describe 'credentials' do
+        it 'is nil' do
+          expect(subject.credentials).to be_nil
+        end
+      end
+
+      describe 'agent_id' do
+        it 'is nil' do
+          expect(subject.agent_id).to be_nil
+        end
+      end
+
+      describe 'vm_cid' do
+        it 'is nil' do
+          expect(subject.vm_cid).to be_nil
+        end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns sha1 digest of empty string' do
+          expect(subject.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(''))
+        end
+      end
+    end
+
+    describe '#has_important_vm?' do
+      let(:instance_with_important_vm) { BD::Models::Instance.new(state: 'running', ignore: false, active_vm_id: 'id') }
+      let(:ignored_instance) { BD::Models::Instance.new(state: 'running', ignore: true, active_vm_id: 'id') }
+      let(:stopped_instance) { BD::Models::Instance.new(state: 'stopped', active_vm_id: 'id', ignore: false) }
+      let(:instance_with_no_active_vm) { BD::Models::Instance.new(state: 'running', ignore: false) }
+
+      it 'only returns true when model has active vm and is not stopped and is not ignored' do
+        expect(instance_with_important_vm.has_important_vm?).to eq(true)
+        expect(ignored_instance.has_important_vm?).to eq(false)
+        expect(stopped_instance.has_important_vm?).to eq(false)
+        expect(instance_with_no_active_vm.has_important_vm?).to eq(false)
+      end
+    end
   end
 end

@@ -199,12 +199,12 @@ module Bosh::Director
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
           .map do |deployment|
           cloud_config = if deployment.cloud_config.nil?
-                         'none'
-                       elsif deployment.cloud_config == latest_cloud_config
-                         'latest'
-                       else
-                         'outdated'
-                       end
+                           'none'
+                         elsif deployment.cloud_config == latest_cloud_config
+                           'latest'
+                         else
+                           'outdated'
+                         end
 
           {
             'name' => deployment.name,
@@ -498,15 +498,22 @@ module Bosh::Director
       end
 
       def create_instance_response(instance)
-        {
-            'agent_id' => instance.agent_id,
-            'cid' => instance.vm_cid,
-            'job' => instance.job,
-            'index' => instance.index,
-            'id' => instance.uuid,
-            'az' => instance.availability_zone,
-            'ips' => ips(instance),
+        response = {
+          'agent_id' => nil,
+          'cid' => nil,
+          'job' => instance.job,
+          'index' => instance.index,
+          'id' => instance.uuid,
+          'az' => instance.availability_zone,
+          'ips' => ips(instance),
         }
+
+        if !instance.active_vm.nil?
+          response['cid'] = instance.active_vm.cid
+          response['agent_id'] = instance.active_vm.agent_id
+        end
+
+        response
       end
 
       def ips(instance)
@@ -515,7 +522,7 @@ module Bosh::Director
           result = instance.spec['networks'].map {|_, network| network['ip']}
         end
         result
-       end
+      end
     end
   end
 end

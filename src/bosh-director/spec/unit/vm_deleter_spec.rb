@@ -36,7 +36,12 @@ module Bosh
         instance_group
       end
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
-      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+      let(:vm_model) { Models::Vm.make(cid: 'vm-cid') }
+      let(:instance_model) do
+        is = Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1')
+        is.add_vm vm_model
+        is.update(active_vm: vm_model)
+      end
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
             job,
@@ -49,7 +54,6 @@ module Bosh
         )
         instance.bind_existing_instance_model(instance_model)
         allow(instance).to receive(:apply_spec).and_return({})
-        allow(instance).to receive(:vm_cid).and_return('vm-cid')
         allow(instance).to receive(:deployment).and_return(deployment)
         allow(instance).to receive(:job).and_return(job)
         allow(instance).to receive(:spec).and_return(JSON.parse('{"networks":[["name",{"ip":"1.2.3.4"}]],"job":{"name":"job_name"},"deployment":"bosh"}'))
@@ -72,7 +76,7 @@ module Bosh
                                                                       instance_id: instance.id) }
 
         before do
-          expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
+          expect(instance_model).to receive(:update).with(active_vm: nil).and_call_original
           expect(subject).to receive(:delete_vm).with(instance_model)
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end
@@ -102,15 +106,15 @@ module Bosh
 
         it 'calls delete_vm on the cloud' do
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
           subject.delete_vm(instance_model)
         end
 
         context 'when vm has already been deleted from the IaaS' do
           it 'should log a warning' do
             expect(logger).to receive(:info).with('Deleting VM')
-            expect(logger).to receive(:warn).with("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
-            expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid).and_raise Bosh::Clouds::VMNotFound
+            expect(logger).to receive(:warn).with("VM '#{vm_model.cid}' might have already been deleted from the cloud")
+            expect(cloud).to receive(:delete_vm).with(vm_model.cid).and_raise Bosh::Clouds::VMNotFound
 
             subject.delete_vm(instance_model)
           end
@@ -132,16 +136,16 @@ module Bosh
           allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
 
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
-          subject.delete_vm_by_cid(instance_model.vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
+          subject.delete_vm_by_cid(vm_model.cid)
         end
 
         it 'does not call delete_vm if multiple clouds are configured' do
           allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
 
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to_not receive(:delete_vm).with(instance_model.vm_cid)
-          subject.delete_vm_by_cid(instance_model.vm_cid)
+          expect(cloud).to_not receive(:delete_vm).with(vm_model.cid)
+          subject.delete_vm_by_cid(vm_model.cid)
         end
 
         context 'when virtual delete is enabled' do
@@ -152,7 +156,7 @@ module Bosh
 
             expect(logger).to receive(:info).with('Deleting VM')
             expect(cloud).not_to receive(:delete_vm)
-            subject.delete_vm_by_cid(instance_model.vm_cid)
+            subject.delete_vm_by_cid(vm_model.cid)
           end
         end
       end

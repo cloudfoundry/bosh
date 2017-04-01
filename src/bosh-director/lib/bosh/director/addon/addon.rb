@@ -1,5 +1,8 @@
 module Bosh::Director
-  module RuntimeConfig
+  module Addon
+    DEPLOYMENT_LEVEL = :deployment
+    RUNTIME_LEVEL = :runtime
+
     class Addon
       extend ValidationHelper
 
@@ -21,7 +24,7 @@ module Bosh::Director
         @addon_level_properties
       end
 
-      def self.parse(addon_hash)
+      def self.parse(addon_hash, addon_level = RUNTIME_LEVEL)
         name = safe_property(addon_hash, 'name', :class => String)
         addon_job_hashes = safe_property(addon_hash, 'jobs', :class => Array, :default => [])
         parsed_addon_jobs = []
@@ -29,8 +32,8 @@ module Bosh::Director
           parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
         end
         addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        addon_include = AddonFilter.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true), :include)
-        addon_exclude = AddonFilter.parse(safe_property(addon_hash, 'exclude', :class => Hash, :optional => true), :exclude)
+        addon_include = Filter.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true), :include, addon_level)
+        addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', :class => Hash, :optional => true), :exclude, addon_level)
 
         new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
       end

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 function generate_certs() {
   local certs_dir
@@ -187,7 +187,7 @@ function main() {
 EOF
       source "${local_bosh_dir}/env"
 
-      bosh -n update-cloud-config docker/cloud-config.yml
+      bosh -n update-cloud-config docker/cloud-config.yml -v network=director_network
 
   popd > /dev/null
 }

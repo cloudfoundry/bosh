@@ -3,7 +3,7 @@ module Bosh::Director
 
     def self.run_post_deploys_after_resurrection(deployment)
       return unless Config.enable_post_deploy
-      instances = Models::Instance.filter(deployment: deployment).exclude(vm_cid: nil).all
+      instances = Models::Instance.filter(deployment: deployment).exclude(active_vm_id: nil).all
       agent_options = {
           timeout: 10,
           retry_methods: {get_state: 0}
@@ -26,10 +26,12 @@ module Bosh::Director
     def self.run_post_deploys_after_deployment(deployment_plan)
       return unless Config.enable_post_deploy
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        deployment_plan.instance_groups.each do |job|
+        deployment_plan.instance_groups.each do |instance_group|
           # No ignored instances will ever come to this point as they were filtered out earlier
           # BUT JUST IN CASE, check for the ignore flag
-          job.instances.select{|instance| instance.model[:vm_cid] != nil && instance.model.state != "stopped" && !instance.model.ignore}.each do |instance|
+          instance_group.instances.select do |instance|
+            instance.model.has_important_vm?
+          end.each do |instance|
             pool.process do
               instance.agent_client.run_script('post-deploy', {})
             end

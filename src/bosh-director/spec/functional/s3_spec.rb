@@ -25,7 +25,7 @@ module Bosh::Blobstore
     end
 
     let(:s3cli_path) do
-      File.expand_path(File.join(File.dirname(__FILE__), "../../../../blobs/s3cli/", "s3cli-0.0.53-linux-amd64"))
+      Dir.glob(File.join(File.dirname(__FILE__), "../../../../blobs/s3cli/", "s3cli-*-linux-amd64")).first
     end
 
     let(:bucket_name) do

@@ -18,16 +18,22 @@ module Bosh::Director
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
 
+      @vm = Models::Vm.make(
+        cid: 'vm-cid',
+        agent_id: 'agent-007'
+      )
+
       @instance = Models::Instance.make(
         job: 'mysql_node',
         index: 0,
         uuid: 'uuid-1',
-        vm_cid: 'vm-cid',
         deployment: deployment_model,
         cloud_properties_hash: { 'foo' => 'bar' },
         spec: {'networks' => networks},
-        agent_id: 'agent-007'
       )
+      @instance.add_vm @vm
+      @instance.active_vm = @vm
+      @instance.save
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
     end
@@ -52,7 +58,7 @@ module Bosh::Director
 
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
-        @instance.update(vm_cid: nil)
+        @instance.update(active_vm_id: nil)
         expect {
           handler.apply_resolution(:reboot_vm)
         }.to raise_error(ProblemHandlerError, /is no longer in the database/)
@@ -88,7 +94,7 @@ module Bosh::Director
 
     describe 'recreate_vm resolution' do
       it 'skips recreate if CID is not present' do
-        @instance.update(vm_cid: nil)
+        @instance.update(active_vm_id: nil)
 
         expect {
           handler.apply_resolution(:recreate_vm)
@@ -163,8 +169,8 @@ module Bosh::Director
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).not_to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).to be_nil
         end
 
         context 'when update is specified' do
@@ -207,8 +213,8 @@ module Bosh::Director
               expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
               handler.apply_resolution(:recreate_vm_skip_post_start)
 
-              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
             end
           end
 
@@ -225,8 +231,8 @@ module Bosh::Director
               expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
               handler.apply_resolution(:recreate_vm)
 
-              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
             end
           end
         end
@@ -235,8 +241,8 @@ module Bosh::Director
           expect_vm_to_be_created
           handler.apply_resolution(:recreate_vm)
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
         end
       end
     end
@@ -256,7 +262,9 @@ module Bosh::Director
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
         expect{
           handler.apply_resolution(:delete_vm)
-        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+        }.to change {
+          Models::Vm.where(cid: 'vm-cid').count
+        }.from(1).to(0)
       end
     end
 
@@ -274,7 +282,9 @@ module Bosh::Director
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
         expect{
           handler.apply_resolution(:delete_vm_reference)
-        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+        }.to change {
+          Models::Vm.where(cid: 'vm-cid').count
+        }.from(1).to(0)
       end
     end
   end

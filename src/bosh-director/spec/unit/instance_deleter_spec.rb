@@ -24,7 +24,12 @@ module Bosh::Director
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }
 
-      let(:existing_instance) { Models::Instance.make(vm_cid: 'fake-vm-cid', deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5) }
+      let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid') }
+      let(:existing_instance) do
+        instance = Models::Instance.make(deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
+        instance.add_vm existing_vm
+        instance.update(active_vm: existing_vm)
+      end
 
       let(:instance_plan) do
         DeploymentPlan::InstancePlan.new(
@@ -114,7 +119,7 @@ module Bosh::Director
 
         it 'should record deletion event' do
           expect(stopper).to receive(:stop)
-          expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+          expect(cloud).to receive(:delete_vm).with(existing_instance.active_vm.cid)
           expect(ip_provider).to receive(:release).with(reservation)
           expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
 
@@ -123,7 +128,7 @@ module Bosh::Director
           }.to change {
             Bosh::Director::Models::Event.count }.from(0).to(8)
 
-          event_1 = Bosh::Director::Models::Event.first
+          event_1 = Bosh::Director::Models::Event.order(:id).first
           expect(event_1.user).to eq(task.username)
           expect(event_1.action).to eq('delete')
           expect(event_1.object_type).to eq('instance')
@@ -171,7 +176,7 @@ module Bosh::Director
           expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
           expect(dns_manager).to receive(:cleanup_dns_records)
           expect(dns_manager).to receive(:publish_dns_records)
-          expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+          expect(cloud).to receive(:delete_vm).with(existing_instance.active_vm.cid)
           expect(ip_provider).to receive(:release).with(reservation)
 
           expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -183,7 +188,7 @@ module Bosh::Director
 
           expect {
             deleter.delete_instance_plans([instance_plan], event_log_stage)
-          }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+          }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
         end
 
         context 'when force option is passed in' do
@@ -199,7 +204,7 @@ module Bosh::Director
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
               expect(dns_manager).to receive(:cleanup_dns_records)
               expect(dns_manager).to receive(:publish_dns_records)
-              expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+              expect(cloud).to receive(:delete_vm).with(existing_instance.active_vm.cid)
               expect(ip_provider).to receive(:release).with(reservation)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -208,7 +213,7 @@ module Bosh::Director
 
               expect {
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
-              }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+              }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
             end
           end
 
@@ -233,7 +238,7 @@ module Bosh::Director
 
               expect {
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
-              }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+              }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
             end
           end
 
@@ -246,7 +251,7 @@ module Bosh::Director
 
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
               expect(stopper).to receive(:stop)
-              expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+              expect(cloud).to receive(:delete_vm).with(existing_instance.active_vm.cid)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -256,7 +261,7 @@ module Bosh::Director
 
               expect {
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
-              }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+              }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
             end
           end
 
@@ -267,7 +272,7 @@ module Bosh::Director
 
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
               expect(stopper).to receive(:stop)
-              expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+              expect(cloud).to receive(:delete_vm).with(existing_instance.active_vm.cid)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -276,7 +281,7 @@ module Bosh::Director
 
               expect {
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
-              }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+              }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
             end
           end
         end
@@ -300,7 +305,7 @@ module Bosh::Director
 
             expect {
               deleter.delete_instance_plans([instance_plan], event_log_stage)
-            }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+            }.to change { Models::Instance.where(active_vm_id: existing_vm.id).count}.from(1).to(0)
           end
         end
       end

@@ -54,11 +54,12 @@ module Bosh::Director
         previous_releases, previous_stemcells = get_stemcells_and_releases
         context = {}
         parent_id = add_event
+        is_deploy_action = @options['deploy']
 
         with_deployment_lock(@deployment_name) do
           deployment_plan = nil
 
-          if @options['deploy']
+          if is_deploy_action
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
@@ -71,7 +72,7 @@ module Bosh::Director
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
-            generate_variables_values(deployment_plan.variables, @deployment_name)
+            generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
             deployment_plan.bind_models
           end
 
@@ -83,8 +84,11 @@ module Bosh::Director
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
           begin
-            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, @options['deploy'], deployment_plan.model.current_variable_set)
-            render_templates_and_snapshot_errand_variables(deployment_plan)
+            current_variable_set = deployment_plan.model.current_variable_set
+
+            # TODO:ConfigServer This class ConfigServer::VariablesHandler is weirdly modifying the instance groups objects. Need to do something about it.
+            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, is_deploy_action, current_variable_set)
+            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
 
             if dry_run?
               return "/deployments/#{deployment_plan.name}"
@@ -98,7 +102,7 @@ module Bosh::Director
               end
 
               # only in the case of a deploy should you be cleaning up
-              if @options['deploy']
+              if is_deploy_action
                 ConfigServer::VariablesHandler.mark_new_current_variable_set(deployment_plan.model)
                 ConfigServer::VariablesHandler.remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end
@@ -176,9 +180,9 @@ module Bosh::Director
         end
       end
 
-      def render_templates_and_snapshot_errand_variables(deployment_plan)
+      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
         errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
-        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups)
+        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
         unless errors.empty?
           message = errors.map { |error| error.message.strip }.join("\n")
@@ -199,7 +203,7 @@ module Bosh::Director
         errors
       end
 
-      def snapshot_errands_variables_versions(errands_instance_groups)
+      def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
         variables_interpolator = ConfigServer::VariablesInterpolator.new
 
@@ -213,7 +217,7 @@ module Bosh::Director
           end
 
           begin
-            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {})
+            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {}, current_variable_set)
           rescue Exception => e
             instance_group_errors.push e
           end

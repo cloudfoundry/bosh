@@ -3,6 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::InstanceManager do
     let(:deployment) { Models:: Deployment.make(name: deployment_name) }
+    let(:credentials) { {'foo' => 'bar'} }
+    let(:vm) { Models::Vm.make(agent_id: 'random-id', credentials_json: JSON.generate(credentials)) }
     let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
     let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
@@ -15,6 +17,8 @@ module Bosh::Director
 
     before do
       allow(JobQueue).to receive(:new).and_return(job_queue)
+      instance.add_vm(vm)
+      instance.update(active_vm: vm)
     end
 
     describe '#fetch_logs' do
@@ -45,7 +49,7 @@ module Bosh::Director
       context 'when job is provided' do
         it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id], options], deployment).and_return(task)
+              username, Jobs::FetchLogs, 'fetch logs', [contain_exactly(instance.id, instance_1.id), options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, nil, options)).to eq(task)
         end
@@ -56,7 +60,7 @@ module Bosh::Director
         let(:job_2) { 'FAKE_JOB_2' }
         it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-              username, Jobs::FetchLogs, 'fetch logs', [[instance.id, instance_1.id, instance_2.id], options], deployment).and_return(task)
+              username, Jobs::FetchLogs, 'fetch logs', [contain_exactly(instance.id, instance_1.id, instance_2.id), options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, nil, nil, options)).to eq(task)
         end
@@ -115,6 +119,21 @@ module Bosh::Director
     describe '#filter_by' do
       it 'filters by given criteria' do
         expect(subject.filter_by(deployment, uuid: instance.uuid).all).to eq [instance]
+      end
+    end
+
+    describe '#agent_client_for' do
+      it 'creates an agent client for the specified instance' do
+        fake_agent_client = instance_double(AgentClient)
+        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, vm.agent_id).and_return(fake_agent_client)
+        agent_client = subject.agent_client_for(instance)
+        expect(agent_client).to eq(fake_agent_client)
+      end
+
+      context 'when the instance has no active vm' do
+        it 'raises error' do
+          expect{ subject.agent_client_for(instance_1) }.to raise_error(InstanceVmMissing, "'#{instance_1}' doesn't reference a VM")
+        end
       end
     end
 

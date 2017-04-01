@@ -771,7 +771,7 @@ module Bosh::Director
               #
             end
 
-            expect(Models::Instance.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)).to be_nil
+            expect(Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)).to be_nil
           end
         end
 
@@ -779,7 +779,9 @@ module Bosh::Director
           expect {
             compiler.prepare_vm(stemcell, &Proc.new {})
           }.to change {
-              Models::Instance.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count}.from(0).to(1)
+            matching_vm = Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)
+            matching_vm.nil? ? 0 : Models::Instance.where(active_vm_id: matching_vm.id).count
+          }.from(0).to(1)
         end
 
         context 'when the new vm fails to start' do

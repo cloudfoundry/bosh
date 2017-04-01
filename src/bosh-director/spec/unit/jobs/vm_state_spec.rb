@@ -35,8 +35,13 @@ module Bosh::Director
       let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
-
-    let(:instance) { Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: 'fake-vm-cid') }
+    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id') }
+    let(:instance) do
+      instance = Models::Instance.make(deployment: @deployment)
+      instance.add_vm vm
+      instance.active_vm = vm
+      instance.save
+    end
 
     describe '#perform' do
       before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent) }
@@ -84,11 +89,17 @@ module Bosh::Director
       context "when 'ip_addresses' is empty for instance" do
 
         it "returns the ip addresses from 'Models::Instance.apply_spec'" do
-          Models::Instance.make(
-              deployment: @deployment,
+          vm = Models::Vm.make(
               agent_id: 'fake-agent-id',
-              vm_cid: 'fake-vm-cid',
+              cid: 'fake-vm-cid',
+          )
+
+          instance = Models::Instance.make(
+              deployment: @deployment,
               spec: {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}})
+          instance.add_vm vm
+          instance.active_vm = vm
+          instance.save
 
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
@@ -290,7 +301,7 @@ module Bosh::Director
 
       context 'without vm_cid' do
         it 'does not try to contact the agent' do
-          instance.update(vm_cid: nil)
+          instance.update(active_vm_id: nil)
 
           expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
 
@@ -359,13 +370,18 @@ module Bosh::Director
           {'name' => 'fake-process-2', 'state' => 'failing' }])
       end
 
-      context 'when exclude filter is set and vms without cid exist' do
+      context 'with exclude filter and instances without vms' do
         before(:each) do
-          Models::Instance.make(deployment: @deployment, vm_cid: 'fake-vm-cid')
-          Models::Instance.make(deployment: @deployment, vm_cid: nil)
+          vm1 = Models::Vm.make(cid: 'fake-vm-cid')
+          is1 = Models::Instance.make(deployment: @deployment)
+          is1.add_vm vm1
+          is1.active_vm = vm1
+          is1.save
+
+          Models::Instance.make(deployment: @deployment)
         end
 
-        it 'excludes them' do
+        it 'excludes those instances missing vms' do
           allow(agent).to receive(:get_state).with('full').and_return({
               'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           })

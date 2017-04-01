@@ -409,9 +409,9 @@ LOGMESSAGE
 
                 expect {
                   planner
-                }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,
-                                 "Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
-                                   "but 'release2' is not listed in the releases section."
+                }.to raise_error Bosh::Director::AddonReleaseNotListedInReleases,
+                                 "Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
+                                   "but 'release2' is not listed in the runtime releases section."
               end
           end
         end

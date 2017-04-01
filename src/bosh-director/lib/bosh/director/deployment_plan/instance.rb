@@ -183,7 +183,7 @@ module Bosh::Director
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.active_vm.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -283,7 +283,7 @@ module Bosh::Director
       end
 
       def vm_created?
-        !@model.vm_cid.nil?
+        !@model.active_vm.nil?
       end
 
       def cloud_properties
