@@ -7,7 +7,6 @@ module Bosh::Director::Models
     one_to_many :rendered_templates_archives
     one_to_many :ip_addresses
     one_to_many :vms
-    many_to_one :active_vm, class: 'Bosh::Director::Models::Vm'
     many_to_many :templates
     many_to_one :variable_set, class: 'Bosh::Director::Models::VariableSet'
 
@@ -17,10 +16,6 @@ module Bosh::Director::Models
       validates_unique [:vms].sort.first
       validates_integer :index
       validates_includes %w(started stopped detached), :state
-
-      unless active_vm.nil? || vms.include?(active_vm)
-        errors.add('Integrity error:', 'active_vm must be among vms')
-      end
     end
 
     def managed_persistent_disk
@@ -145,10 +140,21 @@ module Bosh::Director::Models
     def credentials=(spec)
       json = json_encode(spec)
       unless active_vm.nil?
-        active_vm.credentials_json = json_encode(spec)
-        active_vm.save
+        active_vm.update(credentials_json: json_encode(spec))
       end
       json
+    end
+
+    def active_vm
+      Vm.first(instance_id: id, active: true)
+    end
+
+    def active_vm=(new_active_vm)
+      old_active_vm = active_vm
+      Bosh::Director::Config.db.transaction do
+        old_active_vm.update(active: false) unless old_active_vm.nil?
+        new_active_vm.update(active: true) unless new_active_vm.nil?
+      end
     end
 
     def agent_id
@@ -169,7 +175,7 @@ module Bosh::Director::Models
     end
 
     def has_important_vm?
-      active_vm_id != nil && state != 'stopped' && !ignore
+      active_vm != nil && state != 'stopped' && !ignore
     end
 
     def trusted_certs_sha1

@@ -41,8 +41,8 @@ module Bosh::Director
                 "'#{instance}' doesn't reference a VM"
         end
 
-        unless instance.active_vm.agent_id
-          raise VmAgentIdMissing, "VM '#{instance.active_vm.cid}' doesn't have an agent id"
+        unless instance.agent_id
+          raise VmAgentIdMissing, "Instance '#{instance.vm_cid}' doesn't have an agent id"
         end
 
         AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)

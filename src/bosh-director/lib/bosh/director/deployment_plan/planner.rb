@@ -250,7 +250,7 @@ module Bosh::Director
           if instance_group.is_service?
             instance_groups << instance_group
           elsif instance_group.is_errand?
-            if instance_group.instances.any? { |i| nil != i.model && !i.model.active_vm_id.to_s.empty? }
+            if instance_group.instances.any? { |i| nil != i.model && !i.model.active_vm.nil? }
               instance_groups << instance_group
             end
           end

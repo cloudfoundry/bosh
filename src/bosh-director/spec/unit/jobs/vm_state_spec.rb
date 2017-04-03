@@ -301,7 +301,7 @@ module Bosh::Director
 
       context 'without vm_cid' do
         it 'does not try to contact the agent' do
-          instance.update(active_vm_id: nil)
+          instance.active_vm = nil
 
           expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
 

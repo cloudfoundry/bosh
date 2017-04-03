@@ -18,7 +18,7 @@ module Bosh::Director
       @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0')
       @instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
       @instance.add_vm(@vm)
-      @instance.update(active_vm_id: @vm.id)
+      @instance.active_vm = @vm
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
@@ -28,7 +28,7 @@ module Bosh::Director
       vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1')
       instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
       instance.add_vm(vm)
-      instance.update(active_vm_id: vm.id)
+      instance.active_vm = vm
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
@@ -37,7 +37,7 @@ module Bosh::Director
       @vm2 = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2')
       @instance2 = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
       @instance2.add_vm(@vm2)
-      @instance2.update(active_vm_id: @vm2.id)
+      @instance2.active_vm = @vm2
 
       # snapshot from another deployment
       Models::Snapshot.make

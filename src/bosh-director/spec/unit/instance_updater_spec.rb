@@ -15,7 +15,8 @@ module Bosh::Director
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
       instance.add_vm vm_model
-      instance.update(active_vm: vm_model)
+      instance.active_vm = vm_model
+      instance
     end
     let(:instance_model_state) { 'started' }
     let(:dns_manager) { DnsManagerProvider.create }

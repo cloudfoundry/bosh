@@ -10,25 +10,29 @@ module Bosh::Director
       is = Models::Instance.make(deployment: deployment)
       vm = Models::Vm.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
+      is
     end
     let!(:instance2) do
       is = Models::Instance.make(deployment: deployment)
       vm = Models::Vm.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
+      is
     end
     let!(:instance3) do
       is = Models::Instance.make(deployment: deployment)
       vm = Models::Vm.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
+      is
     end
     let!(:instance4) do
       is = Models::Instance.make
       vm = Models::Vm.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
+      is
     end
 
     subject { described_class.new(deployment_name) }

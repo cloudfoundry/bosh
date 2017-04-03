@@ -17,7 +17,8 @@ module Bosh::Director::DeploymentPlan
         variable_set: variable_set_model
       )
       instance_model.add_vm vm_model
-      instance_model.update(active_vm: vm_model)
+      instance_model.active_vm = vm_model
+      instance_model
     end
     let(:spec) do
       { 'vm_type' =>

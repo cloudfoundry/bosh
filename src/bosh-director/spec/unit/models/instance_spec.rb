@@ -150,10 +150,10 @@ module Bosh::Director::Models
 
       it 'should have stemcell' do
         expect(subject.spec_p('stemcell')).to eq({
-              'alias' => 'a',
-              'name' => 'ubuntu-stemcell',
-              'version' => '1'
-            })
+          'alias' => 'a',
+          'name' => 'ubuntu-stemcell',
+          'version' => '1'
+        })
       end
     end
 
@@ -222,17 +222,17 @@ module Bosh::Director::Models
             })
 
             expect(subject.spec['vm_type']).to eq(
-                {'name' => 'a',
-                 'cloud_properties' => {}
-                }
+              {'name' => 'a',
+                'cloud_properties' => {}
+              }
             )
 
             expect(subject.spec['stemcell']).to eq(
               {'name' => 'ubuntu-stemcell',
-               'version' => '1',
-               'alias' => 'a'
+                'version' => '1',
+                'alias' => 'a'
               }
-             )
+            )
           end
         end
 
@@ -358,35 +358,58 @@ module Bosh::Director::Models
       expect(new_instance.vms).to contain_exactly(vm1)
     end
 
-    it 'requires the active_vm to be in vms' do
-      vm = BD::Models::Vm.make
+    describe '#active_vm' do
+      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
 
-      expect do
-        subject.active_vm = vm
-        subject.save
-      end.to raise_error(Sequel::ValidationFailed, 'Integrity error: active_vm must be among vms')
+      it 'returns vm of #vms that is marked active' do
+        expect(subject.active_vm).to eq(vm2)
+      end
     end
 
-    it 'behaves as if it has a one-to-one relationship to its active vm' do
-      vm = BD::Models::Vm.make
-      subject.add_vm vm
-      subject.active_vm = vm
-      subject.save
-      expect(subject.active_vm_id).to eq(vm.id)
+    describe '#active_vm=' do
+      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
 
-      instance_model = BD::Models::Instance[subject.id]
+      it 'changes what vm is returned for #active_vm' do
+        expect(subject.active_vm).to eq(vm2)
 
-      expect(instance_model.active_vm_id).to eq(vm.id)
-      expect(instance_model.vms).to contain_exactly(vm)
-      expect(vm.instance).to eq(instance_model)
+        subject.active_vm = vm1
 
-      new_instance = BD::Models::Instance.make
+        expect(subject.active_vm).to eq(vm1)
+      end
 
-      expect do
-        new_instance.add_vm vm
-        subject.refresh
-        subject.save
-      end.to raise_error
+      context 'when updating new vm to be active fails' do
+        before { allow(vm1).to receive(:update).and_raise }
+
+        it 'is transactional' do
+          expect(subject.active_vm).to eq(vm2)
+
+          expect { subject.active_vm = vm1 }.to raise_error
+
+          expect(subject.active_vm).to eq(vm2)
+        end
+      end
+
+      context 'when updating with a nil vm' do
+        it 'the instance should not have any active_vms' do
+          subject.active_vm = nil
+
+          expect(subject.active_vm).to eq(nil)
+        end
+      end
+
+      context 'when instance does not already have an active vm' do
+        before { vm2.update(active: false) }
+
+        it 'sets the given vm to be active' do
+          expect(subject.active_vm).to eq(nil)
+
+          subject.active_vm = vm2
+
+          expect(subject.active_vm).to eq(vm2)
+        end
+      end
     end
 
     context 'with active vm' do
@@ -399,7 +422,7 @@ module Bosh::Director::Models
 
       describe 'credentials' do
         it 'references credentials from active vm' do
-          expect(subject.credentials).to eq({ 'something' => 'jsony'})
+          expect(subject.credentials).to eq({'something' => 'jsony'})
         end
       end
 
@@ -449,10 +472,13 @@ module Bosh::Director::Models
     end
 
     describe '#has_important_vm?' do
-      let(:instance_with_important_vm) { BD::Models::Instance.new(state: 'running', ignore: false, active_vm_id: 'id') }
-      let(:ignored_instance) { BD::Models::Instance.new(state: 'running', ignore: true, active_vm_id: 'id') }
-      let(:stopped_instance) { BD::Models::Instance.new(state: 'stopped', active_vm_id: 'id', ignore: false) }
-      let(:instance_with_no_active_vm) { BD::Models::Instance.new(state: 'running', ignore: false) }
+      let!(:vm) { BD::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
+      let!(:ignored_vm) { BD::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
+      let!(:stopped_vm) { BD::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
+      let(:instance_with_important_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let(:ignored_instance) { BD::Models::Instance.make(state: 'started', ignore: true) }
+      let(:stopped_instance) { BD::Models::Instance.make(state: 'stopped', ignore: false) }
+      let(:instance_with_no_active_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
 
       it 'only returns true when model has active vm and is not stopped and is not ignored' do
         expect(instance_with_important_vm.has_important_vm?).to eq(true)

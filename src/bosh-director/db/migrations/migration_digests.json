@@ -99,5 +99,6 @@
   "20170306215659_expand_vms_json_column_lengths": "544410b869c44f6af0f748cf74da4e12f1919289",
   "20170320171505_add_id_group_az_network_deployment_columns_to_local_dns_records": "0a5296c0d3de35d3c3921e2f36c124f56a0a7e94",
   "20170321151400_add_writable_to_variable_set": "b4a4ab1ce8b4788402cd5b55dff5a1c05d621dc9",
-  "20170328224049_associate_vm_info_with_vms_table": "caf75442a20a49cf28eeec1fd295090a76c001e3"
+  "20170328224049_associate_vm_info_with_vms_table": "caf75442a20a49cf28eeec1fd295090a76c001e3",
+  "20170331171657_remove_active_vm_id_from_instances": "9e640563feef3e437c6ba7a5f289927488a2292a"
 }

@@ -8,8 +8,9 @@ module Bosh::Director
     subject(:job) { described_class.new(deployment.id, {'target' => target, 'command' => 'fake-command', 'params' => {'user' => 'user-ssh'}, :blobstore => {}}) }
 
     let(:deployment) { Models::Deployment.make(name: 'name-1') }
+    let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
     let(:target) { {'job' => 'fake-job', 'indexes' => [1]} }
-    let (:agent) { double(AgentClient)}
+    let(:agent) { double(AgentClient) }
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
@@ -23,10 +24,10 @@ module Bosh::Director
 
     before do
       vm = Models::Vm.make(cid: 'cid')
-      is = Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment, uuid: 'fake-uuid-1')
+      is = Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
       is.add_vm vm
-      is.update(active_vm: vm)
-      Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment, uuid: 'fake-uuid-2', active_vm: nil)
+      is.active_vm = vm
+      Models::Instance.make(job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})
@@ -51,8 +52,8 @@ module Bosh::Director
       let(:target) { {'job' => 'fake-job', 'indexes' => [1, 2]} }
 
       it 'performs only for instances with vm' do
-        instance_with_vm = Models::Instance.exclude(active_vm_id: nil).first
-        instance_witout_vm =  Models::Instance.filter(active_vm_id: nil).first
+        instance_with_vm = Models::Instance.reject { |instance| instance.active_vm.nil? }.first
+        instance_witout_vm = Models::Instance.reject { |instance| !instance.active_vm.nil? }.first
         expect(instance_manager).to_not receive(:agent_client_for).with(instance_witout_vm)
         expect(instance_manager).to receive(:agent_client_for).with(instance_with_vm)
         job.perform
@@ -60,7 +61,7 @@ module Bosh::Director
     end
 
     it 'should store new event' do
-      expect{ job.perform }.to change{ Models::Event.count }.from(0).to(1)
+      expect { job.perform }.to change { Models::Event.count }.from(0).to(1)
       event = Models::Event.first
       expect(event.user).to eq(task.username)
       expect(event.action).to eq('fake-command ssh')

@@ -3,7 +3,7 @@ module Bosh::Director
 
     def self.run_post_deploys_after_resurrection(deployment)
       return unless Config.enable_post_deploy
-      instances = Models::Instance.filter(deployment: deployment).exclude(active_vm_id: nil).all
+      instances = Models::Instance.filter(deployment: deployment).reject { |i| i.active_vm.nil? }
       agent_options = {
           timeout: 10,
           retry_methods: {get_state: 0}

@@ -33,7 +33,8 @@ module Bosh::Director
       let!(:instance_model) do
         instance = Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state)
         instance.add_vm vm
-        instance.update(active_vm: vm)
+        instance.active_vm = vm
+        instance
       end
 
       before {

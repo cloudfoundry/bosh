@@ -11,7 +11,8 @@ module Bosh::Director
     let(:instance_model) do
       instance = Models::Instance.make
       instance.add_vm(vm_model)
-      instance.update(active_vm: vm_model)
+      instance.active_vm = vm_model
+      instance
     end
 
     describe '#get_state' do
@@ -152,7 +153,7 @@ module Bosh::Director
       it 'should do nothing when instance is ok' do
         instance = Models::Instance.make(:deployment => @deployment, :job => 'bar', :index => 11)
         instance.add_vm(vm_model)
-        instance.update(active_vm: vm_model)
+        instance.active_vm = vm_model
         agent_state_migrator.verify_state(instance_model, {
             'deployment' => 'foo',
             'job' => {

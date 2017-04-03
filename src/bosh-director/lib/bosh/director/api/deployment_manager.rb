@@ -30,7 +30,7 @@ module Bosh::Director
       end
 
       def deployment_instances_with_vms(deployment)
-        Models::Instance.where(deployment: deployment).exclude(active_vm_id: nil)
+        Models::Instance.where(deployment: deployment).reject { |i| i.active_vm.nil? }
       end
     end
   end

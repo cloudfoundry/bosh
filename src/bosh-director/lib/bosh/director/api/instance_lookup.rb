@@ -18,7 +18,7 @@ module Bosh::Director
         instance = Models::Instance.find(deployment: deployment, job: job_name, index: job_index)
         if instance.nil?
           raise InstanceNotFound,
-                "'#{deployment.name}/#{job_name}/#{job_index}' doesn't exist"
+            "'#{deployment.name}/#{job_name}/#{job_index}' doesn't exist"
         end
         instance
       end
@@ -27,7 +27,7 @@ module Bosh::Director
         instance = Models::Instance.find(deployment: deployment, job: job_name, uuid: uuid)
         if instance.nil?
           raise InstanceNotFound,
-                "'#{deployment.name}/#{job_name}/#{uuid}' doesn't exist"
+            "'#{deployment.name}/#{job_name}/#{uuid}' doesn't exist"
         end
         instance
       end
@@ -49,15 +49,11 @@ module Bosh::Director
       end
 
       def by_vm_cid(vm_cid)
-        vm = Models::Vm.filter(cid: vm_cid).first
+        vm = Models::Vm.filter(cid: vm_cid, active: true).first
         if vm.nil?
           raise InstanceNotFound, "No instances matched vm cid '#{vm_cid}'"
         end
-        instances = Models::Instance.filter(active_vm_id: vm.id)
-        if instances.empty?
-          raise InstanceNotFound, "No instances matched vm cid '#{vm_cid}'"
-        end
-        instances
+        [vm.instance]
       end
     end
   end

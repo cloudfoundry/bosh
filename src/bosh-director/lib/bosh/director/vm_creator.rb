@@ -74,7 +74,7 @@ module Bosh::Director
             network['ip']
           end.compact
 
-          @agent_broadcaster.delete_arp_entries(instance_model.active_vm.cid, ip_addresses)
+          @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
         @disk_manager.attach_disks_if_needed(instance_plan)
@@ -82,7 +82,7 @@ module Bosh::Director
         instance.update_instance_settings
         instance.update_cloud_properties!
       rescue Exception => e
-        @logger.error("Failed to create/contact VM #{instance_model.active_vm.cid}: #{e.inspect}")
+        @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
         if Config.keep_unreachable_vms
           @logger.info('Keeping the VM for debugging')
         else
@@ -195,9 +195,7 @@ module Bosh::Director
       vm_model = Models::Vm.create(vm_options)
       vm_model.save
 
-      options[:active_vm_id] = vm_model.id
-      instance_model.refresh
-      instance_model.active_vm_id = vm_model.id
+      instance_model.active_vm = vm_model
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")

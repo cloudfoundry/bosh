@@ -177,7 +177,7 @@ module Bosh::Director
           handler.apply_resolution(:delete_vm_reference)
         }.to change {
           vm = Models::Vm.where(cid: 'vm-cid').first
-          vm.nil? ? 0 : Models::Instance.where(active_vm_id: vm.id).count
+          vm.nil? ? 0 : Models::Vm.where(instance_id: instance.id, active: true).count
         }.from(1).to(0)
       end
     end

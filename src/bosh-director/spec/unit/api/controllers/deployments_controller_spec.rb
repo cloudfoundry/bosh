@@ -696,7 +696,7 @@ module Bosh::Director
               instance = Models::Instance.create(instance_params)
               if i < 8
                 instance.add_vm(vm)
-                instance.update(active_vm: vm)
+                instance.active_vm = vm
               end
             end
 
@@ -742,7 +742,7 @@ module Bosh::Director
                 instance = Models::Instance.create(instance_params)
                 if i < 8
                   instance.add_vm(vm)
-                  instance.update(active_vm: vm)
+                  instance.active_vm = vm
                 end
 
                 ip_addresses_params  = {
@@ -795,7 +795,7 @@ module Bosh::Director
                 instance = Models::Instance.create(instance_params)
                 if i < 8
                   instance.add_vm(vm)
-                  instance.update(active_vm: vm)
+                  instance.active_vm = vm
                 end
               end
 

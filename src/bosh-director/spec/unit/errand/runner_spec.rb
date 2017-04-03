@@ -31,7 +31,8 @@ module Bosh::Director
           deployment: deployment,
         )
         is.add_vm vm_model
-        is.update(active_vm: vm_model)
+        is.active_vm = vm_model
+        is
       end
       let(:vm_model) { Models::Vm.make(agent_id: 'agent-id') }
 
@@ -278,7 +279,7 @@ module Bosh::Director
         end
 
         context 'when job instance is not associated with any VM yet' do
-          before { instance_model.update(active_vm_id: nil) }
+          before { instance_model.active_vm = nil }
 
           it 'raises an error' do
             expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_model.uuid} (#{instance_model.index})' doesn't reference a VM")
