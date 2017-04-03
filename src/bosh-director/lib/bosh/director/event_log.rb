@@ -31,6 +31,12 @@ module Bosh::Director
             filename: io,
             layout: Logging.layouts.pattern(:pattern => '%m\n')
           ))
+        elsif io.is_a?(TaskDBWriter)
+          @logger.add_appenders(TaskAppender.new(
+            'EventDBWriter',
+            db_writer: io,
+            layout: Logging.layouts.pattern(:pattern => '%m\n')
+          ))
         else
           @logger.add_appenders(Logging.appenders.io(
             'EventIO',

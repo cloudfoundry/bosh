@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe InstanceGroupSpecParser do
-      subject(:parser) { described_class.new(deployment_plan, Config.event_log, logger) }
+      subject(:parser) { described_class.new(deployment_plan, event_log, logger) }
 
       let(:deployment_plan) do
         instance_double(
@@ -17,6 +17,9 @@ module Bosh::Director
         )
       end
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
+      let(:task) { Models::Task.make(id: 42) }
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       describe '#parse' do
         before do
@@ -225,7 +228,7 @@ module Bosh::Director
                                     .with('fake-template2-name')
                                     .and_return(job2)
 
-            expect(Config.event_log).to receive(:warn_deprecated).with(
+            expect(event_log).to receive(:warn_deprecated).with(
               "Please use 'templates' when specifying multiple templates for a job. "\
                 "'template' for multiple templates will soon be unsupported."
             )

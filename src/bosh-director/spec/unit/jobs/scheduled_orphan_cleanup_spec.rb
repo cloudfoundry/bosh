@@ -16,7 +16,13 @@ module Bosh::Director
     let(:less_than_one_day_ago) { time - one_day_seconds + 1 }
     let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
     let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
+    let(:task) { Models::Task.make(id: 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
+    before {
+      allow(Config).to receive(:event_log).and_return(event_log)
+    }
     describe '#has_work' do
       describe 'when there is work to do' do
         it 'should return true' do

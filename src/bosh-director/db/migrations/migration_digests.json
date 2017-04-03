@@ -84,6 +84,7 @@
   "20160817135953_add_cpi_to_stemcells": "86c07f145372c4394725c0d5d225d45f31ad54bc",
   "20160818112257_change_stemcell_unique_key": "990754d5d2363f1abd5a17e791f709bed13bdc89",
   "20161031204534_populate_lifecycle_on_instance_spec": "77d0bc69b8ebc1159cf3beafdaf73c9e659cb0f2",
+  "20161128181900_add_logs_to_tasks": "d91e2a137fe9759de57a947337c78e317d387b81",
   "20161209104649_add_context_id_to_tasks": "cab77fbee73f1e377a11e15375db83f38ea668fa",
   "20161221151107_allow_null_instance_id_local_dns": "0c6c941569a2312587019c2a84b0bbe7c34e624e",
   "20170104003158_add_agent_dns_version": "1765c0f5e9b2cb38c09089b615fedc4d012a5850",

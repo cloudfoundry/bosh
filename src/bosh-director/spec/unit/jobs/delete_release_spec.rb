@@ -11,6 +11,13 @@ module Bosh::Director
     end
 
     let(:release) { Models::Release.make(name: 'test_release') }
+    let(:task) { Models::Task.make(id: 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+
+    before {
+      allow(Config).to receive(:event_log).and_return(event_log)
+    }
 
     describe 'perform' do
       context 'when blobstore fails to delete compiled package' do

@@ -20,8 +20,8 @@ module Bosh::Director
         @logger ||= Config.logger
       end
 
-      def result_file
-        @result_file ||= Config.result
+      def task_result
+        @task_result ||= Config.result
       end
 
       def dns_manager

@@ -114,6 +114,8 @@ module Bosh::Director::DeploymentPlan
     let(:cloud) { Bosh::Director::Config.cloud }
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
@@ -121,6 +123,7 @@ module Bosh::Director::DeploymentPlan
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
     end
 
     before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }

@@ -82,7 +82,7 @@ module Bosh::Director
             end
           end
 
-          runner = Errand::Runner.new(errand_instance_group.instances.first, errand_instance_group.name, result_file, @instance_manager, @logs_fetcher)
+          runner = Errand::Runner.new(errand_instance_group.instances.first, errand_instance_group.name, task_result, @instance_manager, @logs_fetcher)
 
           cancel_blk = lambda {
             begin

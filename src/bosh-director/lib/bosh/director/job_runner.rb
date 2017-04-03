@@ -10,13 +10,13 @@ module Bosh::Director
       end
 
       @task_id = task_id
-      setup_task_logging
-
+      setup_task_logging_for_files
       task_manager = Bosh::Director::Api::TaskManager.new
 
       @job_class = job_class
       @task_logger.info("Looking for task with task id #{@task_id}")
       @task = task_manager.find_task(@task_id)
+      setup_task_logging_for_db
       @task_logger.info("Found task #{@task.inspect}")
     end
 
@@ -37,13 +37,11 @@ module Bosh::Director
 
     # Sets up job logging.
     # @return [void]
-    def setup_task_logging
+    def setup_task_logging_for_files
       log_dir = File.join(Config.base_dir, 'tasks', @task_id.to_s)
       FileUtils.mkdir_p(log_dir)
 
       debug_log = File.join(log_dir, 'debug')
-      event_log = File.join(log_dir, 'event')
-      result_log = File.join(log_dir, 'result')
 
       @task_logger = Logging::Logger.new('DirectorJobRunner')
       shared_appender = Logging.appenders.file(
@@ -54,8 +52,6 @@ module Bosh::Director
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
 
-      Config.event_log = EventLog::Log.new(event_log)
-      Config.result = TaskResultFile.new(result_log)
       Config.logger = @task_logger
 
       Config.db.logger = @task_logger
@@ -64,6 +60,13 @@ module Bosh::Director
       cpi_log = File.join(log_dir, 'cpi')
       Config.cloud_options['properties'] ||= {}
       Config.cloud_options['properties']['cpi_log'] = cpi_log
+    end
+
+    # Sets up job logging.
+    # @return [void]
+    def setup_task_logging_for_db
+      Config.event_log = EventLog::Log.new(TaskDBWriter.new(:event_output, @task.id))
+      Config.result = TaskDBWriter.new(:result_output, @task.id)
     end
 
     # Instantiates and performs director job.
@@ -154,6 +157,7 @@ module Bosh::Director
     # @param [Symbol] state Task completion state
     # @param [#to_s] result
     def finish_task(state, result)
+      @task.refresh
       @task.state = state
       @task.result = truncate(result.to_s)
       @task.timestamp = Time.now

@@ -105,9 +105,11 @@ module Bosh
 
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
 
-      let(:event_manager) { Api::EventManager.new(true) }
-      let(:task_id) { 42 }
-      let(:update_job) { instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
+      let(:event_manager) { Api::EventManager.new(true)}
+      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+      let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
 
       let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
       let(:networks) { {'my-manual-network' => manual_network} }
@@ -185,6 +187,7 @@ module Bosh
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
         allow(cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).and_return(cloud)
         allow(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).and_return(cloud)
       end
@@ -302,7 +305,7 @@ module Bosh
         expect(event_1.action).to eq('create')
         expect(event_1.object_type).to eq('vm')
         expect(event_1.object_name).to eq(nil)
-        expect(event_1.task).to eq("#{task_id}")
+        expect(event_1.task).to eq("#{task.id}")
         expect(event_1.deployment).to eq(instance_model.deployment.name)
         expect(event_1.instance).to eq(instance_model.name)
 
@@ -312,7 +315,7 @@ module Bosh
         expect(event_2.action).to eq('create')
         expect(event_2.object_type).to eq('vm')
         expect(event_2.object_name).to eq('new-vm-cid')
-        expect(event_2.task).to eq("#{task_id}")
+        expect(event_2.task).to eq("#{task.id}")
         expect(event_2.deployment).to eq(instance_model.deployment.name)
         expect(event_2.instance).to eq(instance_model.name)
       end

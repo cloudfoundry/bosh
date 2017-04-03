@@ -2,6 +2,11 @@ module Bosh::Director::Models
   class Task < Sequel::Model(Bosh::Director::Config.db)
     many_to_many :teams
 
+    def before_create
+      self.result_output ||= ""
+      self.event_output ||= ""
+    end
+
     def validate
       validates_presence [:state, :timestamp, :description]
     end

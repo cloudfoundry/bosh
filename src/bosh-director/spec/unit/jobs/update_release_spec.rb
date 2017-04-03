@@ -9,6 +9,13 @@ module Bosh::Director
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:task) { Models::Task.make(id: 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+
+    before {
+      allow(Config).to receive(:event_log).and_return(event_log)
+    }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :update_release }

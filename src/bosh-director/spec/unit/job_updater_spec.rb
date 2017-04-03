@@ -23,15 +23,18 @@ module Bosh::Director
 
     describe 'update' do
       let(:needed_instance_plans) { [] }
-      before {
+      before do
         allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans)
         allow(job).to receive(:did_change=)
-      }
+        allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter)
+        allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      end
 
       let(:update_error) { RuntimeError.new('update failed') }
-
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
-      before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
+      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       context 'when job is up to date' do
         let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
@@ -53,7 +56,7 @@ module Bosh::Director
         it 'should not begin the updating job event stage' do
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -82,7 +85,7 @@ module Bosh::Director
         it 'should apply the instance plan' do
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -152,7 +155,7 @@ module Bosh::Director
 
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -171,7 +174,7 @@ module Bosh::Director
 
           expect { job_updater.update }.to raise_error(update_error)
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'failed'),
@@ -188,7 +191,7 @@ module Bosh::Director
 
           expect { job_updater.update }.to raise_error(update_error)
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -307,7 +310,7 @@ module Bosh::Director
 
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -343,7 +346,7 @@ module Bosh::Director
 
             job_updater.update
 
-            check_event_log do |events|
+            check_event_log(task.id) do |events|
               [
                 updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
                 updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),

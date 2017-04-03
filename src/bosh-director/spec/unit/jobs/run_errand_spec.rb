@@ -5,12 +5,17 @@ module Bosh::Director
     subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive, when_changed) }
     let(:keep_alive) { false }
     let(:when_changed) { false }
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(Config).to receive(:record_events).and_return(true)
       allow(job).to receive(:event_manager).and_return(event_manager)
       allow(Config).to receive(:current_job).and_return(job)
+      allow(Config).to receive(:event_log).and_return(event_log)
+      allow(Config).to receive(:result).and_return(task_result)
     end
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
@@ -86,9 +91,6 @@ module Bosh::Director
               let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
 
-              before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
-              let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
-
               before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', { timeout: 10, deployment_name: 'fake-dep-name' }).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
@@ -128,7 +130,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(instance, 'fake-errand-name', result_file, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+                  with(instance, 'fake-errand-name', task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }

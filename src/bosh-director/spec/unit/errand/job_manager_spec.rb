@@ -19,9 +19,14 @@ module Bosh::Director
     let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance2_model) }
     let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
 
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+
     before do
       fake_app
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
     end
 
     describe '#update' do

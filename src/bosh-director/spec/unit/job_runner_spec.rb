@@ -58,16 +58,20 @@ module Bosh::Director
 
     it 'sets up task logs: debug, event, result' do
       event_log = double('event log')
-      result_file = double('result file')
+      task_result = double('result file')
+
+      task_writer = TaskDBWriter.new(:event_output, task.id)
+      allow(TaskDBWriter).to receive(:new).
+        with(:event_output, task.id).and_return(task_writer)
 
       allow(EventLog::Log)
         .to receive(:new)
-        .with(File.join(task_dir, 'event'))
+        .with(task_writer)
         .and_return(event_log)
 
-      allow(TaskResultFile).to receive(:new).
-        with(File.join(task_dir, 'result')).
-        and_return(result_file)
+      allow(TaskDBWriter).to receive(:new).
+        with(:result_output, task.id).
+        and_return(task_result)
 
       make_runner(sample_job_class, 42)
 
@@ -76,7 +80,7 @@ module Bosh::Director
       config = Config
       expect(config.event_log).to eq(event_log)
       expect(config.logger).to eq(logger_repo.fetch('DirectorJobRunner'))
-      expect(config.result).to eq(result_file)
+      expect(config.result).to eq(task_result)
     end
 
     it 'handles task cancellation' do

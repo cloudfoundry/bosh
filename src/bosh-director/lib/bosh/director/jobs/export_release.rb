@@ -67,7 +67,7 @@ module Bosh::Director
               planner.compile_packages
 
               tarball_state = create_tarball(release_version_model, deployment_plan_stemcell)
-              result_file.write(tarball_state.to_json + "\n")
+              task_result.write(tarball_state.to_json + "\n")
             end
           end
         end

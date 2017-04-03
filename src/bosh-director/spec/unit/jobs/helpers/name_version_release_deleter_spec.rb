@@ -5,9 +5,9 @@ module Bosh::Director
     describe NameVersionReleaseDeleter do
       subject(:name_version_release_deleter) { NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, logger) }
 
-      let(:release_version_deleter) { ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log) }
+      let(:release_version_deleter) { ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, event_log) }
       let(:release_manager) { Bosh::Director::Api::ReleaseManager.new }
-      let(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger) }
+      let(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger) }
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
@@ -23,6 +23,9 @@ module Bosh::Director
       let(:release_name) { release.name }
       let(:act) { name_version_release_deleter.find_and_delete_release(release_name, version, force) }
       let(:force) { false }
+      let(:task) { Models::Task.make(id: 42) }
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       before do
         allow(blobstore).to receive(:delete).with('package-blob-id-1')
