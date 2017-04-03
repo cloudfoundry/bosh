@@ -28,7 +28,8 @@ module Bosh::Director
         availability_zone: 'az1'
       )
       instance.add_vm(vm)
-      instance.update(active_vm: vm)
+      instance.active_vm = vm
+      instance
     end
     let(:vm) { Models::Vm.make }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }

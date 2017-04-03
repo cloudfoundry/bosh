@@ -26,7 +26,7 @@ module Bosh::Director
           before do
             vm = Models::Vm.make(cid: 'vm-1')
             instance.add_vm vm
-            instance.update(active_vm: vm)
+            instance.active_vm = vm
           end
 
           before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent) }
@@ -158,7 +158,7 @@ module Bosh::Director
         end
 
         it 'raises an exception because there is no agent to contact' do
-          instance_1.update(active_vm: nil)
+          instance_1.active_vm = nil
           expect {
             fetch_logs.perform
           }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_1.uuid} (44)' doesn't reference a VM")

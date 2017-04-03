@@ -5,7 +5,7 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-          logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
+        logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
       ) }
 
       let(:disk_manager) { DiskManager.new(logger) }
@@ -16,14 +16,14 @@ module Bosh
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:agent_client) do
         instance_double(
-            AgentClient,
-            wait_until_ready: nil,
-            update_settings: nil,
-            apply: nil,
-            get_state: nil
+          AgentClient,
+          wait_until_ready: nil,
+          update_settings: nil,
+          apply: nil,
+          get_state: nil
         )
       end
-      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager ).to_hash }
+      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', dns_manager).to_hash }
       let(:dns_manager) { DnsManager.new('bosh', {}, nil, nil, nil) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
@@ -44,13 +44,13 @@ module Bosh
 
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
-            job,
-            5,
-            'started',
-            deployment,
-            {},
-            nil,
-            logger
+          job,
+          5,
+          'started',
+          deployment,
+          {},
+          nil,
+          logger
         )
         instance.bind_existing_instance_model(instance_model)
         allow(instance).to receive(:apply_spec).and_return({})
@@ -91,69 +91,70 @@ module Bosh
         instance_group
       end
 
-      let(:extra_ip) do {
-          'a' =>{
-              'ip' => '192.168.1.3',
-              'netmask' => '255.255.255.0',
-              'cloud_properties' =>{},
-              'default' =>['dns', 'gateway'],
-              'dns' =>['192.168.1.1', '192.168.1.2'],
-              'gateway' => '192.168.1.1'
+      let(:extra_ip) do
+        {
+          'a' => {
+            'ip' => '192.168.1.3',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {},
+            'default' => ['dns', 'gateway'],
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'gateway' => '192.168.1.1'
           }}
       end
 
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
 
-      let(:event_manager) { Api::EventManager.new(true)}
-      let(:task_id) {42}
-      let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+      let(:event_manager) { Api::EventManager.new(true) }
+      let(:task_id) { 42 }
+      let(:update_job) { instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
 
       let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
       let(:networks) { {'my-manual-network' => manual_network} }
       let(:manual_network_spec) {
         {
-            'name' => 'my-manual-network',
-            'subnets' => [
-                {
-                    'range' => '192.168.1.0/30',
-                    'gateway' => '192.168.1.1',
-                    'dns' => ['192.168.1.1', '192.168.1.2'],
-                    'static' => [],
-                    'reserved' => [],
-                    'cloud_properties' => {},
-                    'az' => 'az-1',
-                },
-                {
-                    'range' => '192.168.2.0/30',
-                    'gateway' => '192.168.2.1',
-                    'dns' => ['192.168.2.1', '192.168.2.2'],
-                    'static' => [],
-                    'reserved' => [],
-                    'cloud_properties' => {},
-                    'az' => 'az-2',
-                },
-                {
-                    'range' => '192.168.3.0/30',
-                    'gateway' => '192.168.3.1',
-                    'dns' => ['192.168.3.1', '192.168.3.2'],
-                    'static' => [],
-                    'reserved' => [],
-                    'cloud_properties' => {},
-                    'azs' => ['az-2'],
-                }
+          'name' => 'my-manual-network',
+          'subnets' => [
+            {
+              'range' => '192.168.1.0/30',
+              'gateway' => '192.168.1.1',
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'static' => [],
+              'reserved' => [],
+              'cloud_properties' => {},
+              'az' => 'az-1',
+            },
+            {
+              'range' => '192.168.2.0/30',
+              'gateway' => '192.168.2.1',
+              'dns' => ['192.168.2.1', '192.168.2.2'],
+              'static' => [],
+              'reserved' => [],
+              'cloud_properties' => {},
+              'az' => 'az-2',
+            },
+            {
+              'range' => '192.168.3.0/30',
+              'gateway' => '192.168.3.1',
+              'dns' => ['192.168.3.1', '192.168.3.2'],
+              'static' => [],
+              'reserved' => [],
+              'cloud_properties' => {},
+              'azs' => ['az-2'],
+            }
 
-            ]
+          ]
         }
       }
       let(:manual_network) do
         DeploymentPlan::ManualNetwork.parse(
-            manual_network_spec,
-            [
-                BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
-                BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
-            ],
-            global_network_resolver,
-            logger
+          manual_network_spec,
+          [
+            BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
+            BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
+          ],
+          global_network_resolver,
+          logger
         )
       end
       let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
@@ -290,7 +291,7 @@ module Bosh
 
       it 'should record events' do
         expect(cloud).to receive(:create_vm).with(
-          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
+          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
         ).and_return('new-vm-cid')
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -337,30 +338,30 @@ module Bosh
 
       it 'flushes the ARP cache' do
         allow(cloud).to receive(:create_vm).with(
-            kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
+          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
         ).and_return('new-vm-cid')
 
         allow(instance_plan).to receive(:network_settings_hash).and_return(
-            network_settings.merge(extra_ip)
+          network_settings.merge(extra_ip)
         )
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        expect(agent_broadcaster).to have_received(:delete_arp_entries).with(instance_model.active_vm.cid, ['192.168.1.3'])
+        expect(agent_broadcaster).to have_received(:delete_arp_entries).with(instance_model.vm_cid, ['192.168.1.3'])
       end
 
       it 'does not flush the arp cache when arp_flush set to false' do
         Config.flush_arp = false
 
         allow(cloud).to receive(:create_vm).with(
-            kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' =>{'group' => expected_group, 'groups' => expected_groups}}
+          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), ['fake-disk-cid'], {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
         ).and_return('new-vm-cid')
 
         allow(instance_plan).to receive(:network_settings_hash).and_return(
-            network_settings.merge(extra_ip)
+          network_settings.merge(extra_ip)
         )
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(instance_model.active_vm.cid, ['192.168.1.3'])
+        expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(instance_model.vm_cid, ['192.168.1.3'])
 
       end
 
@@ -375,15 +376,15 @@ module Bosh
           expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
             expect(vm_cid).to eq('new-vm-cid')
             expect(metadata).to match({
-                                          'deployment' => 'deployment_name',
-                                          'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                                          'job' => 'fake-job',
-                                          'index' => '5',
-                                          'director' => 'fake-director-name',
-                                          'id' => instance_model.uuid,
-                                          'name' => "fake-job/#{instance_model.uuid}",
-                                          'mytag' => 'foobar',
-                                      })
+              'deployment' => 'deployment_name',
+              'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
+              'job' => 'fake-job',
+              'index' => '5',
+              'director' => 'fake-director-name',
+              'id' => instance_model.uuid,
+              'name' => "fake-job/#{instance_model.uuid}",
+              'mytag' => 'foobar',
+            })
           end
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -401,20 +402,20 @@ module Bosh
       it 'should create credentials when encryption is enabled' do
         Config.encryption = true
         expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
-                                                  kind_of(Hash), network_settings, ['fake-disk-cid'],
-                                                  {'bosh' =>
-                                                      {
-                                                        'group' => expected_group,
-                                                        'groups' => expected_groups,
-                                                        'credentials' =>
-                                                             { 'crypt_key' => kind_of(String),
-                                                               'sign_key' => kind_of(String)}}})
-                             .and_return('new-vm-cid')
+          kind_of(Hash), network_settings, ['fake-disk-cid'],
+          {'bosh' =>
+            {
+              'group' => expected_group,
+              'groups' => expected_groups,
+              'credentials' =>
+                {'crypt_key' => kind_of(String),
+                  'sign_key' => kind_of(String)}}})
+                           .and_return('new-vm-cid')
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
 
         new_vm = Models::Vm.find(cid: 'new-vm-cid')
-        instance_with_new_vm = Models::Instance.find(active_vm_id: new_vm.id)
+        instance_with_new_vm = Models::Instance.all.select { |i| i.active_vm == new_vm }.first
         expect(instance_with_new_vm).not_to be_nil
         expect(instance_with_new_vm.credentials).not_to be_nil
 
@@ -438,7 +439,7 @@ module Bosh
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to change {
           vm = Models::Vm.where(cid: 'fake-vm-cid').first
-          vm.nil? ? 0 : Models::Instance.where(active_vm_id: vm.id).count }.from(0).to(1)
+          vm.nil? ? false : vm.active }.from(false).to(true)
       end
 
       it 'should not retry creating a VM if it is told it is not a retryable error' do
@@ -543,7 +544,7 @@ module Bosh
         context 'no password is specified' do
           it 'should generate a random VM password' do
             expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
-              expect(env['bosh']).to eq({ 'group' => expected_group, 'groups' => expected_groups})
+              expect(env['bosh']).to eq({'group' => expected_group, 'groups' => expected_groups})
             end.and_return('new-vm-cid')
 
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

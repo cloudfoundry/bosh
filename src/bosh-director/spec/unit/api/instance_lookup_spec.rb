@@ -101,11 +101,11 @@ module Bosh::Director
           before do
             vm = Models::Vm.make(cid: 'vm-cid')
             instance.add_vm vm
-            instance.update(active_vm: vm)
+            instance.active_vm = vm
           end
 
           it 'finds the instance with the vm' do
-            expect(subject.by_vm_cid('vm-cid').all).to eq([instance])
+            expect(subject.by_vm_cid('vm-cid')).to eq([instance])
           end
         end
 

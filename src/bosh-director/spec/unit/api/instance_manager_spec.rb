@@ -18,7 +18,7 @@ module Bosh::Director
     before do
       allow(JobQueue).to receive(:new).and_return(job_queue)
       instance.add_vm(vm)
-      instance.update(active_vm: vm)
+      instance.active_vm = vm
     end
 
     describe '#fetch_logs' do

@@ -28,7 +28,7 @@ module Bosh::Director
 
         deployment = Models::Deployment[@deployment_id]
 
-        instances = @instance_manager.filter_by(deployment, filter).exclude(active_vm_id: nil)
+        instances = @instance_manager.filter_by(deployment, filter).reject { |i| i.active_vm.nil? }
 
         if instances.empty?
           raise "No instance with a VM in deployment '#{deployment.name}' matched filter #{filter}"

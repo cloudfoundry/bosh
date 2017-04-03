@@ -28,7 +28,7 @@ module Bosh::Director
         index: 0,
         uuid: 'uuid-1',
         deployment: deployment_model,
-        cloud_properties_hash: { 'foo' => 'bar' },
+        cloud_properties_hash: {'foo' => 'bar'},
         spec: {'networks' => networks},
       )
       @instance.add_vm @vm
@@ -38,8 +38,8 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
     end
 
-    let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
-    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
+    let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager) }
 
     let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
@@ -58,7 +58,7 @@ module Bosh::Director
 
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
-        @instance.update(active_vm_id: nil)
+        @instance.active_vm = nil
         expect {
           handler.apply_resolution(:reboot_vm)
         }.to raise_error(ProblemHandlerError, /is no longer in the database/)
@@ -94,7 +94,7 @@ module Bosh::Director
 
     describe 'recreate_vm resolution' do
       it 'skips recreate if CID is not present' do
-        @instance.update(active_vm_id: nil)
+        @instance.active_vm = nil
 
         expect {
           handler.apply_resolution(:recreate_vm)
@@ -117,7 +117,7 @@ module Bosh::Director
             'index' => 0,
             'vm_type' => {
               'name' => 'fake-vm-type',
-              'cloud_properties' => { 'foo' => 'bar' },
+              'cloud_properties' => {'foo' => 'bar'},
             },
             'stemcell' => {
               'name' => 'stemcell-name',
@@ -127,7 +127,7 @@ module Bosh::Director
             'template_hashes' => {},
             'configuration_hash' => {'configuration' => 'hash'},
             'rendered_templates_archive' => {'some' => 'template'},
-            'env' => { 'key1' => 'value1' }
+            'env' => {'key1' => 'value1'}
           }
         end
         let(:agent_spec) do
@@ -260,7 +260,7 @@ module Bosh::Director
       it 'deletes VM from Cloud' do
         expect(@cloud).to receive(:delete_vm).with('vm-cid')
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect{
+        expect {
           handler.apply_resolution(:delete_vm)
         }.to change {
           Models::Vm.where(cid: 'vm-cid').count
@@ -280,7 +280,7 @@ module Bosh::Director
 
       it 'deletes VM reference' do
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect{
+        expect {
           handler.apply_resolution(:delete_vm_reference)
         }.to change {
           Models::Vm.where(cid: 'vm-cid').count

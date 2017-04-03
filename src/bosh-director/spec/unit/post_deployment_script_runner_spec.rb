@@ -13,13 +13,13 @@ module Bosh::Director
       let(:instance) do
         instance = Models::Instance.make(state: 'started')
         instance.add_vm(vm)
-        instance.update(active_vm: vm)
+        instance.active_vm = vm
+        instance
       end
 
       before do
         allow(Bosh::Director::Models::Instance).to receive(:filter).and_return(instance_data_set)
-        allow(instance_data_set).to receive(:exclude).and_return(instance_data_set)
-        allow(instance_data_set).to receive(:all).and_return([instance, instance])
+        allow(instance_data_set).to receive(:reject).and_return([instance, instance])
         allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
       end
 

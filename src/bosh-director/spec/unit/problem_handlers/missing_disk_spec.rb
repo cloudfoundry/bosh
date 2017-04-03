@@ -202,7 +202,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is destroyed' do
         before do
-          instance.update(active_vm: nil)
+          instance.active_vm = nil
         end
 
         it 'deletes disk related info from database directly' do

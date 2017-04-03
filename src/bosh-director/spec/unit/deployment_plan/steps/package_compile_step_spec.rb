@@ -10,7 +10,7 @@ module Bosh::Director
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
-    let(:disk_manager) {DiskManager.new(logger)}
+    let(:disk_manager) { DiskManager.new(logger) }
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:reuse_compilation_vms) { false }
     let(:number_of_workers) { 3 }
@@ -36,8 +36,8 @@ module Bosh::Director
       )
     end
     let(:instance_reuser) { InstanceReuser.new }
-    let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
-    let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
+    let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
+    let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil) }
     let(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, 4)
     end
@@ -48,10 +48,10 @@ module Bosh::Director
       allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
-    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
-    let(:event_manager) {Api::EventManager.new(true)}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' => {'property' => 'settings'}}) }
+    let(:net) { {'default' => {'network_name' => {'property' => 'settings'}}} }
+    let(:event_manager) { Api::EventManager.new(true) }
+    let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:expected_groups) {
       [
         'fake-director-name',
@@ -379,10 +379,10 @@ module Bosh::Director
         expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling))
 
         initial_state = {
-            'deployment' => 'mycloud',
-            'vm_type' => {},
-            'stemcell' => {},
-            'networks' => net
+          'deployment' => 'mycloud',
+          'vm_type' => {},
+          'stemcell' => {},
+          'networks' => net
         }
 
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
@@ -392,10 +392,10 @@ module Bosh::Director
         allow(agent).to receive(:compile_package) do |*args|
           name = args[2]
           {
-              'result' => {
-                  'sha1' => "compiled.#{name}.sha1",
-                  'blobstore_id' => "blob.#{name}.id"
-              }
+            'result' => {
+              'sha1' => "compiled.#{name}.sha1",
+              'blobstore_id' => "blob.#{name}.id"
+            }
           }
         end
 
@@ -406,23 +406,23 @@ module Bosh::Director
 
       it 'sends information about immediate dependencies of the package being compiled' do
         expect(agent).to receive(:compile_package).with(
-                             anything(), # source package blobstore id
-                             anything(), # source package sha1
-            'common', # package name
-            '0.1-dev.1', # package version
-                             {}).ordered # immediate dependencies
+          anything(), # source package blobstore id
+          anything(), # source package sha1
+          'common', # package name
+          '0.1-dev.1', # package version
+          {}).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
-                             anything(), # source package blobstore id
-                             anything(), # source package sha1
-            'ruby', # package name
-            '0.1-dev.1', # package version
-                             {'common' =>{'name' => 'common', 'version' => '0.1-dev.1', 'sha1' => 'compiled.common.sha1', 'blobstore_id' => 'blob.common.id'}}).ordered # immediate dependencies
+          anything(), # source package blobstore id
+          anything(), # source package sha1
+          'ruby', # package name
+          '0.1-dev.1', # package version
+          {'common' => {'name' => 'common', 'version' => '0.1-dev.1', 'sha1' => 'compiled.common.sha1', 'blobstore_id' => 'blob.common.id'}}).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
-                             anything(), # source package blobstore id
-                             anything(), # source package sha1
-            'needs_ruby', # package name
-            '0.1-dev.1', # package version
-                             {'ruby' =>{'name' => 'ruby', 'version' => '0.1-dev.1', 'sha1' => 'compiled.ruby.sha1', 'blobstore_id' => 'blob.ruby.id'}}).ordered # immediate dependencies
+          anything(), # source package blobstore id
+          anything(), # source package sha1
+          'needs_ruby', # package name
+          '0.1-dev.1', # package version
+          {'ruby' => {'name' => 'ruby', 'version' => '0.1-dev.1', 'sha1' => 'compiled.ruby.sha1', 'blobstore_id' => 'blob.ruby.id'}}).ordered # immediate dependencies
 
         allow(@j_deps_ruby).to receive(:use_compiled_package)
 
@@ -776,7 +776,7 @@ module Bosh::Director
             compiler.prepare_vm(stemcell, &Proc.new {})
           }.to change {
             matching_vm = Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)
-            matching_vm.nil? ? 0 : Models::Instance.where(active_vm_id: matching_vm.id).count
+            matching_vm.nil? ? 0 : Models::Instance.all.select { |i| i.active_vm == matching_vm }.count
           }.from(0).to(1)
         end
 

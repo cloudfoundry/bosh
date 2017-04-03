@@ -16,7 +16,7 @@ module Bosh::Director
           instance_name = "#{instance_model.job}/#{instance_model.uuid}"
           parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance_model)
-          instance_model.update(active_vm: nil)
+          instance_model.active_vm = nil
           vm_model.delete
         rescue Exception => e
           raise e
@@ -32,9 +32,9 @@ module Bosh::Director
         cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
 
         begin
-          cloud.delete_vm(instance_model.active_vm.cid) unless @enable_virtual_delete_vm
+          cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
         rescue Bosh::Clouds::VMNotFound
-          @logger.warn("VM '#{instance_model.active_vm.cid}' might have already been deleted from the cloud")
+          @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
         end
       end
     end

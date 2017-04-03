@@ -133,7 +133,8 @@ module Bosh::Director::DeploymentPlan
       let(:instance_model) do
         instance = Bosh::Director::Models::Instance.make(deployment: deployment)
         instance.add_vm(vm_model)
-        instance.update(active_vm: vm_model)
+        instance.active_vm = vm_model
+        instance
       end
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
@@ -152,7 +153,7 @@ module Bosh::Director::DeploymentPlan
             expect(Bosh::Director::Models::Vm.find(cid: 'vm-cid-1')).to be_nil
             vm2 = Bosh::Director::Models::Vm.find(cid: 'vm-cid-2')
             expect(vm2).not_to be_nil
-            expect(Bosh::Director::Models::Instance.find(active_vm_id: vm2.id)).not_to be_nil
+            expect(Bosh::Director::Models::Instance.all.select { |i| i.active_vm = vm2 }.first).not_to be_nil
 
             expect(agent_client).to have_received(:drain).with('shutdown', {})
           end
@@ -178,7 +179,7 @@ module Bosh::Director::DeploymentPlan
         update_step.perform
 
         vm = Bosh::Director::Models::Vm.find(cid: 'vm-cid-2')
-        expect(Bosh::Director::Models::Instance.find(active_vm_id: vm.id).spec['lifecycle']).to eq('service')
+        expect(Bosh::Director::Models::Instance.all.select { |i| i.active_vm = vm }.first.spec['lifecycle']).to eq('service')
       end
     end
   end

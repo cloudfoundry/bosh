@@ -3,17 +3,15 @@ require 'spec_helper'
 module Bosh::Director
   describe AgentBroadcaster do
     let(:ip_addresses) { ['10.0.0.1'] }
-    let(:vm1) { Bosh::Director::Models::Vm.make(id: 1, cid: 'id-1') }
-    let(:vm2) { Bosh::Director::Models::Vm.make(id: 2, cid: 'id-2') }
     let(:instance1) do
       instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1')
-      instance.add_vm(vm1)
-      instance.update(active_vm: vm1)
+      Bosh::Director::Models::Vm.make(id: 1, cid: 'id-1', instance_id: instance.id, active: true)
+      instance
     end
     let(:instance2) do
       instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 2, job: 'fake-job-1')
-      instance.add_vm(vm2)
-      instance.update(active_vm: vm2)
+      Bosh::Director::Models::Vm.make(id: 2, cid: 'id-2', instance_id: instance.id, active: true)
+      instance
     end
     let(:agent) { double(AgentClient, wait_until_ready: nil, fake_method: nil, delete_arp_entries: nil) }
     let(:agent_broadcast) { AgentBroadcaster.new(0.1) }
@@ -23,10 +21,9 @@ module Bosh::Director
         3.times do |i|
           Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: i, job: "fake-job-#{i}")
         end
-        vm_being_created = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0')
+
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
-        instance.add_vm(vm_being_created)
-        instance.update(active_vm: vm_being_created)
+        vm_being_created = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance_id: instance.id, active: true)
 
         agent_broadcast = AgentBroadcaster.new
         instances = agent_broadcast.filter_instances(vm_being_created.cid)
@@ -50,7 +47,7 @@ module Bosh::Director
         active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0')
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
         instance.add_vm(active_vm)
-        instance.update(active_vm: active_vm)
+        instance.active_vm = active_vm
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new
@@ -63,7 +60,7 @@ module Bosh::Director
         active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0')
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
         instance.add_vm(active_vm)
-        instance.update(active_vm: active_vm)
+        instance.active_vm = active_vm
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new

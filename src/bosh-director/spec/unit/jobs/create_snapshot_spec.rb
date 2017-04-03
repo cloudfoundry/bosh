@@ -6,7 +6,8 @@ module Bosh::Director
     let(:instance) do
       is = Models::Instance.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
+      is
     end
     let(:options) { {} }
     let(:instance_manager) { instance_double('Bosh::Director::Api::InstanceManager') }

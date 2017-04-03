@@ -18,7 +18,8 @@ module Bosh::Director
           spec: spec
         )
         instance_model.add_vm(existing_vm_model)
-        instance_model.update(active_vm_id: existing_vm_model.id)
+        instance_model.active_vm = existing_vm_model
+        instance_model
       end
       let(:spec) do
         {

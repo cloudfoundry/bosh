@@ -498,22 +498,15 @@ module Bosh::Director
       end
 
       def create_instance_response(instance)
-        response = {
-          'agent_id' => nil,
-          'cid' => nil,
+        {
+          'agent_id' => instance.agent_id,
+          'cid' => instance.vm_cid,
           'job' => instance.job,
           'index' => instance.index,
           'id' => instance.uuid,
           'az' => instance.availability_zone,
           'ips' => ips(instance),
         }
-
-        if !instance.active_vm.nil?
-          response['cid'] = instance.active_vm.cid
-          response['agent_id'] = instance.active_vm.agent_id
-        end
-
-        response
       end
 
       def ips(instance)

@@ -30,7 +30,7 @@ module Bosh::Director
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1')
       instance.add_vm vm_model
-      instance.update(active_vm: vm_model)
+      instance.active_vm = vm_model
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end

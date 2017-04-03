@@ -42,7 +42,8 @@ module Bosh::Director::DeploymentPlan
     let(:instance_model) do
       instance = Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1')
       instance.add_vm vm_model
-      instance.update(active_vm: vm_model)
+      instance.active_vm = vm_model
+      instance
     end
 
     let(:current_state) { {'current' => 'state'} }

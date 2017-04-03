@@ -40,7 +40,8 @@ module Bosh
       let(:instance_model) do
         is = Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1')
         is.add_vm vm_model
-        is.update(active_vm: vm_model)
+        is.active_vm = vm_model
+        is
       end
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
@@ -76,7 +77,7 @@ module Bosh
                                                                       instance_id: instance.id) }
 
         before do
-          expect(instance_model).to receive(:update).with(active_vm: nil).and_call_original
+          expect(instance_model).to receive(:active_vm=).with(nil).and_call_original
           expect(subject).to receive(:delete_vm).with(instance_model)
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end

@@ -23,7 +23,7 @@ module Bosh::Director
         metadata['name'] = "#{instance.job}/#{instance.uuid}"
         metadata['created_at'] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        cloud.set_vm_metadata(instance.active_vm.cid, metadata)
+        cloud.set_vm_metadata(instance.vm_cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
       @logger.debug(e.inspect)

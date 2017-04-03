@@ -51,7 +51,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     end
 
     it 'is invalid if disk no longer has associated instance' do
-      @instance.update(active_vm: nil)
+      @instance.active_vm = nil
       expect {
         make_handler(@disk.id)
       }.to raise_error("Can't find corresponding vm-cid for disk 'disk-cid'")

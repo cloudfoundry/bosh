@@ -337,7 +337,7 @@ module Bosh::Director
 
       context 'without vm_cid' do
         it 'does not try to contact the agent' do
-          instance.update(active_vm_id: nil)
+          instance.active_vm = nil
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)

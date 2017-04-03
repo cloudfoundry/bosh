@@ -129,7 +129,7 @@ module Bosh::Director::Models
       vm = Vm.make
       is = Instance.make
       is.add_vm vm
-      is.update(active_vm: vm)
+      is.active_vm = vm
     end
   end
 
