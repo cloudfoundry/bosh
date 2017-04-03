@@ -42,9 +42,8 @@ module Bosh::Director
           end
         end
 
-        dns_manager = DnsManagerProvider.create
-        dns_spec = safe_property(subnet_spec, 'dns', :class => Array, :optional => true)
-        dns = dns_manager.dns_servers(network_name, dns_spec)
+        name_server_parser = NetworkParser::NameServersParser.new
+        name_servers = name_server_parser.parse(network_name, subnet_spec)
 
         availability_zone_names = parse_availability_zones(subnet_spec, network_name, availability_zones)
 
@@ -86,14 +85,14 @@ module Bosh::Director
           end
         end
 
-        new(network_name, range, gateway, dns, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips)
+        new(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips)
       end
 
-      def initialize(network_name, range, gateway, dns, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips)
+      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips)
         @network_name = network_name
         @range = range
         @gateway = gateway
-        @dns = dns
+        @dns = name_servers
         @cloud_properties = cloud_properties
         @netmask = netmask
         @availability_zone_names = availability_zone_names

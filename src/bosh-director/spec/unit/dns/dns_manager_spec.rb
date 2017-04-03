@@ -11,54 +11,6 @@ module Bosh::Director
     let(:dns_provider) { nil }
     let(:dns_publisher) { nil }
 
-    describe '#dns_servers' do
-      it 'should return nil when there are no DNS servers' do
-        expect(dns_manager.dns_servers('network', nil)).to be_nil
-      end
-
-      it 'should return an array of DNS servers' do
-        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8])
-      end
-
-      it "should raise an error if a DNS server isn't specified with as an IP" do
-        expect {
-          dns_manager.dns_servers('network', %w[1.2.3.4 foo.bar])
-        }.to raise_error
-      end
-
-      context 'when there is a default server' do
-        let(:dns_config) { {'domain_name' => domain.name, 'server' => '9.10.11.12'} }
-
-        it 'should add default dns server when there are no DNS servers' do
-          expect(dns_manager.dns_servers('network', [])).to eq(%w[9.10.11.12])
-        end
-
-        it 'should add default dns server to an array of DNS servers' do
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
-        end
-
-        it 'should not add default dns server to an array of DNS servers' do
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8], false)).to eq(%w[1.2.3.4 5.6.7.8])
-        end
-
-        it 'should add default dns server to an array of DNS servers' do
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
-        end
-
-        it 'should not add default dns server if already set' do
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4 9.10.11.12])).to eq(%w[1.2.3.4 9.10.11.12])
-        end
-
-        context 'when dns server is 127.0.0.1' do
-          let(:dns_config) { {'domain_name' => domain.name, 'server' => '127.0.0.1'} }
-
-          it 'should not add default dns server if it is 127.0.0.1' do
-            expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
-          end
-        end
-      end
-    end
-
     describe '#flush_dns_cache' do
       let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
       let(:flush_command) { nil }
@@ -370,12 +322,6 @@ module Bosh::Director
         it 'does not migrate' do
           dns_manager.migrate_legacy_records(instance_model)
           expect(instance_model.dns_record_names.to_a).to match_array([])
-        end
-      end
-
-      describe '#dns_servers' do
-        it 'should not add default dns server when dns is not enabled' do
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
         end
       end
 

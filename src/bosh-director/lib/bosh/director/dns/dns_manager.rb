@@ -22,7 +22,6 @@ module Bosh::Director
       @dns_domain_name = dns_domain_name
       @dns_provider = dns_provider
       @dns_publisher = dns_publisher
-      @default_server = dns_config['server']
       @flush_command = dns_config['flush_command']
       @ip_address = dns_config['address']
       @logger = logger
@@ -113,25 +112,7 @@ module Bosh::Director
     end
 
     # build a list of dns servers to use
-    def dns_servers(network, dns_spec, add_default_dns = true)
-      servers = nil
 
-      if dns_spec
-        servers = []
-        dns_spec.each do |dns|
-          dns = NetAddr::CIDR.create(dns)
-          unless dns.size == 1
-            raise NetworkInvalidDns,
-              "Invalid DNS for network '#{network}': must be a single IP"
-          end
-
-          servers << dns.ip
-        end
-      end
-
-      return servers unless add_default_dns
-      add_default_dns_server(servers)
-    end
 
     # Purge cached DNS records
     def flush_dns_cache
@@ -256,16 +237,6 @@ module Bosh::Director
           end
         end
       end
-    end
-
-    # add default dns server to an array of dns servers
-    def add_default_dns_server(servers)
-      unless @default_server.to_s.empty? || @default_server == '127.0.0.1'
-        (servers ||= []) << @default_server
-        servers.uniq!
-      end
-
-      servers
     end
   end
 end
