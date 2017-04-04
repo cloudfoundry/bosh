@@ -168,7 +168,7 @@ module Bosh::Director
             end
 
             it 'versions the variables in errands' do
-              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name')
+              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name', variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links, variable_set_1)
 
               job.perform

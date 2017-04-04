@@ -67,11 +67,13 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       }
     end
 
-    it 'interpolates the hash given to it' do
-      expect(config_server_client).to receive(:interpolate).with(job_1_properties, deployment_name, nil).and_return(interpolated_job_1_properties)
-      expect(config_server_client).to receive(:interpolate).with(job_2_properties, deployment_name, nil).and_return(interpolated_job_2_properties)
+    let(:given_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
-      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name)).to eq(interpolated_properties_spec)
+    it 'interpolates the hash given to it' do
+      expect(config_server_client).to receive(:interpolate).with(job_1_properties, deployment_name, given_variable_set).and_return(interpolated_job_1_properties)
+      expect(config_server_client).to receive(:interpolate).with(job_2_properties, deployment_name, given_variable_set).and_return(interpolated_job_2_properties)
+
+      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, given_variable_set)).to eq(interpolated_properties_spec)
     end
 
     it 'interpolates using the variable set passed in' do
@@ -85,14 +87,14 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
     context 'when src hash is nil' do
       it 'returns the src as is' do
-        expect(subject.interpolate_template_spec_properties(nil, deployment_name)).to eq(nil)
+        expect(subject.interpolate_template_spec_properties(nil, deployment_name, given_variable_set)).to eq(nil)
       end
     end
 
     context 'when deployment name is nil' do
       it 'raises an error' do
         expect{
-          subject.interpolate_template_spec_properties(properties_spec, nil)
+          subject.interpolate_template_spec_properties(properties_spec, nil, given_variable_set)
         }.to raise_error(Bosh::Director::ConfigServerDeploymentNameMissing, "Deployment name missing while interpolating jobs' properties")
       end
     end

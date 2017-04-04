@@ -9,7 +9,7 @@ module Bosh::Director::ConfigServer
     # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
     # @param [VariableSet] variable_set The variable set which the interpolation will use. Default: nil
     # @return [Hash] A Deep copy of the interpolated template_spec_properties
-    def interpolate_template_spec_properties(template_spec_properties, deployment_name, variable_set = nil)
+    def interpolate_template_spec_properties(template_spec_properties, deployment_name, variable_set)
       if template_spec_properties.nil?
         return template_spec_properties
       end

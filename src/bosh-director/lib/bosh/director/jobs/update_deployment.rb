@@ -211,7 +211,7 @@ module Bosh::Director
           instance_group_errors = []
 
           begin
-            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name)
+            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
           rescue Exception => e
             instance_group_errors.push e
           end
