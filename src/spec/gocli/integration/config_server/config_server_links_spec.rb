@@ -361,6 +361,20 @@ describe 'using director with config server and deployments having links', type:
                     expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
                   end
                 end
+
+                context 'when resurrector kicks in to recreate an unresponsive consumer VM' do
+                  with_reset_hm_before_each
+
+                  it 'the consumer deployment VM is still rendered with the variable versions it was originally deployed with' do
+                    link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                    director.kill_vm_and_wait_for_resurrection(link_instance, deployment_name: 'consumer_deployment_name', include_credentials: false, env: client_env)
+
+                    resurrected_link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                    template = YAML.load(resurrected_link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+                    expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+                    expect(resurrected_link_instance.vm_cid).to_not eq(link_instance.vm_cid)
+                  end
+                end
               end
             end
           end
