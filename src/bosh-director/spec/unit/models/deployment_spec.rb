@@ -63,11 +63,11 @@ tags:
         before do
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
           allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
-          allow(mock_client).to receive(:interpolate).and_return(interpolated_tags)
+          VariableSet.make(id: 1, deployment: deployment)
         end
 
         it 'substitutes the variables in the tags section' do
-          expect(mock_client).to receive(:interpolate).with(tags, deployment.name, anything)
+          expect(mock_client).to receive(:interpolate).with(tags, deployment.name, deployment.current_variable_set).and_return(interpolated_tags)
           expect(deployment.tags).to eq(interpolated_tags)
         end
       end
