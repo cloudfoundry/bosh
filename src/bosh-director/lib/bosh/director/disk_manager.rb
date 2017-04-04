@@ -6,6 +6,7 @@ module Bosh::Director
       @logger = logger
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
       @transactor = Transactor.new
+      @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
     end
 
     def update_persistent_disk(instance_plan)
@@ -217,8 +218,10 @@ module Bosh::Director
 
     def create_disk(instance_model, disk)
       disk_size = disk.size
-      cloud_properties = disk.cloud_properties
       disk_model = nil
+
+      deployment_name = instance_model.deployment.name
+      cloud_properties = @config_server_client.interpolate(Bosh::Common::DeepCopy.copy(disk.cloud_properties), deployment_name, instance_model.variable_set)
 
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")

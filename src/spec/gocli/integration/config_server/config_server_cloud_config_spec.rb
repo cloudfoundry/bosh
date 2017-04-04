@@ -27,6 +27,7 @@ describe 'using director with config server', type: :integration do
             'networks' => [{'name' => 'private'}],
             'properties' => {},
             'vm_type' => 'medium',
+            'persistent_disk_type' => 'large',
             'azs' => ['z1'],
             'stemcell' => 'default'
         }],
@@ -75,8 +76,15 @@ describe 'using director with config server', type: :integration do
         config_server_helper.put_value('/workers_placeholder', 5)
       end
 
-      it 'does a successfull deploy' do
+      it 'uses the interpolated values for a successful deploy' do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+        
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.last.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+
+        create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
+        expect(create_disk_invocations.last.inputs['size']).to eq(50_000)
+        expect(create_disk_invocations.last.inputs['cloud_properties']).to eq({'type' => 'gp2'})
       end
     end
 

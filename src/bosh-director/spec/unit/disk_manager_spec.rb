@@ -24,18 +24,19 @@ module Bosh::Director
       job.persistent_disk_collection.add_by_disk_type(disk_type)
       job
     end
-    let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'}) }
+    let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:vm_model) { Models::Vm.make(cid: 'vm234') }
     let(:instance_model) do
-      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1')
+      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10, )
       instance.add_vm vm_model
       instance.active_vm = vm_model
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end
 
-    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: {'cloud' => 'properties'}, active: true) }
+    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true) }
+    let(:cloud_properties) { {'cloud' => 'properties'} }
     let(:disk_name) { '' }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
 
@@ -437,6 +438,28 @@ module Bosh::Director
           expect {
             disk_manager.update_persistent_disk(instance_plan)
           }.not_to raise_error
+        end
+      end
+
+      context 'when cloud properties has placeholders' do
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+
+        let(:cloud_properties) { {'cloud' => '((cloud_placeholder))'} }
+        let(:interpolated_cloud_properties) { {'cloud' => 'unicorns'} }
+
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        end
+
+        it 'uses the interpolated cloud config' do
+          expect(config_server_client).to receive(:interpolate).with(cloud_properties, instance_model.deployment.name, anything).and_return(interpolated_cloud_properties)
+          expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
+
+          expect {
+            disk_manager.update_persistent_disk(instance_plan)
+          }.to_not raise_error
         end
       end
     end
