@@ -15,6 +15,10 @@ module Bosh::Director
         it 'returns json' do
           expect(dns_records.to_json).to eq('{"records":[["ip-addr1","fqdn1"],["ip-addr2","fqdn2"]],"version":2,"record_keys":["id","instance_group","az","network","deployment","ip"],"record_infos":[["index","group-name","az1","net-name1","dep-name","ip-addr1"],["uuid","group-name","az1","net-name2","dep-name","ip-addr2"]]}')
         end
+
+        it 'returns the shasum' do
+          expect(dns_records.shasum).to eq('282bf2e211056bafc513f489c1bccc530e8c9882')
+        end
       end
 
       context 'when have 0 records' do

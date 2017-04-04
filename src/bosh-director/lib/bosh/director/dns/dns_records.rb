@@ -15,6 +15,10 @@ module Bosh::Director
       @record_infos << [instance_id, instance_group_name, az_name, network_name, deployment_name, ip]
     end
 
+    def shasum
+      ::Digest::SHA1.hexdigest(to_json)
+    end
+
     def to_json
       JSON.dump({records: @records, version: @version, record_keys: @record_keys, record_infos: @record_infos})
     end

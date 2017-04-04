@@ -6,9 +6,10 @@ module Bosh::Director
       logger = Config.logger
       canonized_dns_domain_name = Config.canonized_dns_domain_name
 
-      dns_publisher = BlobstoreDnsPublisher.new(App.instance.blobstores.blobstore, canonized_dns_domain_name) if Config.local_dns_enabled?
       dns_provider = PowerDns.new(canonized_dns_domain_name, logger) if !!Config.dns_db
 
+      blobstore = App.instance.blobstores.blobstore
+      dns_publisher = BlobstoreDnsPublisher.new(blobstore, canonized_dns_domain_name)
       DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, logger)
     end
   end
@@ -31,10 +32,6 @@ module Bosh::Director
       !@dns_provider.nil?
     end
 
-    def publisher_enabled?
-      !@dns_publisher.nil?
-    end
-
     def configure_nameserver
       @dns_provider.create_or_update_nameserver(@ip_address) if dns_enabled?
     end
@@ -55,9 +52,7 @@ module Bosh::Director
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       update_dns_records_for_instance_model(instance_model, dns_records)
-      if publisher_enabled?
-        create_or_delete_local_dns_record(instance_model)
-      end
+      create_or_delete_local_dns_record(instance_model)
     end
 
     def migrate_legacy_records(instance_model)
@@ -102,17 +97,11 @@ module Bosh::Director
           @logger.info("Removing DNS for: #{record_name}")
           @dns_provider.delete(record_name)
         end
-        update_dns_records_for_instance_model(instance_model, [])
       end
 
-      if publisher_enabled?
-        update_dns_records_for_instance_model(instance_model, [])
-        delete_local_dns_record(instance_model)
-      end
+      update_dns_records_for_instance_model(instance_model, [])
+      delete_local_dns_record(instance_model)
     end
-
-    # build a list of dns servers to use
-
 
     # Purge cached DNS records
     def flush_dns_cache
@@ -128,17 +117,11 @@ module Bosh::Director
     end
 
     def publish_dns_records
-      if publisher_enabled?
-        dns_records = @dns_publisher.export_dns_records
-        @dns_publisher.publish(dns_records)
-        @dns_publisher.broadcast
-      end
+      @dns_publisher.publish_and_broadcast
     end
 
     def cleanup_dns_records
-      if publisher_enabled?
-        @dns_publisher.cleanup_blobs
-      end
+      @dns_publisher.cleanup_blobs
     end
 
     def find_dns_record_names_by_instance(instance_model)
@@ -188,11 +171,10 @@ module Bosh::Director
     private
 
     def insert_local_dns_record(instance_model, ip, name, network_name)
-      deleted_record = Models::LocalDnsRecord
-                         .where(:name => name, :instance_id => instance_model.id)
-                         .exclude(:ip => ip.to_s)
-                         .delete
-      insert_tombstone unless deleted_record == 0
+      Models::LocalDnsRecord
+          .where(:name => name, :instance_id => instance_model.id)
+          .exclude(:ip => ip.to_s)
+          .delete
       begin
         Models::LocalDnsRecord.create(
           :name => name,
