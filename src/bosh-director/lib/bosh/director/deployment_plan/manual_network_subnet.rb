@@ -47,10 +47,9 @@ module Bosh::Director
 
         availability_zone_names = parse_availability_zones(subnet_spec, network_name, availability_zones)
 
-        cloud_properties = safe_property(subnet_spec, "cloud_properties", class: Hash, default: {})
-
-        reserved_property = safe_property(subnet_spec, "reserved", :optional => true)
-        static_property = safe_property(subnet_spec, "static", :optional => true)
+        cloud_properties = safe_property(subnet_spec, 'cloud_properties', default: {})
+        reserved_property = safe_property(subnet_spec, 'reserved', :optional => true)
+        static_property = safe_property(subnet_spec, 'static', :optional => true)
 
         restricted_ips = Set.new
         restricted_ips.add(gateway.to_i) if gateway

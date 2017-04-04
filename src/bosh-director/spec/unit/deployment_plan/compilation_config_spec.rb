@@ -47,6 +47,22 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
         expect(config.cloud_properties).to eq({'instance_type' => 'super-large'})
       end
+
+      context 'when cloud_properties is a placeholder' do
+        it 'should not raise an error' do
+          expect {
+            BD::DeploymentPlan::CompilationConfig.new(
+                {
+                    'workers' => 2,
+                    'network' => 'foo',
+                    'cloud_properties' => '((cloud_properties_placeholder))'
+                },
+                {},
+                []
+            )
+          }.to_not raise_error
+        end
+      end
     end
 
     context 'when vm_type is configured' do

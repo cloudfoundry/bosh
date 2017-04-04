@@ -71,6 +71,16 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      context 'when cloud_properties is a placeholder' do
+        before { valid_spec['cloud_properties'] = '((cloud_properties_placeholder))' }
+
+        it 'does not error' do
+          expect{
+            subject
+          }.to_not raise_error
+        end
+      end
+
       %w(size).each do |key|
         context "when #{key} is missing" do
           before { valid_spec.delete(key) }

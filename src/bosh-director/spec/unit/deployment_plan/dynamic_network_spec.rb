@@ -66,6 +66,19 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
+      it 'does not raise error when cloud_properties is a placeholder' do
+        expect {
+          BD::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'cloud_properties' => '((cloud_properties_placeholder))',
+              },
+              [],
+              logger
+          )
+        }.to_not raise_error
+      end
+
       it "raises error when 'az' is present on the network spec" do
         expect {
           BD::DeploymentPlan::DynamicNetwork.parse(
@@ -206,6 +219,27 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [], logger
           )
         }.to raise_error(BD::ValidationInvalidType)
+      end
+
+      it 'does not raise error when cloud_properties is a placeholder' do
+        expect {
+          BD::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'subnets' => [
+                      {
+                          'dns' => %w[1.2.3.4 5.6.7.8],
+                          'cloud_properties' => '((cloud_properties_placeholder))',
+                          'az' => 'foz-zone'
+                      },
+                  ]
+              },
+              [
+                  BD::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+              ],
+              logger
+          )
+        }.to_not raise_error
       end
 
       it 'raises error when dns is present at the top level' do

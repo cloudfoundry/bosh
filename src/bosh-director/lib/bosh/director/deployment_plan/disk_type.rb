@@ -42,7 +42,7 @@ module Bosh::Director
               "Disk types '#{name}' references an invalid persistent disk size '#{disk_size}'"
           end
 
-          cloud_properties = safe_property(dp_spec, 'cloud_properties', class: Hash, default: {})
+          cloud_properties = safe_property(dp_spec, 'cloud_properties', default: {})
 
           DiskType.new(name, disk_size, cloud_properties)
         end

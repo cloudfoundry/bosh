@@ -35,8 +35,7 @@ module Bosh::Director
           class: :boolean,
           optional: true)
 
-        @cloud_properties = safe_property(
-          compilation_config, 'cloud_properties', class: Hash, default: {})
+        @cloud_properties = safe_property(compilation_config, 'cloud_properties', default: {})
         @env = safe_property(compilation_config, 'env', class: Hash, optional: true, default: {})
 
         parse_availability_zone(azs_list, compilation_config)

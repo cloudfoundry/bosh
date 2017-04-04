@@ -19,12 +19,12 @@ module Bosh::Director
 
           subnets = network_spec['subnets'].map do |subnet_properties|
             name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
-            cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
+            cloud_properties = safe_property(subnet_properties, 'cloud_properties', default: {})
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
             DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones)
           end
         else
-          cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
+          cloud_properties = safe_property(network_spec, 'cloud_properties', default: {})
           name_servers = name_server_parser.parse(network_spec['name'], network_spec)
           subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil)]
         end

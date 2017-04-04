@@ -5,11 +5,20 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
   let(:instance_model) { BD::Models::Instance.make }
 
   describe :initialize do
-    it "defaults cloud properties to empty hash" do
+    it 'defaults cloud properties to empty hash' do
       network = BD::DeploymentPlan::VipNetwork.new({
-          "name" => "foo"
+          'name' => 'foo'
         }, logger)
       expect(network.cloud_properties).to eq({})
+    end
+
+    it 'does not error when cloud properties is a placeholder' do
+      expect {
+        BD::DeploymentPlan::VipNetwork.new({
+             'name' => 'foo',
+             'cloud_properties' => '((cloud_properties_placeholder))'
+         }, logger)
+      }.to_not raise_error
     end
   end
 
@@ -23,7 +32,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       }, logger)
     end
 
-    it "should provide the VIP network settings" do
+    it 'should provide the VIP network settings' do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, @network, "0.0.0.1")
 
       expect(@network.network_settings(reservation, [])).to eq({
@@ -35,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       })
     end
 
-    it "should fail if there are any defaults" do
+    it 'should fail if there are any defaults' do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, @network, "0.0.0.1")
 
       expect {

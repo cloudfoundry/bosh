@@ -65,19 +65,19 @@ module Bosh::Director
             expect(disk_pool.spec['cloud_properties']).to eq({'type' => 'standard'})
           end
 
-          context 'when cloud_properties is not a hash' do
+          context 'when cloud_properties is a placeholder' do
             let(:spec) do
               {
                 'name' => 'fake-name',
                 'disk_size' => 100,
-                'cloud_properties' => 'string-property'
+                'cloud_properties' => '((cloud_properties_placeholder))'
               }
             end
 
-            it 'raises an error' do
+            it 'does not raise an error' do
               expect {
                 described_class.parse(spec)
-              }.to raise_error
+              }.to_not raise_error
             end
           end
         end
