@@ -10,7 +10,7 @@ module Bosh::Director::ConfigServer
       @logger = logger
     end
 
-    # @param [Hash] src Hash to be interpolated
+    # @param [Hash] raw_hash Hash to be interpolated
     # @param [String] deployment_name The deployment context in-which the interpolation
     # will occur (used mostly for links properties interpolation since they will be interpolated in
     # the context of the deployment providing these links)
@@ -21,18 +21,19 @@ module Bosh::Director::ConfigServer
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
     #   - 'must_be_absolute_name': [Boolean] Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(src, deployment_name, variable_set, options = {})
+    def interpolate(raw_hash, deployment_name, variable_set, options = {})
+      return raw_hash if raw_hash.nil?
+      raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
+
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
 
-      variable_set = variable_set || @deployment_lookup.by_name(deployment_name).current_variable_set
-
-      placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
+      placeholders_paths = @deep_hash_replacer.placeholders_paths(raw_hash, subtrees_to_ignore)
       placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
 
       retrieved_config_server_values = fetch_values(placeholders_list, deployment_name, variable_set, must_be_absolute_name)
 
-      @deep_hash_replacer.replace_placeholders(src, placeholders_paths, retrieved_config_server_values)
+      @deep_hash_replacer.replace_placeholders(raw_hash, placeholders_paths, retrieved_config_server_values)
     end
 
     # @param [Hash] link_properties_hash Link spec properties to be interpolated
@@ -137,7 +138,7 @@ module Bosh::Director::ConfigServer
         begin
           name_root = get_name_root(name)
 
-          saved_variable_mapping = Bosh::Director::Models::Variable[variable_set_id: variable_set.id, variable_name: name_root]
+          saved_variable_mapping = variable_set.find_variable_by_name(name_root)
 
           if saved_variable_mapping.nil?
             raise Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '#{name_root}' to be already versioned in deployment '#{deployment_name}'" unless variable_set.writable
@@ -148,7 +149,7 @@ module Bosh::Director::ConfigServer
               save_variable(name_root, variable_set, fetched_variable_from_cfg_srv)
               config_values[variable] = extract_variable_value(name, fetched_variable_from_cfg_srv)
             rescue Sequel::UniqueConstraintViolation
-              saved_variable_mapping = Bosh::Director::Models::Variable[variable_set: variable_set, variable_name: name_root]
+              saved_variable_mapping = variable_set.find_variable_by_name(name_root)
               config_values[variable] = get_value_by_id(saved_variable_mapping.variable_name, saved_variable_mapping.variable_id)
             end
 

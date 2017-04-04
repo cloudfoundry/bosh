@@ -11,6 +11,7 @@ module Bosh::Director::ConfigServer
     let(:success_post_response) {
       generate_success_response({ "id": "some_id1" }.to_json)
     }
+    let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
     let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
     let(:task_id) {42}
@@ -35,568 +36,474 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#interpolate' do
-      subject { client.interpolate(manifest_hash, deployment_name, nil, interpolate_options) }
-      let(:interpolate_options) do
-        {
-          :subtrees_to_ignore => ignored_subtrees
-        }
-      end
-      let(:ignored_subtrees) { [] }
-      let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '1'}]} }
-      let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_namespace('empty_placeholder')}", 'value' => '', 'id' => '2'}]} }
-      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '3'}]} }
-      let(:instance_placeholder) { {'data' => [{'name' => "#{prepend_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '4'}]} }
-      let(:job_placeholder) { {'data' => [{'name' => "#{prepend_namespace('job_placeholder')}", 'value' => 'test2', 'id' => '5'}]} }
-      let(:env_placeholder) { {'data' => [{'name' => "#{prepend_namespace('env_placeholder')}", 'value' => 'test3', 'id' => '6'}]} }
-      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_namespace('cert_placeholder')}", 'value' => {'ca' => 'ca_value', 'private_key' => 'abc123'}, 'id' => '7'}]} }
-      let(:mock_config_store) do
-        {
-          prepend_namespace('nil_placeholder') => generate_success_response(nil_placeholder.to_json),
-          prepend_namespace('empty_placeholder') => generate_success_response(empty_placeholder.to_json),
-          prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
-          prepend_namespace('instance_placeholder') => generate_success_response(instance_placeholder.to_json),
-          prepend_namespace('job_placeholder') => generate_success_response(job_placeholder.to_json),
-          prepend_namespace('env_placeholder') => generate_success_response(env_placeholder.to_json),
-          prepend_namespace('cert_placeholder') => generate_success_response(cert_placeholder.to_json),
-        }
+      let(:deployment_name) { 'my_deployment_name' }
+      let(:variable_set_model) { instance_double(Bosh::Director::Models::VariableSet) }
+
+      context 'when object to be interpolated in is nil' do
+        it 'should return nil' do
+          expect(client.interpolate(nil, deployment_name, variable_set_model, {})).to be_nil
+        end
       end
 
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
-      let(:manifest_hash) do
-        {
-          'name' => deployment_name,
-          'properties' => {
-            'name' => '((integer_placeholder))',
-            'nil_allowed' => '((nil_placeholder))',
-            'empty_allowed' => '((empty_placeholder))'
-          },
-          'instance_groups' => {
-            'name' => 'bla',
-            'jobs' => [
+      context 'when object to be interpolated is NOT nil' do
+        context 'when object to be interpolated is NOT a hash' do
+          it 'raises an error' do
+            expect {
+              client.interpolate('i am not a hash', deployment_name, variable_set_model, {})
+            }.to raise_error "Unable to interpolate provided object. Expected a 'Hash', got 'String'"
+          end
+        end
+
+        context 'when object to be interpolated is a hash' do
+          context 'when some placeholders have invalid name syntax' do
+            let(:provided_hash) do
               {
-                'name' => 'test_job',
-                'properties' => {'job_prop' => '((job_placeholder))'}
+                'properties' => {
+                  'integer_allowed' => '((int&&&&eger_placeholder))',
+                  'nil_allowed' => '((nil_place holder))',
+                  'empty_allowed' => '((emp**ty_placeholder))'
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => '((job_placeholder+++ ))'}
+                    }
+                  ]
+                }
               }
-            ]
-          },
-          'resource_pools' => [
-            {'env' => {'env_prop' => '((env_placeholder))'}}
-          ],
-          'cert' => '((cert_placeholder))'
-        }
-      end
-
-      before do
-        mock_config_store.each do |name, value|
-          allow(http_client).to receive(:get).with(name).and_return(value)
-        end
-      end
-
-      context 'with variable mappings' do
-        let(:variable_name) { '/boo' }
-        let(:variable_id) { 'cfg-svr-id' }
-        let(:variable_value) { 'var_val' }
-        let(:response_body_id) { {'name' => variable_name, 'value' => variable_value, 'id' => variable_id} }
-        let(:response_body_name) { {'data' => [response_body_id]} }
-        let(:mock_response) { generate_success_response(response_body_id.to_json) }
-
-        context 'when variable set is manually specified' do
-          let(:latest_variable_set) { 1500 }
-
-          it 'should request by id from the specified set' do
-            allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
-            Bosh::Director::Models::VariableSet.make(id: latest_variable_set, deployment: Bosh::Director::Models::Deployment.find(deployment_attrs))
-            Bosh::Director::Models::Variable.create(variable_set_id: variables_set_id, variable_name: variable_name, variable_id: variable_id)
-            Bosh::Director::Models::Variable.create(variable_set_id: latest_variable_set, variable_name: '/not/used', variable_id: 'unused id')
-            expect(http_client).to receive(:get_by_id).with("#{variable_id}").and_return(mock_response)
-            expected_variable_set = Bosh::Director::Models::VariableSet.find({id: variables_set_id})
-            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, expected_variable_set, interpolate_options)
-          end
-        end
-
-        context 'when variable is already fetched for the current set' do
-          before do
-            allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
-            Bosh::Director::Models::Variable.create(variable_set_id: variables_set_id, variable_name: variable_name, variable_id: variable_id)
-          end
-
-          it 'should request by id' do
-            expect(http_client).to receive(:get_by_id).with("#{variable_id}").and_return(mock_response)
-            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
-          end
-        end
-
-        context 'when variable requested is not in the current set' do
-          before do
-            allow(http_client).to receive(:get).with(variable_name).and_return(generate_success_response(response_body_name.to_json))
-          end
-
-          it 'should add the name to id mapping for the current set to database' do
-            expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to be_nil
-            client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
-            models = Bosh::Director::Models::Variable.all
-            expect(models.length).to eq(1)
-            expect(Bosh::Director::Models::Variable[variable_name: variable_name, variable_set_id: variables_set_id]).to_not be_nil
-          end
-
-          context 'but variable was added to the current set by another worker after the initial check' do
-            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
-            let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-            let(:variable) { instance_double(Bosh::Director::Models::Variable) }
-
-            before do
-              allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
-              allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
-              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
-              allow(variable_set).to receive(:add_variable).and_raise(Sequel::UniqueConstraintViolation)
-              allow(variable_set).to receive(:id)
-              allow(variable_set).to receive(:writable).and_return(true)
-              allow(variable).to receive(:variable_id).and_return(variable_id)
-              allow(variable).to receive(:variable_name).and_return(variable_name)
-
-              allow(Bosh::Director::Models::Variable).to receive(:[]).and_return(nil, variable)
             end
 
-            it 'should fetch by id from database' do
-              allow(http_client).to receive(:get_by_id).with(variable_id).and_return(mock_response)
-
-              expect(http_client).to receive(:get_by_id).with(variable_id)
-              client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
-            end
-          end
-
-          context 'but variable set is not writable' do
-            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
-            let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-            let(:variable) { instance_double(Bosh::Director::Models::Variable) }
-
-            before do
-              allow(Bosh::Director::Api::DeploymentLookup).to receive(:new).and_return(deployment_lookup)
-              allow(deployment_lookup).to receive(:by_name).and_return(deployment_model)
-              allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
-              allow(variable_set).to receive(:writable).and_return(false)
-              allow(variable_set).to receive(:id)
-
-              allow(Bosh::Director::Models::Variable).to receive(:[]).and_return(nil, variable)
-            end
-
+            # TODO: make sure all the errors are displayed
             it 'should raise an error' do
-              models = Bosh::Director::Models::Variable.all
-
-              expect(models.length).to eq(0)
-              expect{
-                client.interpolate({'key' => "((#{variable_name}))"}, deployment_name, nil, interpolate_options)
-              }.to raise_error(Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '/boo' to be already versioned in deployment 'deployment_name'")
-              expect(models.length).to eq(0)
-            end
-          end
-        end
-      end
-
-      context 'when response received from server is not in the expected format' do
-        let(:manifest_hash) do
-          {
-            'name' => 'deployment_name',
-            'properties' => {
-              'name' => '((/bad))'
-            }
-          }
-        end
-
-        [
-          {'response' => 'Invalid JSON response',
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
-
-          {'response' => {'x' => {}},
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
-
-          {'response' => {'data' => {'value' => 'x'}},
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
-
-          {'response' => {'data' => []},
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
-
-          {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
-
-          {'response' => {'data' => [{'value' => 'x'}]},
-           'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\''},
-        ].each do |entry|
-          it 'raises an error' do
-            allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
-            expect {
-              subject
-            }.to raise_error { |error|
-              expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-              expect(error.message).to include(entry['message'])
-            }
-          end
-        end
-      end
-
-      context 'when response received from server has multiple errors' do
-        let(:manifest_hash) do
-          {
-            'name' => 'deployment_name',
-            'properties' => {
-              'p1' => '((/bad1))',
-              'p2' => '((/bad2))',
-              'p3' => '((/bad3))',
-              'p4' => '((/bad4))',
-              'p5' => '((/bad5))',
-            }
-          }
-        end
-
-        let(:mock_config_store) do
-          {
-            '/bad1' => generate_success_response('Invalid JSON response'),
-            '/bad2' => generate_success_response({'data' => 'Not Array'}.to_json),
-            '/bad3' => generate_success_response({'data' => []}.to_json),
-            '/bad4' => generate_success_response({'data' => [{'name' => 'name exists', 'value' => 'value exists'}]}.to_json),
-            '/bad5' => generate_success_response({'data' => [{'id' => 'id exists', 'name' => 'name exists'}]}.to_json),
-          }
-        end
-
-        it 'raises an error consolidating all the problems' do
-          expect {
-            subject
-          }.to raise_error { |error|
-            expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-            expect(error.message).to include("- Failed to fetch variable '/bad1' from config server: Invalid JSON response")
-            expect(error.message).to include("- Failed to fetch variable '/bad2' from config server: Expected data to be an array")
-            expect(error.message).to include("- Failed to fetch variable '/bad3' from config server: Expected data to be non empty array")
-            expect(error.message).to include("- Failed to fetch variable '/bad4' from config server: Expected data[0] to have key 'id'")
-            expect(error.message).to include("- Failed to fetch variable '/bad5' from config server: Expected data[0] to have key 'value'")
-          }
-        end
-      end
-
-      context 'when absolute path is required' do
-        it 'should raise error when name is not absolute' do
-          expect {
-            client.interpolate(manifest_hash, deployment_name, nil, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true})
-          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
-        end
-      end
-
-      it 'should return a new copy of the original manifest' do
-        expect(client.interpolate(manifest_hash, deployment_name, nil, {subtrees_to_ignore: ignored_subtrees})).to_not equal(manifest_hash)
-      end
-
-      it 'replaces all placeholders it finds in the hash passed' do
-        expected_result = {
-          'name' => 'deployment_name',
-          'properties' => {
-            'name' => 123,
-            'nil_allowed' => nil,
-            'empty_allowed' => ''
-          },
-          'instance_groups' => {
-            'name' => 'bla',
-            'jobs' => [
-              {
-                'name' => 'test_job',
-                'properties' => {'job_prop' => 'test2'}
-              }
-            ]
-          },
-          'resource_pools' => [
-            {'env' => {'env_prop' => 'test3'}}
-          ],
-          'cert' => {
-            'ca' => 'ca_value',
-            'private_key' => 'abc123'
-          }
-        }
-
-        expect(subject).to eq(expected_result)
-      end
-
-      it 'should raise a missing name error message when name is not found in the config_server' do
-        allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleNotFoundResponse.new)
-
-        manifest_hash['properties'] = {'name' => '((missing_placeholder))'}
-        expect {
-          subject
-        }.to raise_error { |error|
-          expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-          expect(error.message).to include("- Failed to find variable '#{prepend_namespace('missing_placeholder')}' from config server: HTTP code '404'")
-        }
-      end
-
-      it 'should raise an unknown error when config_server returns any error other than a 404' do
-        allow(http_client).to receive(:get).with(prepend_namespace('missing_placeholder')).and_return(SampleForbiddenResponse.new)
-
-        manifest_hash['properties'] = {'name' => '((missing_placeholder))'}
-        expect {
-          subject
-        }.to raise_error { |error|
-          expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-          expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/deployment_name/missing_placeholder' from config server: HTTP code '403'")
-        }
-      end
-
-      context 'ignored subtrees' do
-        #TODO pull out config server mocks into their own lets
-        let(:mock_config_store) do
-          {
-            prepend_namespace('release_1_placeholder') => generate_success_response({'data' => [{'name' => prepend_namespace('release_1_placeholder'), 'value' => 'release_1', 'id' => 1}]}.to_json),
-            prepend_namespace('release_2_version_placeholder') => generate_success_response({'data' => [{'name' => prepend_namespace('release_2_version_placeholder'), 'value' => 'v2', 'id' => 2}]}.to_json),
-            prepend_namespace('job_name') => generate_success_response({'data' => [{'name' => prepend_namespace('job_name'), 'value' => 'spring_server', 'id' => 3}]}.to_json)
-          }
-        end
-
-        let(:manifest_hash) do
-          {
-            'releases' => [
-              {'name' => '((release_1_placeholder))', 'version' => 'v1'},
-              {'name' => 'release_2', 'version' => '((release_2_version_placeholder))'}
-            ],
-            'instance_groups' => [
-              {
-                'name' => 'logs',
-                'env' => {'smurf' => '((smurf_placeholder))'},
-                'jobs' => [
-                  {
-                    'name' => 'mysql',
-                    'properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
-                  },
-                  {
-                    'name' => '((job_name))'
-                  }
-                ],
-                'properties' => {'a' => ['123', 45, '((secret_name))']}
-              }
-            ],
-            'properties' => {
-              'global_property' => '((something))'
-            },
-            'resource_pools' => [
-              {
-                'name' => 'resource_pool_name',
-                'env' => {
-                  'f' => '((f_placeholder))'
-                }
-              }
-            ]
-          }
-        end
-
-        let(:interpolated_manifest_hash) do
-          {
-            'releases' => [
-              {'name' => 'release_1', 'version' => 'v1'},
-              {'name' => 'release_2', 'version' => 'v2'}
-            ],
-            'instance_groups' => [
-              {
-                'name' => 'logs',
-                'env' => {'smurf' => '((smurf_placeholder))'},
-                'jobs' => [
-                  {
-                    'name' => 'mysql',
-                    'properties' => {'foo' => '((foo_place_holder))', 'bar' => {'smurf' => '((smurf_placeholder))'}}
-                  },
-                  {
-                    'name' => 'spring_server'
-                  }
-                ],
-                'properties' => {'a' => ['123', 45, '((secret_name))']}
-              }
-            ],
-            'properties' => {
-              'global_property' => '((something))'
-            },
-            'resource_pools' => [
-              {
-                'name' => 'resource_pool_name',
-                'env' => {
-                  'f' => '((f_placeholder))'
-                }
-              }
-            ]
-          }
-        end
-
-        let(:ignored_subtrees) do
-          index_type = Integer
-          any_string = String
-
-          ignored_subtrees = []
-          ignored_subtrees << ['properties']
-          ignored_subtrees << ['instance_groups', index_type, 'properties']
-          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'properties']
-          ignored_subtrees << ['instance_groups', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']
-          ignored_subtrees << ['jobs', index_type, 'properties']
-          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'properties']
-          ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
-          ignored_subtrees << ['instance_groups', index_type, 'env']
-          ignored_subtrees << ['jobs', index_type, 'env']
-          ignored_subtrees << ['resource_pools', index_type, 'env']
-          ignored_subtrees << ['name']
-          ignored_subtrees
-        end
-
-        it 'should not replace values in ignored subtrees' do
-          expect(subject).to eq(interpolated_manifest_hash)
-        end
-      end
-
-      context 'when placeholders use dot syntax' do
-        before do
-          get_by_id_response = generate_success_response(nested_placeholder['data'][0].to_json)
-          allow(http_client).to receive(:get_by_id).with("some_id").and_return(get_by_id_response)
-
-        end
-
-        let(:nested_placeholder) do
-          {
-            'data' => [
-              {
-                'id' => 'some_id',
-                'name' => '/nested_placeholder',
-                'value' => {'x' => {'y' => {'z' => 'gold'}}}
-              }
-            ]
-          }
-        end
-
-        let(:mock_config_store) do
-          {
-            '/nested_placeholder' => generate_success_response(nested_placeholder.to_json)
-          }
-        end
-
-        let(:manifest_hash) do
-          {
-              'nest1' => '((/nested_placeholder.x))',
-              'nest2' => '((/nested_placeholder.x.y))',
-              'nest3' => '((/nested_placeholder.x.y.z))'
-          }
-        end
-
-        it 'should only use the first piece of the placeholder name when making requests to the config_server' do
-          expect(http_client).to receive(:get).with('/nested_placeholder')
-          subject
-        end
-
-        it 'should return the sub-property' do
-          expected_result = {
-            'nest1' => {'y' => {'z' => 'gold'}},
-            'nest2' => {'z' => 'gold'},
-            'nest3' => 'gold'
-          }
-          expect(subject).to eq(expected_result)
-        end
-
-        context 'when all parts of dot syntax are not found' do
-
-          let(:manifest_hash) do
-            {
-              'name' => 'deployment_name',
-              'bad_nest' => ''
-            }
-          end
-
-          it 'raises an error' do
-            data = [
-              {'placeholder' => '((/nested_placeholder.a))',
-               'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
-
-              {'placeholder' => '((/nested_placeholder.a.b))',
-               'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'"},
-
-              {'placeholder' => '((/nested_placeholder.x.y.a))',
-               'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'"},
-
-              {'placeholder' => '((/nested_placeholder.x.a.y))',
-               'message' => "- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'"},
-            ]
-
-            data.each do |entry|
-              manifest_hash['bad_nest'] = entry['placeholder']
               expect {
-                subject
-              }.to raise_error { |error|
-                expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-                expect(error.message).to include(entry['message'])
-              }
+                client.interpolate(provided_hash, deployment_name, variable_set_model, {})
+              }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
+                "Placeholder name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
             end
           end
-        end
 
-        context 'when multiple errors occur because of parts of dot syntax not found' do
-          let(:manifest_hash) do
-            {
-              'name' => 'deployment_name',
-              'properties' => {
-                'p1' => '((/nested_placeholder.a))',
-                'p2' => '((/nested_placeholder.x.y.a))',
-                'p3' => '((/nested_placeholder.x.a.y))',
+          context 'when all placeholders syntax is correct' do
+            let(:hash_placeholder_value) do
+              {
+                'ca' => {
+                  'level_1' => 'level_1_value',
+                  'level_2' => {
+                    'level_2_1' => 'level_2_1_value'
+                  }
+                },
+                'private_key' => 'abc123'
               }
-            }
+            end
+            
+            let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
+            let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
+            let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_namespace('empty_placeholder')}", 'value' => '', 'id' => '3'}]} }
+            let(:string_placeholder) { {'data' => [{'name' => "#{prepend_namespace('string_placeholder')}", 'value' => 'i am a string', 'id' => '4'}]} }
+            let(:hash_placeholder) do
+              {
+                'data' => [
+                  {
+                    'name' => "#{prepend_namespace('hash_placeholder')}",
+                    'value' => hash_placeholder_value,
+                    'id' => '5'
+                  }
+                ]
+              }
+            end
+
+            let(:mock_config_store) do
+              {
+                prepend_namespace('integer_placeholder') => generate_success_response(integer_placeholder.to_json),
+                prepend_namespace('nil_placeholder') => generate_success_response(nil_placeholder.to_json),
+                prepend_namespace('empty_placeholder') => generate_success_response(empty_placeholder.to_json),
+                prepend_namespace('string_placeholder') => generate_success_response(string_placeholder.to_json),
+                prepend_namespace('hash_placeholder') => generate_success_response(hash_placeholder.to_json),
+              }
+            end
+
+            let(:raw_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => '((integer_placeholder))',
+                  'nil_allowed' => '((nil_placeholder))',
+                  'empty_allowed' => '((empty_placeholder))'
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => '((string_placeholder))'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => '((hash_placeholder))'}}
+                ],
+                'my_value_will_be_a_hash' => '((hash_placeholder))'
+              }
+            end
+            let(:interpolated_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => 123,
+                  'nil_allowed' => nil,
+                  'empty_allowed' => ''
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => 'i am a string'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => hash_placeholder_value}}
+                ],
+                'my_value_will_be_a_hash' => hash_placeholder_value
+              }
+            end
+
+            context 'when all the variables to be fetched were already fetched within the provided variable set context' do
+              before do
+                mock_config_store.each do |name, value|
+                  result_data = JSON.parse(value.body)['data'][0]
+                  variable_id = result_data['id']
+
+                  variable_model = instance_double(Bosh::Director::Models::Variable)
+                  allow(variable_model).to receive(:variable_name).and_return(name)
+                  allow(variable_model).to receive(:variable_id).and_return(variable_id)
+                  allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(variable_model)
+
+                  allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
+                end
+              end
+
+              it 'should request all variables by id and returns the interpolated hash' do
+                mock_config_store.each do |_, value|
+                  result_data = JSON.parse(value.body)['data'][0]
+                  variable_id = result_data['id']
+
+                  expect(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
+                end
+
+                expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+              end
+
+              it 'should return a new copy of the original manifest' do
+                expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+              end
+
+              context 'when an id is not found in the config server' do
+                before do
+                  mock_config_store.each do |_, value|
+                    result_data = JSON.parse(value.body)['data'][0]
+                    variable_id = result_data['id']
+                    allow(http_client).to receive(:get_by_id).with(variable_id).and_return(SampleNotFoundResponse.new)
+                  end
+                end
+
+                it 'returns all the errors correctly formatted' do
+                  expected_error_msg = <<-EXPECTED.strip
+- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: HTTP code '404'
+                  EXPECTED
+
+                  expect {
+                    client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                  }.to raise_error { |e|
+                    expect(e.message).to eq(expected_error_msg)
+                  }
+                end
+              end
+
+              context 'when config server throws an error while fetching values' do
+                before do
+                  mock_config_store.each do |_, value|
+                    result_data = JSON.parse(value.body)['data'][0]
+                    variable_id = result_data['id']
+                    allow(http_client).to receive(:get_by_id).with(variable_id).and_return(SampleForbiddenResponse.new)
+                  end
+                end
+
+                it 'returns all the errors correctly formatted' do
+                  expected_error_msg = <<-EXPECTED.strip
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: HTTP code '403'
+                  EXPECTED
+
+                  expect {
+                    client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                  }.to raise_error { |e|
+                    expect(e.message).to eq(expected_error_msg)
+                  }
+                end
+              end
+
+              context 'when options passed contain ignored subtrees' do
+                let(:ignored_subtrees) do
+                  index_integer = Integer
+
+                  ignored_subtrees = []
+                  ignored_subtrees << ['properties', 'integer_allowed']
+                  ignored_subtrees << ['i_am_a_hash', 'i_am_an_array', index_integer, 'properties']
+                  ignored_subtrees
+                end
+
+                let(:interpolated_hash) do
+                  {
+                    'properties' => {
+                      'integer_allowed' => '((integer_placeholder))',
+                      'nil_allowed' => nil,
+                      'empty_allowed' => ''
+                    },
+                    'i_am_a_hash' => {
+                      'i_am_an_array' => [
+                        {
+                          'name' => 'test_job',
+                          'properties' => {'job_prop' => '((string_placeholder))'}
+                        }
+                      ]
+                    },
+                    'i_am_another_array' => [
+                      {'env' => {'env_prop' => hash_placeholder_value}}
+                    ],
+                    'my_value_will_be_a_hash' => hash_placeholder_value
+                  }
+                end
+
+                it 'does NOT replace values in ignored subtrees' do
+                  expect(http_client).to_not receive(:get_by_id).with('1')
+                  expect(http_client).to_not receive(:get_by_id).with('4')
+                  expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {subtrees_to_ignore: ignored_subtrees})).to eq(interpolated_hash)
+                end
+              end
+              
+              context 'when some placeholders begin with a !' do
+                before do
+                  raw_hash['properties'] = {
+                    '!integer_allowed' => '((integer_placeholder))',
+                    '!nil_allowed' => '((nil_placeholder))',
+                    '!empty_allowed' => '((empty_placeholder))'
+                  }
+
+                  interpolated_hash['properties'] =  {
+                    '!integer_allowed' => 123,
+                    '!nil_allowed' => nil,
+                    '!empty_allowed' => ''
+                  }
+                 end
+
+                it 'should strip the exclamation mark' do
+                  mock_config_store.each do |_, value|
+                    result_data = JSON.parse(value.body)['data'][0]
+                    variable_id = result_data['id']
+
+                    expect(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
+                  end
+
+                  expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+                end
+              end
+
+              context 'when some placeholders have the dot syntax' do
+                before do
+                  raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.private_key))'
+                  interpolated_hash['my_value_will_be_a_hash'] = 'abc123'
+                end
+
+                it 'extracts the variable name from placeholder name' do
+                  expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+                end
+
+                context 'when placeholders have multiple dot levels' do
+                  before do
+                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_2.level_2_1))'
+                    interpolated_hash['my_value_will_be_a_hash'] = 'level_2_1_value'
+                  end
+
+                  it 'extracts value from placeholder name' do
+                    expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+                  end
+                end
+
+                context 'when all parts of dot syntax are not found' do
+                  before do
+                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
+                  end
+
+                  it 'fails to find values and throws formatting error' do
+                    expect {
+                      client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                    }.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " +
+                      "from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
+                  end
+                end
+
+                context 'when multiple errors occur because parts of dot syntax is not found' do
+                  before do
+                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
+                    raw_hash['my_value_will_be_an_other_hash'] = '((hash_placeholder.ca.level_m.level_m_1))'
+                  end
+
+                  it 'fails to find all values and throws formatting error' do
+                    expect {
+                      client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                    }.to raise_error { |error|
+                      expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+                      expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
+                      expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
+                    }
+                  end
+                end
+
+                context 'when placeholders use bad dot syntax' do
+                  before do
+                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca...level_1))'
+                  end
+
+                  it 'fails to find value and throws formatting error' do
+                    expect {
+                      client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                    }.to raise_error { |error|
+                      expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
+                      expect(error.message).to include("Placeholder name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
+                    }
+                  end
+                end
+
+                context 'when absolute path is required' do
+                  it 'returns an error for non absolute path placeholders' do
+                    expect {
+                      client.interpolate(raw_hash, deployment_name, variable_set_model, {must_be_absolute_name: true})
+                    }.to raise_error { |error|
+                      expect(error.message).to eq("Names must be absolute path: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
+                    }
+                  end
+                end
+              end
+
+              context 'when response received from server is not in the expected format' do
+                let(:raw_hash) do
+                  {
+                    'name' => 'deployment_name',
+                    'properties' => {
+                      'name' => '((/bad))'
+                    }
+                  }
+                end
+
+                [
+                  {'response' => 'Invalid JSON response',
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
+
+                  {'response' => {'x' => {}},
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                  {'response' => {'data' => {'value' => 'x'}},
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                  {'response' => {'data' => []},
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                  {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                  {'response' => {'data' => [{'name' => 'name1', 'value' => 'x'}]},
+                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                ].each do |entry|
+                  it 'raises an error' do
+                    variable_model = instance_double(Bosh::Director::Models::Variable)
+                    allow(variable_model).to receive(:variable_name).and_return('/bad')
+                    allow(variable_model).to receive(:variable_id).and_return('20')
+                    allow(variable_set_model).to receive(:find_variable_by_name).with('/bad').and_return(variable_model)
+                    allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response'].to_json))
+
+                    expect {
+                      client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                    }.to raise_error { |error|
+                      expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+                      expect(error.message).to include(entry['message'])
+                    }
+                  end
+                end
+              end
+            end
+
+            context 'when all the variables to be fetched are not in the current set context' do
+              before do
+                mock_config_store.each do |name, value|
+                  allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(nil)
+                end
+              end
+
+              context 'when variable set is writable' do
+                before do
+                  allow(variable_set_model).to receive(:writable).and_return(true)
+
+                  mock_config_store.each do |name, value|
+                    result_body = JSON.parse(value.body)
+                    variable_id = result_body['data'][0]['id']
+
+                    allow(http_client).to receive(:get).with(name).and_return(generate_success_response(result_body.to_json))
+                    allow(variable_set_model).to receive(:add_variable).with({:variable_name => name, :variable_id => variable_id})
+                  end
+                end
+
+                it 'should add the name to id mapping for the current set to database' do
+                  expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+                end
+
+                context 'when the variable was added to the current set by another thread' do
+                  before do
+                    mock_config_store.each do |name, value|
+                      result_body = JSON.parse(value.body)
+                      result_data = result_body['data'][0]
+                      variable_id = result_data['id']
+
+                      variable_model = instance_double(Bosh::Director::Models::Variable)
+                      allow(variable_model).to receive(:variable_name).and_return(name)
+                      allow(variable_model).to receive(:variable_id).and_return(variable_id)
+
+                      allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(nil, variable_model)
+
+                      allow(variable_set_model).to receive(:add_variable)
+                                                     .with({:variable_name => name, :variable_id => variable_id})
+                                                     .and_raise(Sequel::UniqueConstraintViolation.new)
+
+                      allow(http_client).to receive(:get_by_id)
+                                              .with(variable_id)
+                                              .and_return(generate_success_response(result_data.to_json))
+                    end
+                  end
+                  it 'should fetch by id from database' do
+                    expect(client.interpolate(raw_hash, deployment_name, variable_set_model, {})).to eq(interpolated_hash)
+                  end
+                end
+              end
+
+              context 'when variable set is NOT writable' do
+                before do
+                  allow(variable_set_model).to receive(:writable).and_return(false)
+                end
+                it 'should raise an error' do
+                  expect {
+                    client.interpolate(raw_hash, deployment_name, variable_set_model, {})
+                  }.to raise_error { |error|
+                    expect(error).to be_a(Bosh::Director::ConfigServerInconsistentVariableState)
+                    expect(error.message).to include("Expected variable '/smurf_director_name/my_deployment_name/integer_placeholder' to be already versioned in deployment 'my_deployment_name'")
+                  }
+                end
+              end
+            end
           end
-
-          it 'raises an error consolidating all the problems' do
-            expect {
-              subject
-            }.to raise_error { |error|
-              expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder' hash to have key 'a'")
-              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x.y' hash to have key 'a'")
-              expect(error.message).to include("- Failed to fetch variable '/nested_placeholder' from config server: Expected parent '/nested_placeholder.x' hash to have key 'a'")
-            }
-          end
-        end
-
-        context 'when bad dot syntax is used' do
-          let(:manifest_hash) do
-            {'bad_nest' => '((nested_placeholder..x))'}
-          end
-
-          it 'raises an error' do
-            expect {
-              subject
-            }. to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Placeholder name 'nested_placeholder..x' syntax error: Must not contain consecutive dots")
-          end
-        end
-      end
-
-      context 'when placeholders begin with !' do
-        let(:manifest_hash) do
-          {
-            'name' => 'deployment_name',
-            'properties' => {
-              'age' => '((!integer_placeholder))'
-            }
-          }
-        end
-
-        it 'should strip the exclamation mark' do
-          expected_result = {
-            'name' => 'deployment_name',
-            'properties' => {'age' => 123}
-          }
-          expect(subject).to eq(expected_result)
-        end
-      end
-
-      context 'when some placeholders have invalid name syntax' do
-        let(:manifest_hash) do
-          {
-            'properties' => {
-              'age' => '((I am an invalid name &%^))'
-            }
-          }
-        end
-
-        it 'raises an error' do
-          expect {
-            subject
-          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax)
         end
       end
     end
@@ -605,8 +512,6 @@ module Bosh::Director::ConfigServer
       def prepend_provider_namespace(name)
         "/#{director_name}/#{provider_deployment_name}/#{name}"
       end
-
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
       let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
       let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('cert_placeholder')}", 'value' => {'ca' => 'ca_value', 'private_key' => 'abc123'}, 'id' => '2'}]} }
@@ -846,7 +751,6 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#prepare_and_get_property' do
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
       let(:ok_response) do
         response = SampleSuccessResponse.new
         response.body = {
@@ -1119,8 +1023,6 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#generate_values' do
-      let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
-
       context 'when given a variables object' do
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
