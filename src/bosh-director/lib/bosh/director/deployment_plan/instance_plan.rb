@@ -203,8 +203,7 @@ module Bosh
             @instance.current_networks,
             @instance.availability_zone,
             @instance.index,
-            @instance.uuid,
-            @dns_manager
+            @instance.uuid
           )
         end
 

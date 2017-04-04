@@ -11,8 +11,7 @@ module Bosh::Director::DeploymentPlan
         {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}},
         az,
         3,
-        'uuid-1',
-        Bosh::Director::DnsManagerProvider.create
+        'uuid-1'
       )
     end
 

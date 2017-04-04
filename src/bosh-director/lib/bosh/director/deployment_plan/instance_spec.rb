@@ -94,7 +94,6 @@ module Bosh::Director
     class TemplateSpec
       def initialize(full_spec, variables_interpolator, variable_set)
         @full_spec = full_spec
-        @dns_manager = DnsManagerProvider.create
         @variables_interpolator = variables_interpolator
         @variable_set = variable_set
       end
@@ -136,7 +135,7 @@ module Bosh::Director
         ip = nil
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
           if @full_spec['job'] != nil
-            settings_with_dns = network_settings.merge({'dns_record_name' => @dns_manager.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
+            settings_with_dns = network_settings.merge({'dns_record_name' => DnsNameGenerator.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
             networks_hash[network_name] = settings_with_dns
           end
 

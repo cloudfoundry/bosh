@@ -146,14 +146,7 @@ module Bosh::Director
     end
 
     def dns_record_name(hostname, job_name, network_name, deployment_name)
-      network_name = Canonicalizer.canonicalize(network_name) unless network_name == '%'
-
-      [ hostname,
-        Canonicalizer.canonicalize(job_name),
-        network_name,
-        Canonicalizer.canonicalize(deployment_name),
-        @dns_domain_name
-      ].join('.')
+      Bosh::Director::DnsNameGenerator.dns_record_name(hostname, job_name, network_name, deployment_name)
     end
 
     def find_local_dns_record(instance_model)

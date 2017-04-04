@@ -116,7 +116,6 @@ module Bosh::Director
         @persistent_disk_collection = nil
 
         @deployment_name = nil
-        @dns_manager = DnsManagerProvider.create
       end
 
       def self.is_legacy_spec?(instance_group_spec)
@@ -373,7 +372,7 @@ module Bosh::Director
       def get_dns_record_names
         result = []
         networks.map(&:name).each do |network_name|
-          result << @dns_manager.dns_record_name('*', @name, network_name, @deployment_name)
+          result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name)
         end
         result.sort
       end

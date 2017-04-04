@@ -71,9 +71,9 @@ module Bosh::Director
 
       apply_spec = instance_plan_to_create.existing_instance.spec
       apply_spec['networks'].each do |network_name, network|
-        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
+        index_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[index_dns_name] = network['ip']
-        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
+        id_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[id_dns_name] = network['ip']
       end
 

@@ -3,6 +3,12 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
+
+      def initialize(config)
+        super(config)
+        @dns_manager = DnsManagerProvider.create
+      end
+
       def requires_authentication?
         false
       end
