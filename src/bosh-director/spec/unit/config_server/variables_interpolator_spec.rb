@@ -476,11 +476,17 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       ignored_subtrees << ['resource_pools', index_type, 'env']
       ignored_subtrees
     end
-
+    let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}
+    let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
     let(:deployment_manifest) {{'name' => 'smurf-deployment', 'properties' => {'a' => '{{placeholder}}'}}}
 
+    before do
+      allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: deployment_manifest['name']).and_return(current_deployment)
+      allow(current_deployment).to receive(:current_variable_set).and_return(current_variable_set)
+    end
+
     it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate).with(deployment_manifest , 'smurf-deployment', anything, subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false).and_return({'name' => 'smurf'})
+      expect(config_server_client).to receive(:interpolate).with(deployment_manifest , 'smurf-deployment', current_variable_set, subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false).and_return({'name' => 'smurf'})
       result = subject.interpolate_deployment_manifest(deployment_manifest)
       expect(result).to eq({'name' => 'smurf'})
     end
@@ -488,7 +494,8 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
   describe '#interpolate_runtime_manifest' do
     let(:deployment_name) { 'some_deployment_name' }
-
+    let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}
+    let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
     let(:ignored_subtrees) do
       index_type = Integer
       any_string = String
@@ -500,8 +507,13 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       ignored_subtrees
     end
 
+    before do
+      allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(current_deployment)
+      allow(current_deployment).to receive(:current_variable_set).and_return(current_variable_set)
+    end
+
     it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate).with({'name' => '{{placeholder}}'}, deployment_name, anything, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
+      expect(config_server_client).to receive(:interpolate).with({'name' => '{{placeholder}}'}, deployment_name, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
       result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'}, deployment_name)
       expect(result).to eq({'name' => 'smurf'})
     end

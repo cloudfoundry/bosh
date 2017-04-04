@@ -1281,6 +1281,7 @@ module Bosh::Director
             context 'authenticated access' do
               before do
                 authorize 'admin', 'admin'
+                Models::Deployment.make(name: 'errand')
                 release = Models::Release.make(name: 'bosh-release')
                 template1 = Models::Template.make(name: 'foobar', release: release)
                 template2 = Models::Template.make(name: 'errand1', release: release)

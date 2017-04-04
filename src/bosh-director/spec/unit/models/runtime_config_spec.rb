@@ -28,6 +28,14 @@ module Bosh::Director::Models
     end
 
     describe '#tags' do
+      let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}
+      let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
+
+      before do
+        allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(current_deployment)
+        allow(current_deployment).to receive(:current_variable_set).and_return(current_variable_set)
+      end
+
       context 'when there are no tags' do
         it 'returns an empty hash' do
           expect(runtime_config_model.tags(deployment_name)).to eq({})
