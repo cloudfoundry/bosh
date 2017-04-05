@@ -177,65 +177,81 @@ module Bosh::Director
         }
       }
 
-      before do
-        Models::CloudConfig.create(
-          :manifest => cloud_config_hash_with_two_azs
-        )
-      end
-
       context 'authenticated access' do
+
         before { authorize 'admin', 'admin' }
 
-        context 'when there is no diff' do
-          it 'returns empty diff' do
-            post(
-              '/diff',
-              YAML.dump(cloud_config_hash_with_two_azs),
-              { 'CONTENT_TYPE' => 'text/yaml' }
+        context 'when there is a previous cloud config' do
+          before do
+            Models::CloudConfig.create(
+                :manifest => cloud_config_hash_with_two_azs
             )
-            expect(last_response.body).to eq('{"diff":[]}')
           end
+
+          context 'when there is no diff' do
+            it 'returns empty diff' do
+              post(
+                  '/diff',
+                  YAML.dump(cloud_config_hash_with_two_azs),
+                  {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(last_response.body).to eq('{"diff":[]}')
+            end
+          end
+
+          context 'when there is a diff' do
+            it 'returns the diff' do
+              post(
+                  '/diff',
+                  YAML.dump(cloud_config_hash_with_one_az),
+                  {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+            end
+          end
+
+          it 'gives a nice error when request body is not a valid yml' do
+            post '/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          end
+
+          it 'gives a nice error when request body is empty' do
+            post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Manifest should not be empty',
+            )
+          end
+
+          it 'returns 200 with an empty diff and an error message if the diffing fails' do
+            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
+
+            post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body)['diff']).to eq([])
+            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff cloud-config')
+          end
+
         end
 
-        context 'when there is a diff' do
+        context 'when there is no previous cloud config' do
           it 'returns the diff' do
             post(
-            '/diff',
-              YAML.dump(cloud_config_hash_with_one_az),
-              { 'CONTENT_TYPE' => 'text/yaml' }
+                '/diff',
+                YAML.dump(cloud_config_hash_with_one_az),
+                {'CONTENT_TYPE' => 'text/yaml'}
             )
-            expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
           end
         end
-
-        it 'gives a nice error when request body is not a valid yml' do
-          post '/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
-
-          expect(last_response.status).to eq(400)
-          expect(JSON.parse(last_response.body)['code']).to eq(440001)
-          expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
-        end
-
-        it 'gives a nice error when request body is empty' do
-          post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
-
-          expect(last_response.status).to eq(400)
-          expect(JSON.parse(last_response.body)).to eq(
-            'code' => 440001,
-            'description' => 'Manifest should not be empty',
-          )
-        end
-
-        it 'returns 200 with an empty diff and an error message if the diffing fails' do
-          allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
-
-          post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
-
-          expect(last_response.status).to eq(200)
-          expect(JSON.parse(last_response.body)['diff']).to eq([])
-          expect(JSON.parse(last_response.body)['error']).to include('Unable to diff cloud-config')
-        end
-
       end
 
       context 'accessing with invalid credentials' do
