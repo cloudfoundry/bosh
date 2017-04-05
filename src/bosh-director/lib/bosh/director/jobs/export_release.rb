@@ -65,7 +65,7 @@ module Bosh::Director
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
             with_stemcell_lock(deployment_plan_stemcell.name, deployment_plan_stemcell.version, :timeout => lock_timeout) do
-              planner.compile_packages
+              compile_step(planner).perform
 
               tarball_state = create_tarball(release_version_model, deployment_plan_stemcell)
               task_result.write(tarball_state.to_json + "\n")
@@ -76,6 +76,10 @@ module Bosh::Director
       end
 
       private
+
+      def compile_step(deployment_plan)
+        DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
+      end
 
       def deployment_manifest_has_release?(manifest)
         deployment_manifest = YAML.load(manifest)

@@ -26,17 +26,17 @@ module Bosh::Director
       deployment_name = deployment_manifest.to_hash['name']
 
       with_deployment_lock(deployment_name) do
-        deployment = nil
+        deployment_planner = nil
         begin
           errand_instance_group = nil
 
           event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-            deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
-            assembler = DeploymentPlan::Assembler.create(deployment)
+            deployment_planner = planner_factory.create_from_model(deployment_model)
+            assembler = DeploymentPlan::Assembler.create(deployment_planner)
             assembler.bind_models
-            errand_instance_group = deployment.instance_group(@errand_name)
+            errand_instance_group = deployment_planner.instance_group(@errand_name)
 
             if errand_instance_group.nil?
               raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"
@@ -53,10 +53,10 @@ module Bosh::Director
             end
 
             logger.info('Starting to prepare for deployment')
-            errand_instance_group.bind_instances(deployment.ip_provider)
+            errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
-            deployment.job_renderer.render_job_instances(errand_instance_group.needed_instance_plans)
-            deployment.compile_packages
+            deployment_planner.job_renderer.render_job_instances(errand_instance_group.needed_instance_plans)
+            compile_step(deployment_planner).perform
 
             if @when_changed
               logger.info('Errand run with --when-changed')
@@ -94,12 +94,12 @@ module Bosh::Director
             end
           }
 
-          with_updated_instances(deployment, errand_instance_group) do
+          with_updated_instances(deployment_planner, errand_instance_group) do
             logger.info('Starting to run errand')
             runner.run(&cancel_blk)
           end
         ensure
-          deployment.job_renderer.clean_cache!
+          deployment_planner.job_renderer.clean_cache!
         end
       end
     end
@@ -109,6 +109,10 @@ module Bosh::Director
     end
 
     private
+
+    def compile_step(deployment_plan)
+      DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
+    end
 
     def with_updated_instances(deployment, job, &blk)
       job_manager = Errand::JobManager.new(deployment, job, logger)

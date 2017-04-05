@@ -173,14 +173,15 @@ module Bosh::Director
       end
     end
 
-    describe '#create' do
-      it 'returns a DeploymentPlan::Assembler with the correct deployment_plan and makes stemcell and dns managers' do
-        assembler = DeploymentPlan::Assembler.create(deployment_plan)
-        expect(assembler).to be_a(DeploymentPlan::Assembler)
+    describe '.create' do
+      it 'initializes a DeploymentPlan::Assembler with the correct deployment_plan and makes stemcell and dns managers' do
+        expect(DeploymentPlan::Assembler).to receive(:new).with(
+          deployment_plan,
+          an_instance_of(Api::StemcellManager),
+          an_instance_of(DnsManager),
+        ).and_call_original
 
-        expect(assembler.deployment_plan).to eq(deployment_plan)
-        expect(assembler.stemcell_manager).to be_a(Api::StemcellManager)
-        expect(assembler.dns_manager).to be_a(DnsManager)
+        DeploymentPlan::Assembler.create(deployment_plan)
       end
     end
   end

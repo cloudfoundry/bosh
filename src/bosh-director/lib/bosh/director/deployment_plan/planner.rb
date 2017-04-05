@@ -120,33 +120,6 @@ module Bosh::Director
         }
       end
 
-      def compile_packages
-        validate_packages
-
-        disk_manager = DiskManager.new(@logger)
-        agent_broadcaster = AgentBroadcaster.new
-        dns_manager = DnsManagerProvider.create
-        vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, @job_renderer, agent_broadcaster)
-        instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
-        compilation_instance_pool = CompilationInstancePool.new(
-          InstanceReuser.new,
-          vm_creator,
-          self,
-          @logger,
-          instance_deleter,
-          compilation.workers)
-        package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-          @name,
-          instance_groups,
-          compilation,
-          compilation_instance_pool,
-          @logger,
-          nil
-        )
-        package_compile_step.perform
-      end
-
       def persist_updates!
         #prior updates may have had release versions that we no longer use.
         #remove the references to these stale releases.
@@ -298,22 +271,6 @@ module Bosh::Director
 
       def set_variables(variables_obj)
         @variables = variables_obj
-      end
-
-      private
-
-      def validate_packages
-        release_manager = Bosh::Director::Api::ReleaseManager.new
-        validator = DeploymentPlan::PackageValidator.new(@logger)
-        instance_groups.each do |instance_group|
-          instance_group.jobs.each do |job|
-            release_model = release_manager.find_by_name(job.release.name)
-            release_version_model = release_manager.find_version(release_model, job.release.version)
-
-            validator.validate(release_version_model, instance_group.stemcell)
-          end
-        end
-        validator.handle_faults
       end
     end
   end

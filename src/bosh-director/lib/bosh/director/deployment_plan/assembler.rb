@@ -6,10 +6,8 @@ module Bosh::Director
     include IpUtil
     include LegacyDeploymentHelper
 
-    attr_reader :deployment_plan, :stemcell_manager, :dns_manager
-
     def self.create(deployment_plan)
-      DeploymentPlan::Assembler.new(deployment_plan, Api::StemcellManager.new, DnsManagerProvider.create)
+      new(deployment_plan, Api::StemcellManager.new, DnsManagerProvider.create)
     end
 
     def initialize(deployment_plan, stemcell_manager, dns_manager)

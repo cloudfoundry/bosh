@@ -59,7 +59,7 @@ module Bosh::Director
         before do
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(job).to receive(:current_variable_set).and_return(variable_set)
-          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(compile_step)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
           allow(JobRenderer).to receive(:create).and_return(job_renderer)
@@ -75,9 +75,9 @@ module Bosh::Director
 
         context 'when variables need to be interpolated from config server' do
           before do
+            allow(compile_step).to receive(:perform).ordered
             allow(update_step).to receive(:perform).ordered
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:compile_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
             allow(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
             allow(notifier).to receive(:send_start_event)
@@ -132,12 +132,11 @@ module Bosh::Director
 
           before do
             expect(notifier).to receive(:send_start_event).ordered
+            expect(compile_step).to receive(:perform).ordered
             expect(update_step).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
             allow(job_renderer).to receive(:render_job_instances)
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:validate_packages)
-            allow(planner).to receive(:compile_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
             allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
@@ -146,7 +145,6 @@ module Bosh::Director
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
             expect(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
-            expect(planner).to receive(:compile_packages)
             expect(job).to_not receive(:run_post_deploys)
 
             job.perform
@@ -462,14 +460,13 @@ Unable to render instance groups for deployment. Errors are:
           before do
             allow(job_renderer).to receive(:render_job_instances)
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:validate_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
           end
 
           let(:options) { {'dry_run' => true} }
 
           it 'should exit before trying to create vms' do
-            expect(planner).not_to receive(:compile_packages)
+            expect(compile_step).not_to receive(:perform)
             expect(update_step).not_to receive(:perform)
             expect(PostDeploymentScriptRunner).not_to receive(:run_post_deploys_after_deployment)
             expect(notifier).not_to receive(:send_start_event)

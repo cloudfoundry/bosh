@@ -1,12 +1,32 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, max_instance_count)
+
+      def self.create(deployment_plan)
+        logger = Config.logger
+        disk_manager = DiskManager.new(logger)
+        agent_broadcaster = AgentBroadcaster.new
+        dns_manager = DnsManagerProvider.create
+        vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
+        vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, deployment_plan.job_renderer, agent_broadcaster)
+        instance_deleter = Bosh::Director::InstanceDeleter.new(deployment_plan.ip_provider, dns_manager, disk_manager)
+        instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
+
+        new(
+          InstanceReuser.new,
+          instance_provider,
+          logger,
+          instance_deleter,
+          deployment_plan.compilation.workers,
+        )
+      end
+
+      def initialize(instance_reuser, instance_provider, logger, instance_deleter, max_instance_count)
         @instance_reuser = instance_reuser
         @logger = logger
         @instance_deleter = instance_deleter
         @max_instance_count = max_instance_count
-        @instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
+        @instance_provider = instance_provider
         @mutex = Mutex.new
       end
 
@@ -46,7 +66,7 @@ module Bosh::Director
 
       def delete_instances(number_of_workers)
         ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-           @instance_reuser.each do |instance_memo|
+          @instance_reuser.each do |instance_memo|
             pool.process do
               @instance_reuser.remove_instance(instance_memo)
               instance_plan = DeploymentPlan::InstancePlan.new(
@@ -146,25 +166,25 @@ module Bosh::Director
       rescue Exception => e
         raise e
       ensure
-        add_event(instance_model.deployment.name, instance_model.name, parent_id, e )
+        add_event(instance_model.deployment.name, instance_model.name, parent_id, e)
       end
 
       private
 
       def add_event(deployment_name, instance_name = nil, parent_id = nil, error = nil)
-        user  = Config.current_job.username
-        event  = Config.current_job.event_manager.create_event(
-            {
-                parent_id:   parent_id,
-                user:        user,
-                action:      'create',
-                object_type: 'instance',
-                object_name: instance_name,
-                task:        Config.current_job.task_id,
-                deployment:  deployment_name,
-                instance:    instance_name,
-                error:       error
-            })
+        user = Config.current_job.username
+        event = Config.current_job.event_manager.create_event(
+          {
+            parent_id: parent_id,
+            user: user,
+            action: 'create',
+            object_type: 'instance',
+            object_name: instance_name,
+            task: Config.current_job.task_id,
+            deployment: deployment_name,
+            instance: instance_name,
+            error: error
+          })
         event.id
       end
     end

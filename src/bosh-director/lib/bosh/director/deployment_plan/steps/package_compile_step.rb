@@ -9,6 +9,18 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
+        def self.create(deployment_plan)
+          compilation_pool = CompilationInstancePool.create(deployment_plan)
+          new(
+            deployment_plan.name,
+            deployment_plan.instance_groups,
+            deployment_plan.compilation,
+            compilation_pool,
+            Config.logger,
+            nil,
+          )
+        end
+
         def initialize(deployment_name, jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
           @event_log_stage = nil
           @logger = logger
@@ -27,6 +39,8 @@ module Bosh::Director
         end
 
         def perform
+          validate_packages
+
           @logger.info('Generating a list of compile tasks')
           prepare_tasks
 
@@ -120,6 +134,20 @@ module Bosh::Director
         end
 
         private
+
+        def validate_packages
+          release_manager = Bosh::Director::Api::ReleaseManager.new
+          validator = DeploymentPlan::PackageValidator.new(@logger)
+          @jobs_to_compile.each do |instance_group|
+            instance_group.jobs.each do |job|
+              release_model = release_manager.find_by_name(job.release.name)
+              release_version_model = release_manager.find_version(release_model, job.release.version)
+
+              validator.validate(release_version_model, instance_group.stemcell)
+            end
+          end
+          validator.handle_faults
+        end
 
         def prepare_tasks
           @event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)

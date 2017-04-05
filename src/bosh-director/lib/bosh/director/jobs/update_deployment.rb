@@ -94,7 +94,7 @@ module Bosh::Director
             if dry_run?
               return "/deployments/#{deployment_plan.name}"
             else
-              deployment_plan.compile_packages
+              compilation_step(deployment_plan).perform
 
               update_step(deployment_plan).perform
 
@@ -163,6 +163,10 @@ module Bosh::Director
           return true if job.did_change
         end
         false
+      end
+
+      def compilation_step(deployment_plan)
+        DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
       end
 
       def update_step(deployment_plan)

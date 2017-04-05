@@ -57,7 +57,7 @@ module Bosh::Director
           allow(DeploymentPlan::PlannerFactory).to receive(:new).
             and_return(instance_double(
               'Bosh::Director::DeploymentPlan::PlannerFactory',
-              create_from_manifest: planner,
+              create_from_model: planner,
             ))
           allow(job).to receive(:task_id).and_return(task.id)
 
@@ -72,15 +72,16 @@ module Bosh::Director
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
-            validate_packages: nil,
-            compile_packages: nil,
             ip_provider: ip_provider,
             job_renderer: job_renderer,
           )
         end
+        let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
         let(:job_renderer) { JobRenderer.create.tap { |jr| allow(jr).to receive(:render_job_instances) } }
 
         let(:cloud_config) { Models::CloudConfig.make }
+
+        before { allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step) }
 
         context 'when job representing an errand exists' do
           let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
@@ -149,7 +150,7 @@ module Bosh::Director
 
               it 'binds models, validates packages, compiles packages' do
                 expect(assembler).to receive(:bind_models)
-                expect(planner).to receive(:compile_packages)
+                expect(compile_packages_step).to receive(:perform)
 
                 subject.perform
               end

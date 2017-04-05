@@ -11,6 +11,8 @@ module Bosh::Director
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
+    let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
+
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
     let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
@@ -55,7 +57,6 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
-
       let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
       let!(:deployment_model) do
@@ -129,11 +130,9 @@ module Bosh::Director
         end
 
         context 'and the requested stemcell is found' do
-          let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-
           before do
             create_stemcell
-            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
+            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(job).to receive(:create_tarball)
             allow(package_compile_step).to receive(:perform)
           end
@@ -148,11 +147,6 @@ module Bosh::Director
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |_, job, config, _, _|
-              expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
-              expect(job.first.release.name).to eq(release_name)
-              expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
-            end.and_return(package_compile_step)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform
@@ -186,10 +180,6 @@ module Bosh::Director
             end
 
             it 'succeeds' do
-              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |_, job, config, _, _|
-                expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
-                expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
-              end.and_return(package_compile_step)
               expect(package_compile_step).to receive(:perform).with no_args
 
               job.perform
@@ -224,7 +214,6 @@ module Bosh::Director
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
-                allow(planner).to receive(:compile_packages)
                 allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
               }
 
@@ -245,8 +234,8 @@ module Bosh::Director
       context 'when creating a tarball' do
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
-        let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
+        let(:planner_factory) { DeploymentPlan::PlannerFactory.create(logger) }
+        let(:planner) { planner_factory.create_from_model(deployment_model) }
         let(:task_dir) { Dir.mktmpdir }
 
         before {
@@ -304,9 +293,9 @@ module Bosh::Director
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
-          allow(planner).to receive(:instance_groups) { ['fake-job'] }
-          allow(planner).to receive(:compilation) { 'fake-compilation-config' }
-          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
+          allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
+          allow(planner_factory).to receive(:create_from_model).and_return(planner)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
         }
 
