@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, logger) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
       using_global_networking?: false,
@@ -30,6 +30,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:releases).and_return([])
         allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
         allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)
+        allow(deployment_plan).to receive(:deployment_wide_options).and_return({})
       end
 
       it 'should bind releases and their templates' do
@@ -59,7 +60,7 @@ module Bosh::Director
         sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
         sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
 
-        expect(deployment_plan).to receive(:stemcells).and_return({ 'sc1' => sc1, 'sc2' => sc2})
+        expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
 
         expect(sc1).to receive(:bind_model)
         expect(sc2).to receive(:bind_model)
@@ -67,10 +68,18 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      it 'passes tags to instance plan factory' do
-        expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}}
-        expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
-        assembler.bind_models({tags: {'key1' => 'value1'}})
+      context 'contains deployment plan tags' do
+        before do
+          allow(deployment_plan).to receive(:deployment_wide_options).and_return({
+            tags: {'key1' => 'value1'}
+          })
+        end
+
+        it 'passes tags to instance plan factory' do
+          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}}
+          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+          assembler.bind_models({tags: {'key1' => 'value1'}})
+        end
       end
 
       context 'when there are desired instance_groups' do
@@ -112,7 +121,7 @@ module Bosh::Director
         end
 
         context 'links binding' do
-          let(:links_resolver) { double(DeploymentPlan::LinksResolver)}
+          let(:links_resolver) { double(DeploymentPlan::LinksResolver) }
 
           before do
             allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
@@ -161,6 +170,17 @@ module Bosh::Director
       it 'configures dns' do
         expect(dns_manager).to receive(:configure_nameserver)
         assembler.bind_models
+      end
+    end
+
+    describe '#create' do
+      it 'returns a DeploymentPlan::Assembler with the correct deployment_plan and makes stemcell and dns managers' do
+        assembler = DeploymentPlan::Assembler.create(deployment_plan)
+        expect(assembler).to be_a(DeploymentPlan::Assembler)
+
+        expect(assembler.deployment_plan).to eq(deployment_plan)
+        expect(assembler.stemcell_manager).to be_a(Api::StemcellManager)
+        expect(assembler.dns_manager).to be_a(DnsManager)
       end
     end
   end

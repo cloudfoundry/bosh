@@ -113,19 +113,11 @@ module Bosh::Director
         Canonicalizer.canonicalize(@name)
       end
 
-      def bind_models(options = {})
-        stemcell_manager = Api::StemcellManager.new
-        dns_manager = DnsManagerProvider.create
-        assembler = DeploymentPlan::Assembler.new(
-          self,
-          stemcell_manager,
-          dns_manager,
-          @logger
-        )
-
-        options[:fix] = @fix
-        options[:tags] = @tags
-        assembler.bind_models(options)
+      def deployment_wide_options
+        {
+          fix: @fix,
+          tags: @tags,
+        }
       end
 
       def compile_packages
@@ -153,6 +145,34 @@ module Bosh::Director
           nil
         )
         package_compile_step.perform
+      end
+
+      def persist_updates!
+        #prior updates may have had release versions that we no longer use.
+        #remove the references to these stale releases.
+        stale_release_versions = (model.release_versions - releases.map(&:model))
+        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}.uniq
+        with_release_locks(stale_release_names) do
+          stale_release_versions.each do |release_version|
+            model.remove_release_version(release_version)
+          end
+        end
+
+        model.manifest = YAML.dump(@uninterpolated_manifest_text)
+        model.cloud_config = @cloud_config
+        model.runtime_config = @runtime_config
+        model.link_spec = @link_spec
+        model.save
+      end
+
+      def update_stemcell_references!
+        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.models }.flatten
+        @stemcells.values.map(&:models).flatten.each do |stemcell|
+          current_stemcell_models << stemcell
+        end
+        model.stemcells.each do |deployment_stemcell|
+          deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
+        end
       end
 
       # Returns a list of Instances in the deployment (according to DB)
@@ -262,34 +282,6 @@ module Bosh::Director
       # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
       def errand_instance_groups
         @instance_groups.select(&:is_errand?)
-      end
-
-      def persist_updates!
-        #prior updates may have had release versions that we no longer use.
-        #remove the references to these stale releases.
-        stale_release_versions = (model.release_versions - releases.map(&:model))
-        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}.uniq
-        with_release_locks(stale_release_names) do
-          stale_release_versions.each do |release_version|
-            model.remove_release_version(release_version)
-          end
-        end
-
-        model.manifest = YAML.dump(@uninterpolated_manifest_text)
-        model.cloud_config = @cloud_config
-        model.runtime_config = @runtime_config
-        model.link_spec = @link_spec
-        model.save
-      end
-
-      def update_stemcell_references!
-        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.models }.flatten
-        @stemcells.values.map(&:models).flatten.each do |stemcell|
-          current_stemcell_models << stemcell
-        end
-        model.stemcells.each do |deployment_stemcell|
-          deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
-        end
       end
 
       def using_global_networking?

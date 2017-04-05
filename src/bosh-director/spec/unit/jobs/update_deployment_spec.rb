@@ -49,6 +49,7 @@ module Bosh::Director
             model: deployment_model
           )
         end
+        let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
         let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
 
         let(:mock_manifest) do
@@ -69,12 +70,12 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
           allow(deployment_model).to receive(:current_variables_set).and_return(variable_set)
+          allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
         end
 
         context 'when variables need to be interpolated from config server' do
           before do
             allow(update_step).to receive(:perform).ordered
-            allow(planner).to receive(:bind_models)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:compile_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
@@ -134,7 +135,6 @@ module Bosh::Director
             expect(update_step).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
             allow(job_renderer).to receive(:render_job_instances)
-            allow(planner).to receive(:bind_models)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:validate_packages)
             allow(planner).to receive(:compile_packages)
@@ -144,7 +144,7 @@ module Bosh::Director
           end
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
-            expect(planner).to receive(:bind_models)
+            expect(assembler).to receive(:bind_models)
             expect(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
             expect(planner).to receive(:compile_packages)
             expect(job).to_not receive(:run_post_deploys)
@@ -380,7 +380,6 @@ Unable to render instance groups for deployment. Errors are:
 
           before do
             allow(notifier).to receive(:send_start_event)
-            allow(planner).to receive(:bind_models)
             allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
             allow(planner).to receive(:instance_models).and_return([])
           end
@@ -462,7 +461,6 @@ Unable to render instance groups for deployment. Errors are:
         context 'when job is being dry-run' do
           before do
             allow(job_renderer).to receive(:render_job_instances)
-            allow(planner).to receive(:bind_models)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:validate_packages)
             allow(planner).to receive(:instance_groups).and_return([deployment_job])
@@ -482,7 +480,7 @@ Unable to render instance groups for deployment. Errors are:
 
           context 'when it fails the dry-run' do
             it 'should not send an error event to the health monitor' do
-              expect(planner).to receive(:bind_models).and_raise
+              expect(assembler).to receive(:bind_models).and_raise
               expect(notifier).not_to receive(:send_error_event)
 
               expect { job.perform }.to raise_error

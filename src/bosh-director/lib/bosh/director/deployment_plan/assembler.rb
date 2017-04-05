@@ -6,9 +6,15 @@ module Bosh::Director
     include IpUtil
     include LegacyDeploymentHelper
 
-    def initialize(deployment_plan, stemcell_manager, dns_manager, logger)
+    attr_reader :deployment_plan, :stemcell_manager, :dns_manager
+
+    def self.create(deployment_plan)
+      DeploymentPlan::Assembler.new(deployment_plan, Api::StemcellManager.new, DnsManagerProvider.create)
+    end
+
+    def initialize(deployment_plan, stemcell_manager, dns_manager)
       @deployment_plan = deployment_plan
-      @logger = logger
+      @logger = Config.logger
       @stemcell_manager = stemcell_manager
       @dns_manager = dns_manager
     end
@@ -18,8 +24,9 @@ module Bosh::Director
 
       should_bind_links = options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
-      fix = options.fetch(:fix, false)
-      tags = options.fetch(:tags, {})
+      deployment_options = @deployment_plan.deployment_wide_options
+      fix = deployment_options.fetch(:fix, false)
+      tags = deployment_options.fetch(:tags, {})
 
       bind_releases
 

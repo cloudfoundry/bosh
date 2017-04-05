@@ -103,28 +103,34 @@ module Bosh::Director
           expect(plan.recreate).to eq(true)
         end
 
-        describe '#bind_models' do
-          context 'if fix is set' do
-            let(:options) do
-              {'fix' => true}
-            end
-
-            it 'delegates to DeploymentPlan Assembler with correct options' do
-              expected_options = {fix: true, tags: {}}
-              expect_any_instance_of(DeploymentPlan::Assembler).to receive(:bind_models).with expected_options
-              planner.bind_models
-            end
+        describe '#deployment_wide_options' do
+          let(:options) do
+            {
+              'fix' => true,
+              'tags' => {'key1' => 'value1'},
+              'some_other_option' => 'disappears',
+            }
           end
 
-          context 'if tags are set' do
-            let(:options) do
-              {'tags' => {'key1' => 'value1'}}
-            end
+          it 'returns fix and tags values set on planner' do
+            expect(subject.deployment_wide_options).to eq(
+              {
+                fix: true,
+                tags: {'key1' => 'value1'},
+              }
+            )
+          end
 
-            it 'delegates to DeploymentPlan Assembler with correct options' do
-              expected_options = {tags: {'key1' => 'value1'}, fix: false}
-              expect_any_instance_of(DeploymentPlan::Assembler).to receive(:bind_models).with expected_options
-              planner.bind_models
+          context 'when fix and tag values are not present' do
+            let(:options) { {} }
+
+            it 'returns fix: false and empty tags hash' do
+              expect(subject.deployment_wide_options).to eq(
+                {
+                  fix: false,
+                  tags: {},
+                }
+              )
             end
           end
         end
@@ -253,7 +259,7 @@ module Bosh::Director
 
               planner.add_release(ReleaseVersion.new(deployment_model, {'name' => 'same', 'version' => '123'}))
               planner.add_release(ReleaseVersion.new(deployment_model, {'name' => 'new', 'version' => '123'}))
-              planner.bind_models
+              DeploymentPlan::Assembler.create(planner).bind_models
             end
 
             it 'updates the release version on the deployment to be the ones from the provided manifest', ENV do
@@ -290,6 +296,7 @@ module Bosh::Director
 
         describe '#update_stemcell_references!' do
           let(:stemcell_model_2) { Bosh::Director::Models::Stemcell.create(name: 'stem2', version: '1.0', cid: 'def') }
+          let(:assembler) { DeploymentPlan::Assembler.create(planner) }
 
           before do
             setup_global_config_and_stubbing
@@ -299,7 +306,7 @@ module Bosh::Director
           context 'when using resource pools' do
             context "when the stemcells associated with the resource pools have diverged from the stemcells associated with the planner" do
               it 'it removes the given deployment from any stemcell it should not be associated with' do
-                planner.bind_models
+                assembler.bind_models
 
                 expect(stemcell_model.deployments).to include(deployment_model)
                 expect(stemcell_model_2.deployments).to include(deployment_model)
@@ -314,14 +321,16 @@ module Bosh::Director
 
           context 'when using vm types and stemcells' do
             let(:resource_pools) { [] }
+
             before do
               planner.add_stemcell(Stemcell.parse({
                 'alias' => 'default',
                 'name' => 'default',
                 'version' => '1',
               }))
-              planner.bind_models
+              assembler.bind_models
             end
+
             context "when the stemcells associated with the deployment stemcell has diverged from the stemcells associated with the planner" do
               it 'it removes the given deployment from any stemcell it should not be associated with' do
 

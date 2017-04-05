@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
     manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, nil, nil, {:resolve_interpolation => false})
     planner = planner_factory.create_from_manifest(manifest, nil, nil, {})
-    planner.bind_models
+    Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
     planner
   end
 
@@ -199,7 +199,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         before do
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
           deployment_plan = planner_factory.create_from_manifest(manifest, nil, nil, {})
-          deployment_plan.bind_models
+          Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan).bind_models
 
           links_resolver = described_class.new(deployment_plan, logger)
           mysql_job = deployment_plan.instance_group('mysql')
@@ -377,7 +377,7 @@ Unable to process links for deployment. Errors are:
         manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, cloud_config, nil, {:resolve_interpolation => false})
 
         planner = planner_factory.create_from_manifest(manifest, cloud_config, nil, {})
-        planner.bind_models
+        Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
         planner
       end
 

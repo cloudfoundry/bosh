@@ -34,7 +34,8 @@ module Bosh::Director
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
-            deployment.bind_models
+            assembler = DeploymentPlan::Assembler.create(deployment)
+            assembler.bind_models
             errand_instance_group = deployment.instance_group(@errand_name)
 
             if errand_instance_group.nil?

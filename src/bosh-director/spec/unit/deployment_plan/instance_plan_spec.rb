@@ -66,7 +66,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_plan) do
       planner_factory = PlannerFactory.create(logger)
       plan = planner_factory.create_from_model(deployment_model)
-      plan.bind_models
+      Assembler.create(plan).bind_models
       plan
     end
 

@@ -29,7 +29,7 @@ module Bosh::Director::DeploymentPlan
     let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
-    let(:assembler) { Assembler.new(deployment_plan, nil, nil, logger) }
+    let(:assembler) { Assembler.new(deployment_plan, nil, nil) }
     let(:cloud_config) { nil }
     let(:runtime_config) { nil }
 
@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
       planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
       manifest = Bosh::Director::Manifest.new(deployment_manifest, deployment_manifest, nil, nil, nil)
       deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_config, {})
-      deployment_plan.bind_models
+      DeploymentPlan::Assembler.create(deployment_plan).bind_models
       deployment_plan
     end
     let(:deployment_manifest) do

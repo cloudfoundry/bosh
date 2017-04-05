@@ -72,8 +72,9 @@ module Bosh::Director
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
+            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
-            deployment_plan.bind_models
+            deployment_assembler.bind_models
           end
 
           if deployment_plan.instance_models.any?(&:ignore)

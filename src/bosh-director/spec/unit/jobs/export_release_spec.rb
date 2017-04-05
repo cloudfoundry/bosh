@@ -12,6 +12,7 @@ module Bosh::Director
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
+    let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
     before do
       fake_locks
@@ -27,6 +28,8 @@ module Bosh::Director
       allow(multi_digest).to receive(:create).and_return('expected-sha1')
       allow(Config).to receive(:result).and_return(task_result)
       allow(planner_model).to receive(:add_variable_set)
+
+      allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
     end
 
     subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2) }
@@ -226,7 +229,7 @@ module Bosh::Director
               }
 
               it 'skips links binding' do
-                expect(planner).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
+                expect(assembler).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
                 job.perform
               end
             end
