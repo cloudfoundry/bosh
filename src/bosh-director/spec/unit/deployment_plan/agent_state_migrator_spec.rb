@@ -2,8 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::AgentStateMigrator do
-    let(:agent_state_migrator) { described_class.new(deployment_plan, Config.logger) }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple') }
+    let(:agent_state_migrator) { described_class.new(Config.logger) }
     let(:client) { instance_double(AgentClient) }
     let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
 
@@ -142,8 +141,6 @@ module Bosh::Director
     describe '#verify_state' do
       before do
         @deployment = Models::Deployment.make(:name => 'foo')
-        allow(deployment_plan).to receive(:name).and_return('foo')
-        allow(deployment_plan).to receive(:model).and_return(@deployment)
       end
 
       it 'should do nothing when VM is ok' do

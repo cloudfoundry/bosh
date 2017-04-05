@@ -1,8 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class AgentStateMigrator
-      def initialize(deployment_plan, logger)
-        @deployment_plan = deployment_plan
+      def initialize(logger)
         @logger = logger
       end
 
