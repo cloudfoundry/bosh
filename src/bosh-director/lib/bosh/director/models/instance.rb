@@ -134,13 +134,15 @@ module Bosh::Director::Models
     end
 
     def credentials
-      active_vm.nil? ? nil : object_or_nil(active_vm.credentials_json)
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? nil : object_or_nil(instance_active_vm.credentials_json)
     end
 
     def credentials=(spec)
       json = json_encode(spec)
-      unless active_vm.nil?
-        active_vm.update(credentials_json: json_encode(spec))
+      instance_active_vm = active_vm
+      unless instance_active_vm.nil?
+        instance_active_vm.update(credentials_json: json_encode(spec))
       end
       json
     end
@@ -158,11 +160,13 @@ module Bosh::Director::Models
     end
 
     def agent_id
-      active_vm.nil? ? nil : active_vm.agent_id
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? nil : instance_active_vm.agent_id
     end
 
     def vm_cid
-      active_vm.nil? ? nil : active_vm.cid
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? nil : instance_active_vm.cid
     end
 
     def lifecycle
@@ -179,7 +183,8 @@ module Bosh::Director::Models
     end
 
     def trusted_certs_sha1
-      active_vm.nil? ? ::Digest::SHA1.hexdigest('') : active_vm.trusted_certs_sha1
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? ::Digest::SHA1.hexdigest('') : instance_active_vm.trusted_certs_sha1
     end
 
     private
