@@ -305,80 +305,149 @@ describe 'using director with config server and deployments having links', type:
 
     let(:deployment_name) {provider_manifest['name']}
 
-    describe 'sequenced deployments scenarios' do
-      context 'given a successful provider deployment' do
+    context 'given a successful provider deployment' do
+      before do
+        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_1')
+        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+      end
+
+      context 'when deploying the consumer deployment' do
         before do
-          config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_1')
-          deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+          deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
         end
 
-        context 'when deploying the consumer deployment' do
+        it 'should successfully use the shared links' do
+          link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+          template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+        end
+
+        context 'when updating config server values' do
           before do
-            deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+            config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_2')
           end
 
-          it 'should successfully use the shared links' do
-            link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-            expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
-          end
-
-          context 'when updating config server values' do
+          context 'when re-deploying the provider deployment' do
             before do
-              config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_2')
+              deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
             end
 
-            context 'when re-deploying the provider deployment' do
+            context 'and then updating config server values one more time' do
               before do
-                deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+                config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_3')
               end
 
-              context 'and then updating config server values one more time' do
+              context 'when re-deploying the consumer deployment' do
                 before do
-                  config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_3')
+                  deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
                 end
 
-                context 'when re-deploying the consumer deployment' do
-                  before do
-                    deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
-                  end
+                it 'the consumer deployment picks up the variables of the last successful provider deployment' do
+                  link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                  template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+                  expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_2')
+                end
+              end
 
-                  it 'the consumer deployment picks up the variables of the last successful provider deployment' do
-                    link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-                    template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-                    expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_2')
-                  end
+              context 'when recreating the consumer deployment VMs' do
+                before do
+                  bosh_runner.run('recreate', deployment_name: consumer_manifest['name'], no_login: true, include_credentials: false,  env: client_env)
                 end
 
-                context 'when recreating the consumer deployment VMs' do
-                  before do
-                    bosh_runner.run('recreate', deployment_name: consumer_manifest['name'], no_login: true, include_credentials: false,  env: client_env)
-                  end
-
-                  it 'the consumer deployment is still rendered with the variable versions it was deployed with' do
-                    link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-                    template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-                    expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
-                  end
+                it 'the consumer deployment is still rendered with the variable versions it was deployed with' do
+                  link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                  template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+                  expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
                 end
+              end
 
-                context 'when resurrector kicks in to recreate an unresponsive consumer VM' do
-                  with_reset_hm_before_each
+              context 'when resurrector kicks in to recreate an unresponsive consumer VM' do
+                with_reset_hm_before_each
 
-                  it 'the consumer deployment VM is still rendered with the variable versions it was originally deployed with' do
-                    link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-                    director.kill_vm_and_wait_for_resurrection(link_instance, deployment_name: 'consumer_deployment_name', include_credentials: false, env: client_env)
+                it 'the consumer deployment VM is still rendered with the variable versions it was originally deployed with' do
+                  link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                  director.kill_vm_and_wait_for_resurrection(link_instance, deployment_name: 'consumer_deployment_name', include_credentials: false, env: client_env)
 
-                    resurrected_link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-                    template = YAML.load(resurrected_link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-                    expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
-                    expect(resurrected_link_instance.vm_cid).to_not eq(link_instance.vm_cid)
-                  end
+                  resurrected_link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+                  template = YAML.load(resurrected_link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+                  expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+                  expect(resurrected_link_instance.vm_cid).to_not eq(link_instance.vm_cid)
                 end
               end
             end
           end
         end
+      end
+    end
+
+    context 'given a successful provider deployment containing generated job properties with type password' do
+      let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
+
+      before do
+        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+      end
+
+      it 'should successfully use the generated shared link properties' do
+        generated_value = config_server_helper.get_value(prepend_namespace('fibonacci_placeholder'))
+        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+
+        link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']['properties']['fibonacci']).to eq(generated_value)
+      end
+    end
+
+    context 'when using runtime config' do
+      let(:runtime_config) do
+        {
+          'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+          'addons' => [
+            {
+              'name' => 'addon_job',
+              'jobs' => [
+                'name' => 'http_proxy_with_requires',
+                'release' => 'bosh-release',
+                'consumes' => {
+                  'proxied_http_endpoint' => {
+                    'from' => 'vroom',
+                    'deployment' => 'provider_deployment_name'
+                  }
+                }
+              ]
+
+            }
+          ]
+        }
+      end
+
+      let(:consumer_deployment_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'consumer_deployment_node',
+          templates: [
+            {
+              'name' => 'provider',
+              'release' => 'bosh-release'
+            }
+          ],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      before do
+        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'bosh_is_nice')
+        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+      end
+
+      it 'should successfully use shared link from provider deployment' do
+        expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+
+        link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']['properties']['fibonacci']).to eq('bosh_is_nice')
       end
     end
   end
