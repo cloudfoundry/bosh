@@ -193,9 +193,8 @@ namespace :spec do
     desc 'Run all migrations tests'
     task :migrations do
       trap('INT') { exit }
-      build = 'bosh-director'
       cmd = 'rspec --tty --backtrace -c -f p ./spec/unit/db/migrations/'
-      system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{cmd}")
+      sh("cd bosh-director && #{cmd}")
     end
   end
 
