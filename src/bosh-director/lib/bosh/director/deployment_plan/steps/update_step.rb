@@ -20,7 +20,7 @@ module Bosh::Director
             @deployment_plan.persist_updates!
             @logger.info('Finished updating deployment')
           ensure
-            @deployment_plan.update_stemcell_references!
+            CleanupStemcellReferencesStep.new(@deployment_plan).perform
           end
         end
 

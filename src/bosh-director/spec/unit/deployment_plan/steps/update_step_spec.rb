@@ -14,10 +14,10 @@ module Bosh::Director
       let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
+      let(:cleanup_stemcell_reference) { instance_double('Bosh::Director::DeploymentPlan::Steps::CleanupStemcellReferencesStep') }
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          update_stemcell_references!: nil,
           persist_updates!: nil,
           job_renderer: JobRenderer.create,
         )
@@ -30,6 +30,7 @@ module Bosh::Director
         allow(UpdateErrandsStep).to receive(:new).with(deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
         allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, anything).and_return(vm_creator)
+        allow(CleanupStemcellReferencesStep).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
       end
 
       describe '#perform' do
@@ -42,6 +43,7 @@ module Bosh::Director
           expect(logger).to receive(:info).with('Committing updates').ordered
           expect(deployment_plan).to receive(:persist_updates!).ordered
           expect(logger).to receive(:info).with('Finished updating deployment').ordered
+          expect(cleanup_stemcell_reference).to receive(:perform).ordered
 
           subject.perform
         end
@@ -54,9 +56,9 @@ module Bosh::Director
           end
 
           it 'still updates the stemcell references' do
-            expect(deployment_plan).to receive(:update_stemcell_references!)
+            expect(cleanup_stemcell_reference).to receive(:perform)
 
-            expect{
+            expect {
               subject.perform
             }.to raise_error(some_error)
           end

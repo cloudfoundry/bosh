@@ -16,7 +16,6 @@ module Bosh::Director
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          update_stemcell_references!: nil,
           persist_updates!: nil,
           instance_groups_starting_on_deploy: [],
           ip_provider: ip_provider,
@@ -25,6 +24,8 @@ module Bosh::Director
       end
 
       before do
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+
         allow(base_job).to receive(:logger).and_return(logger)
         allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
         allow(event_log).to receive(:begin_stage)

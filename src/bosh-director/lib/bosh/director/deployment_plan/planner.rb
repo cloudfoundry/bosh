@@ -138,16 +138,6 @@ module Bosh::Director
         model.save
       end
 
-      def update_stemcell_references!
-        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.models }.flatten
-        @stemcells.values.map(&:models).flatten.each do |stemcell|
-          current_stemcell_models << stemcell
-        end
-        model.stemcells.each do |deployment_stemcell|
-          deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
-        end
-      end
-
       # Returns a list of Instances in the deployment (according to DB)
       # @return [Array<Models::Instance>]
       def instance_models
