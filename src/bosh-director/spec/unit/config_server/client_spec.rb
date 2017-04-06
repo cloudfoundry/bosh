@@ -602,7 +602,7 @@ module Bosh::Director::ConfigServer
               variable_model = instance_double(Bosh::Director::Models::Variable)
               allow(variable_model).to receive(:variable_name).and_return(name)
               allow(variable_model).to receive(:variable_id).and_return(variable_id)
-              allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(variable_model)
+              allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(variable_model)
 
               allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
             end
@@ -651,7 +651,7 @@ module Bosh::Director::ConfigServer
               allow(consumer_variable_set).to receive(:writable).and_return(false)
 
               mock_config_store.each do |name, _|
-                allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(nil)
+                allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
               end
             end
 
@@ -689,9 +689,9 @@ module Bosh::Director::ConfigServer
                   allow(variable_model).to receive(:variable_name).and_return(name)
                   allow(variable_model).to receive(:variable_id).and_return(variable_id)
 
-                  allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(nil)
+                  allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
                   # expecting here because we can !
-                  expect(consumer_variable_set).to receive(:add_variable).with({variable_name:name, variable_id: variable_id, is_local: false, provider_deployment: provider_deployment_name})
+                  expect(consumer_variable_set).to receive(:add_variable).with({variable_name:name, variable_id: variable_id})
                   allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(variable_model)
 
                   allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
@@ -705,14 +705,7 @@ module Bosh::Director::ConfigServer
 
               context 'when the consumer variable_set throws unique constraint violation while copying variable to it (concurrency possibility)' do
                 before do
-                  allow(consumer_variable_set).to receive(:add_variable)
-                                                    .with({
-                                                            variable_name: '/smurf_director_name/provider_deployment_name/string_placeholder',
-                                                            variable_id: '5',
-                                                            is_local: false,
-                                                            provider_deployment: provider_deployment_name
-                                                          })
-                                                    .and_raise(Sequel::UniqueConstraintViolation.new)
+                  allow(consumer_variable_set).to receive(:add_variable).with({variable_name: '/smurf_director_name/provider_deployment_name/string_placeholder', variable_id: '5'}).and_raise(Sequel::UniqueConstraintViolation.new)
                   allow(consumer_variable_set).to receive(:id).and_return('my_id')
                 end
 
@@ -729,7 +722,7 @@ module Bosh::Director::ConfigServer
             context 'when the provider variable set does NOT have the variable' do
               before do
                 mock_config_store.each do |name, value|
-                  allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(nil)
+                  allow(consumer_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
                   allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
                 end
               end

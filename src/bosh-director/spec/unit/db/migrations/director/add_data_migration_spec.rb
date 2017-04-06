@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170405144414_add_cross_deployment_links_support_for_variables.rb')
+      expect(latest_db_migration_file).to eq('20170331171657_remove_active_vm_id_from_instances.rb')
     end
   end
 end
