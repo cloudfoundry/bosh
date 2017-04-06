@@ -58,6 +58,12 @@ module Bosh::Director
 
       attr_accessor :addons
 
+      # @return [Hash] Returns the shared links
+      attr_reader :link_spec
+
+      attr_reader :cloud_config
+      attr_reader :runtime_config
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -118,24 +124,6 @@ module Bosh::Director
           fix: @fix,
           tags: @tags,
         }
-      end
-
-      def persist_updates!
-        #prior updates may have had release versions that we no longer use.
-        #remove the references to these stale releases.
-        stale_release_versions = (model.release_versions - releases.map(&:model))
-        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}.uniq
-        with_release_locks(stale_release_names) do
-          stale_release_versions.each do |release_version|
-            model.remove_release_version(release_version)
-          end
-        end
-
-        model.manifest = YAML.dump(@uninterpolated_manifest_text)
-        model.cloud_config = @cloud_config
-        model.runtime_config = @runtime_config
-        model.link_spec = @link_spec
-        model.save
       end
 
       # Returns a list of Instances in the deployment (according to DB)

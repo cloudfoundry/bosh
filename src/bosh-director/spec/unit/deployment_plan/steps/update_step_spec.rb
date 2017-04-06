@@ -15,10 +15,10 @@ module Bosh::Director
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
       let(:cleanup_stemcell_reference) { instance_double('Bosh::Director::DeploymentPlan::Steps::CleanupStemcellReferencesStep') }
+      let(:persist_deployment) { instance_double('Bosh::Director::DeploymentPlan::Steps::PersistDeploymentStep') }
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          persist_updates!: nil,
           job_renderer: JobRenderer.create,
         )
       end
@@ -31,6 +31,7 @@ module Bosh::Director
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
         allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, anything).and_return(vm_creator)
         allow(CleanupStemcellReferencesStep).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
+        allow(PersistDeploymentStep).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end
 
       describe '#perform' do
@@ -41,7 +42,7 @@ module Bosh::Director
           expect(update_jobs).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered
           expect(logger).to receive(:info).with('Committing updates').ordered
-          expect(deployment_plan).to receive(:persist_updates!).ordered
+          expect(persist_deployment).to receive(:perform).ordered
           expect(logger).to receive(:info).with('Finished updating deployment').ordered
           expect(cleanup_stemcell_reference).to receive(:perform).ordered
 

@@ -16,7 +16,6 @@ module Bosh::Director
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          persist_updates!: nil,
           instance_groups_starting_on_deploy: [],
           ip_provider: ip_provider,
           tags: {}

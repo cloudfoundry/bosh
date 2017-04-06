@@ -17,7 +17,7 @@ module Bosh::Director
             UpdateJobsStep.new(@base_job, @deployment_plan, @multi_job_updater).perform
             UpdateErrandsStep.new(@deployment_plan).perform
             @logger.info('Committing updates')
-            @deployment_plan.persist_updates!
+            PersistDeploymentStep.new(@deployment_plan).perform
             @logger.info('Finished updating deployment')
           ensure
             CleanupStemcellReferencesStep.new(@deployment_plan).perform
