@@ -450,5 +450,57 @@ describe 'using director with config server and deployments having links', type:
         expect(template['links']['properties']['fibonacci']).to eq('bosh_is_nice')
       end
     end
+
+    context 'handling of absolute variables being defined in the consumer deployment and provider deployment' do
+      context 'given provider deployment providing a property with value as an absolute variable' do
+        before do
+          provider_deployment_job_spec['templates'][0]['properties']['name_space']['fibonacci'] = '((/fibonacci_variable))'
+          config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_1')
+          deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+        end
+
+        context 'given a consumer deployment which defines a property value with same absolute variable' do
+          before do
+            consumer_deployment_job_spec['templates'][0]['properties'] = {
+              'http_proxy_with_requires' => {
+                'listen_port' => '((/fibonacci_variable))'
+              }
+            }
+          end
+
+          it 'versions the 2 variables separately' do
+            deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+            link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+            expect(template['property_listen_port']).to eq('fibonacci_value_1')
+
+            config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_2')
+            deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+
+            link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+            expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+            expect(template['property_listen_port']).to eq('fibonacci_value_2')
+          end
+
+          context 'when recreating the consumer deployment' do
+            it 'should use the variables it was created with' do
+              config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_2')
+              deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+
+              config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_3')
+              deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+
+              bosh_runner.run('recreate consumer_instance_group', deployment_name: consumer_manifest['name'], include_credentials: false, env: client_env)
+              link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
+              template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+              expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+              expect(template['property_listen_port']).to eq('fibonacci_value_2')
+            end
+          end
+        end
+      end
+    end
   end
 end

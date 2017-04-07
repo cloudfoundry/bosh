@@ -183,7 +183,7 @@ module Bosh::Director::ConfigServer
         )
 
         variable_composed_name = get_name_root(raw_variable_name)
-        consumer_variable_model = consumer_variable_set.find_variable_by_name(variable_composed_name)
+        consumer_variable_model = consumer_variable_set.find_provided_variable_by_name(variable_composed_name, provider_deployment_name)
 
         begin
           if !consumer_variable_model.nil?
@@ -199,7 +199,7 @@ module Bosh::Director::ConfigServer
             variable_name = provider_variable_model.variable_name
 
             begin
-              consumer_variable_set.add_variable(variable_name: variable_name, variable_id: variable_id)
+              consumer_variable_set.add_variable(variable_name: variable_name, variable_id: variable_id, is_local: false, provider_deployment: provider_deployment_name)
             rescue Sequel::UniqueConstraintViolation
               @logger.debug("Variable '#{variable_name}' was already added to consumer variable set '#{consumer_variable_set.id}'")
             end

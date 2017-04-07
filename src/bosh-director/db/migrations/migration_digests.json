@@ -100,5 +100,6 @@
   "20170320171505_add_id_group_az_network_deployment_columns_to_local_dns_records": "0a5296c0d3de35d3c3921e2f36c124f56a0a7e94",
   "20170321151400_add_writable_to_variable_set": "b4a4ab1ce8b4788402cd5b55dff5a1c05d621dc9",
   "20170328224049_associate_vm_info_with_vms_table": "caf75442a20a49cf28eeec1fd295090a76c001e3",
-  "20170331171657_remove_active_vm_id_from_instances": "9e640563feef3e437c6ba7a5f289927488a2292a"
+  "20170331171657_remove_active_vm_id_from_instances": "9e640563feef3e437c6ba7a5f289927488a2292a",
+  "20170405144414_add_cross_deployment_links_support_for_variables": "457fcff2c0ae0cdc1c2da694d58e2b4bc39735c3"
 }

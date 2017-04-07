@@ -9,8 +9,11 @@ module Bosh::Director::Models
     end
 
     def find_variable_by_name(variable_name)
-      variables_dataset.where(variable_name: variable_name).limit(1).first
+      variables_dataset.where(variable_name: variable_name, is_local: true).limit(1).first
     end
 
+    def find_provided_variable_by_name(variable_name, provider_deployment)
+      variables_dataset.where(variable_name: variable_name, is_local: false, provider_deployment: provider_deployment).limit(1).first
+    end
   end
 end
