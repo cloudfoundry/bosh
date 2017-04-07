@@ -148,7 +148,7 @@ module Bosh::Director
       agent_id = self.class.generate_agent_id
 
       config_server_client = @config_server_client_factory.create_client
-      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name, instance.variable_set)
+      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), instance.variable_set)
 
       vm_options = {instance: instance_model, agent_id: agent_id}
       options = {}

@@ -23,7 +23,7 @@ module Bosh::Director::ConfigServer
 
       template_spec_properties.each do |job_name, job_properties|
         begin
-          interpolated_hash = @config_server_client.interpolate(job_properties, deployment_name, variable_set)
+          interpolated_hash = @config_server_client.interpolate(job_properties, variable_set)
           result[job_name] = interpolated_hash
         rescue Exception => e
           header = "- Unable to render templates for job '#{job_name}'. Errors are:"
@@ -54,7 +54,7 @@ module Bosh::Director::ConfigServer
           begin
             provider_deployment_name = link_spec['deployment_name']
             if provider_deployment_name == consumer_deployment_name
-              interpolated_link_properties = @config_server_client.interpolate(link_spec['properties'], provider_deployment_name, consumer_variable_set)
+              interpolated_link_properties = @config_server_client.interpolate(link_spec['properties'], consumer_variable_set)
               link_spec['properties'] = interpolated_link_properties
             else
               provider_deployment = get_deployment_by_name(provider_deployment_name)
@@ -95,7 +95,6 @@ module Bosh::Director::ConfigServer
 
       @config_server_client.interpolate(
         deployment_manifest,
-        deployment_manifest['name'],
         deployment_model.current_variable_set,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}
       )
@@ -115,7 +114,6 @@ module Bosh::Director::ConfigServer
 
       @config_server_client.interpolate(
         runtime_manifest,
-        deployment_name,
         deployment_model.current_variable_set,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
       )

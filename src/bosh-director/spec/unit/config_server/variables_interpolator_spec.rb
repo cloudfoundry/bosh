@@ -70,8 +70,8 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     let(:given_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
     it 'interpolates the hash given to it' do
-      expect(config_server_client).to receive(:interpolate).with(job_1_properties, deployment_name, given_variable_set).and_return(interpolated_job_1_properties)
-      expect(config_server_client).to receive(:interpolate).with(job_2_properties, deployment_name, given_variable_set).and_return(interpolated_job_2_properties)
+      expect(config_server_client).to receive(:interpolate).with(job_1_properties, given_variable_set).and_return(interpolated_job_1_properties)
+      expect(config_server_client).to receive(:interpolate).with(job_2_properties, given_variable_set).and_return(interpolated_job_2_properties)
 
       expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, given_variable_set)).to eq(interpolated_properties_spec)
     end
@@ -79,8 +79,8 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     it 'interpolates using the variable set passed in' do
       deployment_model = Bosh::Director::Models::Deployment.make({ id: 1, name: deployment_name })
       variable_set = Bosh::Director::Models::VariableSet.make(id: 42, deployment: deployment_model)
-      expect(config_server_client).to receive(:interpolate).with(job_1_properties, deployment_name, variable_set).and_return(interpolated_job_1_properties)
-      expect(config_server_client).to receive(:interpolate).with(job_2_properties, deployment_name, variable_set).and_return(interpolated_job_2_properties)
+      expect(config_server_client).to receive(:interpolate).with(job_1_properties, variable_set).and_return(interpolated_job_1_properties)
+      expect(config_server_client).to receive(:interpolate).with(job_2_properties, variable_set).and_return(interpolated_job_2_properties)
 
       expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, variable_set)).to eq(interpolated_properties_spec)
     end
@@ -101,13 +101,13 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
     context 'when config server returns errors while interpolating properties' do
       before do
-        allow(config_server_client).to receive(:interpolate).with(job_1_properties, deployment_name, anything).and_raise Exception, <<-EOF
+        allow(config_server_client).to receive(:interpolate).with(job_1_properties, anything).and_raise Exception, <<-EOF
 - Failed to find variable '/TestDirector/deployment_name/smurf_1_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_2_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_3_1_placeholder' from config server: HTTP code '404'
         EOF
 
-        allow(config_server_client).to receive(:interpolate).with(job_2_properties, deployment_name, anything).and_raise Exception, <<-EOF
+        allow(config_server_client).to receive(:interpolate).with(job_2_properties, anything).and_raise Exception, <<-EOF
 - Failed to find variable '/TestDirector/deployment_name/smurf_4_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_5_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_6_1_placeholder' from config server: HTTP code '404'
@@ -329,7 +329,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
         end
 
         it 'does not add it' do
-          expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_1', consumer_variable_set).and_return(interpolated_link_2_properties)
+          expect(config_server_client).to receive(:interpolate).with(link_2_properties, consumer_variable_set).and_return(interpolated_link_2_properties)
           expect(subject.interpolate_link_spec_properties(input, consumer_variable_set)).to eq(result)
         end
       end
@@ -346,7 +346,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
         end
 
         it 'keeps it as nil' do
-          expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_1', consumer_variable_set).and_return(interpolated_link_2_properties)
+          expect(config_server_client).to receive(:interpolate).with(link_2_properties, consumer_variable_set).and_return(interpolated_link_2_properties)
           expect(subject.interpolate_link_spec_properties(input, consumer_variable_set)).to eq(result)
         end
       end
@@ -354,8 +354,8 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       context 'when the properties of a link is present' do
         context 'when all the links are provided by the SAME deployment' do
           it 'interpolates the hash given to it by calling config_server_client.interpolate method' do
-            expect(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', consumer_variable_set).and_return(interpolated_link_1_properties)
-            expect(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_1', consumer_variable_set).and_return(interpolated_link_2_properties)
+            expect(config_server_client).to receive(:interpolate).with(link_1_properties, consumer_variable_set).and_return(interpolated_link_1_properties)
+            expect(config_server_client).to receive(:interpolate).with(link_2_properties, consumer_variable_set).and_return(interpolated_link_2_properties)
             result = subject.interpolate_link_spec_properties(same_deployment_links_spec, consumer_variable_set)
             expect(result).to eq(interpolated_same_deployment_links_spec)
             expect(result).to_not equal(interpolated_same_deployment_links_spec)
@@ -369,7 +369,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
           before do
             allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: 'simple_2').and_return(provider_deployment)
             allow(provider_deployment).to receive(:last_successful_variable_set).and_return(provider_variable_set)
-            allow(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', consumer_variable_set).and_return(interpolated_link_1_properties)
+            allow(config_server_client).to receive(:interpolate).with(link_1_properties, consumer_variable_set).and_return(interpolated_link_1_properties)
           end
 
           it 'interpolates the cross deployment link properties by calling config_server_client.interpolate_cross_deployment_link method' do
@@ -423,13 +423,13 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
       context 'when config server returns errors while interpolating properties' do
         before do
-          allow(config_server_client).to receive(:interpolate).with(link_1_properties, 'simple_1', consumer_variable_set).and_raise Exception, <<-EOF
+          allow(config_server_client).to receive(:interpolate).with(link_1_properties, consumer_variable_set).and_raise Exception, <<-EOF
 - Failed to find variable '/TestDirector/deployment_name/smurf_1_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_2_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_3_1_placeholder' from config server: HTTP code '404'
           EOF
 
-          allow(config_server_client).to receive(:interpolate).with(link_2_properties, 'simple_1', consumer_variable_set).and_raise Exception, <<-EOF
+          allow(config_server_client).to receive(:interpolate).with(link_2_properties, consumer_variable_set).and_raise Exception, <<-EOF
 - Failed to find variable '/TestDirector/deployment_name/smurf_4_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_5_placeholder' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/deployment_name/smurf_6_1_placeholder' from config server: HTTP code '404'
@@ -486,7 +486,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
 
     it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate).with(deployment_manifest , 'smurf-deployment', current_variable_set, subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false).and_return({'name' => 'smurf'})
+      expect(config_server_client).to receive(:interpolate).with(deployment_manifest, current_variable_set, subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false).and_return({'name' => 'smurf'})
       result = subject.interpolate_deployment_manifest(deployment_manifest)
       expect(result).to eq({'name' => 'smurf'})
     end
@@ -513,7 +513,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
 
     it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate).with({'name' => '{{placeholder}}'}, deployment_name, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
+      expect(config_server_client).to receive(:interpolate).with({'name' => '{{placeholder}}'}, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
       result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'}, deployment_name)
       expect(result).to eq({'name' => 'smurf'})
     end

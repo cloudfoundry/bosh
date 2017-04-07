@@ -11,19 +11,17 @@ module Bosh::Director::ConfigServer
     end
 
     # @param [Hash] raw_hash Hash to be interpolated
-    # @param [String] deployment_name The deployment context in-which the interpolation
-    # will occur (used mostly for links properties interpolation since they will be interpolated in
-    # the context of the deployment providing these links)
-    # @param [VariableSet] variable_set The variable set to use with interpolation. If 'nil' it will
-    # use the default variable set from deployment.
+    # @param [VariableSet] variable_set The variable set to use with interpolation.
     # @param [Hash] options Additional options
     #   Options include:
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
     #   - 'must_be_absolute_name': [Boolean] Flag to check if all the placeholders start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(raw_hash, deployment_name, variable_set, options = {})
+    def interpolate(raw_hash, variable_set, options = {})
       return raw_hash if raw_hash.nil?
       raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
+
+      deployment_name = variable_set.deployment.name
 
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
@@ -383,7 +381,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, deployment_name, variable_set, options={})
+    def interpolate(src, variable_set, options={})
       Bosh::Common::DeepCopy.copy(src)
     end
 
