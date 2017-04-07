@@ -4,9 +4,9 @@ module Bosh::Director
   describe BlobstoreDnsPublisher do
     include IpUtil
 
-    let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+    let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
-    subject(:dns) { BlobstoreDnsPublisher.new(blobstore, domain_name) }
+    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
@@ -17,14 +17,21 @@ module Bosh::Director
       dns_records
     end
 
+    before do
+      allow(Config).to receive(:canonized_dns_domain_name).and_return(domain_name)
+      allow(Config).to receive(:local_dns_include_index?).and_return(false)
+    end
+
     describe 'publish and broadcast' do
       let(:broadcaster) { instance_double(AgentBroadcaster) }
 
       before do
-        instance1 = Models::Instance.make(uuid: 'uuid1')
+        instance1 = Models::Instance.make(
+            uuid: 'uuid1',
+            index: 1,
+        )
         Bosh::Director::Models::LocalDnsRecord.make(
             instance_id: instance1.id,
-            name: "uuid1.instance1.net-name1.test-deployment.#{domain_name}",
             ip: '192.0.2.101',
             deployment: 'test-deployment',
             az: 'az1',
@@ -34,7 +41,6 @@ module Bosh::Director
 
         Bosh::Director::Models::LocalDnsRecord.make(
             instance_id: instance1.id,
-            name: "uuid1.instance1.net-name3.test-deployment.#{domain_name}",
             ip: '192.0.3.101',
             deployment: 'test-deployment',
             az: 'az1',
@@ -42,10 +48,12 @@ module Bosh::Director
             network: 'net-name3'
         )
 
-        instance2 = Models::Instance.make(uuid: 'uuid2')
+        instance2 = Models::Instance.make(
+            uuid: 'uuid2',
+            index: 2,
+        )
         Bosh::Director::Models::LocalDnsRecord.make(
             instance_id: instance2.id,
-            name: "uuid2.instance2.net-name2.test-deployment.#{domain_name}",
             ip: '192.0.2.102',
             deployment: 'test-deployment',
             az: 'az2',
@@ -71,21 +79,26 @@ module Bosh::Director
       end
 
       context 'when local_dns is enabled' do
-        let(:expected_dns_records) do
-          dns_records = DnsRecords.new(4)
-          dns_records.add_record('uuid1', 'instance1', 'az1', 'net-name1', 'test-deployment', '192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name')
-          dns_records.add_record('uuid1', 'instance1', 'az1', 'net-name3', 'test-deployment', '192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name')
-          dns_records.add_record('uuid2', 'instance2', 'az2', 'net-name2', 'test-deployment', '192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name')
-          dns_records
-        end
-
         before do
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
           allow(blobstore).to receive(:create).and_return('blob_id_1')
         end
 
         it 'puts a blob containing the records into the blobstore' do
-          expect(blobstore).to receive(:create).with(expected_dns_records.to_json).and_return('blob_id_1')
+          expected_records = JSON.dump({
+              'records' => [
+                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name']],
+              'version' => 4,
+              'record_keys' =>
+                  ['id', 'instance_group', 'az', 'network', 'deployment', 'ip'],
+              'record_infos' => [
+                  ['uuid1', 'instance1', 'az1', 'net-name1', 'test-deployment', '192.0.2.101'],
+                  ['uuid1', 'instance1', 'az1', 'net-name3', 'test-deployment', '192.0.3.101'],
+                  ['uuid2', 'instance2', 'az2', 'net-name2', 'test-deployment', '192.0.2.102']]
+          })
+          expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
           dns.publish_and_broadcast
         end
 
@@ -118,6 +131,34 @@ module Bosh::Director
             expect(records_json).to_not include('tombstone')
           end
           dns.publish_and_broadcast
+        end
+
+        context 'when index based records are enabled' do
+          before do
+            allow(Config).to receive(:local_dns_include_index?).and_return(true)
+          end
+
+          it 'should include index records too' do
+            expected_records = JSON.dump({
+                 'records' => [
+                     ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                     ['192.0.2.101', '1.instance1.net-name1.test-deployment.fake-domain-name'],
+                     ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                     ['192.0.3.101', '1.instance1.net-name3.test-deployment.fake-domain-name'],
+                     ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                     ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name']],
+                 'version' => 4,
+                 'record_keys' =>
+                     ['id', 'instance_group', 'az', 'network', 'deployment', 'ip'],
+                 'record_infos' => [
+                     ['uuid1', 'instance1', 'az1', 'net-name1', 'test-deployment', '192.0.2.101'],
+                     ['uuid1', 'instance1', 'az1', 'net-name3', 'test-deployment', '192.0.3.101'],
+                     ['uuid2', 'instance2', 'az2', 'net-name2', 'test-deployment', '192.0.2.102']]
+             })
+
+            expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+            dns.publish_and_broadcast
+          end
         end
       end
     end

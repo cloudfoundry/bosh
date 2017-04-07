@@ -8,8 +8,8 @@ module Bosh::Director
 
       dns_provider = PowerDns.new(canonized_dns_domain_name, logger) if !!Config.dns_db
 
-      blobstore = App.instance.blobstores.blobstore
-      dns_publisher = BlobstoreDnsPublisher.new(blobstore, canonized_dns_domain_name)
+      blobstore_provider = lambda { App.instance.blobstores.blobstore }
+      dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, canonized_dns_domain_name)
       DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, logger)
     end
   end
@@ -134,17 +134,10 @@ module Bosh::Director
 
     def find_local_dns_record(instance_model)
       @logger.debug('Find local dns records')
-      result = []
-      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip|
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, ip|
         @logger.debug("Finding local dns record with UUID name #{name_uuid} and ip #{ip}")
-        result = Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).all
-
-        if Config.local_dns_include_index?
-          @logger.debug("Finding local dns record with index name #{name_index} and ip #{ip}")
-          result += Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).all
-        end
+        return Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).all
       end
-      result
     end
 
     def delete_local_dns_record(instance_model)
@@ -158,23 +151,23 @@ module Bosh::Director
     def create_or_delete_local_dns_record(instance_model)
       @logger.debug('Creating local dns records')
 
-      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, name_index, ip, network_name|
+      with_valid_instance_spec_in_transaction(instance_model) do |name_uuid, ip, network_name|
         @logger.debug("Adding local dns record with UUID-based name '#{name_uuid}' and ip '#{ip}'")
+        delete_obsolete_local_dns_records(name_uuid, instance_model.id, ip)
         insert_local_dns_record(instance_model, ip, name_uuid, network_name)
-        if Config.local_dns_include_index?
-          @logger.debug("Adding local dns record with index-based name '#{name_index}' and ip '#{ip}'")
-          insert_local_dns_record(instance_model, ip, name_index, network_name)
-        end
       end
     end
 
     private
 
-    def insert_local_dns_record(instance_model, ip, name, network_name)
+    def delete_obsolete_local_dns_records(name, instance_model_id, ip)
       Models::LocalDnsRecord
-          .where(:name => name, :instance_id => instance_model.id)
+          .where(:name => name, :instance_id => instance_model_id)
           .exclude(:ip => ip.to_s)
           .delete
+    end
+
+    def insert_local_dns_record(instance_model, ip, name, network_name)
       begin
         Models::LocalDnsRecord.create(
           :name => name,
@@ -208,7 +201,7 @@ module Bosh::Director
             name_rest = '.' + Canonicalizer.canonicalize(spec['job']['name']) + '.' + network_name + '.' + Canonicalizer.canonicalize(spec['deployment']) + '.' + Config.canonized_dns_domain_name
             name_uuid = instance_model.uuid + name_rest
             name_index = instance_model.index.to_s + name_rest
-            block.call(name_uuid, name_index, ip, network_name)
+            block.call(name_uuid, ip, network_name)
           end
         end
       end

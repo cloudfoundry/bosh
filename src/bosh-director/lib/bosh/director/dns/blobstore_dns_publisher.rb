@@ -1,7 +1,7 @@
 module Bosh::Director
   class BlobstoreDnsPublisher
-    def initialize(blobstore, domain_name)
-      @blobstore = blobstore
+    def initialize(blobstore_provider, domain_name)
+      @blobstore_provider = blobstore_provider
       @domain_name = domain_name
     end
 
@@ -38,7 +38,7 @@ module Bosh::Director
 
     def publish(dns_records)
       Models::LocalDnsBlob.create(
-          blobstore_id: @blobstore.create(dns_records.to_json),
+          blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
           sha1: dns_records.shasum,
           version: dns_records.version,
           created_at: Time.new
@@ -46,17 +46,17 @@ module Bosh::Director
     end
 
     def export_dns_records
-      local_dns_records = nil
+      local_dns_records = []
       version = nil
       Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
         version = Models::LocalDnsRecord.max(:id) || 0
         local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
       end
 
-      dns_records = DnsRecords.new(version)
+      dns_records = DnsRecords.new(version, Config.local_dns_include_index?)
       local_dns_records.each do |dns_record|
-        dns_records.add_record(dns_record.instance.uuid, dns_record.instance_group, dns_record.az,
-                               dns_record.network, dns_record.deployment, dns_record.ip, dns_record.name)
+        dns_records.add_record(dns_record.instance.uuid, dns_record.instance.index, dns_record.instance_group,
+                               dns_record.az, dns_record.network, dns_record.deployment, dns_record.ip)
       end
       dns_records
     end
