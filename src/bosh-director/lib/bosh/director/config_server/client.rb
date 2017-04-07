@@ -17,11 +17,11 @@ module Bosh::Director::ConfigServer
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
     #   - 'must_be_absolute_name': [Boolean] Flag to check if all the variables start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(raw_hash, variable_set, options = {})
+    def interpolate(raw_hash, variable_set = nil, options = {})
       return raw_hash if raw_hash.nil?
       raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
 
-      deployment_name = variable_set.deployment.name
+      deployment_name = variable_set.deployment.name unless variable_set.nil?
 
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
 
@@ -410,7 +410,7 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, variable_set, options={})
+    def interpolate(src, variable_set = nil, options={})
       Bosh::Common::DeepCopy.copy(src)
     end
 

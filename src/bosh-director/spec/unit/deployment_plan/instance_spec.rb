@@ -216,13 +216,38 @@ module Bosh::Director::DeploymentPlan
       describe 'when the cloud properties change' do
 
         describe 'logging' do
-          let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
-          let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
-          let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
+          context 'cloud properties does NOT have variables' do
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
+            let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
+            let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
 
-          it 'should log the change' do
-            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
-            instance.cloud_properties_changed?
+            it 'should log the change' do
+              expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
+              instance.cloud_properties_changed?
+            end
+          end
+
+          context 'cloud properties has variables' do
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => '((/placeholder1))'}})}
+            let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => '((/placeholder2))'}})]}
+            let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => '((/placeholder3))'})}
+            let(:merged_cloud_properties) { {'abcd'=>'((/placeholder3))', 'baz'=>'((/placeholder1))', 'a'=>'((/placeholder2))'} }
+            let(:interpolated_merged_cloud_properties) { {'abcd'=>'p1', 'baz'=>'p2', 'a'=>'p3'} }
+
+            let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+
+            before do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              allow(config_server_client).to receive(:interpolate).with(merged_cloud_properties).and_return(interpolated_merged_cloud_properties)
+              allow(config_server_client).to receive(:interpolate).with(instance_model.cloud_properties_hash, anything, anything).and_return(instance_model.cloud_properties_hash)
+            end
+
+            it 'should NOT log the interpolated values' do
+              expect(logger).to receive(:debug).with("cloud_properties_changed? changed FROM: #{instance_model.cloud_properties_hash} TO: #{merged_cloud_properties}")
+              instance.cloud_properties_changed?
+            end
           end
         end
 
@@ -263,6 +288,25 @@ module Bosh::Director::DeploymentPlan
               expect(instance.cloud_properties_changed?).to be(true)
             end
           end
+        end
+      end
+
+      context 'when called repeatedly on the same deployment plan instance' do
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+
+        before do
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+          allow(config_server_client).to receive(:interpolate)
+        end
+
+        it 'returns the cached result' do
+          expect(client_factory).to receive(:create_client).at_most(:once)
+          expect(config_server_client).to receive(:interpolate).at_most(:twice)
+
+          instance.cloud_properties_changed?
+          instance.cloud_properties_changed?
         end
       end
     end

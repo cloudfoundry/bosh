@@ -184,7 +184,7 @@ module Bosh::Director
         context 'when there is a previous cloud config' do
           before do
             Models::CloudConfig.create(
-                :manifest => cloud_config_hash_with_two_azs
+                :raw_manifest => cloud_config_hash_with_two_azs
             )
           end
 

@@ -264,7 +264,7 @@ module Bosh::Director::ConfigServer
               end
 
               it 'should use the latest variables from the config server' do
-                result = client.interpolate({'key' => "((#{variable_name}))"}, nil, nil)
+                result = client.interpolate({'key' => "((#{variable_name}))"}, nil)
                 expect(result['key']).to eq('var_val')
               end
 
@@ -273,7 +273,7 @@ module Bosh::Director::ConfigServer
 
                 it 'should error' do
                   expect {
-                    client.interpolate({'key' => "((#{variable_name}))"}, nil, nil)
+                    client.interpolate({'key' => "((#{variable_name}))"}, nil)
                   }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
                 end
               end
@@ -282,7 +282,7 @@ module Bosh::Director::ConfigServer
                 let(:variable_value) { {'cert' => 'my cert', 'key' => 'my key', 'ca' => 'my ca'} }
 
                 it 'should get the sub-value as needed' do
-                  result = client.interpolate({'key' => '((/boo.ca))'}, nil, nil)
+                  result = client.interpolate({'key' => '((/boo.ca))'}, nil)
                   expect(result['key']).to eq('my ca')
                 end
               end
@@ -316,7 +316,7 @@ module Bosh::Director::ConfigServer
                   it 'raises an error' do
                     allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
                     expect {
-                      client.interpolate(manifest_hash, nil, nil)
+                      client.interpolate(manifest_hash, nil)
                     }.to raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                       expect(error.message).to include(entry['message'])
@@ -339,7 +339,7 @@ module Bosh::Director::ConfigServer
                   allow(http_client).to receive(:get).with('/missing_placeholder').and_return(SampleNotFoundResponse.new)
 
                   expect {
-                    client.interpolate(manifest_hash, nil, nil)
+                    client.interpolate(manifest_hash, nil)
                   }.to raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                     expect(error.message).to include("- Failed to find variable '/missing_placeholder' from config server: HTTP code '404'")

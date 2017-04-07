@@ -195,9 +195,18 @@ module Bosh::Director
       end
 
       def cloud_properties_changed?
-        changed = cloud_properties != @model.cloud_properties_hash
-        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
-        changed
+        return @cloud_properties_changed unless @cloud_properties_changed.nil?
+
+        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+        config_server_client = config_server_client_factory.create_client
+
+        proposed = config_server_client.interpolate(cloud_properties)
+        existing = config_server_client.interpolate(@model.cloud_properties_hash, @deployment_model.name, @model.variable_set)
+
+        @cloud_properties_changed = existing != proposed
+        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed
+
+        @cloud_properties_changed
       end
 
       def current_job_spec
