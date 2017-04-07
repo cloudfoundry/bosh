@@ -51,7 +51,6 @@ group :development, :test do
   gem 'sinatra-contrib'
   gem 'codeclimate-test-reporter', require: false
   gem 'vcr'
-  gem 'pry'
 
   # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
   gem 'eventmachine', '1.0.4'

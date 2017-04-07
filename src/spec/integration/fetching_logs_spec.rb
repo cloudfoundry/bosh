@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'pry'
 
 describe 'fetching logs', type: :integration do
   with_reset_sandbox_before_each
