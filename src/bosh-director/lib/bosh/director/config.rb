@@ -63,6 +63,8 @@ module Bosh::Director
           thr[:bosh] = nil
         end
 
+        @blobstore = nil
+
         @compiled_package_cache = nil
         @compiled_package_blobstore = nil
         @compiled_package_cache_options = nil
