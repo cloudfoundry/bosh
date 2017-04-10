@@ -23,6 +23,10 @@ module Bosh::Director
     end
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
+    before do
+      fake_app
+    end
+
     describe '#prepare' do
       def self.it_does_not_send_prepare
         it 'does not send prepare message to the instance' do

@@ -225,7 +225,8 @@ module Bosh
           instance.cloud_properties_changed? ||
             stemcell_changed? ||
             env_changed? ||
-            needs_recreate?
+            needs_recreate? ||
+            networks_changed?
         end
 
         def find_existing_reservation_for_network(network)

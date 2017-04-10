@@ -109,6 +109,50 @@ module Bosh::Director
           expect(plan.recreate).to eq(true)
         end
 
+        describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
+          before { subject.add_instance_group(instance_group) }
+          let(:update_config) { instance_double(UpdateConfig, strategy: 'hot-swap') }
+          let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: true) }
+          let(:instance_group) do
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+              name: 'fake-job1-name',
+              canonical_name: 'fake-job1-cname',
+              is_service?: true,
+              is_errand?: false,
+              update: update_config,
+              sorted_instance_plans: [instance_plan]
+            })
+          end
+
+          it 'should return instance groups that are hot-swap enabled' do
+            expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+          end
+
+          context 'when no instance groups have hot-swap enabled' do
+            let(:update_config) { instance_double(UpdateConfig, strategy: 'not-hot-swap-enabled') }
+
+            it 'should return empty array' do
+              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+            end
+          end
+
+          context 'when a new, hot-swap instance group is added to a deployment' do
+            let(:instance_plan) { instance_double(InstancePlan, new?: true, needs_shutting_down?: true) }
+
+            it 'should not be considered for hot swap' do
+              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+            end
+          end
+
+          context 'when a hot-swap instance group does not need shutting down' do
+            let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: false) }
+
+            it 'should not be considered for hot swap' do
+              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+            end
+          end
+        end
+
         describe '#deployment_wide_options' do
           let(:options) do
             {

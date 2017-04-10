@@ -186,6 +186,18 @@ module Bosh::Director
         end
       end
 
+      def instance_plans_with_hot_swap_and_needs_shutdown
+        instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          if instance_group.update.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+            return []
+          end
+
+          instance_group.sorted_instance_plans
+            .select(&:needs_shutting_down?)
+            .reject(&:new?)
+        end
+      end
+
       def mark_instance_plans_for_deletion(instance_plans)
         @unneeded_instance_plans = instance_plans
       end

@@ -10,7 +10,13 @@ module Bosh::Director
           Planner,
           model: Models::Deployment.make,
           properties: {},
-          update: nil,
+          update: UpdateConfig.new(
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60000,
+            'update_watch_time' => 30000,
+            'serial' => true,
+          ),
           name: 'fake-deployment',
           networks: [network],
           releases: {}
@@ -18,8 +24,8 @@ module Bosh::Director
       end
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
       let(:task) { Models::Task.make(id: 42) }
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+      let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+      let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
       describe '#parse' do
         before do
@@ -33,10 +39,10 @@ module Bosh::Director
             })
           )
           allow(deployment_plan).to receive(:disk_type).and_return(disk_type)
-          allow(UpdateConfig).to receive(:new)
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
         end
-        let(:parsed_instance_group) { parser.parse(instance_group_spec) }
+        let(:parse_options) { {} }
+        let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
         let(:resource_pool_env) { {'key' => 'value'} }
         let(:uninterpolated_resource_pool_env) { {'key' => '((value_placeholder))'} }
         let(:resource_pool) do
@@ -47,12 +53,12 @@ module Bosh::Director
 
         let(:instance_group_spec) do
           {
-            'name'      => 'instance-group-name',
+            'name' => 'instance-group-name',
             'jobs' => [],
-            'release'   => 'fake-release-name',
+            'release' => 'fake-release-name',
             'resource_pool' => 'fake-resource-pool-name',
             'instances' => 1,
-            'networks'  => [{'name' => 'fake-network-name'}],
+            'networks' => [{'name' => 'fake-network-name'}],
           }
         end
 
@@ -155,7 +161,7 @@ module Bosh::Director
 
             job = make_job('job-name', job_rel_ver)
             expect(job).to receive(:add_properties)
-                                  .with({}, 'instance-group-name')
+                             .with({}, 'instance-group-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('job-name')
                                      .and_return(job)
@@ -191,14 +197,14 @@ module Bosh::Director
 
             job1 = make_job('fake-template1-name', job_rel_ver)
             expect(job1).to receive(:add_properties)
-                                  .with({}, 'instance-group-name')
+                              .with({}, 'instance-group-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template1-name')
                                      .and_return(job1)
 
             job2 = make_job('fake-template2-name', job_rel_ver)
             expect(job2).to receive(:add_properties)
-                                  .with({}, 'instance-group-name')
+                              .with({}, 'instance-group-name')
             expect(job_rel_ver).to receive(:get_or_create_template)
                                      .with('fake-template2-name')
                                      .and_return(job2)
@@ -275,25 +281,25 @@ module Bosh::Director
 
             job1 = make_job('fake-template1-name', job_rel_ver)
             expect(job1).to receive(:add_properties)
-                                   .with({
-                                           'instance_group_property_1' => 'moop',
-                                           'property_1' => 'meow',
-                                           'deployment_plan_property_1' => 'smurf'
-                                         }, 'instance-group-name')
+                              .with({
+                                'instance_group_property_1' => 'moop',
+                                'property_1' => 'meow',
+                                'deployment_plan_property_1' => 'smurf'
+                              }, 'instance-group-name')
             allow(job_rel_ver).to receive(:get_or_create_template)
-                                     .with('fake-template1-name')
-                                     .and_return(job1)
+                                    .with('fake-template1-name')
+                                    .and_return(job1)
 
             job2 = make_job('fake-template2-name', job_rel_ver)
             expect(job2).to receive(:add_properties)
-                                   .with({
-                                           'instance_group_property_1' => 'moop',
-                                           'property_1' => 'meow',
-                                           'deployment_plan_property_1' => 'smurf'
-                                         }, 'instance-group-name')
+                              .with({
+                                'instance_group_property_1' => 'moop',
+                                'property_1' => 'meow',
+                                'deployment_plan_property_1' => 'smurf'
+                              }, 'instance-group-name')
             allow(job_rel_ver).to receive(:get_or_create_template)
-                                     .with('fake-template2-name')
-                                     .and_return(job2)
+                                    .with('fake-template2-name')
+                                    .and_return(job2)
 
             instance_group = parsed_instance_group
             expect(instance_group.jobs).to eq([job1, job2])
@@ -339,8 +345,8 @@ module Bosh::Director
                                               .and_return(rel_ver)
 
                   allow(rel_ver).to receive(:get_or_create_template)
-                                               .with('job-name')
-                                               .and_return(job)
+                                      .with('job-name')
+                                      .and_return(job)
                   allow(job).to receive(:add_link_from_manifest)
                   allow(job).to receive(:add_properties)
                 end
@@ -358,9 +364,9 @@ module Bosh::Director
                 let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: '') }
                 let(:job) { make_job('job-name', nil) }
 
-                let(:provides_link) { instance_double(Link,name: 'zz') }
-                let(:provides_job) { instance_double(Job,name: 'z') }
-                let(:provides_instance_group) { instance_double(InstanceGroup,name: 'y') }
+                let(:provides_link) { instance_double(Link, name: 'zz') }
+                let(:provides_job) { instance_double(Job, name: 'z') }
+                let(:provides_instance_group) { instance_double(InstanceGroup, name: 'y') }
 
                 before do
                   allow(deployment_plan).to receive(:release)
@@ -372,8 +378,8 @@ module Bosh::Director
                   allow(deployment_plan).to receive(:instance_groups).and_return([provides_instance_group])
 
                   allow(rel_ver).to receive(:get_or_create_template)
-                                               .with('job-name')
-                                               .and_return(job)
+                                      .with('job-name')
+                                      .and_return(job)
                   allow(job).to receive(:add_link_from_manifest)
                   allow(job).to receive(:add_properties)
                 end
@@ -648,7 +654,7 @@ module Bosh::Director
                                         .with('job-name')
                                         .and_return(job)
                 expect(job).to receive(:add_properties)
-                                      .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'instance-group-name')
+                                 .with({'property_1' => 'property_1_value', 'property_2' => {'life' => 'life_value'}}, 'instance-group-name')
 
                 parsed_instance_group
               end
@@ -676,7 +682,7 @@ module Bosh::Director
               before do
                 instance_group_spec['templates'] = [
                   {'name' => 'job-name',
-                   'links' => {'db' => 'a.b.c'}
+                    'links' => {'db' => 'a.b.c'}
                   }
                 ]
 
@@ -698,7 +704,7 @@ module Bosh::Director
                                         .with('job-name')
                                         .and_return(job)
                 expect(job).to receive(:add_properties)
-                                      .with(props, 'instance-group-name')
+                                 .with(props, 'instance-group-name')
 
                 parsed_instance_group
               end
@@ -751,7 +757,7 @@ module Bosh::Director
                                           .with('job-name')
                                           .and_return(job)
                   expect(job).to receive(:add_properties)
-                                        .with(mapped_props, 'instance-group-name')
+                                   .with(mapped_props, 'instance-group-name')
 
                   parsed_instance_group
                 end
@@ -797,7 +803,7 @@ module Bosh::Director
                                         .with('job-name')
                                         .and_return(job)
                 allow(job).to receive(:add_properties)
-                                     .with({'property_1' => 'property_1_value', 'property_2' =>{'life' => 'life_value'}}, 'instance-group-name')
+                                .with({'property_1' => 'property_1_value', 'property_2' => {'life' => 'life_value'}}, 'instance-group-name')
 
                 parsed_instance_group
               end
@@ -885,7 +891,7 @@ module Bosh::Director
             instance_group_spec['persistent_disk'] = 0
 
             expect(
-                parsed_instance_group.persistent_disk_collection.collection
+              parsed_instance_group.persistent_disk_collection.collection
             ).to be_empty
           end
 
@@ -965,11 +971,11 @@ module Bosh::Director
         describe 'persistent_disks' do
           let(:disk_type_small) { instance_double(DiskType) }
           let(:disk_type_large) { instance_double(DiskType) }
-          let(:disk_collection) { instance_double(PersistentDiskCollection)}
+          let(:disk_collection) { instance_double(PersistentDiskCollection) }
 
           it 'parses' do
             instance_group_spec['persistent_disks'] = [{'name' => 'my-disk', 'type' => 'disk-type-small'},
-                                            {'name' => 'my-favourite-disk', 'type' => 'disk-type-large'}]
+              {'name' => 'my-favourite-disk', 'type' => 'disk-type-large'}]
             expect(deployment_plan).to receive(:disk_type)
                                          .with('disk-type-small')
                                          .and_return(disk_type_small)
@@ -978,9 +984,9 @@ module Bosh::Director
                                          .and_return(disk_type_large)
             expect(PersistentDiskCollection).to receive_message_chain(:new).and_return(disk_collection)
             expect(disk_collection).to receive(:add_by_disk_name_and_type)
-                                                  .with('my-favourite-disk', disk_type_large)
+                                         .with('my-favourite-disk', disk_type_large)
             expect(disk_collection).to receive(:add_by_disk_name_and_type)
-                                                  .with('my-disk', disk_type_small)
+                                         .with('my-disk', disk_type_small)
 
             parsed_instance_group
           end
@@ -1090,20 +1096,20 @@ module Bosh::Director
             end
           end
 
-      context 'when the job declares env, and the resource pool does not' do
-        let(:resource_pool_env) { {} }
-        before do
-          instance_group_spec['env'] = {'job' => 'env'}
-          expect(deployment_plan).to receive(:resource_pool)
-                                       .with('fake-resource-pool-name')
-                                       .and_return(resource_pool)
-        end
+          context 'when the job declares env, and the resource pool does not' do
+            let(:resource_pool_env) { {} }
+            before do
+              instance_group_spec['env'] = {'job' => 'env'}
+              expect(deployment_plan).to receive(:resource_pool)
+                                           .with('fake-resource-pool-name')
+                                           .and_return(resource_pool)
+            end
 
-        it 'should assign the job env to the job' do
-          instance_group = parsed_instance_group
-          expect(instance_group.env.spec).to eq({'job' => 'env'})
-        end
-      end
+            it 'should assign the job env to the job' do
+              instance_group = parsed_instance_group
+              expect(instance_group.env.spec).to eq({'job' => 'env'})
+            end
+          end
 
           it 'complains about unknown resource pool' do
             instance_group_spec['resource_pool'] = 'unknown-resource-pool'
@@ -1139,14 +1145,14 @@ module Bosh::Director
 
           let(:instance_group_spec) do
             {
-              'name'      => 'instance-group-name',
+              'name' => 'instance-group-name',
               'templates' => [],
-              'release'   => 'fake-release-name',
+              'release' => 'fake-release-name',
               'vm_type' => 'fake-vm-type',
               'stemcell' => 'fake-stemcell',
               'env' => {'key' => 'value'},
               'instances' => 1,
-              'networks'  => [{'name' => 'fake-network-name'}]
+              'networks' => [{'name' => 'fake-network-name'}]
             }
           end
 
@@ -1165,7 +1171,7 @@ module Bosh::Director
             end
 
             it 'errors out' do
-              expect{parsed_instance_group}.to raise_error(
+              expect { parsed_instance_group }.to raise_error(
                 InstanceGroupUnknownVmType,
                 "Instance group 'instance-group-name' references an unknown vm type 'fake-vm-type'"
               )
@@ -1178,7 +1184,7 @@ module Bosh::Director
             end
 
             it 'errors out' do
-              expect{parsed_instance_group}.to raise_error(
+              expect { parsed_instance_group }.to raise_error(
                 InstanceGroupUnknownStemcell,
                 "Instance group 'instance-group-name' references an unknown stemcell 'fake-stemcell'"
               )
@@ -1191,28 +1197,28 @@ module Bosh::Director
 
           let(:vm_extension_1) do
             {
-              'name'             => 'vm_extension_1',
+              'name' => 'vm_extension_1',
               'cloud_properties' => {'property' => 'value'}
             }
           end
 
           let(:vm_extension_2) do
             {
-              'name'             => 'vm_extension_2',
+              'name' => 'vm_extension_2',
               'cloud_properties' => {'another_property' => 'value1', 'property' => 'value2'}
             }
           end
 
           let(:instance_group_spec) do
             {
-              'name'      => 'instance-group-name',
+              'name' => 'instance-group-name',
               'templates' => [],
-              'release'   => 'fake-release-name',
+              'release' => 'fake-release-name',
               'vm_type' => 'fake-vm-type',
               'stemcell' => 'fake-stemcell',
               'env' => {'key' => 'value'},
               'instances' => 1,
-              'networks'  => [{'name' => 'fake-network-name'}]
+              'networks' => [{'name' => 'fake-network-name'}]
             }
           end
 
@@ -1254,18 +1260,18 @@ module Bosh::Director
         describe 'properties key' do
           context 'properties mapping' do
             it 'complains about unsatisfiable property mappings' do
-              props = { 'foo' => 'bar' }
+              props = {'foo' => 'bar'}
 
               instance_group_spec['properties'] = props
-              instance_group_spec['property_mappings'] = { 'db' => 'ccdb' }
+              instance_group_spec['property_mappings'] = {'db' => 'ccdb'}
 
               allow(deployment_plan).to receive(:properties).and_return(props)
 
               expect {
                 parsed_instance_group
               }.to raise_error(
-                     InstanceGroupInvalidPropertyMapping,
-                   )
+                InstanceGroupInvalidPropertyMapping,
+              )
             end
 
             it 'maps properties correctly' do
@@ -1371,7 +1377,7 @@ module Bosh::Director
 
               it 'picks the only network as default' do
                 instance_group_spec['networks'].first['default'] = ['dns']
-                instance_group_spec['networks'] << { 'name' => 'fake-network-name-2', 'default' => [ 'gateway' ] }
+                instance_group_spec['networks'] << {'name' => 'fake-network-name-2', 'default' => ['gateway']}
                 instance_group_spec['instances'] = 3
                 allow(deployment_plan).to receive(:networks).and_return([network, network2])
                 instance_group = parsed_instance_group
@@ -1486,12 +1492,12 @@ module Bosh::Director
         describe 'migrated_from' do
           let(:instance_group_spec) do
             {
-              'name'      => 'instance-group-name',
+              'name' => 'instance-group-name',
               'templates' => [],
-              'release'   => 'fake-release-name',
+              'release' => 'fake-release-name',
               'resource_pool' => 'fake-resource-pool-name',
               'instances' => 1,
-              'networks'  => [{'name' => 'fake-network-name'}],
+              'networks' => [{'name' => 'fake-network-name'}],
               'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}],
               'azs' => ['z1', 'z2']
             }
@@ -1561,6 +1567,35 @@ module Bosh::Director
               instance_group = parsed_instance_group
               expect(instance_group.env.spec['bosh']['remove_dev_tools']).to eq(false)
             end
+          end
+        end
+
+        describe 'update' do
+          let(:update) { {} }
+
+          before do
+            instance_group_spec['update'] = update
+          end
+
+          it 'can be overridden by canaries option' do
+            parse_options['canaries'] = 7
+
+            expect(parsed_instance_group.update.canaries(nil)).to eq(7)
+          end
+
+          it 'can be overridden by max-in-flight option' do
+            parse_options['max_in_flight'] = 8
+
+            expect(parsed_instance_group.update.max_in_flight(nil)).to eq(8)
+          end
+
+          context 'when provided an instance_group_spec with a strategy' do
+            let(:update) { {'strategy' => 'hot-swap'} }
+
+            it 'should set the instance_group strategy as hot-swap' do
+              expect(parsed_instance_group.update.strategy).to eq('hot-swap')
+            end
+
           end
         end
 

@@ -208,20 +208,8 @@ module Bosh::Director
     end
 
     def needs_recreate?(instance_plan)
-      instance = instance_plan.instance
-
       if instance_plan.needs_shutting_down?
         @logger.debug('VM needs to be shutdown before it can be updated.')
-        return true
-      end
-
-      if instance.cloud_properties_changed?
-        @logger.debug('Cloud Properties have changed. Recreating VM')
-        return true
-      end
-
-      if instance_plan.networks_changed?
-        @logger.debug('Networks have changed. Recreating VM')
         return true
       end
 

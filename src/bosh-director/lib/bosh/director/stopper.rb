@@ -46,8 +46,7 @@ module Bosh::Director
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
         @instance_plan.needs_shutting_down? ||
-        @instance_plan.persistent_disk_changed? ||
-        @instance_plan.networks_changed?
+        @instance_plan.persistent_disk_changed?
     end
 
     def wait_for_dynamic_drain(initial_drain_time)

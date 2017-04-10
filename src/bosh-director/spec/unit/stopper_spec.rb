@@ -61,6 +61,7 @@ module Bosh::Director
     end
 
     before do
+      fake_app
       allow(instance).to receive(:current_networks)
       instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
@@ -182,24 +183,6 @@ module Bosh::Director
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(true)
           instance_plan.existing_instance.add_persistent_disk(Models::PersistentDisk.make)
-        end
-
-        it 'drains with shutdown' do
-          expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
-          expect(agent_client).to receive(:stop).ordered
-          subject.stop
-        end
-      end
-
-      context 'when networks have changed' do
-        before do
-          allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
-          allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
-
-          subnet = DeploymentPlan::DynamicNetworkSubnet.new('a.b.c.d', {}, ['az'])
-          network = DeploymentPlan::DynamicNetwork.new('dynamic', [subnet], logger)
-          reservation = DesiredNetworkReservation.new_dynamic(instance_model, network)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         end
 
         it 'drains with shutdown' do

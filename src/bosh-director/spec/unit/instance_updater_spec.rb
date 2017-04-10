@@ -243,9 +243,7 @@ module Bosh::Director
         allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
 
-        allow(instance_plan).to receive(:networks_changed?).and_return(false)
         allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
-        allow(instance_plan).to receive(:cloud_properties_changed?).and_return(false)
 
         allow(instance_plan).to receive(:already_detached?).and_return(true)
         allow(disk_manager).to receive(:update_persistent_disk)

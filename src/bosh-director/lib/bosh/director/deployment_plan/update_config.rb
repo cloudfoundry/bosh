@@ -1,6 +1,10 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
+      STRATEGY_HOT_SWAP = 'hot-swap'
+      STRATEGY_LEGACY = 'legacy'
+      ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY]
+
       include ValidationHelper
 
       attr_accessor :min_canary_watch_time
@@ -11,6 +15,8 @@ module Bosh::Director
 
       attr_reader :canaries_before_calculation
       attr_reader :max_in_flight_before_calculation
+
+      attr_reader :strategy
 
       # @param [Hash] update_config Raw update config from deployment manifest
       # @param [optional, Hash] default_update_config Default update config
@@ -40,6 +46,19 @@ module Bosh::Director
             parse_watch_times(update_watch_times)
         end
 
+        @strategy = safe_property(update_config, 'strategy',
+          class: String,
+          optional: true,
+          default: default_update_config ? default_update_config.strategy : nil,
+        )
+
+        unless @strategy.nil?
+          unless UpdateConfig::ALLOWED_STRATEGY.include?(@strategy)
+            raise ValidationInvalidValue,
+              "Invalid strategy '#{strategy}', valid strategies are: #{UpdateConfig::ALLOWED_STRATEGY.join(', ')}"
+          end
+        end
+
         @serial = safe_property(update_config, "serial", {
           class: :boolean,
           optional: true,
@@ -65,7 +84,8 @@ module Bosh::Director
           'max_in_flight' => @max_in_flight_before_calculation,
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
-          'serial' => serial?
+          'serial' => serial?,
+          'strategy' => @strategy.nil? ? STRATEGY_LEGACY : @strategy,
         }
       end
 
