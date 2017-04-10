@@ -15,7 +15,7 @@ module Bosh::Director::ConfigServer
     # @param [Hash] options Additional options
     #   Options include:
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
-    #   - 'must_be_absolute_name': [Boolean] Flag to check if all the placeholders start with '/'
+    #   - 'must_be_absolute_name': [Boolean] Flag to check if all the variables start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
     def interpolate(raw_hash, variable_set, options = {})
       return raw_hash if raw_hash.nil?
@@ -26,12 +26,12 @@ module Bosh::Director::ConfigServer
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
       must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
 
-      placeholders_paths = @deep_hash_replacer.placeholders_paths(raw_hash, subtrees_to_ignore)
-      placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
+      variables_paths = @deep_hash_replacer.variables_path(raw_hash, subtrees_to_ignore)
+      variables_list = variables_paths.flat_map { |c| c['variables'] }.uniq
 
-      retrieved_config_server_values = fetch_values(placeholders_list, deployment_name, variable_set, must_be_absolute_name)
+      retrieved_config_server_values = fetch_values(variables_list, deployment_name, variable_set, must_be_absolute_name)
 
-      @deep_hash_replacer.replace_placeholders(raw_hash, placeholders_paths, retrieved_config_server_values)
+      @deep_hash_replacer.replace_variables(raw_hash, variables_paths, retrieved_config_server_values)
     end
 
     # @param [Hash] link_properties_hash Link spec properties to be interpolated
@@ -42,12 +42,12 @@ module Bosh::Director::ConfigServer
       return link_properties_hash if link_properties_hash.nil?
       raise "Unable to interpolate cross deployment link properties. Expected a 'Hash', got '#{link_properties_hash.class}'" unless link_properties_hash.is_a?(Hash)
 
-      placeholders_paths = @deep_hash_replacer.placeholders_paths(link_properties_hash)
-      placeholders_list = placeholders_paths.flat_map { |c| c['placeholders'] }.uniq
+      variables_paths = @deep_hash_replacer.variables_path(link_properties_hash)
+      variables_list = variables_paths.flat_map { |c| c['variables'] }.uniq
 
-      retrieved_config_server_values = resolve_cross_deployments_variables(placeholders_list, consumer_variable_set, provider_variable_set)
+      retrieved_config_server_values = resolve_cross_deployments_variables(variables_list, consumer_variable_set, provider_variable_set)
 
-      @deep_hash_replacer.replace_placeholders(link_properties_hash, placeholders_paths, retrieved_config_server_values)
+      @deep_hash_replacer.replace_variables(link_properties_hash, variables_paths, retrieved_config_server_values)
     end
 
     # Refer to unit tests for full understanding of this method
@@ -61,9 +61,9 @@ module Bosh::Director::ConfigServer
       if provided_prop.nil?
         result = default_prop
       else
-        if ConfigServerHelper.is_full_placeholder?(provided_prop)
+        if ConfigServerHelper.is_full_variable?(provided_prop)
           extracted_name = ConfigServerHelper.add_prefix_if_not_absolute(
-            ConfigServerHelper.extract_placeholder_name(provided_prop),
+            ConfigServerHelper.extract_variable_name(provided_prop),
             @director_name,
             deployment_name
           )
@@ -129,7 +129,7 @@ module Bosh::Director::ConfigServer
 
       variables.each do |variable|
         name = ConfigServerHelper.add_prefix_if_not_absolute(
-          ConfigServerHelper.extract_placeholder_name(variable),
+          ConfigServerHelper.extract_variable_name(variable),
           @director_name,
           deployment_name
         )
@@ -176,7 +176,7 @@ module Bosh::Director::ConfigServer
 
       variables.each do |variable|
         raw_variable_name = ConfigServerHelper.add_prefix_if_not_absolute(
-          ConfigServerHelper.extract_placeholder_name(variable),
+          ConfigServerHelper.extract_variable_name(variable),
           @director_name,
           provider_deployment_name
         )

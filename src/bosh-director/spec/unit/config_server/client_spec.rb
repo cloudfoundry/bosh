@@ -85,7 +85,7 @@ module Bosh::Director::ConfigServer
               expect {
                 client.interpolate(provided_hash, variable_set_model)
               }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
-                "Placeholder name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+                "Variable name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
             end
           end
 
@@ -380,7 +380,7 @@ module Bosh::Director::ConfigServer
                       client.interpolate(raw_hash, variable_set_model)
                     }.to raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
-                      expect(error.message).to include("Placeholder name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
+                      expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
                     }
                   end
                 end

@@ -64,8 +64,8 @@ describe 'using director with config server', type: :integration do
 
   context 'when config server certificates are trusted' do
 
-    context 'when deployment manifest has placeholders' do
-      context 'when some placeholders are not set in config server' do
+    context 'when deployment manifest has variables' do
+      context 'when some variables are not set in config server' do
 
         let(:job_properties) do
           {
@@ -95,7 +95,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      context 'when all placeholders are set in config server' do
+      context 'when all variables are set in config server' do
         it 'does not log interpolated properties in the task debug logs and deploy output' do
           skip("#130127863")
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
@@ -107,7 +107,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(debug_output).to_not include('he is colorless')
         end
 
-        it 'replaces placeholders in the manifest when config server has value for placeholders' do
+        it 'replaces variables in the manifest when config server has value for placeholders' do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
@@ -134,7 +134,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             }
           end
 
-          it 'replaces the placeholders in the manifest' do
+          it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'greenish')
             config_server_helper.put_value(prepend_namespace('smurf_age_placeholder'), 9)
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
@@ -183,9 +183,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 Error: Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_1))' in 'my color is ((my_placeholder_1))'. The value should be a String or an Integer.
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_2))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_3))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_1))' in 'my color is ((my_placeholder_1))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_2))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_3))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
             EOF
             end
           end
@@ -215,7 +215,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             manifest_hash
           end
 
-          it 'replaces the placeholders in the manifest' do
+          it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
 
             manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
@@ -226,7 +226,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(template_hash['properties_list']['gargamel_color']).to eq('cats are angry')
           end
 
-          it 'replaces nested placeholders in the manifest' do
+          it 'replaces nested variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder_1'), { 'cat'=> {'color' => {'value' => 'orange'}}})
             config_server_helper.put_value(prepend_namespace('my_placeholder_2'), { 'cat'=> {'color' => {'value' => 'black'}}})
             config_server_helper.put_value(prepend_namespace('my_placeholder_3'), { 'cat'=> {'color' => {'value' => 'white'}}})
@@ -248,7 +248,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
           end
 
-          it 'errors if all parts of nested placeholder is not found' do
+          it 'errors if all parts of nested variable is not found' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
 
             manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
@@ -288,7 +288,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
         end
 
-        context 'when a placeholder starts with an exclamation mark' do
+        context 'when a variable starts with an exclamation mark' do
           let(:job_properties) do
             {
               'gargamel' => {
@@ -331,7 +331,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
 
         describe 'env values in instance groups and resource pools' do
-          context 'when instance groups env is using placeholders' do
+          context 'when instance groups env is using variables' do
             let(:cloud_config_hash) do
               cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
               cloud_config_hash.delete('resource_pools')
@@ -409,7 +409,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
           end
 
-          context 'when resource pool env is using placeholders (legacy manifest)' do
+          context 'when resource pool env is using variables (legacy manifest)' do
             let(:env_hash) do
               {
                 'env1' => '((env1_placeholder))',
@@ -650,7 +650,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
     end
 
-    context 'when runtime manifest has placeholders' do
+    context 'when runtime manifest has variables' do
       context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
@@ -774,7 +774,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
         end
 
-        it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
+        it 'replaces variables in the addons and updates jobs on redeploy when config server values change' do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
           instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
@@ -796,7 +796,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
         end
 
-        it 'throws errors when placeholders do not start with slash' do
+        it 'throws errors when variables do not start with slash' do
           runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
           upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
@@ -806,7 +806,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      context 'when placeholders use dot syntax' do
+      context 'when variables use dot syntax' do
         let(:runtime_config) do
           {
               'releases' => [{'name' => 'bosh-release', 'version' => '((/placeholder1.version))'}],
@@ -834,7 +834,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
         end
 
-        it 'replaces placeholders in the manifest' do
+        it 'replaces variables in the manifest' do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
           instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
@@ -860,7 +860,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           })
       end
 
-      context 'when these properties are defined in deployment manifest as placeholders' do
+      context 'when these properties are defined in deployment manifest as variables' do
         context 'when these properties are NOT defined in the config server' do
           let(:job_properties) do
             {
@@ -891,7 +891,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
             end
 
-            context 'when it is NOT a full placeholder' do
+            context 'when it is NOT a full variable' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -960,7 +960,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
             end
 
-            context 'when placeholder is NOT a full placeholder' do
+            context 'when variable is NOT a full variable' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -1130,7 +1130,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               end
             end
 
-            context 'when placeholders start with exclamation mark' do
+            context 'when variables start with exclamation mark' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -1144,7 +1144,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                 }
               end
 
-              it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
+              it 'removes the exclamation mark from variable and generates values for these properties with no issue' do
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
                 instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
