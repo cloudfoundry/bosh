@@ -212,11 +212,11 @@ module Bosh::Director::ConfigServer
 
                 it 'returns all the errors correctly formatted' do
                   expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP code '404'
                   EXPECTED
 
                   expect {
@@ -238,11 +238,11 @@ module Bosh::Director::ConfigServer
 
                 it 'returns all the errors correctly formatted' do
                   expected_error_msg = <<-EXPECTED.strip
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP code '403'
                   EXPECTED
 
                   expect {
@@ -408,7 +408,7 @@ module Bosh::Director::ConfigServer
 
                 [
                   {'response' => 'Invalid JSON response',
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
+                   'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response"},
 
                   {'response' => {'x' => {}},
                    'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
@@ -632,13 +632,13 @@ module Bosh::Director::ConfigServer
 
             it 'returns a formatted error message' do
               expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' from config server: HTTP code '404'
-- Failed to find variable '/absolute_placeholder' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' with id '2' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' with id '7' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' with id '3' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' with id '4' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' with id '5' from config server: HTTP code '404'
+- Failed to find variable '/absolute_placeholder' with id '6' from config server: HTTP code '404'
               EXPECTED
 
               expect {

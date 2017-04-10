@@ -133,6 +133,7 @@ module Bosh::Director::ConfigServer
           @director_name,
           deployment_name
         )
+
         begin
           name_root = get_name_root(name)
 
@@ -228,12 +229,12 @@ module Bosh::Director::ConfigServer
         begin
           response_data = JSON.parse(response.body)
         rescue JSON::ParserError
-          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
         end
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP code '404'"
       else
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP code '#{response.code}'"
       end
 
       extract_variable_value(name, response_data)
