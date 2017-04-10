@@ -4,10 +4,11 @@ module Bosh::Director
 
       extend ValidationHelper
 
-      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells, filter_type)
+      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells, applicable_networks, filter_type)
         @applicable_jobs = applicable_jobs
         @applicable_deployment_names = applicable_deployment_names
         @applicable_stemcells = applicable_stemcells
+        @applicable_networks = applicable_networks
         @filter_type = filter_type
       end
 
@@ -18,29 +19,35 @@ module Bosh::Director
         end
         applicable_jobs = safe_property(addon_filter_hash, 'jobs', :class => Array, :default => [])
         applicable_stemcells = safe_property(addon_filter_hash, 'stemcell', :class => Array, :default => [])
+        applicable_networks = safe_property(addon_filter_hash, 'networks', :class => Array, :default => [])
 
         #TODO throw an exception with all wrong jobs
         verify_jobs_section(applicable_jobs, filter_type, addon_level)
 
         verify_stemcells_section(applicable_stemcells, filter_type, addon_level)
 
-        new(applicable_jobs, applicable_deployment_names, applicable_stemcells, filter_type)
+        new(applicable_jobs, applicable_deployment_names, applicable_stemcells, applicable_networks, filter_type)
       end
 
       def applies?(deployment_name, deployment_instance_group)
-        if has_stemcells? && !has_applicable_stemcell(deployment_instance_group)
+        if has_stemcells? && !has_applicable_stemcell?(deployment_instance_group)
+          return false
+        end
+        if has_networks? && !has_applicable_network?(deployment_instance_group)
           return false
         end
         case {has_deployments: has_deployments?, has_jobs: has_jobs?}
           when {has_deployments: true, has_jobs: false}
             return @applicable_deployment_names.include?(deployment_name)
           when {has_deployments: false, has_jobs: true}
-            return has_applicable_job(deployment_instance_group)
+            return has_applicable_job?(deployment_instance_group)
           when {has_deployments: true, has_jobs: true}
-            return @applicable_deployment_names.include?(deployment_name) && has_applicable_job(deployment_instance_group)
+            return @applicable_deployment_names.include?(deployment_name) && has_applicable_job?(deployment_instance_group)
           else
             return true if @filter_type == :include
-            return ((@filter_type == :exclude) && (has_stemcells? && has_applicable_stemcell(deployment_instance_group))) ?  true : false
+            # cases with `has_stemcells? && !has_applicable_stemcell?` and `has_networks? && !has_applicable_network?` are checked before.
+            # all other cases are covered by simple check `has_stemcells? || has_networks?`.
+            return @filter_type == :exclude && (has_stemcells? || has_networks?)
         end
       end
 
@@ -74,7 +81,7 @@ module Bosh::Director
         !@applicable_jobs.nil? && !@applicable_jobs.empty?
       end
 
-      def has_applicable_job(deployment_instance_group)
+      def has_applicable_job?(deployment_instance_group)
         @applicable_jobs.any? do |job|
           deployment_instance_group.has_job?(job['name'], job['release'])
         end
@@ -84,12 +91,21 @@ module Bosh::Director
         !@applicable_stemcells.nil? && !@applicable_stemcells.empty?
       end
 
-      def has_applicable_stemcell(deployment_instance_group)
+      def has_applicable_stemcell?(deployment_instance_group)
         @applicable_stemcells.any? do |stemcell|
           deployment_instance_group.has_os?(stemcell['os'])
         end
       end
 
+      def has_networks?
+        !@applicable_networks.nil? && !@applicable_networks.empty?
+      end
+
+      def has_applicable_network?(deployment_instance_group)
+        @applicable_networks.any? do |network_name|
+          deployment_instance_group.has_network?(network_name)
+        end
+      end
     end
   end
 end
