@@ -175,7 +175,6 @@ module Bosh::Director
       AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
     end
 
-    # @todo[multi-disks] the rescue is duplicated with migrate_disk
     def mount_disk(disk)
       agent_client = agent_client(disk.instance)
       agent_client.wait_until_ready
@@ -184,7 +183,6 @@ module Bosh::Director
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 
       unmount_and_detach_disk(disk)
-      @orphan_disk_manager.orphan_disk(disk)
       raise e
     end
 

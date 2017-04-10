@@ -350,13 +350,12 @@ module Bosh::Director
                     expect(agent_client).to receive(:mount_disk).with('new-disk-cid').and_raise(disk_error)
                   end
 
-                  it 'deletes the disk and re-raises the error' do
+                  it 'detaches the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
                     expect(cloud_collection).to receive(:detach_disk).with('vm234', 'new-disk-cid')
                     expect {
                       disk_manager.update_persistent_disk(instance_plan)
                     }.to raise_error disk_error
-                    expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
                   end
                 end
 
