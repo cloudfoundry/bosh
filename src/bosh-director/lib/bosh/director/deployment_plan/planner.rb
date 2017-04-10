@@ -195,6 +195,7 @@ module Bosh::Director
           instance_group.sorted_instance_plans
             .select(&:needs_shutting_down?)
             .reject(&:new?)
+            .reject { |plan| plan.instance.state == 'detached' }
         end
       end
 

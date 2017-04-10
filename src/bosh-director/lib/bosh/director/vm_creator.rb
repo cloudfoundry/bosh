@@ -195,7 +195,10 @@ module Bosh::Director
       vm_model = Models::Vm.create(vm_options)
       vm_model.save
 
-      instance_model.active_vm = vm_model
+      unless instance.vm_created?
+        instance_model.active_vm = vm_model
+      end
+
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")

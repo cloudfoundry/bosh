@@ -17,9 +17,12 @@ module Bosh::Director
 
         def create_vms
           @logger.info('Creating missing VMs')
-          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm check?
+
+          missing_plans = @deployment_plan.instance_plans_with_missing_vms
+          hotswap_plans = @deployment_plan.instance_plans_with_hot_swap_and_needs_shutdown
+
           @vm_creator.create_for_instance_plans(
-            @deployment_plan.instance_plans_with_missing_vms,
+            missing_plans + hotswap_plans,
             @deployment_plan.ip_provider,
             @deployment_plan.tags
           )

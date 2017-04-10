@@ -112,7 +112,8 @@ module Bosh::Director
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
           before { subject.add_instance_group(instance_group) }
           let(:update_config) { instance_double(UpdateConfig, strategy: 'hot-swap') }
-          let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: true) }
+          let(:instance_plan_instance) {instance_double(Instance, state: 'started')}
+          let(:instance_plan) { instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true) }
           let(:instance_group) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
               name: 'fake-job1-name',
@@ -126,6 +127,14 @@ module Bosh::Director
 
           it 'should return instance groups that are hot-swap enabled' do
             expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+          end
+
+          context 'when instance group contains detached instance plan' do
+            let(:instance_plan_instance) {instance_double(Instance, state: 'detached')}
+
+            it 'should filter detached instance plans' do
+              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([])
+            end
           end
 
           context 'when no instance groups have hot-swap enabled' do

@@ -175,6 +175,8 @@ module Bosh
       let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
 
       before do
+        fake_app
+
         allow(Config).to receive(:cloud).and_return(cloud)
         Config.name = 'fake-director-name'
         Config.max_vm_create_tries = 2
@@ -450,6 +452,33 @@ module Bosh
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      end
+
+      context 'when instance already has associated active_vm' do
+        let(:old_vm) { Models::Vm.make(instance: instance_model) }
+
+        before { instance_model.active_vm = old_vm }
+
+        it 'should not override the active vm on the instance model' do
+            Config.encryption = true
+            expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {'bosh' =>
+                {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                  'credentials' =>
+                    {'crypt_key' => kind_of(String),
+                      'sign_key' => kind_of(String)}}})
+                               .and_return('new-vm-cid')
+
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+
+            instance_model.refresh
+            old_vm.refresh
+
+            expect(instance_model.active_vm).to eq(old_vm)
+        end
       end
 
       it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
