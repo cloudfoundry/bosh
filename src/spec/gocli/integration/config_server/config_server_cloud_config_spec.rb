@@ -110,7 +110,6 @@ describe 'using director with config server', type: :integration do
         expect(create_disk_invocations.last.inputs['cloud_properties']).to eq({'type' => 'gp2'})
       end
 
-
       context 'after a successful deployment' do
         before do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
@@ -122,16 +121,21 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value('/disk_types_placeholder', [{'name' => 'large', 'disk_size' => 100_000, 'cloud_properties' => {'type' => 'gp1'}}])
           end
 
-          it 'should use old variable value during CCK - missing vm' do
-            current_sandbox.cpi.kill_agents
-            pre_kill_invocations_size = current_sandbox.cpi.invocations.size
+          context 'deployment has unresponsive agents' do
+            before {
+              current_sandbox.cpi.kill_agents
+            }
 
-            recreate_vm_without_waiting_for_process = 3
-            bosh_run_cck_with_resolution(1, recreate_vm_without_waiting_for_process, client_env)
+            it 'should use old variable value during CCK - recreate VM' do
+              pre_kill_invocations_size = current_sandbox.cpi.invocations.size
 
-            invocations = current_sandbox.cpi.invocations.drop(pre_kill_invocations_size)
-            create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+              recreate_vm = 3
+              bosh_run_cck_with_resolution(1, recreate_vm, client_env)
+
+              invocations = current_sandbox.cpi.invocations.drop(pre_kill_invocations_size)
+              create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
+              expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+            end
           end
 
           it 'should use old variable value during hard stop, start' do

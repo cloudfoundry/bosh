@@ -21,63 +21,69 @@ module Bosh::Director::DeploymentPlan
         expect(disk_type.cloud_properties).to eq({ 'foo' => 'bar' })
       end
 
-      context 'when name is missing' do
-        before { valid_spec.delete('name') }
+      it 'returns disk type spec as Hash' do
+        disk_type = DiskType.parse(valid_spec)
+        expect(disk_type.spec).to eq({
+           'name' => 'small',
+           'disk_size' => 2,
+           'cloud_properties' => { 'foo' => 'bar' },
+         })
+      end
 
-        it 'raises an error' do
-          expect {
-            DiskType.parse(valid_spec)
-          }.to raise_error(BD::ValidationMissingField)
+      describe 'name' do
+        context 'when name is missing' do
+          before { valid_spec.delete('name') }
+
+          it 'raises an error' do
+            expect {
+              DiskType.parse(valid_spec)
+            }.to raise_error(BD::ValidationMissingField)
+          end
         end
       end
 
-      context 'when disk_size is missing' do
-        before { valid_spec.delete('disk_size') }
+      describe 'disk_size' do
+        context 'when disk_size is missing' do
+          before { valid_spec.delete('disk_size') }
 
-        it 'raises an error' do
-          expect {
-            DiskType.parse(valid_spec)
-          }.to raise_error(BD::ValidationMissingField)
+          it 'raises an error' do
+            expect {
+              DiskType.parse(valid_spec)
+            }.to raise_error(BD::ValidationMissingField)
+          end
+        end
+
+        context 'when disk_size is less than 0' do
+          before { valid_spec['disk_size'] = -2 }
+
+          it 'raises an error' do
+            expect {
+              DiskType.parse(valid_spec)
+            }.to raise_error(BD::DiskTypeInvalidDiskSize)
+          end
         end
       end
 
-      context 'when disk_size is less than 0' do
-        before { valid_spec['disk_size'] = -2 }
+      describe 'cloud_properties' do
+        context 'when cloud_properties is missing' do
+          before { valid_spec.delete('cloud_properties') }
 
-        it 'raises an error' do
-          expect {
-            DiskType.parse(valid_spec)
-          }.to raise_error(BD::DiskTypeInvalidDiskSize)
+          it 'defaults to empty hash' do
+            disk_type = DiskType.parse(valid_spec)
+            expect(disk_type.cloud_properties).to eq({})
+          end
+        end
+
+        context 'when cloud_properties is NOT a hash' do
+          before { valid_spec['cloud_properties'] = 'not_hash' }
+
+          it 'raises an error' do
+            expect{
+              DiskType.parse(valid_spec)
+            }.to raise_error(Bosh::Director::ValidationInvalidType)
+          end
         end
       end
-
-      context 'when cloud_properties is missing' do
-        before { valid_spec.delete('cloud_properties') }
-
-        it 'defaults to empty hash' do
-          disk_type = DiskType.parse(valid_spec)
-          expect(disk_type.cloud_properties).to eq({})
-        end
-      end
-
-      context 'when cloud_properties is a placeholder' do
-        before { valid_spec['cloud_properties'] = '((cloud_properties_placeholder))' }
-
-        it 'does not error' do
-          expect{
-            DiskType.parse(valid_spec)
-          }.to_not raise_error
-        end
-      end
-    end
-
-    it 'returns disk type spec as Hash' do
-      disk_type = DiskType.parse(valid_spec)
-      expect(disk_type.spec).to eq({
-        'name' => 'small',
-        'disk_size' => 2,
-        'cloud_properties' => { 'foo' => 'bar' },
-      })
     end
   end
 end

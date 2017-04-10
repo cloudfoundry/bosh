@@ -9,7 +9,7 @@ module Bosh::Director
 
       def initialize(spec)
         @name = safe_property(spec, 'name', class: String)
-        @cloud_properties = safe_property(spec, 'cloud_properties', default: {})
+        @cloud_properties = safe_property(spec, 'cloud_properties', class: Hash, default: {})
       end
 
       def spec

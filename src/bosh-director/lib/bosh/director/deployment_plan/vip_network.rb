@@ -14,7 +14,7 @@ module Bosh::Director
       def initialize(network_spec, logger)
         super(safe_property(network_spec, "name", :class => String), logger)
 
-        @cloud_properties = safe_property(network_spec, "cloud_properties", default: {})
+        @cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
         @reserved_ips = Set.new
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end

@@ -34,33 +34,27 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     end
 
     context 'when cloud_properties are configured' do
-      it 'should parse the property' do
-        config = BD::DeploymentPlan::CompilationConfig.new(
-          {
-            'workers' => 2,
-            'network' => 'foo',
-            'cloud_properties' => {'instance_type' => 'super-large'}
-          },
-          {},
-          []
-        )
+      let (:cloud_properties) { {'instance_type' => 'super-large'} }
+      let (:compilation_config) {
+        {
+          'workers' => 2,
+          'network' => 'foo',
+          'cloud_properties' => cloud_properties
+        }
+      }
 
+      it 'should parse the property' do
+        config = BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
         expect(config.cloud_properties).to eq({'instance_type' => 'super-large'})
       end
 
-      context 'when cloud_properties is a placeholder' do
-        it 'should not raise an error' do
+      context 'when cloud_properties is NOT a hash' do
+        let (:cloud_properties) { 'not_hash' }
+
+        it 'should raise an error' do
           expect {
-            BD::DeploymentPlan::CompilationConfig.new(
-                {
-                    'workers' => 2,
-                    'network' => 'foo',
-                    'cloud_properties' => '((cloud_properties_placeholder))'
-                },
-                {},
-                []
-            )
-          }.to_not raise_error
+            BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
+          }.to raise_error(Bosh::Director::ValidationInvalidType)
         end
       end
     end

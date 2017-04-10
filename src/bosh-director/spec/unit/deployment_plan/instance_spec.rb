@@ -241,7 +241,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
               allow(config_server_client).to receive(:interpolate).with(merged_cloud_properties).and_return(interpolated_merged_cloud_properties)
-              allow(config_server_client).to receive(:interpolate).with(instance_model.cloud_properties_hash, anything, anything).and_return(instance_model.cloud_properties_hash)
+              allow(config_server_client).to receive(:interpolate).with(instance_model.cloud_properties_hash, anything).and_return(instance_model.cloud_properties_hash)
             end
 
             it 'should NOT log the interpolated values' do

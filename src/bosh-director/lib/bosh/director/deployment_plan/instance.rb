@@ -201,7 +201,7 @@ module Bosh::Director
         config_server_client = config_server_client_factory.create_client
 
         proposed = config_server_client.interpolate(cloud_properties)
-        existing = config_server_client.interpolate(@model.cloud_properties_hash, @deployment_model.name, @model.variable_set)
+        existing = config_server_client.interpolate(@model.cloud_properties_hash, @model.variable_set)
 
         @cloud_properties_changed = existing != proposed
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed

@@ -12,13 +12,13 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       expect(network.cloud_properties).to eq({})
     end
 
-    it 'does not error when cloud properties is a placeholder' do
+    it 'raises an error when cloud properties is NOT a hash' do
       expect {
         BD::DeploymentPlan::VipNetwork.new({
              'name' => 'foo',
-             'cloud_properties' => '((cloud_properties_placeholder))'
+             'cloud_properties' => 'not_hash'
          }, logger)
-      }.to_not raise_error
+      }.to raise_error(Bosh::Director::ValidationInvalidType)
     end
   end
 

@@ -120,17 +120,17 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       expect(subnet.cloud_properties).to eq({})
     end
 
-    it 'should not fail when cloud properties is a placeholder' do
+    it 'should fail when cloud properties is NOT a hash' do
       expect {
         make_subnet(
             {
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
-                'cloud_properties' => '((cloud_properties_placeholder))'
+                'cloud_properties' => 'not_hash'
             },
             []
         )
-      }.to_not raise_error
+      }.to raise_error(Bosh::Director::ValidationInvalidType)
     end
 
     it 'should allow a gateway' do

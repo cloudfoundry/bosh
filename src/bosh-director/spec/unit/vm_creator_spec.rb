@@ -31,8 +31,8 @@ module Bosh
       let(:availability_zone) do
         BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end
-      let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
       let(:cloud_properties) { {'ram' => '2gb'} }
+      let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
       let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
       let(:stemcell) do
         stemcell_model
@@ -626,8 +626,6 @@ module Bosh
           }
         end
 
-        let(:cloud_properties) {}
-
         before do
           allow(instance_spec).to receive(:as_apply_spec).and_return({})
           allow(instance_spec).to receive(:full_spec).and_return({})
@@ -683,8 +681,8 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate).with({}, 'deployment_name', anything).and_return({})
-          expect(config_server_client).to receive(:interpolate).with(cloud_properties, 'deployment_name', anything).and_return(resolved_cloud_properties)
+          expect(config_server_client).to receive(:interpolate).with({}, anything).and_return({})
+          expect(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(resolved_cloud_properties)
 
           expect(cloud).to receive(:create_vm) do |_, _, cloud_properties, _, _, _|
             expect(cloud_properties['foo']).to eq('bar')

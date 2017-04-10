@@ -454,7 +454,7 @@ module Bosh::Director
         end
 
         it 'uses the interpolated cloud config' do
-          expect(config_server_client).to receive(:interpolate).with(cloud_properties, instance_model.deployment.name, anything).and_return(interpolated_cloud_properties)
+          expect(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
           expect {

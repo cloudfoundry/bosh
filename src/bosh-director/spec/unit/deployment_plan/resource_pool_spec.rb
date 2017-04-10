@@ -71,13 +71,13 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when cloud_properties is a placeholder' do
-        before { valid_spec['cloud_properties'] = '((cloud_properties_placeholder))' }
+      context 'when cloud_properties is NOT a hash' do
+        before { valid_spec['cloud_properties'] = 'not_hash' }
 
-        it 'does not error' do
+        it 'raises an error' do
           expect{
             subject
-          }.to_not raise_error
+          }.to raise_error(Bosh::Director::ValidationInvalidType)
         end
       end
 

@@ -274,6 +274,13 @@ module Bosh::Director
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
         let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
 
+        let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
+
+        before do
+          allow(vm_creator).to receive(:create_for_instance_plan)
+          allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster).and_return(vm_creator)
+        end
+
         it 'spins up vm in the az' do
           vm_instance = nil
           compilation_instance_pool.with_reused_vm(stemcell) do |instance|

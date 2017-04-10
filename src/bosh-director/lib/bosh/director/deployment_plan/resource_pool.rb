@@ -22,7 +22,7 @@ module Bosh::Director
 
         @name = safe_property(spec, "name", class: String)
 
-        @cloud_properties = safe_property(spec, 'cloud_properties', default: {})
+        @cloud_properties = safe_property(spec, 'cloud_properties', class: Hash, default: {})
         stemcell_spec = safe_property(spec, 'stemcell', class: Hash)
         @stemcell = Stemcell.parse(stemcell_spec)
 

@@ -133,12 +133,17 @@ module Bosh::Director::ConfigServer
           ['compilation', 'cloud_properties', String]
       ]
 
+      variable_set = nil
+      unless deployment_name.nil?
+        deployment_model = get_deployment_by_name(deployment_name)
+        variable_set = deployment_model.current_variable_set
+      end
+
       # must_be_absolute_name is true because we require all placeholders
       # in the cloud config to be absolute
       @config_server_client.interpolate(
           cloud_manifest,
-          deployment_name,
-          nil,
+          variable_set,
           { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
       )
     end

@@ -57,14 +57,6 @@ module Bosh::Director::DeploymentPlan
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
           end
         end
-
-        context 'is a placeholder' do
-          let(:availability_zone_spec) { {'name' => 'z1', 'cloud_properties' => '((cloud_properties_placeholder))'} }
-
-          it 'does not raise an error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to_not raise_error
-          end
-        end
       end
 
       describe 'cpi' do

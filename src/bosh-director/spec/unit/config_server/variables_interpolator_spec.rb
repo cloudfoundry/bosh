@@ -520,7 +520,6 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
   end
 
   describe '#interpolate_cloud_manifest' do
-    let(:deployment_name) { 'some_deployment_name' }
     let(:cloud_manifest) { {'name' => '((placeholder))'} }
     let(:interpolated_cloud_manifest) { {'name' => 'kobu'} }
 
@@ -539,12 +538,36 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       ignored_subtrees
     end
 
-    it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate).
-          with(cloud_manifest, deployment_name, anything, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).
-          and_return(interpolated_cloud_manifest)
-      result = subject.interpolate_cloud_manifest(cloud_manifest, deployment_name)
-      expect(result).to eq(interpolated_cloud_manifest)
+    context 'when deployment name is nil' do
+      let(:deployment_name) { nil }
+      let(:current_variable_set) { nil }
+
+      it 'should call interpolate with the correct arguments' do
+        expect(config_server_client).to receive(:interpolate).
+            with(cloud_manifest, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).
+            and_return(interpolated_cloud_manifest)
+        result = subject.interpolate_cloud_manifest(cloud_manifest, deployment_name)
+        expect(result).to eq(interpolated_cloud_manifest)
+      end
+    end
+
+    context 'when deployment name is NOT nil' do
+      let(:deployment_name) { 'some_deployment_name' }
+      let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}
+      let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
+
+      before do
+        allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(current_deployment)
+        allow(current_deployment).to receive(:current_variable_set).and_return(current_variable_set)
+      end
+
+      it 'should call interpolate with the correct arguments' do
+        expect(config_server_client).to receive(:interpolate).
+            with(cloud_manifest, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).
+            and_return(interpolated_cloud_manifest)
+        result = subject.interpolate_cloud_manifest(cloud_manifest, deployment_name)
+        expect(result).to eq(interpolated_cloud_manifest)
+      end
     end
   end
 end
