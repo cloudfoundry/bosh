@@ -336,7 +336,7 @@ module Bosh::Director
     end
 
     describe 'find_local_dns_record' do
-      let(:spec_json) { '{"networks":{"name":{"ip":1234}},"job":{"name":"job_name"},"deployment":"bosh"}' }
+      let(:spec_json) { '{"networks":{"name":{"ip":"1234"}},"job":{"name":"job_name"},"deployment":"bosh"}' }
 
       before do
         subject.update_dns_record_for_instance(instance_model, {})
