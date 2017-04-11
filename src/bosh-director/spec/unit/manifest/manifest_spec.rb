@@ -63,7 +63,7 @@ module Bosh::Director
         result = Manifest.load_from_model(deployment_model, {:ignore_cloud_config => true})
         expect(result.hybrid_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
         expect(result.raw_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
-        expect(result.hybrid_cloud_config_hash).to eq({})
+        expect(result.hybrid_cloud_config_hash).to eq(nil)
         expect(result.hybrid_runtime_config_hash).to eq({'name-3' =>'my-name-3'})
       end
 
@@ -73,11 +73,15 @@ module Bosh::Director
 
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
+          allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
+          allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return({})
+          allow(variables_interpolator).to receive(:interpolate_cloud_manifest).and_return({})
+          allow(variables_interpolator).to receive(:interpolate_runtime_manifest).and_return({})
         end
 
         it 'creates a manifest object from a manifest, a cloud config, and a runtime config correctly' do
-          result =  Manifest.load_from_model(deployment_model)
+          result =  Manifest.load_from_model(deployment_model, {:ignore_cloud_config => false})
           expect(result.hybrid_manifest_hash).to eq({})
           expect(result.raw_manifest_hash).to eq({})
           expect(result.hybrid_cloud_config_hash).to eq({})
@@ -127,6 +131,8 @@ module Bosh::Director
 
       before do
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).with({}).and_return({})
+        allow(variables_interpolator).to receive(:interpolate_cloud_manifest).with({}, nil).and_return({})
+        allow(variables_interpolator).to receive(:interpolate_runtime_manifest).with({}, nil).and_return({})
       end
 
       it 'creates a manifest object from a cloud config, a manifest text, and a runtime config' do
@@ -139,7 +145,7 @@ module Bosh::Director
         result = Manifest.load_from_hash(hybrid_manifest_hash, cloud_config, runtime_config, {:ignore_cloud_config => true})
         expect(result.hybrid_manifest_hash).to eq({})
         expect(result.raw_manifest_hash).to eq({})
-        expect(result.hybrid_cloud_config_hash).to eq({})
+        expect(result.hybrid_cloud_config_hash).to eq(nil)
         expect(result.hybrid_runtime_config_hash).to eq({})
       end
 
@@ -150,6 +156,7 @@ module Bosh::Director
 
         before do
           allow(cloud_config).to receive(:raw_manifest).and_return({})
+          allow(cloud_config).to receive(:interpolated_manifest).and_return({})
           allow(runtime_config).to receive(:interpolated_manifest_for_deployment).and_return({})
           allow(runtime_config).to receive(:raw_manifest).and_return({})
         end

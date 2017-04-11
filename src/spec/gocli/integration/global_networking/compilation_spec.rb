@@ -92,10 +92,15 @@ describe 'global networking', type: :integration do
         )
     end
 
-    context 'when availability zone does not match any on the deployment' do
+    context 'when availability zone does not match any of the deployment' do
       it 'raises a availability zone not found error' do
         cloud_config_hash['compilation']['az'] = 'non_existing_az'
-        expect{upload_cloud_config(cloud_config_hash: cloud_config_hash)}.to raise_error(RuntimeError, /Compilation config references unknown az 'non_existing_az'. Known azs are: \[z2\]/)
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+        expect{
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+        }.to raise_error(RuntimeError, /Compilation config references unknown az 'non_existing_az'. Known azs are: \[z2\]/)
       end
     end
   end
