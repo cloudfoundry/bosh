@@ -10,9 +10,9 @@ describe 'local DNS', type: :integration do
   before do
     cloud_config['networks'][0]['name'] = network_name
     cloud_config['compilation']['network'] = network_name
-    upload_cloud_config({:cloud_config_hash => cloud_config})
+    upload_cloud_config({cloud_config_hash: cloud_config})
     upload_stemcell
-    create_and_upload_test_release
+    create_and_upload_test_release(force: true)
   end
 
   let(:ip_regexp) { /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ }
@@ -20,8 +20,9 @@ describe 'local DNS', type: :integration do
   let(:canonical_job_name) { 'job-to-test-local-dns' }
   let(:deployment_name) { 'simple.local_dns' }
   let(:canonical_deployment_name) { 'simplelocal-dns' }
-  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{canonical_job_name}\.#{network_name}\.#{canonical_deployment_name}\.bosh/ }
-  let(:index_hostname_regexp) { /\d+\.#{canonical_job_name}\.#{network_name}\.#{canonical_deployment_name}\.bosh/ }
+  let(:canonical_network_name) { 'local-dns' }
+  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
+  let(:index_hostname_regexp) { /\d+\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
 
   context 'small 1 instance deployment' do
     it 'sends sync_dns action agent and updates /etc/hosts' do
@@ -177,7 +178,7 @@ describe 'local DNS', type: :integration do
   def generate_instance_dns
     director.instances(deployment_name: deployment_name).map do |instance|
       {
-        'hostname' => "#{instance.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh",
+        'hostname' => "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh",
         'ip' => instance.ips[0],
       }
     end
@@ -185,7 +186,7 @@ describe 'local DNS', type: :integration do
 
   def generate_instance_records
     director.instances(deployment_name: deployment_name).map do |instance|
-      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.local_dns.simplelocal-dns.bosh"]
+      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh"]
     end
   end
 

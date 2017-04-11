@@ -2,15 +2,25 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsManager do
-    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, logger) }
+    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger) }
 
-    let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
+    let(:instance_model) do
+      Models::Instance.make(
+          uuid: 'fake-uuid',
+          index: 0,
+          job: 'job-a',
+          deployment: deployment_model,
+          spec_json: spec_json
+      )
+    end
+    let(:spec_json) { '{}' }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
     let(:dns_config) { {} }
     let(:dns_provider) { nil }
     let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
+    let(:local_dns_repo) { LocalDnsRepo.new(logger) }
 
     describe '#flush_dns_cache' do
       let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
@@ -60,16 +70,34 @@ module Bosh::Director
 
     describe '#cleanup_dns_records' do
       context 'when dns_publisher is enabled' do
-        it 'calls cleanup_blobs and publish on the dns_publisher' do
-          expect(dns_publisher).to receive(:cleanup_blobs).and_return([])
+        let!(:old_local_dns_blob) do
+          Models::LocalDnsBlob.create(
+              sha1: 'old-sha1',
+              blobstore_id: 'old-id',
+              version: 1,
+              created_at: Time.new(2016, 10, 31)
+          )
+        end
+
+        let!(:latest_local_dns_blob) do
+          Models::LocalDnsBlob.create(
+              sha1: 'latest-sha1',
+              blobstore_id: 'latest-id',
+              version: 2,
+              created_at: Time.new(2016, 11, 31)
+          )
+        end
+
+        it 'deletes all local dns blobs except the most recent version' do
           dns_manager.cleanup_dns_records
+          expect(Models::LocalDnsBlob.all).to contain_exactly(latest_local_dns_blob)
         end
       end
 
-      context 'when dns_publisher is disabled' do
-        it 'calls nothing on the dns_publisher' do
+      it 'does not delete any blobs' do
+        expect{
           dns_manager.cleanup_dns_records
-        end
+        }.to_not change { Models::LocalDnsBlob.count }
       end
     end
 
@@ -130,9 +158,18 @@ module Bosh::Director
           end
         end
 
-        it 'calls the local dns methods' do
-          expect(dns_manager).to receive(:delete_local_dns_record).with(instance_model)
-          dns_manager.delete_dns_for_instance(instance_model)
+        context 'local dns records' do
+          before do
+            Models::LocalDnsRecord.create(
+                                      ip: 'ip-addr',
+                                      instance_id: instance_model.id
+            )
+          end
+
+          it 'deletes the local dns records' do
+            dns_manager.delete_dns_for_instance(instance_model)
+            expect(Models::LocalDnsRecord.where(instance_id: instance_model.id).all).to be_empty
+          end
         end
       end
 
@@ -154,8 +191,20 @@ module Bosh::Director
       end
 
       describe '#update_dns_record_for_instance' do
+        let(:spec_json) { JSON.dump({'networks' => {'net-name' => {'ip' => '1234'}}}) }
         before do
+          instance_model.update(availability_zone: 'az1')
           dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
+        end
+
+        it 'updates local dns records' do
+          expect(Models::LocalDnsRecord.where(instance_id: instance_model.id).count).to eq(1)
+          local_dns_record = Models::LocalDnsRecord.where(instance_id: instance_model.id).first
+          expect(local_dns_record.ip).to eq('1234')
+          expect(local_dns_record.az).to eq('az1')
+          expect(local_dns_record.network).to eq('net-name')
+          expect(local_dns_record.deployment).to eq('bosh.1')
+          expect(local_dns_record.instance_group).to eq('job-a')
         end
 
         it 'updates dns records for instance in database' do
@@ -198,11 +247,6 @@ module Bosh::Director
             dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
             expect(dns_record.content).to eq('5.6.7.8')
           end
-        end
-
-        it 'deletes old records and creates a new dns record' do
-          expect(dns_manager).to receive(:create_or_delete_local_dns_record)
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
         end
       end
 
@@ -290,328 +334,15 @@ module Bosh::Director
       end
     end
 
-    describe '#create_or_delete_local_dns_record' do
-      it 'creates canonicalized records' do
-        instance_model.update(
-          index: 0,
-          availability_zone: 'az-1',
-          job: 'job_Name',
-          spec_json: '{"networks":[["net-name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}'
-        )
-
-        subject.create_or_delete_local_dns_record(instance_model)
-
-        local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-        expect(local_dns_record_first.name).to eq('fake-uuid.job-name.net-name.bosh1.bosh')
-        expect(local_dns_record_first.az).to eq('az-1')
-        expect(local_dns_record_first.instance_group).to eq('job_Name')
-        expect(local_dns_record_first.deployment).to eq('bosh.1')
-        expect(local_dns_record_first.network).to eq('net-name')
-      end
-
-      context 'when include_index enabled' do
-        before do
-          allow(Config).to receive(:local_dns_include_index?).and_return(true)
-        end
-
-        it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
-          instance_model.update(
-            index: 0,
-            availability_zone: 'az-1',
-            job: 'job_Name',
-            spec_json: '{"networks":[["net-name",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}'
-          )
-
-          subject.create_or_delete_local_dns_record(instance_model)
-
-          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
-
-          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
-          expect(local_dns_record_second.name).to match(Regexp.compile("#{instance_model.index}.job-name.*"))
-
-          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          expect(local_dns_record_first.name).to eq('fake-uuid.job-name.net-name.bosh1.bosh')
-          expect(local_dns_record_first.az).to eq('az-1')
-          expect(local_dns_record_first.instance_group).to eq('job_Name')
-          expect(local_dns_record_first.deployment).to eq('bosh.1')
-          expect(local_dns_record_first.network).to eq('net-name')
-
-          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
-          expect(local_dns_record_second.name).to eq('0.job-name.net-name.bosh1.bosh')
-          expect(local_dns_record_second.az).to eq('az-1')
-          expect(local_dns_record_second.instance_group).to eq('job_Name')
-          expect(local_dns_record_second.deployment).to eq('bosh.1')
-          expect(local_dns_record_second.network).to eq('net-name')
-
-        end
-
-        context 'when an instance is created with a new ip' do
-          before do
-            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '987', instance_id: instance_model.id)
-            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '987', instance_id: instance_model.id)
-          end
-
-          it 'only deletes stale dns records' do
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-
-            dns_manager.create_or_delete_local_dns_record(instance_model)
-
-            all_records = Models::LocalDnsRecord.exclude(instance_id: nil).all
-            expect(all_records.size).to eq(4)
-            expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-2.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
-            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234', '5678', '5678')
-          end
-
-          it 'should have a higher max LocalDnsRecord' do
-            allow(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-            expect {
-              dns_manager.create_or_delete_local_dns_record(instance_model)
-            }.to change { Models::LocalDnsRecord.max(:id) }.by(4)
-          end
-        end
-
-        context 'when an instance is re-created with the same ip' do
-          it 'should not create a duplicate dns record' do
-            dns_index_id = Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            dns_uuid_id = Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-
-            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
-
-            all_records = Models::LocalDnsRecord.all
-            expect(all_records.size).to eq(2)
-            expect(all_records.map(&:name)).to contain_exactly('0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-1.bosh1.bosh')
-            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234')
-            expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
-          end
-
-          it 'should not insert a tombstone record' do
-            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
-            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(0)
-          end
-        end
-      end
-
-      context 'when include_index disabled' do
-        before do
-          allow(Config).to receive(:local_dns_include_index?).and_return(false)
-        end
-
-        it 'should call create_or_delete_local_dns_record to add only UUID based DNS record' do
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-          subject.create_or_delete_local_dns_record(instance_model)
-
-          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          expect(local_dns_record_first.name).to match(Regexp.compile("#{instance_model.uuid}.job-name.*"))
-        end
-
-        context 'when an instance is created with a new ip' do
-          before do
-            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', instance_id: instance_model.id, ip: '987')
-            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', instance_id: instance_model.id, ip: '1234')
-          end
-
-          it 'only deletes stale dns records' do
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-
-            dns_manager.create_or_delete_local_dns_record(instance_model)
-
-            all_records = Models::LocalDnsRecord.exclude(instance_id: nil).all
-            # product says it is okay to keep index-based dns around if they previously had it enabled, but then
-            # disabled it
-            expect(all_records.size).to eq(3)
-            expect(all_records.map(&:name).sort).to contain_exactly('fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-1.bosh1.bosh', 'fake-uuid.job-name.network-2.bosh1.bosh')
-            expect(all_records.map(&:ip).sort).to contain_exactly('1234', '1234', '5678')
-          end
-
-          it 'should have a higher max LocalDnsRecord' do
-            allow(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}],["network-2",{"ip":"5678"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-            expect {
-              dns_manager.create_or_delete_local_dns_record(instance_model)
-            }.to change { Models::LocalDnsRecord.max(:id) }.by(2)
-          end
-        end
-
-        context 'when an instance is re-created with the same ip' do
-          it 'should not create a duplicate dns record' do
-            dns_uuid_id = Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            dns_index_id = Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-
-            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
-
-            all_records = Models::LocalDnsRecord.all
-            expect(all_records.size).to eq(2)
-            expect(all_records.map(&:name)).to contain_exactly('fake-uuid.job-name.network-1.bosh1.bosh', '0.job-name.network-1.bosh1.bosh')
-            expect(all_records.map(&:ip)).to contain_exactly('1234', '1234')
-            expect(all_records.map(&:id)).to contain_exactly(dns_uuid_id, dns_index_id)
-
-          end
-
-          it 'should not insert a tombstone record' do
-            Models::LocalDnsRecord.make(name: 'fake-uuid.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            Models::LocalDnsRecord.make(name: '0.job-name.network-1.bosh1.bosh', ip: '1234', instance_id: instance_model.id).id
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["network-1",{"ip":"1234"}]],"job":{"name":"job_Name"},"deployment":"bosh.1"}').twice
-
-            expect { dns_manager.create_or_delete_local_dns_record(instance_model) }.not_to raise_error
-            expect(Models::LocalDnsRecord.where(instance_id: nil).all.size).to eq(0)
-          end
-        end
-      end
-
-      context 'when instance spec is invalid' do
-        context 'when instance.spec is nil' do
-          it 'skips the instance' do
-            test_validate_spec('{}')
-          end
-        end
-
-        context 'when instance.spec is not nil' do
-          context 'when spec[networks] is nil' do
-            it 'skips the instance' do
-              test_validate_spec('{"networks": null}')
-            end
-          end
-
-          context 'when spec[networks] is not nil' do
-            context 'when network[ip] is nil' do
-              it 'skips the instance' do
-                test_validate_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
-              end
-            end
-          end
-
-          context 'when spec[job] is nil' do
-            it 'skips the instance' do
-              test_validate_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
-            end
-          end
-        end
-
-        def test_validate_spec(spec_json)
-          expect(instance_model).to receive(:spec_json).and_return(spec_json).twice
-          expect(Bosh::Director::Models::LocalDnsRecord).to_not receive(:create)
-
-          subject.create_or_delete_local_dns_record(instance_model)
-        end
-      end
-    end
-
-    describe '#delete_local_dns_record' do
-      let(:record) { instance_double(Models::LocalDnsRecord) }
-      let(:expected_uuid_model) do
-        {
-          name: "fake-uuid.job-name.name.bosh.bosh",
-          ip: '1234',
-          instance_id: instance_model.id
-        }
-      end
-      let(:expected_index_model) do
-        {
-          name: "0.job-name.name.bosh.bosh",
-          ip: '1234',
-          instance_id: instance_model.id
-        }
-      end
+    describe 'find_local_dns_record' do
+      let(:spec_json) { '{"networks":{"name":{"ip":1234}},"job":{"name":"job_name"},"deployment":"bosh"}' }
 
       before do
-        allow(record).to receive(:delete)
+        subject.update_dns_record_for_instance(instance_model, {})
       end
 
-      it 'should search for canonicalized records' do
-        expect(Models::LocalDnsRecord).to receive(:where).
-          with(instance_id: instance_model.id).
-          and_return(record)
-
-        subject.delete_local_dns_record(instance_model)
-      end
-
-      context 'when the record exists' do
-        it 'should insert a tombstone record' do
-          instance_model_to_be_deleted = Models::Instance.make(uuid: 'a-different-fake-uuid', index: 1, job: 'job-a', deployment: deployment_model)
-          Models::LocalDnsRecord.make({
-            name: "a-different-fake-uuid.job-name.name.bosh.bosh",
-            ip: '1234',
-            instance_id: instance_model_to_be_deleted.id
-          })
-
-          subject.delete_local_dns_record(instance_model_to_be_deleted)
-          tombstones = Models::LocalDnsRecord.where(instance_id: nil).all
-          expect(tombstones.size).to eq(1)
-        end
-      end
-
-      context 'when the record does not exists' do
-        let(:instance_model) { instance_double(Models::Instance, id: 8475) }
-
-        it 'should not insert a tombstone record' do
-          subject.delete_local_dns_record(instance_model)
-          tombstones = Models::LocalDnsRecord.where(instance_id: nil).all
-          expect(tombstones.size).to eq(0)
-        end
-      end
-
-      context 'when include_index enabled' do
-        before do
-          allow(Config).to receive(:local_dns_include_index?).and_return(true)
-        end
-
-        it 'should call delete_local_dns_record to remove UUID and Index based DNS record' do
-          instance_model_not_to_be_deleted = Models::Instance.make(uuid: 'a-different-fake-uuid', index: 1, job: 'job-a', deployment: deployment_model)
-          Models::LocalDnsRecord.make({
-            name: "a-different-fake-uuid.job-name.name.bosh.bosh",
-            ip: '1234',
-            instance_id: instance_model_not_to_be_deleted.id
-          })
-          Models::LocalDnsRecord.make(expected_uuid_model)
-          Models::LocalDnsRecord.make(expected_index_model)
-
-          subject.delete_local_dns_record(instance_model)
-
-          expect(Models::LocalDnsRecord.exclude(instance_id: nil).all.size).to eq(1)
-          expect(Models::LocalDnsRecord.first.instance_id).to eq(instance_model_not_to_be_deleted.id)
-        end
-      end
-
-      context 'when include_index disabled' do
-        before do
-          allow(Config).to receive(:local_dns_include_index?).and_return(false)
-        end
-
-        it 'should call create_or_delete_local_dns_record to add only UUID based DNS record' do
-          expect(Models::LocalDnsRecord).to receive(:where).
-            with(instance_id: instance_model.id).
-            and_return(record)
-
-          subject.delete_local_dns_record(instance_model)
-        end
-      end
-    end
-
-    describe 'find_local_dns_record' do
-      context 'when include_index enabled' do
-        before do
-          allow(Config).to receive(:local_dns_include_index?).and_return(true)
-          allow(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-          subject.create_or_delete_local_dns_record(instance_model)
-        end
-
-        it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
-          expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":"1234"}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-          local_dns_record_first = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-          local_dns_record_second = Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
-
-          expect(subject.find_local_dns_record(instance_model)).
-            to include(local_dns_record_first, local_dns_record_second)
-        end
+      it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
+        expect(subject.find_local_dns_record(instance_model)).to eq(Models::LocalDnsRecord.where(instance_id: instance_model.id).all)
       end
     end
   end

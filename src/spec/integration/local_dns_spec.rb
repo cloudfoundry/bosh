@@ -21,8 +21,9 @@ describe 'local DNS', type: :integration do
   let(:canonical_job_name) { 'job-to-test-local-dns' }
   let(:deployment_name) { 'simple.local_dns' }
   let(:canonical_deployment_name) { 'simplelocal-dns' }
-  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{canonical_job_name}\.#{network_name}\.#{canonical_deployment_name}\.bosh/ }
-  let(:index_hostname_regexp) { /\d+\.#{canonical_job_name}\.#{network_name}\.#{canonical_deployment_name}\.bosh/ }
+  let(:canonical_network_name) { 'local-dns' }
+  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
+  let(:index_hostname_regexp) { /\d+\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
 
   context 'small 1 instance deployment' do
     it 'sends sync_dns action agent and updates /etc/hosts' do

@@ -68,13 +68,7 @@ module Bosh
       end
 
       describe '#delete_for_instance' do
-        let!(:uuid_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.uuid}.job_name.name.bosh.bosh",
-                                                                     ip: '1.2.3.4',
-                                                                     instance_id: instance.id) }
-
-        let!(:index_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.index}.job_name.name.bosh.bosh",
-                                                                      ip: '1.2.3.4',
-                                                                      instance_id: instance.id) }
+        let!(:local_dns_record) { Models::LocalDnsRecord.create(ip: '1.2.3.4', instance_id: instance.id) }
 
         before do
           expect(instance_model).to receive(:active_vm=).with(nil).and_call_original
@@ -84,7 +78,7 @@ module Bosh
 
         it 'deletes the instance and stores an event' do
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-          expect(Models::LocalDnsRecord.all).to eq([uuid_local_dns_record, index_local_dns_record])
+          expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
 
           expect {
             subject.delete_for_instance(instance_model)

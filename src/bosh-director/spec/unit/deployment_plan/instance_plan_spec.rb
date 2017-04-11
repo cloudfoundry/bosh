@@ -761,34 +761,6 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when the index dns record for the instance is not found and local_dns is enabled' do
-          let(:network_settings) { {'default' => {'ip' => '1234'}} }
-          let(:spec) do
-            {'name' => 'fake-name',
-              'deployment' => 'fake-deployment-name',
-              'vm_type' =>
-                {'name' => 'original_vm_type_name',
-                  'cloud_properties' => {'old' => 'value'}
-                },
-              'networks' => network_settings,
-              'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}
-            }
-          end
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
-
-            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
-            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
-
-            Bosh::Director::Models::LocalDnsRecord.make(name: "fake-uuid-1.fake-name.default.fake-deployment-name.bosh", ip: '4321', instance_id: instance_model.id)
-          end
-
-          it '#dns_changed? should return true' do
-            expect(instance_plan.dns_changed?).to be(true)
-          end
-
-        end
-
         describe 'when the id dns record for the instance is not found' do
           let(:uuid) { BD::Models::Instance.all.last }
 

@@ -221,7 +221,6 @@ module Bosh::Director::Models
   end
 
   LocalDnsRecord.blueprint do
-    name        { Sham.name }
     ip          { Sham.ip }
     instance_id { Sham.instance_id }
   end
