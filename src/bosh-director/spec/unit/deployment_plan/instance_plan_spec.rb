@@ -745,8 +745,6 @@ module Bosh::Director::DeploymentPlan
         describe 'when the index dns record for the instance is not found and local_dns is not enabled' do
 
           before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
-
             instance = BD::Models::Instance.all.last
             BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.fake-dns", :type => 'A', :content => '192.168.1.3')
           end

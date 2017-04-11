@@ -38,10 +38,15 @@ module Bosh::Director
           }.to_not change { Models::LocalDnsRecord.max(:id) }
           expect(Models::LocalDnsRecord.all).to eq([local_dns_record_0])
         end
+
+        it 'does not have changes on the diff' do
+          diff = local_dns_repo.diff(instance_model)
+          expect(diff.changes?).to be(false)
+        end
       end
 
       context 'when an instance has a different ip address' do
-        let(:record_0_ip) { '5678 ' }
+        let(:record_0_ip) { '5678' }
 
         it 'inserts a new record' do
           expect {
@@ -58,6 +63,28 @@ module Bosh::Director
           expect(local_dns_record.deployment).to eq('bosh.1')
           expect(local_dns_record.instance_group).to eq('instance-group-0')
           expect(local_dns_record.instance).to eq(instance_model)
+        end
+
+        it 'will compute the difference between the instance model and the existing local dns records' do
+          diff = local_dns_repo.diff(instance_model)
+          expect(diff.changes?).to be(true)
+          expect(diff.obsolete).to eq([{
+            :ip => '5678',
+            :instance_id => instance_model.id,
+            :az => 'az1',
+            :network => 'net-name',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+          }])
+          expect(diff.missing).to eq([{
+            :ip => '1234',
+            :instance_id => instance_model.id,
+            :az => 'az1',
+            :network => 'net-name',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+          }])
+          expect(diff.unaffected).to be_empty
         end
       end
 
@@ -97,6 +124,28 @@ module Bosh::Director
 
           original_record = Models::LocalDnsRecord.order(:id).first
           expect(original_record).to eq(local_dns_record_0)
+        end
+
+        it 'will compute the difference between the instance model and the existing local dns records' do
+          diff = local_dns_repo.diff(instance_model)
+
+          expect(diff.obsolete).to be_empty
+          expect(diff.missing).to eq([{
+            :ip => '9876',
+            :instance_id => 1,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+          }])
+          expect(diff.unaffected).to eq([{
+            :ip => record_0_ip,
+            :instance_id => instance_model.id,
+            :az => 'az1',
+            :network => 'net-name',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+          }])
         end
       end
 
@@ -156,6 +205,32 @@ module Bosh::Director
           expect {
             local_dns_repo.update_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.where(instance_id: nil).count }.by(1)
+        end
+
+        it 'will compute the difference between the instance model and the existing local dns records' do
+          diff = local_dns_repo.diff(instance_model)
+
+          expect(diff.obsolete).to eq([
+            {
+              :ip => record_0_ip,
+              :instance_id => instance_model.id,
+              :az => 'az1',
+              :network => 'net-name',
+              :deployment => 'bosh.1',
+              :instance_group => 'instance-group-0',
+            },
+            {
+              :ip => '9876',
+              :instance_id => instance_model.id,
+              :az => 'az1',
+              :network => 'net-name-2',
+              :deployment => 'bosh.1',
+              :instance_group => 'instance-group-0',
+            },
+          ])
+
+          expect(diff.missing).to be_empty
+          expect(diff.unaffected).to be_empty
         end
       end
 

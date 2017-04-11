@@ -6,6 +6,23 @@ module Bosh::Director
     end
 
     def update_for_instance(instance_model)
+      diff = diff(instance_model)
+      @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(diff.obsolete)}, new records: #{dump(diff.missing)}, unmodified records: #{dump(diff.unaffected)}")
+
+      if diff.missing.empty? && !diff.obsolete.empty?
+        insert_tombstone
+      end
+
+      diff.missing.each do |record_hash|
+        insert_new_record(record_hash)
+      end
+
+      diff.obsolete.each do |record_hash|
+        delete_obsolete_local_dns_records(record_hash)
+      end
+    end
+
+    def diff(instance_model)
       existing_record_hashes = existing_record_hashes(instance_model)
       desired_record_hashes = desired_record_hashes(instance_model)
 
@@ -13,19 +30,7 @@ module Bosh::Director
       obsolete_record_hashes = existing_record_hashes - desired_record_hashes
       unmodified_record_hashes = existing_record_hashes - obsolete_record_hashes
 
-      @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(obsolete_record_hashes)}, new records: #{dump(new_record_hashes)}, unmodified records: #{dump(unmodified_record_hashes)}")
-
-      if new_record_hashes.empty? && !obsolete_record_hashes.empty?
-        insert_tombstone
-      end
-
-      new_record_hashes.each do |record_hash|
-        insert_new_record(record_hash)
-      end
-
-      obsolete_record_hashes.each do |record_hash|
-        delete_obsolete_local_dns_records(record_hash)
-      end
+      Diff.new(obsolete_record_hashes, new_record_hashes, unmodified_record_hashes)
     end
 
     def delete_for_instance(instance_model)
@@ -95,6 +100,20 @@ module Bosh::Director
       end
 
       "[#{record_strings.sort.join(', ')}]"
+    end
+  end
+
+  class Diff
+    attr_reader :obsolete, :missing, :unaffected
+
+    def initialize(obsolete, missing, unaffected)
+      @obsolete = obsolete
+      @missing = missing
+      @unaffected = unaffected
+    end
+
+    def changes?
+      !obsolete.empty? || !missing.empty?
     end
   end
 end
