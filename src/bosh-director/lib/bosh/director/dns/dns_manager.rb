@@ -59,13 +59,13 @@ module Bosh::Director
       return if find_dns_record_names_by_instance(instance_model).any?
       return unless dns_enabled?
 
-      index_pattern_for_all_networks = dns_record_name(
+      index_pattern_for_all_networks = DnsNameGenerator.dns_record_name(
         instance_model.index,
         instance_model.job,
         '%',
         instance_model.deployment.name
       )
-      uuid_pattern_for_all_networks = dns_record_name(
+      uuid_pattern_for_all_networks = DnsNameGenerator.dns_record_name(
         instance_model.uuid,
         instance_model.job,
         '%',
@@ -88,7 +88,7 @@ module Bosh::Director
           # did not have records in local repo
           # we cannot migrate them because powerdns can be different database
           # those instance only had index-based dns records (before global-net)
-          index_record_pattern = dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
+          index_record_pattern = DnsNameGenerator.dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
           @dns_provider.delete(index_record_pattern)
           return
         end
@@ -126,10 +126,6 @@ module Bosh::Director
 
     def find_dns_record_names_by_instance(instance_model)
       instance_model.nil? ? [] : instance_model.dns_record_names.to_a.compact
-    end
-
-    def dns_record_name(hostname, job_name, network_name, deployment_name)
-      Bosh::Director::DnsNameGenerator.dns_record_name(hostname, job_name, network_name, deployment_name)
     end
 
     def find_local_dns_record(instance_model)
