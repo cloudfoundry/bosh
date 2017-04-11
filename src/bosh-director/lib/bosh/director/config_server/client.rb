@@ -67,7 +67,7 @@ module Bosh::Director::ConfigServer
             @director_name,
             deployment_name
           )
-          extracted_name = extracted_name.split('.').first
+          extracted_name = get_name_root(extracted_name)
 
           if name_exists?(extracted_name)
             result = provided_prop
@@ -142,7 +142,7 @@ module Bosh::Director::ConfigServer
           if saved_variable_mapping.nil?
             raise Bosh::Director::ConfigServerInconsistentVariableState, "Expected variable '#{name_root}' to be already versioned in deployment '#{deployment_name}'" unless variable_set.writable
 
-            fetched_variable_from_cfg_srv = get_variable_by_name(name)
+            fetched_variable_from_cfg_srv = get_variable_by_name(name_root)
 
             begin
               save_variable(name_root, variable_set, fetched_variable_from_cfg_srv)
@@ -259,27 +259,25 @@ module Bosh::Director::ConfigServer
     end
 
     def get_variable_by_name(name)
-      name_root = get_name_root(name)
-
-      response = @config_server_http_client.get(name_root)
+      response = @config_server_http_client.get(name)
 
       if response.kind_of? Net::HTTPOK
         begin
           response_body = JSON.parse(response.body)
         rescue JSON::ParserError
-          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name}' from config server: Invalid JSON response"
         end
 
         response_data = response_body['data']
 
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" unless response_data.is_a?(Array)
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be non empty array" if response_data.empty?
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name}' from config server: Expected data to be an array" unless response_data.is_a?(Array)
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name}' from config server: Expected data to be non empty array" if response_data.empty?
 
         response_data[0]
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name}' from config server: HTTP code '404'"
       else
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name}' from config server: HTTP code '#{response.code}'"
       end
     end
 

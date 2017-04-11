@@ -45,6 +45,85 @@ module Bosh::Director::ConfigServer
         allow(variable_set_model).to receive(:deployment).and_return(deployment_model)
       end
 
+      shared_examples_for :variable_name_dot_syntax do
+        context 'when some placeholders have the dot syntax' do
+          before do
+            raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.private_key))'
+            interpolated_hash['my_value_will_be_a_hash'] = 'abc123'
+          end
+
+          it 'extracts the variable name from placeholder name' do
+            expect(client.interpolate(raw_hash, variable_set_model)).to eq(interpolated_hash)
+          end
+
+          context 'when placeholders have multiple dot levels' do
+            before do
+              raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_2.level_2_1))'
+              interpolated_hash['my_value_will_be_a_hash'] = 'level_2_1_value'
+            end
+
+            it 'extracts value from placeholder name' do
+              expect(client.interpolate(raw_hash, variable_set_model)).to eq(interpolated_hash)
+            end
+          end
+
+          context 'when all parts of dot syntax are not found' do
+            before do
+              raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
+            end
+
+            it 'fails to find values and throws formatting error' do
+              expect {
+                client.interpolate(raw_hash, variable_set_model)
+              }.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " +
+                                 "from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
+            end
+          end
+
+          context 'when multiple errors occur because parts of dot syntax is not found' do
+            before do
+              raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
+              raw_hash['my_value_will_be_an_other_hash'] = '((hash_placeholder.ca.level_m.level_m_1))'
+            end
+
+            it 'fails to find all values and throws formatting error' do
+              expect {
+                client.interpolate(raw_hash, variable_set_model)
+              }.to raise_error { |error|
+                expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
+                expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
+                expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
+              }
+            end
+          end
+
+          context 'when placeholders use bad dot syntax' do
+            before do
+              raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca...level_1))'
+            end
+
+            it 'fails to find value and throws formatting error' do
+              expect {
+                client.interpolate(raw_hash, variable_set_model)
+              }.to raise_error { |error|
+                expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
+                expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
+              }
+            end
+          end
+
+          context 'when absolute path is required' do
+            it 'returns an error for non absolute path placeholders' do
+              expect {
+                client.interpolate(raw_hash, variable_set_model, {must_be_absolute_name: true})
+              }.to raise_error { |error|
+                expect(error.message).to eq("Names must be absolute path: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
+              }
+            end
+          end
+        end
+      end
+
       context 'when object to be interpolated in is nil' do
         it 'should return nil' do
           expect(client.interpolate(nil, variable_set_model)).to be_nil
@@ -319,82 +398,7 @@ module Bosh::Director::ConfigServer
                 end
               end
 
-              context 'when some placeholders have the dot syntax' do
-                before do
-                  raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.private_key))'
-                  interpolated_hash['my_value_will_be_a_hash'] = 'abc123'
-                end
-
-                it 'extracts the variable name from placeholder name' do
-                  expect(client.interpolate(raw_hash, variable_set_model)).to eq(interpolated_hash)
-                end
-
-                context 'when placeholders have multiple dot levels' do
-                  before do
-                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_2.level_2_1))'
-                    interpolated_hash['my_value_will_be_a_hash'] = 'level_2_1_value'
-                  end
-
-                  it 'extracts value from placeholder name' do
-                    expect(client.interpolate(raw_hash, variable_set_model)).to eq(interpolated_hash)
-                  end
-                end
-
-                context 'when all parts of dot syntax are not found' do
-                  before do
-                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
-                  end
-
-                  it 'fails to find values and throws formatting error' do
-                    expect {
-                      client.interpolate(raw_hash, variable_set_model)
-                    }.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " +
-                      "from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
-                  end
-                end
-
-                context 'when multiple errors occur because parts of dot syntax is not found' do
-                  before do
-                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca.level_n.level_n_1))'
-                    raw_hash['my_value_will_be_an_other_hash'] = '((hash_placeholder.ca.level_m.level_m_1))'
-                  end
-
-                  it 'fails to find all values and throws formatting error' do
-                    expect {
-                      client.interpolate(raw_hash, variable_set_model)
-                    }.to raise_error { |error|
-                      expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-                      expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
-                      expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
-                    }
-                  end
-                end
-
-                context 'when placeholders use bad dot syntax' do
-                  before do
-                    raw_hash['my_value_will_be_a_hash'] = '((hash_placeholder.ca...level_1))'
-                  end
-
-                  it 'fails to find value and throws formatting error' do
-                    expect {
-                      client.interpolate(raw_hash, variable_set_model)
-                    }.to raise_error { |error|
-                      expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
-                      expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
-                    }
-                  end
-                end
-
-                context 'when absolute path is required' do
-                  it 'returns an error for non absolute path placeholders' do
-                    expect {
-                      client.interpolate(raw_hash, variable_set_model, {must_be_absolute_name: true})
-                    }.to raise_error { |error|
-                      expect(error.message).to eq("Names must be absolute path: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
-                    }
-                  end
-                end
-              end
+              it_behaves_like :variable_name_dot_syntax
 
               context 'when response received from server is not in the expected format' do
                 let(:raw_hash) do
@@ -443,7 +447,7 @@ module Bosh::Director::ConfigServer
               end
             end
 
-            context 'when all the variables to be fetched are not in the current set context' do
+            context 'when all the variables to be fetched are not in the current set' do
               before do
                 mock_config_store.each do |name, value|
                   allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(nil)
@@ -466,6 +470,8 @@ module Bosh::Director::ConfigServer
                 it 'should add the name to id mapping for the current set to database' do
                   expect(client.interpolate(raw_hash, variable_set_model)).to eq(interpolated_hash)
                 end
+
+                it_behaves_like :variable_name_dot_syntax
 
                 context 'when the variable was added to the current set by another thread' do
                   before do
