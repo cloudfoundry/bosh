@@ -6,7 +6,7 @@ module Bosh::Director
 
     let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
-    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name) }
+    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name, logger) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
