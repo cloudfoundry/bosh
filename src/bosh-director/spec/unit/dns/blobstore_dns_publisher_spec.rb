@@ -6,7 +6,8 @@ module Bosh::Director
 
     let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
-    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name, logger) }
+    let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
+    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name, agent_broadcaster, logger) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
@@ -21,10 +22,10 @@ module Bosh::Director
     before do
       allow(Config).to receive(:canonized_dns_domain_name).and_return(domain_name)
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
+      allow(agent_broadcaster).to receive(:sync_dns)
     end
 
     describe 'publish and broadcast' do
-      let(:broadcaster) { instance_double(AgentBroadcaster) }
 
       before do
         instance1 = Models::Instance.make(
@@ -72,7 +73,7 @@ module Bosh::Director
 
         it 'does nothing' do
           expect(Bosh::Director::Models::LocalDnsBlob.last).to be_nil
-          expect(broadcaster).to_not receive(:sync_dns)
+          expect(agent_broadcaster).to_not receive(:sync_dns)
           dns.publish_and_broadcast
         end
       end
@@ -110,8 +111,7 @@ module Bosh::Director
         end
 
         it 'broadcasts the blob to the agents' do
-          expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
-          expect(broadcaster).to receive(:sync_dns).with('blob_id_1', 'a0dcf2caa8d2ffdfc1707f9c54f58b70b64ea7e3', 4)
+          expect(agent_broadcaster).to receive(:sync_dns).with('blob_id_1', 'a0dcf2caa8d2ffdfc1707f9c54f58b70b64ea7e3', 4)
           dns.publish_and_broadcast
         end
 
@@ -171,8 +171,7 @@ module Bosh::Director
           it 'does not broadcast' do
             dns.publish_and_broadcast
 
-            expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
-            expect(broadcaster).to receive(:sync_dns)
+            expect(agent_broadcaster).to receive(:sync_dns)
             dns.publish_and_broadcast
           end
         end

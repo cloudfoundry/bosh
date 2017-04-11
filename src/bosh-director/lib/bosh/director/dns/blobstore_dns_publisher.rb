@@ -1,9 +1,10 @@
 module Bosh::Director
   class BlobstoreDnsPublisher
-    def initialize(blobstore_provider, domain_name, logger)
+    def initialize(blobstore_provider, domain_name, agent_broadcaster, logger)
       @blobstore_provider = blobstore_provider
       @domain_name = domain_name
       @logger = logger
+      @agent_broadcaster = agent_broadcaster
     end
 
     def publish_and_broadcast
@@ -22,7 +23,7 @@ module Bosh::Director
         end
 
         if local_dns_blob.nil? || local_dns_blob.version < max_dns_record_version
-          @logger.debug("Exporting local dns records max_dns_record_version:#{max_dns_record_version} local_dns_blob.version:#{local_dns_blob.version}")
+          @logger.debug("Exporting local dns records max_dns_record_version:#{max_dns_record_version} local_dns_blob.version:#{local_dns_blob.nil? ? nil : local_dns_blob.version}")
           records = export_dns_records
           local_dns_blob = publish(records)
         end
@@ -52,7 +53,7 @@ module Bosh::Director
     private
 
     def broadcast(blob)
-      AgentBroadcaster.new.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
+      @agent_broadcaster.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
     end
 
     def publish(dns_records)

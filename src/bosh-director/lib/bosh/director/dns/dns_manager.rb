@@ -9,7 +9,8 @@ module Bosh::Director
       dns_provider = PowerDns.new(canonized_dns_domain_name, logger) if !!Config.dns_db
 
       blobstore_provider = lambda { App.instance.blobstores.blobstore }
-      dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, canonized_dns_domain_name, logger)
+      agent_broadcaster = AgentBroadcaster.new
+      dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, canonized_dns_domain_name, agent_broadcaster, logger)
       local_dns_repo = LocalDnsRepo.new(logger)
       DnsManager.new(canonized_dns_domain_name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
     end
