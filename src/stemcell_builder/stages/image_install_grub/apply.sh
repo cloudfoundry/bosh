@@ -187,7 +187,7 @@ then
   if is_ppc64le; then
     run_in_chroot ${image_mount_point} "
     if [ -f /etc/default/grub ]; then
-      sed -i -e 's/^GRUB_CMDLINE_LINUX=\\\"\\\"/GRUB_CMDLINE_LINUX=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 audit=1 \\\"/' /etc/default/grub
+      sed -i -e 's/^GRUB_CMDLINE_LINUX=\\\"\\\"/GRUB_CMDLINE_LINUX=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 ipv6.disable=1 audit=1 \\\"/' /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
     "
@@ -197,7 +197,7 @@ default=0
 timeout=1
 title ${os_name} (${kernel_version})
   root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0 cgroup_enable=memory swapaccount=1 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0 cgroup_enable=memory swapaccount=1 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 ipv6.disable=1 audit=1
   initrd /boot/${initrd_file}
 GRUB_CONF
 fi
@@ -209,7 +209,7 @@ default=0
 timeout=1
 title ${os_name} (${kernel_version})
   root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} net.ifnames=0 plymouth.enable=0 selinux=0 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} net.ifnames=0 plymouth.enable=0 selinux=0 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 ipv6.disable=1 audit=1
   initrd /boot/${initrd_file}
 GRUB_CONF
 
@@ -220,7 +220,7 @@ default=0
 timeout=1
 title ${os_name} (${kernel_version})
   root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} net.ifnames=0 plymouth.enable=0 selinux=0 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} net.ifnames=0 plymouth.enable=0 selinux=0 console=tty0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 ipv6.disable=1 audit=1
   initrd /boot/${initrd_file}
 GRUB_CONF
 else

@@ -20,6 +20,12 @@ shared_examples_for 'All Stemcells' do
     end
   end
 
+  context 'ipv6 is disabled in the kernel' do
+    describe file('/boot/grub/grub.conf') do
+      its(:content) { should match /^\s+kernel .* ipv6\.disable=1 .*$/}
+    end
+  end
+
   context 'grub does not install an EFI bootloader' do
     describe file('/boot/efi') do
       it { should_not be_directory }
