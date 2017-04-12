@@ -1,8 +1,9 @@
 module Bosh::Director
   class LocalDnsRepo
 
-    def initialize(logger)
+    def initialize(logger, root_domain)
       @logger = logger
+      @root_domain = root_domain
     end
 
     def update_for_instance(instance_model)
@@ -46,13 +47,20 @@ module Bosh::Director
 
     def desired_record_hashes(instance_model)
       networks_and_ips(instance_model).map do |network_to_ip|
+        agent_id = nil
+        if instance_model.active_vm != nil
+          agent_id = instance_model.active_vm.agent_id
+        end
+
         {
             :ip => network_to_ip[:ip],
             :instance_id => instance_model.id,
             :az => instance_model.availability_zone,
             :network => network_to_ip[:name],
             :deployment => instance_model.deployment.name,
-            :instance_group => instance_model.job
+            :instance_group => instance_model.job,
+            :agent_id => agent_id,
+            :root_domain => @root_domain
         }
       end
     end

@@ -312,20 +312,20 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe '#canonicalized_dns_domain_name' do
+  describe '#root_domain' do
     context 'when no dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {}}) }
-      it 'returns formatted DNS domain' do
+      it 'returns bosh' do
         described_class.configure(test_config)
-        expect(described_class.canonicalized_dns_domain_name).to eq('bosh')
+        expect(described_class.root_domain).to eq('bosh')
       end
     end
 
     context 'when dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {'domain_name' => 'test-domain-name'}}) }
-      it 'returns formatted DNS domain' do
+      it 'returns the DNS domain' do
         described_class.configure(test_config)
-        expect(described_class.canonicalized_dns_domain_name).to eq('test-domain-name')
+        expect(described_class.root_domain).to eq('test-domain-name')
       end
     end
   end

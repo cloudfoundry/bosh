@@ -2,8 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe LocalDnsRepo do
-    subject(:local_dns_repo) { LocalDnsRepo.new(logger) }
+    subject(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
+    let(:root_domain) { 'bosh1.tld' }
 
     let(:instance_model) do
       Models::Instance.make(
@@ -16,6 +17,13 @@ module Bosh::Director
       )
     end
 
+    let!(:active_vm) do
+      Models::Vm.make(
+        agent_id: 'some-agent-id',
+        instance: instance_model,
+        active: true
+      )
+    end
     let(:spec_json) { {'networks' => {'net-name' => {'ip' => '1234'}}} }
 
     let(:record_0_ip) { '1234' }
@@ -26,7 +34,9 @@ module Bosh::Director
           :az => 'az1',
           :network => 'net-name',
           :deployment => 'bosh.1',
-          :instance_group => 'instance-group-0'
+          :instance_group => 'instance-group-0',
+          :agent_id => 'some-agent-id',
+          :root_domain => 'bosh1.tld'
       )
     end
 
@@ -75,6 +85,8 @@ module Bosh::Director
             :network => 'net-name',
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :root_domain => 'bosh1.tld'
           }])
           expect(diff.missing).to eq([{
             :ip => '1234',
@@ -83,6 +95,8 @@ module Bosh::Director
             :network => 'net-name',
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :root_domain => 'bosh1.tld'
           }])
           expect(diff.unaffected).to be_empty
         end
@@ -117,6 +131,8 @@ module Bosh::Director
           expect(new_local_dns_record.deployment).to eq('bosh.1')
           expect(new_local_dns_record.instance_group).to eq('instance-group-0')
           expect(new_local_dns_record.instance).to eq(instance_model)
+          expect(new_local_dns_record.agent_id).to eq('some-agent-id')
+          expect(new_local_dns_record.root_domain).to eq('bosh1.tld')
         end
 
         it 'does not delete the record for the original ip' do
@@ -137,6 +153,8 @@ module Bosh::Director
             :network => 'net-name-2',
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :root_domain => 'bosh1.tld'
           }])
           expect(diff.unaffected).to eq([{
             :ip => record_0_ip,
@@ -145,6 +163,8 @@ module Bosh::Director
             :network => 'net-name',
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :root_domain => 'bosh1.tld'
           }])
         end
       end
@@ -159,7 +179,9 @@ module Bosh::Director
               :az => 'az1',
               :network => 'net-name-2',
               :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0'
+              :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
           )
         end
 
@@ -191,7 +213,9 @@ module Bosh::Director
               :az => 'az1',
               :network => 'net-name-2',
               :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0'
+              :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
           )
         end
 
@@ -218,6 +242,8 @@ module Bosh::Director
               :network => 'net-name',
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
             },
             {
               :ip => '9876',
@@ -226,6 +252,8 @@ module Bosh::Director
               :network => 'net-name-2',
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
             },
           ])
 
@@ -397,7 +425,9 @@ module Bosh::Director
               :az => 'az1',
               :network => 'net-name-2',
               :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0'
+              :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
           )
         end
 
@@ -410,6 +440,18 @@ module Bosh::Director
           expect {
             local_dns_repo.update_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.max(:id) }.by(1)
+        end
+      end
+
+      context 'when the instance has no vm' do
+        let!(:active_vm) {}
+
+        it 'sets the agent_id to nil' do
+          local_dns_repo.update_for_instance(instance_model)
+
+          records = Models::LocalDnsRecord.all
+          expect(records.size).to eq(1)
+          expect(records.first.agent_id).to eq(nil)
         end
       end
     end
@@ -434,7 +476,9 @@ module Bosh::Director
               :az => 'az1',
               :network => 'net-name-2',
               :deployment => 'bosh.1',
-              :instance_group => 'instance-group-whatever'
+              :instance_group => 'instance-group-whatever',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
           )
         end
 
@@ -445,7 +489,9 @@ module Bosh::Director
               :az => 'az1',
               :network => 'net-name-2',
               :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0'
+              :instance_group => 'instance-group-0',
+              :agent_id => 'some-agent-id',
+              :root_domain => 'bosh1.tld'
           )
         end
 

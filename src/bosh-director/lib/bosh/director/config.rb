@@ -206,9 +206,9 @@ module Bosh::Director
           })
       end
 
-      def canonicalized_dns_domain_name
+      def root_domain
         dns_config = Config.dns || {}
-        Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
+        dns_config.fetch('domain_name', 'bosh')
       end
 
       def log_dir

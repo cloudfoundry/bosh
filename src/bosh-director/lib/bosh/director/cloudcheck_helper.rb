@@ -69,7 +69,7 @@ module Bosh::Director
       dns_manager = DnsManagerProvider.create
       dns_names_to_ip = {}
 
-      dns_domain_name = Config.canonicalized_dns_domain_name
+      dns_domain_name = Config.root_domain
 
       apply_spec = instance_plan_to_create.existing_instance.spec
       apply_spec['networks'].each do |network_name, network|

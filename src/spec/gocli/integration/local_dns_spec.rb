@@ -43,7 +43,7 @@ describe 'local DNS', type: :integration do
 
         records_json = parse_agent_records_json(9)
         expect(records_json['records']).to match_array(generate_instance_records)
-        expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip'])
+        expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'root_domain', 'agent_id'])
         expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
         expect(records_json['version']).to eq(10)
       end
@@ -193,7 +193,7 @@ describe 'local DNS', type: :integration do
   def generate_instance_record_infos
     director.instances(deployment_name: deployment_name).map do |instance|
       az = instance.availability_zone.empty? ? nil : instance.availability_zone
-      [instance.id, instance.job_name, az, 'local_dns', 'simple.local_dns', instance.ips[0]]
+      [instance.id, instance.job_name, az, 'local_dns', 'simple.local_dns', instance.ips[0], 'bosh', instance.agent_id]
     end
   end
 

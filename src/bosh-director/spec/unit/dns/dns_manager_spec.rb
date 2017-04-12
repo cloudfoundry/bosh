@@ -21,7 +21,8 @@ module Bosh::Director
     let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name', agent_broadcaster, logger) }
-    let(:local_dns_repo) { LocalDnsRepo.new(logger) }
+    let(:root_domain) { 'bosh1.tld' }
+    let(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
 
     describe '#flush_dns_cache' do
       let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
