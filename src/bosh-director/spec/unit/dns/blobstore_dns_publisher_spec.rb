@@ -13,7 +13,7 @@ module Bosh::Director
 
     let(:include_index_records) { false }
     let(:dns_records) do
-      dns_records = DnsRecords.new(2, include_index_records)
+      dns_records = DnsRecords.new(2, include_index_records, domain_name)
       dns_records.add_record('id0', 'group0', 'az0', 'net0', 'deployment0', 'fake-ip0', 'fake-name0')
       dns_records.add_record('id1', 'group1', 'az1', 'net1', 'deployment1', 'fake-ip1', 'fake-name1')
       dns_records

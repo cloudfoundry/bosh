@@ -1,6 +1,6 @@
 module Bosh::Director
   class DeploymentPlan::NetworkSettings
-    def initialize(job_name, deployment_name, default_network, desired_reservations, current_networks, availability_zone, instance_index, instance_id)
+    def initialize(job_name, deployment_name, default_network, desired_reservations, current_networks, availability_zone, instance_index, instance_id, dns_domain_name)
       @job_name = job_name
       @desired_reservations = desired_reservations
       @default_network = default_network
@@ -9,6 +9,7 @@ module Bosh::Director
       @instance_index = instance_index
       @instance_id = instance_id
       @current_networks = current_networks
+      @dns_domain_name = dns_domain_name
     end
 
     def to_hash
@@ -37,9 +38,9 @@ module Bosh::Director
     def dns_record_info
       dns_record_info = {}
       to_hash.each do |network_name, network|
-        index_dns_name = DnsNameGenerator.dns_record_name(@instance_index, @job_name, network_name, @deployment_name)
+        index_dns_name = DnsNameGenerator.dns_record_name(@instance_index, @job_name, network_name, @deployment_name, @dns_domain_name)
         dns_record_info[index_dns_name] = network['ip']
-        id_dns_name =  DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+        id_dns_name =  DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @dns_domain_name)
         dns_record_info[id_dns_name] = network['ip']
       end
       dns_record_info
@@ -49,7 +50,7 @@ module Bosh::Director
       network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
       if network_hash[network_name]['type'] == 'dynamic' || Bosh::Director::Config.local_dns_enabled?
-        address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+        address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @dns_domain_name)
       else
         address = network_hash[network_name]['ip']
       end
@@ -67,7 +68,7 @@ module Bosh::Director
 
       to_hash.each do |network_name, network|
         if network['type'] == 'dynamic'
-          address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+          address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @dns_domain_name)
         else
           address = network['ip']
         end

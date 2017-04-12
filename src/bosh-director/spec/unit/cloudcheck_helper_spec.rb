@@ -191,8 +191,10 @@ module Bosh::Director
             expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
             expect(fake_new_agent).to receive(:start).ordered
 
-            expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name).and_return('index.record.name')
-            expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name).and_return('uuid.record.name')
+            allow(Config).to receive(:canonicalized_dns_domain_name).and_return('bosh')
+            expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('index.record.name')
+            expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('uuid.record.name')
+
             expect(dns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' => nil, 'uuid.record.name' => nil})
             expect(dns_manager).to receive(:flush_dns_cache)
 

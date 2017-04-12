@@ -11,8 +11,14 @@ module Bosh::Director::DeploymentPlan
         {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}},
         az,
         3,
-        'uuid-1'
+        'uuid-1',
+        'bosh1.tld',
       )
+    end
+    let(:job) do
+      job = InstanceGroup.new(logger)
+      job.name = 'fake-job'
+      job
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
@@ -40,13 +46,7 @@ module Bosh::Director::DeploymentPlan
     }
     let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
 
-    describe '#network_settings' do
-      let(:job) do
-        job = InstanceGroup.new(logger)
-        job.name = 'fake-job'
-        job
-      end
-
+    describe '#to_hash' do
       context 'dynamic network' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
@@ -72,7 +72,7 @@ module Bosh::Director::DeploymentPlan
 
         describe '#network_address' do
           it 'returns the id based dns record address for the instance' do
-            expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh')
+            expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
           end
         end
 
@@ -94,6 +94,40 @@ module Bosh::Director::DeploymentPlan
           it 'returns the ip address for manual networks on the instance' do
             expect(network_settings.network_ip_address).to eq('10.0.0.6')
           end
+        end
+      end
+    end
+
+    describe '#dns_record_info' do
+      it 'includes both id and uuid records' do
+        expect(network_settings.dns_record_info).to eq({
+          '3.fake-job.net-a.fake-deployment.bosh1.tld' => '10.0.0.6',
+          'uuid-1.fake-job.net-a.fake-deployment.bosh1.tld' => '10.0.0.6',
+        })
+      end
+    end
+
+    describe '#network_addresses' do
+      context 'dynamic network' do
+        let(:dynamic_network) do
+          subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
+          DynamicNetwork.new('net_a', subnets, logger)
+        end
+
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network) }
+
+        it 'includes the network name and domain record' do
+          expect(network_settings.network_addresses).to eq({
+            'net_a' => 'uuid-1.fake-job.net-a.fake-deployment.bosh1.tld',
+          })
+        end
+      end
+
+      context 'manual network' do
+        it 'includes the network name and ip' do
+          expect(network_settings.network_addresses).to eq({
+            'net_a' => '10.0.0.6',
+          })
         end
       end
     end

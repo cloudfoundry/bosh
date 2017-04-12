@@ -135,7 +135,7 @@ module Bosh::Director
         ip = nil
         modified_networks_hash = networks_hash.each_pair do |network_name, network_settings|
           if @full_spec['job'] != nil
-            settings_with_dns = network_settings.merge({'dns_record_name' => DnsNameGenerator.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
+            settings_with_dns = network_settings.merge({'dns_record_name' => DnsNameGenerator.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'], @full_spec['dns_domain_name'])})
             networks_hash[network_name] = settings_with_dns
           end
 

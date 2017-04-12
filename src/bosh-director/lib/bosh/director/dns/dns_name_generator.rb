@@ -1,8 +1,6 @@
 module Bosh::Director
   class DnsNameGenerator
-    def self.dns_record_name(hostname, job_name, network_name, deployment_name)
-      dns_domain_name = Config.canonicalized_dns_domain_name
-
+    def self.dns_record_name(hostname, job_name, network_name, deployment_name, root_domain)
       if network_name == '%'
         canonicalized_network_name = '%'
       else
@@ -13,7 +11,7 @@ module Bosh::Director
         Canonicalizer.canonicalize(job_name),
         canonicalized_network_name,
         Canonicalizer.canonicalize(deployment_name),
-        dns_domain_name
+        root_domain
       ].join('.')
     end
   end

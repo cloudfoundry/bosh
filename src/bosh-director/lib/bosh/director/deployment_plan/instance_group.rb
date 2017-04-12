@@ -372,7 +372,7 @@ module Bosh::Director
       def get_dns_record_names
         result = []
         networks.map(&:name).each do |network_name|
-          result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name)
+          result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name, Config.canonicalized_dns_domain_name)
         end
         result.sort
       end

@@ -73,7 +73,7 @@ module Bosh::Director
         local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
       end
 
-      dns_records = DnsRecords.new(version, Config.local_dns_include_index?)
+      dns_records = DnsRecords.new(version, Config.local_dns_include_index?, Config.canonicalized_dns_domain_name)
       local_dns_records.each do |dns_record|
         dns_records.add_record(dns_record.instance.uuid, dns_record.instance.index, dns_record.instance_group,
                                dns_record.az, dns_record.network, dns_record.deployment, dns_record.ip)

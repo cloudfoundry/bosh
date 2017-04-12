@@ -3,12 +3,13 @@ module Bosh::Director
 
     attr_reader :version
 
-    def initialize(version, include_index_records)
+    def initialize(version, include_index_records, dns_domain_name)
       @version = version
       @record_keys = ['id', 'instance_group', 'az', 'network', 'deployment', 'ip']
       @record_infos = []
       @records = []
       @include_index_records = include_index_records
+      @dns_domain_name = dns_domain_name
     end
 
     def add_record(instance_id, index, instance_group_name, az_name, network_name, deployment_name, ip)
@@ -36,6 +37,7 @@ module Bosh::Director
           instance_group_name,
           network_name,
           deployment_name,
+          @dns_domain_name
       )
       @records << [ip, record_name]
     end

@@ -4,7 +4,8 @@ module Bosh::Director
   describe DnsRecords do
     let(:include_index_records) { false }
     let(:version) { 2 }
-    let(:dns_records) { DnsRecords.new(version, include_index_records) }
+    let(:dns_domain_name) {'bosh1.tld'}
+    let(:dns_records) { DnsRecords.new(version, include_index_records, dns_domain_name) }
 
     describe '#to_json' do
       context 'with records' do
@@ -16,8 +17,8 @@ module Bosh::Director
         it 'returns json' do
           expected_records = {
              'records' => [
-                 ['ip-addr1', 'uuid1.group-name1.net-name1.dep-name1.bosh'],
-                 ['ip-addr2', 'uuid2.group-name2.net-name2.dep-name2.bosh']],
+                 ['ip-addr1', 'uuid1.group-name1.net-name1.dep-name1.bosh1.tld'],
+                 ['ip-addr2', 'uuid2.group-name2.net-name2.dep-name2.bosh1.tld']],
              'version' => 2,
              'record_keys' =>
                  ['id', 'instance_group', 'az', 'network', 'deployment', 'ip'],
@@ -29,7 +30,7 @@ module Bosh::Director
         end
 
         it 'returns the shasum' do
-          expect(dns_records.shasum).to eq('64d434471082add36366cd1bd7742c08de2811dd')
+          expect(dns_records.shasum).to eq('bb165db4f57629d627359a592a27f068d6ed4405')
         end
 
         context 'when index records are enabled' do
@@ -38,10 +39,10 @@ module Bosh::Director
           it 'returns json' do
             expected_records = {
                 'records' => [
-                    ['ip-addr1', 'uuid1.group-name1.net-name1.dep-name1.bosh'],
-                    ['ip-addr1', 'index1.group-name1.net-name1.dep-name1.bosh'],
-                    ['ip-addr2', 'uuid2.group-name2.net-name2.dep-name2.bosh'],
-                    ['ip-addr2', 'index2.group-name2.net-name2.dep-name2.bosh']],
+                    ['ip-addr1', 'uuid1.group-name1.net-name1.dep-name1.bosh1.tld'],
+                    ['ip-addr1', 'index1.group-name1.net-name1.dep-name1.bosh1.tld'],
+                    ['ip-addr2', 'uuid2.group-name2.net-name2.dep-name2.bosh1.tld'],
+                    ['ip-addr2', 'index2.group-name2.net-name2.dep-name2.bosh1.tld']],
                 'version' => 2,
                 'record_keys' =>
                     ['id', 'instance_group', 'az', 'network', 'deployment', 'ip'],
