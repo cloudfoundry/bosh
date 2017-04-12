@@ -20,7 +20,7 @@ module Bosh::Director
     end
 
     before do
-      allow(Config).to receive(:canonized_dns_domain_name).and_return(domain_name)
+      allow(Config).to receive(:canonicalized_dns_domain_name).and_return(domain_name)
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
       allow(agent_broadcaster).to receive(:sync_dns)
     end
