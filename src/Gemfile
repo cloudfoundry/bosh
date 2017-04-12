@@ -45,19 +45,11 @@ group :development, :test do
   gem 'rack-test'
   gem 'webmock'
   gem 'fakefs'
-  gem 'simplecov', '~> 0.9.0'
   gem 'sinatra'
   gem 'sinatra-contrib'
-  gem 'codeclimate-test-reporter', require: false
-  gem 'vcr'
 
   # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
   gem 'eventmachine', '1.0.4'
-
-  # Explicitly do not require serverspec dependency
-  # so that it could be monkey patched in a deterministic way
-  # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`
-  gem 'specinfra', '1.15.0', require: nil
 
   # for director
   gem 'machinist', '~>1.0'
@@ -65,7 +57,6 @@ group :development, :test do
   # for root level specs
   gem 'rest-client'
   gem 'nats'
-  gem 'rugged'
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'
