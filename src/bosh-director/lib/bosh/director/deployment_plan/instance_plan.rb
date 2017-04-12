@@ -204,7 +204,7 @@ module Bosh
             @instance.availability_zone,
             @instance.index,
             @instance.uuid,
-            @dns_manager.dns_domain_name,
+            @dns_manager.root_domain,
           )
         end
 

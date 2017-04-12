@@ -32,7 +32,7 @@ module Bosh::Director
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
-          'dns_domain_name' => dns_manager.dns_domain_name,
+          'dns_domain_name' => dns_manager.root_domain,
           'links' => instance_group.resolved_links,
           'address' => instance_plan.network_settings.network_address,
           'update' => instance_group.update_spec

@@ -17,10 +17,10 @@ module Bosh::Director
   end
 
   class DnsManager
-    attr_reader :dns_domain_name
+    attr_reader :root_domain
 
-    def initialize(dns_domain_name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
-      @dns_domain_name = dns_domain_name
+    def initialize(root_domain, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
+      @root_domain = root_domain
       @dns_provider = dns_provider
       @dns_publisher = dns_publisher
       @flush_command = dns_config['flush_command']
@@ -65,14 +65,14 @@ module Bosh::Director
         instance_model.job,
         '%',
         instance_model.deployment.name,
-        @dns_domain_name
+        @root_domain
       )
       uuid_pattern_for_all_networks = DnsNameGenerator.dns_record_name(
         instance_model.uuid,
         instance_model.job,
         '%',
         instance_model.deployment.name,
-        @dns_domain_name
+        @root_domain
       )
 
       legacy_record_names = [index_pattern_for_all_networks, uuid_pattern_for_all_networks]
@@ -91,7 +91,7 @@ module Bosh::Director
           # did not have records in local repo
           # we cannot migrate them because powerdns can be different database
           # those instance only had index-based dns records (before global-net)
-          index_record_pattern = DnsNameGenerator.dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name, @dns_domain_name)
+          index_record_pattern = DnsNameGenerator.dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name, @root_domain)
           @dns_provider.delete(index_record_pattern)
           return
         end

@@ -24,7 +24,7 @@ module Bosh::Director
           'features' => {
             'dns' => {
               'status' => @dns_manager.dns_enabled?,
-              'extras' => {'domain_name' => @dns_manager.dns_domain_name}
+              'extras' => {'domain_name' => @dns_manager.root_domain}
             },
             'compiled_package_cache' => {
               'status' => Config.use_compiled_package_cache?,
