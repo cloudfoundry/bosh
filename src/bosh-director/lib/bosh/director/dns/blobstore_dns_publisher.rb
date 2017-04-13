@@ -83,7 +83,7 @@ module Bosh::Director
           dns_record.network,
           dns_record.deployment,
           dns_record.ip,
-          dns_record.root_domain,
+          dns_record.root_domain.nil? ? @domain_name : dns_record.root_domain,
           dns_record.agent_id
         )
       end

@@ -115,6 +115,45 @@ module Bosh::Director
           dns.publish_and_broadcast
         end
 
+        context 'when the root_domain is empty' do
+          before do
+            instance3 = Models::Instance.make(
+              uuid: 'uuid3',
+              index: 3,
+            )
+            Bosh::Director::Models::LocalDnsRecord.make(
+              instance_id: instance3.id,
+              ip: '192.0.2.104',
+              deployment: 'test-deployment',
+              az: 'az2',
+              instance_group: 'instance4',
+              network: 'net-name2',
+              agent_id: 'fake-agent-uuid4'
+            )
+
+          end
+
+          it 'backfills the current root_domain' do
+              expected_records = JSON.dump({
+                'records' => [
+                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                  ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name']],
+                'version' => 5,
+                'record_keys' =>
+                  ['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'root_domain', 'agent_id'],
+                'record_infos' => [
+                  ['uuid1', 'instance1', 'az1', 'net-name1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1'],
+                  ['uuid1', 'instance1', 'az1', 'net-name3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1'],
+                  ['uuid2', 'instance2', 'az2', 'net-name2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2'],
+                  ['uuid3', 'instance4', 'az2', 'net-name2', 'test-deployment', '192.0.2.104', 'fake-domain-name', 'fake-agent-uuid4']]
+              })
+              expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+              dns.publish_and_broadcast
+          end
+        end
+
         context 'when putting to the blobstore fails' do
           it 'fails uploading records' do
             expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)
