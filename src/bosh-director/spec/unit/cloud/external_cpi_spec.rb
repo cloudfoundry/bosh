@@ -74,6 +74,7 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_arguments = arguments.clone
         if method == :create_vm
+          expected_arguments[2] = {'cloud' => '<redacted>'}
           expected_arguments[5] = {
             'bosh' => {
               'group' => 'my-group',
@@ -82,6 +83,8 @@ describe Bosh::Clouds::ExternalCpi do
             },
             'other' => '<redacted>'
           }
+        elsif method == :create_disk
+          expected_arguments[1] = {'type' => '<redacted>'}
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
@@ -322,7 +325,7 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#create_disk' do
-    it_calls_cpi_method(:create_disk, 100_000, 'fake-vm-cid')
+    it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
   end
 
   describe '#has_disk' do

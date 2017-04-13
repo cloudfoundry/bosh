@@ -250,7 +250,7 @@ module Bosh::Director::ConfigServer
               }
             end
 
-            context 'when there is no variable set or active deployment' do
+            context 'when there is no variable set' do
               let(:variable_name) { '/boo' }
               let(:variable_id) { 'cfg-svr-id' }
               let(:variable_value) { 'var_val' }

@@ -234,8 +234,10 @@ module Bosh::Director::ConfigServer
 
       variables.each do |variable|
         name = ConfigServerHelper.extract_variable_name(variable)
+        name_root = get_name_root(name)
+
         begin
-          fetched_variable_from_cfg_srv = get_variable_by_name(name)
+          fetched_variable_from_cfg_srv = get_variable_by_name(name_root)
           config_values[variable] = extract_variable_value(name, fetched_variable_from_cfg_srv)
         rescue Bosh::Director::ConfigServerFetchError, Bosh::Director::ConfigServerMissingName => e
           errors << e
