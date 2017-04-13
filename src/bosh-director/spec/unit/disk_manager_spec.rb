@@ -461,6 +461,12 @@ module Bosh::Director
             disk_manager.update_persistent_disk(instance_plan)
           }.to_not raise_error
         end
+
+        it 'does not save PersistentDisk model with the interpolated cloud config' do
+          allow(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          disk_manager.update_persistent_disk(instance_plan)
+          expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
+        end
       end
     end
 

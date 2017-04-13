@@ -235,7 +235,7 @@ module Bosh::Director
           active: false,
           instance_id: instance_model.id,
           size: disk_size,
-          cloud_properties: cloud_properties,
+          cloud_properties: disk.cloud_properties,
         )
       rescue Exception => e
         raise e

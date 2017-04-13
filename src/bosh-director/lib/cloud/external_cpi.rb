@@ -112,10 +112,21 @@ module Bosh::Clouds
 
     def redact_arguments(method_name, arguments)
       if method_name == 'create_vm'
-        redact_from_env_in_create_vm_arguments(arguments)
+        arguments = redact_from_env_in_create_vm_arguments(arguments)
+        redact_cloud_property_values(arguments, 2)
+      elsif method_name == 'create_disk'
+        redact_cloud_property_values(arguments, 1)
       else
         arguments
       end
+    end
+
+    def redact_cloud_property_values(arguments, position)
+      redacted_arguments = arguments.clone
+      cloud_properties = redacted_arguments[position]
+      redacted_cloud_properties = redactAllBut([], cloud_properties)
+      redacted_arguments[position] = redacted_cloud_properties
+      redacted_arguments
     end
 
     def redact_from_env_in_create_vm_arguments(arguments)

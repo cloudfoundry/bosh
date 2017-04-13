@@ -61,6 +61,73 @@ module Bosh::Spec
       }
     end
 
+    def self.cloud_config_with_cloud_properties_placeholders
+      {
+        'azs' => [
+          {
+            'name' => 'z1',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'vm_types' => [
+          {
+            'name' => 'small',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'disk_types' => [
+          {
+            'name' => 'small',
+            'disk_size' => 3000,
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'networks' => [
+          {
+            'name' => 'private',
+            'type' => 'manual',
+            'subnets' => [
+              {
+                'range' => '10.10.0.0/24',
+                'gateway' => '10.10.0.1',
+                'az' => 'z1',
+                'static' => [
+                  '10.10.0.62'
+                ],
+                'dns' => [
+                  '10.10.0.2'
+                ],
+                'cloud_properties' => {
+                  'secret' => '((/never-log-me))'
+                }
+              }
+            ]
+          }
+        ],
+        'vm_extensions' => [
+          {
+            'name' => 'pub-lbs',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'compilation' => {
+          'workers' => 5,
+          'reuse_compilation_vms' => true,
+          'az' => 'z1',
+          'vm_type' => 'small',
+          'network' => 'private'
+        }
+      }
+    end
+
     def self.simple_cloud_config
       minimal_cloud_config.merge({
           'networks' => [network],

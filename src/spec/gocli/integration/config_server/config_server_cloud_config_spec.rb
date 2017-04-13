@@ -35,7 +35,6 @@ describe 'using director with config server', type: :integration do
     }
   end
 
-  let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_placeholders }
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
 
@@ -61,7 +60,8 @@ describe 'using director with config server', type: :integration do
     output
   end
 
-  context 'cloud config config contains placeholders' do
+  context 'cloud config contains placeholders' do
+    let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_placeholders }
 
     context 'all placeholders are set in config server' do
       before do
@@ -100,7 +100,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'uses the interpolated values for a successful deploy' do
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.last.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
@@ -204,6 +204,77 @@ describe 'using director with config server', type: :integration do
       end
     end
   end
+
+  context 'cloud config contains cloud properties only placeholders' do
+    let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_cloud_properties_placeholders }
+
+    let(:manifest_hash) do
+      {
+        'name' => 'simple',
+        'director_uuid' => 'deadbeef',
+        'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+        'update' => {
+            'canaries' => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight' => 1,
+            'update_watch_time' => 20
+        },
+        'instance_groups' => [{
+            'name' => 'our_instance_group',
+            'templates' => [{
+                'name' => 'job_1_with_many_properties',
+                'properties' => {
+                    'gargamel' => {
+                        'color' => 'pitch black'
+                    }
+                }
+            }],
+            'instances' => 1,
+            'networks' => [{'name' => 'private'}],
+            'properties' => {},
+            'vm_type' => 'small',
+            'persistent_disk_type' => 'small',
+            'azs' => ['z1'],
+            'stemcell' => 'default'
+        }],
+        'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+      }
+    end
+
+    before do
+      config_server_helper.put_value('/never-log-me', 'super-secret')
+    end
+
+    it 'does not log interpolated cloud properties in the task logs and deploy output' do
+      deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      expect(deploy_output).to_not include('super-secret')
+
+      task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+      debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
+      expect(debug_output).to_not include('super-secret')
+    end
+
+    context 'after a successful deployment' do
+      before do
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+      end
+
+      context 'deployment has unresponsive agents' do
+        before {
+          current_sandbox.cpi.kill_agents
+        }
+
+        it 'does not log interpolated cloud properties in the task logs during CCK - recreate VM' do
+          recreate_vm = 3
+          cck_output = bosh_run_cck_with_resolution(1, recreate_vm, client_env)
+
+          task_id = cck_output.match(/^Task (\d+) done$/)[1]
+
+          debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
+          expect(debug_output).to_not include('super-secret')
+        end
+      end
+    end
+  end
 end
-
-
