@@ -308,16 +308,15 @@ properties:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
 
   # Blobstore destination for backups
-  #   ex:
-  #     backup_destination
-  #       provider: s3
-  #       options:
-  #         bucket_name: some-bucket-name
-  #         access_key_id: ...
-  #         secret_access_key: ...
-  #
   director.backup_destination:
     description: Configuration of the blobstore used by director for backups (dav|simple|s3)
+    example:
+      provider: s3
+      options:
+        bucket_name: some-bucket-name
+        credentials_source: static # or env_or_profile
+        access_key_id: AKIAA1B2C3D4...
+        secret_access_key: a1b2c3d4...
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
     default: false
