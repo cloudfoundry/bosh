@@ -2,7 +2,7 @@ Sequel.migration do
   up do
     alter_table :local_dns_records do
       add_column :agent_id, String
-      add_column :root_domain, String
+      add_column :domain, String
     end
 
     self[:local_dns_records].each do |local_dns_record|

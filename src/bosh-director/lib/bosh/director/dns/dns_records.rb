@@ -5,19 +5,19 @@ module Bosh::Director
 
     def initialize(version, include_index_records)
       @version = version
-      @record_keys = ['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'root_domain', 'agent_id']
+      @record_keys = ['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'domain', 'agent_id']
       @record_infos = []
       @records = []
       @include_index_records = include_index_records
     end
 
-    def add_record(instance_id, index, instance_group_name, az_name, network_name, deployment_name, ip, root_domain, agent_id)
-      add_hosts_record(instance_id, instance_group_name, network_name, deployment_name, ip, root_domain)
+    def add_record(instance_id, index, instance_group_name, az_name, network_name, deployment_name, ip, domain, agent_id)
+      add_hosts_record(instance_id, instance_group_name, network_name, deployment_name, ip, domain)
       if @include_index_records
-        add_hosts_record(index, instance_group_name, network_name, deployment_name, ip, root_domain)
+        add_hosts_record(index, instance_group_name, network_name, deployment_name, ip, domain)
       end
 
-      @record_infos << [instance_id, instance_group_name, az_name, network_name, deployment_name, ip, root_domain, agent_id]
+      @record_infos << [instance_id, instance_group_name, az_name, network_name, deployment_name, ip, domain, agent_id]
     end
 
     def shasum
@@ -30,13 +30,13 @@ module Bosh::Director
 
     private
 
-    def add_hosts_record(hostname, instance_group_name, network_name, deployment_name, ip, root_domain)
+    def add_hosts_record(hostname, instance_group_name, network_name, deployment_name, ip, domain)
       record_name = DnsNameGenerator.dns_record_name(
         hostname,
         instance_group_name,
         network_name,
         deployment_name,
-        root_domain
+        domain
       )
       @records << [ip, record_name]
     end

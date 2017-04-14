@@ -43,7 +43,7 @@ describe 'local DNS', type: :integration do
 
         records_json = parse_agent_records_json(9)
         expect(records_json['records']).to match_array(generate_instance_records)
-        expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'root_domain', 'agent_id'])
+        expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'domain', 'agent_id'])
         expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
         expect(records_json['version']).to eq(10)
       end

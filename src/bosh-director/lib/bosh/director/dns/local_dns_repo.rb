@@ -60,7 +60,7 @@ module Bosh::Director
             :deployment => instance_model.deployment.name,
             :instance_group => instance_model.job,
             :agent_id => agent_id,
-            :root_domain => @root_domain
+            :domain => @root_domain
         }
       end
     end

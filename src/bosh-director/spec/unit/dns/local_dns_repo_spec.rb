@@ -36,7 +36,7 @@ module Bosh::Director
           :deployment => 'bosh.1',
           :instance_group => 'instance-group-0',
           :agent_id => 'some-agent-id',
-          :root_domain => 'bosh1.tld'
+          :domain => 'bosh1.tld'
       )
     end
 
@@ -86,7 +86,7 @@ module Bosh::Director
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
             :agent_id => 'some-agent-id',
-            :root_domain => 'bosh1.tld'
+            :domain => 'bosh1.tld'
           }])
           expect(diff.missing).to eq([{
             :ip => '1234',
@@ -96,7 +96,7 @@ module Bosh::Director
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
             :agent_id => 'some-agent-id',
-            :root_domain => 'bosh1.tld'
+            :domain => 'bosh1.tld'
           }])
           expect(diff.unaffected).to be_empty
         end
@@ -132,7 +132,7 @@ module Bosh::Director
           expect(new_local_dns_record.instance_group).to eq('instance-group-0')
           expect(new_local_dns_record.instance).to eq(instance_model)
           expect(new_local_dns_record.agent_id).to eq('some-agent-id')
-          expect(new_local_dns_record.root_domain).to eq('bosh1.tld')
+          expect(new_local_dns_record.domain).to eq('bosh1.tld')
         end
 
         it 'does not delete the record for the original ip' do
@@ -154,7 +154,7 @@ module Bosh::Director
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
             :agent_id => 'some-agent-id',
-            :root_domain => 'bosh1.tld'
+            :domain => 'bosh1.tld'
           }])
           expect(diff.unaffected).to eq([{
             :ip => record_0_ip,
@@ -164,7 +164,7 @@ module Bosh::Director
             :deployment => 'bosh.1',
             :instance_group => 'instance-group-0',
             :agent_id => 'some-agent-id',
-            :root_domain => 'bosh1.tld'
+            :domain => 'bosh1.tld'
           }])
         end
       end
@@ -181,7 +181,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
           )
         end
 
@@ -215,7 +215,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
           )
         end
 
@@ -243,7 +243,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
             },
             {
               :ip => '9876',
@@ -253,7 +253,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
             },
           ])
 
@@ -427,7 +427,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
           )
         end
 
@@ -478,7 +478,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-whatever',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
           )
         end
 
@@ -491,7 +491,7 @@ module Bosh::Director
               :deployment => 'bosh.1',
               :instance_group => 'instance-group-0',
               :agent_id => 'some-agent-id',
-              :root_domain => 'bosh1.tld'
+              :domain => 'bosh1.tld'
           )
         end
 

@@ -27,7 +27,7 @@ module Bosh::Director
         deployment: nil,
         ip: 'd03b0d55-7a16-47d4-8eab-b1ebea8629cd-tombstone',
         agent_id: nil,
-        root_domain: nil,
+        domain: nil,
       })
     end
 
@@ -64,7 +64,7 @@ module Bosh::Director
         deployment: 'fake-deployment',
         ip: '192.168.0.1',
         agent_id: nil,
-        root_domain: nil,
+        domain: nil,
       })
     end
 
@@ -108,7 +108,7 @@ module Bosh::Director
         deployment: 'fake-deployment',
         ip: '192.168.0.1',
         agent_id: 'fake-agent-uuid1',
-        root_domain: nil,
+        domain: nil,
       })
     end
   end

@@ -103,5 +103,5 @@
   "20170331171657_remove_active_vm_id_from_instances": "9e640563feef3e437c6ba7a5f289927488a2292a",
   "20170405144414_add_cross_deployment_links_support_for_variables": "457fcff2c0ae0cdc1c2da694d58e2b4bc39735c3",
   "20170405181126_backfill_local_dns_records_and_drop_name": "2788b6821ffae3fc8d92932f999e5ca5988378fa",
-  "20170412205032_add_agent_id_and_domain_name_to_local_dns_records": "feffe51e8030ea97a5e44e948afac9f716d5f058"
+  "20170412205032_add_agent_id_and_domain_name_to_local_dns_records": "3391eb9ece5a0f1d91c406806a2df96ec45d39b9"
 }
