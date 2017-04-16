@@ -1,0 +1,31 @@
+---
+name: (( meta.environment "-bosh" ))
+director_uuid: (( merge ))
+
+releases: (( merge ))
+
+compilation:
+  workers: (( merge ))
+  cloud_properties: (( merge ))
+  network: default
+  reuse_compilation_vms: true
+
+update:
+  canaries: 1
+  canary_watch_time: 3000-120000
+  update_watch_time: 3000-120000
+  max_in_flight: 4
+  max_errors: 1
+
+networks: (( merge ))
+
+resource_pools:
+  - name: common
+    network: default
+    size: (( auto ))
+    stemcell: (( merge ))
+    cloud_properties: (( merge ))
+
+jobs: (( merge ))
+
+properties: (( merge ))
