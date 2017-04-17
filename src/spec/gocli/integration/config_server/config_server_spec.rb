@@ -97,13 +97,14 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when all variables are set in config server' do
         it 'does not log interpolated properties in the task debug logs and deploy output' do
-          skip("#130127863")
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
 
           deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
           expect(deploy_output).to_not include('he is colorless')
 
-          debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
+          task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+          debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
           expect(debug_output).to_not include('he is colorless')
         end
 
@@ -398,12 +399,13 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
 
             it 'should not log interpolated env values in the debug logs and deploy output' do
-              skip("#130127863")
-              debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
-
+              deploy_output = deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
               expect(deploy_output).to_not include('lazy smurf')
               expect(deploy_output).to_not include('super_color')
 
+              task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+              debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
               expect(debug_output).to_not include('lazy smurf')
               expect(debug_output).to_not include('super_color')
             end
