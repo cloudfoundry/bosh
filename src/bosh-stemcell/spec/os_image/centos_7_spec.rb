@@ -87,20 +87,22 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'installed by system_initramfs' do
-    describe command("zcat /boot/initramfs-3.10.*.el7.x86_64.img | cpio -t | grep '/lib/modules/3.10.*.el7.x86_64'") do
+  context 'required initramfs modules' do
+    describe command("/usr/lib/dracut/skipcpio /boot/initramfs-3.10.*.el7.x86_64.img | zcat | cpio -t | grep '/lib/modules/3.10.*.el7.x86_64'") do
 
       modules = [
         #ata
         	'ata_generic', 'pata_acpi',
         #block
-          'floppy', 'loop', 'brd', 'xen-blkfront',
+          'floppy', 'loop', 'brd',
+        #xen
+          'xen-blkfront',
         #hv
-          'hv_vmbus',
+          'hv_vmbus','hv_storvsc', 'hv_vmbus',
         #virtio
           'virtio_blk', 'virtio_net', 'virtio_pci', 'virtio_scsi',
-        #fusion
-          'mptspi', 'mptbase', 'mptscsih',
+        #vmware fusion
+          'mptspi', 'mptbase', 'mptscsih','mpt2sas', 'mpt3sas',
         #scsci
           '3w-9xxx',
         	'3w-sas',
@@ -110,15 +112,11 @@ describe 'CentOS 7 OS image', os_image: true do
         	'fnic',
         	'hpsa',
         	'hptiop',
-        	'hv_storvsc',
-          'hv_vmbus',
         	'initio',
         	'isci',
         	'libsas',
         	'lpfc',
         	'megaraid_sas',
-        	'mpt2sas',
-        	'mpt3sas',
         	'mtip32xx',
         	'mvsas',
         	'mvumi',

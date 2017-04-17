@@ -212,7 +212,6 @@ module Bosh::Stemcell
         :base_ssh,
         :system_kernel_modules,
         :system_ixgbevf,
-        :system_initramfs,
         bosh_steps,
         :password_policies,
         :restrict_su_command,
