@@ -203,6 +203,25 @@ describe 'using director with config server', type: :integration do
         }.to raise_error
       end
     end
+
+    context 'some placeholders have relative (non-absolute) path' do
+      before do
+        cloud_config['azs'][0]['cloud_properties'] = '((z1_cloud_properties))'
+      end
+
+      it 'does NOT error on update of cloud-config' do
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+        expect {
+          bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", no_login: true, include_credentials: false, env: client_env)
+        }.to_not raise_error
+      end
+
+      it 'errors on deploy' do
+        expect {
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+        }.to raise_error(RuntimeError, /Names must be absolute path: 'z1_cloud_properties'/)
+      end
+    end
   end
 
   context 'cloud config contains cloud properties only placeholders' do
