@@ -89,13 +89,7 @@ module Bosh::Monitor
         started = Time.now
         logger.info("Sending email...")
 
-        headers = {
-          "From"         => smtp_options["from"],
-          "To"           => recipients.join(", "),
-          "Subject"      => subject,
-          "Date"         => date,
-          "Content-Type" => "text/plain; charset=\"iso-8859-1\""
-        }
+        headers = create_headers(subject, date)
 
         smtp_client_options = {
           :domain   => smtp_options["domain"],
@@ -132,6 +126,16 @@ module Bosh::Monitor
 
       rescue => e
         logger.error("Error sending email: #{e}")
+      end
+
+      def create_headers(subject, date)
+        {
+          "From"         => smtp_options["from"],
+          "To"           => recipients.join(", "),
+          "Subject"      => subject,
+          "Date"         => date.strftime("%a, %-d %b %Y %T %z"),
+          "Content-Type" => "text/plain; charset=\"iso-8859-1\""
+        }
       end
     end
   end
