@@ -17,6 +17,7 @@ module Bosh::Director
         instance_groups_starting_on_deploy: [],
         instance_plans_with_missing_vms: [],
         ip_provider: ip_provider,
+        job_renderer: JobRenderer.create,
         skip_drain: skip_drain,
         recreate: false,
         tags: {}

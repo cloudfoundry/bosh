@@ -1,8 +1,9 @@
 module Bosh::Director
   class JobUpdater
-    def initialize(ip_provider, job, disk_manager)
+    def initialize(ip_provider, job, disk_manager, job_renderer)
       @ip_provider = ip_provider
       @job = job
+      @job_renderer = job_renderer
 
       @logger = Config.logger
       @event_log = Config.event_log
@@ -106,7 +107,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
         with_thread_name("canary_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@ip_provider).update(instance_plan, :canary => true)
+            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -125,7 +126,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
         with_thread_name("instance_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@ip_provider).update(instance_plan)
+            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

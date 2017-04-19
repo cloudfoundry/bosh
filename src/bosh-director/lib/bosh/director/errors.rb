@@ -121,7 +121,6 @@ module Bosh::Director
   JobMissingMonit = err(80004)
   JobInvalidLogSpec = err(80005)
   JobTemplateBindingFailed = err(80006)
-  JobTemplateUnpackFailed = err(80007)
   JobInvalidPropertySpec = err(80008)
   InstanceGroupInvalidPropertyMapping = err(80009)
   JobIncompatibleSpecs = err(80010)

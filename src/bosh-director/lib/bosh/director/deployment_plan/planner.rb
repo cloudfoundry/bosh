@@ -54,6 +54,8 @@ module Bosh::Director
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
 
+      attr_reader :job_renderer
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -82,6 +84,7 @@ module Bosh::Director
         @variables = Variables.new([])
 
         @logger = Config.logger
+        @job_renderer = JobRenderer.create
       end
 
       def_delegators :@cloud_planner,
@@ -125,11 +128,10 @@ module Bosh::Director
         validate_packages
 
         disk_manager = DiskManager.new(@logger)
-        job_renderer = JobRenderer.create
         agent_broadcaster = AgentBroadcaster.new
         dns_manager = DnsManagerProvider.create
         vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, @job_renderer, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
           InstanceReuser.new,

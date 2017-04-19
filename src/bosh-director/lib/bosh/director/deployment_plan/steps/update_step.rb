@@ -9,7 +9,7 @@ module Bosh::Director
           @multi_job_updater = multi_job_updater
           @disk_manager = DiskManager.new(@logger)
           @dns_manager = DnsManagerProvider.create
-          job_renderer = JobRenderer.create
+          job_renderer = @deployment_plan.job_renderer
           agent_broadcaster = AgentBroadcaster.new
           @vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @vm_creator = Bosh::Director::VmCreator.new(@logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster)

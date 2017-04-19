@@ -56,6 +56,7 @@ module Bosh::Director
         parent_id = add_event
 
         with_deployment_lock(@deployment_name) do
+          deployment_plan = nil
 
           if @options['deploy']
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now)
@@ -65,8 +66,6 @@ module Bosh::Director
 
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event unless dry_run?
-
-          deployment_plan = nil
 
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
@@ -80,27 +79,31 @@ module Bosh::Director
             @event_log.warn('You have ignored instances. They will not be changed.')
           end
 
-          next_releases, next_stemcells  = get_stemcells_and_releases
+          next_releases, next_stemcells = get_stemcells_and_releases
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
-          render_templates_and_snapshot_errand_variables(deployment_plan)
+          begin
+            render_templates_and_snapshot_errand_variables(deployment_plan)
 
-          if dry_run?
-            return "/deployments/#{deployment_plan.name}"
-          else
-            deployment_plan.compile_packages
+            if dry_run?
+              return "/deployments/#{deployment_plan.name}"
+            else
+              deployment_plan.compile_packages
 
-            update_step(deployment_plan).perform
+              update_step(deployment_plan).perform
 
-            if check_for_changes(deployment_plan)
-              PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+              if check_for_changes(deployment_plan)
+                PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+              end
+
+              @notifier.send_end_event
+              logger.info('Finished updating deployment')
+              add_event(context, parent_id)
+
+              "/deployments/#{deployment_plan.name}"
             end
-
-            @notifier.send_end_event
-            logger.info('Finished updating deployment')
-            add_event(context, parent_id)
-
-            "/deployments/#{deployment_plan.name}"
+          ensure
+            deployment_plan.job_renderer.clean_cache!
           end
         end
       rescue Exception => e
@@ -118,18 +121,18 @@ module Bosh::Director
 
       def add_event(context = {}, parent_id = nil, error = nil)
         action = @options.fetch('new', false) ? "create" : "update"
-        event  = event_manager.create_event(
-            {
-                parent_id:   parent_id,
-                user:        username,
-                action:      action,
-                object_type: "deployment",
-                object_name: @deployment_name,
-                deployment:  @deployment_name,
-                task:        task_id,
-                error:       error,
-                context:     context
-            })
+        event = event_manager.create_event(
+          {
+            parent_id: parent_id,
+            user: username,
+            action: action,
+            object_type: "deployment",
+            object_name: @deployment_name,
+            deployment: @deployment_name,
+            task: task_id,
+            error: error,
+            context: context
+          })
         event.id
       end
 
@@ -146,32 +149,31 @@ module Bosh::Director
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           deployment_plan,
-          multi_job_updater
+          multi_job_updater(deployment_plan)
         )
       end
 
       # Job dependencies
 
-      def multi_job_updater
+      def multi_job_updater(deployment_plan)
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.job_renderer))
         end
       end
 
       def render_templates_and_snapshot_errand_variables(deployment_plan)
-        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy)
+        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups)
 
         unless errors.empty?
-          message = errors.map{|error| error.message.strip}.join("\n")
+          message = errors.map { |error| error.message.strip }.join("\n")
           header = 'Unable to render instance groups for deployment. Errors are:'
           raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2})
         end
       end
 
-      def render_instance_groups_templates(instance_groups)
+      def render_instance_groups_templates(instance_groups, job_renderer)
         errors = []
-        job_renderer = JobRenderer.create
         instance_groups.each do |instance_group|
           begin
             job_renderer.render_job_instances(instance_group.needed_instance_plans_for_variable_resolution)
@@ -202,7 +204,7 @@ module Bosh::Director
           end
 
           unless instance_group_errors.empty?
-            message = instance_group_errors.map{|error| error.message.strip}.join("\n")
+            message = instance_group_errors.map { |error| error.message.strip }.join("\n")
             header = "- Unable to render jobs for instance group '#{instance_group.name}'. Errors are:"
             e = Exception.new(Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2}))
             errors << e

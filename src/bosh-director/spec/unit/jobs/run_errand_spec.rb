@@ -38,17 +38,19 @@ module Bosh::Director
             ))
         end
         let(:planner) do
-          ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-          ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
+          ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
+          ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
             bind_models: nil,
             validate_packages: nil,
             compile_packages: nil,
-            ip_provider: ip_provider
+            ip_provider: ip_provider,
+            job_renderer: job_renderer,
           )
         end
+        let(:job_renderer) { JobRenderer.create.tap {|jr| allow(jr).to receive(:render_job_instances) } }
 
         let(:cloud_config) { Models::CloudConfig.make }
 
@@ -144,6 +146,8 @@ module Bosh::Director
                   and_return('fake-result-short-description')
 
                 expect(job_manager).to receive(:delete_vms).with(no_args).ordered
+
+                expect(job_renderer).to receive(:clean_cache!).ordered
 
                 expect(called_after_block_check).to receive(:call).ordered
 

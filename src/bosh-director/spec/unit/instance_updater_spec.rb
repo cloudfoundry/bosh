@@ -4,7 +4,8 @@ module Bosh::Director
   describe InstanceUpdater do
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
+    let(:job_renderer) { JobRenderer.create }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, job_renderer) }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
     let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }

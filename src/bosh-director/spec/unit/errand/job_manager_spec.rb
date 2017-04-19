@@ -7,6 +7,7 @@ module Bosh::Director
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
         ip_provider: ip_provider,
+        job_renderer: JobRenderer.create,
         skip_drain: skip_drain,
         name: 'fake-deployment'
       }) }
