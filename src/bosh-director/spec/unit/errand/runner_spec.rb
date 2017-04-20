@@ -30,11 +30,11 @@ module Bosh::Director
           index: 0,
           deployment: deployment,
         )
+        vm_model = Models::Vm.make(agent_id: 'agent-id', instance_id: is.id)
         is.add_vm vm_model
         is.active_vm = vm_model
         is
       end
-      let(:vm_model) { Models::Vm.make(agent_id: 'agent-id') }
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
 

@@ -4,16 +4,10 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
-    let(:vm_model) { Models::Vm.make(cid: 'vm-cid') }
-    let(:instance_model) do
-      is = Models::Instance.make(spec: spec)
-      is.add_vm vm_model
-      is.active_vm = vm_model
-      is
-    end
+    let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
+    let(:instance_model) { Models::Instance.make(spec: spec) }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
@@ -65,6 +59,9 @@ module Bosh::Director
       allow(instance).to receive(:current_networks)
       instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
+
+      instance_model.active_vm = vm_model
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
     end
 
     describe '#stop' do

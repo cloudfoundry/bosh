@@ -7,6 +7,8 @@ module Bosh::Director
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
+      db[:deployments] << {name: 'foo'}
+      db[:variable_sets] << {deployment_id: db[:deployments].first[:id], created_at: Time.now}
     end
 
     it 'drops the active_vm_id from instances table' do
@@ -25,7 +27,8 @@ module Bosh::Director
     end
 
     it 'sets all existing vms to be active true' do
-      db[:vms] << {id: 1}
+      db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running'}
+      db[:vms] << {id: 1, instance_id: 1}
 
       DBSpecHelper.migrate(migration_file)
 
@@ -34,8 +37,8 @@ module Bosh::Director
 
     it 'sets active to default to false' do
       DBSpecHelper.migrate(migration_file)
-
-      db[:vms] << {id: 2}
+      db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running'}
+      db[:vms] << {id: 2, instance_id: 1}
 
       expect(db[:vms].first[:active]).to eq(false)
     end

@@ -38,11 +38,9 @@ module Bosh::Director::DeploymentPlan
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
 
-    let(:vm_model) { Bosh::Director::Models::Vm.make() }
     let(:instance_model) do
       instance = Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1')
-      instance.add_vm vm_model
-      instance.active_vm = vm_model
+      Bosh::Director::Models::Vm.make(instance: instance, active: true)
       instance
     end
 

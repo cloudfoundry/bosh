@@ -31,15 +31,13 @@ module Bosh::Director
       let!(:disk) do
         Models::PersistentDisk.make(active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
       end
-      let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid') }
-      let!(:instance) {
-        instance = Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1')
-        instance.add_vm(vm)
-        instance.active_vm = vm
-        instance.save
-      }
+      let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id) }
+      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
       let(:disk_owners) { {'fake-disk-cid' => ['fake-vm-cid']} }
-      before { allow(cloud).to receive(:has_disk).and_return(true) }
+      before do
+        allow(cloud).to receive(:has_disk).and_return(true)
+        instance.active_vm = vm
+      end
 
       context 'when cloud does not have disk' do
         before { allow(cloud).to receive(:has_disk).and_return(false) }
@@ -53,12 +51,7 @@ module Bosh::Director
       end
 
       context 'when instance is ignored' do
-      let!(:instance) {
-        instance = Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1', ignore: true)
-        instance.add_vm(vm)
-        instance.active_vm = vm
-        instance.save
-      }
+      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
 
         it 'does not register missing disk problem' do
           expect(problem_register).to_not receive(:problem_found).with(:missing_disk, disk)

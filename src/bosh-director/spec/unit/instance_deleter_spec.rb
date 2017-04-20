@@ -24,13 +24,8 @@ module Bosh::Director
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }
 
-      let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid') }
-      let(:existing_instance) do
-        instance = Models::Instance.make(deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
-        instance.add_vm existing_vm
-        instance.active_vm = existing_vm
-        instance
-      end
+      let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: existing_instance.id) }
+      let(:existing_instance) { Models::Instance.make(deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5) }
 
       let(:instance_plan) do
         DeploymentPlan::InstancePlan.new(
@@ -55,6 +50,11 @@ module Bosh::Director
       end
 
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+
+      before do
+        existing_instance.active_vm = existing_vm
+        existing_instance.save
+      end
 
       describe 'deleting instances' do
         before do

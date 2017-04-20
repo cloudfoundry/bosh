@@ -29,15 +29,11 @@ module Bosh::Director
     let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid) }
 
     describe '#perform' do
-      let(:vm) { Models::Vm.make(cid: vm_cid) }
-      let!(:instance_model) do
-        instance = Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state)
-        instance.add_vm vm
-        instance.active_vm = vm
-        instance
-      end
+      let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
+      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state) }
 
       before {
+        instance_model.active_vm = vm
         allow(Config).to receive(:current_job).and_return(update_job)
         deployment.add_instance(instance_model)
       }

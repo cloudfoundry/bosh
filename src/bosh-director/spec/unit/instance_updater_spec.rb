@@ -11,10 +11,9 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
     let(:credentials) { {'user' => 'secret'} }
     let(:credentials_json) { JSON.generate(credentials) }
-    let(:vm_model) { Models::Vm.make(agent_id: 'scool', credentials_json: credentials_json) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
-      instance.add_vm vm_model
+      vm_model = Models::Vm.make(agent_id: 'scool', credentials_json: credentials_json, instance_id: instance.id)
       instance.active_vm = vm_model
       instance
     end

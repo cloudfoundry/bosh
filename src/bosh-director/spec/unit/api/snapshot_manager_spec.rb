@@ -15,29 +15,23 @@ module Bosh::Director
       allow(Config).to receive_messages(cloud: cloud)
 
       # instance 1: one disk with two snapshots
-      @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0')
       @instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
-      @instance.add_vm(@vm)
-      @instance.active_vm = @vm
+      @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', instance: @instance, active: true)
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
-      vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1')
       instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
-      instance.add_vm(vm)
-      instance.active_vm = vm
+      vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1', instance: instance, active: true)
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
-      @vm2 = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2')
       @instance2 = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
-      @instance2.add_vm(@vm2)
-      @instance2.active_vm = @vm2
+      @vm2 = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2', instance: @instance2, active: true)
 
       # snapshot from another deployment
       Models::Snapshot.make

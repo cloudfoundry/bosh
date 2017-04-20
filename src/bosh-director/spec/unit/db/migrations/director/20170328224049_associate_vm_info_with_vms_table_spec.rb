@@ -7,11 +7,13 @@ module Bosh::Director
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
+
+      db[:deployments] << {name: 'foo'}
+      db[:variable_sets] << {deployment_id: db[:deployments].first[:id], created_at: Time.now}
     end
 
     it 'should reset vms table' do
       expect(db.table_exists?('vms')).to be_truthy
-      db[:deployments] << {name: 'foo'}
       db[:vms] << {agent_id: 1, deployment_id: db[:deployments].first[:id]}
 
       DBSpecHelper.migrate(migration_file)
@@ -30,14 +32,18 @@ module Bosh::Director
 
     it 'has a unique contraint on the agent_id for the vm table' do
       DBSpecHelper.migrate(migration_file)
-      db[:vms] << {agent_id: 1}
-      expect { db[:vms] << {agent_id: 1} }.to raise_error(Sequel::UniqueConstraintViolation)
+
+      db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running'}
+      db[:vms] << {agent_id: 1, instance_id: 1}
+      expect { db[:vms] << {agent_id: 1, instance_id: 1} }.to raise_error(Sequel::UniqueConstraintViolation)
     end
 
     it 'has a unique contraint on the cid for the vm table' do
       DBSpecHelper.migrate(migration_file)
-      db[:vms] << {cid: 1}
-      expect { db[:vms] << {cid: 1} }.to raise_error(Sequel::UniqueConstraintViolation)
+
+      db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running'}
+      db[:vms] << {cid: 1, instance_id: 1}
+      expect { db[:vms] << {cid: 1, instance_id: 1} }.to raise_error(Sequel::UniqueConstraintViolation)
     end
 
     it 'has a foreign key to the instances table on the instances id for the vm table' do
@@ -45,14 +51,20 @@ module Bosh::Director
       expect { db[:vms] << {instance_id: 999} }.to raise_error(Sequel::ForeignKeyConstraintViolation)
     end
 
+    it 'has a not null constraint on the instances id for the vm table' do
+      DBSpecHelper.migrate(migration_file)
+      expect { db[:vms] << {} }.to raise_error
+    end
+
     it 'defaults the trusted certs sha1 to the sha of an empty string for the vm table' do
       DBSpecHelper.migrate(migration_file)
-      db[:vms] << {agent_id: 1}
+
+      db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running'}
+      db[:vms] << {cid: 1, instance_id: 1}
       expect(db[:vms].all.first[:trusted_certs_sha1]).to eq('da39a3ee5e6b4b0d3255bfef95601890afd80709')
     end
 
     it 'adds foreign key constraint on active_vm_id to instances' do
-      db[:deployments] << {name: 'foo'}
       db[:variable_sets] << {deployment_id: db[:deployments].first[:id], created_at: Time.now}
 
       DBSpecHelper.migrate(migration_file)
@@ -63,7 +75,6 @@ module Bosh::Director
 
     describe 'populating vms table' do
       before do
-        db[:deployments] << {name: 'foo'}
         db[:variable_sets] << {deployment_id: db[:deployments].first[:id], created_at: Time.now}
         db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 99, vm_cid: 100, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: 'some-trusted-cert-sha1'}
         db[:instances] << {id: 2, job: 'blah', index: 1, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 100, vm_cid: 101, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: 'some-trusted-cert-sha1'}
@@ -91,7 +102,6 @@ module Bosh::Director
 
     describe 'backing up important columns' do
       before do
-        db[:deployments] << {name: 'foo'}
         db[:variable_sets] << {deployment_id: db[:deployments].first[:id], created_at: Time.now}
         db[:instances] << {id: 1, job: 'blah', index: 0, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 99, vm_cid: 100, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: 'some-trusted-cert-sha1'}
         db[:instances] << {id: 2, job: 'blah', index: 1, deployment_id: db[:deployments].first[:id], variable_set_id: db[:variable_sets].first[:id], state: 'running', agent_id: 100, vm_cid: 101, credentials_json: '{"foo":"bar"}', trusted_certs_sha1: 'some-trusted-cert-sha1'}

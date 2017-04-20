@@ -8,29 +8,25 @@ module Bosh::Director
     let!(:deployment) { Models::Deployment.make(name: deployment_name) }
     let!(:instance1) do
       is = Models::Instance.make(deployment: deployment)
-      vm = Models::Vm.make
-      is.add_vm vm
+      vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance2) do
       is = Models::Instance.make(deployment: deployment)
-      vm = Models::Vm.make
-      is.add_vm vm
+      vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance3) do
       is = Models::Instance.make(deployment: deployment)
-      vm = Models::Vm.make
-      is.add_vm vm
+      vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance4) do
       is = Models::Instance.make
-      vm = Models::Vm.make
-      is.add_vm vm
+      vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end

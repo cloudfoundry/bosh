@@ -676,12 +676,6 @@ module Bosh::Director
 
           it 'returns a list of instances with vms (vm_cid != nil)' do
             15.times do |i|
-              vm_params = {
-                'agent_id' => "agent-#{i}",
-                'cid' => "cid-#{i}",
-              }
-              vm = Models::Vm.create(vm_params)
-
               instance_params = {
                 'deployment_id' => deployment.id,
                 'job' => "job-#{i}",
@@ -694,8 +688,14 @@ module Bosh::Director
               instance_params['availability_zone'] = "az0" if i == 0
               instance_params['availability_zone'] = "az1" if i == 1
               instance = Models::Instance.create(instance_params)
+              vm_params = {
+                'agent_id' => "agent-#{i}",
+                'cid' => "cid-#{i}",
+                'instance_id' => instance.id,
+              }
+
+              vm = Models::Vm.create(vm_params)
               if i < 8
-                instance.add_vm(vm)
                 instance.active_vm = vm
               end
             end
@@ -722,12 +722,6 @@ module Bosh::Director
           context 'ips' do
             it 'returns instance ip addresses' do
               15.times do |i|
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                }
-                vm = Models::Vm.create(vm_params)
-
                 instance_params = {
                   'deployment_id' => deployment.id,
                   'job' => "job-#{i}",
@@ -740,8 +734,14 @@ module Bosh::Director
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
                 instance = Models::Instance.create(instance_params)
+                vm_params = {
+                  'agent_id' => "agent-#{i}",
+                  'cid' => "cid-#{i}",
+                  'instance_id': instance.id,
+                }
+
+                vm = Models::Vm.create(vm_params)
                 if i < 8
-                  instance.add_vm(vm)
                   instance.active_vm = vm
                 end
 
@@ -774,12 +774,6 @@ module Bosh::Director
 
             it 'returns network spec ip addresses' do
               15.times do |i|
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                }
-                vm = Models::Vm.create(vm_params)
-
                 instance_params = {
                   'deployment_id' => deployment.id,
                   'job' => "job-#{i}",
@@ -793,8 +787,14 @@ module Bosh::Director
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
                 instance = Models::Instance.create(instance_params)
+                vm_params = {
+                  'agent_id' => "agent-#{i}",
+                  'cid' => "cid-#{i}",
+                  'instance_id' => instance.id,
+                }
+
+                vm = Models::Vm.create(vm_params)
                 if i < 8
-                  instance.add_vm(vm)
                   instance.active_vm = vm
                 end
               end

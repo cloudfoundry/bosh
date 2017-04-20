@@ -9,10 +9,10 @@ module Bosh::Director
       let(:instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', instances: [instance_plan, instance_plan]) }
       let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance, agent_client: agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
-      let(:vm) { Models::Vm.make }
+
       let(:instance) do
         instance = Models::Instance.make(state: 'started')
-        instance.add_vm(vm)
+        vm = Models::Vm.make(instance_id: instance.id)
         instance.active_vm = vm
         instance
       end

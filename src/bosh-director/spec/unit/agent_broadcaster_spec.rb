@@ -44,10 +44,8 @@ module Bosh::Director
       end
 
       it 'excludes compilation VMs' do
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0')
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
-        instance.add_vm(active_vm)
-        instance.active_vm = active_vm
+        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance: instance, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new
@@ -57,10 +55,8 @@ module Bosh::Director
       end
 
       it 'includes VMs that need flushing' do
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0')
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
-        instance.add_vm(active_vm)
-        instance.active_vm = active_vm
+        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance: instance, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new

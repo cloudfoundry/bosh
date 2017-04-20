@@ -8,7 +8,7 @@ Sequel.migration do
 
     create_table :vms do
       primary_key :id
-      foreign_key :instance_id, :instances, null: true
+      foreign_key :instance_id, :instances, null: false
       String :agent_id, unique: true
       String :cid, unique: true
       String :credentials_json

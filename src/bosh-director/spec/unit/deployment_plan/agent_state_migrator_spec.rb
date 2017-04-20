@@ -6,13 +6,8 @@ module Bosh::Director
     let(:client) { instance_double(AgentClient) }
     let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
 
-    let(:vm_model) { Models::Vm.make(credentials_json: JSON.generate(credentials), agent_id: 'agent-1') }
-    let(:instance_model) do
-      instance = Models::Instance.make
-      instance.add_vm(vm_model)
-      instance.active_vm = vm_model
-      instance
-    end
+    let!(:vm_model) { Models::Vm.make(credentials_json: JSON.generate(credentials), agent_id: 'agent-1', instance: instance_model, active: true) }
+    let(:instance_model) { Models::Instance.make }
 
     describe '#get_state' do
       before do

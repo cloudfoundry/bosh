@@ -27,11 +27,9 @@ module Bosh::Director
         spec: spec,
         availability_zone: 'az1'
       )
-      instance.add_vm(vm)
-      instance.active_vm = vm
       instance
     end
-    let(:vm) { Models::Vm.make }
+    let!(:vm) { Models::Vm.make(instance: instance, active: true) }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }

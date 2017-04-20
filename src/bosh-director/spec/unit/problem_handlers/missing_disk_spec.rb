@@ -13,10 +13,9 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 
   let(:instance) do
-    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid')
     instance = Bosh::Director::Models::Instance.
       make(job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1')
-    instance.add_vm vm
+    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: instance.id)
     instance.active_vm = vm
     instance.credentials = {'secret' => 'things'}
     instance.save

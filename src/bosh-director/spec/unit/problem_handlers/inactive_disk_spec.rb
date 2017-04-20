@@ -12,17 +12,16 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   before(:each) do
     @agent = double('agent')
 
-    @vm = Bosh::Director::Models::Vm.make
     @instance = Bosh::Director::Models::Instance.make(
       job: 'mysql_node',
       index: 3,
       uuid: '52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7',
       availability_zone: 'az1'
     )
-    @instance.add_vm @vm
+
+    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id)
     @instance.active_vm = @vm
     @instance.update(credentials: {'credentials' => 'json'})
-
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,

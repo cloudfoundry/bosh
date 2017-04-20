@@ -4,26 +4,26 @@ module Bosh::Director
   describe Jobs::VmState do
     def stub_agent_get_state_to_return_state_with_vitals
       expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'job_state' => 'running',
-          'resource_pool' => {},
-          'processes' => [
-            {'name' => 'fake-process-1', 'state' => 'running'},
-            {'name' => 'fake-process-2', 'state' => 'failing'},
-          ],
-          'vitals' => {
-            'load' => ['1', '5', '15'],
-            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
-            'mem' => { 'percent' => 'p', 'kb' => 'k' },
-            'swap' => { 'percent' => 'p', 'kb' => 'k' },
-            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
-          },
-        )
+        'vm_cid' => 'fake-vm-cid',
+        'networks' => {'test' => {'ip' => '1.1.1.1'}},
+        'agent_id' => 'fake-agent-id',
+        'job_state' => 'running',
+        'resource_pool' => {},
+        'processes' => [
+          {'name' => 'fake-process-1', 'state' => 'running'},
+          {'name' => 'fake-process-2', 'state' => 'failing'},
+        ],
+        'vitals' => {
+          'load' => ['1', '5', '15'],
+          'cpu' => {'user' => 'u', 'sys' => 's', 'wait' => 'w'},
+          'mem' => {'percent' => 'p', 'kb' => 'k'},
+          'swap' => {'percent' => 'p', 'kb' => 'k'},
+          'disk' => {'system' => {'percent' => 'p'}, 'ephemeral' => {'percent' => 'p'}},
+        },
+      )
     end
 
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     before do
       @deployment = Models::Deployment.make
       allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
@@ -35,23 +35,23 @@ module Bosh::Director
       let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
-    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id') }
-    let(:instance) do
-      instance = Models::Instance.make(deployment: @deployment)
-      instance.add_vm vm
-      instance.active_vm = vm
-      instance.save
-    end
+    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id) }
+    let(:instance) { Models::Instance.make(deployment: @deployment) }
 
     describe '#perform' do
-      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent) }
+      before do
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent)
+        instance.active_vm = vm
+        instance.save
+      end
+
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
         Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'networks' => {'test' => {'ip' => '1.1.1.1'}},
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
           'resource_pool' => {}
@@ -87,20 +87,12 @@ module Bosh::Director
       end
 
       context "when 'ip_addresses' is empty for instance" do
+        before do
+          instance.spec = {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}}
+          instance.save
+        end
 
         it "returns the ip addresses from 'Models::Instance.apply_spec'" do
-          vm = Models::Vm.make(
-              agent_id: 'fake-agent-id',
-              cid: 'fake-vm-cid',
-          )
-
-          instance = Models::Instance.make(
-              deployment: @deployment,
-              spec: {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}})
-          instance.add_vm vm
-          instance.active_vm = vm
-          instance.save
-
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
           job = Jobs::VmState.new(@deployment.id, 'full')
@@ -126,10 +118,10 @@ module Bosh::Director
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
         expect(status['vitals']['load']).to eq(['1', '5', '15'])
-        expect(status['vitals']['cpu']).to eq({ 'user' => 'u', 'sys' => 's', 'wait' => 'w' })
-        expect(status['vitals']['mem']).to eq({ 'percent' => 'p', 'kb' => 'k' })
-        expect(status['vitals']['swap']).to eq({ 'percent' => 'p', 'kb' => 'k' })
-        expect(status['vitals']['disk']).to eq({ 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } })
+        expect(status['vitals']['cpu']).to eq({'user' => 'u', 'sys' => 's', 'wait' => 'w'})
+        expect(status['vitals']['mem']).to eq({'percent' => 'p', 'kb' => 'k'})
+        expect(status['vitals']['swap']).to eq({'percent' => 'p', 'kb' => 'k'})
+        expect(status['vitals']['disk']).to eq({'system' => {'percent' => 'p'}, 'ephemeral' => {'percent' => 'p'}})
       end
 
       it 'should return DNS A records if they exist' do
@@ -295,8 +287,8 @@ module Bosh::Director
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
-          {'name' => 'fake-process-2', 'state' => 'failing' }])
+        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
+          {'name' => 'fake-process-2', 'state' => 'failing'}])
       end
 
       context 'without vm_cid' do
@@ -343,14 +335,14 @@ module Bosh::Director
 
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'networks' => {'test' => {'ip' => '1.1.1.1'}},
           'agent_id' => 'fake-agent-id',
           'index' => 0,
-          'job' => { 'name' => 'dea' },
+          'job' => {'name' => 'dea'},
           'job_state' => 'running',
           'processes' => [
-            {'name' => 'fake-process-1', 'state' => 'running' },
-            {'name' => 'fake-process-2', 'state' => 'failing' },
+            {'name' => 'fake-process-1', 'state' => 'running'},
+            {'name' => 'fake-process-2', 'state' => 'failing'},
           ],
           'resource_pool' => {}
         )
@@ -366,24 +358,14 @@ module Bosh::Director
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to eq('fake-vm-type')
         expect(status['vitals']).to be_nil
-        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
-          {'name' => 'fake-process-2', 'state' => 'failing' }])
+        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
+          {'name' => 'fake-process-2', 'state' => 'failing'}])
       end
 
       context 'with exclude filter and instances without vms' do
-        before(:each) do
-          vm1 = Models::Vm.make(cid: 'fake-vm-cid')
-          is1 = Models::Instance.make(deployment: @deployment)
-          is1.add_vm vm1
-          is1.active_vm = vm1
-          is1.save
-
-          Models::Instance.make(deployment: @deployment)
-        end
-
         it 'excludes those instances missing vms' do
           allow(agent).to receive(:get_state).with('full').and_return({
-              'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+            'networks' => {'test' => {'ip' => '1.1.1.1'}},
           })
           job = Jobs::VmState.new(@deployment.id, 'full')
 

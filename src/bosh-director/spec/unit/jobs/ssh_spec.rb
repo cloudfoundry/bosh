@@ -23,9 +23,8 @@ module Bosh::Director
     end
 
     before do
-      vm = Models::Vm.make(cid: 'cid')
       is = Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
-      is.add_vm vm
+      vm = Models::Vm.make(cid: 'cid', instance_id: is.id)
       is.active_vm = vm
       Models::Instance.make(job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)

@@ -36,13 +36,8 @@ module Bosh
         instance_group
       end
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
-      let(:vm_model) { Models::Vm.make(cid: 'vm-cid') }
-      let(:instance_model) do
-        is = Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1')
-        is.add_vm vm_model
-        is.active_vm = vm_model
-        is
-      end
+      let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
+      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
             job,
@@ -63,6 +58,8 @@ module Bosh
       end
 
       before do
+        instance_model.active_vm = vm_model
+
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
         allow(cloud_factory).to receive(:default_from_director_config).and_return(cloud)
       end

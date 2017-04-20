@@ -5,10 +5,6 @@ module Bosh::Director
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
     let!(:instance) do
-      vm = Models::Vm.make(
-        agent_id: 'agent-007',
-        cid: vm_cid
-      )
       instance = Models::Instance.make(
         job: manifest['jobs'].first['name'],
         index: 0,
@@ -17,7 +13,12 @@ module Bosh::Director
         cloud_properties_hash: {'foo' => 'bar'},
         spec: spec.merge({env: {'key1' => 'value1'}}),
       )
-      instance.add_vm vm
+      vm = Models::Vm.make(
+        agent_id: 'agent-007',
+        cid: vm_cid,
+        instance_id: instance.id
+      )
+
       instance.active_vm = vm
       instance.save
     end

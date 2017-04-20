@@ -25,8 +25,8 @@ module Bosh::Director
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id)
 
         Models::LocalDnsBlob.all.each { |local_blob| local_blob.delete }
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         is = Models::Instance.make
+        Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: is.id)
         expect { dns_version_converger.update_instances_based_on_strategy }.to_not raise_error
       end
 
@@ -38,8 +38,8 @@ module Bosh::Director
 
       it 'only acts upon instances with a vm' do
         Models::Instance.make
-        Models::Instance.make
-        Models::Vm.make(agent_id: 'abc')
+        is = Models::Instance.make
+        Models::Vm.make(agent_id: 'abc', instance_id: is.id)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
         expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
 
@@ -71,9 +71,8 @@ module Bosh::Director
       end
 
       it 'logs to the provided logger' do
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         instance = Models::Instance.make
-        instance.add_vm vm
+        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id)
         instance.active_vm = vm
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
@@ -91,9 +90,8 @@ module Bosh::Director
       end
 
       it 'logs that there were problems updating the dns record when the response is not successful' do
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         instance = Models::Instance.make
-        instance.add_vm vm
+        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id)
         instance.active_vm = vm
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
@@ -130,10 +128,8 @@ module Bosh::Director
       end
 
       it 'does not update agent dns version if the response was not successful' do
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         is = Models::Instance.make
-        is.add_vm vm
-        is.active_vm = vm
+        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: is.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
           with(credentials, 'abc') do
@@ -152,10 +148,8 @@ module Bosh::Director
       end
 
       it 'updates agents that have stale dns records' do
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         instance = Models::Instance.make
-        instance.add_vm vm
-        instance.active_vm = vm
+        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
           with(instance.credentials, instance.agent_id) do
@@ -192,10 +186,8 @@ module Bosh::Director
 
       it 'updates all instances, even if they are up to date' do
         dns_version_converger_with_selector = DnsVersionConverger.new(logger, 32, DnsVersionConverger::ALL_INSTANCES_WITH_VMS_SELECTOR)
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid')
         instance = Models::Instance.make
-        instance.add_vm vm
-        instance.active_vm = vm
+        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 2)
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
           with(instance.credentials, instance.agent_id) do

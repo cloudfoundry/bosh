@@ -51,14 +51,13 @@ module Bosh::Director
 
       let(:instance1_model) do
         is = Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)
-        is.add_vm vm1_model
+        vm1_model = Models::Vm.make(cid: 'vm_cid1', instance_id: is.id)
         is.active_vm = vm1_model
         is
       end
       let(:instance2_model) do
         Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true, state: 'detached')
       end
-      let(:vm1_model) { Models::Vm.make(cid: 'vm_cid1') }
 
       let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
       let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }

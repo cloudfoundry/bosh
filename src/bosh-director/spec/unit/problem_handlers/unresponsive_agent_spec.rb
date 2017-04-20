@@ -18,10 +18,6 @@ module Bosh::Director
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
 
-      @vm = Models::Vm.make(
-        cid: 'vm-cid',
-        agent_id: 'agent-007'
-      )
 
       @instance = Models::Instance.make(
         job: 'mysql_node',
@@ -31,7 +27,13 @@ module Bosh::Director
         cloud_properties_hash: {'foo' => 'bar'},
         spec: {'networks' => networks},
       )
-      @instance.add_vm @vm
+
+      @vm = Models::Vm.make(
+        cid: 'vm-cid',
+        agent_id: 'agent-007',
+        instance_id: @instance.id
+      )
+
       @instance.active_vm = @vm
       @instance.save
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)

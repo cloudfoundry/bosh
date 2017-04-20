@@ -414,8 +414,7 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha')
-        subject.add_vm vm
+        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha', instance_id: subject.id)
         subject.active_vm = vm
         subject.save
       end

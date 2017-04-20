@@ -42,9 +42,8 @@ module Bosh::Director
       context 'when instance has reference to vm' do
         before do
           deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-          vm = BD::Models::Vm.make(cid: vm_cid)
           is = BD::Models::Instance.make(deployment: deployment, job: 'foo-job', uuid: 'instance_id', index: 0, ignore: true)
-          is.add_vm vm
+          vm = BD::Models::Vm.make(cid: vm_cid, instance_id: is.id)
           is.active_vm = vm
           is.save
         end

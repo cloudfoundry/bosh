@@ -128,9 +128,8 @@ module Bosh::Director::Models
     active      { true }
     disk_cid    { Sham.disk_cid }
     instance    do
-      vm = Vm.make
       is = Instance.make
-      is.add_vm vm
+      vm = Vm.make(instance_id: is.id)
       is.active_vm = vm
     end
   end

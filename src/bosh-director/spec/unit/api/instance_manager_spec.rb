@@ -4,7 +4,7 @@ module Bosh::Director
   describe Api::InstanceManager do
     let(:deployment) { Models:: Deployment.make(name: deployment_name) }
     let(:credentials) { {'foo' => 'bar'} }
-    let(:vm) { Models::Vm.make(agent_id: 'random-id', credentials_json: JSON.generate(credentials)) }
+    let(:vm) { Models::Vm.make(agent_id: 'random-id', credentials_json: JSON.generate(credentials), instance: instance, active: true) }
     let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
     let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
@@ -17,8 +17,6 @@ module Bosh::Director
 
     before do
       allow(JobQueue).to receive(:new).and_return(job_queue)
-      instance.add_vm(vm)
-      instance.active_vm = vm
     end
 
     describe '#fetch_logs' do

@@ -2,10 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::CreateSnapshot do
-    let(:vm) { Models::Vm.make }
     let(:instance) do
       is = Models::Instance.make
-      is.add_vm vm
+      vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end

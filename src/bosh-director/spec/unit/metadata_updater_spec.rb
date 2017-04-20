@@ -6,16 +6,18 @@ describe Bosh::Director::MetadataUpdater do
   subject(:metadata_updater) { described_class.new(director_metadata, logger) }
   let(:director_metadata) { {} }
   let(:vm) {
-    BD::Models::Vm.make(cid: 'fake-vm-cid')
+    BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id)
   }
   let(:instance) {
-    instance = BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
-    instance.add_vm vm
-    instance.active_vm = vm
-    instance.save
+    BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
   }
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
   let(:cloud) { Bosh::Director::Config.cloud }
+
+  before do
+    instance.active_vm = vm
+    instance.save
+  end
 
   describe '.build' do
     it 'returns metadata updater' do
