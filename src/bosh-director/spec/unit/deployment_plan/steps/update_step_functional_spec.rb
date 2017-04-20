@@ -133,11 +133,9 @@ module Bosh::Director::DeploymentPlan::Steps
     before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
-      let(:vm_model) { Bosh::Director::Models::Vm.make(cid: 'vm-cid-1') }
       let(:instance_model) do
         instance = Bosh::Director::Models::Instance.make(deployment: deployment)
-        instance.add_vm(vm_model)
-        instance.active_vm = vm_model
+        Bosh::Director::Models::Vm.make(cid: 'vm-cid-1', instance: instance, active: true)
         instance
       end
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
