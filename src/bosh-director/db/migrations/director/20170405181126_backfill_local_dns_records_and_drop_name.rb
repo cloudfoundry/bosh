@@ -4,6 +4,9 @@ Sequel.migration do
       drop_index(nil, name: 'name_ip_idx')
       drop_column(:name)
       drop_foreign_key :instance_id
+    end
+
+    alter_table :local_dns_records do
       add_foreign_key :instance_id, :instances, :null => true
     end
 
@@ -23,12 +26,12 @@ Sequel.migration do
       networks_json.each do |network_name, network|
         begin
           self[:local_dns_records] << {
-              instance_id: instance[:id],
-              instance_group: instance[:job],
-              az: instance[:availability_zone],
-              network: network_name,
-              deployment: self[:deployments].first(id: instance[:deployment_id])[:name],
-              ip: network['ip'],
+            instance_id: instance[:id],
+            instance_group: instance[:job],
+            az: instance[:availability_zone],
+            network: network_name,
+            deployment: self[:deployments].first(id: instance[:deployment_id])[:name],
+            ip: network['ip'],
           }
         rescue
           next
