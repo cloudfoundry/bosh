@@ -8,12 +8,12 @@ module Bosh::Director
 
     let(:instance_model) do
       Models::Instance.make(
-          uuid: 'uuid',
-          index: 1,
-          deployment: deployment_model,
-          job: 'instance-group-0',
-          availability_zone: 'az1',
-          spec_json: JSON.dump(spec_json),
+        uuid: 'uuid',
+        index: 1,
+        deployment: deployment_model,
+        job: 'instance-group-0',
+        availability_zone: 'az1',
+        spec_json: JSON.dump(spec_json),
       )
     end
 
@@ -29,14 +29,14 @@ module Bosh::Director
     let(:record_0_ip) { '1234' }
     let!(:local_dns_record_0) do
       Models::LocalDnsRecord.create(
-          :ip => record_0_ip,
-          :instance => instance_model,
-          :az => 'az1',
-          :network => 'net-name',
-          :deployment => 'bosh.1',
-          :instance_group => 'instance-group-0',
-          :agent_id => 'some-agent-id',
-          :domain => 'bosh1.tld'
+        :ip => record_0_ip,
+        :instance => instance_model,
+        :az => 'az1',
+        :network => 'net-name',
+        :deployment => 'bosh.1',
+        :instance_group => 'instance-group-0',
+        :agent_id => 'some-agent-id',
+        :domain => 'bosh1.tld'
       )
     end
 
@@ -105,10 +105,10 @@ module Bosh::Director
       context 'when an instance adds a network and ip' do
         let(:spec_json) do
           {
-              'networks' => {
-                  'net-name' => {'ip' => '1234'},
-                  'net-name-2' => {'ip' => '9876'},
-              }
+            'networks' => {
+              'net-name' => {'ip' => '1234'},
+              'net-name-2' => {'ip' => '9876'},
+            }
           }
         end
 
@@ -174,14 +174,14 @@ module Bosh::Director
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
-              :ip => '9876',
-              :instance => instance_model,
-              :az => 'az1',
-              :network => 'net-name-2',
-              :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0',
-              :agent_id => 'some-agent-id',
-              :domain => 'bosh1.tld'
+            :ip => '9876',
+            :instance => instance_model,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :domain => 'bosh1.tld'
           )
         end
 
@@ -208,14 +208,14 @@ module Bosh::Director
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
-              :ip => '9876',
-              :instance => instance_model,
-              :az => 'az1',
-              :network => 'net-name-2',
-              :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0',
-              :agent_id => 'some-agent-id',
-              :domain => 'bosh1.tld'
+            :ip => '9876',
+            :instance => instance_model,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :domain => 'bosh1.tld'
           )
         end
 
@@ -263,7 +263,7 @@ module Bosh::Director
       end
 
       it 'causes the max id to increase when instance deployment changes' do
-        instance_model.update('deployment' =>  Models::Deployment.make(name: 'bosh.2'))
+        instance_model.update('deployment' => Models::Deployment.make(name: 'bosh.2'))
         expect {
           local_dns_repo.update_for_instance(instance_model)
         }.to change { Models::LocalDnsRecord.max(:id) }.by(1)
@@ -311,10 +311,10 @@ module Bosh::Director
       context 'when multiple updates occur' do
         let(:spec_json) do
           {
-              'networks' => {
-                  'net-name' => {'ip' => '1234'},
-                  'net-name-2' => {'ip' => '9876'},
-              }
+            'networks' => {
+              'net-name' => {'ip' => '1234'},
+              'net-name-2' => {'ip' => '9876'},
+            }
           }
         end
 
@@ -413,23 +413,23 @@ module Bosh::Director
       context 'when the spec[ip] is nil' do
         let(:spec_json) do
           {
-              'networks' => {
-                  'net-name' => {'ip' => nil},
-                  'net-name-2' => {'ip' => '9876'},
-              }
+            'networks' => {
+              'net-name' => {'ip' => nil},
+              'net-name-2' => {'ip' => '9876'},
+            }
           }
         end
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
-              :ip => '9876',
-              :instance => instance_model,
-              :az => 'az1',
-              :network => 'net-name-2',
-              :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0',
-              :agent_id => 'some-agent-id',
-              :domain => 'bosh1.tld'
+            :ip => '9876',
+            :instance => instance_model,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :domain => 'bosh1.tld'
           )
         end
 
@@ -456,44 +456,60 @@ module Bosh::Director
           expect(records.first.agent_id).to eq(nil)
         end
       end
-    end
 
+      context 'when doing database operations' do
+        let(:spec_json) { '{}' }
+
+        it 'is transactional' do
+          original_records = Models::LocalDnsRecord.all
+
+          expect(Config.db).to receive(:transaction).and_call_original
+          expect(Models::LocalDnsRecord).to receive(:create).and_raise(RuntimeError, 'everything is broken')
+
+          expect {
+            local_dns_repo.update_for_instance(instance_model)
+          }.to raise_error(RuntimeError, 'everything is broken')
+
+          expect(Models::LocalDnsRecord.all).to eq(original_records)
+        end
+      end
+    end
     context 'delete for instance' do
       context 'when an instance has records' do
         let(:instance_model_too) do
           Models::Instance.make(
-              uuid: 'uuidtoo',
-              index: 2,
-              deployment: deployment_model,
-              job: 'instance-group-whatever',
-              availability_zone: 'az1',
-              spec_json: JSON.dump({'networks' => {'net-name-2' => {'ip' => '9876too'}}}),
+            uuid: 'uuidtoo',
+            index: 2,
+            deployment: deployment_model,
+            job: 'instance-group-whatever',
+            availability_zone: 'az1',
+            spec_json: JSON.dump({'networks' => {'net-name-2' => {'ip' => '9876too'}}}),
           )
         end
 
         let!(:local_dns_record_too) do
           Models::LocalDnsRecord.create(
-              :ip => '9876too',
-              :instance => instance_model_too,
-              :az => 'az1',
-              :network => 'net-name-2',
-              :deployment => 'bosh.1',
-              :instance_group => 'instance-group-whatever',
-              :agent_id => 'some-agent-id',
-              :domain => 'bosh1.tld'
+            :ip => '9876too',
+            :instance => instance_model_too,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-whatever',
+            :agent_id => 'some-agent-id',
+            :domain => 'bosh1.tld'
           )
         end
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
-              :ip => '9876',
-              :instance => instance_model,
-              :az => 'az1',
-              :network => 'net-name-2',
-              :deployment => 'bosh.1',
-              :instance_group => 'instance-group-0',
-              :agent_id => 'some-agent-id',
-              :domain => 'bosh1.tld'
+            :ip => '9876',
+            :instance => instance_model,
+            :az => 'az1',
+            :network => 'net-name-2',
+            :deployment => 'bosh.1',
+            :instance_group => 'instance-group-0',
+            :agent_id => 'some-agent-id',
+            :domain => 'bosh1.tld'
           )
         end
 
@@ -502,8 +518,20 @@ module Bosh::Director
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all).to eq([local_dns_record_too])
         end
 
+        it 'uses a transaction' do
+          original_records = Models::LocalDnsRecord.all
+
+          expect(Models::LocalDnsRecord).to receive(:create).and_raise(RuntimeError, 'everything is broken')
+
+          expect {
+            local_dns_repo.delete_for_instance(instance_model)
+          }.to raise_error(RuntimeError, 'everything is broken')
+
+          expect(Models::LocalDnsRecord.all).to eq(original_records)
+        end
+
         #SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
-        it 'causes the max id to increase', :if => ENV.fetch('DB', 'sqlite') != 'sqlite'  do
+        it 'causes the max id to increase', :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect {
             local_dns_repo.delete_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.max(:id) }.by(1)

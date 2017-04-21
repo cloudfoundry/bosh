@@ -10,16 +10,18 @@ module Bosh::Director
       diff = diff(instance_model)
       @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(diff.obsolete)}, new records: #{dump(diff.missing)}, unmodified records: #{dump(diff.unaffected)}")
 
-      diff.missing.each do |record_hash|
-        insert_new_record(record_hash)
-      end
+      Config.db.transaction do
+        diff.missing.each do |record_hash|
+          insert_new_record(record_hash)
+        end
 
-      diff.obsolete.each do |record_hash|
-        delete_obsolete_local_dns_records(record_hash)
-      end
+        diff.obsolete.each do |record_hash|
+          delete_obsolete_local_dns_records(record_hash)
+        end
 
-      if diff.missing.empty? && !diff.obsolete.empty?
-        insert_tombstone
+        if diff.missing.empty? && !diff.obsolete.empty?
+          insert_tombstone
+        end
       end
     end
 
@@ -37,9 +39,11 @@ module Bosh::Director
     def delete_for_instance(instance_model)
       records = Models::LocalDnsRecord.where(instance_id: instance_model.id).all
       if records.size > 0
-        @logger.debug("Deleting local dns records for '#{instance_model}' records: #{records.map(&:to_hash)}")
-        records.map(&:delete)
-        insert_tombstone
+        Config.db.transaction do
+          @logger.debug("Deleting local dns records for '#{instance_model}' records: #{records.map(&:to_hash)}")
+          records.map(&:delete)
+          insert_tombstone
+        end
       end
     end
 
@@ -53,14 +57,14 @@ module Bosh::Director
         end
 
         {
-            :ip => network_to_ip[:ip],
-            :instance_id => instance_model.id,
-            :az => instance_model.availability_zone,
-            :network => network_to_ip[:name],
-            :deployment => instance_model.deployment.name,
-            :instance_group => instance_model.job,
-            :agent_id => agent_id,
-            :domain => @root_domain
+          :ip => network_to_ip[:ip],
+          :instance_id => instance_model.id,
+          :az => instance_model.availability_zone,
+          :network => network_to_ip[:name],
+          :deployment => instance_model.deployment.name,
+          :instance_group => instance_model.job,
+          :agent_id => agent_id,
+          :domain => @root_domain
         }
       end
     end
