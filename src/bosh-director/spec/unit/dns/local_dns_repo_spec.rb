@@ -384,7 +384,8 @@ module Bosh::Director
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).count).to eq(0)
         end
 
-        it 'causes the max id to increase' do
+        #SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
+        it 'causes the max id to increase', :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect {
             local_dns_repo.update_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.max(:id) }.by(1)
@@ -401,7 +402,8 @@ module Bosh::Director
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).count).to eq(0)
         end
 
-        it 'causes the max id to increase' do
+        #SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
+        it 'causes the max id to increase', :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect {
             local_dns_repo.update_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.max(:id) }.by(1)
@@ -500,7 +502,8 @@ module Bosh::Director
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all).to eq([local_dns_record_too])
         end
 
-        it 'causes the max id to increase' do
+        #SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
+        it 'causes the max id to increase', :if => ENV.fetch('DB', 'sqlite') != 'sqlite'  do
           expect {
             local_dns_repo.delete_for_instance(instance_model)
           }.to change { Models::LocalDnsRecord.max(:id) }.by(1)

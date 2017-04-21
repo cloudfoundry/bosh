@@ -10,16 +10,16 @@ module Bosh::Director
       diff = diff(instance_model)
       @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(diff.obsolete)}, new records: #{dump(diff.missing)}, unmodified records: #{dump(diff.unaffected)}")
 
-      if diff.missing.empty? && !diff.obsolete.empty?
-        insert_tombstone
-      end
-
       diff.missing.each do |record_hash|
         insert_new_record(record_hash)
       end
 
       diff.obsolete.each do |record_hash|
         delete_obsolete_local_dns_records(record_hash)
+      end
+
+      if diff.missing.empty? && !diff.obsolete.empty?
+        insert_tombstone
       end
     end
 
@@ -37,9 +37,9 @@ module Bosh::Director
     def delete_for_instance(instance_model)
       records = Models::LocalDnsRecord.where(instance_id: instance_model.id).all
       if records.size > 0
-        insert_tombstone
         @logger.debug("Deleting local dns records for '#{instance_model}' records: #{records.map(&:to_hash)}")
         records.map(&:delete)
+        insert_tombstone
       end
     end
 

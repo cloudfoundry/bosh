@@ -137,6 +137,27 @@ describe 'local DNS', type: :integration do
     end
   end
 
+  context 'ordering of tombstone deletion' do
+    let(:manifest_deployment) { initial_deployment(2, 1) }
+
+    it 'deploys and downgrades with max_in_flight' do
+      manifest_deployment['jobs'][0]['instances'] = 1
+      deploy_simple_manifest(manifest_hash: manifest_deployment)
+
+      output = bosh_runner.run('task --debug 5')
+      puts output
+
+      logpos = /Deleting local dns records for /.match(output).begin(0)
+      expect(logpos).to be > 0
+
+      deletepos = /DELETE FROM ["`]local_dns_records["`] WHERE ["`]id["`] = 2/.match(output).begin(0)
+      expect(deletepos).to be > logpos
+
+      insertpos = /INSERT INTO ["`]local_dns_records["`] /.match(output).begin(0)
+      expect(insertpos).to be > deletepos
+    end
+  end
+
   def initial_deployment(number_of_instances, max_in_flight=1)
     manifest_deployment = Bosh::Spec::Deployments.test_release_manifest
     manifest_deployment.merge!(
