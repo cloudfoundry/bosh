@@ -69,6 +69,10 @@ module Bosh::Director::DeploymentPlan
         return false unless existing_reservation.network.manual?
 
         desired_reservation.network.subnets.any? do |subnet|
+          if existing_reservation.instance_model.availability_zone != '' && !subnet.availability_zone_names.nil?
+            next unless subnet.availability_zone_names.include?(existing_reservation.instance_model.availability_zone)
+          end
+
           true if subnet.is_reservable?(existing_reservation.ip)
         end
       end
