@@ -117,7 +117,7 @@ module Bosh::Director::ConfigServer
               expect {
                 client.interpolate(raw_hash, variable_set_model, {must_be_absolute_name: true})
               }.to raise_error { |error|
-                expect(error.message).to eq("Names must be absolute path: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
+                expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
               }
             end
           end

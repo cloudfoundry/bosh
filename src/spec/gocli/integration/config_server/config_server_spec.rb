@@ -804,7 +804,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect {
             deploy_from_scratch(no_login: true, include_credentials: false,  env: client_env)
-          }.to raise_error(RuntimeError, /Names must be absolute path: 'addon_release_version_placeholder'/)
+          }.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'addon_release_version_placeholder'/)
         end
       end
 

@@ -12,7 +12,7 @@ module Bosh
 
       attr_reader :commands
 
-      def initialize(options)
+      def initialize(options, context)
         @options = options
 
         @base_dir = options['dir']
@@ -32,7 +32,7 @@ module Bosh
           ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
-        @inputs_recorder = InputsRecorder.new(@base_dir, @logger)
+        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, context)
 
         prepare
       rescue Errno::EACCES
@@ -611,14 +611,15 @@ module Bosh
       end
 
       class InputsRecorder
-        def initialize(base_dir, logger)
+        def initialize(base_dir, logger, context)
           @cpi_inputs_dir = File.join(base_dir, 'cpi_inputs')
           @logger = logger
+          @context = context
         end
 
         def record(method, args)
           FileUtils.mkdir_p(@cpi_inputs_dir)
-          data = {method_name: method, inputs: args}
+          data = {method_name: method, inputs: args, context: @context}
           @logger.debug("Saving input for #{method} <redacted> #{ordered_file_path}")
           File.open(ordered_file_path, 'a') { |f| f.puts(JSON.dump(data)) }
         end
@@ -635,7 +636,7 @@ module Bosh
           result = []
           File.read(ordered_file_path).split("\n").each do |request|
             data = JSON.parse(request)
-            result << CpiInvocation.new(data['method_name'], data['inputs'])
+            result << CpiInvocation.new(data['method_name'], data['inputs'], data['context'])
           end
           result
         end
@@ -680,7 +681,7 @@ module Bosh
         end
       end
 
-      class CpiInvocation < Struct.new(:method_name, :inputs); end
+      class CpiInvocation < Struct.new(:method_name, :inputs, :context); end
     end
   end
 end

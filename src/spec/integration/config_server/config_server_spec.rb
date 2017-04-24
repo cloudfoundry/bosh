@@ -549,7 +549,7 @@ describe 'using director with config server', type: :integration do
 
           expect {
             deploy_from_scratch(no_login: true, env: client_env)
-          }.to raise_error(RuntimeError, /Error 540004: Names must be absolute path: 'addon_release_version_placeholder'/)
+          }.to raise_error(RuntimeError, /Error 540004: Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'addon_release_version_placeholder'/)
         end
       end
     end

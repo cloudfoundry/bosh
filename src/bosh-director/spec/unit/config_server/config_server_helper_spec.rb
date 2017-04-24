@@ -317,7 +317,7 @@ module Bosh::Director::ConfigServer
         it 'raises an error' do
           expect {
             ConfigServerHelper.validate_absolute_names(placeholder_names)
-          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Names must be absolute path: 'test/test', 'smurf'")
+          }.to raise_error(Bosh::Director::ConfigServerIncorrectNameSyntax, "Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'test/test', 'smurf'")
         end
       end
 

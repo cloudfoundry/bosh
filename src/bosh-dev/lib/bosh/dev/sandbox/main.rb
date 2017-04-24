@@ -116,11 +116,10 @@ module Bosh::Dev::Sandbox
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
-      @cpi = Bosh::Clouds::Dummy.new(
+      @cpi = Bosh::Clouds::Dummy.new({
         'dir' => cloud_storage_dir,
         'agent' => {'blobstore' => {}},
-        'nats' => "nats://localhost:#{nats_port}"
-      )
+        'nats' => "nats://localhost:#{nats_port}" }, {})
       reconfigure({})
     end
 

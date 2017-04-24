@@ -375,4 +375,36 @@ describe 'CPI calls', type: :integration do
       end
     end
   end
+
+  describe 'upload simple cpi config' do
+
+    before do
+      cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
+      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
+
+      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+    end
+
+    context 'a cli command that invokes a cpi action' do
+      let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+
+      before do
+        bosh_runner.run("upload-stemcell #{stemcell_filename}")
+      end
+
+      it 'sends CPI config properties as context to the CPI' do
+        invocations = current_sandbox.cpi.invocations
+
+        expect(invocations[0].method_name).to eq('info')
+        expect(invocations[0].inputs).to eq(nil)
+        expect(invocations[0].context).to include({'somekey' => 'someval'})
+
+        expect(invocations[2].method_name).to eq('info')
+        expect(invocations[2].inputs).to eq(nil)
+        expect(invocations[2].context).to include({'somekey2' => 'someval2'})
+      end
+    end
+  end
 end

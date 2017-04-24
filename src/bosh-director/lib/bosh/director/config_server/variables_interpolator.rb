@@ -148,6 +148,20 @@ module Bosh::Director::ConfigServer
       )
     end
 
+    # @param [Hash] cpi_manifest CPI Manifest Hash to be interpolated
+    # @return [Hash] A Deep copy of the interpolated manifest Hash
+    def interpolate_cpi_config(cpi_config)
+      ignored_subtrees = [
+          ['name'],
+          ['type']
+      ]
+      @config_server_client.interpolate(
+          cpi_config,
+          nil,
+          { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
+      )
+    end
+
     private
 
     def get_deployment_by_name(name)

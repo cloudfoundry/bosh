@@ -63,7 +63,7 @@ module Bosh::Director::ConfigServer
       end
 
       quoted_non_absolute_names = non_absolute_names.map {|item| "'#{item}'"}
-      raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Names must be absolute path: ' + quoted_non_absolute_names.join(', ') unless quoted_non_absolute_names.empty?
+      raise Bosh::Director::ConfigServerIncorrectNameSyntax, 'Relative paths are not allowed in this context. The following must be be switched to use absolute paths: ' + quoted_non_absolute_names.join(', ') unless quoted_non_absolute_names.empty?
     end
 
     private_class_method def self.validate_placeholder_name(name)

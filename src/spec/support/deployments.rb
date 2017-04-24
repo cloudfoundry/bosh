@@ -364,6 +364,31 @@ module Bosh::Spec
       cpi_config
     end
 
+    def self.simple_cpi_config_with_variables(exec_path=nil)
+      cpi_config =  {
+          'cpis' => [
+              {
+                  'name' => 'cpi-name1',
+                  'type' => 'cpi-type1',
+                  'properties' => {
+                      'someKeyFoo1' => '((/cpi-someFooVal1-var))',
+                      'someKeyBar1' => '((/cpi-someBarVal1-var))'
+                  }
+              },
+              {
+                  'name' => 'cpi-name2',
+                  'type' => 'cpi-type2',
+                  'properties' => {
+                      'someKeyFoo2' => '((/cpi-someFooVal2-var))',
+                      'someKeyBar2' => '((/cpi-someBarVal2-var))'
+                  }
+              }
+          ]
+      }
+      cpi_config['cpis'].each{|cpi|cpi['exec_path'] = exec_path} unless exec_path.nil?
+      cpi_config
+    end
+
     def self.network(options = {})
       {
         'name' => 'a',

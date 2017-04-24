@@ -219,7 +219,7 @@ describe 'using director with config server', type: :integration do
       it 'errors on deploy' do
         expect {
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
-        }.to raise_error(RuntimeError, /Names must be absolute path: 'z1_cloud_properties'/)
+        }.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'z1_cloud_properties'/)
       end
     end
   end

@@ -51,12 +51,14 @@ begin
   cloud_properties = director_config['cloud']['properties']
   log_buffer = StringIO.new
   cloud_properties['log_buffer'] = log_buffer
-  dummy = Bosh::Clouds::Dummy.new(cloud_properties)
 
   request = JSON.parse($stdin.readline)
 
   command = request['method']
   arguments = request['arguments']
+  context = request['context']
+
+  dummy = Bosh::Clouds::Dummy.new(cloud_properties, context)
 
   result = dummy.send(command, *arguments)
 rescue => e
