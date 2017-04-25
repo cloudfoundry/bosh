@@ -11,7 +11,7 @@ module Bosh::Director
       let(:cloud_config_id) { nil }
       let(:runtime_config_id) { nil }
       let(:options) { {} }
-      let(:deployment_job) { DeploymentPlan::InstanceGroup.new(logger) }
+      let(:deployment_instance_group) { DeploymentPlan::InstanceGroup.new(logger) }
       let(:task) { Models::Task.make(:id => 42, :username => 'user') }
       let(:errand_instance_group) do
         ig = DeploymentPlan::InstanceGroup.new(logger)
@@ -42,8 +42,8 @@ module Bosh::Director
           instance_double(
             DeploymentPlan::Planner,
             name: 'deployment-name',
-            instance_groups: [deployment_job],
-            instance_groups_starting_on_deploy: [deployment_job],
+            instance_groups: [deployment_instance_group],
+            instance_groups_starting_on_deploy: [deployment_instance_group],
             errand_instance_groups: [errand_instance_group],
             job_renderer: job_renderer,
             model: deployment_model
@@ -69,7 +69,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_template_spec_properties) { |properties, _| properties }
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
-          allow(deployment_model).to receive(:current_variables_set).and_return(variable_set)
+          allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
         end
 
@@ -78,26 +78,58 @@ module Bosh::Director
             allow(compile_step).to receive(:perform).ordered
             allow(update_step).to receive(:perform).ordered
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:instance_groups).and_return([deployment_job])
-            allow(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
+            allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
+            allow(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
             allow(notifier).to receive(:send_start_event)
             allow(notifier).to receive(:send_end_event).ordered
           end
 
-          context "when options hash contains 'deploy' key" do
+          context "when it is a 'deploy' action" do
             let(:options) { {'deploy' => true} }
             let(:fixed_time) { Time.now }
+            let(:instance_plan1) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
+            let(:instance_plan2) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
+            let(:instance_plans) { [instance_plan1, instance_plan2] }
+            let(:instance1) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
+            let(:instance2) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
 
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+              allow(deployment_model).to receive(:add_variable_set)
+
+              allow(deployment_instance_group).to receive(:unignored_instance_plans).and_return(instance_plans)
+              allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
+
+              allow(job_renderer).to receive(:render_job_instances)
+              allow(instance_plan1).to receive(:instance).and_return(instance1)
+              allow(instance_plan2).to receive(:instance).and_return(instance2)
+
+              allow(instance1).to receive(:variable_set=)
+              allow(instance2).to receive(:variable_set=)
             end
 
             it 'should create a new variable set for the deployment and mark variable sets' do
               expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time, :writable => true})
+              job.perform
+            end
+
+            it "should set the VariableSet's deployed_successfully field" do
+              expect(variable_set).to receive(:update).with(:deployed_successfully => true)
+              job.perform
+            end
+
+            it 'cleans up old VariableSets' do
+              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
+
+              expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
+              job.perform
+            end
+
+            it 'updates unignored instance plan with current variable set' do
+              expect(deployment_instance_group).to receive(:assign_variable_set).with(variable_set)
+
               job.perform
             end
           end
@@ -107,10 +139,7 @@ module Bosh::Director
 
             it 'should NOT mark new variable set or remove unused variable sets' do
               expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
-
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:mark_new_current_variable_set)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:remove_unused_variable_sets)
+              expect(variable_set).to_not receive(:update).with(:deployed_successfully => true)
 
               job.perform
             end
@@ -128,7 +157,7 @@ module Bosh::Director
         end
 
         context 'when all steps complete' do
-          let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet) }
+          let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet, id: 43) }
 
           before do
             expect(notifier).to receive(:send_start_event).ordered
@@ -137,14 +166,14 @@ module Bosh::Director
             expect(notifier).to receive(:send_end_event).ordered
             allow(job_renderer).to receive(:render_job_instances)
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:instance_groups).and_return([deployment_job])
+            allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
             allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
           end
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
-            expect(job_renderer).to receive(:render_job_instances).with(deployment_job.unignored_instance_plans)
+            expect(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
             expect(job).to_not receive(:run_post_deploys)
 
             job.perform
@@ -194,8 +223,8 @@ module Bosh::Director
               before do
                 allow(variable_set_1).to receive(:update)
                 allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-                allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
-                allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+                allow(variable_set).to receive(:update).with(:deployed_successfully => true)
+                allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
               end
 
               it 'generates the values through config server' do
@@ -249,8 +278,8 @@ module Bosh::Director
             let (:instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
 
             it 'will run post-deploy scripts' do
-              allow(planner).to receive(:instance_groups).and_return([deployment_job])
-              allow(deployment_job).to receive(:did_change).and_return(true)
+              allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
+              allow(deployment_instance_group).to receive(:did_change).and_return(true)
 
               expect(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_deployment)
 
@@ -331,8 +360,7 @@ module Bosh::Director
             let(:options) { {'deploy' => true} }
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-              allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
-              allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+              allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
             end
             it 'should mark variable_set.writable to false' do
               expect(variable_set_1).to receive(:update).with({:writable => false})
@@ -460,7 +488,7 @@ Unable to render instance groups for deployment. Errors are:
           before do
             allow(job_renderer).to receive(:render_job_instances)
             allow(planner).to receive(:instance_models).and_return([])
-            allow(planner).to receive(:instance_groups).and_return([deployment_job])
+            allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
           end
 
           let(:options) { {'dry_run' => true} }

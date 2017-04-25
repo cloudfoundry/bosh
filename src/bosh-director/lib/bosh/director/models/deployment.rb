@@ -59,6 +59,10 @@ module Bosh::Director::Models
     def last_successful_variable_set
       variable_sets_dataset.where(deployed_successfully: true).order(Sequel.desc(:created_at)).limit(1).first
     end
+
+    def cleanup_variable_sets(variable_sets_to_keep)
+      variable_sets_dataset.exclude(:id => variable_sets_to_keep.map(&:id)).delete
+    end
   end
 
   Deployment.plugin :association_dependencies

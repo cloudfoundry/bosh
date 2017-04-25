@@ -87,8 +87,10 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-            # TODO:ConfigServer This class ConfigServer::VariablesHandler is weirdly modifying the instance groups objects. Need to do something about it.
-            ConfigServer::VariablesHandler.update_instance_plans_variable_set_id(deployment_plan.instance_groups, is_deploy_action, current_variable_set)
+            if is_deploy_action
+              update_instance_groups_variable_set(deployment_plan.instance_groups, current_variable_set)
+            end
+
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
 
             if dry_run?
@@ -104,8 +106,8 @@ module Bosh::Director
 
               # only in the case of a deploy should you be cleaning up
               if is_deploy_action
-                ConfigServer::VariablesHandler.mark_new_current_variable_set(deployment_plan.model)
-                ConfigServer::VariablesHandler.remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
+                current_variable_set.update(deployed_successfully: true)
+                remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end
 
               @notifier.send_end_event
@@ -138,6 +140,22 @@ module Bosh::Director
       end
 
       private
+
+      def update_instance_groups_variable_set(instance_groups, current_variable_set)
+        instance_groups.each do |instance_group|
+          instance_group.assign_variable_set(current_variable_set)
+        end
+      end
+
+      def remove_unused_variable_sets(deployment, instance_groups)
+        variable_sets_to_keep = []
+        variable_sets_to_keep << deployment.current_variable_set
+        instance_groups.each do |instance_group|
+          variable_sets_to_keep += instance_group.referenced_variable_sets
+        end
+
+        deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
+      end
 
       def add_event(context = {}, parent_id = nil, error = nil)
         action = @options.fetch('new', false) ? "create" : "update"

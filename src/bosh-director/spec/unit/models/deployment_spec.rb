@@ -137,5 +137,47 @@ tags:
         expect(deployment_2.last_successful_variable_set).to be_nil
       end
     end
+
+    describe '#cleanup_variable_sets' do
+      let(:deployment_1) { Deployment.make(manifest: 'test') }
+      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:time) { Time.now }
+
+      it 'deletes variable sets not referenced in the list provided' do
+        time = Time.now
+
+        dep_1_variable_sets_to_keep = [
+          VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true),
+          VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true),
+          VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true),
+          VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true),
+          VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+        ]
+
+        dep_1_variable_sets_to_be_deleted = [
+          VariableSet.make(id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: true),
+          VariableSet.make(id: 7, deployment: deployment_1, created_at: time + 7, deployed_successfully: true),
+          VariableSet.make(id: 8, deployment: deployment_1, created_at: time + 8, deployed_successfully: true),
+          VariableSet.make(id: 9, deployment: deployment_1, created_at: time + 9, deployed_successfully: false)
+        ]
+
+        dep_2_control_variable_sets = [
+          VariableSet.make(id: 10, deployment: deployment_2, created_at: time + 10, deployed_successfully: false),
+          VariableSet.make(id: 11, deployment: deployment_2, created_at: time + 11, deployed_successfully: true),
+          VariableSet.make(id: 12, deployment: deployment_2, created_at: time + 12, deployed_successfully: false)
+        ]
+
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_1_variable_sets_to_be_deleted + dep_2_control_variable_sets)
+
+        deployment_1.cleanup_variable_sets(dep_1_variable_sets_to_keep)
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_2_control_variable_sets)
+
+        deployment_2.cleanup_variable_sets(dep_2_control_variable_sets)
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_2_control_variable_sets)
+
+        deployment_2.cleanup_variable_sets([])
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep)
+      end
+    end
   end
 end
