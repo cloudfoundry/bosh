@@ -8,6 +8,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Bh9d3uFF6cMjpXUdd6ATTHqiJDM.5vxt`
+  - USN-3265-2: Linux kernel vulnerability
+  - built from 3363.x (06f748ac5fdbd402990c5faa50958cd4f2b7e7ea)
+
 * `NYFb8vmMU.W0.rTc._PoeLpK7QtMKpGh`
   - Periodic bump
   - built from 3363.x (286ff3dc92a2b0c95c6db098a50075ea5c5fa0d5)
@@ -576,6 +580,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+* `t3B8lmHn5Br8T2H2EvxHIZk5r9sNjATa`
+  - USN-3265-2: Linux kernel vulnerability
+  - built from 3363.x (06f748ac5fdbd402990c5faa50958cd4f2b7e7ea)
 
 * `hjnG6AuK0518DCo5jd9eDZyjuWlUxT1g`
   - Periodic bump to include CESA-2017:0933
