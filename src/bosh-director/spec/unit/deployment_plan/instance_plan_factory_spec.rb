@@ -127,7 +127,6 @@ module Bosh::Director
             instance: anything,
             skip_drain: anything,
             recreate_deployment: anything,
-            need_to_fix: anything,
             tags: tags
           )
 

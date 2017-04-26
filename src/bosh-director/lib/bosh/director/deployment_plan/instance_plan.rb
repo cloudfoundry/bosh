@@ -4,16 +4,16 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlan
-        def initialize(attrs)
-          @existing_instance = attrs.fetch(:existing_instance)
-          @desired_instance = attrs.fetch(:desired_instance)
-          @instance = attrs.fetch(:instance)
-          @network_plans = attrs.fetch(:network_plans, [])
-          @skip_drain = attrs.fetch(:skip_drain, false)
-          @recreate_deployment = attrs.fetch(:recreate_deployment, false)
-          @logger = attrs.fetch(:logger, Config.logger)
+        def initialize(existing_instance:, desired_instance:, instance:, network_plans: [], skip_drain: false, recreate_deployment: false, logger: Config.logger, tags: {})
+          @existing_instance = existing_instance
+          @desired_instance = desired_instance
+          @instance = instance
+          @network_plans = network_plans
+          @skip_drain = skip_drain
+          @recreate_deployment = recreate_deployment
+          @logger = logger
+          @tags = tags
           @dns_manager = DnsManagerProvider.create
-          @tags = attrs.fetch(:tags, {})
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags

@@ -38,7 +38,6 @@ module Bosh
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
-            need_to_fix: need_to_fix,
             tags: @tags,
           )
         end

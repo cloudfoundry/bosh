@@ -18,7 +18,6 @@ module Bosh::Director
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
         existing_instance: nil,
         instance: instance,
-        needs_recreate?: false
       )
     end
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
