@@ -36,7 +36,7 @@ module Bosh::Director
           diff_lines << Line.new(1, 'cloud_properties:', nil)
           diff_lines << Line.new(2, 'elbs: [main]', nil)
           diff_lines << Line.new(0, 'variables:', nil)
-          diff_lines << Line.new(0, '- name: ((new-var))', nil)
+          diff_lines << Line.new(0, '- name: new-var', nil)
           diff_lines << Line.new(1, 'type: password', nil)
           diff_lines << Line.new(1, 'default: secret', nil)
           diff_lines << Line.new(0, 'vm_types:', nil)
@@ -59,7 +59,7 @@ module Bosh::Director
             '  cloud_properties:',
             '    elbs: [main]',
             'variables:',
-            '- name: ((new-var))',
+            '- name: new-var',
             '  type: password',
             '  default: secret',
             'vm_types:',
@@ -96,7 +96,7 @@ module Bosh::Director
             '    foo: bar',
             '',
             'variables:',
-            '- name: ((new-var))',
+            '- name: new-var',
             '  type: password',
             '  default: secret',
           ])
