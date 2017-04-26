@@ -636,8 +636,8 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate).with(env_hash, anything).and_return(resolved_env_hash)
-          expect(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(env_hash, anything).and_return(resolved_env_hash)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(cloud_properties)
 
           expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
             expect(env['foo']).to eq('bar')
@@ -681,8 +681,8 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate).with({}, anything).and_return({})
-          expect(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(resolved_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with({}, anything).and_return({})
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(resolved_cloud_properties)
 
           expect(cloud).to receive(:create_vm) do |_, _, cloud_properties, _, _, _|
             expect(cloud_properties['foo']).to eq('bar')

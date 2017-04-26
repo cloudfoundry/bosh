@@ -23,7 +23,7 @@ module Bosh::Director::ConfigServer
 
       template_spec_properties.each do |job_name, job_properties|
         begin
-          interpolated_hash = @config_server_client.interpolate(job_properties, variable_set)
+          interpolated_hash = @config_server_client.interpolate_with_versioning(job_properties, variable_set)
           result[job_name] = interpolated_hash
         rescue Exception => e
           header = "- Unable to render templates for job '#{job_name}'. Errors are:"
@@ -54,7 +54,7 @@ module Bosh::Director::ConfigServer
           begin
             provider_deployment_name = link_spec['deployment_name']
             if provider_deployment_name == consumer_deployment_name
-              interpolated_link_properties = @config_server_client.interpolate(link_spec['properties'], consumer_variable_set)
+              interpolated_link_properties = @config_server_client.interpolate_with_versioning(link_spec['properties'], consumer_variable_set)
               link_spec['properties'] = interpolated_link_properties
             else
               provider_deployment = get_deployment_by_name(provider_deployment_name)
@@ -93,7 +93,7 @@ module Bosh::Director::ConfigServer
 
       deployment_model = get_deployment_by_name(deployment_manifest['name'])
 
-      @config_server_client.interpolate(
+      @config_server_client.interpolate_with_versioning(
         deployment_manifest,
         deployment_model.current_variable_set,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}
@@ -112,7 +112,7 @@ module Bosh::Director::ConfigServer
 
       deployment_model = get_deployment_by_name(deployment_name)
 
-      @config_server_client.interpolate(
+      @config_server_client.interpolate_with_versioning(
         runtime_manifest,
         deployment_model.current_variable_set,
         { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
@@ -133,19 +133,23 @@ module Bosh::Director::ConfigServer
           ['compilation', 'cloud_properties', String]
       ]
 
-      variable_set = nil
-      unless deployment_name.nil?
+      if deployment_name.nil?
+        interpolated_hash = @config_server_client.interpolate(
+          cloud_manifest,
+          { subtrees_to_ignore: ignored_subtrees }
+        )
+      else
         deployment_model = get_deployment_by_name(deployment_name)
         variable_set = deployment_model.current_variable_set
-      end
-
-      # must_be_absolute_name is true because we require all placeholders
-      # in the cloud config to be absolute
-      @config_server_client.interpolate(
+        interpolated_hash = @config_server_client.interpolate_with_versioning(
           cloud_manifest,
           variable_set,
           { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
-      )
+        )
+      end
+
+      interpolated_hash
+
     end
 
     # @param [Hash] cpi_manifest CPI Manifest Hash to be interpolated
@@ -157,8 +161,7 @@ module Bosh::Director::ConfigServer
       ]
       @config_server_client.interpolate(
           cpi_config,
-          nil,
-          { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
+          { subtrees_to_ignore: ignored_subtrees}
       )
     end
 

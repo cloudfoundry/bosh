@@ -10,14 +10,12 @@ module Bosh::Director::ConfigServer
       @logger = logger
     end
 
-    # @param [Hash] raw_hash Hash to be interpolated
-    # @param [VariableSet] variable_set The variable set to use with interpolation.
+    # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
     # @param [Hash] options Additional options
     #   Options include:
     #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
-    #   - 'must_be_absolute_name': [Boolean] Flag to check if all the variables start with '/'
     # @return [Hash] A Deep copy of the interpolated src Hash
-    def interpolate(raw_hash, variable_set = nil, options = {})
+    def interpolate(raw_hash, options = {})
       return raw_hash if raw_hash.nil?
       raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
 
@@ -26,14 +24,30 @@ module Bosh::Director::ConfigServer
       variables_paths = @deep_hash_replacer.variables_path(raw_hash, subtrees_to_ignore)
       variables_list = variables_paths.flat_map { |c| c['variables'] }.uniq
 
-      retrieved_config_server_values =
-      if variable_set.nil?
-        fetch_values_with_latest(variables_list)
-      else
-        must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
-        variable_set = variable_set || @deployment_lookup.by_name(deployment_name).current_variable_set
-        fetch_values_with_deployment(variables_list, variable_set, must_be_absolute_name)
-      end
+      retrieved_config_server_values = fetch_values_with_latest(variables_list)
+
+      @deep_hash_replacer.replace_variables(raw_hash, variables_paths, retrieved_config_server_values)
+    end
+
+    # @param [Hash] raw_hash Hash to be interpolated
+    # @param [VariableSet] variable_set The variable set to use with interpolation.
+    # @param [Hash] options Additional options
+    #   Options include:
+    #   - 'subtrees_to_ignore': [Array] Array of paths that should not be interpolated in src
+    #   - 'must_be_absolute_name': [Boolean] Flag to check if all the variables start with '/'
+    # @return [Hash] A Deep copy of the interpolated src Hash
+    def interpolate_with_versioning(raw_hash, variable_set, options = {})
+      return raw_hash if raw_hash.nil?
+      raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
+      raise "Variable Set cannot be nil." if variable_set.nil?
+
+      subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
+
+      variables_paths = @deep_hash_replacer.variables_path(raw_hash, subtrees_to_ignore)
+      variables_list = variables_paths.flat_map { |c| c['variables'] }.uniq
+
+      must_be_absolute_name = options.fetch(:must_be_absolute_name, false)
+      retrieved_config_server_values = fetch_values_with_deployment(variables_list, variable_set, must_be_absolute_name)
 
       @deep_hash_replacer.replace_variables(raw_hash, variables_paths, retrieved_config_server_values)
     end
@@ -412,7 +426,11 @@ module Bosh::Director::ConfigServer
   end
 
   class DisabledClient
-    def interpolate(src, variable_set = nil, options={})
+    def interpolate(src, options={})
+      Bosh::Common::DeepCopy.copy(src)
+    end
+
+    def interpolate_with_versioning(src, variable_set, options={})
       Bosh::Common::DeepCopy.copy(src)
     end
 

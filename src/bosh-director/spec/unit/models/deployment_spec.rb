@@ -36,7 +36,7 @@ HERE
       end
 
       context 'when tags use variables' do
-        let(:mock_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:mock_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
         let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
 
         let(:manifest) { <<-HERE }
@@ -67,7 +67,7 @@ tags:
         end
 
         it 'substitutes the variables in the tags section' do
-          expect(mock_client).to receive(:interpolate).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
+          expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
           expect(deployment.tags).to eq(interpolated_tags)
         end
       end

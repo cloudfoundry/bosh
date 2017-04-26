@@ -452,7 +452,7 @@ module Bosh::Director
         end
 
         it 'uses the interpolated cloud config' do
-          expect(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
           expect {
@@ -461,7 +461,7 @@ module Bosh::Director
         end
 
         it 'does not save PersistentDisk model with the interpolated cloud config' do
-          allow(config_server_client).to receive(:interpolate).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
           disk_manager.update_persistent_disk(instance_plan)
           expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
         end

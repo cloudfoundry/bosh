@@ -221,7 +221,7 @@ module Bosh::Director
       disk_model = nil
 
       deployment_name = instance_model.deployment.name
-      cloud_properties = @config_server_client.interpolate(Bosh::Common::DeepCopy.copy(disk.cloud_properties), instance_model.variable_set)
+      cloud_properties = @config_server_client.interpolate_with_versioning(Bosh::Common::DeepCopy.copy(disk.cloud_properties), instance_model.variable_set)
 
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
