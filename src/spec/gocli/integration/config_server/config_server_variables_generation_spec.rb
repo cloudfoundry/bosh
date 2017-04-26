@@ -210,6 +210,21 @@ describe 'variable generation with config server', type: :integration do
           expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
         end
 
+        it 'should show changed variables in the diff lines under instance groups' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+          manifest_hash['jobs'][0]['instances'] = 2
+          manifest_hash['variables'][2] = {'name' => 'var_c', 'type' => 'password'}
+          manifest_hash['jobs'][0]['templates'][0]['properties']['gargamel']['color'] = "((var_c))"
+
+          deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: false, redact_diff: true, include_credentials: false, env: client_env)
+
+          expect(deploy_output).to match(/variables:/)
+          expect(deploy_output).to match(/gargamel:/)
+          expect(deploy_output).to match(/- name: var_c/)
+          expect(deploy_output).to match(/type: password/)
+        end
+
         it 'should not regenerate values when calling restart/stop/start/recreate' do
           max_variables_events_count = 2
 

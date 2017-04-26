@@ -28,6 +28,7 @@ module Bosh::Director
       update
       jobs
       addons
+      variables
     )
 
     def order

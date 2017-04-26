@@ -8,12 +8,14 @@ module Bosh::Director
       context 'when simple' do
         before do
           diff_lines << Line.new(0, 'jobs:', nil)
+          diff_lines << Line.new(0, 'variables:', nil)
           diff_lines << Line.new(0, 'azs:', nil)
         end
 
         it 're-orders lines based on desired manifest keys order' do
           expect(diff_lines.map(&:to_s)).to eq([
             'jobs:',
+            'variables:',
             'azs:',
           ])
           diff_lines.order
@@ -21,6 +23,8 @@ module Bosh::Director
             'azs:',
             '',
             'jobs:',
+            '',
+            'variables:'
           ])
         end
       end
@@ -31,6 +35,10 @@ module Bosh::Director
           diff_lines << Line.new(0, '- name: pub-lbs', nil)
           diff_lines << Line.new(1, 'cloud_properties:', nil)
           diff_lines << Line.new(2, 'elbs: [main]', nil)
+          diff_lines << Line.new(0, 'variables:', nil)
+          diff_lines << Line.new(0, '- name: ((new-var))', nil)
+          diff_lines << Line.new(1, 'type: password', nil)
+          diff_lines << Line.new(1, 'default: secret', nil)
           diff_lines << Line.new(0, 'vm_types:', nil)
           diff_lines << Line.new(0, '  - name: default', nil)
           diff_lines << Line.new(1, 'cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}', nil)
@@ -50,6 +58,10 @@ module Bosh::Director
             '- name: pub-lbs',
             '  cloud_properties:',
             '    elbs: [main]',
+            'variables:',
+            '- name: ((new-var))',
+            '  type: password',
+            '  default: secret',
             'vm_types:',
             '  - name: default',
             '  cloud_properties: {instance_type: m1.small, availability_zone: us-east-1c}',
@@ -82,6 +94,11 @@ module Bosh::Director
             '- name: job1',
             '  properties:',
             '    foo: bar',
+            '',
+            'variables:',
+            '- name: ((new-var))',
+            '  type: password',
+            '  default: secret',
           ])
         end
       end
