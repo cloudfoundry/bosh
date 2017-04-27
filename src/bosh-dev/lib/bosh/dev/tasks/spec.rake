@@ -69,6 +69,16 @@ namespace :spec do
       end
     end
 
+    desc 'Download BOSH Agent. Use only for local dev environment'
+    task :download_bosh_agent do
+      trap('INT') { exit }
+      cmd = 'mkdir -p ./go/src/github.com/cloudfoundry && '
+      cmd += 'cd ./go/src/github.com/cloudfoundry && '
+      cmd += 'rm -rf bosh-agent && '
+      cmd += 'git clone https://github.com/cloudfoundry/bosh-agent.git'
+      sh(cmd)
+    end
+
     def install_with_retries(to_install)
       retries = 3
       begin
