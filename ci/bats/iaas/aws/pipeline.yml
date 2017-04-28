@@ -16,13 +16,17 @@ jobs:
           acquire: true
       - do:
         - task: deploy-director
-          file: bosh-src/ci/pipelines/aws-bats/tasks/deploy-director.yml
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
           params:
-            BOSH_access_key_id:     {{aws_access_key__primary}}
-            BOSH_secret_access_key: {{aws_secret_key__primary}}
-            BOSH_region:            {{aws_region__primary}}
+            BAT_INFRASTRUCTURE: aws
+            AWS_ACCESS_KEY_ID:     {{aws_access_key__primary}}
+            AWS_SECRET_ACCESS_KEY: {{aws_secret_key__primary}}
+            AWS_DEFAULT_REGION:    {{aws_region__primary}}
+            AWS_SSH_PRIVATE_KEY:   {{aws_ssh_private_key}}
+            DEPLOY_ARGS: |
+              -o bosh-deployment/external-ip-with-registry-not-recommended.yml
         - task: prepare-bats-config
-          file: bosh-src/ci/pipelines/aws-bats/tasks/prepare-bats-config.yml
+          file: bosh-src/ci/bats/iaas/aws/prepare-bats-config.yml
           params:
             STEMCELL_NAME: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
         - task: run-bats
@@ -30,7 +34,7 @@ jobs:
         ensure:
           do:
           - task: teardown
-            file: bosh-src/ci/pipelines/aws-bats/tasks/destroy-director.yml
+            file: bosh-src/ci/bats/tasks/destroy-director.yml
       ensure:
         do:
         - put: environment
@@ -42,7 +46,7 @@ jobs:
       - get: bosh-src
       - put: terraform
         params:
-          terraform_source: bosh-src/ci/pipelines/aws-bats/assets/terraform
+          terraform_source: bosh-src/ci/bats/iaas/aws/terraform
           delete_on_failure: true
           generate_random_name: true
       - put: environment
@@ -56,14 +60,14 @@ jobs:
         params:
           acquire: true
       - task: ensure-terminated
-        file: bosh-src/ci/pipelines/aws-bats/tasks/ensure-terminated.yml
+        file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
         params:
           AWS_ACCESS_KEY_ID:     {{aws_access_key__primary}}
           AWS_SECRET_ACCESS_KEY: {{aws_secret_key__primary}}
           AWS_DEFAULT_REGION:    {{aws_region__primary}}
       - put: terraform
         params:
-          terraform_source: bosh-src/ci/pipelines/aws-bats/assets/terraform
+          terraform_source: bosh-src/ci/bats/iaas/aws/terraform
           env_name_file: environment/name
           action: destroy
         get_params:
@@ -83,7 +87,7 @@ resources:
     type: s3
     source:
       bucket: {{candidate_release_bucket}}
-      regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" # bosh-257.9+dev.1472844900.tgz
+      versioned_file: bosh-dev-release.tgz
   - name: bosh-src
     type: git
     source:
@@ -108,6 +112,7 @@ resources:
         access_key: {{aws_access_key__primary}}
         secret_key: {{aws_secret_key__primary}}
         region:     {{aws_region__primary}}
+        ssh_public_key: {{aws_ssh_public_key}}
   - name: bosh-cli
     type: s3
     source:

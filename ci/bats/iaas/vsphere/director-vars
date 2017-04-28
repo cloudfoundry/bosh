@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+exec jq '{
+  "internal_cidr": .network1.vCenterCIDR,
+  "internal_gw": .network1.vCenterGateway,
+  "internal_ip": .directorIP,
+  "network_name": env.BOSH_VSPHERE_VCENTER_VLAN,
+  "external_ip": .directorIP,
+  "vcenter_ip": env.BOSH_VSPHERE_VCENTER,
+  "vcenter_user": env.BOSH_VSPHERE_VCENTER_USER,
+  "vcenter_password": env.BOSH_VSPHERE_VCENTER_PASSWORD,
+  "vcenter_dc": env.BOSH_VSPHERE_VCENTER_DC,
+  "vcenter_vms": env.BOSH_VSPHERE_VCENTER_VM_FOLDER,
+  "vcenter_templates": env.BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER,
+  "vcenter_ds": env.BOSH_VSPHERE_VCENTER_DATASTORE,
+  "vcenter_disks": env.BOSH_VSPHERE_VCENTER_DISK_PATH,
+  "vcenter_cluster": env.BOSH_VSPHERE_VCENTER_CLUSTER,
+}' \
+  < environment/metadata

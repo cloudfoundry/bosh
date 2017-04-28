@@ -1,3 +1,5 @@
+variable "ssh_public_key" {}
+
 variable "access_key" {}
 
 variable "secret_key" {}
@@ -49,6 +51,7 @@ resource "aws_subnet" "default" {
   vpc_id = "${aws_vpc.default.id}"
   cidr_block = "${aws_vpc.default.cidr_block}"
   depends_on = ["aws_internet_gateway.default"]
+  availability_zone = "us-east-1a"
 
   tags {
     Name = "${var.env_name}"
@@ -138,6 +141,19 @@ resource "aws_vpc_endpoint" "private-s3" {
 resource "aws_s3_bucket" "blobstore" {
   bucket = "cpi-pipeline-blobstore-${var.env_name}"
   force_destroy = true
+}
+
+resource "aws_key_pair" "main" {
+  key_name   = "${var.env_name}"
+  public_key = "${var.ssh_public_key}"
+}
+
+output "KeyPairPublic" {
+    value = "${aws_key_pair.main.public_key}"
+}
+
+output "KeyPairName" {
+    value = "${aws_key_pair.main.key_name}"
 }
 
 output "VPCID" {

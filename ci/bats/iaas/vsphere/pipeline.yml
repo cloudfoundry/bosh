@@ -1,0 +1,155 @@
+---
+shared:
+  - &deploy-director
+    task: deploy-director
+    tags: [vsphere-v5.1]
+    file: bosh-src/ci/bats/tasks/deploy-director.yml
+    params:
+      BAT_INFRASTRUCTURE: vsphere
+      BOSH_CLIENT:                          {{stemcell-test-director-username}}
+      BOSH_CLIENT_SECRET:                   {{stemcell-test-director-password}}
+      BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
+      BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
+      BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
+      BOSH_VSPHERE_VERSION:                 {{vsphere-version}}
+      BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
+      BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
+      BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
+      BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+
+  - &prepare-bats-config
+    task: prepare-bats
+    tags: [vsphere-v5.1]
+    file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+
+  - &run-bats
+    task: run-bats
+    tags: [vsphere-v5.1]
+    file: bats/ci/tasks/run-bats.yml
+
+  - &teardown
+    task: teardown
+    tags: [vsphere-v5.1]
+    file: bosh-src/ci/bats/tasks/destroy-director.yml
+
+jobs:
+  - name: bats-centos
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+        - get: stemcell
+          resource: centos-stemcell
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-deployment
+        - get: bosh-src
+
+      - put: environment
+        params:
+          acquire: true
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats-config
+          params:
+            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+            - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+  - name: bats-ubuntu
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+        - get: stemcell
+          resource: ubuntu-stemcell
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-deployment
+        - get: bosh-src
+
+      - put: environment
+        params:
+          acquire: true
+
+      - do:
+        - <<: *deploy-director
+
+        - <<: *prepare-bats-config
+          params:
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+        - <<: *run-bats
+        ensure:
+          do:
+          - <<: *teardown
+      ensure:
+        do:
+        - {put: environment, params: {release: environment}}
+
+resources:
+  - name: bosh-candidate-release-tarballs
+    type: s3
+    source:
+      bucket: bosh-candidate-release-tarballs
+      versioned_file: bosh-dev-release.tgz
+
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: gocli-bats
+
+  - name: environment
+    type: pool
+    source:
+      pool: vsphere
+      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+      branch: master
+      private_key: {{github_deployment_key__bosh-cpi-environments}}
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: bosh-cli-([0-9.]+)-linux-amd64
+      bucket: bosh-cli-artifacts
+      region_name: us-east-1
+
+  - name: ubuntu-stemcell
+    type: bosh-io-stemcell
+    source:
+      name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+  - name: centos-stemcell
+    type: bosh-io-stemcell
+    source:
+      name: bosh-vsphere-esxi-centos-7-go_agent
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: gocli-bats
+
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment.git
+      branch: master

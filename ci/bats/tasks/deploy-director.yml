@@ -14,8 +14,12 @@ inputs:
 - name: bosh-release
 - name: stemcell
 
+params:
+  DEPLOY_ARGS: ""
+  BAT_INFRASTRUCTURE: ""
+
 outputs:
 - name: director-state
 
 run:
-  path: bosh-src/ci/pipelines/aws-bats/tasks/deploy-director.sh
+  path: bosh-src/ci/bats/tasks/deploy-director.sh

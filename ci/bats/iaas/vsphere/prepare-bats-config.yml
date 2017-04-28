@@ -11,8 +11,11 @@ inputs:
   - name: environment
   - name: director-state
 
+params:
+  STEMCELL_NAME: null
+
 outputs:
   - name: bats-config
 
 run:
-  path: bosh-src/ci/pipelines/aws-bats/tasks/prepare-bats-config.sh
+  path: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.sh

@@ -11,7 +11,7 @@ inputs:
   - name: environment
 
 run:
-  path: bosh-src/ci/pipelines/aws-bats/tasks/ensure-terminated.sh
+  path: bosh-src/ci/bats/iaas/aws/ensure-terminated.sh
 
 params:
   AWS_ACCESS_KEY_ID:     ""

@@ -11,4 +11,4 @@ inputs:
   - name: bosh-src
 
 run:
-  path: bosh-src/ci/pipelines/aws-bats/tasks/destroy-director.sh
+  path: bosh-src/ci/bats/tasks/destroy-director.sh
