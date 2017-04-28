@@ -22,14 +22,13 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/powerdns.yml \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-src/ci/bats/ops/remove-health-monitor.yml \
+  -o bosh-deployment/local-bosh-release.yml \
   -v dns_recursor_ip=8.8.8.8 \
   -v director_name=bats-director \
+  -v local_bosh_release=$(realpath bosh-release/*.tgz) \
   --vars-file <( bosh-src/ci/bats/iaas/$BAT_INFRASTRUCTURE/director-vars ) \
   $DEPLOY_ARGS \
   > director.yml
- #TODO use compiled release for easier iteration.
-#  -v local_bosh_release=$(realpath bosh-release/*.tgz) \
-#  -o bosh-deployment/local-bosh-release.yml \
 
 bosh-cli create-env \
   --state director-state.json \
