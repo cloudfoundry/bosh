@@ -164,6 +164,22 @@ module Bosh::Spec
       })
     end
 
+    def self.simple_network_specific_cloud_config
+      minimal_cloud_config.merge({
+        'networks' => [
+          {
+            'name' => 'a',
+            'subnets' => [subnet],
+          },
+          {
+            'name' => 'b',
+            'subnets' => [subnet],
+          }
+        ],
+        'resource_pools' => [resource_pool]
+      })
+    end
+
     def self.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config = simple_cloud_config_with_multiple_azs
 
@@ -288,6 +304,18 @@ module Bosh::Spec
             'stemcell' => [
               {'os' => 'toronto-os'}
             ]
+          }
+        ]
+      })
+    end
+
+    def self.runtime_config_with_addon_includes_network
+      runtime_config_with_addon.merge({
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'include' => {
+            'networks' => ["a"]
           }
         ]
       })
@@ -483,6 +511,15 @@ module Bosh::Spec
         'jobs' => [
           simple_job(resource_pool: 'a', name: "has-addon-vm", instances: 1),
           simple_job(resource_pool: 'b', name: "no-addon-vm", instances: 1)
+        ]
+      })
+    end
+
+    def self.network_specific_addon_manifest
+      test_release_manifest.merge({
+        'jobs' => [
+          simple_job(network_name: "a", name: "has-addon-vm", instances: 1),
+          simple_job(network_name: "b", name: "no-addon-vm", instances: 1)
         ]
       })
     end
@@ -845,7 +882,7 @@ module Bosh::Spec
         'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
         'resource_pool' => opts.fetch(:resource_pool, 'a'),
         'instances' => opts.fetch(:instances, 3),
-        'networks' => [{ 'name' => 'a' }],
+        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
         'properties' => {},
       }
 

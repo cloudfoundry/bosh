@@ -32,7 +32,7 @@ describe 'deploy job with addons', type: :integration do
       template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
       expect(template).to include("echo 'prop_value'")
 
-      # deploy Deployement2
+      # deploy Deployment2
       manifest_hash['name'] = 'dep2'
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -58,6 +58,32 @@ describe 'deploy job with addons', type: :integration do
       cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      instances = director.instances
+
+      addon_instance = instances.detect { |instance| instance.job_name == 'has-addon-vm' }
+      expect(File.exist?(addon_instance.job_path('foobar'))).to eq(true)
+      expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
+
+      no_addon_instance = instances.detect { |instance| instance.job_name == 'no-addon-vm' }
+      expect(File.exist?(no_addon_instance.job_path('foobar'))).to eq(true)
+      expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
+    end
+
+    it 'allows addons to be added for specific networks' do
+      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_includes_network)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+
+      cloud_config_hash = Bosh::Spec::Deployments.simple_network_specific_cloud_config
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash = Bosh::Spec::Deployments.network_specific_addon_manifest
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       instances = director.instances

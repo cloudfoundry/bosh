@@ -77,6 +77,25 @@ module Bosh::Director
           end
         end
 
+        describe 'when the filter spec has only a networks section' do
+          let(:filter_hash) { {'networks' => ['net_1', 'net_2']} }
+
+          describe 'when the network name matches one from the include spec' do
+            it 'applies' do
+              allow(instance_group).to receive(:has_network?).with('net_1').and_return(true)
+              expect(addon_include.applies?('anything', instance_group)).to be(true)
+            end
+          end
+
+          describe 'when the network name does not match any from the filter spec' do
+            it 'does not apply' do
+              allow(instance_group).to receive(:has_network?).with('net_1').and_return(false)
+              allow(instance_group).to receive(:has_network?).with('net_2').and_return(false)
+              expect(addon_include.applies?('anything', instance_group)).to be(false)
+            end
+          end
+        end
+
         describe 'when the filter spec has only a jobs section' do
           let(:filter_hash) { {'jobs' => [{'name' => 'job_name', 'release' => 'release_name'}]} }
 
@@ -205,7 +224,7 @@ module Bosh::Director
       describe 'exclude' do
         let (:type) { :exclude }
         describe 'applies?' do
-          describe 'when the include hash is nil' do
+          describe 'when the exclude hash is nil' do
             let(:filter_hash) { nil }
 
             it 'does not apply' do
