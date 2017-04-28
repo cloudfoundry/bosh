@@ -14,7 +14,7 @@ trap cp_artifacts EXIT
 
 : ${BAT_INFRASTRUCTURE:?}
 
-mv bosh-cli/bosh-cli-* /usr/local/bin/bosh-cli
+mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
 bosh-cli interpolate bosh-deployment/bosh.yml \

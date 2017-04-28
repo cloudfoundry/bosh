@@ -790,6 +790,12 @@ resources:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
       branch: gocli-bats
 
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment
+      branch: master
+
   - name: environment
     type: pool
     source:
