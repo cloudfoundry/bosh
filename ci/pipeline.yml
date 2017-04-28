@@ -607,6 +607,7 @@ jobs:
           resource: vsphere-esxi-centos-7
         - get: bosh-cli
         - get: bats
+        - get: bosh-deployment
         - get: bosh-src
           passed:
           - candidate-release
@@ -645,6 +646,7 @@ jobs:
           resource: vsphere-esxi-ubuntu-trusty
         - get: bosh-cli
         - get: bats
+        - get: bosh-deployment
         - get: bosh-src
           passed:
             - candidate-release
