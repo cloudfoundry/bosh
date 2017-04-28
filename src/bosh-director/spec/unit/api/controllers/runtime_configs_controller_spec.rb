@@ -24,6 +24,7 @@ module Bosh::Director
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
 
+          expect(last_response.status).to eq(201)
           expect(Bosh::Director::Models::RuntimeConfig.first.properties).to eq(properties)
         end
 
@@ -51,9 +52,10 @@ module Bosh::Director
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
-          expect(event.object_type).to eq("runtime-config")
-          expect(event.action).to eq("update")
-          expect(event.user).to eq("admin")
+          expect(event.object_type).to eq('runtime-config')
+          expect(event.action).to eq('update')
+          expect(event.user).to eq('admin')
+          expect(event.context).to eq({'name' => ''})
         end
 
         it 'creates a new event with error' do
@@ -61,11 +63,37 @@ module Bosh::Director
             post '/', {}, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
-          expect(event.object_type).to eq("runtime-config")
-          expect(event.action).to eq("update")
-          expect(event.user).to eq("admin")
-          expect(event.error).to eq("Manifest should not be empty")
+          expect(event.object_type).to eq('runtime-config')
+          expect(event.action).to eq('update')
+          expect(event.user).to eq('admin')
+          expect(event.error).to eq('Manifest should not be empty')
+          expect(event.context).to eq({'name' => ''})
+        end
 
+        context 'when a name is passed in via a query param' do
+          let(:path) { '/?name=smurf' }
+
+          it 'creates a new named runtime config' do
+            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+
+            post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(201)
+            expect(Bosh::Director::Models::RuntimeConfig.first.name).to eq('smurf')
+          end
+
+          it 'creates a new event and add name to event context' do
+            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+            expect {
+              post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
+            }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+
+            event = Bosh::Director::Models::Event.first
+            expect(event.object_type).to eq('runtime-config')
+            expect(event.action).to eq('update')
+            expect(event.user).to eq('admin')
+            expect(event.context).to eq({'name' => 'smurf'})
+          end
         end
       end
 
@@ -83,25 +111,28 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'returns the number of runtime configs specified by ?limit' do
-          oldest_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-            properties: "config_from_time_immortal",
-            created_at: Time.now - 3,
-          ).save
-          older_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-            properties: "config_from_last_year",
-            created_at: Time.now - 2,
-          ).save
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'config_value_1').save
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'config_value_2').save
+
           newer_runtime_config_properties = "---\nsuper_shiny: new_config"
-          newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-            properties: newer_runtime_config_properties,
-            created_at: Time.now - 1,
-          ).save
+          Bosh::Director::Models::RuntimeConfig.new(properties: newer_runtime_config_properties).save
 
           get '/?limit=2'
 
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first["properties"]).to eq(newer_runtime_config_properties)
+          expect(JSON.parse(last_response.body).first['properties']).to eq(newer_runtime_config_properties)
+        end
+
+        it 'returns the config with the specified name' do
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config',name: 'smurf').save
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'unnamed_config').save
+
+          get '/?name=smurf&limit=1'
+
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(1)
+          expect(JSON.parse(last_response.body).first['properties']).to eq('named_config')
         end
 
         it 'returns STATUS 400 if limit was not specified or malformed' do

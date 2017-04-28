@@ -62,7 +62,7 @@ describe 'cli: events', type: :integration do
       {'Action' => 'create', 'Object type' => 'vm', 'Object ID' => '-', 'Dep' => 'simple', 'Inst' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'create', 'Object type' => 'instance', 'Object ID' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'create', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
-      {'Action' => 'update', 'Object type' => 'runtime-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'update', 'Object type' => 'runtime-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => 'name:'},
       {'Action' => 'update', 'Object type' => 'cloud-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'start', 'Object type' => 'director', 'Object ID' => 'deadbeef', 'Dep' => '-', 'Inst' => '-', 'Context' => 'version: 0.0.0'},
       {'Action' => 'release', 'Object type'=> 'lock', 'Object ID' => 'lock:deployment:simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},

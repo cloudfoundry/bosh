@@ -4,13 +4,14 @@ module Bosh::Director
   module Api::Controllers
     class RuntimeConfigsController < BaseController
       post '/', :consumes => :yaml do
+        config_name = params['name'].nil? ? '' : params['name']
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
-          Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text)
-          create_event
+          Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
+          create_event({'name' => config_name})
         rescue => e
-          create_event e
+          create_event({'name' => config_name}, e)
           raise e
         end
 
@@ -20,7 +21,7 @@ module Bosh::Director
       get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
-          body("limit is required")
+          body('limit is required')
           return
         end
 
@@ -32,24 +33,29 @@ module Bosh::Director
           return
         end
 
-        runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit)
+        config_name = params['name'].nil? ? '' : params['name']
+
+        runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit, config_name)
+
         json_encode(
             runtime_configs.map do |runtime_config|
             {
-              "properties" => runtime_config.properties,
-              "created_at" => runtime_config.created_at,
+              'properties' => runtime_config.properties,
+              'created_at' => runtime_config.created_at,
             }
         end
         )
       end
 
       private
-      def create_event(error = nil)
+
+      def create_event(context, error = nil)
         @event_manager.create_event({
             user:        current_user,
-            action:      "update",
-            object_type: "runtime-config",
-            error:       error
+            action:      'update',
+            object_type: 'runtime-config',
+            error:       error,
+            context:     context
         })
       end
     end

@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170412205032_add_agent_id_and_domain_name_to_local_dns_records.rb')
+      expect(latest_db_migration_file).to eq('20170427194511_add_runtime_config_name_support.rb')
     end
   end
 end

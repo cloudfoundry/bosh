@@ -64,7 +64,7 @@ describe 'cli: events', type: :integration do
       {'action' => 'create', 'object_type' => 'vm', 'object_id' => '', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'instance', 'object_id' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'deployment', 'object_id' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
-      {'action' => 'update', 'object_type' => 'runtime-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'update', 'object_type' => 'runtime-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => "name: \"\"", 'error' => ''},
       {'action' => 'update', 'object_type' => 'cloud-config', 'object_id' => '', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'start', 'object_type' => 'director', 'object_id' => 'deadbeef', 'deployment' => '', 'instance' => '', 'context' => 'version: 0.0.0',  'error' => ''},
       {'action' => 'release', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_id' =>'lock:deployment:simple', 'object_type'=> 'lock'},
