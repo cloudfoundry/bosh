@@ -317,6 +317,7 @@ properties:
         credentials_source: static # or env_or_profile
         access_key_id: AKIAA1B2C3D4...
         secret_access_key: a1b2c3d4...
+        region: eu-central-1 #us-east-1 by default
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
     default: false
