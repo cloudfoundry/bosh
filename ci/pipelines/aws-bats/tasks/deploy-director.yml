@@ -1,0 +1,21 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: boshcpi/cpi-certification
+
+inputs:
+- name: environment
+- name: bosh-src
+- name: bosh-cli
+- name: bosh-deployment
+- name: bosh-release
+- name: stemcell
+
+outputs:
+- name: director-state
+
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/deploy-director.sh

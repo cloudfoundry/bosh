@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/compiled-release
+
+inputs:
+  - name: bosh-src
+  - name: environment
+  - name: director-state
+
+outputs:
+  - name: bats-config
+
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/prepare-bats-config.sh

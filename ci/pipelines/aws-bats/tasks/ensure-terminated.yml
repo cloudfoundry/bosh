@@ -1,13 +1,18 @@
 ---
 platform: linux
+
 image_resource:
   type: docker-image
-  source: {repository: boshcpi/aws-cpi-release}
+  source:
+    repository: boshcpi/aws-cpi-release
+
 inputs:
   - name: bosh-src
   - name: environment
+
 run:
   path: bosh-src/ci/pipelines/aws-bats/tasks/ensure-terminated.sh
+
 params:
   AWS_ACCESS_KEY_ID:     ""
   AWS_SECRET_ACCESS_KEY: ""

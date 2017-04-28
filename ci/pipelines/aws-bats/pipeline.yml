@@ -1,24 +1,50 @@
 ---
-groups:
-  - name: bosh-aws-ubuntu-bats
-    jobs:
-      - ubuntu-bats
-  - name: environments
-    jobs:
-      - create-environment
-      - destroy-environment
-
 jobs:
+  - name: ubuntu-bats
+    max_in_flight: 3
+    plan:
+    - do:
+      - aggregate:
+        - {get: stemcell,         trigger: true, resource: ubuntu-stemcell}
+        - {get: bosh-release,     trigger: true, resource: bosh-candidate-release-tarballs}
+        - {get: bats,             trigger: false}
+        - {get: bosh-cli,         trigger: false}
+        - {get: bosh-src,         trigger: false}
+        - {get: bosh-deployment,  trigger: false}
+      - put: environment
+        params:
+          acquire: true
+      - do:
+        - task: deploy-director
+          file: bosh-src/ci/pipelines/aws-bats/tasks/deploy-director.yml
+          params:
+            BOSH_access_key_id:     {{aws_access_key__primary}}
+            BOSH_secret_access_key: {{aws_secret_key__primary}}
+            BOSH_region:            {{aws_region__primary}}
+        - task: prepare-bats-config
+          file: bosh-src/ci/pipelines/aws-bats/tasks/prepare-bats-config.yml
+          params:
+            STEMCELL_NAME: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+        - task: run-bats
+          file: bats/ci/tasks/run-bats.yml
+        ensure:
+          do:
+          - task: teardown
+            file: bosh-src/ci/pipelines/aws-bats/tasks/destroy-director.yml
+      ensure:
+        do:
+        - put: environment
+          params:
+            release: environment
+
   - name: create-environment
     plan:
       - get: bosh-src
-
       - put: terraform
         params:
           terraform_source: bosh-src/ci/pipelines/aws-bats/assets/terraform
           delete_on_failure: true
           generate_random_name: true
-
       - put: environment
         params:
           add: terraform
@@ -26,18 +52,15 @@ jobs:
   - name: destroy-environment
     plan:
       - get: bosh-src
-
       - put: environment
         params:
           acquire: true
-
       - task: ensure-terminated
         file: bosh-src/ci/pipelines/aws-bats/tasks/ensure-terminated.yml
         params:
           AWS_ACCESS_KEY_ID:     {{aws_access_key__primary}}
           AWS_SECRET_ACCESS_KEY: {{aws_secret_key__primary}}
           AWS_DEFAULT_REGION:    {{aws_region__primary}}
-
       - put: terraform
         params:
           terraform_source: bosh-src/ci/pipelines/aws-bats/assets/terraform
@@ -45,77 +68,9 @@ jobs:
           action: destroy
         get_params:
           action: destroy
-
       - put: environment
         params:
           remove: environment
-
-  - name: ubuntu-bats
-    max_in_flight: 3
-    plan:
-    - do:
-      - aggregate:
-        - {get: stemcell,      trigger: true, resource: ubuntu-stemcell}
-        - {get: bosh-release,  trigger: true, resource: bosh-candidate-release-tarballs}
-        - {get: cpi-release,   trigger: true}
-        - {get: bats,          trigger: false}
-        - {get: bosh-cli,      trigger: false}
-        - {get: bosh-src,      trigger: false}
-        - {get: certification, trigger: false}
-
-      - put: environment
-        params:
-          acquire: true
-
-      - task: prepare-director
-        file: certification/aws/tasks/prepare-director.yml
-        input_mapping: {pipelines: certification}
-        params:
-            BOSH_CLIENT:            {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_CLIENT_SECRET:     {{BOSH_DIRECTOR_PASSWORD}}
-            AWS_ACCESS_KEY:         {{aws_access_key__primary}}
-            AWS_SECRET_KEY:         {{aws_secret_key__primary}}
-            AWS_REGION_NAME:        {{aws_region__primary}}
-            PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-            PRIVATE_KEY_DATA:       {{bats_pipeline_private_key}}
-
-      - do:
-        - task: deploy-director
-          file: certification/shared/tasks/deploy-director.yml
-          input_mapping: {pipelines: certification}
-          params:
-            BOSH_DIRECTOR_USERNAME: {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_DIRECTOR_PASSWORD: {{BOSH_DIRECTOR_PASSWORD}}
-
-        - task: prepare-manual-bats
-          file: certification/aws/tasks/prepare-manual-bats.yml
-          input_mapping: {pipelines: certification}
-          params:
-            AWS_ACCESS_KEY:         {{aws_access_key__primary}}
-            AWS_SECRET_KEY:         {{aws_secret_key__primary}}
-            AWS_REGION_NAME:        {{aws_region__primary}}
-            BAT_VCAP_PASSWORD:      {{BAT_VCAP_PASSWORD}}
-            PUBLIC_KEY_NAME:        {{bats_pipeline_public_key_name}}
-            BOSH_CLIENT:            {{BOSH_DIRECTOR_USERNAME}}
-            BOSH_CLIENT_SECRET:     {{BOSH_DIRECTOR_PASSWORD}}
-            STEMCELL_NAME:          bosh-aws-xen-hvm-ubuntu-trusty-go_agent
-
-        - task: run-bats
-          file: certification/shared/tasks/run-bats.yml
-          input_mapping: {pipelines: certification}
-
-        ensure:
-          do:
-          - task: teardown
-            file: certification/shared/tasks/teardown.yml
-            input_mapping: {pipelines: certification}
-            params:
-              DEPLOYMENT_NAME:        certification
-      ensure:
-        do:
-        - put: environment
-          params:
-            release: environment
 
 resource_types:
   - name: terraform_type
@@ -129,18 +84,11 @@ resources:
     source:
       bucket: {{candidate_release_bucket}}
       regexp: "bosh.*\\+dev\\.(\\d+)\\.tgz" # bosh-257.9+dev.1472844900.tgz
-
   - name: bosh-src
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: master
-
-  - name: cpi-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry-incubator/bosh-aws-cpi-release
-
+      branch: gocli-bats
   - name: environment
     type: pool
     source:
@@ -148,7 +96,6 @@ resources:
       branch: master
       pool: aws
       private_key: {{github_deployment_key__bosh-bats-environments}}
-
   - name: terraform
     type: terraform_type
     source:
@@ -161,27 +108,23 @@ resources:
         access_key: {{aws_access_key__primary}}
         secret_key: {{aws_secret_key__primary}}
         region:     {{aws_region__primary}}
-
   - name: bosh-cli
     type: s3
     source:
       regexp: bosh-cli-([0-9.]+)-linux-amd64
       bucket: bosh-cli-artifacts
       region_name: us-east-1
-
-  - name: certification
-    type: git
-    source:
-      uri: https://github.com/zaksoup/bosh-cpi-certification
-      branch: master
-
   - name: ubuntu-stemcell
     type: bosh-io-stemcell
     source:
       name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
-
   - name: bats
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: gocli-bats
+  - name: bosh-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-deployment.git
       branch: master
