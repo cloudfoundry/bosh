@@ -660,7 +660,7 @@ jobs:
 
         - <<: *prepare-bats-config
           params:
-            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-trusty-go_agent
 
         - <<: *run-bats
         ensure:
