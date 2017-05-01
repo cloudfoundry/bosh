@@ -1158,7 +1158,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when errand has been run with --keep-alive' do
         it 'immediately updates the errand job' do
-          bosh_runner.run('download-manifest -d simple')
+          bosh_runner.run('manifest -d simple')
 
           bosh_runner.run('run-errand -d simple alive-errand --keep-alive')
 
