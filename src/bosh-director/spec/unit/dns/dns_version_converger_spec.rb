@@ -15,18 +15,20 @@ module Bosh::Director
         version: 2,
         created_at: Time.new)
     end
+    let(:dns_updater) { instance_double(DnsUpdater, update_dns_for_instance: nil) }
 
     before do
       allow(logger).to receive(:info)
+      allow(DnsUpdater).to receive(:new).and_return(dns_updater)
     end
 
     shared_examples_for 'generic converger' do
       it 'no-ops when there are no local dns blobs' do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id)
-
         Models::LocalDnsBlob.all.each { |local_blob| local_blob.delete }
         is = Models::Instance.make
         Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: is.id)
+        expect(dns_updater).to_not receive(:update_dns_for_instance)
+
         expect { dns_version_converger.update_instances_based_on_strategy }.to_not raise_error
       end
 
@@ -36,135 +38,30 @@ module Bosh::Director
         expect(Models::AgentDnsVersion.count).to eq(0)
       end
 
-      it 'only acts upon instances with a vm' do
-        Models::Instance.make
-        is = Models::Instance.make
-        Models::Vm.make(agent_id: 'abc', instance_id: is.id)
-        Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
+      it 'only acts upon instances with an active vm' do
+        no_vm_instance = Models::Instance.make
+        inactive_vm_instance = Models::Instance.make
+        active_vm_instance = Models::Instance.make
+        Models::Vm.make(agent_id: 'abc', instance_id: inactive_vm_instance.id)
+        Models::Vm.make(agent_id: 'abc-123', instance_id: active_vm_instance.id, active: true)
         expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
+        expect(dns_updater).to_not receive(:update_dns_for_instance).with(local_dns_blob, no_vm_instance)
+        expect(dns_updater).to_not receive(:update_dns_for_instance).with(local_dns_blob, inactive_vm_instance)
+        expect(dns_updater).to receive(:update_dns_for_instance).with(local_dns_blob, active_vm_instance)
 
         dns_version_converger.update_instances_based_on_strategy
-
-        expect(Models::AgentDnsVersion.all.length).to eq(1)
-        expect(Models::AgentDnsVersion.all.first.dns_version).to eq(1)
       end
 
-      it 'does not update agent dns version and cancels the nats request if there was no response' do
-        timeout = Timeout.new(3)
-        allow(Timeout).to receive(:new).and_return(timeout)
-        expect(timeout).to receive(:timed_out?).and_return(true)
-
-        instance = Models::Instance.make
-        Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
-
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-          with(instance.credentials, instance.agent_id) do
-          expect(agent_client).to receive(:sync_dns) do |blobstore_id, sha1, version, &blk|
-            expect(agent_client).to receive(:cancel_sync_dns).with('sync-dns-request-id')
-            # block is not called
-            'sync-dns-request-id'
-          end
-          agent_client
-        end
-        dns_version_converger.update_instances_based_on_strategy
-        expect(Models::AgentDnsVersion.count).to eq(0)
-      end
-
-      it 'logs to the provided logger' do
+      it 'logs progress to the provided logger' do
         instance = Models::Instance.make
         vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id)
         instance.active_vm = vm
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
-          expect(agent_client).to receive(:sync_dns) do | _, _, _, &blk|
-            blk.call({'value' => 'synced'})
-          end
-          agent_client
-        end
         expect(logger).to receive(:info).with('Detected 1 instances with outdated dns versions. Current dns version is 2')
         expect(logger).to receive(:info).with("Updating instance '#{instance}' with agent id 'abc' to dns version '2'")
-        expect(logger).to receive(:info).with("Successfully updated instance '#{instance}' with agent id 'abc' to dns version 2. agent sync_dns response: '{\"value\"=>\"synced\"}'")
         expect(logger).to receive(:info).with(/Finished updating instances with latest dns versions. Elapsed time:/)
 
         dns_version_converger.update_instances_based_on_strategy
-      end
-
-      it 'logs that there were problems updating the dns record when the response is not successful' do
-        instance = Models::Instance.make
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id)
-        instance.active_vm = vm
-        Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
-          expect(agent_client).to receive(:sync_dns) do | _, _, _, &blk|
-            blk.call({'value' => 'nope'})
-          end
-          agent_client
-        end
-        expect(logger).to receive(:info).with('Detected 1 instances with outdated dns versions. Current dns version is 2')
-        expect(logger).to receive(:info).with("Updating instance '#{instance}' with agent id 'abc' to dns version '2'")
-        expect(logger).to receive(:info).with("Failed to update instance '#{instance}' with agent id 'abc' to dns version 2. agent sync_dns response: '{\"value\"=>\"nope\"}'")
-        expect(logger).to receive(:info).with(/Finished updating instances with latest dns versions. Elapsed time:/)
-        dns_version_converger.update_instances_based_on_strategy
-      end
-
-      it 'updates agents that have no agent dns record' do
-        instance = Models::Instance.make
-        Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
-
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-          with(credentials, 'abc') do
-          expect(agent_client).to receive(:sync_dns) do |blobstore_id, sha1, version, &blk|
-            expect(blobstore_id).to eq('blob-id')
-            expect(sha1).to eq(blob_sha1)
-            expect(version).to eq(2)
-            blk.call({'value' => 'synced'})
-          end
-          agent_client
-        end
-
-        dns_version_converger.update_instances_based_on_strategy
-
-        expect(Models::AgentDnsVersion.first(agent_id: 'abc').dns_version).to eq(2)
-      end
-
-      it 'does not update agent dns version if the response was not successful' do
-        is = Models::Instance.make
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: is.id, active: true)
-        Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-          with(credentials, 'abc') do
-          expect(agent_client).to receive(:sync_dns) do |blobstore_id, sha1, version, &blk|
-            expect(blobstore_id).to eq('blob-id')
-            expect(sha1).to eq(blob_sha1)
-            expect(version).to eq(2)
-            blk.call({'value' => 'nope'})
-          end
-          agent_client
-        end
-
-        dns_version_converger.update_instances_based_on_strategy
-
-        expect(Models::AgentDnsVersion.first(agent_id: 'abc').dns_version).to eq(1)
-      end
-
-      it 'updates agents that have stale dns records' do
-        instance = Models::Instance.make
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
-        Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-          with(instance.credentials, instance.agent_id) do
-          expect(agent_client).to receive(:sync_dns) do |blobstore_id, sha1, version, &blk|
-            expect(blobstore_id).to eq('blob-id')
-            expect(sha1).to eq(blob_sha1)
-            expect(version).to eq(2)
-            blk.call({'value' => 'synced'})
-          end
-          agent_client
-        end
-
-        dns_version_converger.update_instances_based_on_strategy
-
-        expect(Models::AgentDnsVersion.first(agent_id: 'abc').dns_version).to eq(2)
       end
     end
 
@@ -175,7 +72,7 @@ module Bosh::Director
         instance = Models::Instance.make
         Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 2)
-        expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
+        expect(dns_updater).to_not receive(:update_dns_for_instance)
 
         dns_version_converger.update_instances_based_on_strategy
       end
@@ -187,18 +84,9 @@ module Bosh::Director
       it 'updates all instances, even if they are up to date' do
         dns_version_converger_with_selector = DnsVersionConverger.new(logger, 32, DnsVersionConverger::ALL_INSTANCES_WITH_VMS_SELECTOR)
         instance = Models::Instance.make
-        vm = Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
+        Models::Vm.make(agent_id: 'abc', credentials_json: credentials_json, cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 2)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-          with(instance.credentials, instance.agent_id) do
-          expect(agent_client).to receive(:sync_dns) do |blobstore_id, sha1, version, &blk|
-            expect(blobstore_id).to eq('blob-id')
-            expect(sha1).to eq(blob_sha1)
-            expect(version).to eq(2)
-            blk.call({'value' => 'synced'})
-          end
-          agent_client
-        end
+        expect(dns_updater).to receive(:update_dns_for_instance).with(local_dns_blob, instance)
 
         dns_version_converger_with_selector.update_instances_based_on_strategy
       end
