@@ -9,14 +9,15 @@ module Bosh::Director
       @logger = Config.logger
       @local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
 
-      blobstore_provider = lambda { App.instance.blobstores.blobstore }
-      agent_broadcaster = AgentBroadcaster.new
-      @dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, Config.root_domain, agent_broadcaster, @logger)
+      @dns_publisher = BlobstoreDnsPublisher.new(
+        lambda { App.instance.blobstores.blobstore },
+        Config.root_domain,
+        AgentBroadcaster.new,
+        @logger)
 
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
       @virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
-
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)

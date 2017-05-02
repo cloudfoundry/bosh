@@ -142,23 +142,21 @@ module Bosh
         end
 
         def dns_changed?
-          changed = false
+          power_dns_changed = false
 
           if @dns_manager.dns_enabled?
-            changed = network_settings.dns_record_info.any? do |name, ip|
+            power_dns_changed = network_settings.dns_record_info.any? do |name, ip|
               not_found = @dns_manager.find_dns_record(name, ip).nil?
               @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
               not_found
             end
           end
 
-          if !changed && Config.local_dns_enabled?
-            changed = LocalDnsRepo.new(@logger, Config.root_domain).diff(instance_model).changes?
-            @logger.debug("#{__method__} The requested dns record with for instance #{instance_model} has changed.") if changed
-            # use log_changes method instead, for better and more consistent debug
+          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(instance_model)
+          if diff.changes?
+            log_changes(:local_dns_changed?, diff.obsolete + diff.unaffected, diff.unaffected + diff.missing, instance)
           end
-
-          changed
+          power_dns_changed || diff.changes?
         end
 
         def configuration_changed?

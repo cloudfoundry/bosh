@@ -13,9 +13,10 @@ module Bosh::Director::DeploymentPlan
         bootstrap: true,
         deployment: deployment_model,
         spec: spec,
-        variable_set: variable_set_model
+        variable_set: variable_set_model,
+        job: 'instance-group-name'
       )
-      BD::Models::Vm.make(instance: instance_model, active: true)
+      BD::Models::Vm.make(instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
       instance_model
     end
     let(:spec) do
@@ -746,24 +747,27 @@ module Bosh::Director::DeploymentPlan
           existing_instance.spec = new_spec
         end
 
-        describe 'when the index dns record for the instance is not found and local_dns is not enabled' do
+        describe 'when the index dns record for the instance is not found' do
+          let(:changed_instance) { BD::Models::Instance.all.last }
+
           it '#dns_changed? should return true' do
             expect(instance_plan.dns_changed?).to be(true)
           end
 
           it 'should log the dns changes' do
             expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
             instance_plan.dns_changed?
           end
         end
 
-        describe 'when the index dns record for the instance is not found and local_dns is enabled' do
-          let!(:local_dns_record) { Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: 'dummy-ip') }
-
+        describe 'when the uuid and index dns record for the instance is found, but the local dns record has changed' do
           before do
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: 'dummy-ip')
             BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
             BD::Models::Dns::Record.create(:name => 'fake-uuid-1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
             allow(BD::Config).to receive(:local_dns_enabled?).and_return(true)
+            allow(logger).to receive(:debug)
           end
 
           it '#dns_changed? should return true' do
@@ -771,16 +775,17 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with for instance #{instance_model} has changed.")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
             instance_plan.dns_changed?
           end
         end
 
         describe 'when the id dns record for the instance is not found' do
-          let(:uuid) { BD::Models::Instance.all.last }
+          let(:changed_instance) { BD::Models::Instance.all.last }
 
           before do
-            BD::Models::Dns::Record.create(:name => "#{uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: '192.168.1.3', deployment: 'simple', network: 'a', instance_group: 'instance-group-name', agent_id: 'active-vm-agent-id', domain: 'bosh')
+            BD::Models::Dns::Record.create(:name => "#{changed_instance}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return true' do
@@ -795,6 +800,7 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the dns records for the instance are found' do
           before do
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: '192.168.1.3', deployment: 'simple', network: 'a', instance_group: 'instance-group-name', agent_id: 'active-vm-agent-id', domain: 'bosh')
             BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
             BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end
