@@ -153,8 +153,9 @@ module Bosh
           end
 
           if !changed && Config.local_dns_enabled?
-            changed = @dns_manager.find_local_dns_record(instance_model).empty? # @todo fix (if local_dns_index is enabled at a later stage)
-            # @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+            changed = LocalDnsRepo.new(@logger, Config.root_domain).diff(instance_model).changes?
+            @logger.debug("#{__method__} The requested dns record with for instance #{instance_model} has changed.") if changed
+            # use log_changes method instead, for better and more consistent debug
           end
 
           changed

@@ -18,7 +18,6 @@ module Bosh::Director
       instance
     end
     let(:instance_model_state) { 'started' }
-    let(:dns_manager) { DnsManagerProvider.create }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
@@ -102,15 +101,18 @@ module Bosh::Director
       context 'when instance is currently started' do
         let(:instance_model_state) { 'started' }
 
-        it 'drains, stops, snapshots, and persists rendered templates to the blobstore' do
+        it 'drains, stops, snapshots, and persists rendered templates to the blobstore but leaves DNS records unchanged' do
           expect(Api::SnapshotManager).to receive(:take_snapshot)
           expect(agent_client).not_to receive(:apply)
           expect(agent_client).to receive(:stop)
           expect(agent_client).to receive(:drain).and_return(0.1)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
 
+          instance_model.update(dns_record_names: ['old.dns.record'])
+
           updater.update(instance_plan)
           expect(instance_model.state).to eq('stopped')
+          expect(instance_model.dns_record_names).to eq ['old.dns.record']
           expect(instance_model.update_completed).to eq true
           expect(Models::Event.count).to eq 2
         end
@@ -157,7 +159,7 @@ module Bosh::Director
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
         before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
 
-        it 'does NOT drain, stop, snapshot, but persists rendered templates to the blobstore' do
+        it 'does NOT drain, stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
           # https://www.pivotaltracker.com/story/show/121721619
           expect(Api::SnapshotManager).to_not receive(:take_snapshot)
           expect(agent_client).to_not receive(:stop)
@@ -170,9 +172,21 @@ module Bosh::Director
           expect(state_applier).to receive(:apply)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
 
+          subnet_spec = {
+            'range' => '10.10.10.0/24',
+            'gateway' => '10.10.10.1',
+          }
+          subnet = DeploymentPlan::ManualNetworkSubnet.parse('my-network', subnet_spec, ['az-1'], [])
+          network = DeploymentPlan::ManualNetwork.new('my-network', [subnet], logger)
+          reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
+          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
+
+          instance_model.update(dns_record_names: ['old.dns.record'])
+
           updater.update(instance_plan)
 
           expect(instance_model.update_completed).to eq true
+          expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
           expect(Models::Event.count).to eq 2
           expect(Models::Event.all[1].error).to be_nil
         end
@@ -200,7 +214,6 @@ module Bosh::Director
     context 'when changing DNS' do
       before do
         allow(instance_plan).to receive(:changes).and_return([:dns])
-        allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
       end
 
       it 'should exit early without interacting at all with the agent, and does NOT persist rendered templates to the blobstore' do
@@ -209,8 +222,6 @@ module Bosh::Director
         expect(Models::Event.count).to eq 0
 
         expect(AgentClient).not_to receive(:with_vm_credentials_and_agent_id)
-
-        expect(dns_manager).to receive(:publish_dns_records).twice
 
         subnet_spec = {
           'range' => '10.10.10.0/24',

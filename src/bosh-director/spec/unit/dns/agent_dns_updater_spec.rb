@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DnsUpdater do
-    subject(:dns_updater) { DnsUpdater.new(logger) }
+  describe AgentDnsUpdater do
+    subject(:dns_updater) { AgentDnsUpdater.new(logger) }
     let(:agent_client) { double(AgentClient) }
     let(:credentials) { {'creds' => 'hash'} }
     let(:credentials_json) { JSON.generate(credentials) }

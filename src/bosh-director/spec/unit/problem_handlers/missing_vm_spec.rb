@@ -4,6 +4,8 @@ module Bosh::Director
   describe ProblemHandlers::MissingVM do
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
+    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+
     let!(:instance) do
       instance = Models::Instance.make(
         job: manifest['jobs'].first['name'],
@@ -72,6 +74,12 @@ module Bosh::Director
     describe 'Resolutions:' do
       let(:fake_cloud) { instance_double('Bosh::Cloud') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
+
+      before do
+        allow(fake_new_agent).to receive(:sync_dns) do |_,_,_,&blk|
+          blk.call({'value' => 'synced'})
+        end.and_return(0)
+      end
 
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')

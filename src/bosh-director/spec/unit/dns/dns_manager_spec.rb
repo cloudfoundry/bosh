@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsManager do
-    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, dns_publisher, local_dns_repo, logger) }
+    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, logger) }
 
     let(:instance_model) do
       Models::Instance.make(
@@ -19,10 +19,7 @@ module Bosh::Director
     let(:dns_config) { {} }
     let(:dns_provider) { nil }
     let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
-    let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-    let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name', agent_broadcaster, logger) }
     let(:root_domain) { 'bosh1.tld' }
-    let(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
 
     describe '#flush_dns_cache' do
       let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
@@ -59,47 +56,6 @@ module Bosh::Director
         it 'calls nothing on the dns_publisher' do
           dns_manager.flush_dns_cache
         end
-      end
-    end
-
-    describe '#publish_dns_records' do
-      context 'when dns_publisher is disabled' do
-        it 'calls nothing on the dns_publisher' do
-          dns_manager.flush_dns_cache
-        end
-      end
-    end
-
-    describe '#cleanup_dns_records' do
-      context 'when dns_publisher is enabled' do
-        let!(:old_local_dns_blob) do
-          Models::LocalDnsBlob.create(
-              sha1: 'old-sha1',
-              blobstore_id: 'old-id',
-              version: 1,
-              created_at: Time.new(2016, 10, 31)
-          )
-        end
-
-        let!(:latest_local_dns_blob) do
-          Models::LocalDnsBlob.create(
-              sha1: 'latest-sha1',
-              blobstore_id: 'latest-id',
-              version: 2,
-              created_at: Time.new(2016, 11, 31)
-          )
-        end
-
-        it 'deletes all local dns blobs except the most recent version' do
-          dns_manager.cleanup_dns_records
-          expect(Models::LocalDnsBlob.all).to contain_exactly(latest_local_dns_blob)
-        end
-      end
-
-      it 'does not delete any blobs' do
-        expect{
-          dns_manager.cleanup_dns_records
-        }.to_not change { Models::LocalDnsBlob.count }
       end
     end
 
@@ -159,20 +115,6 @@ module Bosh::Director
             expect(dns_provider.find_dns_record('0.job-a.network-a.dep.bosh', '1.2.3.4')).to be_nil
           end
         end
-
-        context 'local dns records' do
-          before do
-            Models::LocalDnsRecord.create(
-                                      ip: 'ip-addr',
-                                      instance_id: instance_model.id
-            )
-          end
-
-          it 'deletes the local dns records' do
-            dns_manager.delete_dns_for_instance(instance_model)
-            expect(Models::LocalDnsRecord.where(instance_id: instance_model.id).all).to be_empty
-          end
-        end
       end
 
       describe '#configure_nameserver' do
@@ -197,16 +139,6 @@ module Bosh::Director
         before do
           instance_model.update(availability_zone: 'az1')
           dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
-        end
-
-        it 'updates local dns records' do
-          expect(Models::LocalDnsRecord.where(instance_id: instance_model.id).count).to eq(1)
-          local_dns_record = Models::LocalDnsRecord.where(instance_id: instance_model.id).first
-          expect(local_dns_record.ip).to eq('1234')
-          expect(local_dns_record.az).to eq('az1')
-          expect(local_dns_record.network).to eq('net-name')
-          expect(local_dns_record.deployment).to eq('bosh.1')
-          expect(local_dns_record.instance_group).to eq('job-a')
         end
 
         it 'updates dns records for instance in database' do
@@ -333,18 +265,6 @@ module Bosh::Director
             expect(Models::Dns::Record.all.count).to eq(0)
           end
         end
-      end
-    end
-
-    describe 'find_local_dns_record' do
-      let(:spec_json) { '{"networks":{"name":{"ip":"1234"}},"job":{"name":"job_name"},"deployment":"bosh"}' }
-
-      before do
-        subject.update_dns_record_for_instance(instance_model, {})
-      end
-
-      it 'should call create_or_delete_local_dns_record to add UUID and Index based DNS record' do
-        expect(subject.find_local_dns_record(instance_model)).to eq(Models::LocalDnsRecord.where(instance_id: instance_model.id).all)
       end
     end
   end

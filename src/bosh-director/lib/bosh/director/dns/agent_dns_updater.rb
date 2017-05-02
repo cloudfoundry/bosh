@@ -1,5 +1,5 @@
 module Bosh::Director
-  class DnsUpdater
+  class AgentDnsUpdater
     def initialize(logger)
       @logger = logger
     end

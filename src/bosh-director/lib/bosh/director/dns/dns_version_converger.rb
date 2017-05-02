@@ -37,7 +37,7 @@ module Bosh::Director
       instances = @instances_strategy.call(dns_blob.version, @logger)
       @logger.info("Detected #{instances.count} instances with outdated dns versions. Current dns version is #{dns_blob.version}")
 
-      dns_updater = DnsUpdater.new(@logger)
+      dns_updater = AgentDnsUpdater.new(@logger)
       ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
         instances.each do |instance|
           @logger.info("Updating instance '#{instance}' with agent id '#{instance.agent_id}' to dns version '#{dns_blob.version}'")

@@ -217,6 +217,7 @@ module Bosh::Director::Models
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
     created_at   { Time.new }
+    version      { 1 }
   end
 
   LocalDnsRecord.blueprint do

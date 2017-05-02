@@ -7,6 +7,12 @@ module Bosh::Director
       @dns_manager = dns_manager
       @disk_manager = disk_manager
       @logger = Config.logger
+      @local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
+
+      blobstore_provider = lambda { App.instance.blobstores.blobstore }
+      agent_broadcaster = AgentBroadcaster.new
+      @dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, Config.root_domain, agent_broadcaster, @logger)
+
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
       @virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
@@ -35,11 +41,15 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.publish_dns_records
+            @local_dns_repo.delete_for_instance(instance_model)
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.cleanup_dns_records
+            @dns_publisher.publish_and_broadcast
+          end
+
+          error_ignorer.with_force_check do
+            @dns_publisher.cleanup_blobs
           end
 
           error_ignorer.with_force_check do

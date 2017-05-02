@@ -67,6 +67,13 @@ module Bosh::Director
       )
 
       dns_manager = DnsManagerProvider.create
+      dns_publisher = BlobstoreDnsPublisher.new(
+        lambda { App.instance.blobstores.blobstore },
+        Config.root_domain,
+        AgentBroadcaster.new,
+        @logger
+      )
+      local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
       dns_names_to_ip = {}
 
       root_domain = Config.root_domain
@@ -94,7 +101,10 @@ module Bosh::Director
 
       @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
       dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
+      local_dns_repo.update_for_instance(instance_model)
+
       dns_manager.flush_dns_cache
+      dns_publisher.publish_and_broadcast
 
       cloud_check_procedure = lambda do
         blobstore_client = App.instance.blobstores.blobstore
@@ -131,8 +141,8 @@ module Bosh::Director
       # it is not a problem, since all interactions with cpi go over cloud factory (which uses only az name)
       # but still, it is ugly and dangerous...
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone,
-                                                               instance_model.cloud_properties_hash,
-                                                               nil)
+        instance_model.cloud_properties_hash,
+        nil)
 
       instance_from_model = DeploymentPlan::Instance.new(
         instance_model.job,
@@ -165,7 +175,7 @@ module Bosh::Director
     def agent_client(vm_credentials, agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         :timeout => timeout,
-        :retry_methods => { :get_state => retries }
+        :retry_methods => {:get_state => retries}
       }
       @clients ||= {}
       @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options)

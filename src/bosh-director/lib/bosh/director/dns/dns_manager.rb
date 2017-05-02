@@ -7,26 +7,19 @@ module Bosh::Director
       root_domain = Config.root_domain
 
       dns_provider = PowerDns.new(root_domain, logger) if !!Config.dns_db
-
-      blobstore_provider = lambda { App.instance.blobstores.blobstore }
-      agent_broadcaster = AgentBroadcaster.new
-      dns_publisher = BlobstoreDnsPublisher.new(blobstore_provider, root_domain, agent_broadcaster, logger)
-      local_dns_repo = LocalDnsRepo.new(logger, root_domain)
-      DnsManager.new(root_domain, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
+      DnsManager.new(root_domain, dns_config, dns_provider, logger)
     end
   end
 
   class DnsManager
     attr_reader :root_domain
 
-    def initialize(root_domain, dns_config, dns_provider, dns_publisher, local_dns_repo, logger)
+    def initialize(root_domain, dns_config, dns_provider, logger)
       @root_domain = root_domain
       @dns_provider = dns_provider
-      @dns_publisher = dns_publisher
       @flush_command = dns_config['flush_command']
       @ip_address = dns_config['address']
       @logger = logger
-      @local_dns_repo = local_dns_repo
     end
 
     def dns_enabled?
@@ -53,7 +46,6 @@ module Bosh::Director
       end
       dns_records = (current_dns_records + new_dns_records).uniq
       instance_model.update(dns_record_names: dns_records)
-      @local_dns_repo.update_for_instance(instance_model)
     end
 
     def migrate_legacy_records(instance_model)
@@ -103,7 +95,6 @@ module Bosh::Director
       end
 
       instance_model.update(dns_record_names: [])
-      @local_dns_repo.delete_for_instance(instance_model)
     end
 
     # Purge cached DNS records
@@ -116,41 +107,10 @@ module Bosh::Director
           @logger.warn("Failed to flush DNS cache: #{stderr.chomp}")
         end
       end
-      publish_dns_records
-    end
-
-    def publish_dns_records
-      @dns_publisher.publish_and_broadcast
-    end
-
-    def cleanup_dns_records
-      @dns_publisher.cleanup_blobs
     end
 
     def find_dns_record_names_by_instance(instance_model)
       instance_model.nil? ? [] : instance_model.dns_record_names.to_a.compact
-    end
-
-    def find_local_dns_record(instance_model)
-      @logger.debug('Find local dns records')
-      with_valid_instance_spec_in_transaction(instance_model) do |ip, network_name|
-        @logger.debug("Finding local dns record with ip #{ip}")
-        return Models::LocalDnsRecord.where(:ip => ip, :instance_id => instance_model.id ).all
-      end
-    end
-
-    private
-
-    def with_valid_instance_spec_in_transaction(instance_model, &block)
-      spec = instance_model.spec
-      unless spec.nil? || spec['networks'].nil?
-        @logger.debug("Found #{spec['networks'].length} networks")
-        spec['networks'].each do |network_name, network|
-          unless network['ip'].nil?
-            block.call(network['ip'], network_name)
-          end
-        end
-      end
     end
   end
 end

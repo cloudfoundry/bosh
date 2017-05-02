@@ -15,11 +15,11 @@ module Bosh::Director
         version: 2,
         created_at: Time.new)
     end
-    let(:dns_updater) { instance_double(DnsUpdater, update_dns_for_instance: nil) }
+    let(:dns_updater) { instance_double(AgentDnsUpdater, update_dns_for_instance: nil) }
 
     before do
       allow(logger).to receive(:info)
-      allow(DnsUpdater).to receive(:new).and_return(dns_updater)
+      allow(AgentDnsUpdater).to receive(:new).and_return(dns_updater)
     end
 
     shared_examples_for 'generic converger' do

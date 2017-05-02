@@ -1,6 +1,5 @@
 module Bosh::Director
   class LocalDnsRepo
-
     def initialize(logger, root_domain)
       @logger = logger
       @root_domain = root_domain
@@ -113,19 +112,19 @@ module Bosh::Director
 
       "[#{record_strings.sort.join(', ')}]"
     end
-  end
 
-  class Diff
-    attr_reader :obsolete, :missing, :unaffected
+    class Diff
+      attr_reader :obsolete, :missing, :unaffected
 
-    def initialize(obsolete, missing, unaffected)
-      @obsolete = obsolete
-      @missing = missing
-      @unaffected = unaffected
-    end
+      def initialize(obsolete, missing, unaffected)
+        @obsolete = obsolete
+        @missing = missing
+        @unaffected = unaffected
+      end
 
-    def changes?
-      !obsolete.empty? || !missing.empty?
+      def changes?
+        !obsolete.empty? || !missing.empty?
+      end
     end
   end
 end

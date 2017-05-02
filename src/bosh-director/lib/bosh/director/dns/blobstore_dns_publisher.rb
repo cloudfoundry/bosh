@@ -25,7 +25,7 @@ module Bosh::Director
         if local_dns_blob.nil? || local_dns_blob.version < max_dns_record_version
           @logger.debug("Exporting local dns records max_dns_record_version:#{max_dns_record_version} local_dns_blob.version:#{local_dns_blob.nil? ? nil : local_dns_blob.version}")
           records = export_dns_records
-          local_dns_blob = publish(records)
+          local_dns_blob = create_dns_blob(records)
         end
 
         @logger.debug("Broadcasting local_dns_blob.version:#{local_dns_blob.version}")
@@ -51,12 +51,11 @@ module Bosh::Director
     end
 
     private
-
     def broadcast(blob)
       @agent_broadcaster.sync_dns(blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
     end
 
-    def publish(dns_records)
+    def create_dns_blob(dns_records)
       Models::LocalDnsBlob.create(
           blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
           sha1: dns_records.shasum,

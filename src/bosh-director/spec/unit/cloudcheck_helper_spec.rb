@@ -42,9 +42,14 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:dns_manager) { instance_double(DnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
+    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     before do
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent_client)
+      allow(agent_client).to receive(:sync_dns) do |_,_,_,&blk|
+        blk.call({'value' => 'synced'})
+      end.and_return(0)
       allow(JobRenderer).to receive(:create).and_return(job_renderer)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
@@ -156,13 +161,9 @@ module Bosh::Director
             }
           }
         end
-        let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(fake_new_agent)
-
           allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
         end
 
@@ -185,9 +186,9 @@ module Bosh::Director
 
             expect(rendered_templates_persister).to receive(:persist)
 
-            expect(fake_new_agent).to receive(:apply).with({'networks' => {'ip' => '192.1.3.4'}}).ordered
-            expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
-            expect(fake_new_agent).to receive(:start).ordered
+            expect(agent_client).to receive(:apply).with({'networks' => {'ip' => '192.1.3.4'}}).ordered
+            expect(agent_client).to receive(:run_script).with('pre-start', {}).ordered
+            expect(agent_client).to receive(:start).ordered
 
             allow(Config).to receive(:root_domain).and_return('bosh')
             expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('index.record.name')
@@ -232,14 +233,14 @@ module Bosh::Director
 
             it 'skips running post start when applying recreate_vm_skip_post_start resolution' do
               expect_vm_gets_created
-              expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
+              expect(agent_client).to_not receive(:run_script).with('post-start', {})
               test_problem_handler.apply_resolution(:recreate_vm_skip_post_start)
             end
 
             it 'runs post start when applying recreate_vm resolution' do
-              allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+              allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
               expect_vm_gets_created
-              expect(fake_new_agent).to receive(:run_script).with('post-start', {})
+              expect(agent_client).to receive(:run_script).with('post-start', {})
               test_problem_handler.apply_resolution(:recreate_vm)
             end
           end
