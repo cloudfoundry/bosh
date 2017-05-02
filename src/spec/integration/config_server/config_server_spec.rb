@@ -515,6 +515,7 @@ describe 'using director with config server', type: :integration do
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
           config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop first value')
+          config_server_helper.put_value(prepend_namespace('relative_addon_placeholder'), 'red')
           config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
           expect(upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)).to include('Successfully updated runtime config')
@@ -543,13 +544,15 @@ describe 'using director with config server', type: :integration do
           expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
         end
 
-        it 'throws errors when placeholders do not start with slash' do
-          runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
-          upload_runtime_config(runtime_config_hash: runtime_config, env: client_env)
+        it 'variables do not start with slash are named spaced for the manifest deployment' do
+          runtime_config['addons'][0]['jobs'][0]['properties']['gargamel']['color'] = '((relative_addon_placeholder))'
+          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
-          expect {
-            deploy_from_scratch(no_login: true, env: client_env)
-          }.to raise_error(RuntimeError, /Error 540004: Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'addon_release_version_placeholder'/)
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, env: client_env)
+
+          vm = director.vm('our_instance_group', '0', env: client_env)
+          template_hash = YAML.load(vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          expect(template_hash['properties_list']['gargamel_color']).to eq('red')
         end
       end
     end
