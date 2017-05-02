@@ -12,6 +12,7 @@ module Bosh::Director
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
     let(:include_index_records) { false }
+    let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }
 
     before do
       allow(Config).to receive(:root_domain).and_return(domain_name)
@@ -20,12 +21,9 @@ module Bosh::Director
     end
 
     describe 'publish and broadcast' do
+      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make() }
 
       before do
-        instance1 = Models::Instance.make(
-            uuid: 'uuid1',
-            index: 1,
-        )
         Bosh::Director::Models::LocalDnsRecord.make(
             instance_id: instance1.id,
             ip: '192.0.2.101',
@@ -72,9 +70,9 @@ module Bosh::Director
         end
 
         it 'does nothing' do
-          expect(Bosh::Director::Models::LocalDnsBlob.last).to be_nil
           expect(agent_broadcaster).to_not receive(:sync_dns)
           dns.publish_and_broadcast
+          expect(Models::LocalDnsBlob.last).to eq(original_local_dns_blob)
         end
       end
 
@@ -82,6 +80,18 @@ module Bosh::Director
         before do
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
           allow(blobstore).to receive(:create).and_return('blob_id_1')
+        end
+
+        it 'cleans up previous blobs each time a new one is published' do
+          expect {
+            dns.publish_and_broadcast
+          }.to change{ Models::EphemeralBlob.count }.by(1)
+
+          expect(Models::LocalDnsBlob.all).to_not include(original_local_dns_blob)
+
+          ephemeral_blob = Models::EphemeralBlob.last
+          expect(ephemeral_blob.blobstore_id).to eq(original_local_dns_blob.blobstore_id)
+          expect(ephemeral_blob.sha1).to eq(original_local_dns_blob.sha1)
         end
 
         it 'puts a blob containing the records into the blobstore' do
@@ -217,38 +227,5 @@ module Bosh::Director
       end
     end
 
-    describe '#cleanup_blobs' do
-      context 'when there are no entries' do
-        it 'does not do anything' do
-          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
-          expect { dns.cleanup_blobs }.to_not change { Bosh::Director::Models::LocalDnsBlob.count }
-          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
-        end
-      end
-
-      context 'when there is one entry' do
-        before { Bosh::Director::Models::LocalDnsBlob.make }
-
-        it 'leaves the only and newest blob' do
-          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
-          expect { dns.cleanup_blobs }.to_not change { Bosh::Director::Models::LocalDnsBlob.count }
-          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(1)
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count)
-        end
-      end
-
-      context 'when there are some entries' do
-        before { 3.times { Bosh::Director::Models::LocalDnsBlob.make } }
-
-        it 'leaves the newest blob' do
-          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
-          expect { dns.cleanup_blobs }.to change { Bosh::Director::Models::LocalDnsBlob.count }.from(3).to(1)
-          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(3)
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count + 2)
-        end
-      end
-    end
   end
 end

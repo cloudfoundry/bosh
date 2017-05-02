@@ -19,7 +19,7 @@ module Bosh::Director
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
-    let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, cleanup_blobs: nil, publish_and_broadcast: nil)  }
+    let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil)  }
     let(:local_dns_repo) { instance_double(LocalDnsRepo, delete_for_instance: nil) }
 
     let(:options) { {} }
@@ -181,8 +181,6 @@ module Bosh::Director
           expect(stopper).to receive(:stop)
           expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
-          expect(dns_publisher).to receive(:cleanup_blobs)
-
           expect(dns_publisher).to receive(:publish_and_broadcast)
           expect(local_dns_repo).to receive(:delete_for_instance)
 
@@ -213,7 +211,6 @@ module Bosh::Director
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
-              expect(dns_publisher).to receive(:cleanup_blobs)
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_repo).to receive(:delete_for_instance)
 
@@ -242,7 +239,6 @@ module Bosh::Director
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
-              expect(dns_publisher).to receive(:cleanup_blobs)
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_repo).to receive(:delete_for_instance)
 
@@ -261,8 +257,6 @@ module Bosh::Director
           context 'when deleting dns fails' do
             before do
               allow(dns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
-
-              allow(dns_publisher).to receive(:cleanup_blobs)
 
               allow(dns_publisher).to receive(:publish_and_broadcast)
               allow(local_dns_repo).to receive(:delete_for_instance)
@@ -316,8 +310,6 @@ module Bosh::Director
 
             expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
             expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
-
-            expect(dns_publisher).to receive(:cleanup_blobs)
 
             expect(dns_publisher).to receive(:publish_and_broadcast)
             expect(local_dns_repo).to receive(:delete_for_instance)

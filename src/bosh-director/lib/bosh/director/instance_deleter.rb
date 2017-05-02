@@ -50,10 +50,6 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            @dns_publisher.cleanup_blobs
-          end
-
-          error_ignorer.with_force_check do
             RenderedJobTemplatesCleaner.new(instance_model, @blobstore, @logger).clean_all
           end
         end
