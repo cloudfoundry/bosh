@@ -43,6 +43,8 @@ module Bosh::Director
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
+    let (:disk_manager) { instance_double(DiskManager) }
+
     before do
       Models::VariableSet.create(deployment: deployment_model)
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
@@ -52,14 +54,14 @@ module Bosh::Director
       allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
+      allow(DiskManager).to receive(:new).and_return(disk_manager)
+      allow(rendered_templates_persistor).to receive(:persist)
     end
 
     context 'for any state' do
-      let (:disk_manager) { instance_double(DiskManager) }
       let (:state_applier) { instance_double(InstanceUpdater::StateApplier) }
 
       before do
-        allow(DiskManager).to receive(:new).and_return(disk_manager)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
 
         allow(state_applier).to receive(:apply)
@@ -69,7 +71,6 @@ module Bosh::Director
         allow(updater).to receive(:needs_recreate?).and_return(false)
         allow(disk_manager).to receive(:update_persistent_disk)
         allow(instance).to receive(:update_instance_settings)
-        allow(rendered_templates_persistor).to receive(:persist)
         allow(job).to receive(:update)
       end
 
@@ -138,6 +139,47 @@ module Bosh::Director
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
 
           updater.update(instance_plan)
+        end
+      end
+
+      context 'when desired instance state is detached' do
+        let(:instance_model_state) { 'started' }
+        let(:instance_desired_state) { 'detached' }
+        let(:director_state_updater) { instance_double(DirectorDnsStateUpdater) }
+
+        before do
+          allow(DirectorDnsStateUpdater).to receive(:new).and_return(director_state_updater)
+          allow(instance_plan).to receive(:dns_changed?).and_return(true)
+        end
+
+        it 'should update dns' do
+          allow(instance_plan).to receive(:already_detached?).and_return(false)
+          expect(disk_manager).to receive(:unmount_disk_for).with(instance_plan)
+          expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
+          expect(director_state_updater).to receive(:update_dns_for_instance).with(instance_model, instance_plan.network_settings.dns_record_info)
+
+          expect(agent_client).to receive(:stop)
+          expect(agent_client).to receive(:drain).and_return(0)
+
+          updater.update(instance_plan)
+          expect(instance_model.update_completed).to eq true
+          expect(Models::Event.count).to eq 2
+        end
+
+        context 'if instance is already detached' do
+          let(:instance_model_state) { 'detached' }
+
+          before do
+            allow(instance_plan).to receive(:already_detached?).and_return(true)
+          end
+
+          it 'still updates dns' do
+            expect(director_state_updater).to receive(:update_dns_for_instance).with(instance_model, instance_plan.network_settings.dns_record_info)
+
+            updater.update(instance_plan)
+            expect(instance_model.update_completed).to eq true
+            expect(Models::Event.count).to eq 2
+          end
         end
       end
     end

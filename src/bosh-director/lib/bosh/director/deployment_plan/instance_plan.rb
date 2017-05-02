@@ -78,7 +78,7 @@ module Bosh
         end
 
         def should_be_ignored?
-           !instance_model.nil? && instance_model.ignore
+          !instance_model.nil? && instance_model.ignore
         end
 
         def needs_restart?
@@ -301,7 +301,7 @@ module Bosh
           modified_network_settings = Bosh::Common::DeepCopy.copy(network_settings)
 
           modified_network_settings.each do |name, network_setting|
-            network_setting.delete_if{|key, value| key == "dns_record_name"}
+            network_setting.delete_if { |key, value| key == "dns_record_name" }
           end
           modified_network_settings
         end
