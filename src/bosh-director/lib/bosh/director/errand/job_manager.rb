@@ -7,7 +7,7 @@ module Bosh::Director
       @disk_manager = DiskManager.new(logger)
       @job_renderer = @deployment.job_renderer
       agent_broadcaster = AgentBroadcaster.new
-      @dns_manager = DnsManagerProvider.create
+      @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
     end

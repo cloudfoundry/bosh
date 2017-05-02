@@ -1,5 +1,5 @@
 module Bosh::Director
-  class DnsManagerProvider
+  class PowerDnsManagerProvider
     def self.create
       dns_config = Config.dns || {}
 
@@ -7,11 +7,11 @@ module Bosh::Director
       root_domain = Config.root_domain
 
       dns_provider = PowerDns.new(root_domain, logger) if !!Config.dns_db
-      DnsManager.new(root_domain, dns_config, dns_provider, logger)
+      PowerDnsManager.new(root_domain, dns_config, dns_provider, logger)
     end
   end
 
-  class DnsManager
+  class PowerDnsManager
     attr_reader :root_domain
 
     def initialize(root_domain, dns_config, dns_provider, logger)

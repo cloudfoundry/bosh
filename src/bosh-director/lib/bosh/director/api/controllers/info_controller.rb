@@ -6,7 +6,7 @@ module Bosh::Director
 
       def initialize(config)
         super(config)
-        @dns_manager = DnsManagerProvider.create
+        @powerdns_manager = PowerDnsManagerProvider.create
       end
 
       def requires_authentication?
@@ -23,8 +23,8 @@ module Bosh::Director
           'user_authentication' => @config.identity_provider.client_info,
           'features' => {
             'dns' => {
-              'status' => @dns_manager.dns_enabled?,
-              'extras' => {'domain_name' => @dns_manager.root_domain}
+              'status' => @powerdns_manager.dns_enabled?,
+              'extras' => {'domain_name' => @powerdns_manager.root_domain}
             },
             'compiled_package_cache' => {
               'status' => Config.use_compiled_package_cache?,

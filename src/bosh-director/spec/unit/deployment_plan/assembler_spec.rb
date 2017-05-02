@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
       using_global_networking?: false,
@@ -12,7 +12,7 @@ module Bosh::Director
 
     ) }
     let(:stemcell_manager) { nil }
-    let(:dns_manager) { DnsManagerProvider.create }
+    let(:powerdns_manager) { PowerDnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
     describe '#bind_models' do
@@ -51,7 +51,7 @@ module Bosh::Director
 
       describe 'migrate_legacy_dns_records' do
         it 'migrates legacy dns records' do
-          expect(dns_manager).to receive(:migrate_legacy_records).with(instance_model)
+          expect(powerdns_manager).to receive(:migrate_legacy_records).with(instance_model)
           assembler.bind_models
         end
       end
@@ -168,7 +168,7 @@ module Bosh::Director
       end
 
       it 'configures dns' do
-        expect(dns_manager).to receive(:configure_nameserver)
+        expect(powerdns_manager).to receive(:configure_nameserver)
         assembler.bind_models
       end
     end
@@ -178,7 +178,7 @@ module Bosh::Director
         expect(DeploymentPlan::Assembler).to receive(:new).with(
           deployment_plan,
           an_instance_of(Api::StemcellManager),
-          an_instance_of(DnsManager),
+          an_instance_of(PowerDnsManager),
         ).and_call_original
 
         DeploymentPlan::Assembler.create(deployment_plan)

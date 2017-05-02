@@ -13,7 +13,7 @@ module Bosh
           @recreate_deployment = recreate_deployment
           @logger = logger
           @tags = tags
-          @dns_manager = DnsManagerProvider.create
+          @powerdns_manager = PowerDnsManagerProvider.create
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
@@ -144,9 +144,9 @@ module Bosh
         def dns_changed?
           power_dns_changed = false
 
-          if @dns_manager.dns_enabled?
+          if @powerdns_manager.dns_enabled?
             power_dns_changed = network_settings.dns_record_info.any? do |name, ip|
-              not_found = @dns_manager.find_dns_record(name, ip).nil?
+              not_found = @powerdns_manager.find_dns_record(name, ip).nil?
               @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
               not_found
             end
@@ -203,7 +203,7 @@ module Bosh
             @instance.availability_zone,
             @instance.index,
             @instance.uuid,
-            @dns_manager.root_domain,
+            @powerdns_manager.root_domain,
           )
         end
 

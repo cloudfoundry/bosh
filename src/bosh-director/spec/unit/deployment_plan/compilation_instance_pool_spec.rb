@@ -403,7 +403,7 @@ module Bosh::Director
       let(:instance_reuser) { InstanceReuser.new }
       let(:disk_manager) { DiskManager.new(logger) }
       let(:agent_broadcaster) { AgentBroadcaster.new }
-      let(:dns_manager) { DnsManagerProvider.create }
+      let(:powerdns_manager) { PowerDnsManagerProvider.create }
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
@@ -413,10 +413,10 @@ module Bosh::Director
         allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
         allow(DiskManager).to receive(:new).with(logger).and_return(disk_manager)
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
-        allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
+        allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
         allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster).and_return(vm_creator)
-        allow(InstanceDeleter).to receive(:new).with(ip_provider, dns_manager, disk_manager).and_return(instance_deleter)
+        allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
         allow(Config).to receive(:logger).and_return(logger)
         allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)

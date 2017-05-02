@@ -18,12 +18,12 @@ module Bosh::Director
     end
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-    let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
+    let(:powerdns_manager) { instance_double(PowerDnsManager, delete_dns_for_instance: nil) }
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil)  }
     let(:local_dns_repo) { instance_double(LocalDnsRepo, delete_for_instance: nil) }
 
     let(:options) { {} }
-    let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
+    let(:deleter) { InstanceDeleter.new(ip_provider, powerdns_manager, disk_manager, options) }
     let(:disk_manager) { DiskManager.new(logger) }
 
     describe '#delete_instance_plans' do
@@ -179,7 +179,7 @@ module Bosh::Director
 
         it 'drains, deletes snapshots, dns records, persistent disk, releases old reservations' do
           expect(stopper).to receive(:stop)
-          expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+          expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
           expect(dns_publisher).to receive(:publish_and_broadcast)
           expect(local_dns_repo).to receive(:delete_for_instance)
@@ -209,7 +209,7 @@ module Bosh::Director
 
             it 'deletes snapshots, persistent disk, releases old reservations' do
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
-              expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+              expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_repo).to receive(:delete_for_instance)
@@ -237,7 +237,7 @@ module Bosh::Director
             it 'drains, deletes snapshots, persistent disk, releases old reservations' do
               expect(stopper).to receive(:stop)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
-              expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+              expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_repo).to receive(:delete_for_instance)
@@ -256,7 +256,7 @@ module Bosh::Director
 
           context 'when deleting dns fails' do
             before do
-              allow(dns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
+              allow(powerdns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
 
               allow(dns_publisher).to receive(:publish_and_broadcast)
               allow(local_dns_repo).to receive(:delete_for_instance)
@@ -309,7 +309,7 @@ module Bosh::Director
             expect(cloud).not_to receive(:delete_vm)
 
             expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
-            expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+            expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
             expect(dns_publisher).to receive(:publish_and_broadcast)
             expect(local_dns_repo).to receive(:delete_for_instance)

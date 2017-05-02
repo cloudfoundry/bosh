@@ -66,14 +66,8 @@ module Bosh::Director
         true
       )
 
-      dns_manager = DnsManagerProvider.create
-      dns_publisher = BlobstoreDnsPublisher.new(
-        lambda { App.instance.blobstores.blobstore },
-        Config.root_domain,
-        AgentBroadcaster.new,
-        @logger
-      )
-      local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
+      powerdns_manager = PowerDnsManagerProvider.create
+      local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
       dns_names_to_ip = {}
 
       root_domain = Config.root_domain
@@ -100,11 +94,10 @@ module Bosh::Director
       end
 
       @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
-      dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
-      local_dns_repo.update_for_instance(instance_model)
+      powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
+      local_dns_manager.update_dns_record_for_instance(instance_model)
 
-      dns_manager.flush_dns_cache
-      dns_publisher.publish_and_broadcast
+      powerdns_manager.flush_dns_cache
 
       cloud_check_procedure = lambda do
         blobstore_client = App.instance.blobstores.blobstore

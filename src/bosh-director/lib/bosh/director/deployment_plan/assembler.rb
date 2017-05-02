@@ -7,14 +7,14 @@ module Bosh::Director
     include LegacyDeploymentHelper
 
     def self.create(deployment_plan)
-      new(deployment_plan, Api::StemcellManager.new, DnsManagerProvider.create)
+      new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create)
     end
 
-    def initialize(deployment_plan, stemcell_manager, dns_manager)
+    def initialize(deployment_plan, stemcell_manager, powerdns_manager)
       @deployment_plan = deployment_plan
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
-      @dns_manager = dns_manager
+      @powerdns_manager = powerdns_manager
     end
 
     def bind_models(options = {})
@@ -164,12 +164,12 @@ module Bosh::Director
     end
 
     def bind_dns
-      @dns_manager.configure_nameserver
+      @powerdns_manager.configure_nameserver
     end
 
     def migrate_legacy_dns_records
       @deployment_plan.instance_models.each do |instance_model|
-        @dns_manager.migrate_legacy_records(instance_model)
+        @powerdns_manager.migrate_legacy_records(instance_model)
       end
     end
 

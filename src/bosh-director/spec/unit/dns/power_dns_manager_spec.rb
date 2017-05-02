@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DnsManager do
-    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_provider, logger) }
+  describe PowerDnsManager do
+    subject(:powerdns_manager) { described_class.new(domain.name, dns_config, dns_provider, logger) }
 
     let(:instance_model) do
       Models::Instance.make(
@@ -30,7 +30,7 @@ module Bosh::Director
 
         it 'logs success' do
           expect(logger).to receive(:debug).with("Flushed 7 records from DNS cache")
-          dns_manager.flush_dns_cache
+          powerdns_manager.flush_dns_cache
         end
       end
 
@@ -39,7 +39,7 @@ module Bosh::Director
 
         it 'logs an error' do
           expect(logger).to receive(:warn).with("Failed to flush DNS cache: fake failure")
-          dns_manager.flush_dns_cache
+          powerdns_manager.flush_dns_cache
         end
       end
 
@@ -47,14 +47,14 @@ module Bosh::Director
         it 'does not do anything' do
           expect(Open3).to_not receive(:capture3)
           expect {
-            dns_manager.flush_dns_cache
+            powerdns_manager.flush_dns_cache
           }.to_not raise_error
         end
       end
 
       context 'when dns_publisher is disabled' do
         it 'calls nothing on the dns_publisher' do
-          dns_manager.flush_dns_cache
+          powerdns_manager.flush_dns_cache
         end
       end
     end
@@ -64,7 +64,7 @@ module Bosh::Director
         let(:instance_model) { nil }
 
         it 'returns an empty list' do
-          expect(dns_manager.find_dns_record_names_by_instance(instance_model)).to eq([])
+          expect(powerdns_manager.find_dns_record_names_by_instance(instance_model)).to eq([])
         end
       end
 
@@ -72,7 +72,7 @@ module Bosh::Director
         let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model, dns_records: '["test1.example.com","test2.example.com"]') }
 
         it 'returns an empty list' do
-          expect(dns_manager.find_dns_record_names_by_instance(instance_model)).to eq(['test1.example.com', 'test2.example.com'])
+          expect(powerdns_manager.find_dns_record_names_by_instance(instance_model)).to eq(['test1.example.com', 'test2.example.com'])
         end
       end
     end
@@ -82,26 +82,26 @@ module Bosh::Director
 
       describe '#dns_enabled?' do
         it 'should be true' do
-          expect(dns_manager.dns_enabled?).to eq(true)
+          expect(powerdns_manager.dns_enabled?).to eq(true)
         end
       end
 
       describe '#delete_dns_for_instance' do
         before do
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         it 'deletes dns records from dns provider' do
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
-          dns_manager.delete_dns_for_instance(instance_model)
+          powerdns_manager.delete_dns_for_instance(instance_model)
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
         end
 
         it 'deletes dns records from instance model' do
           expect(instance_model.dns_record_names.to_a).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.delete_dns_for_instance(instance_model)
+          powerdns_manager.delete_dns_for_instance(instance_model)
           expect(instance_model.dns_record_names.to_a).to eq([])
         end
 
@@ -111,7 +111,7 @@ module Bosh::Director
           end
 
           it 'removes them from dns provider' do
-            dns_manager.delete_dns_for_instance(instance_model)
+            powerdns_manager.delete_dns_for_instance(instance_model)
             expect(dns_provider.find_dns_record('0.job-a.network-a.dep.bosh', '1.2.3.4')).to be_nil
           end
         end
@@ -121,7 +121,7 @@ module Bosh::Director
         context 'dns is enabled' do
           let(:dns_config) { {'domain_name' => domain.name, 'address' => '1.2.3.4'} }
           it 'creates name server records' do
-            dns_manager.configure_nameserver
+            powerdns_manager.configure_nameserver
             ns_record = Models::Dns::Record.find(name: 'bosh', type: 'NS')
             a_record = Models::Dns::Record.find(type: 'A')
             soa_record = Models::Dns::Record.find(name: 'bosh', type: 'SOA')
@@ -138,18 +138,18 @@ module Bosh::Director
         let(:spec_json) { JSON.dump({'networks' => {'net-name' => {'ip' => '1234'}}}) }
         before do
           instance_model.update(availability_zone: 'az1')
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         it 'updates dns records for instance in database' do
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'fake-dns-name-3'])
         end
 
         it 'appends the records to the model' do
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4', 'another-dns-name-2' => '5.6.7.8'})
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
@@ -159,7 +159,7 @@ module Bosh::Director
 
         it 'it keeps old record names pointing at their original ips' do
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-          dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.5', 'another-dns-name-2' => '5.6.7.9'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.5', 'another-dns-name-2' => '5.6.7.9'})
           expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
           expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
           expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
@@ -169,14 +169,14 @@ module Bosh::Director
 
         context 'when the dns entry already exists' do
           it 'updates the DNS record when the IP address has changed' do
-            dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '9.8.7.6'})
+            powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '9.8.7.6'})
 
             dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
             expect(dns_record.content).to eq('9.8.7.6')
           end
 
           it 'does NOT update the DNS record when the IP address is the same' do
-            dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '5.6.7.8'})
+            powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '5.6.7.8'})
 
             dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
             expect(dns_record.content).to eq('5.6.7.8')
@@ -195,7 +195,7 @@ module Bosh::Director
         it 'saves instance dns records for all networks in local instance model' do
           expect(instance_model.dns_record_names).to be_nil
 
-          dns_manager.migrate_legacy_records(instance_model)
+          powerdns_manager.migrate_legacy_records(instance_model)
 
           expect(instance_model.dns_record_names).to match_array([
             '0.job-a.network-a.bosh1.bosh',
@@ -211,7 +211,7 @@ module Bosh::Director
           end
 
           it 'does not migrate' do
-            dns_manager.migrate_legacy_records(instance_model)
+            powerdns_manager.migrate_legacy_records(instance_model)
             expect(instance_model.dns_record_names).to match_array(['anything'])
           end
         end
@@ -223,26 +223,26 @@ module Bosh::Director
 
       describe '#dns_enabled?' do
         it 'should be false' do
-          expect(dns_manager.dns_enabled?).to eq(false)
+          expect(powerdns_manager.dns_enabled?).to eq(false)
         end
       end
 
       describe '#delete_dns_for_instance' do
         it 'returns with no errors' do
-          dns_manager.delete_dns_for_instance(instance_model)
+          powerdns_manager.delete_dns_for_instance(instance_model)
         end
       end
 
       describe '#migrate_legacy_records' do
         it 'does not migrate' do
-          dns_manager.migrate_legacy_records(instance_model)
+          powerdns_manager.migrate_legacy_records(instance_model)
           expect(instance_model.dns_record_names.to_a).to match_array([])
         end
       end
 
       describe '#configure_nameserver' do
         it 'creates nothing' do
-          dns_manager.configure_nameserver
+          powerdns_manager.configure_nameserver
           ns_record = Models::Dns::Record.find(name: domain.name, type: 'NS')
           a_record = Models::Dns::Record.find(type: 'A')
           soa_record = Models::Dns::Record.find(name: domain.name, type: 'SOA')
@@ -254,13 +254,13 @@ module Bosh::Director
 
       describe '#update_dns_record_for_instance' do
         before do
-          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
+          powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4', 'fake-dns-name-2' => '5.6.7.8'})
         end
 
         context 'when IPs/hosts change' do
           it 'updates dns records for instance' do
             expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
-            dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '11.22.33.44', 'new-fake-dns-name' => '99.88.77.66'})
+            powerdns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '11.22.33.44', 'new-fake-dns-name' => '99.88.77.66'})
             expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'new-fake-dns-name'])
             expect(Models::Dns::Record.all.count).to eq(0)
           end

@@ -36,8 +36,8 @@ module Bosh::Director
 
         job_state, job_vitals, processes, _ = vm_details(instance)
 
-        if dns_manager.dns_enabled?
-          dns_records = dns_manager.find_dns_record_names_by_instance(instance)
+        if powerdns_manager.dns_enabled?
+          dns_records = powerdns_manager.find_dns_record_names_by_instance(instance)
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
