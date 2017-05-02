@@ -47,6 +47,7 @@ describe 'create-release', type: :integration do
         'jobs/transitive_deps.tgz',
         'jobs/id_job.tgz',
         'jobs/job_with_bad_template.tgz',
+        'jobs/local_dns_records_json.tgz',
         'packages/a.tgz',
         'packages/b.tgz',
         'packages/bar.tgz',
@@ -113,6 +114,7 @@ describe 'create-release', type: :integration do
           'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_1_ctl'],
           'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_2_ctl'],
           'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken-post-deploy.erb', './templates/job_3_ctl'],
+          'local_dns_records_json' => ['./monit', './job.MF', './templates/pre-start.erb'],
         }
 
         job_files.each do |job_name, files|
@@ -175,7 +177,8 @@ describe 'create-release', type: :integration do
           job_desc('job_with_post_start_script'),
           job_desc('transitive_deps'),
           job_desc('id_job'),
-          job_desc('job_with_bad_template')
+          job_desc('job_with_bad_template'),
+          job_desc('local_dns_records_json')
         ))
 
         expect(release_manifest['uncommitted_changes']).to eq(false)

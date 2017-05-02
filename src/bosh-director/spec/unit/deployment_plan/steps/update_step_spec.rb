@@ -25,7 +25,7 @@ module Bosh::Director
 
       before do
         allow(PreCleanupStep).to receive(:new).with(base_job, deployment_plan).and_return(pre_cleanup)
-        allow(SetupStep).to receive(:new).with(base_job, deployment_plan, vm_creator).and_return(setup)
+        allow(SetupStep).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
         allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStep).to receive(:new).with(deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)

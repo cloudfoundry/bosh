@@ -3,16 +3,31 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan::Steps
     describe SetupStep do
-      describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
-        subject { SetupStep.new(base_job, deployment_plan, vm_creator) }
+      describe 'deployment prepare & update' do
+        subject { SetupStep.new(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher) }
 
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
         let(:vm_creator) { instance_double(VmCreator) }
 
-        let(:instance_plans_with_hot_swap_and_needs_shutdown) { [instance_double(DeploymentPlan::InstancePlan)] }
-        let(:instance_plans_with_missing_vms) { [instance_double(DeploymentPlan::InstancePlan)] }
+        let(:instance_model_hot_swap) { instance_double(Models::Instance) }
+        let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
+        let(:instance_plans_with_hot_swap_and_needs_shutdown) { [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap)] }
+
+        let(:instance_model_0) { instance_double(Models::Instance) }
+        let(:deployment_plan_instance_0) { instance_double(DeploymentPlan::Instance, model: instance_model_0) }
+        let(:instance_model_1) { instance_double(Models::Instance) }
+        let(:deployment_plan_instance_1) { instance_double(DeploymentPlan::Instance, model: instance_model_1) }
+
+        let(:instance_plans_with_missing_vms) do
+          [
+            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0),
+            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1)
+          ]
+        end
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
         let(:tags) { {'some' => 'tags'} }
+        let(:local_dns_repo) { instance_double(LocalDnsRepo) }
+        let(:dns_publisher) { instance_double(BlobstoreDnsPublisher) }
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
@@ -23,6 +38,13 @@ module Bosh::Director
         end
 
         context 'when the director database contains no instances' do
+          before do
+            allow(vm_creator).to receive(:create_for_instance_plans)
+            allow(base_job).to receive(:task_checkpoint)
+            allow(local_dns_repo).to receive(:update_for_instance)
+            allow(dns_publisher).to receive(:publish_and_broadcast)
+          end
+
           it 'creates vms for instance groups missing vms and checkpoints task' do
             expect(vm_creator).to receive(:create_for_instance_plans).with(
               instance_plans_with_missing_vms + instance_plans_with_hot_swap_and_needs_shutdown,
@@ -31,6 +53,13 @@ module Bosh::Director
             )
 
             expect(base_job).to receive(:task_checkpoint)
+            subject.perform
+          end
+
+          it 'updates and publishes local dns records for the missing plans' do
+            expect(local_dns_repo).to receive(:update_for_instance).with(instance_model_0).ordered
+            expect(local_dns_repo).to receive(:update_for_instance).with(instance_model_1).ordered
+            expect(dns_publisher).to receive(:publish_and_broadcast).ordered
             subject.perform
           end
         end

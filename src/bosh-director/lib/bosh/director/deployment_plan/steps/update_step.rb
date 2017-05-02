@@ -13,7 +13,7 @@ module Bosh::Director
           begin
             @logger.info('Updating deployment')
             PreCleanupStep.new(@base_job, @deployment_plan).perform
-            SetupStep.new(@base_job, @deployment_plan, vm_creator).perform
+            setup_step.perform
             UpdateJobsStep.new(@base_job, @deployment_plan, @multi_job_updater).perform
             UpdateErrandsStep.new(@deployment_plan).perform
             @logger.info('Committing updates')
@@ -33,6 +33,17 @@ module Bosh::Director
           disk_manager = DiskManager.new(@logger)
           vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+        end
+
+        def setup_step
+          local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
+          dns_publisher = BlobstoreDnsPublisher.new(
+            lambda { App.instance.blobstores.blobstore },
+            Config.root_domain,
+            AgentBroadcaster.new,
+            @logger
+          )
+          SetupStep.new(@base_job, @deployment_plan, vm_creator, local_dns_repo, dns_publisher)
         end
       end
     end

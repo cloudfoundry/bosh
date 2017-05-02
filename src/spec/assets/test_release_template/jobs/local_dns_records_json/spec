@@ -1,0 +1,7 @@
+---
+name: local_dns_records_json
+templates:
+  pre-start.erb: bin/pre-start
+
+packages: []
+properties: {}
