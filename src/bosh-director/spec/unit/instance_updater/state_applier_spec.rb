@@ -62,6 +62,8 @@ module Bosh::Director
     let(:instance_model_state) { 'stopped' }
     let(:job_state) { 'running' }
     let(:update_watch_time) { '1000-2000' }
+    let(:dns_updater) { instance_double(DnsUpdater, update_dns_for_instance: nil) }
+    let(:local_dns_blob) { instance_double(Models::LocalDnsBlob) }
 
     before do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
@@ -77,9 +79,12 @@ module Bosh::Director
       allow(agent_client).to receive(:get_state).and_return({'job_state' => job_state})
       allow(rendered_job_templates_cleaner).to receive(:clean)
       allow(state_applier).to receive(:sleep)
+      allow(DnsUpdater).to receive(:new).and_return(dns_updater)
+      allow(Models::LocalDnsBlob).to receive(:latest).and_return(local_dns_blob)
     end
 
-    it 'runs the pre-start, start and post-start scripts in order' do
+    it 'updates dns, then runs the pre-start, start and post-start scripts in order' do
+      expect(dns_updater).to receive(:update_dns_for_instance).with(local_dns_blob, instance_model).ordered
       expect(agent_client).to receive(:run_script).with('pre-start', {}).ordered
       expect(agent_client).to receive(:start).ordered
       expect(agent_client).to receive(:run_script).with('post-start', {}).ordered

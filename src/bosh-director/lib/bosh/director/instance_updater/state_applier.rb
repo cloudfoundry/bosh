@@ -14,6 +14,8 @@ module Bosh::Director
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
 
+      DnsUpdater.new(@logger).update_dns_for_instance(dns_blob, @instance.model)
+
       if @instance.state == 'started'
         @logger.info("Running pre-start for #{@instance}")
         @agent_client.run_script('pre-start', {})
@@ -32,6 +34,10 @@ module Bosh::Director
     end
 
     private
+
+    def dns_blob
+      Models::LocalDnsBlob.latest
+    end
 
     def post_start(min_watch_time, max_watch_time)
       current_state = wait_until_desired_state(min_watch_time, max_watch_time)
