@@ -115,7 +115,7 @@ module Bosh::Director::ConfigServer
       @config_server_client.interpolate_with_versioning(
         runtime_manifest,
         deployment_model.current_variable_set,
-        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true }
+        { subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false }
       )
     end
 

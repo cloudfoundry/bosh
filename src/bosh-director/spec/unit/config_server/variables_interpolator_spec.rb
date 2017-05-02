@@ -513,7 +513,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
 
     it 'should call interpolate with the correct arguments' do
-      expect(config_server_client).to receive(:interpolate_with_versioning).with({'name' => '{{placeholder}}'}, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: true}).and_return({'name' => 'smurf'})
+      expect(config_server_client).to receive(:interpolate_with_versioning).with({'name' => '{{placeholder}}'}, current_variable_set, {subtrees_to_ignore: ignored_subtrees, must_be_absolute_name: false}).and_return({'name' => 'smurf'})
       result = subject.interpolate_runtime_manifest({'name' => '{{placeholder}}'}, deployment_name)
       expect(result).to eq({'name' => 'smurf'})
     end
