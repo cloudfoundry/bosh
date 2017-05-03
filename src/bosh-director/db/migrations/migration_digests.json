@@ -104,5 +104,6 @@
   "20170405144414_add_cross_deployment_links_support_for_variables": "457fcff2c0ae0cdc1c2da694d58e2b4bc39735c3",
   "20170405181126_backfill_local_dns_records_and_drop_name": "3532272ca024a2047287f40573a5ae48b9ada065",
   "20170412205032_add_agent_id_and_domain_name_to_local_dns_records": "3391eb9ece5a0f1d91c406806a2df96ec45d39b9",
-  "20170427194511_add_runtime_config_name_support": "24c478772418b06bbe408c6a8ad098738ff1c621"
+  "20170427194511_add_runtime_config_name_support": "24c478772418b06bbe408c6a8ad098738ff1c621",
+  "20170503205545_change_id_local_dns_to_bigint": "f3e558e1ceea5ab74f512aad1e2a50800d213402"
 }
