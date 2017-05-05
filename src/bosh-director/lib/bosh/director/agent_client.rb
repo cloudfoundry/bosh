@@ -58,8 +58,8 @@ module Bosh::Director
       handle_message_with_retry(method_name, *args)
     end
 
-    def get_state(*args)
-      send_message(:get_state, *args)
+    def get_state(*args, &blk)
+      send_message(:get_state, *args, &blk)
     end
 
     def cancel_task(*args)
@@ -230,7 +230,7 @@ module Bosh::Director
       @nats_rpc.send_request(recipient, request, &callback)
     end
 
-    def handle_method(method_name, args)
+    def handle_method(method_name, args, &blk)
       result = {}
       result.extend(MonitorMixin)
 
@@ -257,6 +257,12 @@ module Bosh::Director
       result.synchronize do
         while result.empty?
           timeout = timeout_time - Time.now.to_f
+          begin
+            blk.call if block_given?
+          rescue TaskCancelled => e
+            @nats_rpc.cancel_request(request_id)
+            raise e
+          end
           if timeout <= 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
@@ -320,10 +326,10 @@ module Bosh::Director
       @resource_manager.delete_resource(blob_id)
     end
 
-    def handle_message_with_retry(message_name, *args)
+    def handle_message_with_retry(message_name, *args, &blk)
       retries = @retry_methods[message_name] || 0
       begin
-        handle_method(message_name, args)
+        handle_method(message_name, args, &blk)
       rescue RpcTimeout
         if retries > 0
           retries -= 1
@@ -340,7 +346,7 @@ module Bosh::Director
     end
 
     def send_message(method_name, *args, &blk)
-      task = start_task(method_name, *args)
+      task = start_task(method_name, *args, &blk)
       if task['agent_task_id']
         wait_for_task(task['agent_task_id'], &blk)
       else
@@ -373,8 +379,8 @@ module Bosh::Director
     end
 
 
-    def start_task(method_name, *args)
-      AgentMessageConverter.convert_old_message_to_new(handle_message_with_retry(method_name, *args))
+    def start_task(method_name, *args, &blk)
+      AgentMessageConverter.convert_old_message_to_new(handle_message_with_retry(method_name, *args, &blk))
     end
 
     def get_task_status(agent_task_id)
