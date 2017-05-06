@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bhm::Plugins::ResurrectorHelper
+module Bosh::Monitor::Plugins
   describe AlertTracker do
     subject(:tracker) { AlertTracker.new(config) }
     let(:config) { {} }
@@ -99,55 +99,6 @@ module Bhm::Plugins::ResurrectorHelper
 
       def build_key(i)
         Bhm::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{i}", "uuid#{i.to_s}")
-      end
-    end
-
-    describe '#melting_down?' do
-      let(:agents) {
-        agents = {}
-        100.times.each do |i|
-          agents["00#{i}"]= Bhm::Agent.new("00#{i}", deployment: 'deployment', job: "00#{i}", instance_id: "uuid#{i.to_s}")
-        end
-        agents
-      }
-
-      let(:job_instance_keys) {
-        100.times.map do |i|
-          Bhm::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{i}", "uuid#{i.to_s}")
-        end
-      }
-
-      before do
-        mock_instance_manager = double(Bhm::InstanceManager)
-        allow(mock_instance_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
-        allow(Bhm).to receive_messages(instance_manager: mock_instance_manager)
-      end
-
-      it 'is melting down if more than 30% of agents are down' do
-        alert_tracker = described_class.new('percent_threshold' => 0.3)
-        31.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
-
-        expect(alert_tracker.melting_down?('deployment')).to be(true)
-      end
-
-      it 'is not melting down if less than 30% of agents are down' do
-        alert_tracker = described_class.new('percent_threshold' => 0.3)
-        29.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
-
-        expect(alert_tracker.melting_down?('deployment')).to be(false)
-      end
-
-      it 'is not melting down if less than 7 agents are down' do
-        alert_tracker = described_class.new('count_threshold' => 7, 'percent_threshold' => 0.01)
-        6.times { |i| alert_tracker.record(job_instance_keys[i], Time.now) }
-
-        expect(alert_tracker.melting_down?('deployment')).to be(false)
-      end
-
-      it 'is not melting down if all agents are responding' do
-        alert_tracker = described_class.new('percent_threshold' => 0.0)
-
-        expect(alert_tracker.melting_down?('deployment')).to be(false)
       end
     end
   end

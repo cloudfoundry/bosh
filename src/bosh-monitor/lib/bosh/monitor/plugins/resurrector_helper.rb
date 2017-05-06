@@ -66,6 +66,8 @@ module Bosh::Monitor::Plugins
 
         if alerts.count > 0
           if alerts.count >= count_threshold && percent >= percent_threshold
+            # "Melting down" means a large part of the cluster is offline and manual intervention
+            # may be required to fix.
             return [STATE_MELTDOWN, details]
           end
 
@@ -73,20 +75,6 @@ module Bosh::Monitor::Plugins
         end
 
         [STATE_NORMAL, details]
-      end
-
-      # "Melting down" means a large part of the cluster is offline and manual intervention
-      # may be required to fix.
-      def melting_down?(deployment)
-        agent_alerts = alerts_for_deployment(deployment)
-        total_number_of_agents = agent_alerts.size
-        number_of_down_agents = agent_alerts.select { |_, alert_time|
-          alert_time > (Time.now - time_threshold)
-        }.size
-
-        return false if number_of_down_agents < count_threshold
-
-        (number_of_down_agents.to_f / total_number_of_agents) >= percent_threshold
       end
 
       def record(agent_key, alert_time)
@@ -115,17 +103,6 @@ module Bosh::Monitor::Plugins
 
       def percent_alerting(agents, alerts)
         alerts.count.to_f / agents.count
-      end
-
-      def alerts_for_deployment(deployment)
-        agents = @instance_manager.get_agents_for_deployment(deployment)
-        keys = agents.values.map { |agent|
-          JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
-        }
-
-        result = {}
-        keys.each { |key| result[key] = @alert_times.fetch(key, Time.at(0)) }
-        result
       end
     end
   end

@@ -55,8 +55,9 @@ module Bosh::Monitor
           }
 
           @url.path = "/deployments/#{deployment}/scan_and_fix"
+          state, details = @alert_tracker.state_for(deployment)
 
-          if @alert_tracker.melting_down?(deployment)
+          if state == ResurrectorHelper::AlertTracker::STATE_MELTDOWN
             # freak out
             ts = Time.now.to_i
             @processor.process(:alert,
@@ -99,4 +100,3 @@ module Bosh::Monitor
     end
   end
 end
-
