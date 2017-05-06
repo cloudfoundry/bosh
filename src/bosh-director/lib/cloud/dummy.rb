@@ -133,6 +133,7 @@ module Bosh
 
           # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
+        raise Bosh::Clouds::VMNotFound if commands.raise_vmnotfound
         # rubocop:enable HandleExceptions
       ensure
         free_ips(vm_cid)
@@ -372,6 +373,7 @@ module Bosh
       end
 
       private
+
       def allocate_ips(ips)
         ips.each do |ip|
           begin
@@ -576,6 +578,17 @@ module Bosh
           CreateVmCommand.new(ip_address, azs_to_ip, failed)
         end
 
+        def make_delete_vm_to_raise_vmnotfound
+          @logger.info('Making delete_vm method to raise VMNotFound exception')
+          FileUtils.mkdir_p(File.dirname(raise_vmnotfound_path))
+          File.write(raise_vmnotfound_path, '')
+        end
+
+        def raise_vmnotfound
+          @logger.info('Reading delete_vm configuration')
+          File.exists?(raise_vmnotfound_path)
+        end
+
         private
 
         def azs_path
@@ -588,6 +601,10 @@ module Bosh
 
         def failed_path
           File.join(@cpi_commands, 'create_vm', 'fail')
+        end
+
+        def raise_vmnotfound_path
+          File.join(@cpi_commands, 'delete_vm', 'fail')
         end
       end
 
