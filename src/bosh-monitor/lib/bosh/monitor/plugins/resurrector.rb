@@ -55,17 +55,21 @@ module Bosh::Monitor
           }
 
           @url.path = "/deployments/#{deployment}/scan_and_fix"
+          state, details = @alert_tracker.state_for(deployment)
 
-          if @alert_tracker.melting_down?(deployment)
+          if state == ResurrectorHelper::AlertTracker::STATE_MELTDOWN
             # freak out
+            summary = "Skipping resurrection for instance: '#{job}/#{id}'; deployment: #{deployment}; alerts: #{details['alerts'].inspect}"
             ts = Time.now.to_i
             @processor.process(:alert,
                                severity: 1,
-                               source: "HM plugin resurrector",
                                title: "We are in meltdown.",
+                               summary: summary,
+                               source: "HM plugin resurrector",
+                               deployment: deployment,
                                created_at: ts)
 
-            logger.error("(Resurrector) we are in meltdown.")
+            logger.error("(Resurrector) we are in meltdown. #{summary}")
           else
             # queue instead, and only queue if it isn't already in the queue
             # what if we can't keep up with the failure rate?
@@ -99,4 +103,3 @@ module Bosh::Monitor
     end
   end
 end
-
