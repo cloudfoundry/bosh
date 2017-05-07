@@ -128,8 +128,10 @@ module Bosh::Monitor::Plugins
           allow(Time).to receive(:now).and_return(expected_time)
           alert_option = {
               :severity => 1,
-              :source => "HM plugin resurrector",
               :title => "We are in meltdown.",
+              :summary => "Skipping resurrection for instance: 'j/i'; deployment: d; alerts: nil",
+              :source => "HM plugin resurrector",
+              :deployment => "d",
               :created_at => expected_time.to_i
           }
           expect(event_processor).to receive(:process).with(:alert, alert_option)

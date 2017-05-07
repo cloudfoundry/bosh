@@ -60,7 +60,7 @@ module Bosh::Monitor::Plugins
           'deployment' => deployment,
           'alerts' => {
             'count' => alerts.count,
-            'percent' => "#{percent * 100}%",
+            'percent' => "#{(percent * 100).round(1)}%",
           }
         }
 

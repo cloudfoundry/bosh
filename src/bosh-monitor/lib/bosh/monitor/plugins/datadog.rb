@@ -3,7 +3,6 @@ require 'dogapi'
 module Bosh::Monitor
   module Plugins
     class DataDog < Base
-
       NORMAL_PRIORITY = [:alert, :critical, :error]
 
       def validate_options
@@ -65,22 +64,17 @@ module Bosh::Monitor
       end
 
       def process_alert(alert)
-        msg, title, source, timestamp = alert.to_hash.values_at(:summary,
-                                                                :title,
-                                                                :source,
-                                                                :created_at)
-
-
+        data = alert.to_hash
         # DataDog only supports "low" and "normal" priority
         begin
-          priority = normal_priority?(alert.severity) ? 'normal' : 'low'
           dog_client.emit_event(
-            Dogapi::Event.new(msg,
-                              msg_title: title,
-                              date_happened: timestamp,
-                              tags: ["source:#{source}"],
-                              priority: priority
-                             )
+            Dogapi::Event.new(data[:summary], {
+              msg_title: data[:title],
+              date_happened: data[:created_at],
+              tags: tags_for(data),
+              priority: priority_for(alert),
+              alert_type: severity_for(alert)
+            })
           )
         rescue Timeout::Error => e
           logger.warn('Could not emit event to Datadog, request timed out.')
@@ -89,8 +83,20 @@ module Bosh::Monitor
         end
       end
 
-      def normal_priority?(severity)
-        NORMAL_PRIORITY.include?(severity)
+      def priority_for(alert)
+        NORMAL_PRIORITY.include?(alert.severity) ? 'normal' : 'low'
+      end
+
+      def severity_for(alert)
+        NORMAL_PRIORITY.include?(alert.severity) ? 'error' : 'warning'
+      end
+      def tags_for(data)
+        [].tap do |tags|
+          tags << "source:#{data[:source]}"
+          tags << "deployment:#{data[:deployment]}"
+          tags << "instance_group:#{data[:job]}"
+          tags << "instance_id:#{data[:instance_id]}"
+        end
       end
     end
   end

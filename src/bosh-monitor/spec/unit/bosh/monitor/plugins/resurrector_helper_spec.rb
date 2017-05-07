@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Monitor::Plugins
+module Bosh::Monitor::Plugins::ResurrectorHelper
   describe AlertTracker do
     subject(:tracker) { AlertTracker.new(config) }
     let(:config) { {} }
