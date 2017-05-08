@@ -29,7 +29,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       end
 
       context 'when the number of unresponsive agents is below the meltdown count threshold' do
-        let(:config) { { 'count_threshold' => 2, 'percent_threshold' => 0.0 } }
+        let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.0 } }
         let(:alerts) { 1 }
 
         it 'reports as "managed"' do
@@ -44,7 +44,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
       context 'when the number of unresponsive agents is at/above the meltdown count threshold' do
         context 'and below the percent threshold' do
-          let(:config) { { 'count_threshold' => 2, 'percent_threshold' => 0.21 } }
+          let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.21 } }
           let(:alerts) { 2 }
 
           it 'reports as "managed"' do
@@ -58,7 +58,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         end
 
         context 'and at/above the percent threshold' do
-          let(:config) { { 'count_threshold' => 2, 'percent_threshold' => 0.20 } }
+          let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.20 } }
           let(:alerts) { 2 }
 
           it 'reports as "meltdown"' do
@@ -73,7 +73,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       end
 
       context 'when recorded alerts are outside of the time threshold' do
-        let(:config) { { 'count_threshold' => 2, 'time_threshold' => 600 } }
+        let(:config) { { 'minimum_down_jobs' => 2, 'time_threshold' => 600 } }
         let(:alerts) { 0 }
 
         it 'excludes those alerts' do

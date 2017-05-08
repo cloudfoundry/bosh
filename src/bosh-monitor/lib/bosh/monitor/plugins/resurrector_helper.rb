@@ -34,7 +34,7 @@ module Bosh::Monitor::Plugins
       STATE_MELTDOWN = 'meltdown'
 
       # Below this number of down agents we don't consider a meltdown occurring
-      attr_accessor :count_threshold
+      attr_accessor :minimum_down_jobs
 
       # Number of seconds at which an alert is considered "current"; alerts older than
       # this are ignored. Integer number of seconds.
@@ -47,7 +47,7 @@ module Bosh::Monitor::Plugins
       def initialize(args={})
         @instance_manager   = Bhm.instance_manager
         @alert_times        = {} # maps JobInstanceKey to time of last Alert
-        @count_threshold    = args.fetch('count_threshold', 5)
+        @minimum_down_jobs  = args.fetch('minimum_down_jobs', 5)
         @percent_threshold  = args.fetch('percent_threshold', 0.2)
         @time_threshold     = args.fetch('time_threshold', 600)
       end
@@ -65,7 +65,7 @@ module Bosh::Monitor::Plugins
         }
 
         if alerts.count > 0
-          if alerts.count >= count_threshold && percent >= percent_threshold
+          if alerts.count >= minimum_down_jobs && percent >= percent_threshold
             # "Melting down" means a large part of the cluster is offline and manual intervention
             # may be required to fix.
             return [STATE_MELTDOWN, details]
