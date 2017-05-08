@@ -25,7 +25,7 @@ module Bosh::Monitor::Plugins
         to_return(status: 200, body: JSON.dump({'user_authentication' => user_authentication}))
     end
 
-    let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i')) }
+    let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i', severity: 1)) }
 
     let(:user_authentication) { {} }
 
@@ -57,7 +57,7 @@ module Bosh::Monitor::Plugins
         end
 
         it 'should be delivered' do
-          expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_NORMAL, {}])
+          expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
           plugin.run
 
           request_url = "#{uri}/deployments/d/scan_and_fix"
@@ -98,7 +98,7 @@ module Bosh::Monitor::Plugins
           let(:token) { uaa_token_info('fake-token-id') }
 
           it 'uses UAA token' do
-            expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_NORMAL, {}])
+            expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
             plugin.run
 
             request_url = "#{uri}/deployments/d/scan_and_fix"
@@ -167,6 +167,9 @@ module Bosh::Monitor::Plugins
 
         context 'when director starts responding' do
           before do
+            @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
+            expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
+            expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
             stub_request(:get, status_uri).to_return({status: 500}, {status: 200, body: '{}'})
           end
 

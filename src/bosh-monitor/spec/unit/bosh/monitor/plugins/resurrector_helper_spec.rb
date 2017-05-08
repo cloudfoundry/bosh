@@ -14,7 +14,10 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         allow(instance_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
         allow(Bhm).to receive_messages(instance_manager: instance_manager)
 
-        alerts.times { |i| tracker.record(build_key(i), Time.now) }
+        alerts.times do |i|
+          alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :error)
+          tracker.record(build_key(i), alert)
+        end
       end
 
       context 'when the number of unresponsive agents is 0' do
@@ -78,9 +81,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
         it 'excludes those alerts' do
           now = Time.now
-          tracker.record(build_key(0), now - 610)
-          tracker.record(build_key(1), now - 600)
-          tracker.record(build_key(2), now - 60)
+          tracker.record(build_key(0), double(Bosh::Monitor::Events::Alert, created_at: (now - 610), severity: :error))
+          tracker.record(build_key(1), double(Bosh::Monitor::Events::Alert, created_at: (now - 600), severity: :error))
+          tracker.record(build_key(2), double(Bosh::Monitor::Events::Alert, created_at: (now - 60), severity: :error))
 
           state, details = tracker.state_for(deployment)
           expect(state).to be(AlertTracker::STATE_MELTDOWN)

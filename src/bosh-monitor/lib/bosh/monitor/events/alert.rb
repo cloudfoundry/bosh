@@ -11,6 +11,8 @@ module Bosh::Monitor
         -1 => :ignored
       }
 
+      MELTDOWN_STATES = [:alert, :critical, :error]
+
       attr_reader :created_at, :source, :title
 
       def initialize(attributes = {})
