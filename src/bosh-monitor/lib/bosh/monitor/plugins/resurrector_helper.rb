@@ -52,6 +52,12 @@ module Bosh::Monitor::Plugins
         @time_threshold     = args.fetch('time_threshold', 600)
       end
 
+      def record(agent_key, alert)
+        if Bosh::Monitor::Events::Alert::MELTDOWN_STATES.include?(alert.severity)
+          @alert_times[agent_key] = alert.created_at
+        end
+      end
+
       def state_for(deployment)
         agents = fetch_agents(deployment)
         alerts = fetch_alerts(agents)
@@ -75,10 +81,6 @@ module Bosh::Monitor::Plugins
         end
 
         [STATE_NORMAL, details]
-      end
-
-      def record(agent_key, alert_time)
-        @alert_times[agent_key] = alert_time
       end
 
       private
