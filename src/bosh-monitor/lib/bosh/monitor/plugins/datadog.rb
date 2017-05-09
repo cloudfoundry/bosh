@@ -90,12 +90,11 @@ module Bosh::Monitor
       def severity_for(alert)
         NORMAL_PRIORITY.include?(alert.severity) ? 'error' : 'warning'
       end
+
       def tags_for(data)
         [].tap do |tags|
           tags << "source:#{data[:source]}"
           tags << "deployment:#{data[:deployment]}"
-          tags << "instance_group:#{data[:job]}"
-          tags << "instance_id:#{data[:instance_id]}"
         end
       end
     end

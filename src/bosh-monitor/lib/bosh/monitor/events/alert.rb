@@ -1,6 +1,7 @@
 module Bosh::Monitor
   module Events
     class Alert < Base
+      CATEGORY_VM_HEALTH = :vm_health
 
       # Considering Bosh::Agent::Alert
       SEVERITY_MAP = {
@@ -11,22 +12,19 @@ module Bosh::Monitor
         -1 => :ignored
       }
 
-      MELTDOWN_STATES = [:alert, :critical, :error]
-
-      attr_reader :created_at, :source, :title
+      attr_reader :created_at, :source, :title, :category
 
       def initialize(attributes = {})
         super
         @kind = :alert
 
-        @id          = @attributes["id"]
-        @severity    = @attributes["severity"]
-        @title       = @attributes["title"]
-        @summary     = @attributes["summary"] || @title
-        @source      = @attributes["source"]
-        @deployment  = @attributes["deployment"] || nil
-        @job         = @attributes["job"] || nil
-        @instance_id = @attributes["instance_id"] || nil
+        @id         = @attributes["id"]
+        @severity   = @attributes["severity"]
+        @category   = @attributes["category"]
+        @title      = @attributes["title"]
+        @summary    = @attributes["summary"] || @title
+        @source     = @attributes["source"]
+        @deployment = @attributes["deployment"]
 
         # This rescue is just to preserve existing test behavior. However, this
         # seems like a pretty wacky way to handle errors - wouldn't we rather
@@ -63,12 +61,11 @@ module Bosh::Monitor
           :kind        => "alert",
           :id          => @id,
           :severity    => @severity,
+          :category    => @category,
           :title       => @title,
           :summary     => @summary,
           :source      => @source,
           :deployment  => @deployment,
-          :job         => @job,
-          :instance_id => @instance_id,
           :created_at  => @created_at.to_i
         }
       end

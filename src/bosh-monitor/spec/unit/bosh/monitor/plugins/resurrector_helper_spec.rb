@@ -15,19 +15,16 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         allow(Bhm).to receive_messages(instance_manager: instance_manager)
 
         alerts.times do |i|
-          alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :error)
+          alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH)
           tracker.record(build_key(i), alert)
         end
       end
 
       context 'when the number of unresponsive agents is 0' do
         it 'reports as "normal"' do
-          state, details = tracker.state_for(deployment)
-          expect(state).to be(AlertTracker::STATE_NORMAL)
-          expect(details).to eq({
-            'deployment' => 'deployment',
-            'alerts' => { 'count' => 0, 'percent' => '0.0%' }
-          })
+          state = tracker.state_for(deployment)
+          expect(state).to be_normal
+          expect(state.summary).to eq("deployment: ''; 0 of 10 agents are unhealthy (0.0%)")
         end
       end
 
@@ -36,12 +33,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         let(:alerts) { 1 }
 
         it 'reports as "managed"' do
-          state, details = tracker.state_for(deployment)
-          expect(state).to be(AlertTracker::STATE_MANAGED)
-          expect(details).to eq({
-            'deployment' => deployment,
-            'alerts' => { 'count' => 1, 'percent' => '10.0%' }
-          })
+          state = tracker.state_for(deployment)
+          expect(state).to be_managed
+          expect(state.summary).to eq("deployment: ''; 1 of 10 agents are unhealthy (10.0%)")
         end
       end
 
@@ -51,12 +45,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
           let(:alerts) { 2 }
 
           it 'reports as "managed"' do
-            state, details = tracker.state_for(deployment)
-            expect(state).to be(AlertTracker::STATE_MANAGED)
-            expect(details).to eq({
-              'deployment' => deployment,
-              'alerts' => { 'count' => 2, 'percent' => '20.0%' }
-            })
+            state = tracker.state_for(deployment)
+            expect(state).to be_managed
+            expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
           end
         end
 
@@ -65,12 +56,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
           let(:alerts) { 2 }
 
           it 'reports as "meltdown"' do
-            state, details = tracker.state_for(deployment)
-            expect(state).to be(AlertTracker::STATE_MELTDOWN)
-            expect(details).to eq({
-              'deployment' => deployment,
-              'alerts' => { 'count' => 2, 'percent' => '20.0%' }
-            })
+            state = tracker.state_for(deployment)
+            expect(state).to be_meltdown
+            expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
           end
         end
       end
@@ -81,16 +69,13 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
         it 'excludes those alerts' do
           now = Time.now
-          tracker.record(build_key(0), double(Bosh::Monitor::Events::Alert, created_at: (now - 610), severity: :error))
-          tracker.record(build_key(1), double(Bosh::Monitor::Events::Alert, created_at: (now - 600), severity: :error))
-          tracker.record(build_key(2), double(Bosh::Monitor::Events::Alert, created_at: (now - 60), severity: :error))
+          tracker.record(build_key(0), double(Bosh::Monitor::Events::Alert, created_at: (now - 610), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
+          tracker.record(build_key(1), double(Bosh::Monitor::Events::Alert, created_at: (now - 600), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
+          tracker.record(build_key(2), double(Bosh::Monitor::Events::Alert, created_at: (now - 60), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
 
-          state, details = tracker.state_for(deployment)
-          expect(state).to be(AlertTracker::STATE_MELTDOWN)
-          expect(details).to eq({
-            'deployment' => deployment,
-            'alerts' => { 'count' => 2, 'percent' => '20.0%' }
-          })
+          state = tracker.state_for(deployment)
+          expect(state).to be_meltdown
+          expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
         end
       end
 

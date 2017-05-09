@@ -42,6 +42,10 @@ module Bosh::Monitor
       "#{@deployment}: #{identifier} [#{attributes.join(', ')}]"
     end
 
+    def expects_vm?
+      !! @expects_vm
+    end
+
     def has_vm?
       @cid != nil
     end

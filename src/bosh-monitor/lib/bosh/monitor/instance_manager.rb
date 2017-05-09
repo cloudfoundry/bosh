@@ -112,6 +112,7 @@ module Bosh::Monitor
       if agent.timed_out?
         @processor.process(:alert,
                            severity: 2,
+                           category: Events::Alert::CATEGORY_VM_HEALTH,
                            source: agent.name,
                            title: "#{agent.id} has timed out",
                            created_at: ts,
@@ -148,13 +149,13 @@ module Bosh::Monitor
     end
 
     def analyze_instance(instance)
-      unless instance.has_vm?
-        ts = Time.now.to_i
+      if instance.expects_vm? && !instance.has_vm?
         @processor.process(:alert,
                            severity: 2,
+                           category: Events::Alert::CATEGORY_VM_HEALTH,
                            source: instance.name,
                            title: "#{instance.id} has no VM",
-                           created_at: ts,
+                           created_at: Time.now.to_i,
                            deployment: instance.deployment,
                            job: instance.job,
                            instance_id: instance.id)

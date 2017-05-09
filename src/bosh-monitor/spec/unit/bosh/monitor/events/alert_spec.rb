@@ -28,12 +28,11 @@ describe Bhm::Events::Alert do
       :kind        => "alert",
       :id          => 1,
       :severity    => 2,
+      :category    => nil,
       :title       => "Test Alert",
       :summary     => "Everything is down",
       :source      => "mysql_node/instance_id_abc",
       :deployment  => "deployment",
-      :job         => "job",
-      :instance_id => "instance_id",
       :created_at  => ts.to_i
     })
   end

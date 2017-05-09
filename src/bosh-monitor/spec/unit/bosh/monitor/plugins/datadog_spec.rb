@@ -151,7 +151,7 @@ describe Bhm::Plugins::DataDog do
         expect(msg).to eq('Everything is down')
         expect(options[:msg_title]).to eq('Test Alert')
         expect(options[:date_happened]).to eq(time)
-        expect(options[:tags]).to match_array(['deployment:deployment', 'instance_group:job', 'instance_id:instance_id', 'source:mysql_node/instance_id_abc'])
+        expect(options[:tags]).to match_array(['deployment:deployment', 'source:mysql_node/instance_id_abc'])
         expect(options[:priority]).to eq('normal')
       }.and_return(fake_event)
 

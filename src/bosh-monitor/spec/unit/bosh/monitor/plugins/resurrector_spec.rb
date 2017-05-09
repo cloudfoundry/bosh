@@ -29,10 +29,6 @@ module Bosh::Monitor::Plugins
 
     let(:user_authentication) { {} }
 
-    it 'should construct a usable url' do
-      expect(plugin.url.to_s).to eq(uri)
-    end
-
     context 'when the event machine reactor is not running' do
       it 'should not start' do
         expect(plugin.run).to be(false)
@@ -48,16 +44,16 @@ module Bosh::Monitor::Plugins
       end
 
       context 'alerts with deployment, job and id' do
-        let (:event_processor) { Bhm::EventProcessor.new }
+        let(:event_processor) { Bhm::EventProcessor.new }
+        let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => true, :meltdown? => false, :summary => 'summary') }
 
         before do
           Bhm.event_processor = event_processor
-          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
+          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
           expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
         end
 
         it 'should be delivered' do
-          expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
           plugin.run
 
           request_url = "#{uri}/deployments/d/scan_and_fix"
@@ -98,7 +94,6 @@ module Bosh::Monitor::Plugins
           let(:token) { uaa_token_info('fake-token-id') }
 
           it 'uses UAA token' do
-            expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
             plugin.run
 
             request_url = "#{uri}/deployments/d/scan_and_fix"
@@ -115,28 +110,30 @@ module Bosh::Monitor::Plugins
           end
         end
 
-        it 'does not deliver while melting down' do
-          expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MELTDOWN, {}])
-          plugin.run
-          expect(plugin).not_to receive(:send_http_put_request)
-          plugin.process(alert)
-        end
+        context 'while melting down' do
+          let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => false, :meltdown? => true, :summary => 'summary') }
 
-        it 'should alert through EventProcessor while melting down' do
-          expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MELTDOWN, {}])
-          expected_time = Time.new
-          allow(Time).to receive(:now).and_return(expected_time)
-          alert_option = {
-              :severity => 1,
-              :title => "We are in meltdown.",
-              :summary => "Skipping resurrection for instance: 'j/i'; deployment: d; alerts: nil",
-              :source => "HM plugin resurrector",
-              :deployment => "d",
-              :created_at => expected_time.to_i
-          }
-          expect(event_processor).to receive(:process).with(:alert, alert_option)
-          plugin.run
-          plugin.process(alert)
+          it 'does not send requests to scan and fix' do
+            plugin.run
+            expect(plugin).not_to receive(:send_http_put_request)
+            plugin.process(alert)
+          end
+
+          it 'sends alerts to the EventProcessor' do
+            expected_time = Time.new
+            allow(Time).to receive(:now).and_return(expected_time)
+            alert_option = {
+                :severity => 1,
+                :title => "We are in meltdown",
+                :summary => "Skipping resurrection for instance: 'j/i'; summary",
+                :source => "HM plugin resurrector",
+                :deployment => "d",
+                :created_at => expected_time.to_i
+            }
+            expect(event_processor).to receive(:process).with(:alert, alert_option)
+            plugin.run
+            plugin.process(alert)
+          end
         end
       end
 
@@ -167,9 +164,8 @@ module Bosh::Monitor::Plugins
 
         context 'when director starts responding' do
           before do
-            @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil)
-            expect(@don).to receive(:state_for).and_return([ResurrectorHelper::AlertTracker::STATE_MANAGED, {}])
-            expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
+            state = double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => true, :meltdown? => false, :summary => 'summary')
+            expect(Bhm::Plugins::ResurrectorHelper::DeploymentState).to receive(:new).and_return(state)
             stub_request(:get, status_uri).to_return({status: 500}, {status: 200, body: '{}'})
           end
 

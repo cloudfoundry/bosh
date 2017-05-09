@@ -29,9 +29,7 @@ module Bosh::Monitor::Plugins
     # Service which tracks alerts and decides whether or not the cluster is melting down.
     # When the cluster is melting down, the resurrector backs off on fixing instances.
     class AlertTracker
-      STATE_NORMAL = 'normal'
-      STATE_MANAGED = 'managed'
-      STATE_MELTDOWN = 'meltdown'
+      UNHEALTHY = [:critical]
 
       # Below this number of down agents we don't consider a meltdown occurring
       attr_accessor :minimum_down_jobs
@@ -45,66 +43,93 @@ module Bosh::Monitor::Plugins
       attr_accessor :percent_threshold
 
       def initialize(args={})
-        @instance_manager   = Bhm.instance_manager
-        @alert_times        = {} # maps JobInstanceKey to time of last Alert
-        @minimum_down_jobs  = args.fetch('minimum_down_jobs', 5)
-        @percent_threshold  = args.fetch('percent_threshold', 0.2)
-        @time_threshold     = args.fetch('time_threshold', 600)
+        @instance_manager  = Bhm.instance_manager
+        @unhealthy_agents  = {}
+        @minimum_down_jobs = args.fetch('minimum_down_jobs', 5)
+        @percent_threshold = args.fetch('percent_threshold', 0.2)
+        @time_threshold    = args.fetch('time_threshold', 600)
       end
 
       def record(agent_key, alert)
-        if Bosh::Monitor::Events::Alert::MELTDOWN_STATES.include?(alert.severity)
-          @alert_times[agent_key] = alert.created_at
+        if alert.category == Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH && UNHEALTHY.include?(alert.severity)
+          @unhealthy_agents[agent_key] = alert.created_at
         end
       end
 
       def state_for(deployment)
-        agents = fetch_agents(deployment)
-        alerts = fetch_alerts(agents)
-        percent = percent_alerting(agents, alerts)
-        details = {
-          'deployment' => deployment,
-          'alerts' => {
-            'count' => alerts.count,
-            'percent' => "#{(percent * 100).round(1)}%",
-          }
-        }
+        agents = @instance_manager.get_agents_for_deployment(deployment)
+        unhealthy_count = unhealthy_count(agents)
 
-        if alerts.count > 0
-          if alerts.count >= minimum_down_jobs && percent >= percent_threshold
-            # "Melting down" means a large part of the cluster is offline and manual intervention
-            # may be required to fix.
-            return [STATE_MELTDOWN, details]
-          end
-
-          return [STATE_MANAGED, details]
-        end
-
-        [STATE_NORMAL, details]
+        DeploymentState.new(deployment, agents.count, unhealthy_count, {
+          count_threshold: minimum_down_jobs,
+          percent_threshold: percent_threshold
+        })
       end
 
       private
 
-      def fetch_agents(deployment)
-        @instance_manager.get_agents_for_deployment(deployment)
-      end
+      def unhealthy_count(agents)
+        count = 0
 
-      def fetch_alerts(agents)
-        {}.tap do |result|
-          agents.values.each do |agent|
-            key = JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
+        agents.values.each do |agent|
+          key = JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
 
-            if time = @alert_times.fetch(key, false)
-              t1 = time.to_i
-              t2 = (Time.now - time_threshold).to_i
-              result[key] = time if t1 >= t2
-            end
+          if time = @unhealthy_agents.fetch(key, false)
+            t1 = time.to_i
+            t2 = (Time.now - time_threshold).to_i
+            count += 1 if (t1 >= t2)
           end
         end
+
+        count
+      end
+    end
+
+    class DeploymentState
+      STATE_NORMAL = 'normal'
+      STATE_MANAGED = 'managed'
+      STATE_MELTDOWN = 'meltdown'
+
+      def initialize(deployment, agent_count, unhealthy_count, thresholds)
+        @deployment = deployment
+        @agent_count = agent_count
+        @unhealthy_count = unhealthy_count
+        @count_threshold = thresholds[:count_threshold]
+        @percent_threshold = thresholds[:percent_threshold]
       end
 
-      def percent_alerting(agents, alerts)
-        alerts.count.to_f / agents.count
+      def managed?
+        state == STATE_MANAGED
+      end
+
+      def meltdown?
+        state == STATE_MELTDOWN
+      end
+
+      def normal?
+        state == STATE_NORMAL
+      end
+
+      def summary
+        "deployment: '#{@eployment}'; #{@unhealthy_count} of #{@agent_count} agents are unhealthy (#{(unhealthy_percent * 100).round(1)}%)"
+      end
+
+      private
+
+      def state
+        if @unhealthy_count > 0
+          if @unhealthy_count >= @count_threshold && unhealthy_percent >= @percent_threshold
+            return STATE_MELTDOWN
+          end
+
+          return STATE_MANAGED
+        end
+
+        STATE_NORMAL
+      end
+
+      def unhealthy_percent
+        @unhealthy_percent ||= (@unhealthy_count.to_f / @agent_count)
       end
     end
   end
