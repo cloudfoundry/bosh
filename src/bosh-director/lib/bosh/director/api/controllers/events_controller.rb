@@ -73,8 +73,8 @@ module Bosh::Director
           events = events.where(object_type: params['object_type'])
         end
 
-        if params['object_id']
-          events = events.where(object_name: params['object_id'])
+        if params['object_name']
+          events = events.where(object_name: params['object_name'])
         end
 
         events = events.limit(EVENT_LIMIT).map do |event|
