@@ -11,6 +11,8 @@ module Bosh::Monitor
         -1 => :ignored
       }
 
+      MELTDOWN_STATES = [:alert, :critical, :error]
+
       attr_reader :created_at, :source, :title
 
       def initialize(attributes = {})
@@ -58,13 +60,16 @@ module Bosh::Monitor
 
       def to_hash
         {
-          :kind       => "alert",
-          :id         => @id,
-          :severity   => @severity,
-          :title      => @title,
-          :summary    => @summary,
-          :source     => @source,
-          :created_at => @created_at.to_i
+          :kind        => "alert",
+          :id          => @id,
+          :severity    => @severity,
+          :title       => @title,
+          :summary     => @summary,
+          :source      => @source,
+          :deployment  => @deployment,
+          :job         => @job,
+          :instance_id => @instance_id,
+          :created_at  => @created_at.to_i
         }
       end
 

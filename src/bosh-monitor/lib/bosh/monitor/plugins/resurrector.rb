@@ -37,7 +37,7 @@ module Bosh::Monitor
         # on the alert so this won't trigger a recreate for other types of alerts
         if deployment && job && id
           agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
-          @alert_tracker.record(agent_key, alert.created_at)
+          @alert_tracker.record(agent_key, alert)
 
           payload = {'jobs' => {job => [id]}}
 
@@ -55,26 +55,31 @@ module Bosh::Monitor
           }
 
           @url.path = "/deployments/#{deployment}/scan_and_fix"
+          state, details = @alert_tracker.state_for(deployment)
 
-          if @alert_tracker.melting_down?(deployment)
+          case state
+          when ResurrectorHelper::AlertTracker::STATE_MELTDOWN
             # freak out
+            summary = "Skipping resurrection for instance: '#{job}/#{id}'; deployment: #{deployment}; alerts: #{details['alerts'].inspect}"
             ts = Time.now.to_i
             @processor.process(:alert,
                                severity: 1,
-                               source: "HM plugin resurrector",
                                title: "We are in meltdown.",
+                               summary: summary,
+                               source: "HM plugin resurrector",
+                               deployment: deployment,
                                created_at: ts)
 
-            logger.error("(Resurrector) we are in meltdown.")
-          else
+            logger.error("(Resurrector) we are in meltdown. #{summary}")
+          when ResurrectorHelper::AlertTracker::STATE_MANAGED
             # queue instead, and only queue if it isn't already in the queue
             # what if we can't keep up with the failure rate?
             # - maybe not, maybe the meltdown detection takes care of the rate issue
             logger.warn("(Resurrector) notifying director to recreate unresponsive VM: #{deployment} #{job}/#{id}")
-
             send_http_put_request(url.to_s, request)
+          else
+            logger.info("(Resurrector) state is normal")
           end
-
         else
           logger.warn("(Resurrector) event did not have deployment, job and id: #{alert}")
         end
@@ -99,4 +104,3 @@ module Bosh::Monitor
     end
   end
 end
-
