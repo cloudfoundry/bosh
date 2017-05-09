@@ -127,8 +127,8 @@ module Bosh::Director
         elem = pair.first
         redacted_elem = pair.last
         if elem.is_a?(Hash)
-          using_names = (added+removed).all? { |e| e.first['name'] }
-          using_ranges = (added+removed).all? { |e| e.first['range'] }
+          using_names = remove_nil_values(added+removed).all? { |e| e.first['name'] }
+          using_ranges = remove_nil_values(added+removed).all? { |e| e.first['range'] }
           if using_names || using_ranges
             if using_names
               removed_same_name_element = removed.find { |e| e.first['name'] == elem['name'] }
@@ -173,6 +173,10 @@ module Bosh::Director
       end
 
       lines
+    end
+
+    def remove_nil_values(values)
+      values.reject { |e| e.nil? || e.first == nil }
     end
   end
 end

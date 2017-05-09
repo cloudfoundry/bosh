@@ -909,6 +909,84 @@ module Bosh::Director
       end
     end
 
+    context 'property was a named hash in an array, but now contains nil elements' do
+      let(:old) do
+        {
+          'service_catalog' => {
+            'plans' => [
+              {
+                'name' => 'cache-small',
+                'description' => 'Blah'
+              },
+              {
+                'name' => 'cache-medium',
+                'description' => 'Blah'
+              },
+              {
+                'name' => 'cache-large',
+                'description' => 'Blah'
+              },
+            ]
+          }
+        }
+      end
+
+      let(:new) do
+        {
+          'service_catalog' => {
+            'plans' => [{'name' => 'some-name'}, nil, nil]
+          }
+        }
+      end
+
+      it 'does not error' do
+        expect(changeset).to eq([
+          ['service_catalog:', nil],
+          ['  plans:', nil],
+          ['  - name: some-name', 'added'],
+          ['  - ', 'added'],
+          ['  - ', 'added'],
+          ['  - name: cache-small', 'removed'],
+          ['    description: Blah', 'removed'],
+          ['  - name: cache-medium', 'removed'],
+          ['    description: Blah', 'removed'],
+          ['  - name: cache-large', 'removed'],
+          ['    description: Blah', 'removed']
+        ]
+        )
+      end
+
+      context 'property also uses range with nils' do
+        let(:new) do
+          {
+            'service_catalog' => {
+              'plans' => [{'name' => 'some-name', 'range' => 'some-range'}, nil, nil]
+            }
+          }
+        end
+
+        it 'does not error' do
+          expect(changeset).to eq([
+            ['service_catalog:', nil],
+            ['  plans:', nil],
+            ['  - name: some-name', 'added'],
+            ['    range: some-range', 'added'],
+            ['  - ', 'added'],
+            ['  - ', 'added'],
+            ['  - name: cache-small', 'removed'],
+            ['    description: Blah', 'removed'],
+            ['  - name: cache-medium', 'removed'],
+            ['    description: Blah', 'removed'],
+            ['  - name: cache-large', 'removed'],
+            ['    description: Blah', 'removed']
+          ]
+          )
+        end
+
+      end
+    end
+
+
     context 'property was an integer, but is now a hash' do
       let(:old) do
         {
