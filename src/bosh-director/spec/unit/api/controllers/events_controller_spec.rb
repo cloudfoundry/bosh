@@ -232,7 +232,7 @@ module Bosh::Director
           end
         end
 
-        context 'when object_id is specified' do
+        context 'when object_name is specified' do
           before do
             basic_authorize 'admin', 'admin'
             Models::Event.make('object_name' => 'fake_name')
@@ -240,7 +240,7 @@ module Bosh::Director
           end
 
           it 'returns a filtered list of events' do
-            get '?object_id=fake_name'
+            get '?object_name=fake_name'
             events = JSON.parse(last_response.body)
             expect(events.size).to eq(1)
             expect(events[0]['object_name']).to eq('fake_name')
@@ -271,7 +271,7 @@ module Bosh::Director
             end
           end
 
-          context 'when user, action, object_id and object_type are specified' do
+          context 'when user, action, object_name and object_type are specified' do
             before do
               Models::Event.make('user' => 'admin')
               Models::Event.make('user' => 'admin', 'action' => 'update', 'object_name' => 'test', 'object_type' => 'deployment')
@@ -281,7 +281,7 @@ module Bosh::Director
             end
 
             it 'returns the ended results' do
-              get '?user=admin&action=update&object_id=test&object_type=deployment'
+              get '?user=admin&action=update&object_name=test&object_type=deployment'
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
               expect(events[0]['user']).to eq('admin')
