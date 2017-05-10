@@ -184,6 +184,7 @@ require 'bosh/director/jobs/attach_disk'
 require 'bosh/director/jobs/delete_vm'
 require 'bosh/director/jobs/helpers'
 require 'bosh/director/jobs/db_job'
+require 'bosh/director/jobs/orphan_disk'
 
 require 'bosh/director/models/helpers/model_helper'
 

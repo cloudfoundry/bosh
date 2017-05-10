@@ -101,4 +101,22 @@ describe 'orphaned disks', type: :integration do
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(['snapshot_disk', 'delete_vm', 'create_vm', 'set_vm_metadata', 'detach_disk'])
   end
+
+  it 'should orhpan disk' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['persistent_disk'] = 3000
+    manifest_hash['jobs'].first['instances'] = 1
+    deploy_from_scratch(manifest_hash: manifest_hash)
+    disk_cid = director.instances.first.disk_cids.first
+
+    result = bosh_runner.run('disks --orphaned')
+    expect(result).to include '0 disks'
+
+    result = bosh_runner.run("orphan-disk #{disk_cid}")
+    expect(result).to include("Succeeded")
+    expect(director.instances.first.disk_cids).to eq([])
+
+    orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
+    expect(orphaned_output[0]['disk_cid']).to eq(disk_cid)
+  end
 end

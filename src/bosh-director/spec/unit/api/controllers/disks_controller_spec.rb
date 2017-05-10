@@ -32,6 +32,7 @@ module Bosh::Director
             deployment_name: 'fake-deployment',
             created_at: orphaned_at,
           )
+          Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
 
           basic_authorize 'admin', 'admin'
         end
@@ -62,6 +63,24 @@ module Bosh::Director
           delete '/random-disk-cid-1'
 
           expect_redirect_to_queued_task(last_response)
+        end
+
+        context 'delete /disk-cid with orphan parameter' do
+          it 'orphans the disk when orphan=true' do
+            expect(Jobs::OrphanDiskJob).to receive(:enqueue)
+                                          .with('admin', 'disk123', kind_of(JobQueue))
+                                          .and_call_original
+            delete '/disk123?orphan=true'
+            expect_redirect_to_queued_task(last_response)
+          end
+
+          it 'deletes an orphan disk when orphan=false' do
+            expect(Jobs::DeleteOrphanDisks).to receive(:enqueue)
+                                          .with('admin', ['random-disk-cid-1'], kind_of(JobQueue))
+                                          .and_call_original
+            delete '/random-disk-cid-1?orphan=false'
+            expect_redirect_to_queued_task(last_response)
+          end
         end
       end
 
