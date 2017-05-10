@@ -1,16 +1,17 @@
 require 'spec_helper'
+require 'timecop'
 
 module Bosh::Director
   describe AgentBroadcaster do
     let(:ip_addresses) { ['10.0.0.1'] }
     let(:instance1) do
       instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1')
-      Bosh::Director::Models::Vm.make(id: 1, cid: 'id-1', instance_id: instance.id, active: true)
+      Bosh::Director::Models::Vm.make(id: 1, agent_id: 'agent-1', cid: 'id-1', instance_id: instance.id, active: true)
       instance
     end
     let(:instance2) do
       instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 2, job: 'fake-job-1')
-      Bosh::Director::Models::Vm.make(id: 2, cid: 'id-2', instance_id: instance.id, active: true)
+      Bosh::Director::Models::Vm.make(id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: instance.id, active: true)
       instance
     end
     let(:agent) { double(AgentClient, wait_until_ready: nil, fake_method: nil, delete_arp_entries: nil) }
@@ -87,12 +88,24 @@ module Bosh::Director
     end
 
     describe '#sync_dns' do
+      let(:start_time) { Time.now }
+      let(:end_time) { start_time + 0.01 }
+
+      before do
+        Timecop.freeze(start_time)
+      end
+
       context 'when all agents are responsive' do
         it 'successfully broadcast :sync_dns call' do
+          expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 1 agents ["agent-1"]')
+          expect(logger).to receive(:info).with('agent_broadcaster: sync_dns[agent-1]: received response {"value"=>"synced"}')
+          expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 1 agents in 10ms (1 successful, 0 failed, 0 unresponsive)')
+
           expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
               with(instance1.credentials, instance1.agent_id).and_return(agent)
-          expect(agent).to receive(:send).with(:sync_dns, 'fake-blob-id', 'fake-sha1', 1) do |args, &blk|
+          expect(agent).to receive(:send).with(:sync_dns, 'fake-blob-id', 'fake-sha1', 1) do |&blk|
             blk.call({'value' => 'synced'})
+            Timecop.freeze(end_time)
           end
 
           agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
@@ -104,18 +117,59 @@ module Bosh::Director
 
         context 'and agent succeeds within retry count' do
           it 'retries broadcasting to failed agents' do
+            expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 2 agents ["agent-1", "agent-2"]')
+            expect(logger).to receive(:info).with('agent_broadcaster: sync_dns[agent-1]: received response {"value"=>"synced"}')
+            expect(logger).to receive(:error).with('agent_broadcaster: sync_dns[agent-2]: received unexpected response {"value"=>"unsynced"}')
+            expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 2 agents in 10ms (1 successful, 1 failed, 0 unresponsive)')
+
             expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-                with(instance1.credentials, instance1.agent_id) do
-              expect(agent).to receive(:sync_dns) do |*args, &blk|
+              with(instance1.credentials, instance1.agent_id) do
+              expect(agent).to receive(:sync_dns) do |&blk|
                 blk.call({'value' => 'synced'})
+                Timecop.freeze(end_time)
               end
               agent
             end
+
             expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-                with(instance2.credentials, instance2.agent_id) do
+              with(instance2.credentials, instance2.agent_id) do
+              expect(agent).to receive(:sync_dns) do |&blk|
+                blk.call({'value' => 'unsynced'})
+              end
+              agent
+            end
+
+            agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
+          end
+        end
+      end
+
+
+      context 'when some agents are unresponsive' do
+        let!(:instances) { [instance1, instance2]}
+
+        context 'and agent succeeds within retry count' do
+          it 'retries broadcasting to failed agents' do
+            expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 2 agents ["agent-1", "agent-2"]')
+            expect(logger).to receive(:info).with('agent_broadcaster: sync_dns[agent-1]: received response {"value"=>"synced"}')
+            expect(logger).to receive(:warn).with('agent_broadcaster: sync_dns[agent-2]: no response received')
+            expect(logger).to receive(:info).with(/agent_broadcaster: sync_dns: attempted 2 agents in \d+ms \(1 successful, 0 failed, 1 unresponsive\)/)
+
+            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
+              with(instance1.credentials, instance1.agent_id) do
+              expect(agent).to receive(:sync_dns) do |&blk|
+                blk.call({'value' => 'synced'})
+                Timecop.travel(end_time)
+              end
+              agent
+            end
+
+            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
+              with(instance2.credentials, instance2.agent_id) do
               expect(agent).to receive(:sync_dns)
               agent
             end.twice
+
             agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
           end
         end

@@ -20,8 +20,26 @@ module Bosh::Director
     def sync_dns(blobstore_id, sha1, version)
       instances = filter_instances(nil)
       timeout = Timeout.new(@sync_dns_timeout)
-      @logger.info("Syncing dns for instances #{instances.map(&:agent_id)}")
-      broadcast_with_retry(instances, timeout, :sync_dns, blobstore_id, sha1, version)
+      @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{instances.map(&:agent_id)}")
+      num_successful = 0
+      num_unresponsive = 0
+      num_failed = 0
+      start_time = Time.now
+      broadcast_with_retry(instances, timeout, :sync_dns, [blobstore_id, sha1, version]) do |agent_id, response|
+        if response.nil?
+          num_unresponsive += 1
+          @logger.warn("agent_broadcaster: sync_dns[#{agent_id}]: no response received")
+        elsif response['value'] == VALID_RESPONSE
+          num_successful += 1
+          @logger.info("agent_broadcaster: sync_dns[#{agent_id}]: received response #{response}")
+        else
+          num_failed += 1
+          @logger.error("agent_broadcaster: sync_dns[#{agent_id}]: received unexpected response #{response}")
+        end
+      end
+      elapsed_time = ((Time.now - start_time) * 1000).ceil
+
+      @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
     end
 
     def filter_instances(vm_cid_to_exclude)
@@ -42,19 +60,15 @@ module Bosh::Director
       end
     end
 
-    def broadcast_with_retry(instances, timeout, method, *args)
+    def broadcast_with_retry(instances, timeout, method, args_list, &blk)
       lock = Mutex.new
       (0...BROADCAST_RETRY).each do
         instances_to_retry = []
         instance_to_request_id = {}
         instances.each do |instance|
           instance_to_request_id[instance] = true
-          send_agent_request(instance.credentials, instance.agent_id, method, *args) do |response|
-            if response['value'] == VALID_RESPONSE
-              @logger.info("Got response #{response} from instance #{instance.agent_id}")
-            else
-              @logger.error("Got error response #{response} from instance #{instance.agent_id}")
-            end
+          send_agent_request(instance.credentials, instance.agent_id, method, *args_list) do |response|
+            blk.call(instance.agent_id, response)
             lock.synchronize do
               instance_to_request_id.delete(instance)
             end
@@ -76,10 +90,11 @@ module Bosh::Director
               instances_to_retry << instance
             end
             instances = instances_to_retry
-            @logger.warn("Unresponsive instances are #{instances.map(&:agent_id)}")
           end
         end
       end
+
+      instances.each { |instance| blk.call(instance.agent_id, nil) }
     end
 
     def send_agent_request(instance_credentials, instance_agent_id, method, *args, &blk)
