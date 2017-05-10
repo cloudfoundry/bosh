@@ -268,6 +268,7 @@ module Bhm
               :alert,
               {
                   severity: 2,
+                  category: :vm_health,
                   source: 'mycloud: mutator(some-sort-of-uuid) [id=007, index=0, cid=]',
                   title: '007 has timed out',
                   created_at: anything,
@@ -331,6 +332,16 @@ module Bhm
         expect(event_processor).to_not receive(:process)
         expect(manager.analyze_instance(Bhm::Instance.create(instance))).to be(true)
       end
+
+      context 'when the instances expects a VM, and does not have one' do
+        it 'sends an alert' do
+          instance = {'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => nil, 'job' => 'mutator', 'expects_vm' => true}
+          manager.sync_instances('my_deployment', [instance])
+
+          expect(event_processor).to receive(:process)
+          expect(manager.analyze_instance(Bhm::Instance.create(instance))).to be(true)
+        end
+      end
     end
 
     describe '#analyze_instances' do
@@ -360,6 +371,7 @@ module Bhm
             :alert,
             {
                 severity: 2,
+                category: :vm_health,
                 source: 'my_deployment: mutator(instance-uuid) [agent_id=007, index=0, cid=]',
                 title: 'instance-uuid has no VM',
                 created_at: anything,

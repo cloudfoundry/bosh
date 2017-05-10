@@ -33,11 +33,6 @@ module Bosh::Monitor
         return false
       end
 
-      unless instance.expects_vm
-        @logger.debug("Instance with no VM expected found: #{instance.id}")
-        return false
-      end
-
       instance.deployment = name
       @logger.debug("Discovered new instance #{instance.id}") if @instance_id_to_instance[instance.id].nil?
       @instance_id_to_instance[instance.id] = instance
@@ -64,7 +59,6 @@ module Bosh::Monitor
     # extracts relevant agent data, wraps it into Agent object
     # and adds it to a list of managed agents.
     def upsert_agent(instance)
-
       @logger.info("Adding agent #{instance.agent_id} (#{instance.job}/#{instance.id}) to #{name}...")
 
       agent_id = instance.agent_id
