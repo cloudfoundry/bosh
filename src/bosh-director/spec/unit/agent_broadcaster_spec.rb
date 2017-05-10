@@ -14,7 +14,7 @@ module Bosh::Director
       Bosh::Director::Models::Vm.make(id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: instance.id, active: true)
       instance
     end
-    let(:agent) { double(AgentClient, wait_until_ready: nil, fake_method: nil, delete_arp_entries: nil) }
+    let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent_broadcast) { AgentBroadcaster.new(0.1) }
 
     describe '#filter_instances' do
@@ -108,7 +108,9 @@ module Bosh::Director
             Timecop.freeze(end_time)
           end
 
-          agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
+          agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
+
+          expect(Models::AgentDnsVersion.all.length).to eq(1)
         end
       end
 
@@ -139,7 +141,9 @@ module Bosh::Director
               agent
             end
 
-            agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
+            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 1)
+
+            expect(Models::AgentDnsVersion.all.length).to eq(1)
           end
         end
       end
@@ -170,7 +174,9 @@ module Bosh::Director
               agent
             end.twice
 
-            agent_broadcast.sync_dns('fake-blob-id', 'fake-sha1', 1)
+            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 1)
+
+            expect(Models::AgentDnsVersion.all.length).to eq(1)
           end
         end
       end

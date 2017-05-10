@@ -18,7 +18,8 @@ module Bosh::Director
         .where { Sequel.expr(vms__active: true) }
     end
 
-    def initialize(logger, max_threads, strategy_selector=ONLY_OUT_OF_DATE_SELECTOR)
+    def initialize(agent_broadcaster, logger, max_threads, strategy_selector=ONLY_OUT_OF_DATE_SELECTOR)
+      @agent_broadcaster = agent_broadcaster
       @logger = logger
       @max_threads = max_threads
       @instances_strategy = strategy_selector
@@ -37,14 +38,8 @@ module Bosh::Director
       instances = @instances_strategy.call(dns_blob.version, @logger)
       @logger.info("Detected #{instances.count} instances with outdated dns versions. Current dns version is #{dns_blob.version}")
 
-      dns_updater = AgentDnsUpdater.new(@logger)
-      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-        instances.each do |instance|
-          @logger.info("Updating instance '#{instance}' with agent id '#{instance.agent_id}' to dns version '#{dns_blob.version}'")
-          pool.process do
-            dns_updater.update_dns_for_instance(dns_blob, instance)
-          end
-        end
+      if !instances.empty?
+        @agent_broadcaster.sync_dns(instances.all, dns_blob.blobstore_id, dns_blob.sha1, dns_blob.version)
       end
 
       delete_orphaned_agent_dns_versions
@@ -60,4 +55,3 @@ module Bosh::Director
     end
   end
 end
-

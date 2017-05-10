@@ -17,8 +17,7 @@ module Bosh::Director
       broadcast(instances, :delete_arp_entries, ips: ip_addresses)
     end
 
-    def sync_dns(blobstore_id, sha1, version)
-      instances = filter_instances(nil)
+    def sync_dns(instances, blobstore_id, sha1, version)
       timeout = Timeout.new(@sync_dns_timeout)
       @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{instances.map(&:agent_id)}")
       num_successful = 0
@@ -31,6 +30,7 @@ module Bosh::Director
           @logger.warn("agent_broadcaster: sync_dns[#{agent_id}]: no response received")
         elsif response['value'] == VALID_RESPONSE
           num_successful += 1
+          Models::AgentDnsVersion.find_or_create(agent_id: agent_id).update(dns_version: version)
           @logger.info("agent_broadcaster: sync_dns[#{agent_id}]: received response #{response}")
         else
           num_failed += 1

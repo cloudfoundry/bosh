@@ -18,6 +18,7 @@ module Bosh::Director
       allow(Config).to receive(:root_domain).and_return(domain_name)
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
       allow(agent_broadcaster).to receive(:sync_dns)
+      allow(agent_broadcaster).to receive(:filter_instances)
     end
 
     describe 'publish and broadcast' do
@@ -121,7 +122,8 @@ module Bosh::Director
         end
 
         it 'broadcasts the blob to the agents' do
-          expect(agent_broadcaster).to receive(:sync_dns).with('blob_id_1', '935e223937b3114dcb4fd6b43c28592cf6f181d2', 4)
+          expect(agent_broadcaster).to receive(:filter_instances).with(nil).and_return([])
+          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', '935e223937b3114dcb4fd6b43c28592cf6f181d2', 4)
           dns.publish_and_broadcast
         end
 
@@ -226,6 +228,5 @@ module Bosh::Director
         end
       end
     end
-
   end
 end
