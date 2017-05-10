@@ -63,14 +63,10 @@ module Bosh::Director
         lock_timeout = 15 * 60 # 15 minutes
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
-          with_release_lock(@release_name, :timeout => lock_timeout) do
-            with_stemcell_lock(deployment_plan_stemcell.name, deployment_plan_stemcell.version, :timeout => lock_timeout) do
-              compile_step(planner).perform
+          compile_step(planner).perform
 
-              tarball_state = create_tarball(release_version_model, deployment_plan_stemcell)
-              task_result.write(tarball_state.to_json + "\n")
-            end
-          end
+          tarball_state = create_tarball(release_version_model, deployment_plan_stemcell)
+          task_result.write(tarball_state.to_json + "\n")
         end
         "Exported release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}"
       end

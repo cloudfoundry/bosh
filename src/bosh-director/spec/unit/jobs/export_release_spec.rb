@@ -71,8 +71,6 @@ module Bosh::Director
         Models::VariableSet.create(deployment: deployment_model)
 
         allow(job).to receive(:with_deployment_lock).and_yield
-        allow(job).to receive(:with_release_lock).and_yield
-        allow(job).to receive(:with_stemcell_lock).and_yield
       end
 
       it 'raises an error when the requested release does not exist' do
@@ -140,8 +138,6 @@ module Bosh::Director
           it 'locks the deployment, release, and selected stemcell' do
             lock_timeout = {:timeout=>900} # 15 minutes. 15 * 60
             expect(job).to receive(:with_deployment_lock).with(deployment_manifest['name'], lock_timeout).and_yield
-            expect(job).to receive(:with_release_lock).with(release_name, lock_timeout).and_yield
-            expect(job).to receive(:with_stemcell_lock).with('ubuntu-stemcell', '1', lock_timeout).and_yield
 
             job.perform
           end
