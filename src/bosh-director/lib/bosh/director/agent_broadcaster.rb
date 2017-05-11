@@ -31,7 +31,6 @@ module Bosh::Director
         elsif response['value'] == VALID_RESPONSE
           num_successful += 1
           Models::AgentDnsVersion.find_or_create(agent_id: agent_id).update(dns_version: version)
-          @logger.info("agent_broadcaster: sync_dns[#{agent_id}]: received response #{response}")
         else
           num_failed += 1
           @logger.error("agent_broadcaster: sync_dns[#{agent_id}]: received unexpected response #{response}")
