@@ -19,10 +19,15 @@ module Bosh::Director::ProblemScanner
 
       @event_logger.begin_stage("Scanning #{disks.size} persistent disks", 2)
 
+      lock = Mutex.new
       @event_logger.track_and_log('Looking for inactive disks') do
-        disks.each do |disk|
-          scan_result = scan_disk(disk)
-          results[scan_result] += 1
+        Bosh::Director::ThreadPool.new(max_threads: Bosh::Director::Config.max_threads).wrap do |pool|
+          disks.each do |disk|
+            pool.process do
+              scan_result = scan_disk(disk)
+              lock.synchronize { results[scan_result] += 1 }
+            end
+          end
         end
       end
 

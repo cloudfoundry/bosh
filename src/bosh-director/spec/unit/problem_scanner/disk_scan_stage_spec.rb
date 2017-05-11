@@ -18,7 +18,19 @@ module Bosh::Director
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
+    let(:thread_pool) { double(ThreadPool) }
+    let(:thread_limit) { double(5) }
+    let(:disk_count) { 1 }
+
     before do
+      expect(thread_pool).to receive(:wrap)  do |&blk|
+        blk.call(thread_pool) if blk
+      end
+
+      expect(thread_pool).to receive(:process).exactly(disk_count).times.and_yield
+      allow(Config).to receive(:max_threads).and_return thread_limit
+      expect(ThreadPool).to receive(:new).with(max_threads: thread_limit).and_return(thread_pool)
+
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
@@ -51,7 +63,8 @@ module Bosh::Director
       end
 
       context 'when instance is ignored' do
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
+        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
+        let(:disk_count) { 0 }
 
         it 'does not register missing disk problem' do
           expect(problem_register).to_not receive(:problem_found).with(:missing_disk, disk)
