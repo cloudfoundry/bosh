@@ -9,9 +9,9 @@ module Bosh::Director
         begin
           validate_manifest_yml(manifest_text, nil)
           Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
-          create_event({'name' => config_name})
+          create_event(config_name)
         rescue => e
-          create_event({'name' => config_name}, e)
+          create_event(config_name, e)
           raise e
         end
 
@@ -49,13 +49,13 @@ module Bosh::Director
 
       private
 
-      def create_event(context, error = nil)
+      def create_event(config_name, error = nil)
         @event_manager.create_event({
             user:        current_user,
             action:      'update',
             object_type: 'runtime-config',
-            error:       error,
-            context:     context
+            object_name: config_name,
+            error:       error
         })
       end
     end

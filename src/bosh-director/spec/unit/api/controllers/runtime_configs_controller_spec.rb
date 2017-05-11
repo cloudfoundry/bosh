@@ -53,9 +53,9 @@ module Bosh::Director
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('runtime-config')
+          expect(event.object_name).to eq('')
           expect(event.action).to eq('update')
           expect(event.user).to eq('admin')
-          expect(event.context).to eq({'name' => ''})
         end
 
         it 'creates a new event with error' do
@@ -64,10 +64,10 @@ module Bosh::Director
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('runtime-config')
+          expect(event.object_name).to eq('')
           expect(event.action).to eq('update')
           expect(event.user).to eq('admin')
           expect(event.error).to eq('Manifest should not be empty')
-          expect(event.context).to eq({'name' => ''})
         end
 
         context 'when a name is passed in via a query param' do
@@ -90,9 +90,9 @@ module Bosh::Director
 
             event = Bosh::Director::Models::Event.first
             expect(event.object_type).to eq('runtime-config')
+            expect(event.object_name).to eq('smurf')
             expect(event.action).to eq('update')
             expect(event.user).to eq('admin')
-            expect(event.context).to eq({'name' => 'smurf'})
           end
         end
       end
