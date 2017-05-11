@@ -49,6 +49,9 @@ properties:
   director.backend_port:
     description: Port that the director listens on
     default: 25556
+  director.monit_timeout:
+    description: "Monit timeout for the director process"
+    default: 30    
   director.nginx.workers:
     description: Number of nginx workers for director
     default: 2
@@ -58,6 +61,9 @@ properties:
   director.enable_dedicated_status_worker:
     description: "Separate worker for 'bosh vms' and 'bosh ssh'"
     default: false
+  director.nginx.monit_timeout:
+    description: "Monit timeout for the director_nginx process"
+    default: 30
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true

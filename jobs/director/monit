@@ -1,6 +1,6 @@
 check process director
   with pidfile /var/vcap/sys/run/director/director.pid
-  start program "/var/vcap/jobs/director/bin/director_ctl start"
+  start program "/var/vcap/jobs/director/bin/director_ctl start" with timeout <%= p('director.monit_timeout') %> seconds
   stop program "/var/vcap/jobs/director/bin/director_ctl stop"
   group vcap
   <% if properties.micro %>
@@ -29,6 +29,6 @@ check process director_sync_dns
 <%end%><%end%>
 check process director_nginx
   with pidfile /var/vcap/sys/run/director/nginx.pid
-  start program "/var/vcap/jobs/director/bin/nginx_ctl start"
+  start program "/var/vcap/jobs/director/bin/nginx_ctl start" with timeout <%= p('director.nginx.monit_timeout') %> seconds
   stop program "/var/vcap/jobs/director/bin/nginx_ctl stop"
   group vcap
