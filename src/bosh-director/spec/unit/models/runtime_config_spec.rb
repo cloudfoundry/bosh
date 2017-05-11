@@ -14,6 +14,14 @@ module Bosh::Director::Models
     end
 
     describe '#latest_set' do
+      it 'returns the latest default runtime config' do
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 1', name: '').save
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 2', name: '').save
+        most_recent = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 3', name: '').save
+
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to contain_exactly(most_recent)
+      end
+
       it 'returns the list of latest runtime configs grouped by name' do
         moop1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop1', name: 'moop').save
         default = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: default', name: '').save
