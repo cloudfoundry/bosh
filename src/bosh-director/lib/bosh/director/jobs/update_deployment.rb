@@ -10,11 +10,11 @@ module Bosh::Director
         :update_deployment
       end
 
-      def initialize(manifest_text, cloud_config_id, runtime_config_id, options = {})
+      def initialize(manifest_text, cloud_config_id, runtime_config_ids, options = {})
         @blobstore = App.instance.blobstores.blobstore
         @manifest_text = manifest_text
         @cloud_config_id = cloud_config_id
-        @runtime_config_id = runtime_config_id
+        @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
       end
@@ -42,11 +42,11 @@ module Bosh::Director
           end
         end
 
-        runtime_config_model = Bosh::Director::Models::RuntimeConfig[@runtime_config_id]
-        if runtime_config_model.nil?
+        runtime_config_models = Bosh::Director::Models::RuntimeConfig.find_by_ids(@runtime_config_ids)
+        if runtime_config_models.empty?
           logger.debug("No runtime config uploaded yet.")
         else
-          logger.debug("Runtime config:\n#{runtime_config_model.raw_manifest}")
+          logger.debug("Runtime configs:\n#{Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_config_models).raw_manifest}")
         end
 
         @deployment_name = manifest_hash['name']
@@ -63,7 +63,7 @@ module Bosh::Director
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
-          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
+          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_models)
 
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event unless dry_run?
@@ -71,7 +71,7 @@ module Bosh::Director
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_model, @options)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_models, @options)
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
             deployment_assembler.bind_models

@@ -38,7 +38,7 @@ module Bosh::Director
         }
       end
       let(:cloud_config) { Models::CloudConfig.make }
-      let(:runtime_config) { Models::RuntimeConfig.make }
+      let(:runtime_configs) { [Models::RuntimeConfig.make, Models::RuntimeConfig.make, Models::RuntimeConfig.make, Models::RuntimeConfig.make] }
       let(:link_spec) {
         {
           'instance_group' => {
@@ -96,7 +96,7 @@ module Bosh::Director
               deployment_plan_release_version_new_release,
             ])
             allow(deployment_planner).to receive(:cloud_config).and_return(cloud_config)
-            allow(deployment_planner).to receive(:runtime_config).and_return(runtime_config)
+            allow(deployment_planner).to receive(:runtime_configs).and_return(runtime_configs)
             allow(deployment_planner).to receive(:link_spec).and_return(link_spec)
           end
 
@@ -123,7 +123,7 @@ module Bosh::Director
           it 'saves runtime config' do
             subject.perform
             reloaded_model = deployment_model.reload
-            expect(reloaded_model.runtime_config).to eq(runtime_config)
+            expect(reloaded_model.runtime_configs).to eq(runtime_configs)
           end
 
           it 'saves link_spec' do

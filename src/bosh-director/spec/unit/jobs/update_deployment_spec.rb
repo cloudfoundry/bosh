@@ -3,13 +3,13 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs
     describe UpdateDeployment do
-      subject(:job) { UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_id, options) }
+      subject(:job) { UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options) }
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
       let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
       let(:cloud_config_id) { nil }
-      let(:runtime_config_id) { nil }
+      let(:runtime_config_ids) { [] }
       let(:options) { {} }
       let(:deployment_instance_group) { DeploymentPlan::InstanceGroup.new(logger) }
       let(:task) { Models::Task.make(:id => 42, :username => 'user') }
@@ -71,6 +71,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
           allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
+          allow(Bosh::Director::Models::RuntimeConfig).to receive(:find_by_ids).and_return([])
         end
 
         context 'when variables need to be interpolated from config server' do
@@ -93,10 +94,14 @@ module Bosh::Director
             let(:instance1) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
             let(:instance2) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
 
+            let(:manifest) { instance_double( Bosh::Director::Manifest)}
+
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
+
+              allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
 
               allow(deployment_instance_group).to receive(:unignored_instance_plans).and_return(instance_plans)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
@@ -136,8 +141,10 @@ module Bosh::Director
 
           context "when options hash does NOT contain 'deploy'" do
             let (:options) { {'deploy' => false} }
+            let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
             it 'should NOT mark new variable set or remove unused variable sets' do
+              allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
               expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
               expect(variable_set).to_not receive(:update).with(:deployed_successfully => true)
 
@@ -149,7 +156,7 @@ module Bosh::Director
             let(:manifest_error) { Exception.new('oh noes!') }
 
             it 'should not raise when manifest cannot be loaded' do
-              expect(Manifest).to receive(:load_from_hash).and_raise manifest_error
+              expect(Bosh::Director::Manifest).to receive(:load_from_hash).and_raise manifest_error
 
               expect { job.perform }.to raise_error(manifest_error)
             end
@@ -158,6 +165,7 @@ module Bosh::Director
 
         context 'when all steps complete' do
           let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet, id: 43) }
+          let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
           before do
             expect(notifier).to receive(:send_start_event).ordered
@@ -169,6 +177,7 @@ module Bosh::Director
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
             allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
+            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
@@ -404,10 +413,13 @@ Unable to render instance groups for deployment. Errors are:
             ERROR_MSGS
           end
 
+          let(:manifest) { instance_double( Bosh::Director::Manifest)}
+
           before do
             allow(notifier).to receive(:send_start_event)
             allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
             allow(planner).to receive(:instance_models).and_return([])
+            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
 
           it 'formats the error messages' do
@@ -485,13 +497,15 @@ Unable to render instance groups for deployment. Errors are:
         end
 
         context 'when job is being dry-run' do
+          let(:manifest) { instance_double( Bosh::Director::Manifest)}
+          let(:options) { {'dry_run' => true} }
+
           before do
             allow(job_renderer).to receive(:render_job_instances)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
+            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
-
-          let(:options) { {'dry_run' => true} }
 
           it 'should exit before trying to create vms' do
             expect(compile_step).not_to receive(:perform)
@@ -514,9 +528,12 @@ Unable to render instance groups for deployment. Errors are:
         end
 
         context 'when the first step fails' do
+          let(:manifest) { instance_double( Bosh::Director::Manifest)}
+
           before do
             expect(notifier).to receive(:send_start_event).ordered
             expect(notifier).to receive(:send_error_event).ordered
+            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
 
           it 'does not compile or update' do

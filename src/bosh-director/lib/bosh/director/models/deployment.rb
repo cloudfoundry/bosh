@@ -7,7 +7,7 @@ module Bosh::Director::Models
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     many_to_one  :cloud_config
-    many_to_one  :runtime_config
+    many_to_many :runtime_configs
     many_to_many :teams
     one_to_many  :variable_sets, :class => 'Bosh::Director::Models::VariableSet'
 
@@ -28,9 +28,22 @@ module Bosh::Director::Models
 
     def self.create_with_teams(attributes)
       teams = attributes.delete(:teams)
+      runtime_configs = attributes.delete(:runtime_configs)
+
       deployment = create(attributes)
+
       deployment.teams = teams
+      deployment.runtime_configs = runtime_configs
       deployment
+    end
+
+    def runtime_configs=(runtime_configs)
+      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
+        self.remove_all_runtime_configs
+        (runtime_configs || []).each do |rc|
+          self.add_runtime_config(rc)
+        end
+      end
     end
 
     def teams=(teams)

@@ -179,5 +179,49 @@ tags:
         expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep)
       end
     end
+
+    describe '#runtime_configs=' do
+      before do
+        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
+        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
+        rc3 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc3-prop', name: 'rc3').save
+
+        deployment.add_runtime_config(rc1)
+        deployment.add_runtime_config(rc2)
+        deployment.add_runtime_config(rc3)
+      end
+      it 'removes existing records & assigns the new runtime config records' do
+        rc4 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc4-prop', name: 'rc4').save
+        rc5 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc5-prop', name: 'rc5').save
+        rc6 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc6-prop', name: 'rc6').save
+
+        deployment.runtime_configs = [rc4, rc5]
+
+        expect(Bosh::Director::Models::Deployment[id: deployment.id].runtime_configs).to contain_exactly(rc4, rc5)
+      end
+    end
+
+    describe '#create_with_teams' do
+      it 'saves attributes including teams & runtime_configs' do
+        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
+        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
+
+        team1 = Bosh::Director::Models::Team.new( name: 'team1')
+        team2 = Bosh::Director::Models::Team.new( name: 'team2')
+
+        attr = {
+          :name => 'some-deploy',
+          :teams => [team1, team2],
+          :runtime_configs => [rc1, rc2]
+        }
+
+        deployment =  Bosh::Director::Models::Deployment.create_with_teams(attr)
+
+        saved_deployment = Bosh::Director::Models::Deployment[id: deployment.id ]
+        expect(saved_deployment).to eq(deployment)
+        expect(saved_deployment.teams).to contain_exactly(team1, team2)
+        expect(saved_deployment.runtime_configs).to contain_exactly(rc1, rc2)
+      end
+    end
   end
 end

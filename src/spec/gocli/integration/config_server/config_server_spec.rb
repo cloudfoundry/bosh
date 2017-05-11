@@ -709,7 +709,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       context 'when config server has all keys' do
-        let(:runtime_config) do
+        let(:default_runtime_config) do
           {
             'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
             'addons' => [
@@ -719,7 +719,24 @@ Error: Unable to render instance groups for deployment. Errors are:
                   {
                     'name' => 'job_2_with_many_properties',
                     'release' => 'bosh-release',
-                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
+                    'properties' => {'gargamel' => {'color' => '((default_rc_placeholder))'}}
+                  }
+                ]
+              }]
+          }
+        end
+
+        let(:named_runtime_config) do
+          {
+            'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
+            'addons' => [
+              {
+                'name' => 'addon1',
+                'jobs' => [
+                  {
+                    'name' => 'job_3_with_many_properties',
+                    'release' => 'bosh-release',
+                    'properties' => {'gargamel' => {'color' => '((named_rc_placeholder))'}}
                   }
                 ]
               }]
@@ -730,21 +747,69 @@ Error: Unable to render instance groups for deployment. Errors are:
           create_and_upload_test_release(include_credentials: false,  env: client_env)
 
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
-          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop first value')
-          config_server_helper.put_value(prepend_namespace('relative_addon_placeholder'), 'red')
+          config_server_helper.put_value(prepend_namespace('default_rc_placeholder'), 'smurfs are blue')
+          config_server_helper.put_value(prepend_namespace('named_rc_placeholder'), 'gargamel is fushia')
           config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
 
-          expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+          expect(upload_runtime_config(runtime_config_hash: default_runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+          expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named-rc-1')).to include('Succeeded')
           manifest_hash['jobs'].first['instances'] = 3
+        end
+
+        it 'interpolates variables in the addons and updates jobs on deploy' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+          default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+          named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
+
+          expect(default_rc_template_hash['properties_list']['gargamel_color']).to eq('smurfs are blue')
+          expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fushia')
+        end
+
+        context 'when variables are updated in the config server after a deploy' do
+          before do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+            config_server_helper.put_value(prepend_namespace('default_rc_placeholder'), 'smurfs have changed to purple')
+            config_server_helper.put_value(prepend_namespace('named_rc_placeholder'), 'gargamel has changed blue')
+          end
+
+          it 'replaces variables in the addons and updates jobs on redeploy' do
+            redeploy_output = parse_blocks(deploy_simple_manifest(manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
+            scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
+
+            concatted_output = scrubbed_redeploy_output.join(' ')
+            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+            expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+            default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+            named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
+
+            expect(default_rc_template_hash['properties_list']['gargamel_color']).to eq('smurfs have changed to purple')
+            expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel has changed blue')
+          end
+
+          it 'uses original variables versions upon recreate' do
+            bosh_runner.run('recreate', deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+            default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+            named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
+
+            expect(default_rc_template_hash['properties_list']['gargamel_color']).to eq('smurfs are blue')
+            expect(named_rc_template_hash_['properties_list']['gargamel_color']).to eq('gargamel is fushia')
+          end
         end
 
         context 'when tags are to be passed to a vm' do
           before do
-            runtime_config['tags']= {
-                'tag_mode' => '((/tag-mode))',
-                'tag_value' => '((/tag-value))'
+            default_runtime_config['tags']= {
+              'tag_mode' => '((/tag-mode))',
+              'tag_value' => '((/tag-value))'
             }
-            upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+            upload_runtime_config(runtime_config_hash: default_runtime_config, include_credentials: false,  env: client_env)
             create_and_upload_test_release(include_credentials: false,  env: client_env)
 
             config_server_helper.put_value('/tag-mode', 'ha')
@@ -775,39 +840,6 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(inputs['metadata']['tag_mode']).to eq('ha')
             expect(inputs['metadata']['tag_value']).to eq('deprecated')
           end
-        end
-
-        it 'replaces variables in the addons and updates jobs on redeploy when config server values change' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
-
-          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
-
-          redeploy_output = parse_blocks(deploy_simple_manifest(manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
-          scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
-
-          concatted_output = scrubbed_redeploy_output.join(' ')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
-        end
-
-        it 'variables do not start with slash are named spaced for the manifest deployment' do
-          runtime_config['addons'][0]['jobs'][0]['properties']['gargamel']['color'] = '((relative_addon_placeholder))'
-          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('red')
         end
       end
 

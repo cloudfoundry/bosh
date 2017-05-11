@@ -1,0 +1,13 @@
+---
+name: job_3_with_many_properties
+templates:
+  properties_displayer.yml.erb: properties_displayer.yml
+
+packages: []
+
+properties:
+  smurfs.color:
+    description: The color of the smurfs
+    default: blue
+  gargamel.color:
+    description: The color of gargamel it is required

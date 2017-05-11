@@ -62,21 +62,4 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       end
     end
   end
-
-  describe '#latest' do
-    it 'returns the latest' do
-      Bosh::Director::Models::RuntimeConfig.new(properties: 'config_from_last_year').save
-      newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(properties: "---\nsuper_shiny: new_config").save
-
-      runtime_config = manager.latest
-
-      expect(runtime_config).to eq(newer_runtime_config)
-    end
-
-    it 'returns nil if there are no cloud configs' do
-      runtime_config = manager.latest
-
-      expect(runtime_config).to be_nil
-    end
-  end
 end

@@ -16,14 +16,6 @@ module Bosh
           Bosh::Director::Models::RuntimeConfig.where(name: name).order(Sequel.desc(:id)).limit(limit).to_a
         end
 
-        def latest
-          list(1).first
-        end
-
-        def find_by_id(id)
-          Bosh::Director::Models::RuntimeConfig.find(id: id)
-        end
-
         private
 
         def validate_yml(runtime_config)

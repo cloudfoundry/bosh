@@ -15,14 +15,14 @@ module Bosh::Director
         Bosh::Director::Models::Deployment.order_by(Sequel.asc(:name)).all
       end
 
-      def create_deployment(username, manifest_text, cloud_config, runtime_config, deployment, options = {}, context_id = '')
+      def create_deployment(username, manifest_text, cloud_config, runtime_configs, deployment, options = {}, context_id = '')
         cloud_config_id = cloud_config.nil? ? nil : cloud_config.id
-        runtime_config_id = runtime_config.nil? ? nil : runtime_config.id
+        runtime_config_ids = runtime_configs.map(&:id)
 
         description = 'create deployment'
         description += ' (dry run)' if options['dry_run']
 
-        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_id, runtime_config_id, options], deployment, context_id)
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_id, runtime_config_ids, options], deployment, context_id)
       end
 
       def delete_deployment(username, deployment, options = {}, context_id = '')

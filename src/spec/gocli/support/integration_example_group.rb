@@ -59,8 +59,9 @@ module IntegrationExampleGroup
 
   def upload_runtime_config(options={})
     runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    name = options.fetch(:name, '')
     runtime_config_manifest = yaml_file('simple', runtime_config_hash)
-    bosh_runner.run("update-runtime-config #{runtime_config_manifest.path}", options)
+    bosh_runner.run("update-runtime-config --name=#{name} #{runtime_config_manifest.path}", options)
   end
 
   def create_and_upload_test_release(options={})

@@ -62,16 +62,16 @@ module Bosh::Director
       attr_reader :link_spec
 
       attr_reader :cloud_config
-      attr_reader :runtime_config
+      attr_reader :runtime_configs
 
-      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
+      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
         @cloud_config = cloud_config
-        @runtime_config = runtime_config
+        @runtime_configs = runtime_configs
         @model = deployment_model
 
         @stemcells = {}

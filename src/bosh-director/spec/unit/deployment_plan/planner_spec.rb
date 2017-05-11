@@ -3,12 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config, deployment_model, options) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config_consolidator, deployment_model, options) }
 
       let(:options) { {} }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_config) { nil }
-      let(:runtime_config) { nil }
+      let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
       let(:planner_attributes) { {name: 'mycloud', properties: {}} }
       let(:deployment_model) { Models::Deployment.make }
@@ -97,7 +97,7 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, cloud_config, runtime_config, deployment_model, options)
+          subject = Planner.new(planner_attributes, minimal_manifest, cloud_config, runtime_config_consolidator, deployment_model, options)
           minimal_manifest['name'] = 'new_name'
           expect(subject.uninterpolated_manifest_text['name']).to eq('minimal')
         end
@@ -105,7 +105,7 @@ module Bosh::Director
         it 'should parse recreate' do
           expect(planner.recreate).to eq(false)
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config, deployment_model, 'recreate' => true)
+          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config_consolidator, deployment_model, 'recreate' => true)
           expect(plan.recreate).to eq(true)
         end
 
