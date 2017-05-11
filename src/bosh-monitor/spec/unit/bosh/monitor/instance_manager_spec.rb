@@ -268,7 +268,7 @@ module Bhm
               :alert,
               {
                   severity: 2,
-                  category: :vm_health,
+                  category: 'vm_health',
                   source: 'mycloud: mutator(some-sort-of-uuid) [id=007, index=0, cid=]',
                   title: '007 has timed out',
                   created_at: anything,
@@ -371,7 +371,7 @@ module Bhm
             :alert,
             {
                 severity: 2,
-                category: :vm_health,
+                category: 'vm_health',
                 source: 'my_deployment: mutator(instance-uuid) [agent_id=007, index=0, cid=]',
                 title: 'instance-uuid has no VM',
                 created_at: anything,
