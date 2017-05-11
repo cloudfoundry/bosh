@@ -1417,8 +1417,9 @@ module Bosh::Director
             )
           end
           let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'azs' => []}) }
-          let(:runtime_config_1) { Models::RuntimeConfig.make(raw_manifest: {'addons' => []}) }
-          let(:runtime_config_2) { Models::RuntimeConfig.make(raw_manifest: {'addons' => []}) }
+          let(:runtime_config_1) { Models::RuntimeConfig.make(id: 1, raw_manifest: {'addons' => []}) }
+          let(:runtime_config_2) { Models::RuntimeConfig.make(id: 2, raw_manifest: {'addons' => []}) }
+          let(:runtime_config_3) { Models::RuntimeConfig.make(id: 3, raw_manifest: {'addons' => []}, name: 'smurf') }
 
           before do
             deployment = Models::Deployment.create(
@@ -1427,7 +1428,7 @@ module Bosh::Director
               cloud_config: cloud_config
             )
 
-            deployment.runtime_configs = [runtime_config_1, runtime_config_2]
+            deployment.runtime_configs = [runtime_config_1, runtime_config_2, runtime_config_3]
           end
 
           context 'authenticated access' do
@@ -1435,7 +1436,7 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_ids":[2]},"diff":[["jobs: []","removed"],["",null],["name: fake-dep-name","added"]]}')
+              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_ids":[2,3]},"diff":[["jobs: []","removed"],["",null],["name: fake-dep-name","added"]]}')
             end
 
             it 'gives a nice error when request body is not a valid yml' do
