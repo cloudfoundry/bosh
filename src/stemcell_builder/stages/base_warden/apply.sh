@@ -9,16 +9,13 @@ source $base_dir/lib/prelude_apply.bash
 # Otherwise using none ubuntu host will fail creating vm
 mkdir -p $chroot/warden-cpi-dev
 
-# Run rsyslog and ssh using runit and replace /usr/sbin/service with a script which call runit
+# Run system services via runit and replace /usr/sbin/service with a script which call runit
 mkdir -p $chroot/etc/sv/ $chroot/etc/service/
-cp -a $assets_dir/runit/rsyslog/ $chroot/etc/sv/rsyslog
-cp -a $assets_dir/runit/ssh/ $chroot/etc/sv/ssh
+cp -a $assets_dir/runit/{ssh,rsyslog,cron} $chroot/etc/sv/
 
 run_in_chroot $chroot "
-chmod +x /etc/sv/rsyslog/run
-chmod +x /etc/sv/ssh/run
-ln -s /etc/sv/rsyslog /etc/service/rsyslog
-ln -s /etc/sv/ssh /etc/service/ssh
+chmod +x /etc/sv/{ssh,rsyslog,cron}/run
+ln -s /etc/sv/{ssh,rsyslog,cron} /etc/service/
 "
 
 # Pending for disk_quota
