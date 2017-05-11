@@ -43,10 +43,6 @@ module Bosh::Director::Models
       it 'returns empty array when passed nil' do
         expect(Bosh::Director::Models::RuntimeConfig.find_by_ids(nil)).to eq([])
       end
-
-      it 'returns empty array when passed none array parameter' do
-        expect(Bosh::Director::Models::RuntimeConfig.find_by_ids('whatever')).to eq([])
-      end
     end
   end
 end

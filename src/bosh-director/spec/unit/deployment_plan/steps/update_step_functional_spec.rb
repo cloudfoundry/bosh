@@ -31,13 +31,12 @@ module Bosh::Director::DeploymentPlan::Steps
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil) }
     let(:cloud_config) { nil }
-    let(:runtime_config) { nil }
+    let(:runtime_configs) { [] }
 
     let(:deployment_plan) do
       planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-      # def initialize(hybrid_manifest_hash, raw_manifest_hash, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
       manifest = Bosh::Director::Manifest.new(deployment_manifest, deployment_manifest, nil, nil, nil, nil)
-      deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_config, {})
+      deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_configs, {})
       Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan).bind_models
       deployment_plan
     end
