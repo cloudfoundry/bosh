@@ -1,3 +1,5 @@
+require 'open3'
+
 module Bosh::Director
   module Api
     class RestoreManager
@@ -15,7 +17,8 @@ module Bosh::Director
         pass = @db_config.fetch('password')
         host = @db_config.fetch('host')
 
-        Process.spawn(
+        # Wait for the restore-db to finish, rather than just spawning
+        Open3.capture3(
           'sudo',
           "LD_LIBRARY_PATH=#{ENV['LD_LIBRARY_PATH']}",
           'restore-db',
@@ -24,8 +27,7 @@ module Bosh::Director
           user,
           pass,
           db_name,
-          path,
-          out: '/dev/null'
+          path
         )
       end
     end

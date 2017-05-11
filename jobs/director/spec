@@ -22,6 +22,8 @@ templates:
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   sync_dns_ctl.erb: bin/sync_dns_ctl
+  b-backup: bin/b-backup
+  b-restore: bin/b-restore
 
 packages:
 - director

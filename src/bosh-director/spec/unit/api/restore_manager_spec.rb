@@ -24,7 +24,7 @@ module Bosh::Director
 
     describe '#restore_db' do
       it 'spawns a process to restore DB' do
-        expect(Process).to receive(:spawn).with(
+        expect(Open3).to receive(:capture3).with(
           'sudo',
           'LD_LIBRARY_PATH=fake-path',
           'restore-db',
@@ -34,7 +34,6 @@ module Bosh::Director
           'fake-password',
           '/:memory:',
           'fake-dump.tgz',
-          { :out => '/dev/null' }
         )
         restore_manager.restore_db('fake-dump.tgz')
       end

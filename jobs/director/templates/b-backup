@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+PATH=/var/vcap/packages/ruby/bin:$PATH
+PATH=$PATH:/var/vcap/jobs/director/bin
+
+# Postgres
+PATH=/var/vcap/packages/postgres-9.4/bin:/var/vcap/packages/postgres/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
+
+# MySQL
+PATH=/var/vcap/packages/mysql/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:$LD_LIBRARY_PATH
+
+export LD_LIBRARY_PATH
+export PATH
+
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+
+/var/vcap/packages/director/bin/bosh-backup
