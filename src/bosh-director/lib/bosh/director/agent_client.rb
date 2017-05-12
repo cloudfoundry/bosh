@@ -86,8 +86,8 @@ module Bosh::Director
       send_message(:apply, *args)
     end
 
-    def compile_package(*args)
-      send_message(:compile_package, *args)
+    def compile_package(*args, &blk)
+      send_message(:compile_package, *args, &blk)
     end
 
     def drain(*args)
