@@ -4,7 +4,7 @@ module Bosh::Director
   module Api
     class RestoreManager
       def initialize
-        @logger = Config.logger
+        @logger = Logging::Logger.new('RestoreManager')
         @db_config = Config.db_config
       end
 
@@ -18,7 +18,7 @@ module Bosh::Director
         host = @db_config.fetch('host')
 
         # Wait for the restore-db to finish, rather than just spawning
-        Open3.capture3(
+        pid = Process.spawn(
           'sudo',
           "LD_LIBRARY_PATH=#{ENV['LD_LIBRARY_PATH']}",
           'restore-db',
@@ -29,6 +29,8 @@ module Bosh::Director
           db_name,
           path
         )
+
+        Process.wait(pid)
       end
     end
   end
