@@ -208,9 +208,7 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
         end
       end
-
     end
-
 
     context 'events configuration' do
       context 'when enabled' do
@@ -232,9 +230,19 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['record_events']).to eq(false)
         end
 
-        it 'is a scheduled task' do
+        it 'is not a scheduled task' do
           expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
         end
+      end
+    end
+
+    context 'dns blob cleanup' do
+      it 'is a scheduled task with correct params' do
+        expect(parsed_yaml['scheduled_jobs']).to include({
+          'command' => 'ScheduledDnsBlobsCleanup',
+          'schedule' => '0,30 * * * * * UTC',
+          'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
+        })
       end
     end
 
