@@ -21,9 +21,7 @@ import (
 	// Allow dynamic profiling.
 	_ "net/http/pprof"
 
-	"bytes"
 	"github.com/nats-io/gnatsd/util"
-	"io"
 )
 
 // Info is the information sent to clients to help them understand information
@@ -948,84 +946,5 @@ func (s *Server) getClientConnectURLs() []string {
 		}
 	}
 	return urls
-}
-
-type PeekableConn struct {
-	net.Conn
-
-	firstBytes *bytes.Buffer
-	combined   io.Reader
-}
-
-func NewPeekableConn(conn net.Conn) *PeekableConn {
-	firstBytes := new(bytes.Buffer)
-	return &PeekableConn{conn, firstBytes, io.MultiReader(firstBytes, conn)}
-}
-
-func (c *PeekableConn) Read(b []byte) (int, error) {
-	return c.combined.Read(b)
-}
-
-func (c *PeekableConn) PeekFirst(n int) ([]byte, error) {
-	readBytes := make([]byte, n)
-	tmpBytes := make([]byte, n) // todo reset?
-
-	for i := 0; i < n; {
-		readN, err := c.Conn.Read(tmpBytes)
-		if err != nil {
-			return nil, err
-		}
-		copy(readBytes[i:], tmpBytes[:minInt(n-i, readN)])
-		i += readN
-	}
-
-	if n != len(readBytes) {
-		panic(fmt.Sprintf("Expected to read '%d' bytes but got '%d'", n, len(readBytes)))
-	}
-
-	_, err := c.firstBytes.Write(readBytes)
-	if err != nil {
-		panic("Buffer never returns an error")
-	}
-
-	fmt.Sprint(readBytes)
-
-	return readBytes, nil
-}
-
-// todo close read/write for TCP. Do we need to close it ? the flow should remain the same as before; so whoever was closing the connection, should still close it
-//func (c *PeekableConn) CloseRead() error  { return c.Conn.(duplexCloser).CloseRead() }
-//func (c *PeekableConn) CloseWrite() error { return c.Conn.(duplexCloser).CloseWrite() }
-
-func minInt(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
-}
-
-var (
-	// http://blog.fourthbit.com/2014/12/23/traffic-analysis-of-an-ssl-slash-tls-session
-	tlsVersions = [][]byte{
-		{22, 3, 1},
-		{22, 3, 2},
-		{22, 3, 3},
-	}
-)
-
-const TLS_CLIENT_HELLO = 1
-
-type TLSDetector struct{}
-
-func (d TLSDetector) Detect(hdr []byte) bool {
-	for _, sig := range tlsVersions {
-		if bytes.HasPrefix(hdr, sig) {
-			// https://tools.ietf.org/html/rfc5246#section-7.4.1.2
-			if hdr[5] == TLS_CLIENT_HELLO {
-				return true
-			}
-		}
-	}
-	return false
 }
 

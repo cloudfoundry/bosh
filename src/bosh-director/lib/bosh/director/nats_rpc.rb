@@ -56,7 +56,7 @@ module Bosh::Director
       if @nats.nil?
         @lock.synchronize do
           if @nats.nil?
-            @nats = NATS.connect(:uri => @nats_uri, :autostart => false, :ssl => true)
+            @nats = NATS.connect(:uri => @nats_uri, :autostart => false, :ssl => false)
           end
         end
       end
