@@ -114,6 +114,7 @@ module Bosh::Director
         Bosh::Director::Models::Blob.new(
             blobstore_id: oid,
             sha1: tarball_hexdigest,
+            type: 'exported-release',
         ).save
 
         {

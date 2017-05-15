@@ -36,8 +36,14 @@ module Bosh::Director
       def perform
         if @config['remove_all']
           releases_to_keep, stemcells_to_keep = 0, 0
+          dns_blob_age, dns_blobs_to_keep = 0, 0
+
+          if Models::Deployment.count > 0
+            dns_blobs_to_keep = 1
+          end
         else
           releases_to_keep, stemcells_to_keep = 2, 2
+          dns_blob_age, dns_blobs_to_keep = 3600, 10
         end
 
         unused_release_name_and_version = @releases_to_delete_picker.pick(releases_to_keep)
@@ -84,16 +90,24 @@ module Bosh::Director
           end
         end
 
-        ephemeral_blobs = Models::Blob.all
-        ephemeral_blob_stage = Config.event_log.begin_stage('Deleting ephemeral blobs', ephemeral_blobs.count)
-        ephemeral_blobs.each do |ephemeral_blob|
-          ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
-            @blobstore.delete(ephemeral_blob.blobstore_id)
-            ephemeral_blob.destroy
+        exported_releases = Models::Blob.where(type: 'exported-release')
+        exported_releases_count = exported_releases.count
+        exported_release_stage = Config.event_log.begin_stage('Deleting exported releases', exported_releases.count)
+        exported_releases.each do |exported_release|
+          exported_release_stage.advance_and_track("#{exported_release.blobstore_id}") do
+            @blobstore.delete(exported_release.blobstore_id)
+            exported_release.destroy
           end
         end
 
-        "Deleted #{unused_release_name_and_version.count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{ephemeral_blobs.count} ephemeral blob(s)"
+        dns_blob_message = ''
+        dns_blobs_stage = Config.event_log.begin_stage('Deleting dns blobs', 1)
+        dns_blobs_stage.advance_and_track('DNS blobs') do
+          cleanup_params = {'max_blob_age' => dns_blob_age, 'num_dns_blobs_to_keep' => dns_blobs_to_keep}
+          dns_blob_message = ScheduledDnsBlobsCleanup.new(cleanup_params).perform
+        end
+
+        "Deleted #{unused_release_name_and_version.count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{exported_releases_count} exported release(s)\n#{dns_blob_message}"
       end
     end
   end

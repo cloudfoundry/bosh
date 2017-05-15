@@ -406,8 +406,7 @@ version: 0.1-dev
         end
 
         context 'that is successfully placed in the blobstore' do
-
-          it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
+          it 'should record the blobstore id of the created tarball in the blobs table' do
             expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
 
             allow(blobstore_client).to receive(:get)
@@ -420,9 +419,10 @@ version: 0.1-dev
               job.perform
             }.to change(Bosh::Director::Models::Blob, :count).from(0).to(1)
 
-            ephemeral_blob = Bosh::Director::Models::Blob.first
-            expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
-            expect(ephemeral_blob.sha1).to eq('expected-sha1')
+            exported_release_blob = Bosh::Director::Models::Blob.first
+            expect(exported_release_blob.blobstore_id).to eq(expected_blobstore_id)
+            expect(exported_release_blob.sha1).to eq('expected-sha1')
+            expect(exported_release_blob.type).to eq('exported-release')
           end
         end
       end

@@ -221,7 +221,7 @@ module Bosh::Director::Models
 
   LocalDnsBlob.blueprint do
     created_at   { Time.new }
-    blob         { Blob.make }
+    blob         { Blob.make(type: 'dns') }
     version      { 1 }
   end
 
