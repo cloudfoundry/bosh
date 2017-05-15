@@ -1442,19 +1442,17 @@ module Bosh::Director
             it 'gives a nice error when request body is not a valid yml' do
               post '/fake-dep-name/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(440001)
-              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest: ')
+              expect(JSON.parse(last_response.body)['error']).to include('Incorrect YAML structure of the uploaded manifest: ' )
             end
 
             it 'gives a nice error when request body is empty' do
               post '/fake-dep-name/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
 
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)).to eq(
-                'code' => 440001,
-                'description' => 'Manifest should not be empty',
-              )
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest: ')
+              expect(JSON.parse(last_response.body)['error']).to include('Manifest should not be empty' )
             end
 
             it 'returns 200 with an empty diff and an error message if the diffing fails' do

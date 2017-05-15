@@ -385,38 +385,41 @@ module Bosh::Director
       end
 
       post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
-        manifest_hash = validate_manifest_yml(request.body.read, nil)
-
-        ignore_cc = ignore_cloud_config?(manifest_hash)
-
-        if deployment
-          before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
-          before_manifest.resolve_aliases
-        else
-          before_manifest = Manifest.generate_empty_manifest
-        end
-
-        after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
-        after_runtime_configs = Bosh::Director::Models::RuntimeConfig.latest_set
-
-        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_configs, {:resolve_interpolation => false})
-        after_manifest.resolve_aliases
-
-        redact =  params['redact'] != 'false'
-
-        result = {
-          'context' => {
-            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
-            'runtime_config_ids' => after_runtime_configs.map(&:id)
-          }
-        }
-
         begin
+          manifest_hash = validate_manifest_yml(request.body.read, nil)
+
+          ignore_cc = ignore_cloud_config?(manifest_hash)
+
+          if deployment
+            before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
+            before_manifest.resolve_aliases
+          else
+            before_manifest = Manifest.generate_empty_manifest
+          end
+
+          after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
+          after_runtime_configs = Bosh::Director::Models::RuntimeConfig.latest_set
+
+          after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_configs, {:resolve_interpolation => false})
+          after_manifest.resolve_aliases
+
+          redact =  params['redact'] != 'false'
+
+          result = {
+            'context' => {
+              'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+              'runtime_config_ids' => after_runtime_configs.map(&:id)
+            }
+          }
+
           diff = before_manifest.diff(after_manifest, redact)
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
-          result['diff'] = []
-          result['error'] = "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
+          result = {
+            'diff' => [],
+            'error' => "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
+          }
+          status(200)
         end
 
         json_encode(result)
