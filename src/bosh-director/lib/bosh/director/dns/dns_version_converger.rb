@@ -39,7 +39,7 @@ module Bosh::Director
       @logger.info("Detected #{instances.count} instances with outdated dns versions. Current dns version is #{dns_blob.version}")
 
       if !instances.empty?
-        @agent_broadcaster.sync_dns(instances.all, dns_blob.blobstore_id, dns_blob.sha1, dns_blob.version)
+        @agent_broadcaster.sync_dns(instances.all, dns_blob.blob.blobstore_id, dns_blob.blob.sha1, dns_blob.version)
       end
 
       delete_orphaned_agent_dns_versions

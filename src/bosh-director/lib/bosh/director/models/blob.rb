@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class EphemeralBlob < Sequel::Model(Bosh::Director::Config.db)
+  class Blob < Sequel::Model(Bosh::Director::Config.db)
     def before_validation
       self.created_at ||= Time.now
     end

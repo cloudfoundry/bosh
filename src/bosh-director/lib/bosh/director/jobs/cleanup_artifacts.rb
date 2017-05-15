@@ -84,7 +84,7 @@ module Bosh::Director
           end
         end
 
-        ephemeral_blobs = Models::EphemeralBlob.all
+        ephemeral_blobs = Models::Blob.all
         ephemeral_blob_stage = Config.event_log.begin_stage('Deleting ephemeral blobs', ephemeral_blobs.count)
         ephemeral_blobs.each do |ephemeral_blob|
           ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do

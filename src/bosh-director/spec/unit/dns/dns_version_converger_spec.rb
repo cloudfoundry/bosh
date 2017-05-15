@@ -8,10 +8,15 @@ module Bosh::Director
     let(:credentials_json) { JSON.generate(credentials) }
     let(:blob_sha1) { ::Digest::SHA1.hexdigest('dns-records') }
     let(:logger) { double(Logger)}
-    let!(:local_dns_blob) do
-      Models::LocalDnsBlob.make(
+    let(:blob) do
+      Models::Blob.make(
         blobstore_id: 'blob-id',
         sha1: blob_sha1,
+      )
+    end
+    let!(:local_dns_blob) do
+      Models::LocalDnsBlob.make(
+        blob: blob,
         version: 2,
         created_at: Time.new)
     end
@@ -39,7 +44,6 @@ module Bosh::Director
       end
 
       it 'only acts upon instances with an active vm' do
-        no_vm_instance = Models::Instance.make
         inactive_vm_instance = Models::Instance.make
         active_vm_instance = Models::Instance.make
         Models::Vm.make(agent_id: 'abc', instance_id: inactive_vm_instance.id)

@@ -67,8 +67,8 @@ module Bosh::Director
 
         context 'when there are ephemeral blobs' do
           before do
-            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
-            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
+            Bosh::Director::Models::Blob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
+            Bosh::Director::Models::Blob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
             expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
             expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
             allow(event_log).to receive(:begin_stage).and_return(stage)
@@ -80,7 +80,7 @@ module Bosh::Director
             result = subject.perform
 
             expect(result).to eq('Deleted 2 release(s), 2 stemcell(s), 0 orphaned disk(s), 2 ephemeral blob(s)')
-            expect(Models::EphemeralBlob.all).to be_empty
+            expect(Models::Blob.all).to be_empty
           end
         end
 
@@ -230,8 +230,8 @@ module Bosh::Director
 
         context 'when there are ephemeral blobs' do
           before do
-            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
-            Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
+            Bosh::Director::Models::Blob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
+            Bosh::Director::Models::Blob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
             expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
             expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
             allow(event_log).to receive(:begin_stage).and_return(stage)
@@ -243,7 +243,7 @@ module Bosh::Director
             result = subject.perform
 
             expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 2 ephemeral blob(s)')
-            expect(Models::EphemeralBlob.all).to be_empty
+            expect(Models::Blob.all).to be_empty
           end
         end
       end
@@ -265,21 +265,21 @@ module Bosh::Director
           }.to raise_error Exception, 'Bad stuff happened!'
         end
       end
-      
+
       context 'when find_and_delete_release raises' do
         let(:config) { { 'remove_all' => true } }
 
         before do
           allow(blobstore).to receive(:delete).and_raise('nope')
           Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-          Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
+          Models::Blob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
         end
-        
+
         it 'does not delete stemcells, orphan disks and ephemeral blobs' do
           expect{ subject.perform }.to raise_error('nope')
           expect(Models::Stemcell.all).to_not be_empty
           expect(Models::OrphanDisk.all).to_not be_empty
-          expect(Models::EphemeralBlob.all).to_not be_empty
+          expect(Models::Blob.all).to_not be_empty
         end
       end
     end

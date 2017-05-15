@@ -45,6 +45,7 @@ module DBSpecHelper
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
+      Sequel.default_timezone = :utc
       @db = Sequel.connect(@db_helper.connection_string, db_opts)
     end
 

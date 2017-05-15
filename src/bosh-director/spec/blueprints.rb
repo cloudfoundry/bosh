@@ -213,10 +213,15 @@ module Bosh::Director::Models
     successful  { false }
   end
 
-  LocalDnsBlob.blueprint do
+  Blob.blueprint do
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
     created_at   { Time.new }
+  end
+
+  LocalDnsBlob.blueprint do
+    created_at   { Time.new }
+    blob         { Blob.make }
     version      { 1 }
   end
 

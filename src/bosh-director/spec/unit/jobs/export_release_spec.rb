@@ -418,9 +418,9 @@ version: 0.1-dev
 
             expect {
               job.perform
-            }.to change(Bosh::Director::Models::EphemeralBlob, :count).from(0).to(1)
+            }.to change(Bosh::Director::Models::Blob, :count).from(0).to(1)
 
-            ephemeral_blob = Bosh::Director::Models::EphemeralBlob.first
+            ephemeral_blob = Bosh::Director::Models::Blob.first
             expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
             expect(ephemeral_blob.sha1).to eq('expected-sha1')
           end
