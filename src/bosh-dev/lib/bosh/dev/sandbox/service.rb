@@ -82,7 +82,7 @@ module Bosh::Dev::Sandbox
     def safe_file_read(filename)
       begin
         File.read(filename)
-      rescue e
+      rescue => e
         @logger.info("Cannot read file #{filename}: #{e}")
         ''
       end
