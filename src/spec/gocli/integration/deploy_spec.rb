@@ -409,6 +409,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           with_reset_hm_before_each
 
           it 'runs the post-deploy script when a vm is resurrected' do
+            skip('SKIP HM TESTS')
             deploy(manifest_hash: manifest)
 
             agent_id = director.instance('job_with_post_deploy_script', '0').agent_id

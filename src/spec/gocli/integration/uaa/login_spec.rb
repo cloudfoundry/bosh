@@ -179,6 +179,7 @@ CERT
       with_reset_hm_before_each
 
       it 'resurrects vm' do
+        skip('SKIP HM TESTS')
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
 

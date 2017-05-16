@@ -6,6 +6,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~1m20s
   it 'resurrects stateless nodes if agent is not responding' do
+    skip('SKIP HM TESTS')
     deploy_from_scratch
 
     original_instance = director.instance('foobar', '0', deployment_name: 'simple')
@@ -16,6 +17,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~5m
   it 'resurrects stateless nodes if vm is missing for instance' do
+    skip('SKIP HM TESTS')
     deploy_from_scratch
 
     current_sandbox.cpi.commands.make_create_vm_always_fail
@@ -33,6 +35,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
 
   it 'runs the pre-start scripts when the VM is resurrected' do
+    skip('SKIP HM TESTS')
     manifest_hash = Bosh::Spec::Deployments.test_release_manifest.merge({
                         'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
                                        name: 'job_with_templates_having_prestart_scripts',
@@ -113,6 +116,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~3m
   it 'resurrects vms that were down before resurrector started' do
+    skip('SKIP HM TESTS')
     # Turn resurrector off
     current_sandbox.reconfigure_health_monitor('health_monitor_without_resurrector.yml.erb')
 
@@ -137,6 +141,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     it 'only outputs complete heartbeats' do
+      skip('SKIP HM TESTS')
       team_client_env = {'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret'}
       director_client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
 
@@ -188,6 +193,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~50s
   it 'notifies health monitor about job failures' do
+    skip('SKIP HM TESTS')
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_from_scratch(manifest_hash: deployment_hash)
@@ -197,6 +203,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   end
 
   it 're-renders templates with new dynamic network IPs' do
+    skip('SKIP HM TESTS')
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['instances'] = 1
     manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}

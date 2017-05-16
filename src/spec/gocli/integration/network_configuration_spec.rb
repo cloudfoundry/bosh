@@ -364,6 +364,7 @@ describe 'network configuration', type: :integration do
       with_reset_hm_before_each
 
       it 'should update spec.ip with new ip on recreate' do
+        skip('SKIP HM TESTS')
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_hash['networks'] = [{
             'name' => 'a',
