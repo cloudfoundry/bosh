@@ -87,7 +87,7 @@ module Bosh::Director
                     package.name,
                     "#{package.version}.#{build}",
                     task.dependency_spec
-                  )
+                  ) { Config.job_cancelled? }
 
                 task_result = agent_task['result']
               end
