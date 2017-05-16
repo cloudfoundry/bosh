@@ -1,6 +1,8 @@
 module Bosh::Director
   class AgentBroadcaster
 
+    BROADCAST_RETRY = 2
+    MAX_RETRY_THREAD = 1
     SYNC_DNS_TIMEOUT = 10
     VALID_RESPONSE = 'synced'
 
@@ -12,20 +14,19 @@ module Bosh::Director
     def delete_arp_entries(vm_cid_to_exclude, ip_addresses)
       @logger.info("deleting arp entries for the following ip addresses: #{ip_addresses}")
       instances = filter_instances(vm_cid_to_exclude)
-      broadcast(instances, :delete_arp_entries, [ips: ip_addresses])
+      broadcast(instances, :delete_arp_entries, ips: ip_addresses)
     end
 
     def sync_dns(instances, blobstore_id, sha1, version)
+      timeout = Timeout.new(@sync_dns_timeout)
       @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{instances.map(&:agent_id)}")
       num_successful = 0
       num_unresponsive = 0
       num_failed = 0
       start_time = Time.now
-      broadcast(instances, :sync_dns, [blobstore_id, sha1, version]) do |agent_id, response|
-        if response['value'] == 'unresponsive'
+      broadcast_with_retry(instances, timeout, :sync_dns, [blobstore_id, sha1, version]) do |agent_id, response|
+        if response.nil?
           num_unresponsive += 1
-          agent_client(response['credentials'], agent_id).cancel_sync_dns(response['request_id'])
-
           @logger.warn("agent_broadcaster: sync_dns[#{agent_id}]: no response received")
         elsif response['value'] == VALID_RESPONSE
           num_successful += 1
@@ -48,60 +49,56 @@ module Bosh::Director
 
     private
 
-    def broadcast(instances, method, args_list, &blk)
+    def broadcast(instances, method, *args)
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+        instances.each do |instance|
+          pool.process do
+            send_agent_request(instance.credentials, instance.agent_id, method, *args)
+          end
+        end
+      end
+    end
+
+    def broadcast_with_retry(instances, timeout, method, args_list, &blk)
       lock = Mutex.new
-      unresponsive_instances = []
-      instance_to_request_id = {}
-      instances.each do |instance|
-        instance_to_request_id[instance] = true
-        send_agent_request(instance.credentials, instance.agent_id, method, *args_list) do |response|
-          lock.synchronize do
-            if !blk.nil?
-              blk.call(instance.agent_id, response)
+      (0...BROADCAST_RETRY).each do
+        instances_to_retry = []
+        instance_to_request_id = {}
+        instances.each do |instance|
+          instance_to_request_id[instance] = true
+          send_agent_request(instance.credentials, instance.agent_id, method, *args_list) do |response|
+            blk.call(instance.agent_id, response)
+            lock.synchronize do
+              instance_to_request_id.delete(instance)
             end
-
-            instance_to_request_id.delete(instance)
           end
         end
-      end
 
-      timeout = Timeout.new(@sync_dns_timeout)
+        while !timeout.timed_out?
+          lock.synchronize do
+            return if instance_to_request_id.empty?
+          end
+          sleep(0.1)
+        end
 
-      while !timeout.timed_out?
         lock.synchronize do
-          return if instance_to_request_id.empty?
-        end
-        sleep(0.1)
-      end
-
-      lock.synchronize do
-        if instance_to_request_id.empty?
-          return
-        else
-          instance_to_request_id.each do |instance, _|
-            unresponsive_instances << instance
-          end
-          instances = unresponsive_instances
-        end
-
-        if !blk.nil?
-          instances.each do |instance|
-            blk.call(instance.agent_id, {
-              'value' => 'unresponsive',
-              'credentials' => instance.credentials,
-              'request_id' => instance_to_request_id[instance],
-            })
+          if instance_to_request_id.empty?
+            return
+          else
+            instance_to_request_id.each do |instance, _|
+              instances_to_retry << instance
+            end
+            instances = instances_to_retry
           end
         end
       end
+
+      instances.each { |instance| blk.call(instance.agent_id, nil) }
     end
 
     def send_agent_request(instance_credentials, instance_agent_id, method, *args, &blk)
-      agent_client(instance_credentials, instance_agent_id).send(method, *args, &blk)
-    end
-
-    def agent_client(instance_credentials, instance_agent_id)
-      AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id)
+      agent = AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id)
+      agent.send(method, *args, &blk)
     end
   end
 end

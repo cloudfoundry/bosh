@@ -151,7 +151,7 @@ module Bosh::Director
         let!(:instances) { [instance1, instance2]}
 
         context 'and agent succeeds within retry count' do
-          it 'logs broadcasting fail to failed agents' do
+          it 'retries broadcasting to failed agents' do
             expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 2 agents ["agent-1", "agent-2"]')
             expect(logger).to receive(:warn).with('agent_broadcaster: sync_dns[agent-2]: no response received')
             expect(logger).to receive(:info).with(/agent_broadcaster: sync_dns: attempted 2 agents in \d+ms \(1 successful, 0 failed, 1 unresponsive\)/)
@@ -169,13 +169,7 @@ module Bosh::Director
               with(instance2.credentials, instance2.agent_id) do
               expect(agent).to receive(:sync_dns)
               agent
-            end.once
-
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance2.credentials, instance2.agent_id) do
-              expect(agent).to receive(:cancel_sync_dns)
-              agent
-            end.once
+            end.twice
 
             agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 1)
 
