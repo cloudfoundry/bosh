@@ -249,9 +249,11 @@ module Bosh::Director
             'value' => 'task value'
           }
         end
+        let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc, cancel_request: nil) }
+        let(:request_id) { 'my-request' }
 
         before do
-          allow(Config).to receive(:nats_rpc)
+          allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
           allow(Api::ResourceManager).to receive(:new)
         end
 
@@ -260,6 +262,14 @@ module Bosh::Director
             expect(message_name).to eq(:delete_arp_entries)
             expect(args).to eq([ips: ['10.10.10.1', '10.10.10.2']])
           end
+
+          client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2'])
+        end
+
+        it 'cancels the request on the NatsRPC to avoid memory leaks' do
+          allow(client).to receive(:send_nats_request).and_return(request_id)
+          expect(nats_rpc).to receive(:cancel_request).with(request_id)
+
           client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2'])
         end
 

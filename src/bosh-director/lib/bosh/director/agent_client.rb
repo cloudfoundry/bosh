@@ -340,7 +340,8 @@ module Bosh::Director
     end
 
     def fire_and_forget(message_name, *args)
-      send_nats_request(message_name, args)
+      request_id = send_nats_request(message_name, args)
+      @nats_rpc.cancel_request(request_id)
     rescue => e
       @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
     end
