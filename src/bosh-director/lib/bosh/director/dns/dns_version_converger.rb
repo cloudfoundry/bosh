@@ -8,6 +8,7 @@ module Bosh::Director
         .select_append(Sequel.expr(:vms__agent_id).as(:agent_id))
         .select_append(Sequel.expr(:instances__id).as(:id))
         .where { Sequel.expr(vms__active: true) }
+        .where { Sequel.expr(instances__compilation: false) }
         .where { ((dns_version < current_version) | Sequel.expr(dns_version: nil)) }
     end
 
@@ -16,6 +17,7 @@ module Bosh::Director
       Models::Instance.inner_join(:vms, vms__instance_id: :instances__id)
         .select_append(Sequel.expr(:instances__id).as(:id))
         .where { Sequel.expr(vms__active: true) }
+        .where { Sequel.expr(instances__compilation: false) }
     end
 
     def initialize(agent_broadcaster, logger, max_threads, strategy_selector=ONLY_OUT_OF_DATE_SELECTOR)
