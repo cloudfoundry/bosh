@@ -95,10 +95,11 @@ module Bosh::Director
         raise BadManifest, 'Manifest should not be empty' unless yml_string.to_s != ''
 
         begin
-          YAML.load(yml_string, context)
+          yaml = YAML.load(yml_string, context)
         rescue Exception => e
           raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
         end
+        yaml || {}
       end
     end
   end

@@ -188,6 +188,18 @@ module Bosh::Director
             )
           end
 
+          context 'when uploading an empty cloud config' do
+            it 'returns the diff' do
+              post(
+                '/diff',
+                "---\n",
+                { 'CONTENT_TYPE' => 'text/yaml' }
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  cloud_properties: {}","removed"],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+            end
+          end
+
           context 'when there is no diff' do
             it 'returns empty diff' do
               post(
