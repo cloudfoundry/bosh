@@ -7,6 +7,7 @@ module Bosh::Director
     def initialize(broadcast_timeout=DEFAULT_BROADCAST_TIMEOUT)
       @logger = Config.logger
       @broadcast_timeout = broadcast_timeout
+      @reactor_loop = EmReactorLoop.new
     end
 
     def delete_arp_entries(vm_cid_to_exclude, ip_addresses)
@@ -29,6 +30,7 @@ module Bosh::Director
 
       instance_to_request_id = {}
       pending = Set.new
+
       instances.each do |instance|
         pending.add(instance)
         instance_to_request_id[instance] = agent_client(instance.credentials, instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
@@ -45,28 +47,31 @@ module Bosh::Director
         end
       end
 
-      # 10s? what if we have 1000 vms?
-      timeout = Timeout.new(@broadcast_timeout)
+      @reactor_loop.queue do
+        # start timeout after current
+        # 10s? what if we have 1000 vms?
+        timeout = Timeout.new(@broadcast_timeout)
 
-      pending_reqs = true
-      while pending_reqs && !timeout.timed_out?
+        pending_reqs = true
+        while pending_reqs && !timeout.timed_out?
+          sleep(0.1)
+          lock.synchronize do
+            pending_reqs = pending.any?
+          end
+        end
+
         lock.synchronize do
-          pending_reqs = pending.any?
+          pending.each do |instance|
+            agent_client = agent_client(instance.credentials, instance.agent_id)
+            agent_client.cancel_sync_dns(instance_to_request_id[instance])
+            num_unresponsive += 1
+            @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
+          end
         end
-        sleep(0.1)
-      end
 
-      lock.synchronize do
-        pending.each do |instance|
-          agent_client = agent_client(instance.credentials, instance.agent_id)
-          agent_client.cancel_sync_dns(instance_to_request_id[instance])
-          num_unresponsive += 1
-          @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
-        end
+        elapsed_time = ((Time.now - start_time) * 1000).ceil
+        @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
       end
-
-      elapsed_time = ((Time.now - start_time) * 1000).ceil
-      @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
     end
 
     def filter_instances(vm_cid_to_exclude)
@@ -79,6 +84,16 @@ module Bosh::Director
 
     def agent_client(instance_credentials, instance_agent_id)
       AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id)
+    end
+  end
+
+  class EmReactorLoop
+    def queue(&blk)
+      mutex = Mutex.new
+      resource = ConditionVariable.new
+      EM.next_tick { mutex.synchronize { resource.signal } }
+      mutex.synchronize { resource.wait(mutex) }
+      blk.call
     end
   end
 end
