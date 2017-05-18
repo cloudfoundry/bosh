@@ -53,7 +53,7 @@ describe 'local DNS', type: :integration do
         expect(etc_hosts).to match_array(generate_instance_dns)
 
 
-        [0..9].each do |index|
+        (0..9).each do |index|
           records_json = parse_agent_records_json(index)
           expect(records_json['records']).to match_array(generate_instance_records)
           expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'domain', 'agent_id'])
