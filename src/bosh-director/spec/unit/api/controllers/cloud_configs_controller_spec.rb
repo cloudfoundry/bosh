@@ -263,6 +263,24 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
           end
+
+          context 'when previous cloud config is nil' do
+            before do
+              Models::CloudConfig.create(
+                :raw_manifest => nil
+              )
+            end
+
+            it 'returns the diff' do
+              post(
+                '/diff',
+                YAML.dump(cloud_config_hash_with_one_az),
+                {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
+            end
+          end
         end
       end
 
