@@ -9,6 +9,7 @@ require 'pg'
 require 'tempfile'
 require 'tmpdir'
 require 'zlib'
+require 'timecop'
 
 require 'archive/tar/minitar'
 require 'machinist/sequel'
