@@ -221,6 +221,8 @@ RSpec.configure do |rspec|
     allow(threadpool).to receive(:wait)
   end
 
+  rspec.after(:each) { Timecop.return }
+
   rspec.after(:suite) do
     SpecHelper.disconnect_database
   end
