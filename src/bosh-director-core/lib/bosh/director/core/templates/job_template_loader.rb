@@ -29,7 +29,7 @@ module Bosh::Director
           source_erbs << SourceErb.new(src_name, dest_name, erb_file, job_template.name)
         end
 
-        JobTemplateRenderer.new(job_template.name, template_name, monit_source_erb, source_erbs, @logger)
+        JobTemplateRenderer.new(job_template, template_name, monit_source_erb, source_erbs, @logger)
       ensure
         FileUtils.rm_rf(template_dir) if template_dir
       end

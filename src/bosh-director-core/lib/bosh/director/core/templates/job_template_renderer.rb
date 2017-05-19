@@ -10,8 +10,9 @@ module Bosh::Director::Core::Templates
 
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(name, template_name, monit_erb, source_erbs, logger)
-      @name = name
+    def initialize(job_template, template_name, monit_erb, source_erbs, logger)
+      @name = job_template.name
+      @release = job_template.release
       @template_name = template_name
       @monit_erb = monit_erb
       @source_erbs = source_erbs
@@ -21,6 +22,13 @@ module Bosh::Director::Core::Templates
     def render(spec)
       if spec['properties_need_filtering']
         spec = remove_unused_properties(spec)
+      end
+
+      if @release
+        spec['release'] = {
+          'name' => @release.name,
+          'version' => @release.version
+        }
       end
 
       template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))

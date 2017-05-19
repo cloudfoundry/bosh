@@ -66,6 +66,7 @@ module Bosh::Director::Core::Templates
     describe '#process' do
       subject(:job_template_loader) { JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new) }
       let(:logger) { double('Logger', debug: nil) }
+      let(:release) {double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version:'0.1')}
 
       it 'returns the jobs template erb objects' do
         template_contents = create_job('foo', 'monit file',
@@ -76,7 +77,7 @@ module Bosh::Director::Core::Templates
 
         tmp_file = Tempfile.new('blob')
         File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
+        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id', release: release)
 
         container = job_template_loader.process(job_template)
 
@@ -95,7 +96,7 @@ module Bosh::Director::Core::Templates
 
         tmp_file = Tempfile.new('blob')
         File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
+        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id', release: release)
 
         container = job_template_loader.process(job_template)
 
