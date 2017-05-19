@@ -61,24 +61,32 @@ module Bosh::Director
           end
         end
 
+        pending_clone = []
         lock.synchronize do
-          pending.each do |instance|
-            agent_client = agent_client(instance.credentials, instance.agent_id)
-            agent_client.cancel_sync_dns(instance_to_request_id[instance])
+          pending_clone = pending.clone
+        end
+
+        pending_clone.each do |instance|
+          agent_client = agent_client(instance.credentials, instance.agent_id)
+          agent_client.cancel_sync_dns(instance_to_request_id[instance])
+
+          lock.synchronize do
             num_unresponsive += 1
-            @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
           end
+          @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
         end
 
         elapsed_time = ((Time.now - start_time) * 1000).ceil
-        @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
+        lock.synchronize do
+          @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
+        end
       end
     end
 
     def filter_instances(vm_cid_to_exclude)
       Models::Instance
-          .exclude(compilation: true)
-          .all.select {|instance| !instance.active_vm.nil? && (instance.vm_cid != vm_cid_to_exclude) }
+        .exclude(compilation: true)
+        .all.select { |instance| !instance.active_vm.nil? && (instance.vm_cid != vm_cid_to_exclude) }
     end
 
     private
