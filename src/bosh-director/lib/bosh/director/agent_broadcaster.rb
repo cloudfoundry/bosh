@@ -34,10 +34,11 @@ module Bosh::Director
       instances.each do |instance|
         pending.add(instance)
         instance_to_request_id[instance] = agent_client(instance.credentials, instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
+          valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
+          Models::AgentDnsVersion.find_or_create(agent_id: instance.agent_id).update(dns_version: version) if valid_response
           lock.synchronize do
-            if response['value'] == VALID_SYNC_DNS_RESPONSE
+            if valid_response
               num_successful += 1
-              Models::AgentDnsVersion.find_or_create(agent_id: instance.agent_id).update(dns_version: version)
             else
               num_failed += 1
               @logger.error("agent_broadcaster: sync_dns[#{instance.agent_id}]: received unexpected response #{response}")
