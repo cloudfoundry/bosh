@@ -24,12 +24,10 @@ module Bosh::Director::Core::Templates
         spec = remove_unused_properties(spec)
       end
 
-      if @release
-        spec['release'] = {
-          'name' => @release.name,
-          'version' => @release.version
-        }
-      end
+      spec['release'] = {
+        'name' => @release.name,
+        'version' => @release.version
+      }
 
       template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
       monit = monit_erb.render(template_context, @logger)
