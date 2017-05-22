@@ -257,8 +257,6 @@ jobs:
             DB_HOST: {{mysql-rds-host}}
             DB_USER: {{mysql-rds-user}}
             DB_PASSWORD: {{mysql-rds-password}}
-          on_failure:
-            <<: *slack-alert
         - task: test-postgresql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
