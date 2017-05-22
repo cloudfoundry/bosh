@@ -228,14 +228,6 @@ describe Bosh::Clouds::ExternalCpi do
         end
       end
 
-      context 'when cpi returns NotSupported error' do
-        it_raises_an_error(Bosh::Clouds::NotSupported)
-
-        context 'when method not implemented by the cpi' do
-          it_raises_an_error(Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotSupported', 'Method foo not supported in photon CPI')
-        end
-      end
-
       context 'when cpi returns CloudError error' do
         it_raises_an_error(Bosh::Clouds::CloudError)
 
