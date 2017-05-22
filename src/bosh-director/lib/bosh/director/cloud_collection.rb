@@ -55,11 +55,7 @@ module Bosh::Director
 
     def call_method_for_clouds(method, *args)
       clouds.each do |cloud|
-        begin
-          cloud[:cpi].send(method, *args)
-        rescue Bosh::Clouds::NotImplemented => e
-          @logger.debug("CPI '#{cloud[:name]}' doesn't implement this method, trying other CPIs, #{e.inspect}")
-        end
+        cloud[:cpi].send(method, *args)
       end
     end
 

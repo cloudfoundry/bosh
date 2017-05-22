@@ -20,6 +20,14 @@ module Bosh::Director
 
         collection.send(method_name, *method_args)
       end
+
+      it 'bubbles up not implemented exceptions' do
+        expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
+
+        expect {
+          collection.send(method_name, *method_args)
+        }.to raise_error(Bosh::Clouds::NotImplemented)
+      end
     end
 
     describe 'delete_stemcell' do
@@ -92,32 +100,7 @@ module Bosh::Director
       let(:method_name) { :set_disk_metadata }
       let(:method_args) { ['tuber_id', 'flat_potato_id'] }
 
-      context 'when all clouds implement the method' do
-        it_behaves_like 'a delegator'
-      end
-
-      context 'when a cloud does not implement the method' do
-        it 'delegates to all elements in collection and logs an error for the not-implementing cloud' do
-          expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
-          expect(cumulus[:cpi]).to receive(method_name).with(*method_args)
-
-          expect(logger).to receive(:debug).with(/nimbus.*Bosh::Clouds::NotImplemented/)
-
-          collection.send(method_name, *method_args)
-        end
-      end
-
-      context 'when no cloud implements the method' do
-        it 'delegates to all elements in collection and logs errors for each non-implementing cloud' do
-          expect(nimbus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
-          expect(cumulus[:cpi]).to receive(method_name).with(*method_args).and_raise(Bosh::Clouds::NotImplemented)
-
-          expect(logger).to receive(:debug).with(/nimbus.*Bosh::Clouds::NotImplemented/)
-          expect(logger).to receive(:debug).with(/cumulus.*Bosh::Clouds::NotImplemented/)
-
-          collection.send(method_name, *method_args)
-        end
-      end
+      it_behaves_like 'a delegator'
     end
 
     describe 'delete_snapshot' do
