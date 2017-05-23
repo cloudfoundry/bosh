@@ -49,8 +49,6 @@ module Bosh::Director
       end
     end
 
-
-
     private
 
     def add_event(deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
