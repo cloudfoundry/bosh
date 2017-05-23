@@ -2,7 +2,10 @@
 
 set -eu
 
-start-bosh -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=$PWD/bosh-dev-release/bosh-dev-release.tgz
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+src_dir="${script_dir}/../../../"
+
+"${src_dir}bosh-src/ci/docker/main-bosh-docker/start-bosh.sh"
 
 source /tmp/local-bosh/director/env
 

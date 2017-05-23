@@ -7,7 +7,6 @@ image_resource:
     repository: bosh/main-bosh-docker
 
 inputs:
-  - name: bosh-dev-release
   - name: bosh-src
   - name: bbr-binary
 

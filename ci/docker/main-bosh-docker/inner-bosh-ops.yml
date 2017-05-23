@@ -1,0 +1,81 @@
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-docker-cpi
+    version: 0.0.2
+    url: https://bosh.io/d/github.com/cppforlife/bosh-docker-cpi-release?v=0.0.2
+    sha1: a0068cca7ae596ce37b64cfb26412200bcb22890
+
+- type: replace
+  path: /releases/name=bosh/version?
+  value: create
+
+- type: replace
+  path: /stemcells?
+  value:
+  - alias: default
+    os: ubuntu-trusty
+    version: latest
+
+- type: replace
+  path: /instance_groups/name=bosh/stemcell?
+  value: default
+
+- type: remove
+  path: /resource_pools
+
+- type: remove
+  path: /instance_groups/name=bosh/resource_pool
+
+- type: replace
+  path: /instance_groups/name=bosh/vm_type?
+  value: default
+
+- type: replace
+  path: /instance_groups/name=bosh/azs?
+  value: [z1]
+
+- type: remove
+  path: /networks
+
+- type: remove
+  path: /disk_pools
+
+- type: remove
+  path: /instance_groups/name=bosh/persistent_disk_pool
+
+- type: replace
+  path: /instance_groups/name=bosh/persistent_disk_type?
+  value: default
+
+- type: replace
+  path: /update?
+  value:
+    canary_watch_time: 1000-60000
+    update_watch_time: 1000-60000
+    serial: false
+    canaries: 1
+    max_in_flight: 1
+
+- type: replace
+  path: /instance_groups/name=bosh/jobs/-
+  value: &cpi_job
+    name: docker_cpi
+    release: bosh-docker-cpi
+    properties:
+      docker_cpi:
+        docker:
+          host: ((docker_host))
+          tls: ((docker_tls))
+        agent:
+          mbus: nats://nats:((nats_password))@((internal_ip)):4222
+          blobstore:
+            provider: dav
+            options:
+              endpoint: http://((internal_ip)):25250
+              user: agent
+              password: ((blobstore_agent_password))
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/cpi_job?
+  value: docker_cpi

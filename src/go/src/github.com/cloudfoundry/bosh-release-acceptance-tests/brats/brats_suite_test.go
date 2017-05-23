@@ -21,23 +21,24 @@ func TestBrats(t *testing.T) {
 	RunSpecs(t, "Brats Suite")
 }
 
-var boshBinaryPath, bbrBinaryPath, directorIp, sshPrivateKeyPath, boshRelease string
+var outerBoshBinaryPath , boshBinaryPath, bbrBinaryPath, directorIp, sshPrivateKeyPath, boshRelease, boshClient, boshClientSecret, boshCACert string
 
 var _ = BeforeSuite(func() {
-	boshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
+	outerBoshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
+	boshBinaryPath = "/tmp/inner-bosh/director/bosh"
 	bbrBinaryPath = assertEnvExists("BBR_BINARY_PATH")
 	directorIp = assertEnvExists("BOSH_DIRECTOR_IP")
 	sshPrivateKeyPath = assertEnvExists("BOSH_SSH_PRIVATE_KEY_PATH")
 	boshRelease = assertEnvExists("BOSH_RELEASE")
 
-	assertEnvExists("BOSH_CLIENT")
-	assertEnvExists("BOSH_CLIENT_SECRET")
-	assertEnvExists("BOSH_CA_CERT")
+	boshClient = assertEnvExists("BOSH_CLIENT")
+	boshClientSecret = assertEnvExists("BOSH_CLIENT_SECRET")
+	boshCACert = assertEnvExists("BOSH_CA_CERT")
 	assertEnvExists("BOSH_ENVIRONMENT")
 })
 
 var _ = AfterSuite(func() {
-	session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "clean-up", "--all"), GinkgoWriter, GinkgoWriter)
+	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-n", "clean-up", "--all"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, time.Minute).Should(gexec.Exit(0))
 })
