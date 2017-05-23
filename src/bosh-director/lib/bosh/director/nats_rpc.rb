@@ -25,9 +25,8 @@ module Bosh::Director
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
 
-      nats_client = nats
       EM.schedule do
-        nats_client.publish(client, message)
+        nats.publish(client, message)
       end
     end
 
@@ -41,10 +40,9 @@ module Bosh::Director
       message = JSON.generate(request)
       @logger.debug("SENT: #{client} #{message}")
 
-      nats_client = nats
       EM.schedule do
         subscribe_inbox
-        nats_client.publish(client, message)
+        nats.publish(client, message)
       end
       request_id
     end
