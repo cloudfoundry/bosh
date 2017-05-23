@@ -17,8 +17,8 @@ export BOSH_BINARY_PATH=$(which bosh)
 export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_IP="10.245.0.3"
 
-export BBR_VERSION=0.1.0-rc.237
-export BBR_SHA256=033d58fd9b3efbd54412aaeccd95391c2c5306bb7c50aa29d2e19c28e3e7361b
+export BBR_VERSION=0.1.0-rc.251
+export BBR_SHA256=0ef85538410ed8e756014d996de332376c1f584cd84f7cd744f34146b60966d7
 export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr-${BBR_VERSION}"
 
 echo "${BBR_SHA256} ${BBR_BINARY_PATH}" | sha256sum -c -
