@@ -92,19 +92,6 @@ properties:
   # Health Monitor Plugins options
   #
 
-  # Send events via NATS message bus
-  event_nats_enabled:
-    description: Enable event NATS message bus plugin
-    default: false
-  event_nats.address:
-    description: Address of the event NATS message bus to connect to
-  event_nats.port:
-    description: Port of the event NATS message bus port to connect to
-  event_nats.user:
-    description: User for the event NATS message bus connection
-  event_nats.password:
-    description: Password for event NATS message bus connection
-
   # Send events via Email
   hm.email_notifications:
     description: Enable email notifications plugin

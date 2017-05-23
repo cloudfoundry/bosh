@@ -18,7 +18,6 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables << 'bosh-monitor-console'
   spec.executables << 'bosh-monitor'
-  spec.executables << 'listener'
 
   spec.add_dependency 'eventmachine',    '~>1.2.0'
   spec.add_dependency 'logging',         '~>1.8.2'

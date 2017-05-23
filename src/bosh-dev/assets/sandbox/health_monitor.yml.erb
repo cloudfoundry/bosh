@@ -6,6 +6,7 @@ mbus:
   endpoint: nats://localhost:<%= nats_port %>
   user:
   password:
+  ca_path: <%= get_nats_server_ca_path %>
 
 director: &director
   endpoint: <%= director_url %>
@@ -30,14 +31,6 @@ plugins:
     events:
       - alert
       - heartbeat
-  - name: nats
-    events:
-      - alert
-      - heartbeat
-    options:
-      endpoint: nats://localhost:<%= nats_port %>
-      user:
-      password:
   - name: resurrector
     events:
       - alert

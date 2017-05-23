@@ -60,21 +60,6 @@ params = {
   ]
 }
 
-if p('event_nats_enabled')
-  params['plugins'] << {
-    'name' => 'nats',
-    'events' => [
-      'alert',
-      'heartbeat',
-    ],
-    'options' => {
-      'endpoint' => "nats://#{p('event_nats.address')}:#{p('event_nats.port')}",
-      'user' => p('event_nats.user'),
-      'password' => p('event_nats.password'),
-    },
-  }
-end
-
 if p('hm.email_notifications')
   smtp_plugin = {
     'name' => 'email',

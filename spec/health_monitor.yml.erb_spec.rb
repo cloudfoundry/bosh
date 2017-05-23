@@ -95,28 +95,6 @@ describe 'health_monitor.yml.erb' do
     end
 
     context 'plugin is enabled' do
-      context 'nats' do
-        before do
-          deployment_manifest_fragment['properties']['event_nats_enabled'] = true
-          deployment_manifest_fragment['properties']['event_nats'] = {
-            'address' => '127.0.0.2',
-            'port' => 4222,
-            'user' => 'nats-user',
-            'password' => 'nats-password',
-          }
-        end
-
-        it 'renders' do
-          expect(parsed_yaml['plugins'].length).to eq(4)
-
-          plugin = parsed_yaml['plugins'][3]
-          expect(plugin['events']).to be_a(Array)
-          expect(plugin['options']['endpoint']).to eq('nats://127.0.0.2:4222')
-          expect(plugin['options']['user']).to eq('nats-user')
-          expect(plugin['options']['password']).to eq('nats-password')
-        end
-      end
-
       context 'email' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
