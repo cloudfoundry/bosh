@@ -78,6 +78,80 @@ module Bosh::Director
       end
     end
 
+    describe 'POST', '/diff' do
+      let(:cpi_config) { YAML.dump(Bosh::Spec::Deployments.simple_cpi_config) }
+      let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: \"<redacted>\"","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: \"<redacted>\"","added"]]}' }
+
+
+      describe 'when user has admin access' do
+        before { authorize('admin', 'admin') }
+
+        describe 'when redact=false' do
+          let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: someval","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: someval2","added"]]}' }
+
+          it 'shows property values in plain text' do
+            post '/diff?redact=false', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(expected_diff)
+          end
+        end
+
+        describe 'when cpi config is new' do
+          it "shows a full 'added' diff" do
+            post '/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(expected_diff)
+          end
+        end
+
+        describe 'when previous cpi config is nil' do
+          before do
+            cpi_config = Bosh::Director::Models::CpiConfig.new
+            cpi_config.manifest = nil
+            cpi_config.save
+          end
+
+          it "shows a full 'added' diff" do
+            post '/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(expected_diff)
+          end
+        end
+
+        describe 'when new cpi config is empty' do
+          before do
+            Bosh::Director::Api::CpiConfigManager.new.update(cpi_config)
+          end
+          let(:expected_diff) { '{"diff":[["cpis:","removed"],["- name: cpi-name1","removed"],["  type: cpi-type","removed"],["  properties:","removed"],["    somekey: \"<redacted>\"","removed"],["- name: cpi-name2","removed"],["  type: cpi-type2","removed"],["  properties:","removed"],["    somekey2: \"<redacted>\"","removed"]]}' }
+
+          it 'shows a full "removed" diff for nil' do
+            post '/diff', '---', { 'CONTENT_TYPE' => 'text/yaml' }
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(expected_diff)
+          end
+
+          it 'shows a full "removed" diff for empty hash' do
+            post '/diff', '--- {}', { 'CONTENT_TYPE' => 'text/yaml' }
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(expected_diff)
+          end
+        end
+      end
+
+      describe 'when user has readonly access' do
+        before { basic_authorize 'reader', 'reader' }
+
+        it 'denies access' do
+          expect(post('/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+        end
+      end
+    end
+
     describe 'GET', '/' do
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }

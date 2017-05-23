@@ -44,16 +44,19 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        cpi_configs_text = request.body.read
-        new_cpi_configs_hash = validate_manifest_yml(cpi_configs_text, nil)
+        new_cpi_configs_hash = validate_manifest_yml(request.body.read, nil) || {}
         old_cpi_configs = Bosh::Director::Api::CpiConfigManager.new.latest
 
-        old_cpi_configs_hash = old_cpi_configs ? old_cpi_configs.manifest : {}
+        old_cpi_configs_hash = if old_cpi_configs && old_cpi_configs.manifest
+                                 old_cpi_configs.manifest
+                               else
+                                 {}
+                               end
+
 
         result = {}
-
+        redact =  params['redact'] != 'false'
         begin
-          redact =  params['redact'] != 'false'
           diff = Changeset.new(old_cpi_configs_hash, new_cpi_configs_hash).diff(redact).order
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
