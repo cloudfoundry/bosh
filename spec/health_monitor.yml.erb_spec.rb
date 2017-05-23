@@ -68,6 +68,7 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['mbus']['endpoint']).to eq('nats://0.0.0.0:4222')
       expect(parsed_yaml['mbus']['user']).to eq('my-user')
       expect(parsed_yaml['mbus']['password']).to eq('my-password')
+      expect(parsed_yaml['mbus']['ca_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_server_ca.cert')
       expect(parsed_yaml['director']['endpoint']).to eq('https://0.0.0.0:25555')
       expect(parsed_yaml['director']['user']).to eq('admin')
       expect(parsed_yaml['director']['password']).to eq('admin_password')

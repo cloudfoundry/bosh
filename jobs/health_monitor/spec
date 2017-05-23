@@ -5,6 +5,7 @@ templates:
   health_monitor_ctl.erb: bin/health_monitor_ctl
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
+  nats_server_ca.cert.erb: config/nats_server_ca.cert
 
 packages:
   - health_monitor
@@ -63,6 +64,8 @@ properties:
     description: User for the NATS message bus connection
   nats.password:
     description: Password for NATS message bus connection
+  nats.cert.ca:
+    description: CA cert to trust when communicating with NATS server
 
   #
   # Bosh Director options (to get the list of managed VMs)

@@ -18,6 +18,7 @@ params = {
     'endpoint' => "nats://#{p('nats.address')}:#{p('nats.port')}",
     'user' => p('nats.user'),
     'password' => p('nats.password'),
+    'ca_path' => '/var/vcap/jobs/health_monitor/config/nats_server_ca.cert',
   },
   'director' => director,
   'intervals' => {

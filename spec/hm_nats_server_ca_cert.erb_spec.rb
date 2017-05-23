@@ -15,7 +15,7 @@ describe 'nats_server_ca.cert.erb' do
     }
   end
 
-  let(:ca_cert_template) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/nats_server_ca.cert.erb')) }
+  let(:ca_cert_template) { File.read(File.join(File.dirname(__FILE__), '../jobs/health_monitor/templates/nats_server_ca.cert.erb')) }
 
   subject(:rendered_certificate) do
     binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
@@ -23,7 +23,7 @@ describe 'nats_server_ca.cert.erb' do
   end
 
   context 'given a nats ca cert in the properties' do
-    it "should render the cert contents" do
+    it 'should render the cert contents' do
       expect(rendered_certificate).to eq('----- BEGIN CERTIFICATE -----\nI am a cert')
     end
   end
