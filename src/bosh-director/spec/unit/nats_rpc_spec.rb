@@ -5,18 +5,22 @@ describe Bosh::Director::NatsRpc do
   let(:nats_url) { 'fake-nats-url' }
   let(:nats_server_ca_path) { '/path/to/happiness.pem' }
   let(:nats_options) { {uri: nats_url, ssl: true, :tls => { :ca_file => nats_server_ca_path }} }
+  let(:some_logger){ instance_double(Logger) }
   subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path) }
 
   before do
     allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+    allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
+    allow(some_logger).to receive(:debug)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
   end
 
   describe '#nats' do
-    it 'returns a NATs client' do
+    it 'returns a NATs client and registers an error handler' do
       expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
+      expect(NATS).to receive(:on_error)
       expect(nats_rpc.nats).to eq(nats)
     end
 
@@ -29,6 +33,23 @@ describe Bosh::Director::NatsRpc do
         expect{
           nats_rpc.nats
         }.to raise_error('An error has occurred while connecting to NATS: a NATS error has occurred')
+      end
+    end
+
+    context 'When NATS on_error handler is invoked' do
+      let(:nats_url) { 'nats://nats:some_nats_password@127.0.0.1:4222' }
+
+      before do
+        allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+        allow(NATS).to receive(:on_error) do | &clbk |
+          clbk.call('Some error for nats://nats:some_nats_password@127.0.0.1:4222. Another error for nats://nats:some_nats_password@127.0.0.1:4222.')
+        end
+      end
+
+      it 'does NOT log the NATS password' do
+        expect(some_logger).to receive(:error)
+           .with('NATS client error: Some error for nats://nats:*******@127.0.0.1:4222. Another error for nats://nats:*******@127.0.0.1:4222.')
+        nats_rpc.nats
       end
     end
   end

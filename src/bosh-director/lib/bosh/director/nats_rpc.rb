@@ -64,7 +64,9 @@ module Bosh::Director
         @lock.synchronize do
           if @nats.nil?
             NATS.on_error do |e|
-              @logger.error("NATS client error: #{e}")
+              password = @nats_uri[/nats:\/\/.*:(.*)@/, 1]
+              redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
+              @logger.error(redacted_message)
             end
 
             @nats = NATS.connect(uri: @nats_uri, ssl: true, tls: {ca_file: @nats_server_ca_path} )
