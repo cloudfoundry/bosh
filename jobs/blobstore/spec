@@ -8,6 +8,8 @@ templates:
   mime.types:         config/mime.types
   read_users.erb:     config/read_users
   write_users.erb:    config/write_users
+  b-backup:           bin/b-backup
+  b-restore:          bin/b-restore
 
 packages:
 - nginx

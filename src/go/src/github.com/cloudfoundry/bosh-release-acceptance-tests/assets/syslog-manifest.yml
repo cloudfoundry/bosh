@@ -1,0 +1,45 @@
+---
+name: syslog-deployment
+
+releases:
+- name: syslog
+  version: latest
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
+
+instance_groups:
+- name: syslog_storer
+  stemcell: default
+  vm_type: default
+  instances: 1
+  networks:
+  - {name: default}
+  azs: [z1]
+  jobs:
+  - name: syslog_storer
+    release: syslog
+    properties:
+      syslog:
+        transport: tcp
+        port: 514
+- name: syslog_forwarder
+  stemcell: default
+  vm_type: default
+  azs: [z1]
+  instances: 1
+  networks:
+  - {name: default}
+  jobs:
+  - name: syslog_forwarder
+    release: syslog
+    consumes:
+      syslog_storer: { from: syslog_storer }

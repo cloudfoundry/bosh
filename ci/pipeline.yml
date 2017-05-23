@@ -680,6 +680,7 @@ jobs:
           trigger: true
           passed:
             - candidate-release
+        - get: bbr-binary
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
         privileged: true
@@ -777,6 +778,13 @@ resources:
       regexp: alpha-bosh-cli-(.*)-linux-amd64
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+
+  - name: bbr-binary
+    type: s3
+    source:
+      regexp: bbr-(.*)
+      bucket: {{bbr_binary_bucket}}
+      region_name: {{bbr_binary_bucket_region}}
 
   #
   # BATS

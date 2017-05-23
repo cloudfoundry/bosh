@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+set -e
+
+# BBR does not clean out the backup directory
+rm -rf $ARTIFACT_DIRECTORY/*
+
 PATH=/var/vcap/packages/ruby/bin:$PATH
 PATH=$PATH:/var/vcap/jobs/director/bin
 

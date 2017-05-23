@@ -9,6 +9,7 @@ image_resource:
 inputs:
   - name: bosh-dev-release
   - name: bosh-src
+  - name: bbr-binary
 
 params: []
 
