@@ -154,6 +154,18 @@ module Bosh::Director
       vm_options = {instance: instance_model, agent_id: agent_id}
       options = {}
 
+      if Config.nats_uri
+        env['bosh'] ||= {}
+        env['bosh']['mbus'] ||= {}
+        env['bosh']['mbus']['url'] = Config.nats_uri
+      end
+
+      if Config.nats_ca
+        env['bosh'] ||= {}
+        env['bosh']['mbus'] ||= {}
+        env['bosh']['mbus']['ca'] = Config.nats_ca
+      end
+
       if Config.encryption?
         credentials = generate_agent_credentials
         env['bosh'] ||= {}

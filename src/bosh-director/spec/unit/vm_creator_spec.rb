@@ -537,6 +537,66 @@ module Bosh
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
 
+      context 'nats information' do
+        context 'is provided' do
+          it 'should include the uri in ENV' do
+            Config.nats_uri = 'nats://localhost:1234'
+
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {
+                'bosh' => {
+                  'mbus' => {
+                    'url' => Config.nats_uri,
+                  },
+                  'group' => kind_of(String),
+                  'groups' => kind_of(Array),
+                }
+              }
+            ).and_return('new-vm-cid')
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          end
+
+          it 'should include the ca in ENV' do
+            Config.nats_ca = "nats begin\nnats content\nnats end\n"
+
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {
+                'bosh' => {
+                  'mbus' => {
+                    'ca' => Config.nats_ca,
+                  },
+                  'group' => kind_of(String),
+                  'groups' => kind_of(Array),
+                }
+              }
+            ).and_return('new-vm-cid')
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          end
+        end
+        context 'is NOT provided' do
+          it 'should not have the mbus key in ENV' do
+            Config.nats_ca = nil
+            Config.nats_uri = nil
+
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {
+                'bosh' => {
+                  'group' => kind_of(String),
+                  'groups' => kind_of(Array),
+                }
+              }
+            ).and_return('new-vm-cid')
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          end
+        end
+      end
+
       context 'Config.generate_vm_passwords flag is true' do
         before {
           Config.generate_vm_passwords = true

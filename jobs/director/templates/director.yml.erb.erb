@@ -11,6 +11,7 @@ params = {
   },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'nats_server_ca_path' => '/var/vcap/jobs/director/config/nats_server_ca.cert',
+  'nats_ca' => p('nats.cert.ca'),
   'dir' => '/var/vcap/store/director',
   'db' => {
     'adapter' => p('director.db.adapter'),

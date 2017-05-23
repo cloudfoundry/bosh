@@ -7,6 +7,30 @@ describe 'CPI calls', type: :integration do
     expect(invocation.inputs['metadata']['name']).to eq("#{invocation.inputs['metadata']['job']}/#{invocation.inputs['metadata']['id']}")
   end
 
+  let(:expected_mbus) {
+    {
+      'url' => /nats:\/\/127\.0\.0\.1:\d+/,
+      'ca' => '-----BEGIN CERTIFICATE-----
+MIICsjCCAhugAwIBAgIJAJgyGeIL1aiPMA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
+BAYTAkFVMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBX
+aWRnaXRzIFB0eSBMdGQwIBcNMTUwMzE5MjE1NzAxWhgPMjI4ODEyMzEyMTU3MDFa
+MEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJ
+bnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJ
+AoGBAOTD37e9wnQz5fHVPdQdU8rjokOVuFj0wBtQLNO7B2iN+URFaP2wi0KOU0ye
+njISc5M/mpua7Op72/cZ3+bq8u5lnQ8VcjewD1+f3LCq+Os7iE85A/mbEyT1Mazo
+GGo9L/gfz5kNq78L9cQp5lrD04wF0C05QtL8LVI5N9SqT7mlAgMBAAGjgacwgaQw
+HQYDVR0OBBYEFNtN+q97oIhvyUEC+/Sc4q0ASv4zMHUGA1UdIwRuMGyAFNtN+q97
+oIhvyUEC+/Sc4q0ASv4zoUmkRzBFMQswCQYDVQQGEwJBVTETMBEGA1UECBMKU29t
+ZS1TdGF0ZTEhMB8GA1UEChMYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkggkAmDIZ
+4gvVqI8wDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQCZKuxfGc/RrMlz
+aai4+5s0GnhSuq0CdfnpwZR+dXsjMO6dlrD1NgQoQVhYO7UbzktwU1Hz9Mc3XE7t
+HCu8gfq+3WRUgddCQnYJUXtig2yAqmHf/WGR9yYYnfMUDKa85i0inolq1EnLvgVV
+K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
+-----END CERTIFICATE-----
+'
+    }
+  }
+
   describe 'deploy' do
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
@@ -47,6 +71,7 @@ describe 'CPI calls', type: :integration do
         },
         'disk_cids' => [],
         'env' => {'bosh' => {
+          'mbus' => expected_mbus,
           'group' => String,
           'groups' => [
             'testdirector',
@@ -111,6 +136,7 @@ describe 'CPI calls', type: :integration do
         },
         'disk_cids' => [],
         'env' => {'bosh' => {
+          'mbus' => expected_mbus,
           'group' => String,
           'groups' => [
             'testdirector',
@@ -175,16 +201,21 @@ describe 'CPI calls', type: :integration do
           }
         },
         'disk_cids' => [],
-        'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-foobar',
-          'groups' => [
-            'testdirector',
-            'simple',
-            'foobar',
-            'testdirector-simple',
-            'simple-foobar',
-            'testdirector-simple-foobar'
-          ]
-        }}
+        'env' => {
+          'bosh' => {
+            'mbus' => expected_mbus,
+            'password' => 'foobar',
+            'group' => 'testdirector-simple-foobar',
+            'groups' => [
+              'testdirector',
+              'simple',
+              'foobar',
+              'testdirector-simple',
+              'simple-foobar',
+              'testdirector-simple-foobar'
+            ]
+          }
+        }
       })
 
       expect(invocations[11].method_name).to eq('set_vm_metadata')
@@ -259,7 +290,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(first_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -349,7 +387,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [disk_cid],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -442,7 +487,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(first_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -536,7 +588,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [disk_cid],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -636,7 +695,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(first_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -738,7 +804,14 @@ describe 'CPI calls', type: :integration do
             }
           },
           'disk_cids' => [disk_cid],
-          'env' => {'bosh' => {'password' => 'foobar', 'group' => 'testdirector-simple-first-job', 'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']}}
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'password' => 'foobar',
+              'group' => 'testdirector-simple-first-job',
+              'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
+            }
+          }
         })
 
         expect(second_deploy_invocations[4].method_name).to eq('set_vm_metadata')

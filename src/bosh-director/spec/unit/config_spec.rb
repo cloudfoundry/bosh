@@ -367,6 +367,22 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'nats' do
+    before do
+      described_class.configure(test_config)
+    end
+
+    it 'should return nats mbus url' do
+      expect(described_class.nats_uri).to eq('nats://some-user:some-pass@some-nats-uri:1234')
+    end
+
+    context 'when nats_ca is specified' do
+      it 'returns non-nil' do
+        expect(described_class.nats_ca).to eq("begin nats ca\nnats ca contents\nend nats ca\n")
+      end
+    end
+  end
+
   context 'multiple digest' do
     context 'when verify multidigest is provided' do
       it 'allows access to multidigest path' do

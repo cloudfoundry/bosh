@@ -22,6 +22,11 @@ describe 'vm_types and stemcells', type: :integration do
     }
   end
 
+  let(:expected_env_hash) do
+    hash = Marshal.load(Marshal.dump(env_hash))
+    hash['bosh']['mbus'] =  Hash
+  end
+
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash.delete('resource_pools')
@@ -43,7 +48,7 @@ describe 'vm_types and stemcells', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
     create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-    expect(create_vm_invocations.last.inputs['env']).to eq(env_hash)
+    expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
     expect(bosh_runner.run('deployments')).to match_output  %(
 +--------+----------------------+-------------------+--------------+
 | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
@@ -69,7 +74,7 @@ stemcells:
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-      expect(create_vm_invocations.last.inputs['env']).to eq(env_hash)
+      expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
 
       env_hash['env2'] = 'new_env_value'
       manifest_hash['jobs'].first['env'] = env_hash
@@ -78,7 +83,7 @@ stemcells:
 
       new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(new_create_vm_invocations.count).to be > create_vm_invocations.count
-      expect(new_create_vm_invocations.last.inputs['env']).to eq(env_hash)
+      expect(new_create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
     end
   end
 
@@ -167,9 +172,8 @@ stemcells:
 
   #TODO Remove this test when backward compatibility of resource pool is no longer required
   context 'when migrating from resource pool to vm_type and stemcell' do
-    it 'should not recreate instance when with vm_type and stemcell do not change' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      env_hash = {
+    let(:env_hash) {
+      {
         'env1' => 'env_value1',
         'env2' => 'env_value2',
         'bosh' => {
@@ -177,6 +181,10 @@ stemcells:
           'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
         },
       }
+    }
+
+    it 'should not recreate instance when with vm_type and stemcell do not change' do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['resource_pools'].first['env'] = env_hash
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -185,7 +193,7 @@ stemcells:
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.count).to be > 0
-      expect(create_vm_invocations.last.inputs['env']).to eq(env_hash)
+      expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
 
       stemcell_hash = cloud_config_hash['resource_pools'].first['stemcell']
       stemcell_hash['alias'] = 'default'

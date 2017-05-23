@@ -249,6 +249,7 @@ describe 'using director with config server', type: :integration do
                 'color' => 'super_color'
               },
               'bosh' => {
+                'mbus' => Hash,
                 'group' => 'testdirector-simple-foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
               },
@@ -280,7 +281,7 @@ describe 'using director with config server', type: :integration do
           it 'should interpolate them correctly' do
             deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, env: client_env)
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+            expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
             expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
 +--------+----------------------+-------------------+--------------+
 | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
@@ -325,6 +326,7 @@ describe 'using director with config server', type: :integration do
                 'color' => 'smurf blue'
               },
               'bosh' => {
+                'mbus' => Hash,
                 'group' => 'testdirector-simple-foobar',
                 'password' => 'foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -342,7 +344,7 @@ describe 'using director with config server', type: :integration do
             deploy_from_scratch(no_login: true, env: client_env, manifest_hash: deployment_manifest)
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-            expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+            expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
             expect(bosh_runner.run('deployments', env: client_env)).to match_output  %(
 +--------+----------------------+-------------------+--------------+
 | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
@@ -411,6 +413,7 @@ describe 'using director with config server', type: :integration do
                                                           'color' => 'blue'
                                                         },
                                                         'bosh' => {
+                                                          'mbus' => Hash,
                                                           'password' => 'foobar',
                                                           'remove_dev_tools' => true,
                                                           'group' => 'testdirector-simple-foobar',

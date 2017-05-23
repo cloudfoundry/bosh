@@ -33,6 +33,7 @@ module Bosh::Director
         :max_vm_create_tries,
         :flush_arp,
         :nats_uri,
+        :nats_ca,
         :default_ssh_options,
         :keep_unreachable_vms,
         :enable_post_deploy,
@@ -117,6 +118,7 @@ module Bosh::Director
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
+        @nats_ca = config['nats_ca']
         @nats_server_ca_path = config.fetch('nats_server_ca_path')
 
         @default_ssh_options = config['default_ssh_options']
@@ -309,12 +311,20 @@ module Bosh::Director
         end
       end
 
+      def nats_uri
+        @nats_uri
+      end
+
+      def nats_ca
+        @nats_ca
+      end
+
       def nats_rpc
         # double-check locking to reduce synchronization
         if @nats_rpc.nil?
           @lock.synchronize do
             if @nats_rpc.nil?
-              @nats_rpc = NatsRpc.new(@nats_uri, @nats_server_ca_path)
+              @nats_rpc = NatsRpc.new(nats_uri, @nats_server_ca_path)
             end
           end
         end
