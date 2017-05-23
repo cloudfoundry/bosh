@@ -111,9 +111,10 @@ module Bosh::Director
         algorithm = @sha2 ? Digest::MultiDigest::SHA256 : Digest::MultiDigest::SHA1
         tarball_hexdigest = @multi_digest.create([algorithm], output_path)
 
-        Bosh::Director::Models::EphemeralBlob.new(
+        Bosh::Director::Models::Blob.new(
             blobstore_id: oid,
             sha1: tarball_hexdigest,
+            type: 'exported-release',
         ).save
 
         {

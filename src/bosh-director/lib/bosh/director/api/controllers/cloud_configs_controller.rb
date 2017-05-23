@@ -44,9 +44,13 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        new_config_hash = validate_manifest_yml(request.body.read, nil)
+        new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
         cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        old_config_hash = cloud_config ? cloud_config.raw_manifest : {}
+        old_config_hash = if cloud_config.nil? || cloud_config.raw_manifest.nil?
+          {}
+        else
+          cloud_config.raw_manifest
+        end
 
         result = {}
         begin

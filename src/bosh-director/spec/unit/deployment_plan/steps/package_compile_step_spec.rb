@@ -66,6 +66,17 @@ module Bosh::Director
         'fake-director-name-mycloud-compilation-deadbeef'
       ]
     }
+    let(:initial_state) {
+      {
+        'deployment' => 'mycloud',
+        'job' => {
+          'name' => 'compilation-deadbeef'
+        },
+        'index' => 0,
+        'id' => 'deadbeef',
+        'networks' => net
+      }
+    }
 
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
@@ -470,16 +481,11 @@ module Bosh::Director
       end
     end
 
-    context 'when the deploy is cancelled and there is a pending compilation' do
-      let(:reuse_compilation_vms) { true }
-      let(:number_of_workers) { 1 }
-      # this can happen when the cancellation comes in when there is a package to be compiled,
-      # and the compilation is not even in-flight. e.g.
-      # - you have 3 compilation workers, but you've got 5 packages to compile; or
-      # - package "bar" depends on "foo", deploy is cancelled when compiling "foo" ("bar" is blocked)
-
+    context 'when the deploy is cancelled' do
+      before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
       it 'cancels the compilation' do
-        director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
+        vm_cid = 'vm-cid-1'
+        director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: false)
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
@@ -495,26 +501,61 @@ module Bosh::Director
         allow(instance_group).to receive_messages(jobs: [job])
 
         compiler = DeploymentPlan::Steps::PackageCompileStep.new(deployment.name, [instance_group], compilation_config, compilation_instance_pool, logger, director_job)
+        expect(director_job).to receive(:task_cancelled?).ordered.and_return(false)
+        expect(director_job).to receive(:task_cancelled?).ordered.and_return(false)
+        agent = instance_double('Bosh::Director::AgentClient')
+
+        expect(cloud).to receive(:create_vm).once.ordered.
+          with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
+          and_return(vm_cid)
+
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+
+        expect(agent).to receive(:wait_until_ready).ordered
+        expect(agent).to receive(:update_settings).ordered
+        expect(agent).to receive(:apply).with(initial_state).ordered
+        expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'}).ordered
+        expect(agent).to receive(:compile_package).and_raise(TaskCancelled).ordered
 
         expect {
           compiler.perform
-        }.not_to raise_error
+        }.to raise_error(TaskCancelled)
+      end
+
+      # this can happen when the cancellation comes in when there is a package to be compiled,
+      # and the compilation is not even in-flight. e.g.
+      # - you have 3 compilation workers, but you've got 5 packages to compile; or
+      # - package "bar" depends on "foo", deploy is cancelled when compiling "foo" ("bar" is blocked)
+      context 'when there is a pending compilation' do
+        let(:reuse_compilation_vms) { true }
+        let(:number_of_workers) { 1 }
+        it 'cancels the compilation' do
+          director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
+          event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+          allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
+
+          network = double('network', name: 'network_name')
+          release_version_model = Models::ReleaseVersion.make
+          release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model, version: release_version_model.version)
+          release = Models::Release.make(name: release_version.name)
+          release.add_version(release_version_model)
+          stemcell = make_stemcell
+          instance_group = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', release: release_version, name: 'job_name', stemcell: stemcell)
+          package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
+          job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
+          allow(instance_group).to receive_messages(jobs: [job])
+
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(deployment.name, [instance_group], compilation_config, compilation_instance_pool, logger, director_job)
+
+          expect {
+            compiler.perform
+          }.not_to raise_error
+        end
       end
     end
 
     describe 'with reuse_compilation_vms option set' do
       let(:reuse_compilation_vms) { true }
-      let(:initial_state) {
-        {
-          'deployment' => 'mycloud',
-          'job' => {
-            'name' => 'compilation-deadbeef'
-          },
-          'index' => 0,
-          'id' => 'deadbeef',
-          'networks' => net
-        }
-      }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }

@@ -18,6 +18,23 @@ module Bosh::Director
         status(201)
       end
 
+      post '/diff', :consumes => :yaml do
+        old_runtime_config = runtime_config_or_empty(runtime_config_by_name(params['name']))
+        new_runtime_config = validate_manifest_yml(request.body.read, nil) || {}
+
+        result = {}
+        redact = params['redact'] != 'false'
+        begin
+          diff = Changeset.new(old_runtime_config, new_runtime_config).diff(redact).order
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        end
+
+        json_encode(result)
+      end
+
       get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
@@ -48,6 +65,18 @@ module Bosh::Director
       end
 
       private
+
+      def runtime_config_by_name(name)
+        config_name = name.nil? ? '' : name
+        Bosh::Director::Models::RuntimeConfig.latest_set.find do |runtime_config|
+          runtime_config.name == config_name
+        end
+      end
+
+      def runtime_config_or_empty(runtime_config_model)
+        return {} if runtime_config_model.nil? || runtime_config_model.raw_manifest.nil?
+        runtime_config_model.raw_manifest
+      end
 
       def create_event(config_name, error = nil)
         @event_manager.create_event({

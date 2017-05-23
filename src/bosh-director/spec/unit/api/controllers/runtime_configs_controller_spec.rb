@@ -14,6 +14,252 @@ module Bosh::Director
       config
     end
 
+    describe 'POST', '/diff' do
+      let(:runtime_config) {
+        {
+            'release' => {
+                'name' => 'some-release',
+                'version' => '0.0.1'
+            },
+            'addons' => {
+                'name' => 'some-addon',
+                'jobs' => {
+                    'name' => 'some-job',
+                    'release' => 'some-release',
+                    'properties' => {
+                        'some-key' => 'some-value'
+                    }
+                }
+            }
+        }
+      }
+
+      let(:dns_runtime_config) {
+        {
+          'dns' => {
+            'version' => '0.0.1'
+          }
+        }
+      }
+
+      describe 'when user has admin access' do
+
+        before { authorize('admin', 'admin') }
+
+        it 'gives a nice error when request body is not a valid yml' do
+          post '/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+          expect(last_response.status).to eq(400)
+          expect(JSON.parse(last_response.body)['code']).to eq(440001)
+          expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+        end
+
+        it 'gives a nice error when request body is empty' do
+          post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+          expect(last_response.status).to eq(400)
+          expect(JSON.parse(last_response.body)).to eq(
+              'code' => 440001,
+              'description' => 'Manifest should not be empty',
+          )
+        end
+
+        describe 'when diffing raises an error' do
+          before do
+            allow(Changeset).to receive(:new).and_raise StandardError, 'BOOM!'
+          end
+
+          it 'returns 200 with an empty diff and an error message if the diffing fails' do
+            post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body)['diff']).to eq([])
+            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
+          end
+        end
+
+        describe 'when runtime config is already set' do
+          before do
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(dns_runtime_config))
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(runtime_config))
+          end
+
+          describe 'when runtime config already exists' do
+            it 'shows an empty diff' do
+              post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[]}')
+            end
+          end
+
+          describe 'when single line modfied' do
+            it 'shows a single line modified' do
+              runtime_config['release']['version'] = '0.0.2'
+              post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["release:",null],["  version: 0.0.1","removed"],["  version: 0.0.2","added"]]}')
+            end
+          end
+
+          describe 'when single line added' do
+            it 'shows a single line added' do
+              runtime_config['addons']['jobs']['properties']['new-key'] = 'new-value'
+              post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["addons:",null],["  jobs:",null],["    properties:",null],["      new-key: \"<redacted>\"","added"]]}')
+            end
+          end
+
+          describe 'when redact=false' do
+            it 'shows property values in plain text' do
+              runtime_config['addons']['jobs']['properties']['new-key'] = 'new-value'
+              post '/diff?redact=false', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["addons:",null],["  jobs:",null],["    properties:",null],["      new-key: new-value","added"]]}')
+            end
+          end
+
+          describe 'when diffing against empty yaml' do
+            it "shows a full 'removed' diff" do
+              post '/diff', YAML.dump({}), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq(
+                  '{"diff":[' +
+                      '["release:","removed"],' +
+                      '["  name: some-release","removed"],' +
+                      '["  version: 0.0.1","removed"],' +
+                      '["",null],' +
+                      '["addons:","removed"],' +
+                      '["  name: some-addon","removed"],' +
+                      '["  jobs:","removed"],' +
+                      '["    name: some-job","removed"],' +
+                      '["    release: some-release","removed"],' +
+                      '["    properties:","removed"],' +
+                      '["      some-key: \"<redacted>\"","removed"]]}')
+            end
+          end
+        end
+
+        describe 'when multiple named runtime config exist' do
+
+          let (:addons_runtime_config) do
+            { addons: runtime_config['addons'] }
+          end
+          before do
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(runtime_config))
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(dns_runtime_config), 'dns')
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(addons_runtime_config), 'addons')
+          end
+
+          describe 'when no runtime config name provided' do
+            it 'shows diff for default runtime config' do
+              runtime_config['release']['version'] = '0.0.2'
+
+              post '/diff?name=', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["release:",null],["  version: 0.0.1","removed"],["  version: 0.0.2","added"]]}')
+            end
+          end
+
+          describe 'when runtime config name provided' do
+            it 'shows diff for named runtime config' do
+              dns_runtime_config['dns']['version'] = '0.0.2'
+
+              post '/diff?name=dns', YAML.dump(dns_runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["dns:",null],["  version: 0.0.1","removed"],["  version: 0.0.2","added"]]}')
+            end
+          end
+        end
+
+        describe 'when runtime config is new' do
+          it "shows a full 'added' diff" do
+            post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(
+                '{"diff":[' +
+                    '["release:","added"],' +
+                    '["  name: some-release","added"],' +
+                    '["  version: 0.0.1","added"],' +
+                    '["",null],' +
+                    '["addons:","added"],' +
+                    '["  name: some-addon","added"],' +
+                    '["  jobs:","added"],' +
+                    '["    name: some-job","added"],' +
+                    '["    release: some-release","added"],' +
+                    '["    properties:","added"],' +
+                    '["      some-key: \"<redacted>\"","added"]]}')
+          end
+        end
+
+        describe 'when previous runtime config is nil' do
+
+          before do
+            Bosh::Director::Api::RuntimeConfigManager.new.update('---')
+          end
+
+          it "shows a full 'added' diff" do
+            post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(
+              '{"diff":[' +
+                '["release:","added"],' +
+                '["  name: some-release","added"],' +
+                '["  version: 0.0.1","added"],' +
+                '["",null],' +
+                '["addons:","added"],' +
+                '["  name: some-addon","added"],' +
+                '["  jobs:","added"],' +
+                '["    name: some-job","added"],' +
+                '["    release: some-release","added"],' +
+                '["    properties:","added"],' +
+                '["      some-key: \"<redacted>\"","added"]]}')
+          end
+        end
+
+        describe 'when new manifest is nil' do
+          before do
+            Bosh::Director::Api::RuntimeConfigManager.new.update(YAML.dump(runtime_config))
+          end
+
+          it 'shows a full "removed" diff' do
+            post '/diff', '---', { 'CONTENT_TYPE' => 'text/yaml' }
+
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq(
+              '{"diff":[' +
+                '["release:","removed"],' +
+                '["  name: some-release","removed"],' +
+                '["  version: 0.0.1","removed"],' +
+                '["",null],' +
+                '["addons:","removed"],' +
+                '["  name: some-addon","removed"],' +
+                '["  jobs:","removed"],' +
+                '["    name: some-job","removed"],' +
+                '["    release: some-release","removed"],' +
+                '["    properties:","removed"],' +
+                '["      some-key: \"<redacted>\"","removed"]]}')
+          end
+        end
+      end
+
+      describe 'when user has no admin access' do
+        it 'get unauthorized' do
+          post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+          expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
     describe 'POST', '/' do
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }

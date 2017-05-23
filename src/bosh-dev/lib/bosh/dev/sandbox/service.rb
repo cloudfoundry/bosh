@@ -70,14 +70,23 @@ module Bosh::Dev::Sandbox
     end
 
     def stdout_contents
-      stdout ? File.read(stdout) : ''
+      safe_file_read(stdout)
     end
 
     def stderr_contents
-      stderr ? File.read(stderr) : ''
+      safe_file_read(stderr)
     end
 
     private
+
+    def safe_file_read(filename)
+      begin
+        File.read(filename)
+      rescue => e
+        @logger.info("Cannot read file #{filename}: #{e}")
+        ''
+      end
+    end
 
     def running?(pid)
       pid && Process.kill(0, pid)

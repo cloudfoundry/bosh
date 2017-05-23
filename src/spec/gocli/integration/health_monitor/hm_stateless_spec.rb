@@ -179,8 +179,12 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'metrics' => anything,
       }
 
-      expect(heartbeat_hashes.length).to be > 0
-      heartbeat_hashes.each do |heartbeat_hash|
+      heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
+        hash['job'] !=~ /^compilation\-/
+      end
+
+      expect(heartbeat_hashes_excluding_compilation.length).to be > 0
+      heartbeat_hashes_excluding_compilation.each do |heartbeat_hash|
         expect(heartbeat_hash).to match(expected_hash)
       end
     end

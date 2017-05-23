@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'cli: cleanup', type: :integration do
   with_reset_sandbox_before_each
 
-  shared_examples_for 'removing an ephemeral blob' do
+  shared_examples_for 'removing an exported release' do
     before {
       target_and_login
 
@@ -16,12 +16,12 @@ describe 'cli: cleanup', type: :integration do
       bosh_runner.run("export release test_release/1 centos-7/3001")
     }
 
-    it 'should clean up compiled ephemeral blobs of compiled releases' do
+    it 'should clean up compiled blobs of compiled releases' do
       output = scrub_random_ids(bosh_runner.run(clean_command))
 
-      expect(output).to include('Started deleting ephemeral blobs > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done')
-      expect(output.scan(/Started deleting ephemeral blobs > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done/).count).to eq(2)
-      expect(output).to include('Done deleting ephemeral blobs')
+      expect(output).to include('Started deleting exported releases > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done')
+      expect(output.scan(/Started deleting exported releases > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done/).count).to eq(2)
+      expect(output).to include('Done deleting exported releases')
       expect(output).to include('Cleanup complete')
     end
   end
@@ -58,7 +58,7 @@ describe 'cli: cleanup', type: :integration do
     end
 
     context 'when there are compiled releases in the blobstore' do
-      include_examples 'removing an ephemeral blob'
+      include_examples 'removing an exported release'
     end
   end
 
@@ -85,7 +85,7 @@ describe 'cli: cleanup', type: :integration do
     end
 
     context 'when there are compiled releases in the blobstore' do
-      include_examples 'removing an ephemeral blob'
+      include_examples 'removing an exported release'
     end
   end
 

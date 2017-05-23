@@ -9,6 +9,7 @@ require 'pg'
 require 'tempfile'
 require 'tmpdir'
 require 'zlib'
+require 'timecop'
 
 require 'archive/tar/minitar'
 require 'machinist/sequel'
@@ -220,6 +221,8 @@ RSpec.configure do |rspec|
     allow(threadpool).to receive(:process).and_yield
     allow(threadpool).to receive(:wait)
   end
+
+  rspec.after(:each) { Timecop.return }
 
   rspec.after(:suite) do
     SpecHelper.disconnect_database

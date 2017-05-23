@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -eux
+
+rm -rf /var/vcap/store/blobstore/*
+
+cp -rl $ARTIFACT_DIRECTORY/store /var/vcap/store/blobstore/
+
+find /var/vcap/store/blobstore/store -type d | xargs -n 127 chmod 0700
+find /var/vcap/store/blobstore/store -type f | xargs -n 127 chmod 0600
+chown -R vcap:vcap /var/vcap/store/blobstore/
+
+# Clean up uploaded backup artifact
+rm -rf $ARTIFACT_DIRECTORY/*

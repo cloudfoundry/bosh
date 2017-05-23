@@ -245,6 +245,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
+      - { get: rds-trigger, trigger: true }
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -256,8 +257,6 @@ jobs:
             DB_HOST: {{mysql-rds-host}}
             DB_USER: {{mysql-rds-user}}
             DB_PASSWORD: {{mysql-rds-password}}
-          on_failure:
-            <<: *slack-alert
         - task: test-postgresql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
@@ -571,7 +570,6 @@ jobs:
       - unit-2.3
       - unit-2.3-mysql
       - unit-2.3-postgres
-      - unit-2.3-rds
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - integration-postgres-gocli-sha2
@@ -682,6 +680,7 @@ jobs:
           trigger: true
           passed:
             - candidate-release
+        - get: bbr-binary
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
         privileged: true
@@ -780,6 +779,13 @@ resources:
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
+  - name: bbr-binary
+    type: s3
+    source:
+      regexp: bbr-(.*)
+      bucket: {{bbr_binary_bucket}}
+      region_name: {{bbr_binary_bucket_region}}
+
   #
   # BATS
   #
@@ -824,3 +830,7 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: rds-trigger
+    type: time
+    source: {interval: 1h}

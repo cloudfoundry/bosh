@@ -177,7 +177,6 @@ module Bosh::Clouds
 
       raise Bosh::Clouds::NotImplemented, message if error_type == "InvalidCall" && error_message.start_with?('Method is not known, got')
       raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::CloudError' && error_message.start_with?('Invalid Method:')
-      raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::NotSupported' && error_message =~ /^Method .+ not supported in photon CPI/
     end
 
     def save_cpi_log(output)

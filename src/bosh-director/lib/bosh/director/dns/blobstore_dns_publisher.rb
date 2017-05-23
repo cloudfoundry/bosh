@@ -35,36 +35,23 @@ module Bosh::Director
 
     private
 
-    def cleanup_blobs(new_blob)
-      dns_blobs = Models::LocalDnsBlob.where('id < ?', new_blob.id)
-      return if dns_blobs.empty?
-
-      dns_blobs.each do |blob|
-        begin
-          Models::EphemeralBlob.create(blobstore_id: blob.blobstore_id, sha1: blob.sha1, created_at: blob.created_at)
-        rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
-          error_message = e.message.downcase
-          raise e unless (error_message.include?('unique') || error_message.include?('duplicate'))
-        end
-      end
-      dns_blobs.delete
-    end
-
-    def broadcast(blob)
-      @agent_broadcaster.sync_dns(@agent_broadcaster.filter_instances(nil), blob.blobstore_id, blob.sha1, blob.version) unless blob.nil?
+    def broadcast(dns_blob)
+      @agent_broadcaster.sync_dns(@agent_broadcaster.filter_instances(nil), dns_blob.blob.blobstore_id, dns_blob.blob.sha1, dns_blob.version) unless dns_blob.nil?
     end
 
     def create_dns_blob(dns_records)
-      new_blob = Models::LocalDnsBlob.create(
+      blob = Models::Blob.create(
           blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
           sha1: dns_records.shasum,
-          version: dns_records.version,
           created_at: Time.new
       )
+      dns_blob = Models::LocalDnsBlob.create(
+          blob_id: blob.id,
+          version: dns_records.version,
+          created_at: blob.created_at
+      )
 
-      cleanup_blobs(new_blob)
-
-      new_blob
+      dns_blob
     end
 
     def export_dns_records

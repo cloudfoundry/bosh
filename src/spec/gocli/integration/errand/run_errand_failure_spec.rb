@@ -79,8 +79,8 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
       while !File.exists?(vm.file_path('sys/log/errand1/stdout.log'))
         sleep(1)
 
-        if (attempts += 1) > 10
-          raise 'Errand failed to start running within 10 seconds.'
+        if (attempts += 1) > 120
+          raise 'Errand failed to start running within 120 seconds.'
         end
       end
 

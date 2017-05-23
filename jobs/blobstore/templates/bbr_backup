@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -eux
+
+# BBR reuses the backup directory (hard set to /var/vcap/store/backup/blobstore)
+# and it does not clean out this directory
+rm -rf $ARTIFACT_DIRECTORY/*
+
+if [ -z "$(ls -A /var/vcap/store/blobstore)" ]; then
+  exit 0
+fi
+
+# The '-l' flag to `cp` hard link all the things. `ln` does not work recursively
+# for directories. BBR does not follow symlinks.
+cp -rlp /var/vcap/store/blobstore/* $ARTIFACT_DIRECTORY
