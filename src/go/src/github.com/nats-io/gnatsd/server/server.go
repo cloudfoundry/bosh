@@ -947,4 +947,3 @@ func (s *Server) getClientConnectURLs() []string {
 	}
 	return urls
 }
-
