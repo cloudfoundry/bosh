@@ -31,7 +31,6 @@ describe 'resurrector', type: :integration, hm: true do
     end
 
     it 'resurrects vms with old deployment ignoring cloud config' do
-      skip('SKIP HM TESTS')
       deploy_simple_manifest(manifest_hash: legacy_manifest)
       vms = director.vms
       expect(vms.size).to eq(1)

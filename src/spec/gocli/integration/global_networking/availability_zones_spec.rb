@@ -68,7 +68,6 @@ describe 'availability zones', type: :integration do
       with_reset_hm_before_each
 
       it 'resurrects VMs with the correct AZs cloud_properties' do
-        skip('SKIP HM TESTS')
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 

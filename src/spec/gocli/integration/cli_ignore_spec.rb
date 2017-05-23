@@ -832,8 +832,6 @@ describe 'ignore/unignore-instance', type: :integration do
     with_reset_hm_before_each
 
     it 'should not scan & fix the ignored VM' do
-      skip('SKIP HM TESTS')
-
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 

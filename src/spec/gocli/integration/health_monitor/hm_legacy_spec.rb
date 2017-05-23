@@ -6,7 +6,6 @@ describe 'health_monitor with legacy manifest', type: :integration, hm: true do
     with_reset_hm_before_each
 
     it 'resurrects stateless nodes' do
-      skip('SKIP HM TESTS')
       deploy_from_scratch({legacy: true, manifest_hash: Bosh::Spec::Deployments.legacy_manifest})
 
       original_instance = director.instance('foobar', '0', deployment_name: 'simple')

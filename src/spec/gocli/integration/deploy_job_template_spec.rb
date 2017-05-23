@@ -58,7 +58,6 @@ describe 'deploy job template', type: :integration do
     with_reset_hm_before_each
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      skip('SKIP HM TESTS')
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['jobs'].first['instances'] = 1
 

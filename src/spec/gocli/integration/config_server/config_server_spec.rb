@@ -314,7 +314,6 @@ Error: Unable to render instance groups for deployment. Errors are:
           with_reset_hm_before_each
 
           it 'interpolates values correctly when resurrector kicks in' do
-            skip('SKIP HM TESTS')
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)

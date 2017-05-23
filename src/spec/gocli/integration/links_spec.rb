@@ -1386,7 +1386,6 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       it 'resurrects the VM and resolves links correctly', hm: true do
-        skip('SKIP HM TESTS')
         deploy_simple_manifest(manifest_hash: manifest)
 
         instances = director.instances

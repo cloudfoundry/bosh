@@ -52,7 +52,6 @@ describe 'Changing cloud config', type: :integration do
     with_reset_hm_before_each
 
     it 'resurrects vm with original cloud config and IP' do
-      skip('SKIP HM TESTS')
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
 

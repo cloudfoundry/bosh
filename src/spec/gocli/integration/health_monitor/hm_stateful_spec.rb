@@ -24,7 +24,6 @@ describe 'health_monitor: 2', type: :integration, hm: true do
     with_reset_hm_before_each
 
     it 'resurrects stateful nodes ' do
-      skip('SKIP HM TESTS')
       deployment_hash = Bosh::Spec::Deployments.simple_manifest
       deployment_hash['jobs'][0]['instances'] = 1
       deployment_hash['jobs'][0]['persistent_disk'] = 20_480
