@@ -1,0 +1,12 @@
+# NATS Configuration file
+
+listen: 0.0.0.0:<%= nats_port %> # host/port to listen for client connections
+
+log_file: "<%= nats_log_path %>"
+
+# TLS
+tls {
+cert_file:  "<%= nats_conf['cert_file'] %>"
+key_file:   "<%= nats_conf['key_file'] %>"
+timeout:    2
+}

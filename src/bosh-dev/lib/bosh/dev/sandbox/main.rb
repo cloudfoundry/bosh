@@ -27,6 +27,9 @@ module Bosh::Dev::Sandbox
     HM_CONFIG = 'health_monitor.yml'
     DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
 
+    NATS_CONFIG = 'nats.conf'
+    DEFAULT_NATS_CONF_TEMPLATE_NAME = 'nats.conf.erb'
+
     EXTERNAL_CPI = 'cpi'
     EXTERNAL_CPI_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi.erb')
 
@@ -83,6 +86,7 @@ module Bosh::Dev::Sandbox
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @nats_log_path = File.join(@logs_path, 'nats.log')
 
       FileUtils.mkdir_p(@logs_path)
 
@@ -370,6 +374,8 @@ module Bosh::Dev::Sandbox
       hm_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
       write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
+      nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)
     end
@@ -417,11 +423,11 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_nats
-      @nats_log_path = File.join(@logs_path, 'nats.log')
       gnatsd_path = File.join(REPO_ROOT, 'go', 'src', 'github.com', 'nats-io', 'gnatsd', 'out', 'bosh-gnatsd')
+      conf = File.join(sandbox_root, NATS_CONFIG )
 
       @nats_process = Service.new(
-        %W[#{gnatsd_path} --tls --tlscert #{SANDBOX_ASSETS_DIR}/nats_server/certs/server.crt --tlskey #{SANDBOX_ASSETS_DIR}/nats_server/certs/server.key -p #{nats_port} -T -D -l #{@nats_log_path}],
+        %W[#{gnatsd_path} -c #{conf} -T -D ],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )
@@ -437,6 +443,13 @@ module Bosh::Dev::Sandbox
       else
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
+    end
+
+    def nats_conf
+      {
+        'cert_file' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'server.crt'),
+        'key_file' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'server.key'),
+      }
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
