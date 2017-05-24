@@ -98,10 +98,6 @@ module Bosh::Director
 
   class EmReactorLoop
     def queue(&blk)
-      mutex = Mutex.new
-      resource = ConditionVariable.new
-      EM.next_tick { mutex.synchronize { resource.signal } }
-      mutex.synchronize { resource.wait(mutex) }
       blk.call
     end
   end
