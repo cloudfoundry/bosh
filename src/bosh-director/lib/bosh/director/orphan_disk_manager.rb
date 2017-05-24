@@ -10,7 +10,7 @@ module Bosh::Director
     def orphan_disk(disk)
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         begin
-          parent_id = add_event('delete', disk.instance.deployment.name, "#{disk.instance.job}/#{disk.instance.uuid}", disk.disk_cid)
+          parent_id = add_event('orphan', disk.instance.deployment.name, "#{disk.instance.job}/#{disk.instance.uuid}", disk.disk_cid)
           orphan_disk = Models::OrphanDisk.create(
               disk_cid:          disk.disk_cid,
               size:              disk.size,
@@ -26,7 +26,7 @@ module Bosh::Director
         rescue Exception => e
           raise e
         ensure
-          add_event('delete', orphan_disk.deployment_name, orphan_disk.instance_name, orphan_disk.disk_cid, parent_id, e)
+          add_event('orphan', orphan_disk.deployment_name, orphan_disk.instance_name, orphan_disk.disk_cid, parent_id, e)
         end
       end
     end

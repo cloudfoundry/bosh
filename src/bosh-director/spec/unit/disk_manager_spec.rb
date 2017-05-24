@@ -490,32 +490,6 @@ module Bosh::Director
 
         disk_manager.delete_persistent_disks(instance_model)
       end
-
-      it 'stores events' do
-        expect {
-          disk_manager.delete_persistent_disks(instance_model)
-        }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(2)
-
-        event_1 = Bosh::Director::Models::Event.first
-        expect(event_1.user).to eq('user')
-        expect(event_1.action).to eq('delete')
-        expect(event_1.object_type).to eq('disk')
-        expect(event_1.object_name).to eq('disk123')
-        expect(event_1.task).to eq("#{task_id}")
-        expect(event_1.deployment).to eq(instance_model.deployment.name)
-        expect(event_1.instance).to eq(instance_model.name)
-
-        event_2 = Bosh::Director::Models::Event.order(:id).last
-        expect(event_2.parent_id).to eq(1)
-        expect(event_2.user).to eq('user')
-        expect(event_2.action).to eq('delete')
-        expect(event_2.object_type).to eq('disk')
-        expect(event_2.object_name).to eq('disk123')
-        expect(event_2.task).to eq("#{task_id}")
-        expect(event_2.deployment).to eq(instance_model.deployment.name)
-        expect(event_2.instance).to eq(instance_model.name)
-      end
     end
 
     describe '#unmount_disk_for' do
