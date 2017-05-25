@@ -37,7 +37,9 @@ module Bosh::Director
     def delete_vm_reference(instance)
       vm_model = instance.active_vm
       instance.active_vm = nil
-      vm_model.delete
+      if vm_model != nil
+        vm_model.delete
+      end
     end
 
     def delete_vm_from_cloud(instance_model)
