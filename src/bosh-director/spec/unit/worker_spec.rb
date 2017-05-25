@@ -17,6 +17,7 @@ module Bosh::Director
             's3cli_path' => true
           }
         },
+        'record_events' => true,
         'config_server' => {
           'enabled' => false
         },
@@ -24,6 +25,7 @@ module Bosh::Director
       }
     end
     let(:config) { Bosh::Director::Config.load_hash(config_hash) }
+    before { allow(SecureRandom).to receive(:uuid).and_return('fake-uuid') }
 
     describe 'when workers is sent USR1' do
       let(:queues) { worker.queues }
@@ -62,7 +64,7 @@ module Bosh::Director
       it 'should use a default name prefix' do
         worker.prep
 
-        expect(djworker.name).to match(/^worker_0-([a-f0-9\-]{36})$/)
+        expect(djworker.name).to match(/^worker_0-fake-uuid$/)
       end
 
       describe 'when explicitly set' do
@@ -71,8 +73,28 @@ module Bosh::Director
         it 'should use it for worker name prefix' do
           worker.prep
 
-          expect(djworker.name).to match(/^worker_99-([a-f0-9\-]{36})$/)
+          expect(djworker.name).to match(/^worker_99-fake-uuid$/)
         end
+      end
+    end
+
+    context 'bosh events' do
+      let(:djworker) { Delayed::Worker.new }
+      before { allow(Delayed::Worker).to receive(:new).and_return(djworker) }
+
+      it 'should record a start event' do
+        worker.prep
+
+        expect(djworker).to receive(:start)
+
+        worker.start
+
+        event = Bosh::Director::Models::Event.first
+        expect(event.user).to eq('_director')
+        expect(event.action).to eq('start')
+        expect(event.object_type).to eq('worker')
+        expect(event.object_name).to eq('worker_0-fake-uuid')
+        expect(event.context).to eq({})
       end
     end
   end

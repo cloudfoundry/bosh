@@ -32,6 +32,7 @@ module Bosh::Director
 
     def start
       @delayed_job_worker.logger.info("Starting worker #{@delayed_job_worker.name}.")
+      Bosh::Director::Config.log_director_start_event('worker', @delayed_job_worker.name, {})
 
       begin
         @delayed_job_worker_retries ||= 0

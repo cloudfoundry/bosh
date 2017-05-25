@@ -195,14 +195,18 @@ module Bosh::Director
       end
 
       def log_director_start
+        log_director_start_event('director', uuid, { version: @version })
+      end
+
+      def log_director_start_event(object_type, object_name, context = {})
         event_manager = Api::EventManager.new(record_events)
         event_manager.create_event(
           {
             user: '_director',
             action: 'start',
-            object_type: 'director',
-            object_name: uuid,
-            context: { version: @version }
+            object_type: object_type,
+            object_name: object_name,
+            context: context
           })
       end
 

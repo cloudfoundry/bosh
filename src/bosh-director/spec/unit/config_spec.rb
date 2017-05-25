@@ -354,6 +354,25 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'log_director_start_event' do
+    it 'stores an event' do
+      described_class.configure(test_config)
+
+      expect {
+        described_class.log_director_start_event('custom-type', 'custom-name', {'custom' => 'context'})
+      }.to change {
+        Bosh::Director::Models::Event.count
+      }.from(0).to(1)
+
+      expect(Bosh::Director::Models::Event.count).to eq(1)
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('custom-type')
+      expect(event.object_name).to eq('custom-name')
+      expect(event.context).to eq({'custom' => 'context'})
+    end
+  end
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do
