@@ -46,6 +46,9 @@ export BOSH_ENVIRONMENT="docker-inner-director"
 bosh int "${inner_bosh_dir}/creds.yml" --path /director_ssl/ca > "${inner_bosh_dir}/ca.crt"
 bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${inner_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
+bosh int "${inner_bosh_dir}/creds.yml" --path /jumpbox_ssh/private_key > "${inner_bosh_dir}/jumpbox_private_key.pem"
+chmod 400 "${inner_bosh_dir}/jumpbox_private_key.pem"
+
 cat <<EOF > "${inner_bosh_dir}/bosh"
 #!/bin/bash
 
