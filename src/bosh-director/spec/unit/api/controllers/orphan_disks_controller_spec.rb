@@ -34,6 +34,7 @@ module Bosh::Director
           )
           basic_authorize 'admin', 'admin'
         end
+
         it 'returns a list of orphaned disks' do
           get '/'
 
