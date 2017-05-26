@@ -92,7 +92,7 @@ describe 'cli: cloudcheck', type: :integration do
       end
 
       it 'deletes VM reference when delete_reference resolution flag is set' do
-        bosh_runner.run('cck --resolutions non-matching-resolution1 --resolutions delete_vm_reference --resolutions non-matching-resolution2', deployment_name: 'simple')
+        bosh_runner.run('cck --resolution non-matching-resolution1 --resolution delete_vm_reference --resolution non-matching-resolution2', deployment_name: 'simple')
 
         output = scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
         expect(output).to include("4  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
@@ -198,7 +198,7 @@ describe 'cli: cloudcheck', type: :integration do
       end
 
       it 'deletes disk reference when delete_disk_reference is set' do
-        cloudcheck_response = scrub_randoms(bosh_runner.run('cck --resolutions non-matching-resolution1 --resolutions delete_disk_reference --resolutions non-matching-resolution2', deployment_name: 'simple'))
+        cloudcheck_response = scrub_randoms(bosh_runner.run('cck --resolution non-matching-resolution1 --resolution delete_disk_reference --resolution non-matching-resolution2', deployment_name: 'simple'))
 
         expect(cloudcheck_response).to_not match(regexp('0 problems'))
         expect(cloudcheck_response).to match(regexp('1 missing'))
