@@ -338,6 +338,8 @@ module Bosh::Director
             (1..210).each do |i|
               Models::Event.make(:timestamp => timestamp+i)
             end
+            expect(Models::Event.count).to eq(210)
+
             get "?before_time=#{URI.encode(Models::Event.all[201].timestamp.to_s)}"
             events = JSON.parse(last_response.body)
 
@@ -385,6 +387,8 @@ module Bosh::Director
             (1..210).each do |i|
               Models::Event.make(:timestamp => timestamp+i)
             end
+            expect(Models::Event.count).to eq(210)
+
             get "?after_time=#{URI.encode(Models::Event.all[9].timestamp.to_s)}"
             events = JSON.parse(last_response.body)
 
