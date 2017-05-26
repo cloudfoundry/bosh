@@ -17,6 +17,8 @@ import (
 var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 	var innerDirectorUser = "jumpbox"
+	var directorBackupName = "director-backup"
+
 	BeforeEach(func() {
 		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
@@ -27,20 +29,12 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
 		Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
+
+		err = os.RemoveAll(directorBackupName)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("blobstore", func() {
-		var boshDeploymentName string
-
-		BeforeEach(func() {
-			boshDeploymentName = "bosh"
-		})
-
-		AfterEach(func() {
-			err := os.RemoveAll("director-backup")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
 		It("can backup and restore (removes underlying deployment and release)", func() {
 			manifestPath, err := filepath.Abs("../assets/syslog-manifest.yml")
 			Expect(err).ToNot(HaveOccurred())
@@ -67,7 +61,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -98,7 +92,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -154,7 +148,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -170,7 +164,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err = gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -205,10 +199,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 	Context("blobstore permissions", func() {
 		var directoriesBefore, filesBefore []string
-		AfterEach(func() {
-			err := os.RemoveAll("bosh")
-			Expect(err).ToNot(HaveOccurred())
-		})
 
 		It("restores the blobstore files with the correct permissions/ownership", func() {
 			By("Upload a release", func() {
@@ -226,7 +216,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -249,7 +239,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", "director-backup",
+					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
