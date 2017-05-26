@@ -4,7 +4,6 @@ module Bosh::Director
     def initialize(config, index=0)
       @config = config
       @index = index
-      @uuid = SecureRandom.uuid
     end
 
     def prep
@@ -23,14 +22,13 @@ module Bosh::Director
       queues << @config.director_pool unless @config.director_pool.nil? || (queues - ['urgent']).empty?
 
       @delayed_job_worker = Delayed::Worker.new({:queues => queues})
-      @delayed_job_worker.name = "worker_#{@index}-#{@uuid}"
-
       trap('USR1') {
         @delayed_job_worker.queues = [ 'non_existent_queue' ]
       } #stop accepting new jobs when USR1 is sent
     end
 
     def start
+      @delayed_job_worker.name = "worker_#{@index}"
       @delayed_job_worker.logger.info("Starting worker #{@delayed_job_worker.name}.")
       Bosh::Director::Config.log_director_start_event('worker', @delayed_job_worker.name, {})
 

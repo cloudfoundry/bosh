@@ -39,9 +39,9 @@ function test_kill_process {
 function test_list_child_processes {
   function ps {
     cat <<EOF
-21 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_1.yml -n worker_1
-22 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -n worker_2
-23 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -n worker_2
+21 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_1.yml -i 1
+22 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -i 2
+23 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -i 2
 1     init
 EOF
   }

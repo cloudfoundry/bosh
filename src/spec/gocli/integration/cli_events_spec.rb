@@ -36,9 +36,9 @@ describe 'cli: events', type: :integration do
     expect(stable_data).to all(include('id' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
-      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_0-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
-      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
-      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_2-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_0', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_1', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_2', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},

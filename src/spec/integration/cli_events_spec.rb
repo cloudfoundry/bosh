@@ -31,9 +31,9 @@ describe 'cli: events', type: :integration do
     expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
-      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_0-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
-      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
-      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_2-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_0', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_1', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_2', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
