@@ -9,5 +9,5 @@ RUN chmod +x /usr/local/bin/bosh
 
 COPY bosh-deployment /usr/local/bosh-deployment/
 
-COPY start-bosh /usr/local/bin/
+COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh

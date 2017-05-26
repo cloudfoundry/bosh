@@ -8,7 +8,6 @@ image_resource:
 
 inputs:
   - name: bosh-src
-  - name: bbr-binary
 
 params: []
 

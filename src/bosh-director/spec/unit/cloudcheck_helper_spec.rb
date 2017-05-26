@@ -93,6 +93,33 @@ module Bosh::Director
       end
     end
 
+    describe '#delete_vm_reference' do
+      before { fake_job_context }
+
+      it 'deletes VM reference' do
+        expect {
+          test_problem_handler.delete_vm_reference(instance)
+        }.to change {
+          vm = Models::Vm.where(instance_id: instance.id).first
+          vm.nil? ? 0 : Models::Vm.where(instance_id: instance.id, active: true).count
+        }.from(1).to(0)
+      end
+
+      context 'instance active_vm is nil' do
+        before do
+          vm_model = instance.active_vm
+          instance.active_vm = nil
+          vm_model.delete
+        end
+
+        it 'does not error' do
+          expect {
+            test_problem_handler.delete_vm_reference(instance)
+          }.to_not raise_error
+        end
+      end
+    end
+
     describe '#delete_vm' do
       before { fake_job_context }
       context 'when VM does not have disks' do
