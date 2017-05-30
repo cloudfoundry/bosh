@@ -17,7 +17,16 @@ module Bosh::Director
         add_hosts_record(index, instance_group_name, network_name, deployment_name, ip, domain)
       end
 
-      @record_infos << [instance_id, instance_group_name, az_name, network_name, deployment_name, ip, domain, agent_id]
+      @record_infos << [
+        instance_id,
+        Canonicalizer.canonicalize(instance_group_name),
+        az_name,
+        Canonicalizer.canonicalize(network_name),
+        Canonicalizer.canonicalize(deployment_name),
+        ip,
+        domain,
+        agent_id
+      ]
     end
 
     def shasum
