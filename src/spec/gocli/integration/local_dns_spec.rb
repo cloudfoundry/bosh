@@ -233,7 +233,7 @@ describe 'local DNS', type: :integration do
   def generate_instance_record_infos
     director.instances(deployment_name: deployment_name).map do |instance|
       az = instance.availability_zone.empty? ? nil : instance.availability_zone
-      [instance.id, instance.job_name, az, 'local_dns', 'simple.local_dns', instance.ips[0], 'bosh', instance.agent_id]
+      [instance.id, Canonicalizer.canonicalize(instance.job_name), az, Canonicalizer.canonicalize('local_dns'), Canonicalizer.canonicalize('simple.local_dns'), instance.ips[0], 'bosh', instance.agent_id]
     end
   end
 
