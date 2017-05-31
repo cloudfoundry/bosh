@@ -682,6 +682,7 @@ jobs:
             - candidate-release
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
+        tags: ["worker-brats"]
         privileged: true
         input_mapping:
           bosh-dev-release: bosh-release
