@@ -233,10 +233,18 @@ describe 'local DNS', type: :integration do
   def generate_instance_record_infos
     director.instances(deployment_name: deployment_name).map do |instance|
       az = instance.availability_zone.empty? ? nil : instance.availability_zone
-      [instance.id, Canonicalizer.canonicalize(instance.job_name), az, Canonicalizer.canonicalize('local_dns'), Canonicalizer.canonicalize('simple.local_dns'), instance.ips[0], 'bosh', instance.agent_id]
+      [
+        instance.id,
+        Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
+        az,
+        Bosh::Director::Canonicalizer.canonicalize('local_dns'),
+        Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
+        instance.ips[0],
+        'bosh',
+        instance.agent_id
+      ]
     end
   end
-
 
   def check_ip(ip, ips)
     case ips
