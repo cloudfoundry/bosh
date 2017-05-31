@@ -86,7 +86,6 @@ module Bosh::Director
 
       @task_logger.info("Performing task: #{@task.inspect}")
 
-      @task.state = :processing
       @task.timestamp = Time.now
       @task.started_at = Time.now
       @task.checkpoint_time = Time.now
