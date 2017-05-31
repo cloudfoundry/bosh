@@ -26,17 +26,19 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	})
 
 	AfterEach(func() {
+		err := os.RemoveAll(directorBackupName)
+		Expect(err).ToNot(HaveOccurred())
+
 		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
-
-		err = os.RemoveAll(directorBackupName)
-		Expect(err).ToNot(HaveOccurred())
+		Eventually(session, 10 * time.Minute).Should(gexec.Exit(0))
 	})
 
-	Context("blobstore", func() {
+	Context("database backup", func() {
 		It("can backup and restore (removes underlying deployment and release)", func() {
-			manifestPath, err := filepath.Abs("../assets/syslog-manifest.yml")
+			syslogManifestPath, err := filepath.Abs("../assets/syslog-manifest.yml")
+			Expect(err).ToNot(HaveOccurred())
+			osConfManifestPath, err := filepath.Abs("../assets/os-conf-manifest.yml")
 			Expect(err).ToNot(HaveOccurred())
 
 			By("create syslog deployment", func() {
@@ -51,8 +53,21 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				Eventually(session, 2 * time.Minute).Should(gexec.Exit(0))
 
 				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
-					"deploy", manifestPath,
+					"deploy", syslogManifestPath,
 					"-d", "syslog-deployment"), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 3 * time.Minute).Should(gexec.Exit(0))
+			})
+
+			By("create os-conf deployment", func() {
+				osConfRelease := "https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12"
+				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", osConfRelease), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 2 * time.Minute).Should(gexec.Exit(0))
+
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
+					"deploy", osConfManifestPath,
+					"-d", "os-conf-deployment"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 3 * time.Minute).Should(gexec.Exit(0))
 			})
@@ -65,7 +80,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 2 * time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("wipe system, recreate inner director", func() {
@@ -78,9 +93,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				Eventually(session, 3 * time.Minute).Should(gexec.Exit(0))
 			})
 
-			By("expect deploy to fail because the deployment won't be there", func() {
+			By("expect deploy to fail because the release/stemcell won't be there", func() {
 				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n",
-					"deploy", manifestPath,
+					"deploy", syslogManifestPath,
 					"-d", "syslog-deployment",
 					"--recreate",
 				), GinkgoWriter, GinkgoWriter)
@@ -96,31 +111,68 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 2 * time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
-				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
+				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", stemcellUrl), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
+		  })
+
+			By("cck the deployments", func() {
+				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n",
 					"-d", "syslog-deployment",
 					"cck", "--auto",
 				), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 10 * time.Minute).Should(gexec.Exit(0))
+
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
+					"-d", "os-conf-deployment",
+					"cck",
+					"--resolution", "delete_vm_reference",
+					"--resolution", "delete_disk_reference",
+				), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 10 * time.Minute).Should(gexec.Exit(0))
+
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
+					"deploy", osConfManifestPath,
+					"-d", "os-conf-deployment"), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 3 * time.Minute).Should(gexec.Exit(0))
 			})
 
-			By("validate deployment. instance actually ran the jobs", func() {
-				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n",
-					"-d", "syslog-deployment",
-					"instances",
-					"--ps",
-					"--column=process_state",
-					"--column=instance",
-				), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+			By("validate deployments", func() {
+				By("instance actually ran the jobs", func() {
+					session, err := gexec.Start(exec.Command(boshBinaryPath, "-n",
+						"-d", "syslog-deployment",
+						"instances",
+						"--ps",
+						"--column=process_state",
+						"--column=instance",
+					), GinkgoWriter, GinkgoWriter)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
 
-				Expect(session.Out.Contents()).To(MatchRegexp("syslog_storer/[a-z0-9-]+[ \t]+running"))
-				Expect(session.Out.Contents()).To(MatchRegexp("syslog_forwarder/[a-z0-9-]+[ \t]+running"))
+					Expect(session.Out.Contents()).To(MatchRegexp("syslog_storer/[a-z0-9-]+[ \t]+running"))
+					Expect(session.Out.Contents()).To(MatchRegexp("syslog_forwarder/[a-z0-9-]+[ \t]+running"))
+				})
+
+				By("persistent disks exist", func() {
+					session, err := gexec.Start(exec.Command(boshBinaryPath, "-n",
+						"-d", "os-conf-deployment",
+						"instances", "--details",
+						"--column", "disk_cids",
+					), GinkgoWriter, GinkgoWriter)
+
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+					Expect(string(session.Out.Contents())).To(MatchRegexp("[0-9a-f]{8}-[0-9a-f-]{27}"))
+				})
 			})
 		})
 
@@ -129,7 +181,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
 				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", stemcellUrl), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
 
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
 				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
@@ -172,6 +224,11 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
+				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", stemcellUrl), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
+
 				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n",
 					"-d", "syslog-deployment",
 					"cck", "--report",
@@ -197,7 +254,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		})
 	})
 
-	Context("blobstore permissions", func() {
+	Context("blobstore files", func() {
 		var directoriesBefore, filesBefore []string
 
 		It("restores the blobstore files with the correct permissions/ownership", func() {
@@ -265,7 +322,7 @@ func waitForBoshDirectorUp(boshBinaryPath string) {
 }
 
 func findBlobstoreFiles(outerBoshBinaryPath string) ([]string, []string) {
-	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-d", "bosh", "ssh", "bosh", "-r", "--column", "stdout",
+	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-d", "bosh", "ssh", "bosh", "--results", "--column", "stdout",
 		"sudo find /var/vcap/store/blobstore/store -type d -perm 0700 -user vcap -group vcap"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, time.Minute).Should(gexec.Exit(0))

@@ -17,6 +17,8 @@ source "${local_bosh_dir}/env"
   | awk '{ print $1 }' \
   | xargs -n1 -I {} -- "${inner_bosh_dir}/bosh" -n -d {} delete-deployment --force
 
+"${inner_bosh_dir}/bosh" -n clean-up --all
+
 bosh -n delete-deployment -d bosh
 
 rm -fr "${inner_bosh_dir}"

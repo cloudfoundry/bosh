@@ -48,6 +48,9 @@
   path: /instance_groups/name=bosh/persistent_disk_type?
   value: default
 
+- type: remove
+  path: /instance_groups/name=bosh/jobs/name=health_monitor
+
 - type: replace
   path: /update?
   value:

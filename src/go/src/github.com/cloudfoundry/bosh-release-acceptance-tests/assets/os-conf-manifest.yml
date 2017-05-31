@@ -1,20 +1,20 @@
 ---
-name: test-brats-deployment
+name: os-conf-deployment
 
 releases:
 - name: os-conf
-  version: 12
+  version: latest
 
 stemcells:
-- alias: ubuntu_stemcell
+- alias: default
   os: ubuntu-trusty
   version: latest
 
 update:
   canaries: 10
   max_in_flight: 10
-  canary_watch_time: 1000-60000
-  update_watch_time: 1000-60000
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
 
 instance_groups:
 - name: test-brats
@@ -26,6 +26,7 @@ instance_groups:
     properties:
       users: []
   vm_type: default
-  stemcell: ubuntu_stemcell
+  persistent_disk_type: default
+  stemcell: default
   networks:
   - name: default
