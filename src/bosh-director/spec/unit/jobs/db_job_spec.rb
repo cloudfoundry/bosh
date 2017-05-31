@@ -20,6 +20,8 @@ module Bosh::Director
     let(:task) { Models::Task.make(id: 42) }
     let(:process_status) { instance_double(Process::Status, :signaled? => signaled) }
     let(:signaled) { false }
+    let(:task_dataset) { instance_double(Sequel::Dataset) }
+
     before do
       allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
     end
@@ -32,7 +34,7 @@ module Bosh::Director
       }.to raise_error(DirectorError, /invalid director job/i)
     end
 
-    it "doesn't accept job class that does not have \perform' method" do
+    it "doesn't accept job class that does not have 'perform' method" do
       job_class_without_perform = Class.new(Jobs::BaseJob) do
         @queue = :normal
       end
@@ -54,9 +56,23 @@ module Bosh::Director
       }.to raise_error(DirectorError, /invalid director job/i)
     end
 
-    it 'raises error when task is not in queue state' do
-      task.update(state: 'processing')
-      expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+    context 'task state must transition from queued to processed' do
+      it 'always updates state' do
+        db_job.perform
+        expect(Models::Task.where(id: task.id ).first.state).to eq('processing')
+      end
+
+      it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do
+        expect(task_dataset).to receive(:update).once.and_return(1)
+        expect(Models::Task).to receive(:where).once.and_return(task_dataset)
+
+        db_job.perform
+      end
+
+      it 'raises error when task is not in queue state' do
+        task.update(state: 'processing')
+        expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+      end
     end
 
     context 'when forked process is signaled' do
@@ -97,9 +113,13 @@ module Bosh::Director
     end
 
     context 'when db connection times out when pulling record' do
+      before do
+        allow(task_dataset).to receive(:update).once.and_return(1)
+      end
+
       it 'retries on Sequel::DatabaseConnectionError' do
-        expect(Models::Task).to receive(:first).and_raise(Sequel::DatabaseConnectionError).once.ordered
-        expect(Models::Task).to receive(:first).and_return(task).ordered
+        expect(Models::Task).to receive(:where).and_raise(Sequel::DatabaseConnectionError).once.ordered
+        expect(Models::Task).to receive(:where).and_return(task_dataset).ordered
 
         db_job.perform
       end
