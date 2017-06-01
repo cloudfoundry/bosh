@@ -257,6 +257,32 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	Context("blobstore files", func() {
 		var directoriesBefore, filesBefore []string
 
+		It("backs up an empty blobstore", func() {
+			By("Backup deployment", func() {
+				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
+					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+					"--username", innerDirectorUser,
+					"--name", directorBackupName,
+					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+					"backup"), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, time.Minute).Should(gexec.Exit(0))
+			})
+
+			By("Restore deployment", func() {
+				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
+					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+					"--username", innerDirectorUser,
+					"--name", directorBackupName,
+					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+					"restore"), GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+				waitForBoshDirectorUp(boshBinaryPath)
+			})
+		})
+
 		It("restores the blobstore files with the correct permissions/ownership", func() {
 			By("Upload a release", func() {
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
@@ -301,6 +327,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"restore"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+				waitForBoshDirectorUp(boshBinaryPath)
 			})
 
 			By("Check directories have correct permissions after restore", func() {
