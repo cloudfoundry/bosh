@@ -9,7 +9,7 @@ start-bosh
 export BOSH_DIRECTOR_IP="10.245.0.3"
 export AGENT_PASSWORD=$(bosh int /tmp/local-bosh/director/creds.yml --path /blobstore_agent_password)
 
-export DAVCLI_PATH=$(echo $PWD/dav-cli/davcli-*)
+export DAVCLI_PATH=$(echo $PWD/davcli/davcli-*)
 chmod +x $DAVCLI_PATH
 
 pushd bosh-src/src/go

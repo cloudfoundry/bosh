@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: bosh-src
-- name: dav-cli
+- name: davcli
 
 run:
   path: bosh-src/ci/tasks/test-blobstore-load.sh

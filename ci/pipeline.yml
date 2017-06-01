@@ -21,6 +21,7 @@ groups:
       - bats-ubuntu
       - brats-ubuntu
       - upgrade-tests
+      - blobstore-performance
 
   - name: mysql
     jobs:
