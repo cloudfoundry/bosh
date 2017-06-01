@@ -286,6 +286,17 @@ jobs:
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
+  - name: blobstore-performance
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-src, trigger: true }
+      - { get: davcli, trigger: true }
+      - task: test
+        file: bosh-src/ci/tasks/test-blobstore-load.yml
+        on_failure:
+          <<: *slack-alert
 
   - name: integration-postgres-gocli-sha2
     public: true
@@ -742,6 +753,13 @@ resources:
       access_key_id: {{candidate_release_access_key_id}}
       secret_access_key: {{candidate_release_secret_access_key}}
       versioned_file: "bosh-dev-release.tgz"
+
+  - name: davcli
+    type: s3
+    source:
+      regexp: davcli-(.*)-linux-amd64
+      bucket: davcli
+      region_name: us-east-1
 
   - name: bosh-fuzz-tests
     type: git
