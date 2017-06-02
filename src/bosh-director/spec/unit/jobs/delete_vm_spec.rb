@@ -24,7 +24,7 @@ module Bosh::Director
     shared_examples_for 'vm delete' do
       it 'should delete vm' do
         expect(cloud).to receive(:delete_vm).with(vm_cid)
-        expect(event_log).to receive(:begin_stage).with('Delete vm', 1).and_return(stage)
+        expect(event_log).to receive(:begin_stage).with('Delete VM', 1).and_return(stage)
         expect(stage).to receive(:advance_and_track).with('vm_cid', false)
         expect(job.perform).to eq 'vm vm_cid deleted'
       end
