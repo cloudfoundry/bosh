@@ -593,6 +593,7 @@ jobs:
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
       - upgrade-tests
+      - blobstore-performance
     - get: bosh-cli
     - get: candidate-version
       params:
