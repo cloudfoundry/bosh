@@ -185,7 +185,7 @@ jobs:
             - "build-bosh-docker"
       - put: bosh-load-tests
         params:
-          build: "bosh-src-with-docker-dependencies/ci/docker/bosh-load-tests"
+          build: "bosh-src/ci/docker/bosh-load-tests"
         get_params:
           skip_download: true
 
