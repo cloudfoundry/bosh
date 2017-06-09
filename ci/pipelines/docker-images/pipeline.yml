@@ -271,6 +271,7 @@ resources:
       branch: master
       paths:
         - "ci/docker"
+        - "ci/pipelines/docker-images/tasks"
 
   - name: bosh-utils-src
     type: git
