@@ -132,6 +132,16 @@ module Bosh::Director
               job.perform
             end
 
+            it 'does not fail if cleaning up old VariableSets raises an error' do
+              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
+              allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Exception.new('some exception'))
+
+              expect {
+                job.perform
+              }.to_not raise_error
+            end
+
             it 'updates unignored instance plan with current variable set' do
               expect(deployment_instance_group).to receive(:assign_variable_set).with(variable_set)
 
