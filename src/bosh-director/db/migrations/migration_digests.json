@@ -107,5 +107,6 @@
   "20170427194511_add_runtime_config_name_support": "24c478772418b06bbe408c6a8ad098738ff1c621",
   "20170503205545_change_id_local_dns_to_bigint": "e43635548849a0563ba190913a1707e3d68d8d43",
   "20170510154449_add_multi_runtime_config_support": "5f439c8810fdce14e19cb245923a6909370381d5",
-  "20170510190908_alter_ephemeral_blobs": "b76bfedc8bf9f559bfd60a0416cd3a4397ef3daa"
+  "20170510190908_alter_ephemeral_blobs": "b76bfedc8bf9f559bfd60a0416cd3a4397ef3daa",
+  "20170607182149_add_task_id_to_locks": "226cef42c81d5cee602f091a0bc184c57c2bc628"
 }
