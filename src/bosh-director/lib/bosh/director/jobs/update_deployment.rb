@@ -156,8 +156,8 @@ module Bosh::Director
 
         begin
           deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
-        rescue Exception => e
-          logger.warn("Unable to clean up variable_sets. Error: #{e}")
+        rescue Sequel::ForeignKeyConstraintViolation => e
+          logger.warn("Unable to clean up variable_sets. Error: #{e.inspect}")
         end
       end
 
