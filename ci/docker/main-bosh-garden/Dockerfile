@@ -36,3 +36,6 @@ COPY bosh-deployment /usr/local/bosh-deployment/
 
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh
+
+COPY start-garden.sh /usr/local/bin/start-garden
+RUN chmod +x /usr/local/bin/start-garden
