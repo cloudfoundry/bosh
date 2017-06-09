@@ -188,10 +188,10 @@ jobs:
         - get: bosh-deployment
           trigger: true
       - task: copy-dependencies
-        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-docker-dependencies.yml
+        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-garden-dependencies.yml
       - put: main-bosh-garden
         params:
-          build: "bosh-src-with-docker-dependencies/ci/docker/main-bosh-garden"
+          build: "bosh-src-with-garden-dependencies/ci/docker/main-bosh-garden"
         get_params:
           skip_download: true
 
