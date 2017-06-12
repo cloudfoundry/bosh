@@ -238,7 +238,7 @@ module Bosh::Director::DeploymentPlan
             before do
               allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
-              allow(config_server_client).to receive(:interpolate).with(merged_cloud_properties).and_return(interpolated_merged_cloud_properties)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, anything).and_return(interpolated_merged_cloud_properties)
               allow(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, anything).and_return(instance_model.cloud_properties_hash)
             end
 
@@ -301,8 +301,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns the cached result' do
           expect(client_factory).to receive(:create_client).at_most(:once)
-          expect(config_server_client).to receive(:interpolate).at_most(:once)
-          expect(config_server_client).to receive(:interpolate_with_versioning).at_most(:once)
+          expect(config_server_client).to receive(:interpolate_with_versioning).twice
 
           instance.cloud_properties_changed?
           instance.cloud_properties_changed?

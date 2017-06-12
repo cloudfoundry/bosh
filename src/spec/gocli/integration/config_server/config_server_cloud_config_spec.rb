@@ -296,4 +296,65 @@ describe 'using director with config server', type: :integration do
       end
     end
   end
+
+  context '#146889417 Expected variable to be already versioned in deployment' do
+    let(:manifest_hash) {
+      {"name"=>"foo-deployment",
+       "director_uuid"=>nil,
+       "releases"=>[{"name"=>"bosh-release", "version"=>"latest"}],
+       "jobs"=>
+        [{"azs"=>["z1"],
+          "instances"=>1,
+          "name"=>"hjMOn",
+          "networks"=>[{"name"=>"j6XUS1M", "static_ips"=>["192.168.3.246"]}],
+          "resource_pool"=>"dMF8vIexnI",
+          "templates"=>[{"name"=>"foobar", "release"=>"bosh-release"}]}],
+       "update"=>
+        {"canaries"=>1,
+         "canary_watch_time"=>4000,
+         "max_in_flight"=>100,
+         "update_watch_time"=>20}}
+    }
+
+    let(:cloud_config_hash) {
+      {"azs"=>[{"cloud_properties"=>{"hz4RwVr"=>"((/moVsfGUa))"}, "name"=>"z1"}],
+       "compilation"=>{"network"=>"cAknaSb", "workers"=>1},
+       "networks"=>
+           [{"name"=>"j6XUS1M",
+             "subnets"=>
+                 [{"azs"=>["z1"],
+                   "cloud_properties"=>{},
+                   "dns"=>["8.8.8.8"],
+                   "gateway"=>"192.168.3.1",
+                   "range"=>"192.168.3.0/24",
+                   "reserved"=>
+                       ["192.168.3.13",
+                        "192.168.3.104-192.168.3.137",
+                        "192.168.3.139-192.168.3.198"],
+                   "static"=>["192.168.3.200-192.168.3.253"]}],
+             "type"=>"manual"},
+            {"name"=>"cAknaSb",
+             "subnets"=>[{"cloud_properties"=>{}, "dns"=>["8.8.8.8"]}],
+             "type"=>"dynamic"}],
+       "resource_pools"=>
+           [{"cloud_properties"=>{},
+             "name"=>"dMF8vIexnI",
+             "stemcell"=>{"os"=>"toronto-os", "version"=>1}}]}
+    }
+
+    before do
+      config_server_helper.put_value('/moVsfGUa',"c8jNLgq")
+    end
+
+    it 'should not raise an error' do
+      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, return_exit_code: true, include_credentials: false, env: client_env)
+
+      manifest = yaml_file('manifest', manifest_hash)
+      bosh_runner.run("deploy #{manifest.path}", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
+
+      expect {
+        bosh_runner.run("recreate", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
+      }.to_not raise_error
+    end
+  end
 end
