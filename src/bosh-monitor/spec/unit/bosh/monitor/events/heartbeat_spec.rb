@@ -49,7 +49,9 @@ describe Bhm::Events::Heartbeat do
           {:name => "system.disk.ephemeral.inode_percent", :value => "74", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
           {:name => "system.disk.persistent.percent", :value => "97", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
           {:name => "system.disk.persistent.inode_percent", :value => "10", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
-          {:name => "system.healthy", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}}
+          {:name => "system.healthy", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.unhealthy", :value => "0", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
+          {:name => "system.health.running", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}}
       ],
     })
   end
@@ -112,6 +114,82 @@ describe Bhm::Events::Heartbeat do
     it 'should be valid' do
       expect(heartbeat).to be_valid
       expect(heartbeat.kind).to eq(:heartbeat)
+    end
+  end
+
+  describe '#metrics' do
+    context 'when state is "stopped"' do
+      let(:heartbeat) { make_heartbeat({ :job_state => 'stopped' }) }
+
+      it 'reports as "healthy"' do
+        expect(metrics['system.healthy']).to eq(1)
+        expect(metrics['system.unhealthy']).to eq(0)
+      end
+
+      it 'reports health as "stopped"' do
+        expect(metrics['system.health.stopped']).to eq(1)
+      end
+    end
+
+    context 'when state is "starting"' do
+      let(:heartbeat) { make_heartbeat({ :job_state => 'starting' }) }
+
+      it 'reports as "healthy"' do
+        expect(metrics['system.healthy']).to eq(1)
+        expect(metrics['system.unhealthy']).to eq(0)
+      end
+
+      it 'reports health as "starting"' do
+        expect(metrics['system.health.starting']).to eq(1)
+      end
+    end
+
+    context 'when state is "running"' do
+      let(:heartbeat) { make_heartbeat({ :job_state => 'running' }) }
+
+      it 'reports as "healthy"' do
+        expect(metrics['system.healthy']).to eq(1)
+        expect(metrics['system.unhealthy']).to eq(0)
+      end
+
+      it 'reports health as "running"' do
+        expect(metrics['system.health.running']).to eq(1)
+      end
+    end
+
+    context 'when state is "failing"' do
+      let(:heartbeat) { make_heartbeat({ :job_state => 'failing' }) }
+
+      it 'reports as "unhealthy"' do
+        expect(metrics['system.healthy']).to eq(0)
+        expect(metrics['system.unhealthy']).to eq(1)
+      end
+
+      it 'reports health as "failing"' do
+        expect(metrics['system.health.failing']).to eq(1)
+      end
+    end
+
+    context 'when state is "unknown"' do
+      let(:heartbeat) { make_heartbeat({ :job_state => 'unknown' }) }
+
+      it 'reports as "unhealthy"' do
+        expect(metrics['system.healthy']).to eq(0)
+        expect(metrics['system.unhealthy']).to eq(1)
+      end
+
+      it 'reports health as "unknown"' do
+        expect(metrics['system.health.unknown']).to eq(1)
+      end
+    end
+  end
+
+  private
+
+  def metrics
+    metrics = heartbeat.metrics.inject({}) do |hash, metric|
+      hash[metric.name] = metric.value;
+      hash
     end
   end
 end
