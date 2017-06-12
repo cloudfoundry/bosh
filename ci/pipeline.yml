@@ -20,6 +20,8 @@ groups:
       - bats-ubuntu
       - brats-ubuntu
       - upgrade-tests
+      - bump-minor-version
+      - bump-patch-version
 
   - name: mysql
     jobs:
@@ -685,6 +687,16 @@ jobs:
         privileged: true
         input_mapping:
           bosh-dev-release: bosh-release
+
+  - name: bump-minor-version
+    plan:
+    - put: candidate-version
+      params: {bump: minor}
+
+  - name: bump-patch-version
+    plan:
+    - put: candidate-version
+      params: {bump: patch}
 
 resources:
   - name: bosh-src
