@@ -72,13 +72,6 @@ describe Bhm::Events::Heartbeat do
   end
 
   it 'has metrics' do
-    hb = heartbeat
-    metrics = hb.metrics.inject({}) do |h, m|
-      expect(m).to be_kind_of(Bhm::Metric)
-      expect(m.tags).to eq({'job' => 'mysql_node', 'index' => '0', 'id' => 'instance_id_abc'})
-      h[m.name] = m.value; h
-    end
-
     expect(metrics['system.load.1m']).to eq(0.2)
     expect(metrics['system.cpu.user']).to eq(22.3)
     expect(metrics['system.cpu.sys']).to eq(23.4)
@@ -188,6 +181,8 @@ describe Bhm::Events::Heartbeat do
 
   def metrics
     metrics = heartbeat.metrics.inject({}) do |hash, metric|
+      expect(metric).to be_kind_of(Bhm::Metric)
+      expect(metric.tags).to eq({'job' => 'mysql_node', 'index' => '0', 'id' => 'instance_id_abc'})
       hash[metric.name] = metric.value;
       hash
     end
