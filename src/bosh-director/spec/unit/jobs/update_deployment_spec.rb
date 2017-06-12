@@ -135,7 +135,7 @@ module Bosh::Director
             it 'does not fail if cleaning up old VariableSets raises an error' do
               another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
-              allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Exception.new('some exception'))
+              allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Sequel::ForeignKeyConstraintViolation.new('bad stuff happened'))
 
               expect {
                 job.perform
