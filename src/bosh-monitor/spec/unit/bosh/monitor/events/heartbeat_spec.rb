@@ -5,27 +5,6 @@ describe Bhm::Events::Heartbeat do
 
   let(:heartbeat) { make_heartbeat(timestamp: timestamp) }
 
-  context 'validations' do
-    it 'requires id' do
-      expect(make_heartbeat(:id => nil)).not_to be_valid
-    end
-
-    it 'requires timestamp' do
-      expect(make_heartbeat(:timestamp => nil)).not_to be_valid
-    end
-
-    it 'supports attributes validation' do
-      bad_heartbeat = make_heartbeat(:id => nil, :timestamp => nil)
-      expect(bad_heartbeat).not_to be_valid
-      expect(bad_heartbeat.error_message).to eq('id is missing, timestamp is missing')
-    end
-
-    it 'should be valid' do
-      expect(heartbeat).to be_valid
-      expect(heartbeat.kind).to eq(:heartbeat)
-    end
-  end
-
   it 'has short description' do
     expect(heartbeat.short_description).to eq('Heartbeat from mysql_node/instance_id_abc (agent_id=deadbeef index=0) @ 2011-11-02 01:08:19 UTC')
 
@@ -115,4 +94,24 @@ describe Bhm::Events::Heartbeat do
     expect(metrics['system.healthy']).to eq(1)
   end
 
+  context 'validations' do
+    it 'requires id' do
+      expect(make_heartbeat(:id => nil)).not_to be_valid
+    end
+
+    it 'requires timestamp' do
+      expect(make_heartbeat(:timestamp => nil)).not_to be_valid
+    end
+
+    it 'supports attributes validation' do
+      bad_heartbeat = make_heartbeat(:id => nil, :timestamp => nil)
+      expect(bad_heartbeat).not_to be_valid
+      expect(bad_heartbeat.error_message).to eq('id is missing, timestamp is missing')
+    end
+
+    it 'should be valid' do
+      expect(heartbeat).to be_valid
+      expect(heartbeat.kind).to eq(:heartbeat)
+    end
+  end
 end
