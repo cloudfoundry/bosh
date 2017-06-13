@@ -1,7 +1,7 @@
 module Bosh::Monitor
   module Events
     class Heartbeat < Base
-      HEALTHY_STATES = ['stopped', 'starting', 'running']
+      HEALTHY_STATES = ['running']
 
       attr_reader :agent_id, :deployment, :job, :index, :metrics, :instance_id, :teams
 
@@ -109,14 +109,7 @@ module Bosh::Monitor
         add_metric('system.disk.persistent.percent', @persistent_disk['percent'])
         add_metric('system.disk.persistent.inode_percent', @persistent_disk['inode_percent'])
 
-        if HEALTHY_STATES.include?(@job_state)
-          add_metric('system.healthy', 1)
-          add_metric('system.unhealthy', 0)
-        else
-          add_metric('system.healthy', 0)
-          add_metric('system.unhealthy', 1)
-        end
-
+        add_metric('system.healthy', HEALTHY_STATES.include?(@job_state) ? 1 : 0)
         add_metric("system.health.#{@job_state}", 1)
       end
     end

@@ -50,7 +50,6 @@ describe Bhm::Events::Heartbeat do
           {:name => "system.disk.persistent.percent", :value => "97", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
           {:name => "system.disk.persistent.inode_percent", :value => "10", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
           {:name => "system.healthy", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
-          {:name => "system.unhealthy", :value => "0", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}},
           {:name => "system.health.running", :value => "1", :timestamp => 1320196099, :tags => {"job" => "mysql_node", "index" => "0", "id" => "instance_id_abc"}}
       ],
     })
@@ -87,6 +86,7 @@ describe Bhm::Events::Heartbeat do
     expect(metrics['system.disk.persistent.percent']).to eq(97)
     expect(metrics['system.disk.persistent.inode_percent']).to eq(10)
     expect(metrics['system.healthy']).to eq(1)
+    expect(metrics['system.health.running']).to eq(1)
   end
 
   context 'validations' do
@@ -114,9 +114,8 @@ describe Bhm::Events::Heartbeat do
     context 'when state is "stopped"' do
       let(:heartbeat) { make_heartbeat({ :job_state => 'stopped' }) }
 
-      it 'reports as "healthy"' do
-        expect(metrics['system.healthy']).to eq(1)
-        expect(metrics['system.unhealthy']).to eq(0)
+      it 'does not report as "healthy"' do
+        expect(metrics['system.healthy']).to eq(0)
       end
 
       it 'reports health as "stopped"' do
@@ -127,9 +126,8 @@ describe Bhm::Events::Heartbeat do
     context 'when state is "starting"' do
       let(:heartbeat) { make_heartbeat({ :job_state => 'starting' }) }
 
-      it 'reports as "healthy"' do
-        expect(metrics['system.healthy']).to eq(1)
-        expect(metrics['system.unhealthy']).to eq(0)
+      it 'does not report as "healthy"' do
+        expect(metrics['system.healthy']).to eq(0)
       end
 
       it 'reports health as "starting"' do
@@ -142,7 +140,6 @@ describe Bhm::Events::Heartbeat do
 
       it 'reports as "healthy"' do
         expect(metrics['system.healthy']).to eq(1)
-        expect(metrics['system.unhealthy']).to eq(0)
       end
 
       it 'reports health as "running"' do
@@ -153,9 +150,8 @@ describe Bhm::Events::Heartbeat do
     context 'when state is "failing"' do
       let(:heartbeat) { make_heartbeat({ :job_state => 'failing' }) }
 
-      it 'reports as "unhealthy"' do
+      it 'does not report as "healthy"' do
         expect(metrics['system.healthy']).to eq(0)
-        expect(metrics['system.unhealthy']).to eq(1)
       end
 
       it 'reports health as "failing"' do
@@ -166,9 +162,8 @@ describe Bhm::Events::Heartbeat do
     context 'when state is "unknown"' do
       let(:heartbeat) { make_heartbeat({ :job_state => 'unknown' }) }
 
-      it 'reports as "unhealthy"' do
+      it 'does not report as "healthy"' do
         expect(metrics['system.healthy']).to eq(0)
-        expect(metrics['system.unhealthy']).to eq(1)
       end
 
       it 'reports health as "unknown"' do

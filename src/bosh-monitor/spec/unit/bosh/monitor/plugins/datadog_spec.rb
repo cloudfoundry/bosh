@@ -109,7 +109,6 @@ describe Bhm::Plugins::DataDog do
         disk.persistent.percent
         disk.persistent.inode_percent
         healthy
-        unhealthy
         health.running
       ].each do |metric|
         expect(dog_client).to receive(:emit_points).with("bosh.healthmonitor.system.#{metric}", anything, anything)

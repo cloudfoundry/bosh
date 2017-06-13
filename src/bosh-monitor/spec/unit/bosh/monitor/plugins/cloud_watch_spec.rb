@@ -53,7 +53,6 @@ describe Bhm::Plugins::CloudWatch do
             "system.disk.persistent.percent",
             "system.disk.persistent.inode_percent",
             "system.healthy",
-            "system.unhealthy",
             "system.health.running"
         ])
       end
