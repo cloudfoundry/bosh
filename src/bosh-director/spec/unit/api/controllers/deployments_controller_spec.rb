@@ -30,6 +30,7 @@ module Bosh::Director
       end
 
       let(:cloud_config) { Models::CloudConfig.make }
+      let (:time) {Time.now}
       before do
         App.new(config)
         basic_authorize 'admin', 'admin'
@@ -693,6 +694,7 @@ module Bosh::Director
                 'agent_id' => "agent-#{i}",
                 'cid' => "cid-#{i}",
                 'instance_id' => instance.id,
+                'created_at' => time
               }
 
               vm = Models::Vm.create(vm_params)
@@ -706,7 +708,6 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             body = JSON.parse(last_response.body)
             expect(body.size).to eq(8)
-
             body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
               expect(instance_with_vm).to eq(
                 'agent_id' => "agent-#{i}",
@@ -716,6 +717,7 @@ module Bosh::Director
                 'id' => "instance-#{i}",
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                 'ips' => [],
+                'vm_created_at' => time.to_i
               )
             end
           end
@@ -738,7 +740,8 @@ module Bosh::Director
                 vm_params = {
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
-                  'instance_id': instance.id,
+                  'instance_id' => instance.id,
+                  'created_at' => time
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -769,6 +772,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
+                  'vm_created_at' => time.to_i
                 )
               end
             end
@@ -792,6 +796,7 @@ module Bosh::Director
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
+                  'created_at' => time
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -815,6 +820,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
+                  'vm_created_at' => time.to_i
                 )
               end
             end
@@ -860,7 +866,19 @@ module Bosh::Director
 
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
-                Models::Instance.create(instance_params)
+                instance = Models::Instance.create(instance_params)
+                if i < 6
+                  vm_params = {
+                    'agent_id' => "agent-#{i}",
+                    'cid' => "cid-#{i}",
+                    'instance_id' => instance.id,
+                    'created_at' => time
+                  }
+
+                  vm = Models::Vm.create(vm_params)
+                  instance.active_vm = vm
+                end
+
               end
 
               get '/test_deployment/instances'
@@ -870,16 +888,31 @@ module Bosh::Director
               expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance, i|
-                expect(instance).to eq(
-                                        'agent_id' => nil,
-                                        'cid' => nil,
-                                        'job' => "job-#{i}",
-                                        'index' => i,
-                                        'id' => "instance-#{i}",
-                                        'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
-                                        'ips' => [],
-                                        'expects_vm' => true
-                                    )
+                if i < 6
+                  expect(instance).to eq(
+                    'agent_id' => "agent-#{i}",
+                    'cid' => "cid-#{i}",
+                    'job' => "job-#{i}",
+                    'index' => i,
+                    'id' => "instance-#{i}",
+                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'ips' => [],
+                    'vm_created_at' => time.to_i,
+                    'expects_vm' => true
+                  )
+                else
+                  expect(instance).to eq(
+                    'agent_id' => nil,
+                    'cid' => nil,
+                    'job' => "job-#{i}",
+                    'index' => i,
+                    'id' => "instance-#{i}",
+                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'ips' => [],
+                    'vm_created_at' => nil,
+                    'expects_vm' => true
+                  )
+                end
               end
             end
 
@@ -923,6 +956,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                                           'ips' => ["1.2.3.#{i}"],
+                                          'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
                 end
@@ -960,6 +994,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                                           'ips' => ["1.2.3.#{i}"],
+                                          'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
                 end
@@ -1002,6 +1037,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'vm_created_at' => nil,
                                          'expects_vm' => true
                                      )
                 end
@@ -1025,6 +1061,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'vm_created_at' => nil,
                                          'expects_vm' => false
                                      )
                 end
@@ -1050,6 +1087,7 @@ module Bosh::Director
                                        'id' => 'instance-1',
                                        'az' => nil,
                                        'ips' => [],
+                                       'vm_created_at' => nil,
                                        'expects_vm' => false
                                    )
               end

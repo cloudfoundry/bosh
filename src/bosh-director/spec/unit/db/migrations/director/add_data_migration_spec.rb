@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170510190908_alter_ephemeral_blobs.rb')
+      expect(latest_db_migration_file).to eq('20170612013910_add_created_at_to_vms.rb')
     end
   end
 end

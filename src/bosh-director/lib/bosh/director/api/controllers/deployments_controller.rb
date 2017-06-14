@@ -509,6 +509,7 @@ module Bosh::Director
           'id' => instance.uuid,
           'az' => instance.availability_zone,
           'ips' => ips(instance),
+          'vm_created_at' => instance.vm_created_at
         }
       end
 

@@ -437,6 +437,12 @@ module Bosh::Director::Models
         end
       end
 
+      describe 'vm_created_at' do
+        it 'references created_at from active vm' do
+          expect(subject.vm_created_at).to eq(subject.active_vm.created_at.to_i)
+        end
+      end
+
       describe 'trusted_certs_sha1' do
         it 'returns active vms trusted_certs_sha1' do
           expect(subject.trusted_certs_sha1).to eq('trusted-sha')
