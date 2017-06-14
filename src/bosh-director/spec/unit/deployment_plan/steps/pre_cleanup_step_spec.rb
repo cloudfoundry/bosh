@@ -57,7 +57,7 @@ module Bosh::Director
             allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([])
           end
 
-          it 'exists early and logs the lack of work needed' do
+          it 'exits early and logs the lack of work needed' do
             expect(logger).to receive(:info).with('Deleting no longer needed instances')
             expect(logger).to receive(:info).with('No unneeded instances to delete')
             expect(instance_deleter).to_not receive(:delete_instance_plans)
