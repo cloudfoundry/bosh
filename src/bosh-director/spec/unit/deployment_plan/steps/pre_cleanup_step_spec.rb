@@ -26,7 +26,7 @@ module Bosh::Director
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
 
         allow(base_job).to receive(:logger).and_return(logger)
-        allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
+        allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([existing_instance_plan])
         allow(event_log).to receive(:begin_stage)
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)
         allow(instance_deleter).to receive(:delete_instance_plans)
@@ -54,7 +54,7 @@ module Bosh::Director
 
         context 'when no instance plans require deletion' do
           before do
-            allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([])
+            allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([])
           end
 
           it 'exits early and logs the lack of work needed' do
