@@ -90,6 +90,36 @@ module Bosh::Blobstore
           })).to eq(retryable_client)
         end
 
+        it 'makes retryable client with gcs client' do
+          wrapped_client = instance_double('Bosh::Blobstore::GcscliBlobstoreClient')
+          expect(GcscliBlobstoreClient)
+            .to receive(:new)
+            .and_return(wrapped_client)
+
+          sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
+          expect(Sha1VerifiableBlobstoreClient)
+            .to receive(:new)
+            .with(wrapped_client, logger)
+            .and_return(sha1_verifiable_client)
+
+          retryable = instance_double('Bosh::Retryable')
+          expect(Bosh::Retryable)
+            .to receive(:new)
+            .and_return(retryable)
+
+          retryable_client = instance_double('Bosh::Blobstore::RetryableBlobstoreClient')
+          expect(RetryableBlobstoreClient)
+            .to receive(:new)
+            .with(sha1_verifiable_client, retryable)
+            .and_return(retryable_client)
+
+          expect(described_class.safe_create('gcscli', {
+            access_key_id: 'foo',
+            secret_access_key: 'bar',
+            gcscli_path: true,
+          })).to eq(retryable_client)
+        end
+
         it 'makes retryable object with default options' do
           expect(Bosh::Retryable)
             .to receive(:new)
