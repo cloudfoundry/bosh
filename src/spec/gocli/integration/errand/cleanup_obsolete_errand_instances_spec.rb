@@ -74,8 +74,5 @@ describe "#146961875 When an errand's az is changed on a re-deploy", type: :inte
         expect(instance.availability_zone).to eq('my-az2')
       end
     end
-
   end
-
-
 end
