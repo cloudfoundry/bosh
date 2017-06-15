@@ -216,12 +216,22 @@ module Bosh::Director
           end
 
           context 'when the agent does not implement upload_blob' do
-            it 'raises an undefined action exception' do
+            it 'raises an unsupported action exception' do
               allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message')
 
               expect {
                 client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload')
               }.to raise_error(Bosh::Director::AgentUnsupportedAction, 'Unsupported action: upload_blob')
+            end
+          end
+
+          context 'when the agent returns an error "Opening blob store file"' do
+            it 'raises an AgentUploadBlobUnableToOpenFile exception' do
+              allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'Opening blob store file: open \var\vcap\data\blobs/adaff25a-df7b-4f2f-86d5-74fd50fc8c06: The system cannot find the path specified.')
+
+              expect {
+                client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload')
+              }.to raise_error(Bosh::Director::AgentUploadBlobUnableToOpenFile, "'Upload blob' action: failed to open blob")
             end
           end
 
