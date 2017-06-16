@@ -22,8 +22,6 @@ module Bosh::Director
 
       changed_disk_pairs = new_disks.changed_disk_pairs(old_disks)
 
-      new_disk_unmanaged_models = []
-
       changed_disk_pairs.each do |disk_pair|
         old_disk_model = disk_pair[:old].model unless disk_pair[:old].nil?
 
@@ -37,10 +35,6 @@ module Bosh::Director
 
           if new_disk.managed? && old_disk_model
             migrate_disk(instance_model, new_disk_model, old_disk_model)
-          end
-
-          if !new_disk.managed?
-            new_disk_unmanaged_models << new_disk_model
           end
         end
 
