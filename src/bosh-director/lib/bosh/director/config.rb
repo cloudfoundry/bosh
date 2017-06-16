@@ -41,7 +41,8 @@ module Bosh::Director
         :enable_virtual_delete_vms,
         :local_dns,
         :verify_multidigest_path,
-        :version
+        :version,
+        :enable_cpi_resize_disk
       )
 
       attr_reader(
@@ -192,6 +193,7 @@ module Bosh::Director
           raise ArgumentError, 'Multiple Digest binary must be specified'
         end
         @verify_multidigest_path = config['verify_multidigest_path']
+        @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
       end
 
       def log_director_start
