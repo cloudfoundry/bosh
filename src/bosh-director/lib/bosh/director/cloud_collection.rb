@@ -47,6 +47,10 @@ module Bosh::Director
       call_method_for_clouds(:detach_disk, vm_id, disk_id)
     end
 
+    def resize_disk(disk_id, size)
+      call_method_for_clouds(:resize_disk, disk_id, size)
+    end
+
     def ==(other_collection)
       clouds == other_collection.clouds
     end
