@@ -114,6 +114,8 @@ describe 'cli: deployment process', type: :integration do
     expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
     expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
 
+    expect(vitals[:uptime]).to match /\d+d \d{1,2}h \d{1,2}m \d{1,2}s/
+
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')
   end
