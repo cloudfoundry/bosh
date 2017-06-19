@@ -119,11 +119,6 @@ module Bosh::Director::Models
     event_output { nil }
   end
 
-  User.blueprint do
-    username { Sham.username }
-    password { Sham.password }
-  end
-
   PersistentDisk.blueprint do
     active      { true }
     disk_cid    { Sham.disk_cid }

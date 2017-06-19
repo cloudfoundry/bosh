@@ -30,7 +30,6 @@ module Bosh
           controllers['/stemcells'] = Bosh::Director::Api::Controllers::StemcellsController.new(@config)
           controllers['/task'] = Bosh::Director::Api::Controllers::TaskController.new(@config)
           controllers['/tasks'] = Bosh::Director::Api::Controllers::TasksController.new(@config)
-          controllers['/users'] = Bosh::Director::Api::Controllers::UsersController.new(@config)
           controllers['/events'] = Bosh::Director::Api::Controllers::EventsController.new(@config)
           controllers['/vms'] = Bosh::Director::Api::Controllers::VmsController.new(@config)
           controllers
