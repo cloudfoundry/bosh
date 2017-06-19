@@ -22,6 +22,13 @@ module Bosh::Blobstore
           })).to be_instance_of(S3cliBlobstoreClient)
         end
 
+        it 'returns gcscli client' do
+          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          expect(Client.create('gcscli', {
+              gcscli_path: '/path'
+          })).to be_instance_of(GcscliBlobstoreClient)
+        end
+
         it 'returns davcli client' do
           allow(Kernel).to receive(:system).with("/path", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
           expect(Client.create('davcli', {
