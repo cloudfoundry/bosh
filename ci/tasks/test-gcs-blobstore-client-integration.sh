@@ -28,7 +28,7 @@ function clean_up {
 echo $google_json_key_data > key.json
 gcloud auth activate-service-account --key-file=key.json
 
-export GCS_SERVICE_ACCOUNT_KEY=`pwd`/key.json
+export GCS_SERVICE_ACCOUNT_KEY=$google_json_key_data
 
 pushd bosh-src/src
   bundle install

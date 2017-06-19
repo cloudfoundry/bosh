@@ -9,7 +9,7 @@ require_relative 'blobstore_shared_examples'
 module Bosh::Blobstore
   describe GcscliBlobstoreClient do
 
-    let(:credentials_source) do
+    let(:service_account_file) do
       key = ENV['GCS_SERVICE_ACCOUNT_KEY']
       raise 'need to set GCS_SERVICE_ACCOUNT_KEY environment variable' unless key
       key
@@ -36,7 +36,8 @@ module Bosh::Blobstore
         let(:gcs_options) do
           {
             bucket_name: bucket_name,
-            credentials_source: credentials_source,
+            credentials_source: "static",
+            service_account_file: service_account_file,
             gcscli_path: gcscli_path
           }
         end
@@ -64,7 +65,8 @@ module Bosh::Blobstore
         let(:gcs_options) do
           {
             bucket_name: bucket_name,
-            credentials_source: credentials_source,
+            credentials_source: "static",
+            service_account_file: service_account_file,
             gcscli_path: gcscli_path
           }
         end

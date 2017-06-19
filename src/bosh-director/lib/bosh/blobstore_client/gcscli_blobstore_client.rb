@@ -31,6 +31,7 @@ module Bosh::Blobstore
       @gcscli_options = {
         bucket_name: @options[:bucket_name],
         credentials_source: @options.fetch(:credentials_source, 'none'),
+        service_account_file: @options[:service_account_file], 
         storage_class: @options[:storage_class],
       }
 
