@@ -79,6 +79,50 @@ module Bosh::Blobstore
           let(:blobstore) { gcs }
         end
       end
+
+      context 'Encrypted Read/Write' do
+        let(:gcs_options) do
+          {
+            bucket_name: bucket_name,
+            credentials_source: "static",
+            service_account_file: service_account_file,
+            encryption_key: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+            gcscli_path: gcscli_path
+          }
+        end
+        let(:invalid_gcs_options) do
+          {
+            bucket_name: bucket_name,
+            credentials_source: "static",
+            service_account_file: service_account_file,
+            gcscli_path: gcscli_path
+          }
+        end
+
+        let(:gcs) do
+          Client.create('gcscli', gcs_options)
+        end
+
+        after(:each) do
+          gcs.delete(@oid) if @oid
+        end
+
+        it_behaves_like 'any blobstore client' do
+          let(:blobstore) { gcs }
+        end
+
+        let(:invalid_gcs) do
+          Client.create('gcscli', invalid_gcs_options)
+        end
+
+        describe 'get object without key' do
+          it 'should raise an error' do
+            @oid = gcs.create('foobar')
+            file = Tempfile.new('contents')
+            expect { invalid_gcs.get(@oid, file) }.to raise_error BlobstoreError, /ResourceIsEncryptedWithCustomerEncryptionKey/
+          end
+        end
+      end
     end
 
     context 'Read-Only', general_gcs: true do
