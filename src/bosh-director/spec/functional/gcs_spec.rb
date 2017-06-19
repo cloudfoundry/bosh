@@ -79,5 +79,66 @@ module Bosh::Blobstore
       end
     end
 
+    context 'Read-Only', general_gcs: true do
+        let(:gcs_options) do
+          {
+            bucket_name: bucket_name,
+            credentials_source: 'none',
+            gcscli_path: gcscli_path
+          }
+        end
+
+      let(:gcs) do
+        Client.create('gcscli', gcs_options)
+      end
+
+      let(:contents) do
+        'foobar'
+      end
+
+      describe 'get object' do
+        it 'should save to a file' do
+          file = Tempfile.new('contents')
+          gcs.get('public', file)
+          file.rewind
+          expect(file.read).to eq contents
+        end
+
+        it 'should return the contents' do
+          expect(gcs.get('public')).to eq contents
+        end
+
+        it 'should raise an error when the object is missing' do
+          expect { gcs.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
+        end
+      end
+
+      describe 'create object' do
+        it 'should raise an error' do
+          expect { gcs.create(contents) }.to raise_error BlobstoreError, /performing operation put: the client operates in read only mode./
+        end
+      end
+
+      describe 'delete object' do
+        context 'when the key exists' do
+          it 'should raise an error' do
+            expect { gcs.delete('public') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+          end
+        end
+
+        context 'when the key does not exist' do
+          it 'should raise an error' do
+            expect { gcs.delete('nonexistent-key') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+          end
+        end
+      end
+
+      describe 'object exists?' do
+        it 'the object should exist' do
+          expect(gcs.exists?('public')).to be true
+        end
+      end
+    end
+
   end
 end
