@@ -3,11 +3,11 @@ module Bosh::Director
     class LinkPath
       attr_reader :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
-      def initialize(deployment_plan_name, instance_groups, job_name, template_name)
+      def initialize(deployment_plan_name, instance_groups, instance_group_name, job_name)
         @deployment_plan_name = deployment_plan_name
         @instance_groups = instance_groups
-        @consumes_job_name = job_name
-        @consumes_template_name = template_name
+        @consumes_job_name = instance_group_name
+        @consumes_template_name = job_name
         @deployment = nil
         @job = nil
         @template = nil

@@ -23,6 +23,8 @@ module Bosh::Director::Core::Templates
         spec = remove_unused_properties(spec)
       end
 
+      spec = namespace_links_to_current_job(spec)
+
       template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
       monit = monit_erb.render(template_context, @logger)
 
@@ -52,6 +54,24 @@ module Bosh::Director::Core::Templates
     end
 
     private
+
+    def namespace_links_to_current_job(spec)
+      if spec.nil?
+        return nil
+      end
+
+      modified_spec = Bosh::Common::DeepCopy.copy(spec)
+
+      if modified_spec.has_key?('links')
+        if modified_spec['links'][@template_name]
+          links_spec = modified_spec['links'][@template_name]
+          modified_spec['links'] = links_spec
+        elsif
+          modified_spec['links'] = {}
+        end
+      end
+      modified_spec
+    end
 
     def remove_unused_properties(spec)
       if spec.nil?

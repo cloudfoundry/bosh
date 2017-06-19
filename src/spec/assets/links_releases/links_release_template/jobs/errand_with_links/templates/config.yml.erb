@@ -7,7 +7,6 @@ databases:
     index: <%= instance.index %>
     address: <%= instance.address %>
 <% end %>
-  main_properties: <%= link('db').p('foo') %>
   backup:
 <% link('backup_db').instances.each do |instance| %>
   - name: <%= instance.name %>
@@ -15,4 +14,3 @@ databases:
     index: <%= instance.index %>
     address: <%= instance.address %>
 <% end %>
-  backup_properties: <%= link('backup_db').p('foo') %>

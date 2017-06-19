@@ -123,11 +123,16 @@ module Bosh::Director
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
         template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'])
-        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}))
 
         template_hash['links'] = {}
-        interpolated_links_spec.each do |link_name, link_spec|
-          template_hash['links'][link_name] = link_spec.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+        links_hash = @full_spec.fetch('links', {})
+        links_hash.each do |job_name, links|
+          template_hash['links'][job_name] ||= {}
+          interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(links)
+
+          interpolated_links_spec.each do |link_name, link_spec|
+            template_hash['links'][job_name][link_name] = link_spec.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+          end
         end
 
         networks_hash = template_hash['networks']
