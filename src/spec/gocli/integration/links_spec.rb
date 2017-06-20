@@ -504,7 +504,7 @@ Error: Unable to process links for deployment. Errors are:
         expect(out).to include('copying jobs: http_proxy_with_requires/fb01af8736f1ff43db6e507cc0f11cbba4ca75408a6f4ea614637f01ce2f93a4')
         expect(out).to include('copying jobs: http_server_with_provides/46f5cd44ad799db2be2624266c9a9487200ffa18a23bc83df64a19e1413f1e37')
         expect(out).to include('copying jobs: kv_http_server/11c28a822aa698ee9aa9af81ccf6dc67232e2ab25338aca252bac3e90d4e1d95')
-        expect(out).to include('copying jobs: mongo_db/740fcbd346be1d9895d727608c66c2e73e2e850e888aa24f78830eb94d53de7a')
+        expect(out).to include('copying jobs: mongo_db/a04abc8edbc2c0893b8ae1815cca66d676dbea9833c39737d68ddd4c7d955cf5')
         expect(out).to include('copying jobs: node/2b6b3ec34ad9738007a6b861d776b2916e8868986cbe166d6225c508e320e4ad')
         expect(out).to include('copying jobs: provider/b9f01ed6fc017ab7f3bf4fc098828176685a40bc2cd1e786e04a978465c949d7')
         expect(out).to include('copying jobs: provider_fail/43ab3579d49542b999641880cb3f357f605758924a8ad1cefb52d10d03e49916')
