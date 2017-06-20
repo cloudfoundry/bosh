@@ -7,6 +7,7 @@ set -eux
 rm -rf $ARTIFACT_DIRECTORY/*
 
 if [ -z "$(ls -A /var/vcap/store/blobstore)" ]; then
+  mkdir -p $ARTIFACT_DIRECTORY/store
   exit 0
 fi
 

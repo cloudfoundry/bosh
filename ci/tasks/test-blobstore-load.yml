@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+- name: bosh-src
+- name: davcli
+
+run:
+  path: bosh-src/ci/tasks/test-blobstore-load.sh

@@ -115,7 +115,7 @@ describe 'deliver rendered templates through nats', type: :integration do
       big_manifest_hash
     end
 
-    it 'should work as expected - change me please' do
+    it 'should work as expected' do
       deploy_from_scratch(manifest_hash: big_manifest_hash, cloud_config_hash: cloud_config)
 
       running_instances = director.instances
@@ -157,6 +157,26 @@ describe 'deliver rendered templates through nats', type: :integration do
       {
         'name' => 'smurf-vm-type',
         'cloud_properties' => {'legacy_agent_path' => get_legacy_agent_path('no-upload-blob-action-e82bdd1c')}
+      }
+    end
+
+    it 'should fallback to storing in the default blobstore' do
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+      running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+      template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+      expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
+
+      zgrep_output = `zgrep GARGAMEL_COLOR_IS_NOT_BLUE #{current_sandbox.blobstore_storage_dir}/*`
+      expect(zgrep_output.empty?).to be_falsey
+    end
+  end
+
+  context 'when agent fails to open blob for writing' do
+    let(:vm_type) do
+      {
+        'name' => 'smurf-vm-type',
+        'cloud_properties' => {'legacy_agent_path' => get_legacy_agent_path('upload-blob-action-error-file-not-found')}
       }
     end
 

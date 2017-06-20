@@ -8,7 +8,7 @@ module Bosh
 
         def initialize(options)
           users = options.fetch('users', [])
-          @user_manager = Bosh::Director::Api::UserManagerProvider.new.user_manager(users)
+          @user_manager = ConfigUserManager.new(users)
         end
 
         # User management is supported for backwards compatibility

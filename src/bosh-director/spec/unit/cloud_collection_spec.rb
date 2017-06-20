@@ -116,5 +116,12 @@ module Bosh::Director
 
       it_behaves_like 'a delegator'
     end
+
+    describe 'resize_disk' do
+      let(:method_name) { :resize_disk }
+      let(:method_args) { ['tuber_id', 1024] }
+
+      it_behaves_like 'a delegator'
+    end
   end
 end

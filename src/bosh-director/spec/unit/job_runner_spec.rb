@@ -168,7 +168,6 @@ module Bosh::Director
 
     it 'updates task checkpoint time' do
       task = Models::Task[42]
-      task.update(:state => 'processing')
       expect(task.checkpoint_time).to be(nil)
       TaskCheckPointer.new(task.id).checkpoint
 

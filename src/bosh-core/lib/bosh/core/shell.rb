@@ -48,7 +48,12 @@ module Bosh::Core
     def report(cmd, command_output, options)
       return if command_exited_successfully?
 
-      err_msg = "Failed: '#{cmd}' from #{pwd}, with exit status #{$?.to_i}\n\n #{command_output}"
+      redacted_cmd = cmd
+      if options[:redact]
+        redacted_cmd = redacted_cmd.gsub(/#{options[:redact].join('|')}/, "[REDACTED]")
+      end
+
+      err_msg = "Failed: '#{redacted_cmd}' from #{pwd}, with exit status #{$?.to_i}\n\n #{command_output}"
       options[:ignore_failures] ? stdout.puts("#{err_msg}, continuing anyway") : raise(err_msg)
     end
 

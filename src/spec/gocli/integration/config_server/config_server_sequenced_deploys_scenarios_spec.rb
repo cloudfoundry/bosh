@@ -100,6 +100,27 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
       end
+
+      it "does not update jobs (does NOT pick up new config server values) on 'stop' then 'start' then 'restart' then 'recreate'" do
+        bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'rabbits are happy')
+
+        bosh_runner.run('restart', json: true, deployment_name: 'simple', include_credentials: false, env: client_env)
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+        config_server_helper.put_value(prepend_namespace('my_placeholder'), 'birds are happy')
+
+        bosh_runner.run('recreate', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+      end
     end
   end
 

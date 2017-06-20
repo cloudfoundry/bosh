@@ -316,6 +316,10 @@ describe Bosh::Clouds::ExternalCpi do
     it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
   end
 
+  describe '#set_disk_metadata' do
+    it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
+  end
+
   describe '#create_disk' do
     it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
   end
@@ -342,6 +346,10 @@ describe Bosh::Clouds::ExternalCpi do
 
   describe '#delete_snapshot' do
     it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
+  end
+
+  describe '#resize_disk' do
+    it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
   end
 
   describe '#get_disks' do

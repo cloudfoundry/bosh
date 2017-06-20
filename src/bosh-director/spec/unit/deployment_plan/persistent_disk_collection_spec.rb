@@ -262,5 +262,54 @@ module Bosh::Director
         end
       end
     end
+
+    describe PersistentDiskCollection::PersistentDisk do
+
+      describe '#size_diff_only?' do
+        let(:old_disk) { old_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 10) }
+
+        context 'when the size is the only difference' do
+          it 'is true' do
+            new_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 20)
+
+            expect(old_disk.size_diff_only?(new_disk)).to eq(true)
+          end
+        end
+
+        context 'when the size did not change' do
+          it 'is false' do
+            new_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 10)
+
+            expect(old_disk.size_diff_only?(new_disk)).to eq(false)
+          end
+        end
+
+        context 'when the other properties changed' do
+          context 'when the size is the same' do
+            it 'is false' do
+              new_disk = PersistentDiskCollection::PersistentDisk.new('', {'some_property' => 'value'}, 10)
+
+              expect(old_disk.size_diff_only?(new_disk)).to eq(false)
+            end
+          end
+
+          context 'when also the size has changed' do
+            it 'is false' do
+              new_disk = PersistentDiskCollection::PersistentDisk.new('other_name', {}, 20)
+
+              expect(old_disk.size_diff_only?(new_disk)).to eq(false)
+            end
+          end
+        end
+
+        context 'when other is not a PersistentDisk' do
+          it 'is false' do
+            new_disk = nil
+
+            expect(old_disk.size_diff_only?(new_disk)).to eq(false)
+          end
+        end
+      end
+    end
   end
 end

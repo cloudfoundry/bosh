@@ -154,7 +154,11 @@ module Bosh::Director
           variable_sets_to_keep += instance_group.referenced_variable_sets
         end
 
-        deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
+        begin
+          deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
+        rescue Sequel::ForeignKeyConstraintViolation => e
+          logger.warn("Unable to clean up variable_sets. Error: #{e.inspect}")
+        end
       end
 
       def add_event(context = {}, parent_id = nil, error = nil)
