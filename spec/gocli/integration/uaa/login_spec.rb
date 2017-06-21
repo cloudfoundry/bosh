@@ -183,12 +183,12 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
 
-        original_instance = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
+        original_instance = director.vm('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         original_instance.kill_agent
         resurrected_instance = director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         expect(resurrected_instance).to_not eq(nil)
 
-        expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+        expect(resurrected_instance.cid).to_not eq(original_instance.cid)
       end
     end
   end
