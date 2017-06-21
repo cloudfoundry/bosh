@@ -654,7 +654,7 @@ resources:
     type: s3
     source:
       regexp: bosh-cli-(.*)-linux-amd64
-      bucket: {{bosh_cli_aws_s3_release_bucket}}
+      bucket: bosh-cli-artifacts
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
   #
