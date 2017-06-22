@@ -9,6 +9,7 @@ groups:
       - integration-2.3-postgres-gocli
       - integration-2.3-mysql
       - integration-2.3-postgres
+      - upgrade-tests
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -35,12 +36,14 @@ groups:
       - unit-2.3-mysql
       - integration-2.3-mysql
       - publish-coverage
+      - upgrade-tests
 
   - name: postgres
     jobs:
       - unit-2.3-postgres
       - integration-2.3-postgres
       - publish-coverage
+      - upgrade-tests
 
   - name: finalize
     jobs:
@@ -304,6 +307,33 @@ jobs:
             icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
             text: {{slack_failure_message}}
 
+  - name: upgrade-tests
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+          trigger: true
+      - aggregate:
+        - task: upgrade-with-postgres
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: postgresql
+            RUBY_VERSION: 2.3.1
+
+        - task: upgrade-with-mysql
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: mysql
+            RUBY_VERSION: 2.3.1
+
   - name: load-tests-postgres
     public: true
     serial: true
@@ -447,6 +477,7 @@ jobs:
       - integration-2.3-mysql
       - integration-2.3-postgres
       - blobstore-client-integration
+      - upgrade-tests
     - get: candidate-version
     - get: candidate-gem-version
       resource: candidate-version
