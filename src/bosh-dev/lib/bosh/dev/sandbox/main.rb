@@ -30,6 +30,8 @@ module Bosh::Dev::Sandbox
     EXTERNAL_CPI = 'cpi'
     EXTERNAL_CPI_TEMPLATE = File.join(ASSETS_DIR, 'cpi.erb')
 
+    UPGRADE_SPEC_ASSETS_DIR =  File.expand_path('spec/assets/upgrade', REPO_ROOT)
+
     attr_reader :name
     attr_reader :health_monitor_process
     attr_reader :scheduler_process
@@ -149,13 +151,17 @@ module Bosh::Dev::Sandbox
       @database.create_db
       @database_created = true
 
+      unless @test_initial_state.nil?
+        load_db_and_populate_blobstore(@test_initial_state)
+      end
+
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
       dir_config = director_config
       @director_name = dir_config.director_name
 
-      @director_service.start(dir_config)
+      @director_service.start(dir_config, @drop_database)
     end
 
     def director_name
@@ -278,6 +284,8 @@ module Bosh::Dev::Sandbox
     def reconfigure(options)
       @user_authentication = options.fetch(:user_authentication, 'local')
       @config_server_enabled = options.fetch(:config_server_enabled, false)
+      @drop_database = options.fetch(:drop_database, false)
+      @test_initial_state = options.fetch(:test_initial_state, nil)
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
@@ -298,6 +306,25 @@ module Bosh::Dev::Sandbox
 
     private
 
+    def load_db_and_populate_blobstore(test_initial_state)
+      @database.load_db_initial_state(File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state))
+
+      if @database.adapter.eql? 'mysql2'
+        tar_filename = 'blobstore_snapshot_with_mysql.tar.gz'
+      elsif @database.adapter.eql? 'postgres'
+        tar_filename = 'blobstore_snapshot_with_postgres.tar.gz'
+      else
+        raise 'Pre-loading blobstore supported only for PostgresDB and MySQL'
+      end
+
+      blobstore_snapshot_path = File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state, tar_filename)
+      @logger.info("Pre-filling blobstore `#{blobstore_storage_dir}` with blobs from `#{blobstore_snapshot_path}`")
+      tar_out = `tar xzvf #{blobstore_snapshot_path} -C #{blobstore_storage_dir}  2>&1`
+      if $?.exitstatus != 0
+        raise "Cannot pre-fill blobstore: #{tar_out}"
+      end
+    end
+
     def external_cpi_config
       {
         name: 'test-cpi',
@@ -315,10 +342,19 @@ module Bosh::Dev::Sandbox
 
       @director_service.stop
 
-      @database.truncate_db
+      if @drop_database
+        @database.drop_db
+        @database.create_db
+      else
+        @database.truncate_db
+      end
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
+
+      unless @test_initial_state.nil?
+        load_db_and_populate_blobstore(@test_initial_state)
+      end
 
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled

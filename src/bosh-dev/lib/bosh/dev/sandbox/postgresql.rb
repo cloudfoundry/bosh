@@ -11,6 +11,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
       @username = 'postgres'
       @password = ''
+      @host = 'localhost'
       @adapter = 'postgres'
       @port = port
     end
@@ -29,6 +30,16 @@ module Bosh::Dev::Sandbox
     def drop_db
       @logger.info("Dropping postgres database #{db_name}")
       @runner.run(%Q{echo 'revoke connect on database "#{db_name}" from public; drop database "#{db_name}";' | psql -U postgres})
+    end
+
+    def load_db_initial_state(initial_state_assets_dir)
+      sql_dump_path = File.join(initial_state_assets_dir, 'postgres_db_snapshot.sql')
+      load_db(sql_dump_path)
+    end
+
+    def load_db(dump_file_path)
+      @logger.info("Loading dump #{dump_file_path} into postgres database #{db_name}")
+      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
     end
 
     def current_tasks
