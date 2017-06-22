@@ -19,9 +19,9 @@ describe 'Links', type: :integration do
     my_api_vm = director.vm(job, '0', deployment: 'simple')
     template = YAML.load(my_api_vm.read_job_template(template, 'config.yml'))
 
-    template['databases'].each do |_, database|
+    template['databases'].select{|key| key == 'main' || key == 'backup_db'}.each do |_, database|
       database.each do |instance|
-          expect(instance['address']).to match(pattern)
+        expect(instance['address']).to match(pattern)
       end
     end
   end
