@@ -136,6 +136,8 @@ require 'bosh/director/config_server/client_factory'
 require 'bosh/director/config_server/variables_interpolator'
 require 'bosh/director/config_server/config_server_helper'
 
+require 'bosh/director/disk/persistent_disk_comparators'
+
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/diff_lines'

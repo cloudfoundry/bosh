@@ -66,7 +66,13 @@ module Bosh
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
-          changed_disk_pairs = desired_disks_collection.changed_disk_pairs(existing_disk_collection)
+          changed_disk_pairs = PersistentDiskCollection.changed_disk_pairs(
+            existing_disk_collection,
+            instance_model.variable_set,
+            desired_disks_collection,
+            instance_model.deployment.current_variable_set
+          )
+
           changed_disk_pairs.each do |disk_pair|
             log_changes(__method__, disk_pair[:old], disk_pair[:new], instance)
           end

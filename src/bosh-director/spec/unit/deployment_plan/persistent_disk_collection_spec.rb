@@ -118,10 +118,10 @@ module Bosh::Director
         end
       end
 
-      describe '#changed_disk_pairs' do
+      describe '#self.changed_disk_pairs' do
         let(:desired_disks) { PersistentDiskCollection.new(logger) }
         let(:existing_disks) { PersistentDiskCollection.new(logger) }
-        let(:subject) { desired_disks.changed_disk_pairs(existing_disks) }
+        let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
         context 'unchanged' do
           context 'disk ordering unchanged' do
@@ -132,7 +132,7 @@ module Bosh::Director
               existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
               existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(0)
+              expect(PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set).length).to eq(0)
             end
           end
 
@@ -144,7 +144,7 @@ module Bosh::Director
               existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
               existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(0)
+              expect(PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set).length).to eq(0)
             end
           end
         end
@@ -154,10 +154,12 @@ module Bosh::Director
             it 'lists the change' do
               existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(1)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new]).to be_nil
-              expect(subject[0][:old].name).to eq('persistent1')
+              expect(pairs.length).to eq(1)
+
+              expect(pairs[0][:new]).to be_nil
+              expect(pairs[0][:old].name).to eq('persistent1')
             end
           end
 
@@ -169,13 +171,15 @@ module Bosh::Director
               existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
               existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(2)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new]).to be_nil
-              expect(subject[0][:old].name).to eq('persistent1')
+              expect(pairs.length).to eq(2)
 
-              expect(subject[1][:new]).to be_nil
-              expect(subject[1][:old].name).to eq('persistent2')
+              expect(pairs[0][:new]).to be_nil
+              expect(pairs[0][:old].name).to eq('persistent1')
+
+              expect(pairs[1][:new]).to be_nil
+              expect(pairs[1][:old].name).to eq('persistent2')
             end
           end
         end
@@ -185,12 +189,14 @@ module Bosh::Director
             it 'lists the change' do
               desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(1)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new].size).to eq(3)
-              expect(subject[0][:new].name).to eq('persistent1')
-              expect(subject[0][:new].cloud_properties).to eq({'property' => 'one'})
-              expect(subject[0][:old]).to be_nil
+              expect(pairs.length).to eq(1)
+
+              expect(pairs[0][:new].size).to eq(3)
+              expect(pairs[0][:new].name).to eq('persistent1')
+              expect(pairs[0][:new].cloud_properties).to eq({'property' => 'one'})
+              expect(pairs[0][:old]).to be_nil
             end
           end
 
@@ -202,13 +208,15 @@ module Bosh::Director
               desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {'property' => 'one'}))
               desired_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(2)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new].name).to eq('persistent1')
-              expect(subject[0][:old]).to be_nil
+              expect(pairs.length).to eq(2)
 
-              expect(subject[1][:new].name).to eq('persistent2')
-              expect(subject[1][:old]).to be_nil
+              expect(pairs[0][:new].name).to eq('persistent1')
+              expect(pairs[0][:old]).to be_nil
+
+              expect(pairs[1][:new].name).to eq('persistent2')
+              expect(pairs[1][:old]).to be_nil
             end
           end
         end
@@ -220,10 +228,12 @@ module Bosh::Director
 
               existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {}))
 
-              expect(subject.length).to eq(1)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new].size).to eq(6)
-              expect(subject[0][:old].size).to eq(3)
+              expect(pairs.length).to eq(1)
+
+              expect(pairs[0][:new].size).to eq(6)
+              expect(pairs[0][:old].size).to eq(3)
             end
           end
 
@@ -233,10 +243,12 @@ module Bosh::Director
 
               existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {'property' => 'one'}))
 
-              expect(subject.length).to eq(1)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new].cloud_properties).to eq({'property' => 'two'})
-              expect(subject[0][:old].cloud_properties).to eq({'property' => 'one'})
+              expect(pairs.length).to eq(1)
+
+              expect(pairs[0][:new].cloud_properties).to eq({'property' => 'two'})
+              expect(pairs[0][:old].cloud_properties).to eq({'property' => 'one'})
             end
           end
 
@@ -250,13 +262,15 @@ module Bosh::Director
               existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {}))
               existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {}))
 
-              expect(subject.length).to eq(2)
+              pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set)
 
-              expect(subject[0][:new].size).to eq(6)
-              expect(subject[0][:old].size).to eq(3)
+              expect(pairs.length).to eq(2)
 
-              expect(subject[1][:new].size).to eq(12)
-              expect(subject[1][:old].size).to eq(3)
+              expect(pairs[0][:new].size).to eq(6)
+              expect(pairs[0][:old].size).to eq(3)
+
+              expect(pairs[1][:new].size).to eq(12)
+              expect(pairs[1][:old].size).to eq(3)
             end
           end
         end
