@@ -13,6 +13,7 @@ module Bosh::Dev::Sandbox
       @password = password
       @adapter = 'mysql2'
       @port = 3306
+      @host = 'localhost'
     end
 
     def connection_string
