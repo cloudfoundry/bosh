@@ -4,9 +4,14 @@ templates: {}
 packages: []
 
 provides:
-- {name: db, type: db}
+  - name: db
+    type: db
+    properties:
+      - foo
 
 properties:
+  foo:
+    default: 'normal_bar'
   test:
     description: "test property"
     default: "default test property"

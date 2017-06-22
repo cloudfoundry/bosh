@@ -19,7 +19,7 @@ describe 'Links', type: :integration do
     my_api_vm = director.vm(job, '0', deployment: 'simple')
     template = YAML.load(my_api_vm.read_job_template(template, 'config.yml'))
 
-    template['databases'].each do |_, database|
+    template['databases'].select{|key| key == 'main' || key == 'backup_db'}.each do |_, database|
       database.each do |instance|
           expect(instance['address']).to match(pattern)
       end
@@ -735,6 +735,214 @@ Error: Unable to process links for deployment. Errors are:
            }
         )
       end
+
+      context 'when two co-located jobs consume two links with the same name, where each is provided by a different job on the same instance group' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [{
+                              'name' => 'http_server_with_provides',
+                              'properties' => {
+                                  'listen_port' => 11111,
+                                  'name_space' => {
+                                      'prop_a' => 'http_provider_some_prop_a'
+                                  }
+                              },
+                              'provides' => {'http_endpoint' => {'as' => 'link_http_alias'}}
+                          },
+                          {
+                              'name' => 'tcp_server_with_provides',
+                              'properties' => {
+                                  'listen_port' => 77777,
+                                  'name_space' => {
+                                      'prop_a' => 'tcp_provider_some_prop_a'
+                                  }
+                              },
+                              'provides' => {'http_endpoint' => {'as' => 'link_tcp_alias'}}
+                          }
+
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'consumer_instance_group',
+              templates: [
+                  {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_alias'}}},
+                  {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_tcp_alias'}}},
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.vm('consumer_instance_group', '0')
+
+          http_template = YAML.load(consumer_instance_group.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          tcp_template = YAML.load(consumer_instance_group.read_job_template('tcp_proxy_with_requires', 'config/config.yml'))
+
+          expect(http_template['links']['properties']['listen_port']).to eq(11111)
+          expect(http_template['links']['properties']['name_space']['prop_a']).to eq('http_provider_some_prop_a')
+
+          expect(tcp_template['links']['properties']['listen_port']).to eq(77777)
+          expect(tcp_template['links']['properties']['name_space']['prop_a']).to eq('tcp_provider_some_prop_a')
+
+        end
+      end
+
+      context 'when two co-located jobs consume two links with the same name, where each is provided by the same job on different instance groups' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider1_http, provider2_http, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider1_http) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider1_http_instance_group',
+              templates: [{
+                              'name' => 'http_server_with_provides',
+                              'properties' => {
+                                  'listen_port' => 11111,
+                                  'name_space' => {
+                                      'prop_a' => '1_some_prop_a'
+                                  }
+                              },
+                              'provides' => {'http_endpoint' => {'as' => 'link_http_1'}}
+                          }],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:provider2_http) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider2_http_instance_group',
+              templates: [{
+                              'name' => 'http_server_with_provides',
+                              'properties' => {
+                                  'listen_port' => 1234,
+                                  'name_space' => {
+                                      'prop_a' => '2_some_prop_a'
+                                  }
+                              },
+                              'provides' => {'http_endpoint' => {'as' => 'link_http_2'}}
+                          }],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'consumer_instance_group',
+              templates: [
+                  {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_1'}}},
+                  {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_2'}}},
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.vm('consumer_instance_group', '0')
+
+          http_template = YAML.load(consumer_instance_group.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          tcp_template = YAML.load(consumer_instance_group.read_job_template('tcp_proxy_with_requires', 'config/config.yml'))
+
+          expect(http_template['links']['properties']['listen_port']).to eq(11111)
+          expect(http_template['links']['properties']['name_space']['prop_a']).to eq('1_some_prop_a')
+
+          expect(tcp_template['links']['properties']['listen_port']).to eq(1234)
+          expect(tcp_template['links']['properties']['name_space']['prop_a']).to eq('2_some_prop_a')
+
+        end
+      end
+
+      context 'when one job consumes two links of the same type, where each is provided by the same job on different instance groups' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_1_db, provider_2_db, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider_1_db) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_1_db',
+              templates: [{
+                              'name' => 'backup_database',
+                              'properties' => {
+                                  'foo' => 'wow',
+                              },
+                              'provides' => {'backup_db' => {'as' => 'db_1'}}
+                          }],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:provider_2_db) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_2_db',
+              templates: [{
+                              'name' => 'backup_database',
+                              'properties' => {
+                                  'foo' => 'omg_no_keyboard',
+                              },
+                              'provides' => {'backup_db' => {'as' => 'db_2'}}
+                          }],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'consumer_instance_group',
+              templates: [
+                  {'name' => 'api_server', 'consumes' => {'db' => {'from' => 'db_1'}, 'backup_db' => {'from' => 'db_2'}}},
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.vm('consumer_instance_group', '0')
+
+          api_template = YAML.load(consumer_instance_group.read_job_template('api_server', 'config.yml'))
+
+          expect(api_template['databases']['main_properties']).to eq('wow')
+          expect(api_template['databases']['backup_properties']).to eq('omg_no_keyboard')
+
+        end
+      end
+
     end
 
     context 'when provide link is aliased using "as", and the consume link references the old name' do

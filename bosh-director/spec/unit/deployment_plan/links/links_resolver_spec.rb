@@ -182,8 +182,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               }
             ]
           }
+          links_hash = {"api-server-template" => {"db" => spec}}
 
-          expect(api_server_job.resolved_links).to eq({"db" => spec})
+          expect(api_server_job.resolved_links).to eq(links_hash)
         end
       end
     end
@@ -235,7 +236,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             ]
           }
 
-          expect(api_server_job.resolved_links).to eq({'db' => spec})
+          links_hash = {"api-server-template" => {"db" => spec}}
+
+          expect(api_server_job.resolved_links).to eq(links_hash)
         end
       end
 
@@ -301,7 +304,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           ]
         }
 
-        expect(api_server_job.resolved_links).to eq({'backup_db' => link_spec})
+        links_hash = {"api-server-template" => {"backup_db" => link_spec}}
+
+        expect(api_server_job.resolved_links).to eq(links_hash)
       end
     end
 
@@ -310,7 +315,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_job)
-        link_spec = api_server_job.resolved_links['db']
+        link_spec = api_server_job.resolved_links['api-server-template']['db']
 
         expect(link_spec['instances'].first['name']).to eq('mysql')
       end
@@ -512,7 +517,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           ]
         }
 
-        expect(api_server_job.resolved_links).to eq({ 'db' => link_spec })
+        links_hash = {"api-server-template" => {"db" => link_spec}}
+
+        expect(api_server_job.resolved_links).to eq(links_hash)
       end
     end
   end

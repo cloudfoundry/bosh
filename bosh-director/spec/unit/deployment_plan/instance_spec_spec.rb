@@ -8,7 +8,8 @@ module Bosh::Director::DeploymentPlan
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
     let(:links) do
-      {'link_name' =>
+      {'smurf-job' =>
+        {'link_name' =>
          {'deployment_name' => 'dep1',
           'some_key' => 'some_value',
           "networks"=> ["default"],
@@ -24,8 +25,11 @@ module Bosh::Director::DeploymentPlan
                            "address"=> "10.244.0.4"
                          }
           ]}
+        }
       }
     end
+    let(:smurf_job_links) { links['smurf-job'] }
+
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
@@ -122,8 +126,9 @@ module Bosh::Director::DeploymentPlan
     describe '#template_spec' do
 
       let(:expected_links) do
-        {'link_name' =>
-           {
+        {
+          'smurf-job' => {
+            'link_name' => {
              "properties"=> {
                "listen_port"=> "Kittens"
              },
@@ -136,13 +141,49 @@ module Bosh::Director::DeploymentPlan
                               "address"=> "10.244.0.4"
                             }
              ]}
+          }
         }
       end
 
-      context 'properties interpolation' do
-        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+      let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+      let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
 
+      before do
+        allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+        allow(client_factory).to receive(:create_client).and_return(config_server_client)
+
+        allow(config_server_client).to receive(:interpolate).with(properties).and_return(properties)
+        allow(config_server_client).to receive(:interpolate).with(smurf_job_links['link_name']).and_return(smurf_job_links['link_name'])
+
+      end
+
+      context 'links specs whitelisting' do
+        let(:expected_links) do
+          {'smurf-job' =>
+               {'link_name' =>
+                    {
+                        "properties"=> {
+                            "listen_port"=> "Kittens"
+                        },
+                        "instances"=> [{
+                                           "name"=> "provider",
+                                           "index"=> 0,
+                                           "bootstrap"=> true,
+                                           "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
+                                           "az"=> "z1",
+                                           "address"=> "10.244.0.4"
+                                       }
+                        ]}
+               }
+          }
+        end
+
+        it 'respects whitelist for links spec' do
+          expect((instance_spec.as_template_spec)['links']).to eq(expected_links)
+        end
+      end
+
+      context 'properties interpolation' do
         let(:properties) do
           {
             'smurf_1' => '((smurf_placeholder_1))',
@@ -160,8 +201,10 @@ module Bosh::Director::DeploymentPlan
 
         let(:links) do
           {
-            'link_1' => first_link,
-            'link_2' => second_link
+            'smurf-job' => {
+              'link_1' => first_link,
+              'link_2' => second_link
+            }
           }
         end
 
@@ -182,14 +225,11 @@ module Bosh::Director::DeploymentPlan
 
         let(:resolved_links) do
           {
-            'link_1' => resolved_first_link,
-            'link_2' => resolved_second_link,
+            'smurf-job' => {
+              'link_1' => resolved_first_link,
+              'link_2' => resolved_second_link,
+            }
           }
-        end
-
-        before do
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'resolves properties and links properties' do

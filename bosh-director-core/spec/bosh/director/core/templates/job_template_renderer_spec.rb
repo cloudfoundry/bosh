@@ -111,6 +111,50 @@ module Bosh::Director::Core::Templates
 
       end
 
+      context 'when spec has links' do
+        let(:raw_spec) do
+          {
+              'index' => 1,
+              'job' => {
+                  'name' => 'template-name',
+              },
+              "properties_need_filtering" => true,
+              'links' => {
+                  'template-name' => {
+                      "db_link" =>
+                          {"properties" => { 'foo' => 'bar'}, "instances"=>[{"name"=>"mysql1"}, {"name"=>"mysql"}]},
+                      "backup_db" =>
+                          {"properties"=>{ 'moop' => 'yar'}, "instances"=>[{"name"=>"postgres1"},{"name"=>"postgres"}]}
+                  }
+              }
+          }
+        end
+
+        let(:modified_spec) do
+          {
+              'index' => 1,
+              'job' => {
+                  'name' => 'template-name',
+              },
+              "properties_need_filtering" => true,
+              'links' => {
+                  "db_link" =>
+                      {"properties" => { 'foo' => 'bar'}, "instances"=>[{"name"=>"mysql1"}, {"name"=>"mysql"}]},
+                  "backup_db" =>
+                      {"properties"=>{ 'moop' => 'yar'}, "instances"=>[{"name"=>"postgres1"},{"name"=>"postgres"}]}
+              }
+          }
+        end
+
+        before do
+          allow(Bosh::Template::EvaluationContext).to receive(:new)
+          job_template_renderer.render(raw_spec)
+        end
+        it 'should have EvaluationContext called with correct spec' do
+          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec).at_least(2).times
+        end
+      end
+
     end
   end
 end
