@@ -315,12 +315,13 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-        - get: bosh-cli
+        - get: gocli-release-bucket-linux
           trigger: true
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
+          input_mapping: {bosh-cli: gocli-release-bucket-linux}
           tags: ["bosh-integration"]
           params:
             DB: postgresql
@@ -329,6 +330,7 @@ jobs:
         - task: upgrade-with-mysql
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
+          input_mapping: {bosh-cli: gocli-release-bucket-linux}
           tags: ["bosh-integration"]
           params:
             DB: mysql
