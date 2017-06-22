@@ -46,7 +46,7 @@ chmod +x /usr/local/bin/gobosh
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
-cd bosh-src/src
+cd bosh-src
 
 print_git_state
 
