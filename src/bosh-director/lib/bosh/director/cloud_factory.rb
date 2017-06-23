@@ -3,8 +3,18 @@
 # For lookup based on availability zone, it additionally needs the cloud planner which contains the AZ -> CPI mapping from the cloud config.
 module Bosh::Director
   class CloudFactory
+    def self.create_from_deployment_with_latest_configs(deployment)
+      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest
+      cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+
+      planner = nil
+      planner = create_cloud_planner(cloud_config, deployment.name) unless deployment.nil?
+
+      new(planner, parse_cpi_config(cpi_config))
+    end
+
     def self.create_from_deployment(deployment,
-        cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
+      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
 
       planner = nil
       planner = create_cloud_planner(deployment.cloud_config, deployment.name) unless deployment.nil?

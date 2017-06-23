@@ -2,9 +2,8 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class PreCleanupStep
-        def initialize(base_job, deployment_plan)
-          @base_job = base_job
-          @logger = base_job.logger
+        def initialize(logger, deployment_plan)
+          @logger = logger
           @deployment_plan = deployment_plan
         end
 

@@ -20,6 +20,86 @@ describe 'Using multiple CPIs', type: :integration do
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
   end
 
+  context 'when a cpi is renamed and cloud-config azs are updated' do
+    context 'a deployment is updated' do
+      it 'can successfully delete the vm resource' do
+        # deploy with initial cpi config, and 2 azs
+        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+
+        output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+        expect(output).to contain_exactly(
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z2',
+            'ips' => /.*/
+          }
+        )
+
+        # start the transition of using new cpi names
+        cpi_config['cpis'] = cpi_config['cpis'].concat(cpi_config['cpis'].map { |cpi| cpi2=cpi.dup; cpi2['name'] += '-new'; cpi2 })
+        puts "debug: #{cpi_config['cpis']}"
+        cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+        bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+        # tell our cloud-config to start using the new cpi names
+        cloud_config['azs'] = cloud_config['azs'].map { |az| az['cpi'] += '-new'; az }
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+
+        # reduce instance count, just to verify we can delete a vm during a live cpi transition
+        deployment['jobs'][0]['instances'] = 2
+        deployment_manifest = yaml_file('deployment_manifest', deployment)
+
+        # deploy so we get onto the latest cloud-config/cpi names
+        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+
+        output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+        expect(output).to contain_exactly(
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z2',
+            'ips' => /.*/
+          }
+        )
+
+        # now that our deployment is on the latest cloud-config, it no longer has a dependence on the old cpi names
+        # so, remove the old cpi names
+        cpi_config['cpis'] = cpi_config['cpis'].select { |cpi| cpi['name'] =~ /-new$/ }
+        cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+        bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+        # delete the deployment, just to verify we can delete vms even though the original cpi names are gone
+        output = bosh_runner.run('delete-deployment', deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+      end
+    end
+  end
+
   context 'when an az references a CPI that was deleted' do
     it 'fails to redeploy and orphans the VM associated with the deleted CPI' do
       # deploy with initial cpi config, and 2 azs
