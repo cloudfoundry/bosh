@@ -190,13 +190,13 @@ module Bosh
         allow(Config.cloud).to receive(:delete_vm)
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
         allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
-        allow(cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).and_return(cloud)
-        allow(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).and_return(cloud)
+        allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
+        allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
       end
 
       context 'with existing cloud config' do
         let(:non_default_cloud_factory) { instance_double(CloudFactory) }
-        let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'something') }
+        let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'cpi1') }
         let(:stemcell) do
           stemcell_model
           stemcell_model_cpi
@@ -205,13 +205,10 @@ module Bosh
           stemcell
         end
 
-        before do
-          expect(non_default_cloud_factory).to receive(:for_availability_zone!).with(instance_model.availability_zone).at_least(:once).and_return(cloud)
-        end
-
         it 'uses the outdated cloud config from the existing deployment' do
           expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
-          expect(non_default_cloud_factory).to receive(:lookup_cpi_for_az).and_return 'something'
+          expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
+          expect(non_default_cloud_factory).to receive(:get).with('cpi1').at_least(:once).and_return(cloud)
           expect(cloud).to receive(:create_vm).with(
             kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
           ).and_return('new-vm-cid')
@@ -223,7 +220,9 @@ module Bosh
           let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
 
           it 'uses any cloud config if availability zones are not used, even though requested' do
-            expect(non_default_cloud_factory).to receive(:lookup_cpi_for_az).and_return ''
+            expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
+            expect(non_default_cloud_factory).to receive(:get).with('').at_least(:once).and_return(cloud)
+
             expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
             expect(cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
@@ -456,7 +455,7 @@ module Bosh
       end
 
       context 'when instance already has associated active_vm' do
-        let(:old_vm) { Models::Vm.make(instance: instance_model) }
+        let(:old_vm) { Models::Vm.make(instance: instance_model, cpi: 'cpi1') }
 
         before { instance_model.active_vm = old_vm }
 
@@ -522,13 +521,10 @@ module Bosh
       end
 
       it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
-        cloud_collection = instance_double('Bosh::Director::CloudCollection')
-
-        expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).at_least(:once).and_return(cloud_collection)
-
         Config.keep_unreachable_vms = false
+
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-        expect(cloud_collection).to receive(:delete_vm)
+        expect(cloud).to receive(:delete_vm)
 
         expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 

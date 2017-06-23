@@ -12,7 +12,9 @@ module Bosh::Director
     end
 
     def update_vm_metadata(instance, metadata, factory = cloud_factory)
-      cloud = factory.for_availability_zone!(instance.availability_zone)
+      vm = instance.active_vm
+
+      cloud = factory.get(vm.cpi)
 
       if cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
@@ -23,7 +25,7 @@ module Bosh::Director
         metadata['name'] = "#{instance.job}/#{instance.uuid}"
         metadata['created_at'] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        cloud.set_vm_metadata(instance.vm_cid, metadata)
+        cloud.set_vm_metadata(vm.cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
       @logger.debug(e.inspect)

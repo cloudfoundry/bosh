@@ -15,7 +15,18 @@ module Bosh::Director
           vm_cid = vm_model.cid
           instance_name = "#{instance_model.job}/#{instance_model.uuid}"
           parent_id = add_event(instance_model.deployment.name, instance_name, vm_cid) if store_event
-          delete_vm(instance_model)
+
+          @logger.info('Deleting VM')
+          @error_ignorer.with_force_check do
+            cloud = cloud_factory.get(vm_model.cpi)
+
+            begin
+              cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
+            rescue Bosh::Clouds::VMNotFound
+              @logger.warn("VM '#{vm_cid}' might have already been deleted from the cloud")
+            end
+          end
+
           instance_model.active_vm = nil
           vm_model.delete
         rescue Exception => e
@@ -26,30 +37,15 @@ module Bosh::Director
       end
     end
 
-    def delete_vm(instance_model)
-      @logger.info('Deleting VM')
-      @error_ignorer.with_force_check do
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
-
-        begin
-          cloud.delete_vm(instance_model.vm_cid) unless @enable_virtual_delete_vm
-        rescue Bosh::Clouds::VMNotFound
-          @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
-        end
-      end
-    end
-
     def delete_vm_by_cid(cid)
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         # if there are multiple cpis, it's too dangerous to try and delete just vm cid on every cloud.
         unless cloud_factory.uses_cpi_config?
-          cloud_factory.default_from_director_config.delete_vm(cid) unless @enable_virtual_delete_vm
+          cloud_factory.get(nil).delete_vm(cid) unless @enable_virtual_delete_vm
         end
       end
     end
-
-
 
     private
 

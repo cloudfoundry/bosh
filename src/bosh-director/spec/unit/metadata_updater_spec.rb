@@ -6,7 +6,7 @@ describe Bosh::Director::MetadataUpdater do
   subject(:metadata_updater) { described_class.new(director_metadata, logger) }
   let(:director_metadata) { {} }
   let(:vm) {
-    BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id)
+    BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
   }
   let(:instance) {
     BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
@@ -37,7 +37,7 @@ describe Bosh::Director::MetadataUpdater do
 
     context 'with existing cloud factory' do
       it 'uses passed in factory' do
-        expect(cloud_factory).to receive(:for_availability_zone!)
+        expect(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
         metadata_updater.update_vm_metadata(instance, {}, cloud_factory)
       end
     end
@@ -45,7 +45,7 @@ describe Bosh::Director::MetadataUpdater do
     context 'with global cloud factory' do
       before do
         allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
-        expect(cloud_factory).to receive(:for_availability_zone!).with(instance.availability_zone).and_return(cloud)
+        expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 
       context 'when CPI supports setting vm metadata' do

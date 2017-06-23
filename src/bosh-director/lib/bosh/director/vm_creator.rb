@@ -131,7 +131,7 @@ module Bosh::Director
         return cloud_factory, instance_plan.instance.stemcell_cid unless instance_plan.existing_instance.availability_zone
 
         stemcell = instance_plan.instance.stemcell
-        cpi = factory.lookup_cpi_for_az(instance_plan.existing_instance.availability_zone) || ''
+        cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
         stemcell_cid = stemcell.models.find{ |model| model.cpi == cpi }.cid
       else
         factory = cloud_factory
@@ -150,8 +150,9 @@ module Bosh::Director
       config_server_client = @config_server_client_factory.create_client
       env = config_server_client.interpolate_with_versioning(Bosh::Common::DeepCopy.copy(env), instance.variable_set)
       cloud_properties = config_server_client.interpolate_with_versioning(Bosh::Common::DeepCopy.copy(cloud_properties), instance.variable_set)
+      cpi = factory.get_name_for_az(instance_model.availability_zone)
 
-      vm_options = {instance: instance_model, agent_id: agent_id}
+      vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
       options = {}
 
       if Config.encryption?
@@ -183,7 +184,7 @@ module Bosh::Director
 
       count = 0
       begin
-        cloud = factory.for_availability_zone!(instance_model.availability_zone)
+        cloud = factory.get(vm_options[:cpi])
         vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1
