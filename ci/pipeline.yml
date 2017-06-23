@@ -468,6 +468,7 @@ jobs:
   - name: load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: bosh-load-tests-workspace }
@@ -478,6 +479,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-load-tests"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
@@ -490,6 +492,7 @@ jobs:
   - name: legacy-load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: bosh-load-tests-workspace }
@@ -500,6 +503,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-load-tests"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
@@ -512,6 +516,7 @@ jobs:
   - name: load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: bosh-load-tests-workspace }
@@ -522,6 +527,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-load-tests"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
@@ -534,6 +540,7 @@ jobs:
   - name: legacy-load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
@@ -545,6 +552,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-load-tests"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
