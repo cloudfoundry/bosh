@@ -37,7 +37,7 @@ module Bosh::Director
       Models::Snapshot.make
 
       allow(JobQueue).to receive(:new).and_return(job_queue)
-      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }

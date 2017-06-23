@@ -2,8 +2,6 @@ module Bosh::Director::Jobs
   module Helpers
     class StemcellDeleter
       include Bosh::Director::LockHelper
-      include Bosh::Director::CloudFactoryHelper
-
       def initialize(logger)
         @logger = logger
       end
@@ -31,14 +29,11 @@ module Bosh::Director::Jobs
       end
 
       private
+
       def cloud_for_stemcell(stemcell)
-        if stemcell.cpi.blank?
-          cloud_factory.get(nil)
-        else
-          cloud = cloud_factory.get(stemcell.cpi)
-          raise "Stemcell has CPI defined (#{stemcell.cpi}) that is not configured anymore." if cloud.nil?
-          cloud
-        end
+        cloud = Bosh::Director::CloudFactory.create_with_latest_configs.get(stemcell.cpi)
+        raise "Stemcell has CPI defined (#{stemcell.cpi}) that is not configured anymore." if cloud.nil?
+        cloud
       end
     end
   end

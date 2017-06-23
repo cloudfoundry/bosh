@@ -17,7 +17,7 @@ module Bosh::Director
 
     before do
       allow(Config).to receive(:current_job).and_return(update_job)
-      allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     describe '#orphan_disk' do

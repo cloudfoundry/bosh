@@ -60,7 +60,7 @@ module Bosh
       before do
         instance_model.active_vm = vm_model
 
-        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
       end
 

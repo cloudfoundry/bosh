@@ -188,7 +188,7 @@ module Bosh
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
-        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
         allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
         allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)

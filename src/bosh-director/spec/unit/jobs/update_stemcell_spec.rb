@@ -241,7 +241,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'when having multiple cpis' do
         let(:cloud_factory) { instance_double(BD::CloudFactory) }
         before {
-          allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+          allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         }
 
         it 'creates multiple stemcell records with different cpi attributes' do

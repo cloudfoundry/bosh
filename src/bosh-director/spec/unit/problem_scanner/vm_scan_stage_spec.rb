@@ -37,7 +37,7 @@ module Bosh::Director
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
-      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
     end
 
     describe '#scan' do

@@ -103,7 +103,7 @@ module Bosh::Director
     describe 'looking up clouds for a stemcell' do
       let(:cloud_factory) { instance_double(BD::CloudFactory) }
       before {
-        allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
       }
 
       context 'if no cpi is set on stemcell' do
@@ -111,7 +111,7 @@ module Bosh::Director
 
         it 'calls the default cloud' do
           cloud = instance_double(Bosh::Cloud)
-          expect(cloud_factory).to receive(:get).with(nil).and_return(cloud)
+          expect(cloud_factory).to receive(:get).with('').and_return(cloud)
           expect(cloud).to receive(:delete_stemcell)
           stemcell_deleter.delete(stemcell)
         end

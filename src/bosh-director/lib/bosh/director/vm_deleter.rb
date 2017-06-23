@@ -1,7 +1,5 @@
 module Bosh::Director
   class VmDeleter
-    include CloudFactoryHelper
-
     def initialize(logger, force=false, enable_virtual_delete_vm=false)
       @logger = logger
       @error_ignorer = ErrorIgnorer.new(force, @logger)
@@ -18,7 +16,7 @@ module Bosh::Director
 
           @logger.info('Deleting VM')
           @error_ignorer.with_force_check do
-            cloud = cloud_factory.get(vm_model.cpi)
+            cloud = CloudFactory.create_with_latest_configs.get(vm_model.cpi)
 
             begin
               cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
@@ -41,6 +39,7 @@ module Bosh::Director
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         # if there are multiple cpis, it's too dangerous to try and delete just vm cid on every cloud.
+        cloud_factory = CloudFactory.create_with_latest_configs
         unless cloud_factory.uses_cpi_config?
           cloud_factory.get(nil).delete_vm(cid) unless @enable_virtual_delete_vm
         end

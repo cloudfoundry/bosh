@@ -200,7 +200,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   describe '#cid_for_az' do
     let(:cloud_factory) { instance_double(BD::CloudFactory) }
     before {
-      allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     }
 
     it 'raises an error if no stemcell model was bound' do

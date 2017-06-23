@@ -4,7 +4,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:handler) { described_class.new(disk.id, {}) }
   before do
     allow(handler).to receive(:agent_client).with(instance.credentials, instance.agent_id).and_return(agent_client)
-    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+    allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
   end
 

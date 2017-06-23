@@ -1,7 +1,5 @@
 module Bosh::Director
   class DiskManager
-    include CloudFactoryHelper
-
     def initialize(logger)
       @logger = logger
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
@@ -91,7 +89,7 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      cloud = cloud_factory.get(disk.instance.active_vm.cpi)
+      cloud = cloud_for_cpi(disk.instance.active_vm.cpi)
       vm_cid = disk.instance.vm_cid
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
@@ -99,7 +97,7 @@ module Bosh::Director
     end
 
     def cloud_resize_disk(old_disk_model, new_disk_size)
-      cloud = cloud_factory.get(old_disk_model.instance.active_vm.cpi)
+      cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
       cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
@@ -108,7 +106,7 @@ module Bosh::Director
       unmount_disk(disk) if disk.managed?
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = cloud_factory.get(instance_model.active_vm.cpi)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         vm_cid = instance_model.vm_cid
         cloud.detach_disk(vm_cid, disk.disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
@@ -238,7 +236,7 @@ module Bosh::Director
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-        cloud = cloud_factory.get(instance_model.active_vm.cpi)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
         disk_model = Models::PersistentDisk.create(
@@ -282,6 +280,11 @@ module Bosh::Director
 
         @orphan_disk_manager.orphan_disk(old_disk_model)
       end
+    end
+
+    def cloud_for_cpi(cpi)
+      cloud_factory = CloudFactory.create_with_latest_configs
+      cloud_factory.get(cpi)
     end
   end
 end

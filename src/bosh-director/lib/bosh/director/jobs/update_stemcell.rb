@@ -5,8 +5,6 @@ module Bosh::Director
     class UpdateStemcell < BaseJob
       include ValidationHelper
       include DownloadHelper
-      include CloudFactoryHelper
-
       @queue = :normal
       @local_fs = true
 
@@ -80,6 +78,7 @@ module Bosh::Director
         end
 
         stemcell = nil
+        cloud_factory = CloudFactory.create_with_latest_configs
         cloud_factory.all_names.each do |cpi|
           cloud = cloud_factory.get(cpi)
           cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
@@ -148,7 +147,7 @@ module Bosh::Director
         steps = 2 # extract & verify manifest
         steps += 1 if @stemcell_url # also download remote stemcell
         steps += 1 if @stemcell_sha1 # also verify remote stemcell
-        steps + cloud_factory.all_names.count * 3 # check, upload and save for each cloud
+        steps + CloudFactory.create_with_latest_configs.all_names.count * 3 # check, upload and save for each cloud
       end
 
       def is_supported?(cloud, cpi)
