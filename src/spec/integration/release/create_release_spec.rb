@@ -14,6 +14,7 @@ describe 'create release', type: :integration do
         actual = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
         expected = [
           './LICENSE',
+          './jobs/emoji-errand.tgz',
           './jobs/errand1.tgz',
           './jobs/errand_without_package.tgz',
           './jobs/fails_with_too_much_output.tgz',
@@ -142,6 +143,7 @@ describe 'create release', type: :integration do
             ),
             'jobs' => a_collection_containing_exactly(
               job_desc('errand1'),
+              job_desc('emoji-errand'),
               job_desc('errand_without_package'),
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
