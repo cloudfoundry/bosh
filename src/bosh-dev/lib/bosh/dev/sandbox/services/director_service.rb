@@ -114,8 +114,6 @@ module Bosh::Dev::Sandbox
         @database_migrator.migrate
         @database_migrated = true
       end
-
-      @database_migrated = true
     end
 
     def delayed_job_ready?

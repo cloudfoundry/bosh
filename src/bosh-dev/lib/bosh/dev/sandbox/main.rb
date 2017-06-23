@@ -358,7 +358,7 @@ module Bosh::Dev::Sandbox
 
       @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
-      @director_service.start(director_config)
+      @director_service.start(director_config, @drop_database)
 
       @nginx_service.restart_if_needed
 
