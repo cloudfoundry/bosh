@@ -91,7 +91,7 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
+      cloud = cloud_factory.get(disk.instance.active_vm.cpi)
       vm_cid = disk.instance.vm_cid
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
@@ -109,7 +109,7 @@ module Bosh::Director
       unmount_disk(disk) if disk.managed?
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_factory.get(instance_model.active_vm.cpi)
         vm_cid = instance_model.vm_cid
         cloud.detach_disk(vm_cid, disk.disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
@@ -239,7 +239,7 @@ module Bosh::Director
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
+        cloud = cloud_factory.get(instance_model.active_vm.cpi)
         disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
         disk_model = Models::PersistentDisk.create(

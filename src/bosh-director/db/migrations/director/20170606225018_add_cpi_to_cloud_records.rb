@@ -10,7 +10,7 @@ Sequel.migration do
     if latest_cloud_config_query.any?
       begin
         latest_cloud_config = YAML::load(latest_cloud_config_query.first[:properties])
-      rescue Psych::SyntaxError
+      rescue YAML::SyntaxError
         latest_cloud_config = {}
       end
 
@@ -38,7 +38,7 @@ Sequel.migration do
 
       begin
         cloud_config = YAML::load(self[:cloud_configs].where(id: deployment[:cloud_config_id]).first[:properties])
-      rescue Psych::SyntaxError
+      rescue YAML::SyntaxError
         cloud_config = {}
       end
 

@@ -55,7 +55,7 @@ module Bosh::Director
         before { allow(cloud).to receive(:has_disk).and_return(false) }
 
         it 'registers missing disk problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).with(:missing_disk, disk)
           expect(event_logger).to receive(:track_and_log).with('0 OK, 1 missing, 0 inactive, 0 mount-info mismatch')
           disk_scanner.scan
@@ -79,7 +79,7 @@ module Bosh::Director
         end
 
         it 'does not register any problems' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to_not receive(:problem_found)
           disk_scanner.scan
         end
@@ -89,7 +89,7 @@ module Bosh::Director
         let(:disk_state) { false }
 
         it 'registers inactive disk problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).with(:inactive_disk, disk)
           expect(event_logger).to receive(:track_and_log).with('0 OK, 0 missing, 1 inactive, 0 mount-info mismatch')
           disk_scanner.scan
@@ -103,7 +103,7 @@ module Bosh::Director
         end
 
         it 'reports no problems' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to_not receive(:problem_found)
           disk_scanner.scan
         end
@@ -114,7 +114,7 @@ module Bosh::Director
         let(:owner_vms) { ['different-vm-cid'] }
 
         it 'registers disk mount problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).
             with(:mount_info_mismatch, disk, owner_vms: owner_vms)
           disk_scanner.scan

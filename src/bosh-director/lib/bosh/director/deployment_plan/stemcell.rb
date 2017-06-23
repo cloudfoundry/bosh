@@ -97,7 +97,7 @@ module Bosh::Director
         # stemcell might have no AZ, pick default model then
         return model_for_default_cpi.cid if az.nil?
 
-        cpi = cloud_factory.lookup_cpi_for_az(az)
+        cpi = cloud_factory.get_name_for_az(az)
         # stemcell might have AZ without cpi, pick default model then
         return model_for_default_cpi.cid if cpi.nil?
 

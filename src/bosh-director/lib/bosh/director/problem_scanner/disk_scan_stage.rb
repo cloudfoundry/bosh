@@ -41,7 +41,7 @@ module Bosh::Director::ProblemScanner
 
     def scan_disk(disk)
       begin
-        cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
+        cloud = cloud_factory.get_for_az(disk.instance.availability_zone)
         unless cloud.has_disk(disk.disk_cid)
           @logger.info("Found missing disk: #{disk.id}")
           @problem_register.problem_found(:missing_disk, disk)

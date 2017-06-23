@@ -37,13 +37,11 @@ module Bosh::Director
     end
 
     def all_names
-      names = [nil]
-
-      if uses_cpi_config?
-        names += @parsed_cpi_config.cpis.map(&:name)
+      if !uses_cpi_config?
+        return ['']
       end
 
-      names
+      @parsed_cpi_config.cpis.map(&:name)
     end
 
     def get(cpi_name)
@@ -79,7 +77,7 @@ module Bosh::Director
       az = @cloud_planner.availability_zone(az_name)
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
-      az.cpi
+      az.cpi.nil? ? '' : az.cpi
     end
   end
 end

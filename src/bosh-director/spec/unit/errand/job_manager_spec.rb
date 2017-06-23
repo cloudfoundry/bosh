@@ -73,17 +73,14 @@ module Bosh::Director
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
 
           allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
-          allow(vm_deleter).to receive(:delete_vm)
         end
 
         it 'deletes vms for all obsolete plans' do
-          expect(vm_deleter).to receive(:delete_for_instance).with(instance1_model).and_call_original
-          expect(vm_deleter).to receive(:delete_for_instance).with(instance2_model).and_call_original
+          expect(vm_deleter).to receive(:delete_for_instance).with(instance1_model)
+          expect(vm_deleter).to receive(:delete_for_instance).with(instance2_model)
           expect(disk_manager).to receive(:unmount_disk_for).with(instance_plan1)
 
           subject.delete_vms
-
-          expect(instance1_model.active_vm).to be_nil
         end
       end
 

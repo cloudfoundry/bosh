@@ -332,7 +332,10 @@ module Bosh::Director
             expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
           end
 
-          expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times
+          expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times do |instance_plan|
+            # metadata_updater is called for every package compilation, and it expects there to be an active_vm
+            instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+          end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
           allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
@@ -564,7 +567,10 @@ module Bosh::Director
       it 'reuses compilation VMs' do
         prepare_samples
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan|
+          # metadata_updater is called for every package compilation, and it expects there to be an active_vm
+          instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+        end
 
         agent_client = instance_double('BD::AgentClient')
         allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)

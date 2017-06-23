@@ -55,7 +55,7 @@ describe 'Using multiple CPIs', type: :integration do
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
 
       output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
-      error_message = 'CPI was defined for AZ z2 but not found in cpi-config'
+      error_message = "Failed to load CPI for AZ 'z2': CPI 'cpi-name2' not found in cpi-config"
       expect(output).to match /#{error_message}/
 
       # Bosh can't delete VM since its CPI no longer exists

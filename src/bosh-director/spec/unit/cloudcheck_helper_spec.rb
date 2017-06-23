@@ -68,7 +68,7 @@ module Bosh::Director
       before do
         allow(CloudFactory).to receive(:new).and_return(cloud_factory)
         expect(cloud).to receive(:reboot_vm).with(vm.cid)
-        expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+        expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 
       it 'reboots the vm on success' do
@@ -126,7 +126,7 @@ module Bosh::Director
         before { allow(agent_client).to receive(:list_disk).and_return([]) }
 
         it 'deletes VM using vm_deleter' do
-          expect(vm_deleter).to receive(:delete_vm).with(instance)
+          expect(vm_deleter).to receive(:delete_for_instance).with(instance)
           test_problem_handler.delete_vm(instance)
         end
       end

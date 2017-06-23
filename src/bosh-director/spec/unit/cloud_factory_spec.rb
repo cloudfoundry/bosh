@@ -8,14 +8,6 @@ module Bosh::Director
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) {[]}
     let(:logger) { double(:logger, debug: nil) }
-    let(:all_cpis) do
-      clouds = [{name: '', cpi: default_cloud}]
-      cpis.each do |cpi|
-        clouds << {name: cpi.name, cpi: Bosh::Clouds::ExternalCpi.new(cpi.exec_path, Config.uuid, cpi.properties)}
-      end
-
-      CloudCollection.new(clouds, logger)
-    end
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::CpiConfig) }
@@ -105,7 +97,7 @@ module Bosh::Director
 
       describe '#all_names' do
         it 'returns the default cpi' do
-          expect(cloud_factory.all_names).to eq([nil])
+          expect(cloud_factory.all_names).to eq([''])
         end
       end
 
@@ -154,8 +146,8 @@ module Bosh::Director
       end
 
       describe '#all_names' do
-        it 'returns the default and cpi-config cpis' do
-          expect(cloud_factory.all_names).to eq([nil, 'name1', 'name2', 'name3'])
+        it 'returns only the cpi-config cpis' do
+          expect(cloud_factory.all_names).to eq(['name1', 'name2', 'name3'])
         end
       end
 
@@ -187,6 +179,12 @@ module Bosh::Director
         expect {
           cloud_factory.get_name_for_az('some-az')
         }.to raise_error "AZ 'some-az' not found in cloud config"
+      end
+
+      it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
+        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, nil)
+        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
+        expect(cloud_factory.get_name_for_az('some-az')).to eq('')
       end
 
       context 'without cloud planner' do

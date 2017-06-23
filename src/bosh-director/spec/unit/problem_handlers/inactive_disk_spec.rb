@@ -92,6 +92,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     before do
       @disk.add_snapshot(Bosh::Director::Models::Snapshot.make)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
+      allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
     end
 
     it 'fails if disk is mounted' do
@@ -104,7 +105,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
-      expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
+      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi).and_return(cloud)
       @handler.apply_resolution(:delete_disk)
 
       expect(Bosh::Director::Models::PersistentDisk[@disk.id]).to be_nil
@@ -116,7 +117,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid').
         and_raise(RuntimeError.new('Cannot detach disk'))
-      expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
+      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi).and_return(cloud)
 
       @handler.apply_resolution(:delete_disk)
 
