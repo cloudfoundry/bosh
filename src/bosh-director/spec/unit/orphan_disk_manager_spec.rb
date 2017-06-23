@@ -7,7 +7,8 @@ module Bosh::Director
     let(:cloud) { Config.cloud }
     let(:cloud_factory) { instance_double(CloudFactory) }
 
-    let(:instance) { Models::Instance.make(availability_zone: 'az-1') }
+    let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
+    let(:instance) { Models::Instance.make(availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid') }
     let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
 
     let(:event_manager) {Api::EventManager.new(true)}
@@ -31,10 +32,16 @@ module Bosh::Director
         orphan_disk = Models::OrphanDisk.first
         orphan_snapshot = Models::OrphanSnapshot.first
 
+        expect(orphan_disk.availability_zone).to eq('az-1')
+        expect(orphan_disk.cloud_properties).to eq({'cloud' => 'properties'})
+        expect(orphan_disk.cpi).to eq('some-cpi')
+        expect(orphan_disk.deployment_name).to eq('test-deployment')
         expect(orphan_disk.disk_cid).to eq(persistent_disk.disk_cid)
+        expect(orphan_disk.instance_name).to eq('test-instance/test-uuid')
+        expect(orphan_disk.size).to eq(2048)
+
         expect(orphan_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
         expect(orphan_snapshot.orphan_disk).to eq(orphan_disk)
-        expect(orphan_disk.cpi).to eq('some-cpi')
 
         expect(Models::PersistentDisk.all.count).to eq(0)
         expect(Models::Snapshot.all.count).to eq(0)
