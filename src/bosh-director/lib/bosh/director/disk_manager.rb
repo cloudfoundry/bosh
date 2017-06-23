@@ -99,9 +99,8 @@ module Bosh::Director
     end
 
     def cloud_resize_disk(old_disk_model, new_disk_size)
-      cloud_factory
-        .for_availability_zone!(old_disk_model.instance.availability_zone)
-        .resize_disk(old_disk_model.disk_cid, new_disk_size)
+      cloud = cloud_factory.get(old_disk_model.instance.active_vm.cpi)
+      cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
     def detach_disk(disk)

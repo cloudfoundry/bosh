@@ -184,11 +184,11 @@ module Bosh::Director
 
             disk_manager.update_persistent_disk(instance_plan)
 
-            expect(cloud_collection).to have_received(:detach_disk).with('vm234', 'disk123').twice
+            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
             expect(cloud).to have_received(:resize_disk)
             expect(cloud).to have_received(:create_disk).with(4096, {'cloud' => 'properties'}, 'vm234')
-            expect(cloud_collection).to have_received(:attach_disk).with('vm234', 'disk123')
-            expect(cloud_collection).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
           end
         end
 
@@ -200,11 +200,11 @@ module Bosh::Director
 
             disk_manager.update_persistent_disk(instance_plan)
 
-            expect(cloud_collection).to have_received(:detach_disk).with('vm234', 'disk123').twice
+            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
             expect(cloud).to have_received(:resize_disk)
             expect(cloud).to have_received(:create_disk).with(512, {'cloud' => 'properties'}, 'vm234')
-            expect(cloud_collection).to have_received(:attach_disk).with('vm234', 'disk123')
-            expect(cloud_collection).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
           end
         end
       end
