@@ -120,8 +120,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.6
           privileged: true
@@ -138,8 +138,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.7
           privileged: true
@@ -156,8 +156,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
   - name: unit-2.3-postgres
     public: true
@@ -182,8 +182,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.3
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.4
           privileged: true
@@ -201,8 +201,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.4
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.5
           privileged: true
@@ -220,8 +220,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.5
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.6
           privileged: true
@@ -239,8 +239,9 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.6
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
+
   - name: unit-2.3-rds
     public: true
     serial: true
@@ -269,6 +270,7 @@ jobs:
             DB_PASSWORD: {{postgresql-rds-password}}
           on_failure:
             <<: *slack-alert
+
   - name: blobstore-client-integration
     public: true
     serial: true
@@ -287,6 +289,7 @@ jobs:
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
+
   - name: blobstore-performance
     public: true
     serial: true
