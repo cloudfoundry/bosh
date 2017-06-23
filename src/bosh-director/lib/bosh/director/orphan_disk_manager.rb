@@ -14,6 +14,7 @@ module Bosh::Director
           orphan_disk = Models::OrphanDisk.create(
               disk_cid:          disk.disk_cid,
               size:              disk.size,
+              cpi:               cloud_factory.get_name_for_az(disk.instance.availability_zone),
               availability_zone: disk.instance.availability_zone,
               deployment_name:   disk.instance.deployment.name,
               instance_name:     "#{disk.instance.job}/#{disk.instance.uuid}",
@@ -83,7 +84,7 @@ module Bosh::Director
           delete_orphan_snapshot(orphan_snapshot)
         end
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
-        cloud = cloud_factory.for_availability_zone(orphan_disk.availability_zone)
+        cloud = cloud_factory.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
       rescue Bosh::Clouds::DiskNotFound
@@ -114,7 +115,7 @@ module Bosh::Director
       begin
         snapshot_cid = orphan_snapshot.snapshot_cid
         @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
-        cloud = cloud_factory.for_availability_zone(orphan_snapshot.orphan_disk.availability_zone)
+        cloud = cloud_factory.get(orphan_snapshot.orphan_disk.cpi)
         cloud.delete_snapshot(snapshot_cid)
         orphan_snapshot.destroy
       rescue Bosh::Clouds::DiskNotFound

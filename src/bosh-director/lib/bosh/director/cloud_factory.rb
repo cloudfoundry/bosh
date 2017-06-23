@@ -36,88 +36,50 @@ module Bosh::Director
       !@parsed_cpi_config.nil?
     end
 
-    # used when all cpis must be spoken to, i.e. when uploading stemcells.
-    def all_configured_clouds
+    def all_names
+      names = [nil]
+
       if uses_cpi_config?
-        all_from_cpi_config
-      else
-        [ {name: '', cpi: default_from_director_config } ]
+        names += @parsed_cpi_config.cpis.map(&:name)
+      end
+
+      names
+    end
+
+    def get(cpi_name)
+      if cpi_name == nil || cpi_name == '' then
+        return @default_cloud
+      elsif !uses_cpi_config?
+        raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)"
+      end
+
+      cpi_config = @parsed_cpi_config.find_cpi_by_name(cpi_name)
+      raise "CPI '#{cpi_name}' not found in cpi-config" if cpi_config.nil?
+
+      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, Config.uuid, cpi_config.properties)
+    end
+
+    def get_for_az(az_name)
+      cpi_name = get_name_for_az(az_name)
+
+      begin
+        get(cpi_name)
+      rescue RuntimeError => e
+        raise "Failed to load CPI for AZ '#{az_name}': #{e.message}"
       end
     end
 
-    def for_availability_zone!(az_name)
-      # instance/disk can have no AZ, pick default CPI then
-      return default_from_director_config if az_name.nil?
+    def get_name_for_az(az_name)
+      if az_name == '' || az_name == nil then
+        return ''
+      end
 
-      cpi_for_az = lookup_cpi_for_az(az_name)
-      # instance/disk can have AZ without cpi, pick default CPI then
-      return default_from_director_config if cpi_for_az.nil?
-
-      cloud = for_cpi(cpi_for_az)
-      raise "CPI was defined for AZ #{az_name} but not found in cpi-config" if cloud.nil?
-      cloud
-    end
-
-    def for_availability_zone(az_name)
-      return all_configured_clouds_with_default if az_name.nil?
-
-      az = lookup_az(az_name)
-      return all_configured_clouds_with_default if az.nil? || az.cpi.nil?
-
-      cloud = for_cpi(az.cpi)
-      return all_configured_clouds_with_default if cloud.nil?
-      cloud
-    end
-
-    def lookup_cpi_for_az(az_name)
-      az = lookup_az(az_name)
-      raise "AZ #{az_name} not found in cloud config" if az.nil?
-      az.cpi
-    end
-
-    def for_cpi(cpi_name)
-      configured_cpi = cpi_from_config(cpi_name)
-      return nil if configured_cpi.nil?
-      create_from_cpi_config(configured_cpi)
-    end
-
-    def default_from_director_config
-      @default_cloud
-    end
-
-    private
-
-    def lookup_az(az_name)
       raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
-      raise 'AZ name must not be nil' if az_name.nil?
 
-      @cloud_planner.availability_zone(az_name)
-    end
+      az = @cloud_planner.availability_zone(az_name)
+      raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
-    def all_configured_clouds_with_default
-      clouds = [{name: '', cpi: default_from_director_config }]
-
-      if uses_cpi_config?
-        all_from_cpi_config.each do |cpi|
-          clouds << cpi
-        end
-      end
-
-      CloudCollection.new(clouds, @logger)
-    end
-
-    def all_from_cpi_config
-      return [] unless uses_cpi_config?
-      @parsed_cpi_config.cpis.map{|cpi| {name: cpi.name, cpi: create_from_cpi_config(cpi)} }
-    end
-
-    def cpi_from_config(cpi_name)
-      return nil unless uses_cpi_config?
-      @parsed_cpi_config.find_cpi_by_name(cpi_name)
-    end
-
-    def create_from_cpi_config(cpi)
-      Bosh::Clouds::ExternalCpi.new(cpi.exec_path, Config.uuid, cpi.properties)
+      az.cpi
     end
   end
 end
