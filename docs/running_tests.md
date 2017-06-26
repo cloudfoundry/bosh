@@ -73,7 +73,7 @@ Here is an example of running BATs on vSphere, skipping tests that are not appli
 bundle exec rspec spec --tag ~vip_networking --tag ~dynamic_networking --tag ~root_partition --tag ~raw_ephemeral_storage
 ```
 
-There are two ways to run BATs - [using rake tasks](running_bats_using_rake_tasks.md) and [manually](running_bats_manually.md).
+Read more about [running BATs manually](running_bats_manually.md).
 
 ### Release Acceptance Tests (BRATs)
 
