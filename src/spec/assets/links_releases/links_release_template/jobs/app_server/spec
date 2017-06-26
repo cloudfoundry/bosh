@@ -1,0 +1,9 @@
+---
+name: app_server
+
+description: #146818501 - tests release should only be able to see links specified by the job spec
+
+templates:
+  config.yml.erb: config.yml
+
+properties: {}
