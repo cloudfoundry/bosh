@@ -119,7 +119,7 @@ module Bosh::Director
       acquired = false
       until acquired
         begin
-          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
+          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration), task_id: @task_id.to_s)
           acquired = true
         rescue Sequel::DatabaseError
           affected_locks = Models::Lock.where(name: @name).where { expired_at < Time.now }.update(uid: @uid, expired_at: Time.at(lock_expiration))

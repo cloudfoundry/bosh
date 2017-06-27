@@ -67,6 +67,13 @@ module Bosh::Director
       expect(ran_once).to be(true)
     end
 
+    it 'should record task id' do
+      lock = Lock.new('foo', timeout: 0)
+      lock.lock do
+        expect(Models::Lock.first.task_id).to eq(task.id.to_s)
+      end
+    end
+
     describe 'event recordings' do
       before do
         allow(Config).to receive(:record_events).and_return(true)
