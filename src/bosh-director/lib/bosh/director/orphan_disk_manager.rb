@@ -6,7 +6,7 @@ module Bosh::Director
     end
 
     def orphan_disk(disk)
-      cloud_factory = CloudFactory.create_with_latest_configs(disk.instance.deployment)
+      cloud_factory = CloudFactory.create_from_deployment(disk.instance.deployment)
 
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         begin

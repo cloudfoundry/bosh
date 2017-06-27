@@ -240,4 +240,55 @@ describe 'Using multiple CPIs', type: :integration do
                         )
     end
   end
+
+  context 'when an instance with a persistent disk references an AZ which was deleted' do
+    let(:job) { Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2'], :persistent_disk_pool => 'disk_a') }
+    let(:deployment) { Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job]) }
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis.merge('disk_pools' => [Bosh::Spec::Deployments.disk_pool]) }
+
+    it 'the disk can still be migrated to an orphan_disk' do
+      # deploy with initial cpi config, and 2 azs
+      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+      expect(output).to include("Using deployment 'simple'")
+      expect(output).to include('Succeeded')
+
+      output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+      expect(output).to contain_exactly(
+        {
+          'instance' => /foobar\/.*/,
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/
+        },
+        {
+          'instance' => /foobar\/.*/,
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/
+        },
+        {
+          'instance' => /foobar\/.*/,
+          'process_state' => 'running',
+          'az' => 'z2',
+          'ips' => /.*/
+        }
+      )
+
+      # Remove z2 CPI
+      cloud_config['azs'] = [cloud_config['azs'][0]]
+      cloud_config['networks'][0]['subnets'] = [cloud_config['networks'][0]['subnets'][0]]
+      cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+
+      job['azs'] = ['z1']
+      deployment = Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job])
+      deployment_manifest = yaml_file('deployment_manifest', deployment)
+
+      expect(
+        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+      ).to match /Succeeded/
+
+      expect(table(bosh_runner.run('disks --orphaned --column az', json: true))).to eq([{'az' => 'z2'}])
+    end
+  end
 end

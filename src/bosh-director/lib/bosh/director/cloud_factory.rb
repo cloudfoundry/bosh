@@ -16,8 +16,7 @@ module Bosh::Director
       new(planner, parse_cpi_config(cpi_config))
     end
 
-    def self.create_from_deployment(deployment,
-      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
+    def self.create_from_deployment(deployment, cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
       planner = create_cloud_planner(deployment.cloud_config, deployment.name) unless deployment.nil?
 
       new(planner, parse_cpi_config(cpi_config))
