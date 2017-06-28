@@ -1754,6 +1754,65 @@ Error: Unable to process links for deployment. Errors are:
         end
       end
     end
+
+    context 'when the job consumes multiple links of the same type' do
+      let(:provider_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_instance_group',
+            templates: [{
+                            'name' => 'database',
+                            'provides' => {'db' => {'as' => 'link_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_db_bar'
+                            }
+                        },
+                        {
+                            'name' => 'backup_database',
+                            'provides' => {'backup_db' => {'as' => 'link_backup_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_backup_db_bar'
+                            }
+                        }
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:consumer_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+                {
+                    'name' => 'api_server',
+                    'consumes' => {
+                        'db' => {'from' => 'link_db_alias'},
+                        'backup_db' => {'from' => 'link_backup_db_alias'}
+                    }
+                },
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+        manifest
+      end
+
+      it 'should have different content for each link if consumed from different sources' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        consumer_instance = director.instance('consumer_instance_group', '0')
+        template = YAML.load(consumer_instance.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main_properties']).to eq('props_db_bar')
+        expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
+      end
+    end
   end
 
   context 'when addon job requires link' do
