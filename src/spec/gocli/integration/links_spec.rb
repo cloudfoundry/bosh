@@ -1664,6 +1664,96 @@ Error: Unable to process links for deployment. Errors are:
       end
     end
 
+    context 'when the job consumes only links provided in job specs' do
+
+      context 'when the co-located job has implicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job has explicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  {
+                      'name' => 'provider',
+                      'provides' => {'provider' => {'as' => 'link_provider'} }
+                  },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job uses links from adjacent jobs' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'consumer' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located jobs' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+    end
   end
 
   context 'when addon job requires link' do
