@@ -37,7 +37,7 @@ module Bosh::Blobstore
           {
             bucket_name: bucket_name,
             credentials_source: "static",
-            service_account_file: service_account_file,
+            json_key: service_account_file,
             gcscli_path: gcscli_path
           }
         end
@@ -66,7 +66,7 @@ module Bosh::Blobstore
           {
             bucket_name: bucket_name,
             credentials_source: "static",
-            service_account_file: service_account_file,
+            json_key: service_account_file,
             gcscli_path: gcscli_path
           }
         end
@@ -85,7 +85,7 @@ module Bosh::Blobstore
           {
             bucket_name: bucket_name,
             credentials_source: "static",
-            service_account_file: service_account_file,
+            json_key: service_account_file,
             encryption_key: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
             gcscli_path: gcscli_path
           }
@@ -94,7 +94,7 @@ module Bosh::Blobstore
           {
             bucket_name: bucket_name,
             credentials_source: "static",
-            service_account_file: service_account_file,
+            json_key: service_account_file,
             gcscli_path: gcscli_path
           }
         end
