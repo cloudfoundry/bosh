@@ -7,6 +7,7 @@ source bosh-src/ci/tasks/utils.sh
 source /etc/profile.d/chruby.sh
 chruby 2.1.2
 
+check_param google_project
 check_param google_json_key_data
 
 pushd bosh-src
@@ -24,6 +25,8 @@ function clean_up {
   local bucket=$1
   clean_up_bucket ${bucket}
 }
+
+gcloud config set project $google_project
 
 echo $google_json_key_data > key.json
 gcloud auth activate-service-account --key-file=key.json
