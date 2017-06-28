@@ -11,4 +11,5 @@ inputs:
 run:
   path: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.sh
 params:
+  google_project: replace-me
   google_json_key_data: replace-me
