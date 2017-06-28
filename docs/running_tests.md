@@ -53,7 +53,7 @@ bosh$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
 
 BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not easily tested at lower levels. BATs verify integration between all BOSH components and infrastructures. They run against a deployed Director and use the CLI to perform tasks. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployments, handling broken deployments). The assertions are made against CLI commands exit status, output and state of VMs after performing the command. Since BATs run on real infrastructures, they help verify that specific combinations of the Director and stemcell works.
 
-The BATs live in a separate repository. To learn how to run them, check out its [README](https://github.com/cloudfoundry/bosh-acceptance-tests/blob/gocli-bats/README.md).
+The BATs live in a separate repository, [cloudfoundry/bosh-acceptance-tests](https://github.com/cloudfoundry/bosh-acceptance-tests). To learn how to run them, please see the README and docs in that repository.
 
 ### Release Acceptance Tests (BRATs)
 
