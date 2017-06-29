@@ -115,6 +115,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+        trigger: true
       - get: version
         params:
           bump: {{stemcell_version_semver_bump}}
