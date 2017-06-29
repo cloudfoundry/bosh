@@ -29,7 +29,7 @@ describe Bosh::Clouds::ExternalCpi do
 
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"fake-request-id"}})
+      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
 
       expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
       call_cpi_method
@@ -37,7 +37,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     context 'if properties from cpi config are given' do
       let(:director_uuid) {'fake-director-uuid'}
-      let(:request_id) {'fake-request-id'}
+      let(:request_id) {'cpi-fake-request-id'}
       let(:cpi_config_properties) { {'key1' => {'nestedkey1' => 'nestedvalue1'}, 'key2' => 'value2'} }
       let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, cpi_config_properties ) }
       let(:logger) { double }
@@ -57,6 +57,17 @@ describe Bosh::Clouds::ExternalCpi do
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
+      end
+
+      it 'logs requests and responses with request id' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        lines = []
+        allow(logger).to receive(:debug) { |line| lines << line }
+
+        call_cpi_method
+        expect(lines[0]).to start_with "[external-cpi] [#{request_id}] request"
+        expect(lines[1]).to start_with "[external-cpi] [#{request_id}] response"
       end
 
       it 'redacts properties from cpi config in logs' do
@@ -88,7 +99,7 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %(External CPI sending request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
+        expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
