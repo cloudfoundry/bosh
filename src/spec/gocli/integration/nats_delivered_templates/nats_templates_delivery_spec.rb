@@ -59,6 +59,28 @@ describe 'deliver rendered templates through nats', type: :integration do
     expect(zgrep_output.empty?).to be_truthy
   end
 
+  it 'sanitizes agent_client upload_blob call in director debug logs' do
+    deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+    task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+    debug_output = bosh_runner.run("task --debug #{task_id}")
+    upload_blob_debug_lines = debug_output.split("\n").select{ |line| line.include?('"method":"upload_blob"') }
+    expect(upload_blob_debug_lines.count).to eq(6)
+
+    upload_blob_debug_lines.each do |line|
+      upload_blob_request = JSON.parse(line.split(/SENT: agent\.[0-9a-f]{8}-[0-9a-f-]{27} /)[1])
+      expect(upload_blob_request['method']).to eq('upload_blob')
+      expect(upload_blob_request['arguments'].size).to eq(1)
+      expect(upload_blob_request['arguments'][0]['checksum']).to eq('<redacted>')
+      expect(upload_blob_request['arguments'][0]['payload']).to eq('<redacted>')
+    end
+
+    running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+    template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+    expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
+  end
+
   context 'when having multiple instance groups and jobs' do
     let(:job_2_properties) do
       {
