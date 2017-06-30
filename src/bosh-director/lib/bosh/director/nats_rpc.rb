@@ -31,11 +31,14 @@ module Bosh::Director
       @lock.synchronize do
         @requests[request_id] = callback
       end
-      message = JSON.generate(request)
-      @logger.debug("SENT: #{client} #{message}")
+
+      sanitized_log_message = sanitize_log_message(request)
+      request_body = JSON.generate(request)
+
+      @logger.debug("SENT: #{client} #{sanitized_log_message}")
       EM.schedule do
         subscribe_inbox
-        nats.publish(client, message)
+        nats.publish(client, request_body)
       end
       request_id
     end
@@ -90,6 +93,17 @@ module Bosh::Director
         end
       rescue Exception => e
         @logger.warn(e.message)
+      end
+    end
+
+    def sanitize_log_message(request)
+      if request[:method].to_s == 'upload_blob'
+        cloned_request = Bosh::Common::DeepCopy.copy(request)
+        cloned_request[:arguments].first['checksum'] = '<redacted>'
+        cloned_request[:arguments].first['payload'] = '<redacted>'
+        JSON.generate(cloned_request)
+      else
+        JSON.generate(request)
       end
     end
 
