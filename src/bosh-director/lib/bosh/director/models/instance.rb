@@ -10,12 +10,18 @@ module Bosh::Director::Models
     many_to_many :templates
     many_to_one :variable_set, class: 'Bosh::Director::Models::VariableSet'
 
+    attr_writer :desired_availability_zone
+
     def validate
       validates_presence [:deployment_id, :job, :index, :state]
       validates_unique [:deployment_id, :job, :index]
       validates_unique [:vms].sort.first
       validates_integer :index
       validates_includes %w(started stopped detached), :state
+    end
+
+    def desired_availability_zone
+      @desired_availability_zone || availability_zone
     end
 
     def managed_persistent_disk

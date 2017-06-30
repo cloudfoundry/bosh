@@ -261,18 +261,6 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section contains availability zone and instance models do not have az (legacy instances)' do
-          before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
-          end
-
-          it 'updates instance az' do
-            job_migrator.find_existing_instances(etcd_job)
-            etcd_z1_instance = Models::Instance.find(job: 'etcd_z1', index: 0)
-            expect(etcd_z1_instance.availability_zone).to eq('z1')
-          end
-        end
-
         context 'when migrated_from section does not contain availability zone and instance models do not have az (legacy instances)' do
           context 'and the desired job has azs' do
             let(:etcd_job_spec) do
@@ -341,7 +329,7 @@ end
 
 RSpec::Matchers.define :be_a_migrated_instance do |expected, az|
   match do |actual|
-    actual.reload == expected.reload && actual.availability_zone == az
+    actual.reload == expected.reload && actual.availability_zone == nil && actual.desired_availability_zone == az
   end
 end
 
