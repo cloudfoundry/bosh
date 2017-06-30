@@ -158,6 +158,7 @@ module Bosh::Director
         env['bosh'] ||= {}
         env['bosh']['mbus'] ||= {}
         env['bosh']['mbus']['url'] = Config.nats_uri
+        env['bosh']['mbus']['urls'] = [ Config.nats_uri ]
       end
 
       if Config.nats_ca
