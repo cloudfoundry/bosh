@@ -74,21 +74,14 @@ module Bosh::Director
   class ForkedProcess
     def self.run
       pid = Process.fork do
-        begin
-          EM.run do
-            EM.defer do
-              begin
-                yield
-              ensure
-                # unit tests can raise errors before reactor is running
-                EM.stop if EM.reactor_running?
-              end
+        EM.run do
+          EM.defer do
+            begin
+              yield
+            ensure
+              EM.stop
             end
           end
-        rescue Exception => e
-          Config.logger.error("Fatal error from event machine: #{e}\n#{e.backtrace.join("\n")}")
-
-          raise e
         end
       end
       Process.waitpid(pid)
