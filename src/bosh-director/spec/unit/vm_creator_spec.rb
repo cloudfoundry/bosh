@@ -548,7 +548,6 @@ module Bosh
               {
                 'bosh' => {
                   'mbus' => {
-                    'url' => Config.nats_uri,
                     'urls' => [ Config.nats_uri ],
                   },
                   'group' => kind_of(String),
