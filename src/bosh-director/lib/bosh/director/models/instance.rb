@@ -171,7 +171,7 @@ module Bosh::Director::Models
 
     def vm_created_at
       instance_active_vm = active_vm
-      instance_active_vm.nil? || instance_active_vm.created_at.nil? ? nil : instance_active_vm.created_at.to_i
+      instance_active_vm.nil? || instance_active_vm.created_at.nil? ? nil : instance_active_vm.created_at.utc.iso8601
     end
 
     def lifecycle

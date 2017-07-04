@@ -717,7 +717,7 @@ module Bosh::Director
                 'id' => "instance-#{i}",
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                 'ips' => [],
-                'vm_created_at' => time.to_i
+                'vm_created_at' => time.utc.iso8601
               )
             end
           end
@@ -772,7 +772,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
-                  'vm_created_at' => time.to_i
+                  'vm_created_at' => time.utc.iso8601
                 )
               end
             end
@@ -820,7 +820,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
-                  'vm_created_at' => time.to_i
+                  'vm_created_at' => time.utc.iso8601
                 )
               end
             end
@@ -897,7 +897,7 @@ module Bosh::Director
                     'id' => "instance-#{i}",
                     'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                     'ips' => [],
-                    'vm_created_at' => time.to_i,
+                    'vm_created_at' => time.utc.iso8601,
                     'expects_vm' => true
                   )
                 else

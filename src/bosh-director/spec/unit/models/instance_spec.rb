@@ -439,7 +439,7 @@ module Bosh::Director::Models
 
       describe 'vm_created_at' do
         it 'references created_at from active vm' do
-          expect(subject.vm_created_at).to eq(subject.active_vm.created_at.to_i)
+          expect(subject.vm_created_at).to eq(subject.active_vm.created_at.utc.iso8601)
         end
       end
 
@@ -466,6 +466,12 @@ module Bosh::Director::Models
       describe 'vm_cid' do
         it 'is nil' do
           expect(subject.vm_cid).to be_nil
+        end
+      end
+
+      describe 'vm_created_at' do
+        it 'is nil' do
+          expect(subject.vm_created_at).to be_nil
         end
       end
 
