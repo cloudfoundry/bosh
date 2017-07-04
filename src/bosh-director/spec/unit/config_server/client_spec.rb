@@ -9,7 +9,7 @@ module Bosh::Director::ConfigServer
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
     let(:success_post_response) {
-      generate_success_response({ "id": "some_id1" }.to_json)
+      generate_success_response({ :id => 'some_id1'}.to_json)
     }
     let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
@@ -190,6 +190,10 @@ module Bosh::Director::ConfigServer
 
                 {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                {'response' => {'data' => [{'name' => 'name1', 'value' => 'x'}]},
+                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\''},
+
               ].each do |entry|
                 it 'raises an error' do
                   allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
@@ -488,10 +492,6 @@ module Bosh::Director::ConfigServer
         allow(variable_set_model).to receive(:deployment).and_return(deployment_model)
       end
 
-      # shared_examples_for :variable_name_dot_syntax do
-
-      # end
-
       context 'when object to be interpolated is NOT nil' do
         context 'when object to be interpolated is a hash' do
           context 'when all placeholders syntax is correct' do
@@ -782,20 +782,17 @@ module Bosh::Director::ConfigServer
                   {'response' => 'Invalid JSON response',
                    'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response"},
 
-                  {'response' => {'x' => {}},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => {'id' => 'some-id'},
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'value'"},
 
-                  {'response' => {'data' => {'value' => 'x'}},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => {'value' => 'some-value-foo'},
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => {'data' => []},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => {},
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
-
-                  {'response' => {'data' => [{'name' => 'name1', 'value' => 'x'}]},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}, {'name' => 'name2', 'id' => 'id2', 'val' => 'y'}],
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to be a hash, got 'Array'"},
                 ].each do |entry|
                   it 'raises an error' do
                     variable_model = instance_double(Bosh::Director::Models::Variable)
@@ -1345,6 +1342,18 @@ module Bosh::Director::ConfigServer
                     saved_variable = Bosh::Director::Models::Variable[variable_name: prepend_namespace('my_smurf'), variable_set_id: variables_set_id]
                     expect(saved_variable.variable_name).to eq(prepend_namespace('my_smurf'))
                     expect(saved_variable.variable_id).to eq('some_id1')
+                  end
+
+                  it 'should raise an error when id is not present in generated  response' do
+                    allow(http_client).to receive(:post).and_return(generate_success_response({value: 'some-foo'}.to_json))
+
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+                    }.to raise_error(
+                           Bosh::Director::ConfigServerGenerationError,
+                           "Failed to version generated variable '#{prepend_namespace('my_smurf')}'. Expected Config Server response to have key 'id'"
+                    )
+
                   end
 
                   context 'when placeholder starts with exclamation mark' do
