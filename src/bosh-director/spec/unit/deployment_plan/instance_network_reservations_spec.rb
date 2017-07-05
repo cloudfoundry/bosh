@@ -30,9 +30,9 @@ module Bosh::Director
         let(:ip2) { NetAddr::CIDR.create('192.168.0.2').to_i }
 
         before do
-          ip_model1 = Models::IpAddress.make(address: ip1, network_name: 'fake-network')
+          ip_model1 = Models::IpAddress.make(address_str: ip1.to_s, network_name: 'fake-network')
           instance_model.add_ip_address(ip_model1)
-          ip_model2 = Models::IpAddress.make(address: ip2, network_name: 'fake-network')
+          ip_model2 = Models::IpAddress.make(address_str: ip2.to_s, network_name: 'fake-network')
           instance_model.add_ip_address(ip_model2)
         end
 

@@ -7,7 +7,7 @@ module Bosh::Director::Models
       described_class.make(
         instance: instance,
         network_name: 'foonetwork',
-        address: NetAddr::CIDR.create('10.10.0.1').to_i,
+        address_str: NetAddr::CIDR.create('10.10.0.1').to_i.to_s,
         static: true
       )
     end
@@ -25,15 +25,40 @@ module Bosh::Director::Models
     context 'validations' do
       it 'should require ip address' do
         invalid_ip = IpAddress.make
-        invalid_ip.address = nil
+
+        invalid_ip.address_str = ""
         expect {
           invalid_ip.save
-        }.to raise_error /address presence/
+        }.to raise_error /address_str presence/
 
-        invalid_ip.address = NetAddr::CIDR.create('10.10.0.1').to_i
+        invalid_ip.address_str = NetAddr::CIDR.create('10.10.0.1').to_i.to_s
         expect {
           invalid_ip.save
         }.not_to raise_error
+      end
+    end
+
+    describe '#address' do
+      it 'returns address in int form from address str' do
+        expect(subject.address).to eq(168427521)
+      end
+
+      it 'raises an error when the address is an empty string' do
+        invalid_ip = IpAddress.make
+        invalid_ip.address_str = ""
+        expect { invalid_ip.address }.to raise_error(/Unexpected address/)
+      end
+
+      it 'raises an error when the address is a string that does not contain an integer' do
+        invalid_ip = IpAddress.make
+        invalid_ip.address_str = "168427521a"
+        expect { invalid_ip.address }.to raise_error(/Unexpected address '168427521a'/)
+      end
+
+      it 'raises an error when the address is padded' do
+        invalid_ip = IpAddress.make
+        invalid_ip.address_str = "  168427521  "
+        expect { invalid_ip.address }.to raise_error(/Unexpected address '  168427521  '/)
       end
     end
   end

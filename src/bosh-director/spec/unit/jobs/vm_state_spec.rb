@@ -48,7 +48,7 @@ module Bosh::Director
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
-        Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
+        Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
           'networks' => {'test' => {'ip' => '1.1.1.1'}},
@@ -72,8 +72,8 @@ module Bosh::Director
 
       context 'when there are two networks' do
         before {
-          Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
-          Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('2.2.2.2').to_i, task_id: '12345')
+          Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
+          Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s, task_id: '12345')
         }
 
         it "returns the ip addresses from 'Models::Instance.ip_addresses'" do
@@ -104,7 +104,7 @@ module Bosh::Director
       end
 
       it 'parses agent info into vm_state WITH vitals' do
-        Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
+        Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
         stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -330,7 +330,7 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::IpAddress.make(instance_id: instance.id, address: NetAddr::CIDR.create('1.1.1.1').to_i, task_id: '12345')
+        Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
         instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
 
         expect(agent).to receive(:get_state).with('full').and_return(
