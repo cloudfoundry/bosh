@@ -38,18 +38,6 @@ module Bosh::Director
               end
             end
           end
-
-        end
-
-        private
-
-        def update_jobs
-          @logger.info('Updating instances')
-          @multi_job_updater.run(
-            @base_job,
-            @deployment_plan.ip_provider,
-            @deployment_plan.instance_groups_starting_on_deploy,
-          )
         end
       end
     end

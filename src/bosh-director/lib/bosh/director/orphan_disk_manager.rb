@@ -8,16 +8,26 @@ module Bosh::Director
     def orphan_disk(disk)
       cloud_factory = CloudFactory.create_from_deployment(disk.instance.deployment)
 
+      instance_name = "#{disk.instance.job}/#{disk.instance.uuid}"
+
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         begin
-          parent_id = add_event('delete', disk.instance.deployment.name, "#{disk.instance.job}/#{disk.instance.uuid}", disk.disk_cid)
+          parent_id = add_event('delete', disk.instance.deployment.name, instance_name, disk.disk_cid)
+
+          active_vm = disk.instance.active_vm
+          if active_vm.nil?
+            cpi = cloud_factory.get_name_for_az(disk.instance.availability_zone)
+          else
+            cpi = active_vm.cpi
+          end
+
           orphan_disk = Models::OrphanDisk.create(
               disk_cid:          disk.disk_cid,
               size:              disk.size,
-              cpi:               cloud_factory.get_name_for_az(disk.instance.availability_zone),
+              cpi:               cpi,
               availability_zone: disk.instance.availability_zone,
               deployment_name:   disk.instance.deployment.name,
-              instance_name:     "#{disk.instance.job}/#{disk.instance.uuid}",
+              instance_name:     instance_name,
               cloud_properties:  disk.cloud_properties
           )
 
@@ -27,7 +37,7 @@ module Bosh::Director
         rescue Exception => e
           raise e
         ensure
-          add_event('delete', orphan_disk.deployment_name, orphan_disk.instance_name, orphan_disk.disk_cid, parent_id, e)
+          add_event('delete', disk.instance.deployment.name, instance_name, orphan_disk.nil? ? nil : orphan_disk.disk_cid, parent_id, e)
         end
       end
     end
