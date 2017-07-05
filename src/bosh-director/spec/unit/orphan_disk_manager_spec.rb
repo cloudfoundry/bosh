@@ -17,13 +17,10 @@ module Bosh::Director
 
     before do
       allow(Config).to receive(:current_job).and_return(update_job)
+      allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     describe '#orphan_disk' do
-      before do
-        expect(CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
-      end
-
       context 'when instance has an active_vm' do
         let!(:vm) { Models::Vm.make(instance: instance, cpi: 'vm-cpi', active: true) }
 
@@ -172,7 +169,6 @@ module Bosh::Director
       let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b') }
       let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2') }
       before do
-        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)
       end

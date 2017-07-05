@@ -31,7 +31,6 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     allow(@handler).to receive(:cloud).and_return(cloud)
     allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
     allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-    allow(Bosh::Director::CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
   end
 
   it 'registers under inactive_disk type' do

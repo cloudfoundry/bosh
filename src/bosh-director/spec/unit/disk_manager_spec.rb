@@ -61,7 +61,6 @@ module Bosh::Director
       allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
 
       # orphan disk manager may be called; it's easier to mock the calls it makes
-      allow(CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
     end
 
