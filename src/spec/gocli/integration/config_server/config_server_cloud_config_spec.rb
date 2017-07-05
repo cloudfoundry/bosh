@@ -60,6 +60,20 @@ describe 'using director with config server', type: :integration do
     output
   end
 
+  def expect_logs_not_to_contain(deployment_name, task_id, list_of_strings)
+    debug_output = bosh_runner.run("task #{task_id} --debug", deployment_name: deployment_name, include_credentials: false, env: client_env)
+    cpi_output = bosh_runner.run("task #{task_id} --cpi", deployment_name: deployment_name, include_credentials: false, env: client_env)
+    events_output = bosh_runner.run("task #{task_id} --event", deployment_name: deployment_name, include_credentials: false, env: client_env)
+    result_output = bosh_runner.run("task #{task_id} --result", deployment_name: deployment_name, include_credentials: false, env: client_env)
+
+    list_of_strings.each do |token|
+      expect(debug_output).to_not include(token)
+      expect(cpi_output).to_not include(token)
+      expect(events_output).to_not include(token)
+      expect(result_output).to_not include(token)
+    end
+  end
+
   context 'cloud config contains placeholders' do
     let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_placeholders }
 
@@ -288,10 +302,7 @@ describe 'using director with config server', type: :integration do
           recreate_vm = 3
           cck_output = bosh_run_cck_with_resolution(1, recreate_vm, client_env)
 
-          task_id = cck_output.match(/^Task (\d+) done$/)[1]
-
-          debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
-          expect(debug_output).to_not include('super-secret')
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'])
         end
       end
     end
@@ -474,6 +485,291 @@ describe 'using director with config server', type: :integration do
         task_id = Bosh::Spec::OutputParser.new(output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'ig_1'")
+      end
+    end
+  end
+
+  context 'cloud properties interpolation' do
+
+    let(:manifest_hash) do
+      {
+        'name' => 'my-dep',
+        'director_uuid' => 'deadbeef',
+        'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 1,
+          'update_watch_time' => 20
+        },
+        'instance_groups' => [
+          {
+            'name' => 'instance_group_1',
+            'jobs' => [
+              {
+                'name' => 'job_1_with_many_properties',
+                'properties' => {
+                  'gargamel' => {
+                    'color' => 'pitch black'
+                  }
+                }
+              }
+            ],
+            'instances' => 1,
+            'networks' => [{'name' => 'private'}],
+            'vm_extensions' => ['vm-extension-1'],
+            'vm_type' => 'small',
+            'persistent_disk_type' => 'normal_disk',
+            'azs' => ['z1'],
+            'stemcell' => 'default'
+          }
+        ],
+        'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+      }
+    end
+
+    let(:cloud_config_hash) do
+      {
+        'azs' => [
+          {'name' => 'z1', 'cloud_properties' => {}},
+          {'name' => 'z2', 'cloud_properties' => {}}
+        ],
+
+        'vm_types' => [
+          {
+            'name' => 'small',
+            'cloud_properties' => {
+              'instance_type' => 't2.micro'
+            }
+          },
+          {
+            'name' => 'medium',
+            'cloud_properties' => {
+              'instance_type' => 'm3.medium'
+            }
+          }
+        ],
+
+        'disk_types' => [
+          {
+          'name' => 'normal_disk',
+          'disk_size' => 504,
+          'cloud_properties' => {}
+          }
+        ],
+
+        'vm_extensions' => [{'name' => 'vm-extension-1', 'cloud_properties' => {}}],
+
+        'networks' => [
+          {
+            'name' => 'private',
+            'type' => 'manual',
+            'subnets' => [
+              {
+                'range' => '10.10.0.0/24',
+                'gateway' => '10.10.0.1',
+                'az' => 'z1',
+                'static' => ['10.10.0.62'],
+                'dns' => ['10.10.0.2'],
+                'cloud_properties' => {}
+              }, {
+                'range' => '10.10.64.0/24',
+                'gateway' => '10.10.64.1',
+                'az' => 'z2',
+                'static' => ['10.10.64.121', '10.10.64.122'],
+                'dns' => ['10.10.0.2'],
+                'cloud_properties' => {}
+              }
+            ]
+          },
+          {
+            'name' => 'vip',
+            'type' => 'vip',
+            'cloud_properties' => {}
+          }
+        ],
+
+        'compilation' => {
+          'workers' => 10,
+          'reuse_compilation_vms' => true,
+          'az' => 'z1',
+          'vm_type' => 'medium',
+          'network' => 'private'
+        }
+      }
+    end
+
+    context 'azs cloud_properties' do
+      before do
+        cloud_config_hash['azs'][0]['cloud_properties'] = { 'smurf_1' => '((/smurf_1_variable))' }
+        config_server_helper.put_value('/smurf_1_variable', 'cat_1')
+      end
+
+      it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'])
+      end
+
+      it 'does not update deployment when variables values do not change before a second deploy' do
+        # First Deploy
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        # Second Deploy
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        expect(output).to_not include('Updating instance instance_group_1')
+
+        task_id = Bosh::Spec::OutputParser.new(output).task_id
+        task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
+        expect(task_output).to include("No instances to update for 'instance_group_1'")
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+      end
+
+      context 'when variables value gets updated after deploying' do
+        before do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          config_server_helper.put_value('/smurf_1_variable', 'cat_2')
+        end
+
+        it 'updates the deployment with new values when deploying for second time' do
+          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+          create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+          expect(create_vm_invocations.size).to eq(2)
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2', 'instance_type' => 't2.micro'})
+
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          expect(variables_names).to match_array(['/smurf_1_variable'])
+
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_2'])
+        end
+      end
+    end
+
+    context 'vm_types cloud_properties' do
+      before do
+        cloud_config_hash['vm_types'][0]['cloud_properties']['smurf_1'] = '((/smurf_1_variable))'
+        config_server_helper.put_value('/smurf_1_variable', 'cat_1')
+      end
+
+      it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'])
+      end
+
+      it 'does not update deployment when variables values do not change before a second deploy' do
+        # First Deploy
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        # Second Deploy
+        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
+        expect(task_output).to include("No instances to update for 'instance_group_1'")
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+      end
+
+      context 'when variables value gets updated after deploying' do
+        before do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          config_server_helper.put_value('/smurf_1_variable', 'cat_2')
+        end
+
+        it 'updates the deployment with new values when deploying for second time' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+          create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+          expect(create_vm_invocations.size).to eq(2)
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2', 'instance_type' => 't2.micro'})
+
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          expect(variables_names).to match_array(['/smurf_1_variable'])
+        end
+      end
+    end
+
+    context 'vm_extensions cloud_properties' do
+      before do
+        cloud_config_hash['vm_extensions'][0]['cloud_properties'] = { 'smurf_1' => '((/smurf_1_variable_vm_extension))' }
+        config_server_helper.put_value('/smurf_1_variable_vm_extension', 'cat_1_vm_extension')
+      end
+
+      it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
+
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vm_extension'])
+      end
+
+      it 'does not update deployment when variables values do not change before a second deploy' do
+        # First Deploy
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        # Second Deploy
+        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
+        expect(task_output).to include("No instances to update for 'instance_group_1'")
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(create_vm_invocations.size).to eq(1)
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
+      end
+
+      context 'when variables value gets updated after deploying' do
+        before do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          config_server_helper.put_value('/smurf_1_variable_vm_extension', 'cat_2_vm_extension')
+        end
+
+        it 'updates the deployment with new values when deploying for second time' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+          create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+          expect(create_vm_invocations.size).to eq(2)
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2_vm_extension', 'instance_type' => 't2.micro'})
+
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
+        end
       end
     end
   end
