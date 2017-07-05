@@ -39,7 +39,7 @@ module Bosh::Director
       attr_reader :tags
 
       # Job instances from the old manifest that are not in the new manifest
-      attr_reader :unneeded_instance_plans
+      attr_reader :instance_plans_for_obsolete_instance_groups
 
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
@@ -81,7 +81,7 @@ module Bosh::Director
         @tags = options.fetch('tags', {})
 
         @unneeded_vms = []
-        @unneeded_instance_plans = []
+        @instance_plans_for_obsolete_instance_groups = []
 
         @recreate = !!options['recreate']
         @fix = !!options['fix']
@@ -200,11 +200,7 @@ module Bosh::Director
       end
 
       def mark_instance_plans_for_deletion(instance_plans)
-        @unneeded_instance_plans = instance_plans
-      end
-
-      def unneeded_instances
-        @unneeded_instance_plans.map(&:existing_instance)
+        @instance_plans_for_obsolete_instance_groups = instance_plans
       end
 
       # Adds a instance_group by name

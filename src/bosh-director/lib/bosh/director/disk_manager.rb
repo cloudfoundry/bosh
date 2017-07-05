@@ -1,7 +1,5 @@
 module Bosh::Director
   class DiskManager
-    include CloudFactoryHelper
-
     def initialize(logger)
       @logger = logger
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
@@ -20,40 +18,25 @@ module Bosh::Director
       new_disks = instance_plan.desired_instance.instance_group.persistent_disk_collection
       old_disks = instance_model.active_persistent_disks
 
-      changed_disk_pairs = new_disks.changed_disk_pairs(old_disks)
-
-      new_disk_unmanaged_models = []
+      changed_disk_pairs = Bosh::Director::DeploymentPlan::PersistentDiskCollection.changed_disk_pairs(
+        old_disks,
+        instance_model.variable_set,
+        new_disks,
+        instance_model.deployment.current_variable_set
+      )
 
       changed_disk_pairs.each do |disk_pair|
-        old_disk_model = disk_pair[:old].model unless disk_pair[:old].nil?
-
         new_disk = disk_pair[:new]
-        new_disk_model = nil
+        old_disk = disk_pair[:old]
 
-        if new_disk
-          new_disk_model = create_disk(instance_model, new_disk)
+        @logger.info("CPI resize disk enabled: #{Config.enable_cpi_resize_disk}")
 
-          attach_disk(new_disk_model, instance_plan.tags)
-
-          if new_disk.managed? && old_disk_model
-            migrate_disk(instance_model, new_disk_model, old_disk_model)
-          end
-
-          if !new_disk.managed?
-            new_disk_unmanaged_models << new_disk_model
-          end
+        if use_cpi_resize_disk?(old_disk, new_disk)
+          resize_disk(instance_model, instance_plan, new_disk, old_disk)
+        else
+          update_disk(instance_model, instance_plan, new_disk, old_disk)
         end
 
-        @transactor.retryable_transaction(Bosh::Director::Config.db) do
-          old_disk_model.update(:active => false) if old_disk_model
-          new_disk_model.update(:active => true) if new_disk_model
-        end
-
-        if old_disk_model
-          detach_disk(old_disk_model)
-
-          @orphan_disk_manager.orphan_disk(old_disk_model)
-        end
       end
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)
@@ -61,6 +44,24 @@ module Bosh::Director
         detach_disk(disk)
         @orphan_disk_manager.orphan_disk(disk)
       end
+    end
+
+    def resize_disk(instance_model, instance_plan, new_disk, old_disk)
+      @logger.info("Starting IaaS native disk resize #{old_disk.model.disk_cid}")
+      detach_disk(old_disk.model)
+
+      begin
+        cloud_resize_disk(old_disk.model, new_disk.size)
+      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
+        @logger.info("IaaS native disk resize not possible for #{old_disk.model.disk_cid}. Falling back to copy disk.\n#{e.message}")
+        attach_disk(old_disk.model, instance_plan.tags)
+        update_disk(instance_model, instance_plan, new_disk, old_disk)
+        return
+      end
+
+      attach_disk(old_disk.model, instance_plan.tags)
+      old_disk.model.update(:size => new_disk.size)
+      @logger.info("Finished IaaS native disk resize #{old_disk.model.disk_cid}")
     end
 
     def attach_disks_if_needed(instance_plan)
@@ -88,11 +89,16 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
+      cloud = cloud_for_cpi(disk.instance.active_vm.cpi)
       vm_cid = disk.instance.vm_cid
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
       mount_disk(disk) if disk.managed?
+    end
+
+    def cloud_resize_disk(old_disk_model, new_disk_size)
+      cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
+      cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
     def detach_disk(disk)
@@ -100,7 +106,7 @@ module Bosh::Director
       unmount_disk(disk) if disk.managed?
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         vm_cid = instance_model.vm_cid
         cloud.detach_disk(vm_cid, disk.disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
@@ -127,6 +133,10 @@ module Bosh::Director
     end
 
     private
+
+    def use_cpi_resize_disk?(old_disk, new_disk)
+      Config.enable_cpi_resize_disk && new_disk && new_disk.size_diff_only?(old_disk) && new_disk.managed?
+    end
 
     def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
       event  = Config.current_job.event_manager.create_event(
@@ -226,7 +236,7 @@ module Bosh::Director
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
         disk_model = Models::PersistentDisk.create(
@@ -244,6 +254,37 @@ module Bosh::Director
       end
 
       disk_model
+    end
+
+    def update_disk(instance_model, instance_plan, new_disk, old_disk)
+      old_disk_model = old_disk.model unless old_disk.nil?
+      new_disk_model = nil
+
+      if new_disk
+        new_disk_model = create_disk(instance_model, new_disk)
+
+        attach_disk(new_disk_model, instance_plan.tags)
+
+        if new_disk.managed? && old_disk_model
+          migrate_disk(instance_model, new_disk_model, old_disk_model)
+        end
+      end
+
+      @transactor.retryable_transaction(Bosh::Director::Config.db) do
+        old_disk_model.update(:active => false) if old_disk_model
+        new_disk_model.update(:active => true) if new_disk_model
+      end
+
+      if old_disk_model
+        detach_disk(old_disk_model)
+
+        @orphan_disk_manager.orphan_disk(old_disk_model)
+      end
+    end
+
+    def cloud_for_cpi(cpi)
+      cloud_factory = CloudFactory.create_with_latest_configs
+      cloud_factory.get(cpi)
     end
   end
 end

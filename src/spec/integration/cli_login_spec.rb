@@ -30,25 +30,4 @@ describe 'cli: login using the directors built-in user DB', type: :integration d
         .to raise_error(RuntimeError, /Cannot log in as 'test'/)
     end
   end
-
-  context 'when users are not specified in manifest' do
-    with_reset_sandbox_before_each(users_in_manifest: false)
-
-    it 'can log in as a default user, create another user and delete created user' do
-      bosh_runner.run("target #{current_sandbox.director_url}")
-      bosh_runner.run('login admin admin')
-      expect(bosh_runner.run('create user john john-pass')).to match(/User 'john' has been created/i)
-
-      expect(bosh_runner.run('login john john-pass')).to match(/Logged in as 'john'/i)
-      expect(bosh_runner.run('create user jane jane-pass')).to match(/user 'jane' has been created/i)
-      bosh_runner.run('logout')
-
-      expect(bosh_runner.run('login jane jane-pass')).to match(/Logged in as 'jane'/i)
-      expect(bosh_runner.run('delete user john')).to match(/User 'john' has been deleted/i)
-      bosh_runner.run('logout')
-
-      expect(bosh_runner.run('login john john-pass', failure_expected: true)).to match(/Cannot log in as 'john'/i)
-      expect(bosh_runner.run('login jane jane-pass')).to match(/Logged in as 'jane'/i)
-    end
-  end
 end

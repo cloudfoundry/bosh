@@ -25,6 +25,7 @@ module Bosh::Dev::Sandbox
       :users_in_manifest,
       :enable_post_deploy,
       :enable_nats_delivered_templates,
+      :enable_cpi_resize_disk,
       :generate_vm_passwords,
       :remove_dev_tools,
       :director_ips
@@ -65,6 +66,7 @@ module Bosh::Dev::Sandbox
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
       @enable_post_deploy = attrs.fetch(:enable_post_deploy, false)
+      @enable_cpi_resize_disk = attrs.fetch(:enable_cpi_resize_disk, false)
       @enable_nats_delivered_templates = attrs.fetch(:enable_nats_delivered_templates, false)
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)

@@ -187,7 +187,7 @@ module Bosh
         unless disk_attached_to_vm?(vm_cid, disk_id)
           raise Bosh::Clouds::DiskNotAttached, "#{disk_id} is not attached to instance #{vm_cid}"
         end
-        FileUtils.rm(attachment_file(vm_cid, disk_id))
+        FileUtils.rm_rf(attachment_path(disk_id))
 
         agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
@@ -226,6 +226,18 @@ module Bosh
       def delete_snapshot(snapshot_id)
         validate_and_record_inputs(DELETE_SNAPSHOT_SCHEMA, __method__, snapshot_id)
         FileUtils.rm(snapshot_file(snapshot_id))
+      end
+
+      RESIZE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, new_size: Integer } }
+      def resize_disk(disk_id, new_size)
+        validate_and_record_inputs(RESIZE_DISK_SCHEMA, __method__, disk_id, new_size)
+
+        raise Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotImplemented' if commands.raise_resize_disk_not_implemented
+
+        disk_info_file = disk_file(disk_id)
+        disk_info = JSON.parse(File.read(disk_info_file))
+        disk_info['size'] = new_size
+        File.write(disk_info_file, JSON.generate(disk_info))
       end
 
       SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
@@ -589,6 +601,17 @@ module Bosh
           File.exists?(raise_vmnotfound_path)
         end
 
+        def make_resize_disk_to_raise_not_implemented
+          @logger.info('Making resize_disk method to raise NotImplemented exception')
+          FileUtils.mkdir_p(File.dirname(raise_resize_disk_not_implemented_path))
+          FileUtils.touch(raise_resize_disk_not_implemented_path)
+        end
+
+        def raise_resize_disk_not_implemented
+          @logger.info('Reading resize_disk_not_implemented')
+          File.exists?(raise_resize_disk_not_implemented_path)
+        end
+
         private
 
         def azs_path
@@ -606,6 +629,11 @@ module Bosh
         def raise_vmnotfound_path
           File.join(@cpi_commands, 'delete_vm', 'fail')
         end
+
+        def raise_resize_disk_not_implemented_path
+          File.join(@cpi_commands, 'resize_disk', 'not_implemented')
+        end
+
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end

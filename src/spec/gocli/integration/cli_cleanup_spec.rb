@@ -70,7 +70,7 @@ describe 'cli: cleanup', type: :integration do
     it 'should remove orphaned disks, releases, stemcells, and all unused dns blobs' do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['name'] = 'deployment-a'
-      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 11, name: 'first-job')]
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1, name: 'first-job')]
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       disk_pool = Bosh::Spec::Deployments.disk_pool
       disk_pool['cloud_properties'] = {'my' => 'property'}
@@ -78,12 +78,11 @@ describe 'cli: cleanup', type: :integration do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
       bosh_runner.run('delete-deployment', deployment_name: 'deployment-a')
-
       bosh_runner.run(clean_command)
 
       clean_task_id = bosh_runner.get_most_recent_task_id
       cleanup_debug_logs = bosh_runner.run("task #{clean_task_id} --debug")
-      expect(cleanup_debug_logs).to match /Deleted 12 dns blob\(s\)/
+      expect(cleanup_debug_logs).to match /Deleted 2 dns blob\(s\)/
 
       output = table(bosh_runner.run('releases', failure_expected: true, json: true))
       expect(output).to eq([])

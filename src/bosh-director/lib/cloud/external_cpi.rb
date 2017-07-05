@@ -42,7 +42,7 @@ module Bosh::Clouds
     def initialize(cpi_path, director_uuid, properties_from_cpi_config = nil)
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = Config.logger
+      @logger = ::Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
       @properties_from_cpi_config = properties_from_cpi_config
     end
 
@@ -62,6 +62,7 @@ module Bosh::Clouds
     def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def info; invoke_cpi_method(__method__.to_s); end
@@ -69,9 +70,10 @@ module Bosh::Clouds
     private
 
     def invoke_cpi_method(method_name, *arguments)
+      request_id = "cpi-#{Random.rand(100000..999999)}"
       context = {
         'director_uuid' => @director_uuid,
-        'request_id' => "#{Random.rand(100000..999999)}"
+        'request_id' => request_id
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
@@ -81,9 +83,11 @@ module Bosh::Clouds
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
 
-      @logger.debug("External CPI sending request: #{redacted_request} with command: #{cpi_exec_path}")
+      logger = ::Bosh::Director::TaggedLogger.new(@logger, request_id)
+
+      logger.debug("request: #{redacted_request} with command: #{cpi_exec_path}")
       cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
-      @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
+      logger.debug("response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
       parsed_response = parsed_response(cpi_response)
       validate_response(parsed_response)

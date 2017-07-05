@@ -2,8 +2,6 @@ module Bosh::Director
   module DeploymentPlan
     class Stemcell
       extend ValidationHelper
-      include CloudFactoryHelper
-
       attr_reader :alias
       attr_reader :os
       attr_reader :name
@@ -92,12 +90,12 @@ module Bosh::Director
 
       def cid_for_az(az)
         raise 'please bind model first' if @models.nil?
-        raise StemcellNotFound, "No stemcell found" if @models.empty?
+        raise StemcellNotFound, 'No stemcell found' if @models.empty?
 
         # stemcell might have no AZ, pick default model then
         return model_for_default_cpi.cid if az.nil?
 
-        cpi = cloud_factory.lookup_cpi_for_az(az)
+        cpi = CloudFactory.create_with_latest_configs.get_name_for_az(az)
         # stemcell might have AZ without cpi, pick default model then
         return model_for_default_cpi.cid if cpi.nil?
 

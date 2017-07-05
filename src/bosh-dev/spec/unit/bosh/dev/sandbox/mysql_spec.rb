@@ -18,7 +18,7 @@ module Bosh::Dev::Sandbox
     describe '#create_db' do
       it 'creates a database' do
         expect(runner).to receive(:run).with(
-          %Q{mysql -h host -P 3306 --user=my-username --password=my-password -e 'create database `fake_db_name`;' > /dev/null 2>&1})
+          %Q{mysql -h host -P 3306 --user=my-username --password=my-password -e 'create database `fake_db_name`;' > /dev/null 2>&1}, redact: ['my-password'])
         mysql.create_db
       end
     end
@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
     describe '#drop_db' do
       it 'drops a database' do
         expect(runner).to receive(:run).with(
-          %Q{mysql -h host -P 3306 --user=my-username --password=my-password -e 'drop database `fake_db_name`;' > /dev/null 2>&1})
+          %Q{mysql -h host -P 3306 --user=my-username --password=my-password -e 'drop database `fake_db_name`;' > /dev/null 2>&1}, redact: ['my-password'])
         mysql.drop_db
       end
     end

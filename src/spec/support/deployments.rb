@@ -5,9 +5,9 @@ module Bosh::Spec
     def self.minimal_cloud_config
       {
         'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
+          'name' => 'a',
+          'subnets' => [],
+        }],
 
         'compilation' => {
           'workers' => 1,

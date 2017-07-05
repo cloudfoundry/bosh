@@ -410,4 +410,31 @@ describe Bosh::Director::Config do
       expect(event.context).to eq({'version' => '0.0.2'})
     end
   end
+
+  describe 'enable_cpi_resize_disk' do
+    it 'defaults to false' do
+      described_class.configure(test_config)
+      expect(described_class.enable_cpi_resize_disk).to be_falsey
+    end
+
+    context 'when explicitly set' do
+      context 'when set to true' do
+        before { test_config['enable_cpi_resize_disk'] = true }
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_truthy
+        end
+      end
+
+      context 'when set to false' do
+        before { test_config['enable_cpi_resize_disk'] = false }
+
+        it 'resolves to false' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_falsey
+        end
+      end
+    end
+  end
 end

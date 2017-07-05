@@ -20,6 +20,25 @@ module Bosh::Director
         task.refresh
         expect(task[:result_output]).to eq("result-result1")
       end
+
+      context 'database table does not support utf8 data', :truncation => true, :if => ENV.fetch('DB', 'sqlite') == 'mysql' do
+        before { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci') }
+        after { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci') }
+
+        it 'converts utf8 data' do
+          task_db_writer.write("code is \u{1F600}!\n")
+          task.refresh
+          expect(task[:result_output]).to eq("code is <bosh-non-ascii-char>!\n")
+        end
+      end
+
+      context 'database table supports utf8 data', :if => ENV.fetch('DB', 'sqlite') != 'mysql' do
+        it 'stores utf8 data' do
+          task_db_writer.write("code is \u{1F600}!\n")
+          task.refresh
+          expect(task[:result_output]).to eq("code is \u{1F600}!\n")
+        end
+      end
     end
   end
 end

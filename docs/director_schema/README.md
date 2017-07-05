@@ -7,10 +7,12 @@ Sequel. The Ruby classes that this schema maps to are located in the
 
 ![ER diagram of BOSH director schema](bosh-db-diagram.png)
 
-**Warning: This digram can become stale quickly; generate when necessary**
+**Warning: This diagram can become stale quickly; generate when necessary**
 
 The above PNG file was generated using RubyMine Database Plugin.
+There's also a [searchable SVG version.](https://cdn.rawgit.com/cloudfoundry/bosh/master/docs/director_schema/bosh-db-diagram.svg)
 Steps to generate:
-- Using RubyMine Database plugin connect to a BOSH database. Quick trick would be to connect to a database created by an integration test.
+
+- Use RubyMine Database plugin (View » Tools Windows » Database) to connect to a BOSH database. Quick trick would be to connect to a database created by an integration test.
 - Right click database connection: Diagrams --> Show Visualizations . Make sure **UML Support** plugin is enabled.
 - Export the diagram.

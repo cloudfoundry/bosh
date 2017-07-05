@@ -108,5 +108,9 @@
   "20170503205545_change_id_local_dns_to_bigint": "e43635548849a0563ba190913a1707e3d68d8d43",
   "20170510154449_add_multi_runtime_config_support": "5f439c8810fdce14e19cb245923a6909370381d5",
   "20170510190908_alter_ephemeral_blobs": "b76bfedc8bf9f559bfd60a0416cd3a4397ef3daa",
-  "20170612013910_add_created_at_to_vms": "84568dc1e4f09653e53bcfa2ff071d70ac9b6fd4"
+  "20170606225018_add_cpi_to_cloud_records": "e792f59a1d71d66fa7e02e6d5265e4e31364abea",
+  "20170607182149_add_task_id_to_locks": "226cef42c81d5cee602f091a0bc184c57c2bc628",
+  "20170612013910_add_created_at_to_vms": "84568dc1e4f09653e53bcfa2ff071d70ac9b6fd4",
+  "20170616173221_remove_users_table": "5f35086a0f65d81477731b7995fd933a10c9299e",
+  "20170616185237_migrate_spec_json_links": "bd36243e6583c7a9c925e44ddbf27b2aa1ef54ed"
 }

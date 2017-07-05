@@ -73,7 +73,7 @@ module Bosh::Director
             end
 
             if instance.availability_zone.nil?
-              instance.update(availability_zone: migrated_from_instance_group.availability_zone)
+              instance.desired_availability_zone = migrated_from_instance_group.availability_zone
             end
 
             migrated_from_instance_group_instances << instance

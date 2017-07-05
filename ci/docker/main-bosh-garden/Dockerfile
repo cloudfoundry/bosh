@@ -9,6 +9,7 @@ RUN \
     lsb-release \
     pkg-config \
     quota \
+    sshpass \
     sudo \
     uidmap \
     ulogd \

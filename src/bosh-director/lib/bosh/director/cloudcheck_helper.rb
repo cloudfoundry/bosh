@@ -1,6 +1,5 @@
 module Bosh::Director
   module CloudcheckHelper
-    include CloudFactoryHelper
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
@@ -13,8 +12,11 @@ module Bosh::Director
     DEFAULT_AGENT_TIMEOUT = 10
 
     def reboot_vm(instance)
-      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
-      cloud.reboot_vm(instance.vm_cid)
+      vm = instance.active_vm
+
+      cloud = CloudFactory.create_from_deployment(instance.deployment).get(vm.cpi)
+      cloud.reboot_vm(vm.cid)
+
       begin
         agent_client(instance.credentials, instance.agent_id).wait_until_ready
       rescue Bosh::Director::RpcTimeout
@@ -26,7 +28,10 @@ module Bosh::Director
 
     def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id) { |agent| agent.list_disk }
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id) do |agent|
+        agent.list_disk
+      end
+
       if disk_list.size != 0
         handler_error('VM has persistent disk attached')
       end

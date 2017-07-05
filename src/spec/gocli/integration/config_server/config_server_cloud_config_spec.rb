@@ -357,4 +357,124 @@ describe 'using director with config server', type: :integration do
       }.to_not raise_error
     end
   end
+
+  context 'when persistent disks have variables in their cloud_properties' do
+    let(:manifest) {
+      {
+        'name' => 'foo-deployment',
+        'instance_groups' => [
+          {
+            'name' => 'ig_1',
+            'instances' => 2,
+            'vm_type' => 'default',
+            'azs' => ['z1'],
+            'networks' => [
+              {
+                'name' => 'default',
+              }
+            ],
+            'persistent_disk_type' => 'default',
+            'stemcell' => 'default',
+            'jobs' => [
+              {
+                'name' => 'foobar',
+                'release' => 'bosh-release'
+              }
+            ]
+          }
+        ],
+        'releases' => [
+          {
+            'name' => 'bosh-release',
+            'version' => '0+dev.1'
+          }
+        ],
+        'stemcells' => [{
+                          'alias' => 'default',
+                          'os' => 'toronto-os',
+                          'version' => 'latest'
+                        }],
+        'update' => {
+          'canaries' => 5,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 2,
+          'update_watch_time' => 20
+        }
+      }
+    }
+
+    let(:cloud_config) {
+      {
+        'azs' => [
+          {
+            'name' => 'z1'
+          }
+        ],
+        'compilation' => {
+          'az' => 'z1',
+          'network' => 'default',
+          'workers' => 1
+        },
+        'vm_types' => [
+          'name' => 'default'
+        ],
+        'disk_types' => [
+          {
+            'cloud_properties' => {
+              'prop_1' => '((/smurf_1))'
+            },
+            'disk_size' => 100,
+            'name' => 'default'
+          }
+        ],
+        'networks' => [
+          {
+            'name' => 'default',
+            'subnets' => [
+              {
+                'azs' => ['z1'],
+                'dns' => ['8.8.8.8'],
+                'gateway' => '192.168.4.1',
+                'range' => '192.168.4.0/24',
+              }
+            ],
+            'type' => 'manual'
+          }
+        ]
+      }
+    }
+
+    context 'when there are changes to variable value on config-server' do
+      before do
+        config_server_helper.put_value('/smurf_1', 'my_value_1')
+        deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        config_server_helper.put_value('/smurf_1', 'my_value_2')
+      end
+
+      it 'should update instances when redeploying' do
+        created_instance = director.instances(deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
+
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+        expect(created_instance.count).to eq(2)
+        created_instance.each do |instance|
+          expect(output).to include("Updating instance ig_1: ig_1/#{instance.id}")
+        end
+      end
+    end
+
+    context 'when there are NO changes to variables value on config-server' do
+      before do
+        config_server_helper.put_value('/smurf_1', 'my_value_1')
+        deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      end
+
+      it 'should not make any updates when redeploying' do
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        task_id = Bosh::Spec::OutputParser.new(output).task_id
+        task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
+        expect(task_output).to include("No instances to update for 'ig_1'")
+      end
+    end
+  end
 end

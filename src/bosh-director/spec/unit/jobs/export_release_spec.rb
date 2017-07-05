@@ -328,20 +328,9 @@ module Bosh::Director
 
         it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
-             manifest_file = File.open(File.join(download_dir, 'release.MF'), 'r')
-             manifest_file_content = manifest_file.read
-
-             File.write(output_path, 'Some glorious content')
-
-             expect(manifest_file_content).to eq(%q(---
+             manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
+             expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
-- name: ruby
-  version: ruby_version
-  fingerprint: ruby_fingerprint
-  sha1: rubycompiledpackagesha1
-  stemcell: ubuntu/1
-  dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
@@ -349,6 +338,12 @@ compiled_packages:
   stemcell: ubuntu/1
   dependencies:
   - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
 jobs:
 - name: foobar
   version: foo_version
@@ -358,7 +353,20 @@ commit_hash: unknown
 uncommitted_changes: false
 name: bosh-release
 version: 0.1-dev
-))}
+))
+
+             File.write(output_path, 'Some glorious content')
+
+             expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
+             expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
+
+             manifest_hash.delete('compiled_packages')
+             expected_manifest_hash.delete('compiled_packages')
+             manifest_hash.delete('jobs')
+             expected_manifest_hash.delete('jobs')
+
+             expect(manifest_hash).to eq(expected_manifest_hash)
+          }
 
           allow(blobstore_client).to receive(:get)
           allow(blobstore_client).to receive(:create).and_return('blobstore_id')

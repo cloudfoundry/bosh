@@ -79,6 +79,15 @@ module Bosh::Director
               perform_persist
             end
           end
+
+          context 'when persist through agent fails with AgentUploadBlobUnableToOpenFile error' do
+            it 'should delegate to persist_to_blobstore' do
+              allow(rendered_job_instance).to receive(:persist_through_agent).and_raise(AgentUploadBlobUnableToOpenFile.new("'Upload blob' action: failed to open blob"))
+
+              expect(subject).to receive(:persist_on_blobstore)
+              perform_persist
+            end
+          end
         end
       end
 

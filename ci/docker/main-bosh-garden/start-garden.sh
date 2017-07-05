@@ -73,7 +73,7 @@ main() {
   # GARDEN_GRAPH_PATH is the root of the docker image filesystem
   export GARDEN_GRAPH_PATH=/tmp/garden/graph
   mkdir -p "${GARDEN_GRAPH_PATH}"
-  truncate -s 4G /tmp/garden/graph-sparse
+  truncate -s 8G /tmp/garden/graph-sparse
   yes | mkfs -t ext4 /tmp/garden/graph-sparse
   mount -t ext4 /tmp/garden/graph-sparse "${GARDEN_GRAPH_PATH}"
 
@@ -89,6 +89,7 @@ main() {
     --bind-ip 0.0.0.0 --bind-port 7777 \
     --mtu $mtu \
     --graph=$GARDEN_GRAPH_PATH \
+    --graph-cleanup-threshold-in-megabytes=1024 \
     &
 }
 

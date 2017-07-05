@@ -52,6 +52,12 @@ module Bosh::Core
           }.to raise_error /Failed: 'false' from /
         end
 
+        it 'redacts strings' do
+          expect {
+            subject.run('false && i am a secret command: butterflies and unicorns', redact: ['butterflies', 'unicorns'])
+          }.to raise_error /Failed: 'false && i am a secret command: \[REDACTED\] and \[REDACTED\]' from /
+        end
+
         context 'because the working directory has gone missing' do
           it 'fails gracefully with a slightly helpful error message' do
             allow(Dir).to receive(:pwd).and_raise(Errno::ENOENT, 'No such file or directory - getcwd')

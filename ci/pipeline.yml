@@ -120,8 +120,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.6
           privileged: true
@@ -138,8 +138,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.7
           privileged: true
@@ -156,8 +156,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
   - name: unit-2.3-postgres
     public: true
@@ -182,8 +182,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.3
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.4
           privileged: true
@@ -201,8 +201,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.4
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.5
           privileged: true
@@ -220,8 +220,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.5
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.6
           privileged: true
@@ -239,8 +239,9 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.6
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
+
   - name: unit-2.3-rds
     public: true
     serial: true
@@ -269,6 +270,7 @@ jobs:
             DB_PASSWORD: {{postgresql-rds-password}}
           on_failure:
             <<: *slack-alert
+
   - name: blobstore-client-integration
     public: true
     serial: true
@@ -287,6 +289,7 @@ jobs:
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
+
   - name: blobstore-performance
     public: true
     serial: true
@@ -468,21 +471,23 @@ jobs:
   - name: load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
+    - { get: warden-ubuntu-trusty }
+    - { get: bosh-candidate-release-tarballs }
     - { get: bosh-cli }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
-        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         <<: *slack-alert
@@ -490,21 +495,23 @@ jobs:
   - name: legacy-load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
-        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         <<: *slack-alert
@@ -512,21 +519,23 @@ jobs:
   - name: load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
-        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         <<: *slack-alert
@@ -534,22 +543,24 @@ jobs:
   - name: legacy-load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
-        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         <<: *slack-alert
@@ -588,10 +599,6 @@ jobs:
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
       - upgrade-tests
       - blobstore-performance
     - get: bosh-cli
@@ -828,6 +835,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+  - name: warden-ubuntu-trusty
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
 
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
