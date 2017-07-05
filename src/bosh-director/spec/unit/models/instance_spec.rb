@@ -310,22 +310,6 @@ module Bosh::Director::Models
       end
     end
 
-    describe '#desired_availability_zone' do
-      before { subject.availability_zone = 'z1' }
-
-      context 'az has been overridden for migration' do
-        it 'returns the overridden availability zone' do
-          subject.desired_availability_zone = 'z2'
-
-          expect(subject.desired_availability_zone).to eq('z2')
-        end
-      end
-
-      it 'returns the availability_zone' do
-        expect(subject.desired_availability_zone).to eq('z1')
-      end
-    end
-
     describe '#expects_vm?' do
 
       context "when lifecycle is 'errand'" do

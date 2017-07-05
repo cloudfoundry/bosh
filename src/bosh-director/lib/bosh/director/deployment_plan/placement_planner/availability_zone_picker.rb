@@ -36,7 +36,7 @@ module Bosh
             return desired_instances if unplaced_existing_instances.ignored_instances.empty?
             desired_instances = desired_instances.dup
             unplaced_existing_instances.ignored_instances.each do |existing_instance|
-              az = desired_azs.nil? ? nil : desired_azs.find { |az| az.name == existing_instance.desired_availability_zone }
+              az = desired_azs.nil? ? nil : desired_azs.find { |az| az.name == existing_instance.availability_zone }
               desired_instance = desired_instances.pop
               unplaced_existing_instances.claim_instance(existing_instance)
               placed_instances.record_placement(az, desired_instance, existing_instance)
@@ -67,7 +67,7 @@ module Bosh
             return desired_instances if desired_azs.nil?
             unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance|
               break if desired_instances.empty?
-              az = desired_azs.find { |az| az.name == existing_instance.desired_availability_zone }
+              az = desired_azs.find { |az| az.name == existing_instance.availability_zone }
               next if az.nil?
               desired_instance = desired_instances.pop
               unplaced_existing_instances.claim_instance(existing_instance)
