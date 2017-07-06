@@ -9,87 +9,72 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
     let(:instance) { Models::Instance.make(availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid') }
-    let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
+    let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true, cpi: 'some-cpi') }
 
     let(:event_manager) {Api::EventManager.new(true)}
     let(:task_id) {42}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
 
-    before do
-      allow(Config).to receive(:current_job).and_return(update_job)
-      allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-    end
+    before { allow(Config).to receive(:current_job).and_return(update_job) }
 
     describe '#orphan_disk' do
-      context 'when instance has an active_vm' do
-        let!(:vm) { Models::Vm.make(instance: instance, cpi: 'vm-cpi', active: true) }
+      it 'orphans disks and snapshots' do
+        snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
 
-        it 'orphans disks with the active_vm\'s cpi' do
-          disk_manager.orphan_disk(persistent_disk)
+        disk_manager.orphan_disk(persistent_disk)
+        orphan_disk = Models::OrphanDisk.first
+        orphan_snapshot = Models::OrphanSnapshot.first
 
-          orphan_disk = Models::OrphanDisk.first
-          expect(orphan_disk.cpi).to eq('vm-cpi')
-        end
+        expect(orphan_disk.availability_zone).to eq('az-1')
+        expect(orphan_disk.cloud_properties).to eq({'cloud' => 'properties'})
+        expect(orphan_disk.cpi).to eq('some-cpi')
+        expect(orphan_disk.deployment_name).to eq('test-deployment')
+        expect(orphan_disk.disk_cid).to eq(persistent_disk.disk_cid)
+        expect(orphan_disk.instance_name).to eq('test-instance/test-uuid')
+        expect(orphan_disk.size).to eq(2048)
+
+        expect(orphan_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
+        expect(orphan_snapshot.orphan_disk).to eq(orphan_disk)
+
+        expect(Models::PersistentDisk.all.count).to eq(0)
+        expect(Models::Snapshot.all.count).to eq(0)
+        expect(Models::Event.all.count).to eq(2)
       end
 
-      context 'when instance does not have an active_vm' do
-        before do
-          expect(cloud_factory).to receive(:get_name_for_az).with('az-1').and_return('some-cpi')
-        end
+      it 'should transactionally move orphan disks and snapshots' do
+        conflicting_orphan_disk = Models::OrphanDisk.make
+        conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
+          orphan_disk: conflicting_orphan_disk,
+          snapshot_cid: 'existing_cid',
+          snapshot_created_at: Time.now
+        )
 
-        it 'orphans disks and snapshots' do
-          snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
+        Models::Snapshot.make(
+          snapshot_cid: 'existing_cid',
+          persistent_disk: persistent_disk
+        )
 
-          disk_manager.orphan_disk(persistent_disk)
-          orphan_disk = Models::OrphanDisk.first
-          orphan_snapshot = Models::OrphanSnapshot.first
+        expect { disk_manager.orphan_disk(persistent_disk) }.to raise_error(Sequel::ValidationFailed)
 
-          expect(orphan_disk.availability_zone).to eq('az-1')
-          expect(orphan_disk.cloud_properties).to eq({'cloud' => 'properties'})
-          expect(orphan_disk.cpi).to eq('some-cpi')
-          expect(orphan_disk.deployment_name).to eq('test-deployment')
-          expect(orphan_disk.disk_cid).to eq(persistent_disk.disk_cid)
-          expect(orphan_disk.instance_name).to eq('test-instance/test-uuid')
-          expect(orphan_disk.size).to eq(2048)
+        conflicting_orphan_snapshot.destroy
+        conflicting_orphan_disk.destroy
 
-          expect(orphan_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
-          expect(orphan_snapshot.orphan_disk).to eq(orphan_disk)
-
-          expect(Models::PersistentDisk.all.count).to eq(0)
-          expect(Models::Snapshot.all.count).to eq(0)
-          expect(Models::Event.all.count).to eq(2)
-        end
-
-        it 'should transactionally move orphan disks and snapshots' do
-          conflicting_orphan_disk = Models::OrphanDisk.make
-          conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
-            orphan_disk: conflicting_orphan_disk,
-            snapshot_cid: 'existing_cid',
-            snapshot_created_at: Time.now
-          )
-
-          Models::Snapshot.make(
-            snapshot_cid: 'existing_cid',
-            persistent_disk: persistent_disk
-          )
-
-          expect { disk_manager.orphan_disk(persistent_disk) }.to raise_error(Sequel::ValidationFailed)
-
-          conflicting_orphan_snapshot.destroy
-          conflicting_orphan_disk.destroy
-
-          expect(Models::PersistentDisk.all.count).to eq(1)
-          expect(Models::Snapshot.all.count).to eq(1)
-          expect(Models::OrphanDisk.all.count).to eq(0)
-          expect(Models::OrphanSnapshot.all.count).to eq(0)
-        end
+        expect(Models::PersistentDisk.all.count).to eq(1)
+        expect(Models::Snapshot.all.count).to eq(1)
+        expect(Models::OrphanDisk.all.count).to eq(0)
+        expect(Models::OrphanSnapshot.all.count).to eq(0)
       end
     end
 
     describe '#unorphan_disk' do
       let(:instance) { Models::Instance.make(id: 123, availability_zone: 'az1') }
-      let(:orphan_disk) { Models::OrphanDisk.make(disk_cid: 'disk456', size: 2048, availability_zone: 'az1',
-                                                  cloud_properties: {'test_property' => '1'}) }
+      let(:orphan_disk) { Models::OrphanDisk.make(
+        disk_cid: 'disk456',
+        size: 2048,
+        availability_zone: 'az1',
+        cloud_properties: {'test_property' => '1'},
+        cpi: 'some-cpi'
+      ) }
 
       it 'unorphans disks and snapshots' do
         snapshot = Models::OrphanSnapshot.make(orphan_disk: orphan_disk)
@@ -101,6 +86,7 @@ module Bosh::Director
         expect(persistent_disk).to eq(returned_disk)
 
         expect(persistent_disk.disk_cid).to eq(orphan_disk.disk_cid)
+        expect(persistent_disk.cpi).to eq('some-cpi')
         expect(persistent_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
         expect(persistent_snapshot.persistent_disk).to eq(returned_disk)
 
@@ -169,6 +155,7 @@ module Bosh::Director
       let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b') }
       let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2') }
       before do
+        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)
       end

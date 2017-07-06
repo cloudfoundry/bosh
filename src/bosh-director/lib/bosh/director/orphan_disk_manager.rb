@@ -6,25 +6,16 @@ module Bosh::Director
     end
 
     def orphan_disk(disk)
-      cloud_factory = CloudFactory.create_with_latest_configs(disk.instance.deployment)
-
       instance_name = "#{disk.instance.job}/#{disk.instance.uuid}"
 
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         begin
           parent_id = add_event('delete', disk.instance.deployment.name, instance_name, disk.disk_cid)
 
-          active_vm = disk.instance.active_vm
-          if active_vm.nil?
-            cpi = cloud_factory.get_name_for_az(disk.instance.availability_zone)
-          else
-            cpi = active_vm.cpi
-          end
-
           orphan_disk = Models::OrphanDisk.create(
               disk_cid:          disk.disk_cid,
               size:              disk.size,
-              cpi:               cpi,
+              cpi:               disk.cpi,
               availability_zone: disk.instance.availability_zone,
               deployment_name:   disk.instance.deployment.name,
               instance_name:     instance_name,
@@ -51,7 +42,9 @@ module Bosh::Director
             instance_id: instance_id,
             active: true,
             size: disk.size,
-            cloud_properties: disk.cloud_properties)
+            cloud_properties: disk.cloud_properties,
+            cpi: disk.cpi
+        )
 
         disk.orphan_snapshots.each do |snapshot|
           Models::Snapshot.create(persistent_disk: new_disk, snapshot_cid: snapshot.snapshot_cid, clean: snapshot.clean)

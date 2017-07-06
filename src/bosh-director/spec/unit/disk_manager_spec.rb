@@ -28,12 +28,12 @@ module Bosh::Director
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10, )
-      Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true)
+      Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'vm-cpi')
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end
 
-    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true) }
+    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'disk-cpi') }
     let(:cloud_properties) { {'cloud' => 'properties'} }
     let(:disk_name) { '' }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
@@ -153,7 +153,7 @@ module Bosh::Director
               job
             end
 
-            context 'when the old disk is unmanged' do
+            context 'when the old disk is unmanaged' do
               let(:disk_name) { 'unmanaged-disk-name' }
 
               it 'does not use cpi resize_disk' do
@@ -277,7 +277,8 @@ module Bosh::Director
             active: false,
             instance: instance_model,
             size: 54,
-            cloud_properties: {'cloud-props' => 'something'}
+            cloud_properties: {'cloud-props' => 'something'},
+            cpi: 'inactive-cpi'
           )
         end
 
@@ -335,6 +336,7 @@ module Bosh::Director
               disk_manager.update_persistent_disk(instance_plan)
               model = Models::PersistentDisk.where(instance_id: instance_model.id, size: 1024).first
               expect(model.cloud_properties).to eq({'cloud' => 'properties'})
+              expect(model.cpi).to eq('vm-cpi')
             end
 
             it 'attaches the disk to the vm' do
@@ -433,6 +435,7 @@ module Bosh::Director
                       expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
                       expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
                       expect(orphan_disk.cloud_properties).to eq({'cloud-props' => 'something'})
+                      expect(orphan_disk.cpi).to eq('inactive-cpi')
                     end
                   end
                 end

@@ -230,7 +230,6 @@ module Bosh::Director
       disk_size = disk.size
       disk_model = nil
 
-      deployment_name = instance_model.deployment.name
       cloud_properties = @config_server_client.interpolate_with_versioning(Bosh::Common::DeepCopy.copy(disk.cloud_properties), instance_model.variable_set)
 
       begin
@@ -246,6 +245,7 @@ module Bosh::Director
           instance_id: instance_model.id,
           size: disk_size,
           cloud_properties: disk.cloud_properties,
+          cpi: instance_model.active_vm.cpi
         )
       rescue Exception => e
         raise e
