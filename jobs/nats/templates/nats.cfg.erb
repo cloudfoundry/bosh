@@ -1,0 +1,22 @@
+net: <%= p("nats.listen_address") %>
+port: <%= p("nats.port") %>
+
+logtime: true
+
+pid_file: /var/vcap/sys/run/nats/nats.pid
+log_file: /var/vcap/sys/log/nats/nats.log
+
+authorization {
+  user: "<%= p("nats.user") %>"
+  password: "<%= p('nats.password') %>"
+  timeout: <%= p('nats.auth_timeout') %>
+}
+
+tls {
+  cert_file:  "/var/vcap/jobs/nats/config/nats_cert.pem"
+  key_file:   "/var/vcap/jobs/nats/config/nats_key.key"
+  timeout:    2
+}
+
+ping_interval: <%= p('nats.ping_interval') %>
+ping_max: <%= p('nats.ping_max_outstanding') %>

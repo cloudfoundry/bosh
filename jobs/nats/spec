@@ -3,11 +3,13 @@ name: nats
 
 templates:
   nats_ctl.erb: bin/nats_ctl
-  nats.yml.erb: config/nats.yml
+  nats.cfg.erb: config/nats.cfg
+  nats_cert.pem.erb: config/nats_cert.pem
+  nats_key.key.erb: config/nats_key.key
 
 packages:
-  - nats
-  - ruby
+  - gonats
+  - golang
 
 properties:
   nats.listen_address:
@@ -16,12 +18,6 @@ properties:
   nats.port:
     description: TCP port nats mbus listens on
     default: 4222
-  nats.no_epoll:
-    description: Disable epoll (Linux)
-    default: false
-  nats.no_kqueue:
-    description: Disable kqueue (MacOSX and BSD)
-    default: true
   nats.ping_interval:
     description: Time interval (in seconds) pings from server
     default: 5
@@ -32,13 +28,10 @@ properties:
     description: Username clients must use to access nats mbus
   nats.password:
     description: Password clients must use to access nats mbus
+  nats.certificate:
+    description: go nats certificate for TLS
+  nats.private_key:
+    description: go nats private key for TLS
   nats.auth_timeout:
     description: Timeout (in seconds) for clients to send auth credentials
     default: 1
-  nats.http.port:
-    description: TCP port NATS listens on for HTTP connections (optional)
-    default: 9222
-  nats.http.user:
-    description: Username clients must use to access nats mbus via HTTP connection (optional)
-  nats.http.password:
-    description: Password clients must use to access nats mbus via HTTP connection (optional)

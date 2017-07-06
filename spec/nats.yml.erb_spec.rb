@@ -8,58 +8,58 @@ describe 'nats.yml.erb' do
     {
       'properties' => {
         'nats' => {
-          'listen_address' => '0.0.0.0',
+          'listen_address' => '1.2.3.4',
           'port' => 4222,
-          'no_epoll' => false,
-          'no_kqueue' => false,
-          'ping_interval' => 5,
+          'ping_interval' => 7,
           'ping_max_outstanding' => 10,
           'user' => 'my-user',
           'password' => 'my-password',
           'auth_timeout' => 10,
+          'certificate' => 'some-cert-value',
+          'private_key' => 'some-private-key'
         }
       }
     }
   end
 
-  let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/nats/templates/nats.yml.erb')) }
+  let(:erb_cfg) { File.read(File.join(File.dirname(__FILE__), '../jobs/nats/templates/nats.cfg.erb')) }
 
-  subject(:parsed_yaml) do
+  subject(:parsed_cfg) do
     binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
-    YAML.load(ERB.new(erb_yaml).result(binding))
+    ERB.new(erb_cfg).result(binding)
+  end
+
+  let(:expected_cfg) do
+    <<~HEREDOC
+      net: 1.2.3.4
+      port: 4222
+
+      logtime: true
+
+      pid_file: /var/vcap/sys/run/nats/nats.pid
+      log_file: /var/vcap/sys/log/nats/nats.log
+
+      authorization {
+        user: "my-user"
+        password: "my-password"
+        timeout: 10
+      }
+
+      tls {
+        cert_file:  "/var/vcap/jobs/nats/config/nats_cert.pem"
+        key_file:   "/var/vcap/jobs/nats/config/nats_key.key"
+        timeout:    2
+      }
+
+      ping_interval: 7
+      ping_max: 10
+    HEREDOC
   end
 
   context 'given a generally valid manifest' do
     it "should contain NATS's bare minimum" do
-      expect(parsed_yaml['net']).to eq('0.0.0.0')
-      expect(parsed_yaml['port']).to eq(4222)
-      expect(parsed_yaml['logtime']).to satisfy { |v| v == true || v == false }
-      expect(parsed_yaml['no_epoll']).to eq(false)
-      expect(parsed_yaml['no_kqueue']).to eq(false)
-      expect(parsed_yaml['ping']['interval']).to eq(5)
-      expect(parsed_yaml['ping']['max_outstanding']).to eq(10)
-      expect(parsed_yaml['pid_file']).to be_a(String)
-      expect(parsed_yaml['log_file']).to be_a(String)
-      expect(parsed_yaml['authorization']['user']).to eq('my-user')
-      expect(parsed_yaml['authorization']['password']).to eq('my-password')
-      expect(parsed_yaml['authorization']['timeout']).to eq(10)
-      expect(parsed_yaml.has_key?('http')).to eq(false)
+      expect(parsed_cfg).to eq(expected_cfg)
     end
 
-    context "When NATS's HTTP interface is specified" do
-      before do
-        deployment_manifest_fragment['properties']['nats']['http'] = {
-          'port' => 8081,
-          'user' => 'http-user',
-          'password' => 'http-password',
-        }
-      end
-
-      it 'should template the appropriate parameters' do
-        expect(parsed_yaml['http']['port']).to eq(8081)
-        expect(parsed_yaml['http']['user']).to eq('http-user')
-        expect(parsed_yaml['http']['password']).to eq('http-password')
-      end
-    end
   end
 end

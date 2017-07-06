@@ -1,8 +1,0 @@
-set -e
-
-cp -a nats/* ${BOSH_INSTALL_TARGET}
-
-cd ${BOSH_INSTALL_TARGET}
-
-bundle_cmd=/var/vcap/packages/ruby/bin/bundle
-$bundle_cmd install --binstubs --local --deployment
