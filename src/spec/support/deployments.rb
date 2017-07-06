@@ -925,6 +925,31 @@ module Bosh::Spec
       manifest
     end
 
+    def self.manifest_with_errand_job_on_service_instance
+      manifest = simple_manifest
+      manifest['jobs'] = [service_job_with_errand]
+      manifest
+    end
+
+    def self.service_job_with_errand
+      {
+        'name' => 'service_with_errand',
+        'templates' => [{'release' => 'bosh-release', 'name' => 'errand1'}],
+        'lifecycle' => 'service',
+        'resource_pool' => 'a',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+        'properties' => {
+          'errand1' => {
+            'exit_code' => 0,
+            'stdout' => 'fake-errand-stdout',
+            'stderr' => 'fake-errand-stderr',
+            'run_package_file' => true,
+          },
+        },
+      }
+    end
+
     def self.simple_errand_job
       {
         'name' => 'fake-errand-name',

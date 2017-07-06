@@ -119,6 +119,19 @@ module Bosh::Director
         expect { release_job.update(template) }.to_not raise_error
       end
 
+      it 'saves the templates hash on the template' do
+        job_with_interesting_templates =
+          create_job('foo', 'monit', {
+            'template source path' => {'destination' => 'rendered template path', 'contents' => 'whatever'}
+          }, monit_file: 'foo.monit')
+
+        File.open(job_tarball_path, 'w') { |f| f.write(job_with_interesting_templates) }
+
+        saved_template = release_job.update(template)
+
+        expect(saved_template.templates).to eq({'template source path' => 'rendered template path'})
+      end
+
       it 'whines on missing template' do
         job_without_template =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, skip_templates: ['foo'])

@@ -6,17 +6,19 @@ module Bosh
       describe Job do
         let(:deployment_name) {'deployment_name'}
 
+        subject { Job.new(release_version, 'foo', deployment_name) }
+
         # Currently this class is tested mostly in DeploymentPlan::ReleaseVersion spec.
         # In the future these tests can be migrated to here.
         describe '#add_link_from_manifest' do
           let(:job) { described_class.new(nil, 'foo', deployment_name) }
 
-
           context 'given properly formated arguments' do
-            before {
+            before do
               job.add_link_from_release('job_name', 'provides', 'link_name', {'from' => 'link_name'})
-              job.add_link_from_manifest('job_name', 'provides', 'link_name', {'properties'=>['plant'], 'from'=>'link_name'})
-            }
+              job.add_link_from_manifest('job_name', 'provides', 'link_name', {'properties' => ['plant'], 'from' => 'link_name'})
+            end
+
             it 'should populate link_infos' do
               expect(job.link_infos).to eq({'job_name' =>{'provides' =>{'link_name' =>{'properties' =>['plant'], 'from' => 'link_name'}}}})
             end
@@ -75,7 +77,6 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
         end
 
         describe '#bind_properties' do
-          subject { Job.new(release_version, 'foo', deployment_name) }
 
           let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
@@ -222,6 +223,36 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                                                    'dea_max_memory' =>1024
                                                  }
                                                })
+            end
+          end
+        end
+
+        describe '#runs_as_errand' do
+          let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+          let(:template_model) { instance_double('Bosh::Director::Models::Template') }
+
+          before do
+            allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
+            allow(template_model).to receive(:package_names).and_return([])
+            expect(release_version).to receive(:bind_model)
+            expect(release_version).to receive(:bind_templates)
+
+            subject.bind_models
+          end
+
+          context 'when the template model runs as errand' do
+            it 'returns true' do
+              allow(template_model).to receive(:runs_as_errand?).and_return(true)
+
+              expect(subject.runs_as_errand?).to eq true
+            end
+          end
+
+          context 'when the model does not run as errand' do
+            it 'returns false' do
+              allow(template_model).to receive(:runs_as_errand?).and_return(false)
+
+              expect(subject.runs_as_errand?).to eq false
             end
           end
         end
