@@ -217,12 +217,14 @@ module Bosh
           network_settings.to_hash
         end
 
-        def network_address(options)
-          network_settings.network_address(options)
+        def network_address
+          network_settings.network_address
         end
 
-        def network_addresses
-          network_settings.network_addresses
+        # @param [Boolean] prefer_dns_entry Flag for using DNS entry when available.
+        # @return [Hash] A hash mapping network names to their associated address
+        def network_addresses(prefer_dns_entry)
+          network_settings.network_addresses(prefer_dns_entry)
         end
 
         def needs_shutting_down?

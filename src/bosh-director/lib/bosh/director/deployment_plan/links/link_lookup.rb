@@ -18,13 +18,43 @@ module Bosh::Director
 
     private
 
+    class BaseLinkLookup
+      def initialize(link_network_options)
+        @preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
+        @use_dns_entries = link_network_options.fetch(:use_dns_entry, true)
+      end
+
+      def update_addresses!(link_spec)
+        network_name = @preferred_network_name || link_spec['default_network']
+
+        unless @use_dns_entries
+          raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment' unless network_name
+        end
+
+        if network_name
+          link_spec['instances'].each do |instance|
+            if @use_dns_entries
+              addresses = instance['addresses']
+            else
+              addresses = instance['ip_addresses']
+            end
+
+            raise Bosh::Director::LinkLookupError, 'Unable to retrieve network addresses. Please redeploy provider deployment' unless addresses
+            raise Bosh::Director::LinkLookupError, "Invalid network name: #{network_name}" unless addresses[network_name]
+
+            instance['address'] = addresses[network_name]
+          end
+        end
+      end
+    end
+
     # Used to find link source from deployment plan
-    class PlannerLinkLookup
+    class PlannerLinkLookup < BaseLinkLookup
       def initialize(consumed_link, link_path, deployment_plan, link_network_options)
+        super(link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
         @instance_groups = deployment_plan.instance_groups
-        @link_network_options = link_network_options
       end
 
       def find_link_spec
@@ -40,18 +70,22 @@ module Bosh::Director
           found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
           return nil unless found
 
-          Link.new(@link_path.deployment, @link_path.name, instance_group, job, @link_network_options).spec
+          link_spec = Link.new(@link_path.deployment, @link_path.name, instance_group, job).spec
+
+          update_addresses!(link_spec)
+
+          link_spec
         end
       end
     end
 
     # Used to find link source from link spec in deployment model (saved in DB)
-    class DeploymentLinkSpecLookup
+    class DeploymentLinkSpecLookup < BaseLinkLookup
       def initialize(consumed_link, link_path, deployment_link_spec, link_network_options)
+        super(link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
         @deployment_link_spec = deployment_link_spec
-        @preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
       end
 
       def find_link_spec
@@ -64,11 +98,7 @@ module Bosh::Director
         link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
         return nil unless link_spec
 
-        if @preferred_network_name
-          link_spec['instances'].each do |instance|
-            instance['address'] = instance['addresses'][@preferred_network_name]
-          end
-        end
+        update_addresses!(link_spec)
 
         link_spec
       end

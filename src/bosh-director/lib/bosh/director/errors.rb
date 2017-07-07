@@ -322,4 +322,7 @@ module Bosh::Director
 
   # Invalid YAML
   InvalidYamlError = err(710000)
+
+  # Resolving Links
+  LinkLookupError = err(810000)
 end

@@ -33,12 +33,15 @@ module Bosh::Director
             instance_group.add_resolved_link(job.name, link_name, link_path.manual_spec)
           else
             link_info = job.consumes_link_info(instance_group.name, link_name)
-            link_network = link_info['network']
-            enforce_ip = !!link_info['ip_addresses']
+
+            preferred_network_name = link_info['network']
+            use_dns_entry = !link_info['ip_addresses']
+
             link_network_options = {
-              :network_name => link_network,
-              :enforce_ip => enforce_ip
+              :preferred_network_name => preferred_network_name,
+              :use_dns_entry => use_dns_entry
             }
+
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network_options)
             link_spec = link_lookup.find_link_spec
 
@@ -46,8 +49,10 @@ module Bosh::Director
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
             end
 
+            link_spec.delete('default_network')
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
+              instance.delete('ip_addresses')
             end
 
             instance_group.add_resolved_link(job.name, link_name, link_spec)
