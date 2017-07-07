@@ -104,8 +104,8 @@ module Bosh::Director
 
         release_obsolete_ips(instance_plan)
 
-        update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
+        update_dns(instance_plan)
 
         unless recreated
           instance.update_instance_settings
