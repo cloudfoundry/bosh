@@ -32,8 +32,14 @@ module Bosh::Director
           elsif !link_path.manual_spec.nil?
             instance_group.add_resolved_link(job.name, link_name, link_path.manual_spec)
           else
-            link_network = job.consumes_link_info(instance_group.name, link_name)['network']
-            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network)
+            link_info = job.consumes_link_info(instance_group.name, link_name)
+            link_network = link_info['network']
+            enforce_ip = !!link_info['ip_addresses']
+            link_network_options = {
+              :network_name => link_network,
+              :enforce_ip => enforce_ip
+            }
+            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network_options)
             link_spec = link_lookup.find_link_spec
 
             unless link_spec

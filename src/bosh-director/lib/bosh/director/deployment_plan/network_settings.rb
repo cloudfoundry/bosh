@@ -46,10 +46,14 @@ module Bosh::Director
       dns_record_info
     end
 
-    def network_address(preferred_network_name = nil)
+    def network_address(options = {})
+      preferred_network_name = options.fetch(:preferred_network_name, nil)
+      enforce_ip = options.fetch(:enforce_ip, false)
+
       network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
-      if network_hash[network_name]['type'] == 'dynamic' || Bosh::Director::Config.local_dns_enabled?
+
+      if network_hash[network_name]['type'] == 'dynamic' || (Bosh::Director::Config.local_dns_enabled? && !enforce_ip)
         address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
       else
         address = network_hash[network_name]['ip']

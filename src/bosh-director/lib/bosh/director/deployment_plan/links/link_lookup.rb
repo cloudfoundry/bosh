@@ -3,15 +3,15 @@ module Bosh::Director
     # tested in link_resolver_spec
 
     class LinkLookupFactory
-      def self.create(consumed_link, link_path, deployment_plan, link_network)
+      def self.create(consumed_link, link_path, deployment_plan, link_network_options)
         if link_path.deployment == deployment_plan.name
-          PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
+          PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network_options)
         else
-          deployment = Models::Deployment.find(name: link_path.deployment)
-          unless deployment
+          provider_deployment = Models::Deployment.find(name: link_path.deployment)
+          unless provider_deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-          DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)
+          DeploymentLinkSpecLookup.new(consumed_link, link_path, provider_deployment.link_spec, link_network_options)
         end
       end
     end
@@ -20,11 +20,11 @@ module Bosh::Director
 
     # Used to find link source from deployment plan
     class PlannerLinkLookup
-      def initialize(consumed_link, link_path, deployment_plan, link_network)
+      def initialize(consumed_link, link_path, deployment_plan, link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
         @instance_groups = deployment_plan.instance_groups
-        @link_network = link_network
+        @link_network_options = link_network_options
       end
 
       def find_link_spec
@@ -40,18 +40,18 @@ module Bosh::Director
           found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
           return nil unless found
 
-          Link.new(@link_path.deployment, @link_path.name, instance_group, job, @link_network).spec
+          Link.new(@link_path.deployment, @link_path.name, instance_group, job, @link_network_options).spec
         end
       end
     end
 
     # Used to find link source from link spec in deployment model (saved in DB)
     class DeploymentLinkSpecLookup
-      def initialize(consumed_link, link_path, deployment_link_spec, link_network)
+      def initialize(consumed_link, link_path, deployment_link_spec, link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
         @deployment_link_spec = deployment_link_spec
-        @link_network = link_network
+        @preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
       end
 
       def find_link_spec
@@ -64,9 +64,9 @@ module Bosh::Director
         link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
         return nil unless link_spec
 
-        if @link_network
+        if @preferred_network_name
           link_spec['instances'].each do |instance|
-            instance['address'] = instance['addresses'][@link_network]
+            instance['address'] = instance['addresses'][@preferred_network_name]
           end
         end
 

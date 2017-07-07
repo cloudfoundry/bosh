@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Link do
-      subject { described_class.new(deployment_name, link_name, source_instance_group, job, network_name) }
+      subject { described_class.new(deployment_name, link_name, source_instance_group, job, network_options) }
 
       let(:deployment_name) { 'smurf_deployment' }
       let(:link_name) { 'smurf_link' }
@@ -12,6 +12,7 @@ module Bosh::Director
       let(:network_name) { 'smurf_network' }
       let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job)  }
       let(:instance_group_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
+      let(:network_options) { {:preferred_network_name => network_name} }
 
       let(:smurf_link_info) do
         {
@@ -36,8 +37,7 @@ module Bosh::Director
         allow(source_instance_group).to receive(:needed_instance_plans).and_return([needed_instance_plan])
 
         allow(needed_instance_plan).to receive(:instance).and_return(needed_instance)
-        allow(needed_instance_plan).to receive(:network_address).and_return('network-address-1')
-        allow(needed_instance_plan).to receive(:network_addresses).and_return(['network-address-1', 'network-address-2'])
+        allow(needed_instance_plan).to receive(:network_addresses).and_return({'network1' => 'network-address-1', 'network2' => 'network-address-2'})
 
         allow(needed_instance).to receive(:index).and_return(0)
         allow(needed_instance).to receive(:uuid).and_return('instance-uuid')
@@ -49,6 +49,7 @@ module Bosh::Director
       context '#spec' do
         it 'returns correct spec structure' do
           expect(job).to receive(:provides_link_info).with(source_instance_group_name, link_name).and_return(smurf_link_info)
+          expect(needed_instance_plan).to receive(:network_address).with({:preferred_network_name => network_name, :enforce_ip => false}).and_return('network-address-1')
 
           result_spec = subject.spec
 
@@ -64,10 +65,38 @@ module Bosh::Director
                 'id' => 'instance-uuid',
                 'az' => 'my_az',
                 'address' => 'network-address-1',
-                'addresses' => ['network-address-1', 'network-address-2']
+                'addresses' => {'network1' => 'network-address-1', 'network2' => 'network-address-2'},
               }
             ]
           })
+        end
+
+        context 'when enforce_ip is passed in the network options' do
+          let(:network_options) { {:preferred_network_name => network_name, :enforce_ip => true} }
+
+          it 'respects the value' do
+            expect(job).to receive(:provides_link_info).with(source_instance_group_name, link_name).and_return(smurf_link_info)
+            expect(needed_instance_plan).to receive(:network_address).with({:preferred_network_name => network_name, :enforce_ip => true}).and_return('1.2.3.4')
+
+            result_spec = subject.spec
+
+            expect(result_spec).to eq({
+              'deployment_name' => 'smurf_deployment',
+              'networks' => ['instance_group_network_name'],
+              'properties' => { 'a' => 'b' },
+              'instances' => [
+                {
+                  'name'=> 'my_source_instance_group_name',
+                  'index' => 0,
+                  'bootstrap' => true,
+                  'id' => 'instance-uuid',
+                  'az' => 'my_az',
+                  'address' => '1.2.3.4',
+                  'addresses' => {'network1' => 'network-address-1', 'network2' => 'network-address-2'},
+                }
+              ]
+            })
+          end
         end
       end
     end

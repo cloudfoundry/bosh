@@ -319,6 +319,41 @@ Unable to process links for deployment. Errors are:
       end
     end
 
+    context 'when link source specifies ip_addresses or network' do
+      let(:links) { {'db' => {"from" => 'db', 'ip_addresses' => true, 'network' => 'fake-dynamic-network'}} }
+      let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
+
+      before do
+        allow(link_lookup).to receive(:find_link_spec).and_return({'instances' => []})
+      end
+
+      it 'respects both' do
+        expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+          anything,
+          anything,
+          anything,
+          {:network_name=>'fake-dynamic-network', :enforce_ip=>true}
+        ).and_return(link_lookup)
+
+        links_resolver.resolve(api_server_job)
+      end
+
+      context 'when not specified' do
+        let(:links) { {'db' => {"from" => 'db'}} }
+
+        it 'defaults both accordingly' do
+          expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+            anything,
+            anything,
+            anything,
+            {:network_name=>nil, :enforce_ip=>false}
+          ).and_return(link_lookup)
+
+          links_resolver.resolve(api_server_job)
+        end
+      end
+    end
+
     context 'when links source is not provided' do
       let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existant'}} }
 

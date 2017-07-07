@@ -217,8 +217,8 @@ module Bosh
           network_settings.to_hash
         end
 
-        def network_address(network_name)
-          network_settings.network_address(network_name)
+        def network_address(options)
+          network_settings.network_address(options)
         end
 
         def network_addresses
