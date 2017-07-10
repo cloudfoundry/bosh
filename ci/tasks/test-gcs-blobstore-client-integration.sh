@@ -41,7 +41,6 @@ pushd bosh-src/src
     bucket_name="bosh-blobstore-bucket-$RANDOM"
     echo -n "foobar" > public
     gsutil mb -c MULTI_REGIONAL -l us gs://${bucket_name}
-    # gsutil acl ch -u AllUsers:R gs://${bucket_name}
     gsutil iam ch allUsers:objectViewer gs://${bucket_name}
     gsutil iam ch allUsers:legacyObjectReader gs://${bucket_name}
 		gsutil iam ch allUsers:legacyBucketReader gs://${bucket_name}
