@@ -94,6 +94,13 @@ describe 'cli: events', type: :integration do
         {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
         {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
         {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action orphan", deployment_name: 'simple', json: true)
+    data = table(output)
+    columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
+    expect(get_details(data, columns)).to contain_exactly(
+        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
   end
 
   def get_details(table, keys)
