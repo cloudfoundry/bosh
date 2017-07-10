@@ -18,6 +18,7 @@ module Bosh
           controllers['/cpi_configs'] = Bosh::Director::Api::Controllers::CpiConfigsController.new(@config)
           controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(@config)
           controllers['/disks'] = Bosh::Director::Api::Controllers::DisksController.new(@config)
+          controllers['/orphan_disks'] = Bosh::Director::Api::Controllers::OrphanDisksController.new(@config)
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new(@config)
           controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(@config)
           controllers['/packages'] = Bosh::Director::Api::Controllers::PackagesController.new(@config)
