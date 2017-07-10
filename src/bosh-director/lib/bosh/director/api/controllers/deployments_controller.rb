@@ -446,13 +446,18 @@ module Bosh::Director
       get '/:deployment/errands', authorization: :read do
         deployment_plan = load_deployment_plan
 
-        errands = deployment_plan.instance_groups.select(&:is_errand?)
+        errands_instance_groups = deployment_plan.instance_groups.select(&:is_errand?)
+        errands = errands_instance_groups.map(&:name)
 
-        errand_data = errands.map do |errand|
-          {"name" => errand.name}
+        deployment_plan.instance_groups.each do |instance_group|
+          instance_group.jobs.each do |job|
+            errands << job.name if job.runs_as_errand?
+          end
         end
 
-        json_encode(errand_data)
+        errands_hash = errands.uniq.map { |errand| {'name' => errand} }
+
+        json_encode(errands_hash)
       end
 
       private

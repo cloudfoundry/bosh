@@ -1664,6 +1664,155 @@ Error: Unable to process links for deployment. Errors are:
       end
     end
 
+    context 'when the job consumes only links provided in job specs' do
+
+      context 'when the co-located job has implicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job has explicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  {
+                      'name' => 'provider',
+                      'provides' => {'provider' => {'as' => 'link_provider'} }
+                  },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job uses links from adjacent jobs' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'consumer' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located jobs' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+    end
+
+    context 'when the job consumes multiple links of the same type' do
+      let(:provider_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_instance_group',
+            templates: [{
+                            'name' => 'database',
+                            'provides' => {'db' => {'as' => 'link_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_db_bar'
+                            }
+                        },
+                        {
+                            'name' => 'backup_database',
+                            'provides' => {'backup_db' => {'as' => 'link_backup_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_backup_db_bar'
+                            }
+                        }
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:consumer_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+                {
+                    'name' => 'api_server',
+                    'consumes' => {
+                        'db' => {'from' => 'link_db_alias'},
+                        'backup_db' => {'from' => 'link_backup_db_alias'}
+                    }
+                },
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+        manifest
+      end
+
+      it 'should have different content for each link if consumed from different sources' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        consumer_instance = director.instance('consumer_instance_group', '0')
+        template = YAML.load(consumer_instance.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main_properties']).to eq('props_db_bar')
+        expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
+      end
+    end
   end
 
   context 'when addon job requires link' do

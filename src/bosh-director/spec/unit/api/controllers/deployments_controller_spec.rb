@@ -15,7 +15,7 @@ module Bosh::Director
         config
       end
 
-      def manifest_with_errand(deployment_name='errand')
+      def manifest_with_errand_hash(deployment_name='errand')
         manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
         manifest_hash['name'] = deployment_name
         manifest_hash['jobs'] << {
@@ -26,7 +26,11 @@ module Bosh::Director
           'instances' => 1,
           'networks' => [{'name' => 'a'}]
         }
-        YAML.dump(manifest_hash)
+        manifest_hash
+      end
+
+      def manifest_with_errand(deployment_name='errand')
+        YAML.dump(manifest_with_errand_hash(deployment_name))
       end
 
       let(:cloud_config) { Models::CloudConfig.make }
@@ -1271,10 +1275,23 @@ module Bosh::Director
               )
             end
 
+            let(:service_errand) do
+              {
+                'name' => 'service_errand_job',
+                'template' => 'job_with_bin_run',
+                'lifecycle' => 'service',
+                'resource_pool' => 'a',
+                'instances' => 1,
+                'networks' => [{'name' => 'a'}]
+              }
+            end
+
             let!(:deployment_model) do
+              manifest_hash = manifest_with_errand_hash
+              manifest_hash['jobs'] << service_errand
               Models::Deployment.make(
                 name: 'fake-dep-name',
-                manifest: manifest_with_errand,
+                manifest: YAML.dump(manifest_hash),
                 cloud_config: cloud_config
               )
             end
@@ -1286,17 +1303,18 @@ module Bosh::Director
                 release = Models::Release.make(name: 'bosh-release')
                 template1 = Models::Template.make(name: 'foobar', release: release)
                 template2 = Models::Template.make(name: 'errand1', release: release)
+                template3 = Models::Template.make(name: 'job_with_bin_run', release: release, templates: {'foo' => 'bin/run'})
                 release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
                 release_version.add_template(template1)
                 release_version.add_template(template2)
+                release_version.add_template(template3)
               end
 
               it 'returns errands in deployment' do
                 response = perform
-                expect(response.body).to eq('[{"name":"fake-errand-name"},{"name":"another-errand"}]')
+                expect(response.body).to eq('[{"name":"fake-errand-name"},{"name":"another-errand"},{"name":"job_with_bin_run"}]')
                 expect(last_response.status).to eq(200)
               end
-
             end
 
             context 'accessing with invalid credentials' do

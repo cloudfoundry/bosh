@@ -99,7 +99,7 @@ function start_docker() {
 
   local mtu=$(cat /sys/class/net/$(ip route get 8.8.8.8|awk '{ print $5 }')/mtu)
 
-  local server_args="--mtu ${mtu} --host ${DOCKER_HOST} --tlsverify --tlscacert=${certs_dir}/ca.pem --tlscert=${certs_dir}/server-cert.pem --tlskey=${certs_dir}/server-key.pem"
+  local server_args="--mtu ${mtu} --host ${DOCKER_HOST} --tlsverify --tlscacert=${certs_dir}/ca.pem --tlscert=${certs_dir}/server-cert.pem --tlskey=${certs_dir}/server-key.pem --data-root /scratch/docker"
   local registry=""
 
   for registry in $1; do
@@ -139,9 +139,6 @@ function start_docker() {
 }
 
 function main() {
-  source /etc/profile.d/chruby.sh
-  chruby 2.3.1
-
   export OUTER_CONTAINER_IP=$(ruby -rsocket -e 'puts Socket.ip_address_list
                           .reject { |addr| !addr.ip? || addr.ipv4_loopback? || addr.ipv6? }
                           .map { |addr| addr.ip_address }')

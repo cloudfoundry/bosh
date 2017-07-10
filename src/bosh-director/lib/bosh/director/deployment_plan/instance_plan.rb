@@ -66,7 +66,13 @@ module Bosh
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
-          changed_disk_pairs = desired_disks_collection.changed_disk_pairs(existing_disk_collection)
+          changed_disk_pairs = PersistentDiskCollection.changed_disk_pairs(
+            existing_disk_collection,
+            instance_model.variable_set,
+            desired_disks_collection,
+            instance_model.deployment.current_variable_set
+          )
+
           changed_disk_pairs.each do |disk_pair|
             log_changes(__method__, disk_pair[:old], disk_pair[:new], instance)
           end
@@ -211,12 +217,14 @@ module Bosh
           network_settings.to_hash
         end
 
-        def network_address(network_name)
-          network_settings.network_address(network_name)
+        def network_address
+          network_settings.network_address
         end
 
-        def network_addresses
-          network_settings.network_addresses
+        # @param [Boolean] prefer_dns_entry Flag for using DNS entry when available.
+        # @return [Hash] A hash mapping network names to their associated address
+        def network_addresses(prefer_dns_entry)
+          network_settings.network_addresses(prefer_dns_entry)
         end
 
         def needs_shutting_down?

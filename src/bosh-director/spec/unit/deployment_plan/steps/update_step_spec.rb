@@ -8,6 +8,7 @@ module Bosh::Director
       subject { UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
       let(:base_job) { Jobs::BaseJob.new }
       let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Steps::PreCleanupStep') }
+      let(:update_active_vm_cpis) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateActiveVmCpisStep') }
       let(:setup) { instance_double('Bosh::Director::DeploymentPlan::Steps::SetupStep') }
       let(:update_jobs) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateJobsStep') }
       let(:update_errands) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateErrandsStep') }
@@ -24,7 +25,8 @@ module Bosh::Director
       end
 
       before do
-        allow(PreCleanupStep).to receive(:new).with(base_job, deployment_plan).and_return(pre_cleanup)
+        allow(PreCleanupStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(pre_cleanup)
+        allow(UpdateActiveVmCpisStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
         allow(SetupStep).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
         allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStep).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
@@ -38,6 +40,7 @@ module Bosh::Director
         it 'runs deployment plan update steps in the correct order' do
           expect(logger).to receive(:info).with('Updating deployment').ordered
           expect(pre_cleanup).to receive(:perform).ordered
+          expect(update_active_vm_cpis).to receive(:perform).ordered
           expect(setup).to receive(:perform).ordered
           expect(update_jobs).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered

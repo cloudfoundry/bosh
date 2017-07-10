@@ -1,8 +1,6 @@
 module Bosh::Director
   module Api
     class SnapshotManager
-      extend CloudFactoryHelper
-
       def create_deployment_snapshot_task(username, deployment, options = {})
         JobQueue.new.enqueue(username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment)
       end
@@ -61,7 +59,7 @@ module Bosh::Director
         snapshots.each do |snapshot|
           unless keep_snapshots_in_the_cloud
             instance = snapshot.persistent_disk.instance
-            cloud = cloud_factory.for_availability_zone(instance.availability_zone)
+            cloud = CloudFactory.create_with_latest_configs.get_for_az(instance.availability_zone)
             cloud.delete_snapshot(snapshot.snapshot_cid)
           end
           snapshot.delete
@@ -85,7 +83,7 @@ module Bosh::Director
             agent_id: instance.agent_id
         }
 
-        cloud = cloud_factory.for_availability_zone!(instance.availability_zone)
+        cloud = CloudFactory.create_with_latest_configs.get_for_az(instance.availability_zone)
         instance.persistent_disks.each do |disk|
           cid = cloud.snapshot_disk(disk.disk_cid, metadata)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)

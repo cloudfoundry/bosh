@@ -37,7 +37,7 @@ module Bosh::Director
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
-      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
     end
 
     describe '#scan' do
@@ -66,7 +66,7 @@ module Bosh::Director
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instances[0].credentials, instances[0].agent_id, anything).and_return(unresponsive_agent_client)
         expect(unresponsive_agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
         allow(cloud).to receive(:has_vm).and_raise(Bosh::Clouds::NotImplemented)
-        expect(cloud_factory).to receive(:for_availability_zone).with(instances[0].availability_zone).and_return(cloud)
+        expect(cloud_factory).to receive(:get_for_az).with(instances[0].availability_zone).and_return(cloud)
 
         expect(problem_register).to receive(:problem_found).with(
           :unresponsive_agent,
@@ -193,9 +193,9 @@ module Bosh::Director
                 instance_without_vm
             )
 
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
-            expect(cloud_factory).to receive(:for_availability_zone).with(instance_without_vm.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm1.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm2.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(instance_without_vm.availability_zone).and_return(cloud)
 
             vm_scanner.scan
           end
@@ -221,8 +221,8 @@ module Bosh::Director
                 unresponsive_vm2
               )
 
-              expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
-              expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
+              expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm1.availability_zone).and_return(cloud)
+              expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm2.availability_zone).and_return(cloud)
 
               vm_scanner.scan
             end
@@ -247,8 +247,8 @@ module Bosh::Director
                 unresponsive_vm2
               )
 
-              expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
-              expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
+              expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm1.availability_zone).and_return(cloud)
+              expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm2.availability_zone).and_return(cloud)
 
               vm_scanner.scan
             end
@@ -274,8 +274,8 @@ module Bosh::Director
               unresponsive_vm2
             )
 
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm1.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm2.availability_zone).and_return(cloud)
 
             vm_scanner.scan
           end
@@ -305,8 +305,8 @@ module Bosh::Director
             allow(ignored_responsive_agent).to receive(:list_disk).and_return([])
 
             allow(cloud).to receive(:has_vm).and_return(true)
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm1.availability_zone).and_return(cloud)
-            expect(cloud_factory).to receive(:for_availability_zone).with(unresponsive_vm2.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm1.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(unresponsive_vm2.availability_zone).and_return(cloud)
           end
 
           it 'it is not scanned' do
@@ -346,7 +346,7 @@ module Bosh::Director
         end
 
         it 'returns disk cid registered on vm' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).with(:unresponsive_agent, instance)
           vm_scanner.scan
           expect(vm_scanner.agent_disks['fake-disk-cid']).to eq(['vm-cid-0'])

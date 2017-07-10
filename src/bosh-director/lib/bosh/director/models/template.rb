@@ -52,6 +52,21 @@ module Bosh::Director::Models
       object_or_nil(self.provides_json)
     end
 
+    def templates=(templates_spec)
+      self.templates_json = json_encode(templates_spec)
+    end
+
+    def templates
+      object_or_nil(self.templates_json)
+    end
+
+    def runs_as_errand?
+      return false if self.templates == nil
+
+      self.templates.values.include?('bin/run') ||
+        self.templates.values.include?('bin/run.ps1')
+    end
+
     private
 
     def object_or_nil(value)

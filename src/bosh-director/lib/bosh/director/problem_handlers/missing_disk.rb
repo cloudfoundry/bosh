@@ -40,7 +40,7 @@ module Bosh::Director
 
       def delete_disk_reference
         @disk.update(active: false)
-        cloud = cloud_factory.for_availability_zone(@instance.availability_zone)
+        cloud = CloudFactory.create_with_latest_configs.get_for_az(@instance.availability_zone)
 
         # If VM is present we try to unmount and detach disk from VM
         if @instance.vm_cid && cloud.has_vm(@instance.vm_cid)

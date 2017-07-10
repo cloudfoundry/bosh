@@ -118,6 +118,12 @@ module Bosh::Director
         end
       end
 
+      def runs_as_errand?
+        @release.bind_model
+        @release.bind_templates
+        !@model.nil? && @model.runs_as_errand?
+      end
+
       def consumes_links_for_instance_group_name(instance_group_name)
         links_of_kind_for_instance_group_name(instance_group_name, 'consumes')
       end

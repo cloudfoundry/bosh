@@ -772,4 +772,17 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance_group.assign_variable_set(variable_set)
     end
   end
+
+  describe '#default_network_name' do
+    subject { described_class.new(logger) }
+
+    before do
+      subject.default_network['gateway'] = 'gateway-default-network'
+      subject.default_network['dns'] = 'dns-default-network'
+    end
+
+    it 'returns the gateway network name' do
+      expect(subject.default_network_name).to eq('gateway-default-network')
+    end
+  end
 end

@@ -324,7 +324,7 @@ module Bosh::Director
         expect(agent_client).to receive(:drain).and_raise(drain_error)
 
         expect { updater.update(instance_plan) }.to raise_error drain_error
-        expect(Models::Event.map(&:error)).to eq([nil, 'Oh noes!'])
+        expect(Models::Event.map(&:error)).to match_array([nil, 'Oh noes!'])
       end
     end
   end

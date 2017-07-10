@@ -378,6 +378,10 @@ module Bosh::Director
         end
       end
 
+      def default_network_name
+        @default_network['gateway']
+      end
+
       private
 
       def run_time_dependencies

@@ -24,6 +24,7 @@ describe 'create-release', type: :integration do
       actual = list_tar_files(release_file.path)
       expected = [
         'LICENSE',
+        'jobs/emoji-errand.tgz',
         'jobs/errand1.tgz',
         'jobs/errand_without_package.tgz',
         'jobs/fails_with_too_much_output.tgz',
@@ -156,6 +157,7 @@ describe 'create-release', type: :integration do
         ))
 
         expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
+          job_desc('emoji-errand'),
           job_desc('errand1'),
           job_desc('errand_without_package'),
           job_desc('fails_with_too_much_output'),

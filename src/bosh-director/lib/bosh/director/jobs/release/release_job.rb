@@ -50,6 +50,8 @@ module Bosh::Director
       template.provides = job_manifest['provides'] if job_manifest['provides']
       template.consumes = job_manifest['consumes'] if job_manifest['consumes']
 
+      template.templates = job_manifest['templates']
+
       template.save
     end
 

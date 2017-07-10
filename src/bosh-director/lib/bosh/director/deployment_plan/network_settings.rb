@@ -46,38 +46,33 @@ module Bosh::Director
       dns_record_info
     end
 
-    def network_address(preferred_network_name = nil)
-      network_name = preferred_network_name || @default_network['gateway']
-      network_hash = to_hash
-      if network_hash[network_name]['type'] == 'dynamic' || Bosh::Director::Config.local_dns_enabled?
-        address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
-      else
-        address = network_hash[network_name]['ip']
-      end
-
-      address
+    def network_address
+      network_name = @default_network['gateway']
+      get_address(network_name, to_hash[network_name])
     end
 
-    def network_ip_address(preferred_network_name = nil)
-      network_name = preferred_network_name || @default_network['addressable'] || @default_network['gateway']
-      to_hash[network_name]['ip']
-    end
-
-    def network_addresses
+    # @param [Boolean] prefer_dns_entry Flag for using DNS entry when available.
+    # @return [Hash] A hash mapping network names to their associated address
+    def network_addresses(prefer_dns_entry)
       network_addresses = {}
 
       to_hash.each do |network_name, network|
-        if network['type'] == 'dynamic'
-          address = DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
-        else
-          address = network['ip']
-        end
-
-        network_addresses[network_name] = address
+        network_addresses[network_name] = get_address(network_name, network, prefer_dns_entry)
       end
 
       network_addresses
     end
 
+    private
+
+    def get_address(network_name, network, prefer_dns_entry = true)
+      if network['type'] == 'dynamic' # Dynamic networks always return DNS entries
+        return DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
+      elsif prefer_dns_entry && Bosh::Director::Config.local_dns_enabled?
+        return DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
+      else
+        return network['ip']
+      end
+    end
   end
 end

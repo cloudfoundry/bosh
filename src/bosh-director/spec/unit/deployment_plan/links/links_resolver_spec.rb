@@ -138,13 +138,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version.add_template(template_model)
 
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment',
-      link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+      link_spec_json: '{"mysql":{"mysql-template":{"db":{"name":"db","type":"db"}}}}')
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
 
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment',
       manifest: deployment_manifest.to_json,
-      link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+      link_spec_json: '{"mysql":{"mysql-template":{"db":{"name":"db","type":"db"}}}}')
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
   end
@@ -194,47 +194,124 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when job consumes link from another deployment' do
-      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
-      let(:link_spec) { {"mysql" => {"mysql-template" => {"db" => {"db" => {"deployment_name" => "other-deployment", "networks" => ["fake-manual-network", "fake-dynamic-network"], "properties" => {"mysql" => nil}, "instances" => [{"name" => "mysql", "index" => 0, "bootstrap" => true, "id" => "7aed7038-0b3f-4dba-ac6a-da8932502c00", "az" => nil, "address" => "127.0.0.4", "addresses" => {"fake-manual-network" => "127.0.0.4", "fake-dynamic-network" => "7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh"}}, {"name" => "mysql", "index" => 1, "bootstrap" => false, "id" => "adecbe93-e242-4585-acde-ffbc1dad4b41", "az" => nil, "address" => "127.0.0.5", "addresses" => {"fake-manual-network" => "127.0.0.5", "fake-dynamic-network" => "adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh"}}]}}}}} }
+      let(:link_spec) {
+        {
+          'mysql' => {
+            'mysql-template' => {
+              'db' => {
+                'db' => {
+                  'deployment_name' => 'other-deployment', 'networks' => ['fake-manual-network', 'fake-dynamic-network'], 'properties' => {
+                    'mysql' => nil
+                  },
+                  'default_network' => 'fake-manual-network',
+                  'instances' => [
+                    {
+                      'name' => 'mysql',
+                      'index' => 0,
+                      'bootstrap' => true,
+                      'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+                      'az' => nil,
+                      'addresses' => {'fake-manual-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'},
+                      'ip_addresses' => {'fake-manual-network' => '127.0.0.4', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'}
+                    },
+                    {
+                      'name' => 'mysql',
+                      'index' => 1,
+                      'bootstrap' => false,
+                      'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+                      'az' => nil,
+                      'addresses' => {'fake-manual-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'},
+                      'ip_addresses' => {'fake-manual-network' => '127.0.0.5', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
 
       context 'when another deployment has link source' do
         before do
           Bosh::Director::Models::Deployment.where(name: 'other-deployment').first.update(link_spec: link_spec)
         end
 
-        it 'returns link from another deployment' do
-          links_resolver.resolve(api_server_job)
+        context 'when requesting for ip addresses only' do
+          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => true}} }
 
-          provider_dep = Bosh::Director::Models::Deployment.where(name: 'other-deployment').first
+          it 'returns link from another deployment' do
+            links_resolver.resolve(api_server_job)
 
-          spec = {
-            'deployment_name' => provider_dep.name,
-            'networks' => ['fake-manual-network', 'fake-dynamic-network'],
-            "properties" => {"mysql" => nil},
-            'instances' => [
-              {
-                'name' => 'mysql',
-                'index' => 0,
-                "bootstrap" => true,
-                'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
-                'az' => nil,
-                'address' => '127.0.0.4'
-              },
-              {
-                'name' => 'mysql',
-                'index' => 1,
-                "bootstrap" => false,
-                'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
-                'az' => nil,
-                'address' => '127.0.0.5'
-              }
-            ]
-          }
+            provider_dep = Bosh::Director::Models::Deployment.where(name: 'other-deployment').first
 
-          links_hash = {"api-server-template" => {"db" => spec}}
+            spec = {
+              'deployment_name' => provider_dep.name,
+              'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+              "properties" => {"mysql" => nil},
+              'instances' => [
+                {
+                  'name' => 'mysql',
+                  'index' => 0,
+                  "bootstrap" => true,
+                  'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+                  'az' => nil,
+                  'address' => '127.0.0.4'
+                },
+                {
+                  'name' => 'mysql',
+                  'index' => 1,
+                  "bootstrap" => false,
+                  'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+                  'az' => nil,
+                  'address' => '127.0.0.5'
+                }
+              ]
+            }
 
-          expect(api_server_job.resolved_links).to eq(links_hash)
+            links_hash = {"api-server-template" => {"db" => spec}}
+
+            expect(api_server_job.resolved_links).to eq(links_hash)
+          end
         end
+
+        context 'when requesting for DNS entries' do
+          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => false}} }
+
+          it 'returns link from another deployment' do
+            links_resolver.resolve(api_server_job)
+
+            provider_dep = Bosh::Director::Models::Deployment.where(name: 'other-deployment').first
+
+            spec = {
+              'deployment_name' => provider_dep.name,
+              'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+              "properties" => {"mysql" => nil},
+              'instances' => [
+                {
+                  'name' => 'mysql',
+                  'index' => 0,
+                  "bootstrap" => true,
+                  'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+                  'az' => nil,
+                  'address' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-manual-network.other-deployment.bosh'
+                },
+                {
+                  'name' => 'mysql',
+                  'index' => 1,
+                  "bootstrap" => false,
+                  'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+                  'az' => nil,
+                  'address' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-manual-network.other-deployment.bosh'
+                }
+              ]
+            }
+
+            links_hash = {"api-server-template" => {"db" => spec}}
+
+            expect(api_server_job.resolved_links).to eq(links_hash)
+          end
+        end
+
       end
 
       context 'when another deployment does not have link source' do
@@ -316,6 +393,41 @@ Unable to process links for deployment. Errors are:
         links_resolver.resolve(api_server_job)
         link_spec = api_server_job.resolved_links['api-server-template']['db']
         expect(link_spec['instances'].first['name']).to eq('mysql')
+      end
+    end
+
+    context 'when link source specifies ip_addresses or network' do
+      let(:links) { {'db' => {"from" => 'db', 'ip_addresses' => true, 'network' => 'fake-dynamic-network'}} }
+      let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
+
+      before do
+        allow(link_lookup).to receive(:find_link_spec).and_return({'instances' => []})
+      end
+
+      it 'respects both' do
+        expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+          anything,
+          anything,
+          anything,
+          {:preferred_network_name => 'fake-dynamic-network', :use_dns_entry => false}
+        ).and_return(link_lookup)
+
+        links_resolver.resolve(api_server_job)
+      end
+
+      context 'when not specified' do
+        let(:links) { {'db' => {"from" => 'db'}} }
+
+        it 'defaults both accordingly' do
+          expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+            anything,
+            anything,
+            anything,
+            {:preferred_network_name => nil, :use_dns_entry => true}
+          ).and_return(link_lookup)
+
+          links_resolver.resolve(api_server_job)
+        end
       end
     end
 

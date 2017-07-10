@@ -1,7 +1,5 @@
 module Bosh::Director
   class DiskManager
-    include CloudFactoryHelper
-
     def initialize(logger)
       @logger = logger
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
@@ -20,7 +18,12 @@ module Bosh::Director
       new_disks = instance_plan.desired_instance.instance_group.persistent_disk_collection
       old_disks = instance_model.active_persistent_disks
 
-      changed_disk_pairs = new_disks.changed_disk_pairs(old_disks)
+      changed_disk_pairs = Bosh::Director::DeploymentPlan::PersistentDiskCollection.changed_disk_pairs(
+        old_disks,
+        instance_model.variable_set,
+        new_disks,
+        instance_model.deployment.current_variable_set
+      )
 
       changed_disk_pairs.each do |disk_pair|
         new_disk = disk_pair[:new]
@@ -86,7 +89,7 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
+      cloud = cloud_for_cpi(disk.instance.active_vm.cpi)
       vm_cid = disk.instance.vm_cid
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
@@ -94,9 +97,8 @@ module Bosh::Director
     end
 
     def cloud_resize_disk(old_disk_model, new_disk_size)
-      cloud_factory
-        .for_availability_zone!(old_disk_model.instance.availability_zone)
-        .resize_disk(old_disk_model.disk_cid, new_disk_size)
+      cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
+      cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
     def detach_disk(disk)
@@ -104,7 +106,7 @@ module Bosh::Director
       unmount_disk(disk) if disk.managed?
       begin
         @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = cloud_factory.for_availability_zone(instance_model.availability_zone)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         vm_cid = instance_model.vm_cid
         cloud.detach_disk(vm_cid, disk.disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
@@ -228,13 +230,12 @@ module Bosh::Director
       disk_size = disk.size
       disk_model = nil
 
-      deployment_name = instance_model.deployment.name
       cloud_properties = @config_server_client.interpolate_with_versioning(Bosh::Common::DeepCopy.copy(disk.cloud_properties), instance_model.variable_set)
 
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
 
-        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
+        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
         disk_cid = cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
 
         disk_model = Models::PersistentDisk.create(
@@ -244,6 +245,7 @@ module Bosh::Director
           instance_id: instance_model.id,
           size: disk_size,
           cloud_properties: disk.cloud_properties,
+          cpi: instance_model.active_vm.cpi
         )
       rescue Exception => e
         raise e
@@ -278,6 +280,11 @@ module Bosh::Director
 
         @orphan_disk_manager.orphan_disk(old_disk_model)
       end
+    end
+
+    def cloud_for_cpi(cpi)
+      cloud_factory = CloudFactory.create_with_latest_configs
+      cloud_factory.get(cpi)
     end
   end
 end

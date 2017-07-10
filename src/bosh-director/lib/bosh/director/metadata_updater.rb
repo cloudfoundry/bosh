@@ -1,7 +1,5 @@
 module Bosh::Director
   class MetadataUpdater
-    include CloudFactoryHelper
-
     def self.build
       new({'director' => Config.name}, Config.logger)
     end
@@ -11,8 +9,10 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_vm_metadata(instance, metadata, factory = cloud_factory)
-      cloud = factory.for_availability_zone!(instance.availability_zone)
+    def update_vm_metadata(instance, metadata, factory = CloudFactory.create_with_latest_configs)
+      vm = instance.active_vm
+
+      cloud = factory.get(vm.cpi)
 
       if cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
