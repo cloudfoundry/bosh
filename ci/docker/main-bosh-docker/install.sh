@@ -16,8 +16,8 @@ apt-get install -y --no-install-recommends \
 
 curl -o /tmp/download https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
 echo "1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772 /tmp/download" | sha256sum -c
-
-tar -xzf /tmp/download -C /usr/local --strip-components=1
+mkdir /usr/local/go
+tar -xzf /tmp/download -C /usr/local/go --strip-components=1
 rm /tmp/download
 
 curl -fsSL https://apt.dockerproject.org/gpg | apt-key add -
