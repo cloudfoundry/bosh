@@ -772,5 +772,62 @@ describe 'using director with config server', type: :integration do
         end
       end
     end
+
+    context 'disk_types cloud_properties' do
+      before do
+        cloud_config_hash['disk_types'][0]['cloud_properties'] = { 'smurf_1' => '((/smurf_1_variable))' }
+        config_server_helper.put_value('/smurf_1_variable', 'cat_1_disk')
+      end
+
+      it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
+        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
+        expect(create_disk_invocations.size).to eq(1)
+        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_disk'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_disk'])
+      end
+
+      it 'does not update deployment when variables values do not change before a second deploy' do
+        # First Deploy
+        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        # Second Deploy
+        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
+        expect(task_output).to include("No instances to update for 'instance_group_1'")
+
+        create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
+        expect(create_disk_invocations.size).to eq(1)
+        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_disk'})
+
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        expect(variables_names).to match_array(['/smurf_1_variable'])
+      end
+
+      context 'when variables value gets updated after deploying' do
+        before do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          config_server_helper.put_value('/smurf_1_variable', 'cat_2_disk')
+        end
+
+        it 'updates the deployment with new values when deploying for second time' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+
+          create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
+          expect(create_disk_invocations.size).to eq(2)
+          expect(create_disk_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2_disk'})
+
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          expect(variables_names).to match_array(['/smurf_1_variable'])
+        end
+      end
+    end
   end
 end

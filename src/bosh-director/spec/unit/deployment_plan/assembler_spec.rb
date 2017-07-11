@@ -157,6 +157,49 @@ module Bosh::Director
           end
         end
 
+        context 'variable sets binding' do
+          before do
+            deployment_plan.model.add_variable_set(:created_at => Time.now, :writable => true)
+          end
+
+          context 'when should_bind_new_variable_set flag is false' do
+            let(:should_bind_new_variable_set) { false }
+
+            it 'should not bind the instance plans variable sets' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+            end
+          end
+
+          context 'when bind_new_variable_set flag is true' do
+            let(:should_bind_new_variable_set) { true }
+
+            it 'binds the instance plans variable sets correctly' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+            end
+          end
+
+          context 'when bind_new_variable_set flag is not passed' do
+            it 'defaults value to false' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models
+            end
+          end
+        end
+
         context 'when the instance_group validation fails' do
           it 'propagates the exception' do
             expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once

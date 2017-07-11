@@ -68,9 +68,9 @@ module Bosh
 
           changed_disk_pairs = PersistentDiskCollection.changed_disk_pairs(
             existing_disk_collection,
-            instance_model.variable_set,
+            instance.previous_variable_set,
             desired_disks_collection,
-            instance_model.deployment.current_variable_set
+            instance.desired_variable_set
           )
 
           changed_disk_pairs.each do |disk_pair|

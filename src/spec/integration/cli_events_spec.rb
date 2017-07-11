@@ -36,8 +36,8 @@ describe 'cli: events', type: :integration do
       {'Action' => 'start', 'Object type' => 'worker', 'Object ID' => 'worker_2', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
-      {'Action' => 'delete', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
-      {'Action' => 'delete', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
+      {'Action' => 'orphan', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
+      {'Action' => 'orphan', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
@@ -92,8 +92,8 @@ describe 'cli: events', type: :integration do
     columns = ['Action', 'Object type', 'Dep', 'Inst', 'Task']
     expect(get_details(data, columns)).to contain_exactly(
         {'Action' => 'delete', 'Object type' => 'instance', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
-        {'Action' => 'delete', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
-        {'Action' => 'delete', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
+        {'Action' => 'orphan', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
+        {'Action' => 'orphan', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'vm', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'vm', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'instance', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name})

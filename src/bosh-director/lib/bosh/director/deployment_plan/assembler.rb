@@ -22,6 +22,7 @@ module Bosh::Director
 
       should_bind_links = options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
+      should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
       deployment_options = @deployment_plan.deployment_wide_options
       fix = deployment_options.fetch(:fix, false)
       tags = deployment_options.fetch(:tags, {})
@@ -59,9 +60,18 @@ module Bosh::Director
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
+      bind_new_variable_set if should_bind_new_variable_set
     end
 
     private
+
+    def bind_new_variable_set
+      current_variable_set = @deployment_plan.model.current_variable_set
+
+      @deployment_plan.instance_groups.each do |instance_group|
+        instance_group.bind_new_variable_set(current_variable_set)
+      end
+    end
 
     # Binds release DB record(s) to a plan
     # @return [void]

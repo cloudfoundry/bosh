@@ -318,6 +318,12 @@ module Bosh::Director
         end
       end
 
+      def bind_new_variable_set(new_variable_set)
+        unignored_instance_plans.each do |instance_plan|
+          instance_plan.instance.desired_variable_set = new_variable_set
+        end
+      end
+
       def has_network?(network_name)
         networks.any? do |network|
           network.name == network_name
@@ -364,17 +370,10 @@ module Bosh::Director
         @stemcell.os == os
       end
 
-      # Assign variable set to each non-ignored instance_plan instance
-      def assign_variable_set(variable_set)
-        unignored_instance_plans.map do |instance_plan|
-          instance_plan.instance.variable_set = variable_set
-        end
-      end
-
       # @return [Array<Models::VariableSet>] All variable sets of NON-obsolete instance_plan instances
       def referenced_variable_sets
         needed_instance_plans.map do |instance_plan|
-            instance_plan.instance.variable_set
+          instance_plan.instance.desired_variable_set
         end
       end
 

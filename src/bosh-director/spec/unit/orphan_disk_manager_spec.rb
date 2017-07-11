@@ -12,8 +12,8 @@ module Bosh::Director
     let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true, cpi: 'some-cpi') }
 
     let(:event_manager) {Api::EventManager.new(true)}
-    let(:task_id) {42}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
 
     before { allow(Config).to receive(:current_job).and_return(update_job) }
 
@@ -63,6 +63,33 @@ module Bosh::Director
         expect(Models::Snapshot.all.count).to eq(1)
         expect(Models::OrphanDisk.all.count).to eq(0)
         expect(Models::OrphanSnapshot.all.count).to eq(0)
+      end
+
+      it 'should store event' do
+        Models::Snapshot.make(persistent_disk: persistent_disk)
+        expect {
+          disk_manager.orphan_disk(persistent_disk)
+        }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(2)
+
+        event_1 = Bosh::Director::Models::Event.first
+        expect(event_1.user).to eq(task.username)
+        expect(event_1.action).to eq('orphan')
+        expect(event_1.object_type).to eq('disk')
+        expect(event_1.object_name).to eq('disk123')
+        expect(event_1.instance).to eq("#{persistent_disk.instance.job}/#{persistent_disk.instance.uuid}")
+        expect(event_1.deployment).to eq(persistent_disk.instance.deployment.name)
+        expect(event_1.task).to eq("#{task.id}")
+
+        event_2 = Bosh::Director::Models::Event.all.last
+        expect(event_2.parent_id).to eq(event_1.id)
+        expect(event_1.user).to eq(task.username)
+        expect(event_1.action).to eq('orphan')
+        expect(event_1.object_type).to eq('disk')
+        expect(event_1.object_name).to eq('disk123')
+        expect(event_1.instance).to eq("#{persistent_disk.instance.job}/#{persistent_disk.instance.uuid}")
+        expect(event_1.deployment).to eq(persistent_disk.instance.deployment.name)
+        expect(event_1.task).to eq("#{task.id}")
       end
     end
 

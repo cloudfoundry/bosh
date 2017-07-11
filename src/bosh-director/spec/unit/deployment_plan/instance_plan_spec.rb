@@ -539,6 +539,25 @@ module Bosh::Director::DeploymentPlan
 
           instance_plan.persistent_disk_changed?
         end
+
+        context 'variables interpolation' do
+          let(:desired_variable_set) { instance_double(BD::Models::VariableSet) }
+
+          before do
+            instance.desired_variable_set = desired_variable_set
+          end
+
+          it 'should create PersistentDiskCollection with the correct variable sets' do
+            expect(BD::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+              anything,
+              instance.model.variable_set,
+              anything,
+              desired_variable_set
+            ).and_return([])
+
+            instance_plan.persistent_disk_changed?
+          end
+        end
       end
 
       context 'when instance is obsolete' do

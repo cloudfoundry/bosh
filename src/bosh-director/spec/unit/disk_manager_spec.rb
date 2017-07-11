@@ -25,7 +25,8 @@ module Bosh::Director
       job
     end
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
-    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
+    let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
+    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', deployment_model, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10, )
       Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'vm-cpi')
@@ -117,6 +118,20 @@ module Bosh::Director
     describe '#update_persistent_disk' do
       before do
         allow(cloud_factory).to receive(:get).with(instance_model.active_vm.cpi).and_return(cloud)
+      end
+
+      it 'passes correct variable sets for comparing disks' do
+        desired_variable_set = Models::VariableSet.make(deployment: deployment_model)
+        instance_plan.instance.desired_variable_set = desired_variable_set
+
+        expect(Bosh::Director::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+          anything,
+          instance_plan.instance.previous_variable_set,
+          anything,
+          desired_variable_set
+        ).and_return([])
+
+        disk_manager.update_persistent_disk(instance_plan)
       end
 
       context 'when `enable_cpi_disk_resize` is enabled' do
@@ -586,32 +601,6 @@ module Bosh::Director
         expect(cloud).to_not receive(:delete_disk)
 
         disk_manager.delete_persistent_disks(instance_model)
-      end
-
-      it 'stores events' do
-        expect {
-          disk_manager.delete_persistent_disks(instance_model)
-        }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(2)
-
-        event_1 = Bosh::Director::Models::Event.first
-        expect(event_1.user).to eq('user')
-        expect(event_1.action).to eq('delete')
-        expect(event_1.object_type).to eq('disk')
-        expect(event_1.object_name).to eq('disk123')
-        expect(event_1.task).to eq("#{task_id}")
-        expect(event_1.deployment).to eq(instance_model.deployment.name)
-        expect(event_1.instance).to eq(instance_model.name)
-
-        event_2 = Bosh::Director::Models::Event.order(:id).last
-        expect(event_2.parent_id).to eq(1)
-        expect(event_2.user).to eq('user')
-        expect(event_2.action).to eq('delete')
-        expect(event_2.object_type).to eq('disk')
-        expect(event_2.object_name).to eq('disk123')
-        expect(event_2.task).to eq("#{task_id}")
-        expect(event_2.deployment).to eq(instance_model.deployment.name)
-        expect(event_2.instance).to eq(instance_model.name)
       end
     end
 

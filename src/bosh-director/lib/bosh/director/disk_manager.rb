@@ -20,9 +20,9 @@ module Bosh::Director
 
       changed_disk_pairs = Bosh::Director::DeploymentPlan::PersistentDiskCollection.changed_disk_pairs(
         old_disks,
-        instance_model.variable_set,
+        instance_plan.instance.previous_variable_set,
         new_disks,
-        instance_model.deployment.current_variable_set
+        instance_plan.instance.desired_variable_set,
       )
 
       changed_disk_pairs.each do |disk_pair|

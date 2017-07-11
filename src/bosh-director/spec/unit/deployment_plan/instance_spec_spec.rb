@@ -58,10 +58,10 @@ module Bosh::Director::DeploymentPlan
     end
     let(:index) { 0 }
     let(:instance_state) { {} }
-    let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
     let(:instance) {
       instance = Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
-      instance.variable_set = variable_set
+      instance.desired_variable_set = desired_variable_set
       instance
     }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
@@ -153,8 +153,8 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-        allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', variable_set).and_return(properties)
-        allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, variable_set).and_return(smurf_job_links)
+        allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(properties)
+        allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(smurf_job_links)
       end
 
       context 'links specs whitelisting' do
@@ -215,8 +215,8 @@ module Bosh::Director::DeploymentPlan
         let(:resolved_smurf_job_links) { resolved_links['smurf-job'] }
 
         it 'resolves properties and links properties' do
-          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', variable_set).and_return(resolved_properties)
-          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, variable_set).and_return(resolved_smurf_job_links)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(resolved_smurf_job_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)
