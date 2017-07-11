@@ -535,7 +535,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log' do
           allow(logger).to receive(:debug)
 
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/1 (fake-uuid-1)')
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/fake-uuid-1 (1)')
 
           instance_plan.persistent_disk_changed?
         end
@@ -676,7 +676,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1 (uuid-1)')
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/uuid-1 (1)')
           instance_plan.packages_changed?
         end
       end
@@ -704,7 +704,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = {'changed' => 'config'}
 
-          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{instance.model.uuid})")
+          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/#{instance.model.uuid} (1)")
           instance_plan.configuration_changed?
         end
       end
@@ -775,7 +775,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'should log the dns changes' do
             expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
-            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
             instance_plan.dns_changed?
           end
         end
@@ -794,7 +794,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
             instance_plan.dns_changed?
           end
         end
