@@ -105,7 +105,6 @@ describe Bosh::Director::NatsRpc do
     end
 
     context 'logging' do
-      let(:logger) { double(:logger) }
       let(:arguments) do
         [{
           'blob_id' => '1234-5678',
@@ -114,12 +113,8 @@ describe Bosh::Director::NatsRpc do
          }]
       end
 
-      before do
-        allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
-      end
-
       it 'logs redacted payload and checksum message in the debug logs for upload_blob call' do
-        expect(logger).to receive(:debug).with('SENT: test_upload_blob {"method":"upload_blob","arguments":[{"blob_id":"1234-5678","checksum":"<redacted>","payload":"<redacted>"}],"reply_to":"director.123.req1"}')
+        expect(some_logger).to receive(:debug).with('SENT: test_upload_blob {"method":"upload_blob","arguments":[{"blob_id":"1234-5678","checksum":"<redacted>","payload":"<redacted>"}],"reply_to":"director.123.req1"}')
         expect(nats).to receive(:subscribe).with('director.123.>')
         expect(nats).to receive(:publish) do |subject, message|
           expect(subject).to eql('test_upload_blob')
@@ -136,7 +131,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       it 'does NOT redact other messages arguments calls' do
-        expect(logger).to receive(:debug).with('SENT: test_any_method {"method":"any_method","arguments":[{"blob_id":"1234-5678","checksum":"QWERTY","payload":"ASDFGH"}],"reply_to":"director.123.req1"}')
+        expect(some_logger).to receive(:debug).with('SENT: test_any_method {"method":"any_method","arguments":[{"blob_id":"1234-5678","checksum":"QWERTY","payload":"ASDFGH"}],"reply_to":"director.123.req1"}')
         expect(nats).to receive(:subscribe).with('director.123.>')
         expect(nats).to receive(:publish) do |subject, message|
           expect(subject).to eql('test_any_method')
