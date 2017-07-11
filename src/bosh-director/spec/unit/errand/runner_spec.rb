@@ -62,7 +62,7 @@ module Bosh::Director
               and_return('agent_task_id' => 'fake-agent-task-id')
 
             allow(logs_fetcher).to receive(:fetch).
-              and_return('fake-logs-blobstore-id')
+              and_return(['fake-logs-blobstore-id', 'fake-logs-blob-sha1'])
 
             allow(agent_client).to receive(:wait_for_task).and_return(agent_task_result)
           end
@@ -89,6 +89,7 @@ module Bosh::Director
                 'stderr' => 'fake-stderr',
                 'logs' => {
                   'blobstore_id' => 'fake-logs-blobstore-id',
+                  'sha1' => 'fake-logs-blob-sha1',
                 },
               )
             end
@@ -166,7 +167,7 @@ module Bosh::Director
           end
 
           it 'fetches the logs from agent with correct job type and filters' do
-            expect(logs_fetcher).to receive(:fetch).with(instance.model, 'job', nil)
+            expect(logs_fetcher).to receive(:fetch).with(instance.model, 'job', nil, true)
             subject.run
           end
 
@@ -178,6 +179,7 @@ module Bosh::Director
                 'stderr' => 'fake-stderr',
                 'logs' => {
                   'blobstore_id' => nil,
+                  'sha1' => nil,
                 },
               )
             end
@@ -210,7 +212,8 @@ module Bosh::Director
                   'stdout' => 'fake-stdout',
                   'stderr' => 'fake-stderr',
                   'logs' => {
-                    'blobstore_id' => 'fake-logs-blobstore-id'
+                    'blobstore_id' => 'fake-logs-blobstore-id',
+                    'sha1' => 'fake-logs-blob-sha1',
                   },
                 )
               end

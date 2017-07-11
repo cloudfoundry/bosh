@@ -23,7 +23,8 @@ module Bosh::Director
       def perform
         if @instance_ids.size == 1
           instance = @instance_manager.find_instance(@instance_ids[0])
-          @logs_fetcher.fetch(instance, @log_type, @filters)
+          blobstore_id, _ = @logs_fetcher.fetch(instance, @log_type, @filters, true)
+          blobstore_id
         else
           begin
             download_dir = Dir.mktmpdir
@@ -55,7 +56,7 @@ module Bosh::Director
       private
       def generate_and_download(instance_id, path)
         instance = @instance_manager.find_instance(instance_id)
-        blob_id = @logs_fetcher.fetch(instance, @log_type, @filters, true)
+        blob_id, _ = @logs_fetcher.fetch(instance, @log_type, @filters, false)
         time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
         File.open(File.join(path, "#{instance.job}.#{instance.uuid}.#{time}.tgz"), 'w') do |f|
           @blobstore.get(blob_id, f)

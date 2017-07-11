@@ -43,13 +43,13 @@ module Bosh::Director
       end
 
       begin
-        logs_blobstore_id = @logs_fetcher.fetch(@instance.model, 'job', nil)
+        logs_blobstore_id, logs_blobstore_sha1 = @logs_fetcher.fetch(@instance.model, 'job', nil, true)
       rescue DirectorError => e
         @fetch_logs_error = e
       end
 
       if agent_task_result
-        errand_result = Errand::Result.from_agent_task_results(agent_task_result, logs_blobstore_id)
+        errand_result = Errand::Result.from_agent_task_results(agent_task_result, logs_blobstore_id, logs_blobstore_sha1)
         @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
       end
 
