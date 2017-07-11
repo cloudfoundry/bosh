@@ -17,6 +17,7 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
+        @revision_manager = Api::RevisionManager.new
       end
 
       def dry_run?
@@ -24,6 +25,7 @@ module Bosh::Director
       end
 
       def perform
+        started_at = Time.now
         logger.info('Reading deployment manifest')
         manifest_hash = YAML.load(@manifest_text)
         logger.debug("Manifest:\n#{@manifest_text}")
@@ -109,6 +111,17 @@ module Bosh::Director
               @notifier.send_end_event
               logger.info('Finished updating deployment')
               add_event(context, parent_id)
+              @revision_manager.create_revision(
+                deployment_name: @deployment_name,
+                user: username,
+                task: task_id,
+                started_at: started_at,
+                manifest_text: @manifest_text,
+                cloud_config_id: @cloud_config_id,
+                runtime_config_ids: @runtime_config_ids,
+                releases: next_releases,
+                stemcells: next_stemcells,
+              )
 
               "/deployments/#{deployment_plan.name}"
             end
@@ -123,6 +136,18 @@ module Bosh::Director
           # log the second error
         ensure
           add_event(context, parent_id, e)
+          @revision_manager.create_revision(
+            deployment_name: @deployment_name,
+            user: username,
+            task: task_id,
+            started_at: started_at,
+            manifest_text: @manifest_text,
+            cloud_config_id: @cloud_config_id,
+            runtime_config_ids: @runtime_config_ids,
+            releases: nil,
+            stemcells: nil,
+            error: e
+          )
           raise e
         end
       ensure

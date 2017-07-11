@@ -316,9 +316,9 @@ module Bosh::Director
             expect {
               job.perform
             }.to change {
-              Models::Event.count }.from(0).to(2)
+              Models::Event.where(object_type: 'deployment').count }.from(0).to(2)
 
-            event_1 = Models::Event.first
+            event_1 = Models::Event.where(object_type: 'deployment').first
             expect(event_1.user).to eq(task.username)
             expect(event_1.object_type).to eq('deployment')
             expect(event_1.deployment).to eq('deployment-name')
@@ -326,7 +326,7 @@ module Bosh::Director
             expect(event_1.task).to eq("#{task.id}")
             expect(event_1.timestamp).to eq(Time.now)
 
-            event_2 = Models::Event.order(:id).last
+            event_2 = Models::Event.where(object_type: 'deployment').order(:id).last
             expect(event_2.parent_id).to eq(1)
             expect(event_2.user).to eq(task.username)
             expect(event_2.object_type).to eq('deployment')
@@ -351,8 +351,8 @@ module Bosh::Director
               expect {
                 job.perform
               }.to change {
-                Models::Event.count }.from(0).to(2)
-              expect(Models::Event.order(:id).last.context).to eq({'before' => {}, 'after' => {'releases' => ['release/version-1'], 'stemcells' => ['stemcell/version-1']}})
+                Models::Event.where(object_type: 'deployment').count }.from(0).to(2)
+              expect(Models::Event.where(object_type: 'deployment').order(:id).last.context).to eq({'before' => {}, 'after' => {'releases' => ['release/version-1'], 'stemcells' => ['stemcell/version-1']}})
             end
           end
 
@@ -363,10 +363,10 @@ module Bosh::Director
               expect {
                 job.perform
               }.to change {
-                Models::Event.count }.from(0).to(2)
+                Models::Event.where(object_type: 'deployment').count }.from(0).to(2)
 
-              expect(Models::Event.first.action).to eq('create')
-              expect(Models::Event.order(:id).last.action).to eq('create')
+              expect(Models::Event.where(object_type: 'deployment').first.action).to eq('create')
+              expect(Models::Event.where(object_type: 'deployment').order(:id).last.action).to eq('create')
             end
           end
 
@@ -375,9 +375,9 @@ module Bosh::Director
               expect {
                 job.perform
               }.to change {
-                Models::Event.count }.from(0).to(2)
-              expect(Models::Event.first.action).to eq('update')
-              expect(Models::Event.order(:id).last.action).to eq('update')
+                Models::Event.where(object_type: 'deployment').count }.from(0).to(2)
+              expect(Models::Event.where(object_type: 'deployment').first.action).to eq('update')
+              expect(Models::Event.where(object_type: 'deployment').order(:id).last.action).to eq('update')
             end
           end
 

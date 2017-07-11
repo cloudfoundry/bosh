@@ -48,6 +48,7 @@ module Bosh::Director
         @instance_manager = Api::InstanceManager.new
         @deployments_repo = DeploymentPlan::DeploymentRepo.new
         @instance_ignore_manager = Api::InstanceIgnoreManager.new
+        @revision_manager = Api::RevisionManager.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -143,6 +144,21 @@ module Bosh::Director
 
       get '/:deployment/snapshots' do
         json_encode(@snapshot_manager.snapshots(deployment))
+      end
+
+      get '/:deployment/history' do
+        json_encode(@revision_manager.revisions(deployment.name,
+          include_manifest: params['include_manifest'],
+          include_cloud_config: params['include_cloud_config'],
+          include_runtime_configs: params['include_runtime_configs']))
+      end
+
+      get '/:deployment/history/:revision' do
+        json_encode(@revision_manager.revision(deployment.name, params['revision']))
+      end
+
+      get '/:deployment/diff_revisions' do
+        json_encode(@revision_manager.diff(deployment, params['revision1'], params['revision2'], should_redact: !params.fetch(:no_redact, false)))
       end
 
       get '/:deployment/jobs/:job/:index/snapshots' do
