@@ -98,7 +98,7 @@ module Bosh::Director
         if @uuid.nil?
           "#{@job_name}/#{@index}"
         else
-          "#{@job_name}/#{@index} (#{@uuid})"
+          "#{@job_name}/#{@uuid} (#{@index})"
         end
       end
 
