@@ -34,6 +34,7 @@ packages:
 - ruby
 - s3cli
 - davcli
+- bosh-gcscli
 - verify_multidigest
 
 properties:
