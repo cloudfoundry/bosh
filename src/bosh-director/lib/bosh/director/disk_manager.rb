@@ -46,24 +46,6 @@ module Bosh::Director
       end
     end
 
-    def resize_disk(instance_model, instance_plan, new_disk, old_disk)
-      @logger.info("Starting IaaS native disk resize #{old_disk.model.disk_cid}")
-      detach_disk(old_disk.model)
-
-      begin
-        cloud_resize_disk(old_disk.model, new_disk.size)
-      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
-        @logger.info("IaaS native disk resize not possible for #{old_disk.model.disk_cid}. Falling back to copy disk.\n#{e.message}")
-        attach_disk(old_disk.model, instance_plan.tags)
-        update_disk(instance_model, instance_plan, new_disk, old_disk)
-        return
-      end
-
-      attach_disk(old_disk.model, instance_plan.tags)
-      old_disk.model.update(:size => new_disk.size)
-      @logger.info("Finished IaaS native disk resize #{old_disk.model.disk_cid}")
-    end
-
     def attach_disks_if_needed(instance_plan)
       unless instance_plan.needs_disk?
         @logger.warn('Skipping disk attachment, instance no longer needs disk')
@@ -94,11 +76,6 @@ module Bosh::Director
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
       mount_disk(disk) if disk.managed?
-    end
-
-    def cloud_resize_disk(old_disk_model, new_disk_size)
-      cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
-      cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
     def detach_disk(disk)
@@ -280,6 +257,29 @@ module Bosh::Director
 
         @orphan_disk_manager.orphan_disk(old_disk_model)
       end
+    end
+
+    def resize_disk(instance_model, instance_plan, new_disk, old_disk)
+      @logger.info("Starting IaaS native disk resize #{old_disk.model.disk_cid}")
+      detach_disk(old_disk.model)
+
+      begin
+        cloud_resize_disk(old_disk.model, new_disk.size)
+      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
+        @logger.info("IaaS native disk resize not possible for #{old_disk.model.disk_cid}. Falling back to copy disk.\n#{e.message}")
+        attach_disk(old_disk.model, instance_plan.tags)
+        update_disk(instance_model, instance_plan, new_disk, old_disk)
+        return
+      end
+
+      attach_disk(old_disk.model, instance_plan.tags)
+      old_disk.model.update(:size => new_disk.size)
+      @logger.info("Finished IaaS native disk resize #{old_disk.model.disk_cid}")
+    end
+
+    def cloud_resize_disk(old_disk_model, new_disk_size)
+      cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
+      cloud.resize_disk(old_disk_model.disk_cid, new_disk_size)
     end
 
     def cloud_for_cpi(cpi)
