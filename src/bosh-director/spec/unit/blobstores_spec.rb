@@ -2,11 +2,36 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Blobstores do
-    subject(:blobstores) { described_class.new(config) }
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    subject(:blobstores) { described_class.new }
 
+    let(:some_blobstore_config) {
+      {
+        'provider' => 'davcli',
+        'options' => {
+          'endpoint' => 'http://127.0.0.1',
+          'user' => 'admin',
+          'password' => nil,
+          'davcli_path' => true
+        }
+      }
+    }
+    let(:some_backup_blobstore_config) {
+      {
+        'provider' => 's3cli',
+        'options' => {
+          'bucket_name' => 'foo',
+          'access_key_id' => 'asdf',
+          'secret_access_key' => 'zxcv',
+          's3cli_path' => true
+        }
+      }
+    }
 
-    before { allow(Bosh::Blobstore::Client).to receive(:safe_create) }
+    before do
+      allow(Bosh::Blobstore::Client).to receive(:safe_create)
+      allow(Bosh::Director::Config).to receive(:blobstore_config).and_return(some_blobstore_config)
+      allow(Bosh::Director::Config).to receive(:backup_blobstore_config).and_return(some_backup_blobstore_config)
+    end
 
     describe '#blobstore' do
       it 'provides the blobstore client' do

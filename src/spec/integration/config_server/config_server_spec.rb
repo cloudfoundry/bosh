@@ -36,6 +36,14 @@ describe 'using director with config server', type: :integration do
       }
     }
   end
+  let(:expected_blobstore_config) {
+    {
+      "provider" =>"local",
+      "options" =>{
+        "blobstore_path" => current_sandbox.blobstore_storage_dir
+      }
+    }
+  }
 
   def prepend_namespace(name)
     "/#{director_name}/#{deployment_name}/#{name}"
@@ -250,6 +258,7 @@ describe 'using director with config server', type: :integration do
               },
               'bosh' => {
                 'mbus' => Hash,
+                'blobstores' => [expected_blobstore_config],
                 'group' => 'testdirector-simple-foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
               },
@@ -327,6 +336,7 @@ describe 'using director with config server', type: :integration do
               },
               'bosh' => {
                 'mbus' => Hash,
+                'blobstores' => [expected_blobstore_config],
                 'group' => 'testdirector-simple-foobar',
                 'password' => 'foobar',
                 'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -414,6 +424,7 @@ describe 'using director with config server', type: :integration do
                                                         },
                                                         'bosh' => {
                                                           'mbus' => Hash,
+                                                          'blobstores' => [expected_blobstore_config],
                                                           'password' => 'foobar',
                                                           'remove_dev_tools' => true,
                                                           'group' => 'testdirector-simple-foobar',

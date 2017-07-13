@@ -2,9 +2,9 @@ module Bosh::Director
   class Blobstores
     attr_reader :blobstore
 
-    def initialize(config)
-      b_config = config.blobstore_config
-      bd_config = config.backup_blobstore_config
+    def initialize()
+      b_config = Config.blobstore_config
+      bd_config = Config.backup_blobstore_config
       @blobstore = create_client(b_config)
       @backup_destination = create_client(bd_config) if bd_config
     end

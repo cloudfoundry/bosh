@@ -4,6 +4,10 @@ module Bosh::Director
   describe App do
     let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
+    before do
+      allow(Bosh::Director::Blobstores).to receive(:new)
+    end
+
     describe 'initialize' do
       it 'takes a Config' do
         described_class.new(config)
@@ -23,6 +27,9 @@ module Bosh::Director
     end
 
     describe '#blobstores' do
+      before do
+        allow(Bosh::Director::Blobstores).to receive(:new).and_call_original
+      end
       it 'provides the blobstores' do
         expect(described_class.new(config).blobstores).to be_a(Blobstores)
       end

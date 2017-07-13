@@ -30,6 +30,14 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
 '
     }
   }
+  let(:expected_blobstore_config) {
+    {
+      "provider" =>"local",
+      "options" =>{
+        "blobstore_path" => current_sandbox.blobstore_storage_dir
+      }
+    }
+  }
 
   describe 'deploy' do
     it 'sends correct CPI requests' do
@@ -72,6 +80,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
         'disk_cids' => [],
         'env' => {'bosh' => {
           'mbus' => expected_mbus,
+          'blobstores' => [expected_blobstore_config],
           'group' => String,
           'groups' => [
             'testdirector',
@@ -137,6 +146,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
         'disk_cids' => [],
         'env' => {'bosh' => {
           'mbus' => expected_mbus,
+          'blobstores' => [expected_blobstore_config],
           'group' => String,
           'groups' => [
             'testdirector',
@@ -204,6 +214,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
+            'blobstores' => [expected_blobstore_config],
             'password' => 'foobar',
             'group' => 'testdirector-simple-foobar',
             'groups' => [
@@ -293,6 +304,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
@@ -390,6 +402,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
@@ -490,6 +503,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
@@ -591,6 +605,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
@@ -698,6 +713,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
@@ -807,6 +823,7 @@ K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => 'testdirector-simple-first-job',
               'groups' => ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']

@@ -466,4 +466,44 @@ describe Bosh::Director::Config do
       end
     end
   end
+
+  describe '#blobstore_config' do
+    before do
+      described_class.configure(test_config)
+    end
+    let(:expected_blobstore_config) do
+      {
+        'provider' => 'davcli',
+        'options' => {
+          'endpoint' => 'http://127.0.0.1',
+          'user' => 'admin',
+          'password' => nil,
+          'davcli_path' => true
+        }
+      }
+    end
+    it 'returns blobstore correct config info' do
+      expect(described_class.blobstore_config).to eq(expected_blobstore_config)
+    end
+  end
+
+  describe '#backup_blobstore_config' do
+    before do
+      described_class.configure(test_config)
+    end
+    let(:expected_backup_blobstore_config) do
+      {
+        'provider' => 's3cli',
+        'options' => {
+          'bucket_name' => 'foo',
+          'access_key_id' => 'asdf',
+          'secret_access_key' => 'zxcv',
+          's3cli_path' => true
+        }
+      }
+    end
+    it 'returns backup blobstore correct config info' do
+      expect(described_class.backup_blobstore_config).to eq(expected_backup_blobstore_config)
+    end
+  end
 end
