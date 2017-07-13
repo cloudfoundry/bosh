@@ -117,6 +117,7 @@ module Bosh::Clouds
     def redact_arguments(method_name, arguments)
       if method_name == 'create_vm'
         arguments = redact_from_env_in_create_vm_arguments(arguments)
+        arguments = redact_network_cloud_property_in_create_vm_arguments(arguments)
         redact_cloud_property_values(arguments, 2)
       elsif method_name == 'create_disk'
         redact_cloud_property_values(arguments, 1)
@@ -130,6 +131,24 @@ module Bosh::Clouds
       cloud_properties = redacted_arguments[position]
       redacted_cloud_properties = redactAllBut([], cloud_properties)
       redacted_arguments[position] = redacted_cloud_properties
+      redacted_arguments
+    end
+
+    def redact_network_cloud_property_in_create_vm_arguments(arguments)
+      redacted_arguments = arguments.clone
+      networks_hash = redacted_arguments[3]
+
+      if networks_hash && networks_hash.is_a?(Hash)
+        cloned_networks_hash = Bosh::Common::DeepCopy.copy(networks_hash)
+
+        cloned_networks_hash.each do |_, network_hash|
+          cloud_properties = network_hash['cloud_properties']
+          network_hash['cloud_properties'] = redactAllBut([], cloud_properties) if (cloud_properties && cloud_properties.is_a?(Hash))
+        end
+
+        redacted_arguments[3] = cloned_networks_hash
+      end
+
       redacted_arguments
     end
 

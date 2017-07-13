@@ -250,12 +250,72 @@ module Bosh::Director::DeploymentPlan
               }
             }
           end
-          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', {}, ['foo-az']) }
+          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az']) }
           let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
+          let(:subnet_cloud_properties) { {} }
 
           context 'when dns is changed' do
             it 'should return true' do
               expect(instance_plan.networks_changed?).to be_truthy
+            end
+          end
+
+          context 'when variables exist in the spec' do
+            let(:current_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_current_networks_hash) { {'a' => {'b' => 'smurf'}} }
+
+            let(:desired_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
+
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+
+            let(:mock_network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
+            let(:mock_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+            let(:mock_desired_instance) { instance_double(Bosh::Director::DeploymentPlan::DesiredInstance) }
+            let(:mock_existing_instance) { instance_double(Bosh::Director::Models::Instance) }
+            let(:simple_instance_plan) { InstancePlan.new(existing_instance: mock_existing_instance, desired_instance: mock_desired_instance, instance: mock_instance) }
+
+            let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+            before do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+
+              allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
+              allow(mock_instance).to receive(:job_name)
+              allow(mock_instance).to receive(:current_networks)
+              allow(mock_instance).to receive(:availability_zone)
+              allow(mock_instance).to receive(:index)
+              allow(mock_instance).to receive(:uuid)
+              allow(mock_instance).to receive(:previous_variable_set).and_return(previous_variable_set)
+              allow(mock_instance).to receive(:desired_variable_set).and_return(desired_variable_set)
+
+              allow(mock_desired_instance).to receive_message_chain(:instance_group, :default_network)
+
+              allow(mock_existing_instance).to receive(:spec_p).and_return(current_networks_hash)
+
+              allow(Bosh::Director::DeploymentPlan::NetworkSettings).to receive(:new).and_return(mock_network_settings)
+              allow(mock_network_settings).to receive(:to_hash).and_return(desired_networks_hash)
+            end
+
+
+            it 'compares the interpolated cloud_properties' do
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(simple_instance_plan.networks_changed?).to be_truthy
+            end
+
+            it 'does not log the interpolated cloud property changes' do
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(logger).to receive(:debug).with(
+                "networks_changed? network settings changed FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}"
+              )
+              expect(simple_instance_plan.networks_changed?).to be_truthy
             end
           end
         end

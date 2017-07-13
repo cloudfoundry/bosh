@@ -32,6 +32,7 @@ module Bosh
         BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end
       let(:cloud_properties) { {'ram' => '2gb'} }
+      let(:network_cloud_properties) { {'bandwidth' => '5mbps'} }
       let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
       let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
       let(:stemcell) do
@@ -58,7 +59,7 @@ module Bosh
         instance
       end
       let(:reservation) do
-        subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', {'ram' => '2gb'}, ['az-1'])
+        subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
         network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
       end
@@ -595,11 +596,57 @@ module Bosh
         end
       end
 
-      context 'env interpolation' do
+      context 'cloud_properties, networks_settings, env interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
 
         let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
+
+        let(:cloud_properties) do
+          {
+            'a' => 'bar',
+            'b' => '((smurf_placeholder))',
+            'c' => '((gargamel_placeholder))'
+          }
+        end
+
+        let(:resolved_cloud_properties) do
+          {
+            'a' => 'bar',
+            'b' => 'blue',
+            'c' => 'green'
+          }
+        end
+
+        let(:network_cloud_properties) do
+          {'network-v1' => '((find-me))'}
+        end
+
+        let(:resolved_network_cloud_properties) do
+          {'network-v1' => 'resolved-name'}
+        end
+
+        let(:unresolved_networks_settings) do
+          {
+            'name' => {
+              'type' => 'dynamic',
+              'cloud_properties' => network_cloud_properties,
+              'dns' => 'dns',
+              'default' => ['gateway']
+            }
+          }
+        end
+
+        let(:resolved_networks_settings) do
+          {
+            'name' => {
+              'type' => 'dynamic',
+              'cloud_properties' => resolved_network_cloud_properties,
+              'dns' => 'dns',
+              'default' => ['gateway']
+            }
+          }
+        end
 
         let(:env_hash) do
           {
@@ -608,6 +655,7 @@ module Bosh
             'gargamel' => '((gargamel_placeholder))'
           }
         end
+
         let(:env) do
           DeploymentPlan::Env.new(
             env_hash
@@ -622,50 +670,7 @@ module Bosh
           }
         end
 
-        before do
-          allow(instance_spec).to receive(:as_apply_spec).and_return({})
-          allow(instance_spec).to receive(:full_spec).and_return({})
-          allow(instance_spec).to receive(:as_template_spec).and_return({})
-          allow(instance_plan).to receive(:spec).and_return(instance_spec)
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-          allow(client_factory).to receive(:create_client).and_return(config_server_client)
-        end
-
-        it 'should happen' do
-          expect(config_server_client).to receive(:interpolate_with_versioning).with(env_hash, anything).and_return(resolved_env_hash)
-          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(cloud_properties)
-
-          expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
-            expect(env['foo']).to eq('bar')
-            expect(env['smurf']).to eq('blue')
-            expect(env['gargamel']).to eq('green')
-          end.and_return('new-vm-cid')
-
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        end
-      end
-
-      context 'cloud-config interpolation' do
-        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
-
-        let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
-
-        let(:cloud_properties) do
-          {
-              'foo' => 'bar',
-              'smurf' => '((smurf_placeholder))',
-              'gargamel' => '((gargamel_placeholder))'
-          }
-        end
-
-        let(:resolved_cloud_properties) do
-          {
-              'foo' => 'bar',
-              'smurf' => 'blue',
-              'gargamel' => 'green'
-          }
-        end
+        let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
         before do
           allow(instance_spec).to receive(:as_apply_spec).and_return({})
@@ -677,13 +682,16 @@ module Bosh
         end
 
         it 'should happen' do
-          expect(config_server_client).to receive(:interpolate_with_versioning).with({}, anything).and_return({})
-          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(resolved_cloud_properties)
+          instance_plan.instance.desired_variable_set = desired_variable_set
 
-          expect(cloud).to receive(:create_vm) do |_, _, cloud_properties, _, _, _|
-            expect(cloud_properties['foo']).to eq('bar')
-            expect(cloud_properties['smurf']).to eq('blue')
-            expect(cloud_properties['gargamel']).to eq('green')
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(env_hash, desired_variable_set).and_return(resolved_env_hash)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
+
+          expect(cloud).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
+            expect(cloud_properties_param).to eq(resolved_cloud_properties)
+            expect(network_settings_param).to eq(resolved_networks_settings)
+            expect(env_param).to eq(resolved_env_hash)
           end.and_return('new-vm-cid')
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

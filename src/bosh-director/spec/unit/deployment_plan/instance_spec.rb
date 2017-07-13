@@ -249,8 +249,8 @@ module Bosh::Director::DeploymentPlan
             let(:merged_cloud_properties) { {'abcd'=>'((/placeholder3))', 'baz'=>'((/placeholder1))', 'a'=>'((/placeholder2))'} }
             let(:interpolated_merged_cloud_properties) { {'abcd'=>'p1', 'baz'=>'p2', 'a'=>'p3'} }
 
-            let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
             let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
             let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
