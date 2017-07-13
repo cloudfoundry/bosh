@@ -558,13 +558,22 @@ module Bosh::Director
         let(:cloud_properties) { {'cloud' => '((cloud_placeholder))'} }
         let(:interpolated_cloud_properties) { {'cloud' => 'unicorns'} }
 
+        let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
         before do
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
           allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'uses the interpolated cloud config' do
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(5).times.with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          instance_plan.instance.desired_variable_set = desired_variable_set
+
+          # 1 call to check if disks has changed, 1 to figure out the change, 1 to interpolate before we send to CPI
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(3).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
+
+          # 1 call to check if disks has changed, 1 to figure out the change
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(2).times.with(cloud_properties, instance_plan.instance.previous_variable_set).and_return(interpolated_cloud_properties)
+
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
           expect {
