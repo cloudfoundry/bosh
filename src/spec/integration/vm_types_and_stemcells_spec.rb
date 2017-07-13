@@ -24,7 +24,9 @@ describe 'vm_types and stemcells', type: :integration do
 
   let(:expected_env_hash) do
     hash = Marshal.load(Marshal.dump(env_hash))
-    hash['bosh']['mbus'] =  Hash
+    hash['bosh']['mbus'] = Hash
+    hash['bosh']['blobstores'] = Array
+    hash
   end
 
   let(:manifest_hash) do
@@ -77,6 +79,7 @@ stemcells:
       expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
 
       env_hash['env2'] = 'new_env_value'
+      expected_env_hash['env2'] = 'new_env_value'
       manifest_hash['jobs'].first['env'] = env_hash
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
