@@ -13,7 +13,6 @@ module Bosh::Director
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       event_log_stage.advance_and_track('Preparing deployment') do
         changes_exist = true
-        use_existing_vm = false
 
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
         job_renderer = deployment_planner.job_renderer
@@ -22,13 +21,17 @@ module Bosh::Director
 
         if errand_instance_group.nil?
           errand_instance_group = must_errand_instance_group(deployment_planner, errand_name, deployment_name)
-          needed_instance_plans = needed_instance_plans(errand_instance_group, job_renderer)
+        end
+
+        if errand_instance_group.is_errand?
+          @logger.info('Starting to prepare for deployment')
+          errand_instance_group.bind_instances(deployment_planner.ip_provider)
           target_instance = errand_instance_group.instances.first
+          needed_instance_plans = needed_instance_plans(errand_instance_group, job_renderer)
           changes_exist = changes_exist?(needed_instance_plans, target_instance)
           compile_step(deployment_planner).perform
         else
           target_instance = errand_instance_group.instances.first
-          use_existing_vm = true
         end
 
         runner = Errand::Runner.new(target_instance, errand_name, @task_result, @instance_manager, @logs_fetcher)
@@ -38,7 +41,6 @@ module Bosh::Director
           deployment_planner,
           errand_name,
           errand_instance_group,
-          use_existing_vm,
           changes_exist,
           deployment_name,
           @logger)
@@ -88,8 +90,6 @@ module Bosh::Director
         raise InstanceNotFound, "Instance '#{deployment_name}/#{errand_name}/0' doesn't exist"
       end
 
-      @logger.info('Starting to prepare for deployment')
-      errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
       errand_instance_group
     end

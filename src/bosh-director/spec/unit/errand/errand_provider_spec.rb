@@ -32,13 +32,13 @@ module Bosh::Director
       context 'when running an errand by release job name' do
         let(:job_name) { 'errand-job-name' }
         let(:job) { instance_double(DeploymentPlan::Job, name: job_name, runs_as_errand?: true) }
-        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance]) }
+        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], is_errand?: false) }
         let(:instance_groups) { [instance_group] }
 
         it 'provides an errand that will run on the first instance in that group' do
           expect(Errand::Runner).to receive(:new).with(instance, job_name, task_result, instance_manager, logs_fetcher).and_return(runner)
           expect(Errand::ErrandObject).to receive(:new).with(
-            runner, deployment_planner, job_name, instance_group, true, true, deployment_name, logger
+            runner, deployment_planner, job_name, instance_group, true, deployment_name, logger
           ).and_return(errand_object)
           returned_errand = subject.get(deployment_name, 'errand-job-name')
           expect(returned_errand).to eq(errand_object)
@@ -49,7 +49,8 @@ module Bosh::Director
         let(:instance_group_name) { 'instance-group-name' }
         let(:instance_groups) { [instance_group] }
         let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job', runs_as_errand?: false) }
-        let(:errand_job) { instance_double(DeploymentPlan::Job, name: 'errand-job', runs_as_errand?: true) }
+        let(:errand_job_name) {'errand-job'}
+        let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
         let(:needed_instance_plans) { [] }
         let(:instance_model) { Models::Instance.make }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
@@ -80,10 +81,27 @@ module Bosh::Director
             expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
             expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::ErrandObject).to receive(:new).with(
-              runner, deployment_planner, instance_group_name, instance_group, false, true, deployment_name, logger
+              runner, deployment_planner, instance_group_name, instance_group, true, deployment_name, logger
             ).and_return(errand_object)
             returned_errand = subject.get(deployment_name, instance_group_name)
             expect(returned_errand).to eq(errand_object)
+          end
+
+          context 'and the lifecycle errand instance group name is the same as the job name' do
+            let(:instance_group_name) { 'ig-name-matching-job-name' }
+            let(:errand_job_name) { instance_group_name }
+
+            it 'returns an errand object that will run on the first instance in that instance group' do
+              expect(package_compile_step).to receive(:perform)
+              expect(instance_group).to receive(:bind_instances).with(ip_provider)
+              expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
+              expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, task_result, instance_manager, logs_fetcher).and_return(runner)
+              expect(Errand::ErrandObject).to receive(:new).with(
+                runner, deployment_planner, instance_group_name, instance_group, true, deployment_name, logger
+              ).and_return(errand_object)
+              returned_errand = subject.get(deployment_name, instance_group_name)
+              expect(returned_errand).to eq(errand_object)
+            end
           end
         end
 
