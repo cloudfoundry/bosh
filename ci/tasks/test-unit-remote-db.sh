@@ -20,4 +20,4 @@ bundle exec rake --trace spec:unit:migrations
 #Restart rds mysql
 gem install aws-sdk --no-ri --no-rdoc
 gem install aws-sdk-core --no-ri --no-rdoc
-ruby bosh-src/ci/tasks/test-unit-remote-reboot-db.rb
+ruby ../ci/tasks/test-unit-remote-reboot-db.rb
