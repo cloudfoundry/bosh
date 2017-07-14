@@ -45,8 +45,6 @@ module Bosh::Director
       instance.template_hashes    = rendered_job_instance.template_hashes
     end
 
-    private
-
     def get_templates_spec(instance_plan)
       begin
        instance_plan.spec.as_template_spec
@@ -56,6 +54,5 @@ module Bosh::Director
         raise message
       end
     end
-
   end
 end

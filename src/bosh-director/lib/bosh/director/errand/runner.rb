@@ -1,13 +1,13 @@
 module Bosh::Director
   class Errand::Runner
-    # @param [Bosh::Director::DeploymentPlan::Job] job
-    # @param [Bosh::Director::TaskDBWriter] task_result_writer
+    # @param [Bosh::Director::DeploymentPlan::Instance] instance
+    # @param [String] instance_group_name
+    # @param [Bosh::Director::TaskDBWriter] task_result
     # @param [Bosh::Director::Api::InstanceManager] instance_manager
-    # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Bosh::Director::LogsFetcher] logs_fetcher
-    def initialize(instance, job_name, task_result, instance_manager, logs_fetcher)
+    def initialize(instance, instance_group_name, task_result, instance_manager, logs_fetcher)
       @instance = instance
-      @job_name = job_name
+      @instance_group_name = instance_group_name
       @task_result = task_result
       @instance_manager = instance_manager
       @agent_task_id = nil
@@ -30,7 +30,7 @@ module Bosh::Director
       event_log_stage = Config.event_log.begin_stage('Running errand', 1)
 
       begin
-        event_log_stage.advance_and_track("#{@job_name}/#{@instance.index}") do
+        event_log_stage.advance_and_track("#{@instance_group_name}/#{@instance.index}") do
           run_errand_result = agent.run_errand
           @agent_task_id = run_errand_result['agent_task_id']
           agent_task_result = agent.wait_for_task(agent_task_id, &blk)
