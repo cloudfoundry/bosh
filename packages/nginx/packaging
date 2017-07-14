@@ -10,11 +10,11 @@ echo "Extracting nginx_upload module..."
 tar xzvf nginx/nginx-upload-module-2.2.tar.gz
 
 echo "Extracting nginx..."
-tar xzvf nginx/nginx-1.11.1.tar.gz
+tar xzvf nginx/nginx-1.12.1.tar.gz
 
 echo "Building nginx..."
 
-pushd nginx-1.11.1
+pushd nginx-1.12.1
   ./configure \
     --with-debug \
     --prefix=${BOSH_INSTALL_TARGET} \
