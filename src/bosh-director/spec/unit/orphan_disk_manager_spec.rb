@@ -13,9 +13,9 @@ module Bosh::Director
 
     let(:event_manager) {Api::EventManager.new(true)}
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
+    let(:cleanup_job) {instance_double(Bosh::Director::Jobs::CleanupArtifacts, username: 'user', task_id: task.id, event_manager: event_manager)}
 
-    before { allow(Config).to receive(:current_job).and_return(update_job) }
+    before { allow(Config).to receive(:current_job).and_return(cleanup_job) }
 
     describe '#orphan_disk' do
       it 'orphans disks and snapshots' do
@@ -79,17 +79,19 @@ module Bosh::Director
         expect(event_1.object_name).to eq('disk123')
         expect(event_1.instance).to eq("#{persistent_disk.instance.job}/#{persistent_disk.instance.uuid}")
         expect(event_1.deployment).to eq(persistent_disk.instance.deployment.name)
+        expect(event_1.error).to be_nil
         expect(event_1.task).to eq("#{task.id}")
 
         event_2 = Bosh::Director::Models::Event.all.last
         expect(event_2.parent_id).to eq(event_1.id)
-        expect(event_1.user).to eq(task.username)
-        expect(event_1.action).to eq('orphan')
-        expect(event_1.object_type).to eq('disk')
-        expect(event_1.object_name).to eq('disk123')
-        expect(event_1.instance).to eq("#{persistent_disk.instance.job}/#{persistent_disk.instance.uuid}")
-        expect(event_1.deployment).to eq(persistent_disk.instance.deployment.name)
-        expect(event_1.task).to eq("#{task.id}")
+        expect(event_2.user).to eq(task.username)
+        expect(event_2.action).to eq('orphan')
+        expect(event_2.object_type).to eq('disk')
+        expect(event_2.object_name).to eq('disk123')
+        expect(event_2.instance).to eq("#{persistent_disk.instance.job}/#{persistent_disk.instance.uuid}")
+        expect(event_2.deployment).to eq(persistent_disk.instance.deployment.name)
+        expect(event_2.error).to be_nil
+        expect(event_2.task).to eq("#{task.id}")
       end
     end
 
@@ -244,6 +246,37 @@ module Bosh::Director
           expect(Models::OrphanSnapshot.all.map(&:snapshot_cid)).to eq(['snap-cid-2'])
         end
 
+        it 'should store delete event' do
+          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+          expect(cloud).to receive(:delete_snapshot).with('snap-cid-a')
+          expect(cloud).to receive(:delete_snapshot).with('snap-cid-b')
+          expect(cloud).to_not receive(:delete_snapshot).with('snap-cid-2')
+          expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
+          subject.delete_orphan_disk(orphan_disk_1)
+          expect(Models::Event.all.count).to eq(2)
+
+          event_1 = Bosh::Director::Models::Event.first
+          expect(event_1.user).to eq(task.username)
+          expect(event_1.action).to eq('delete')
+          expect(event_1.object_type).to eq('disk')
+          expect(event_1.object_name).to eq('disk-cid-1')
+          expect(event_1.instance).to eq(orphan_disk_1.instance_name)
+          expect(event_1.deployment).to eq(orphan_disk_1.deployment_name)
+          expect(event_1.error).to be_nil
+          expect(event_1.task).to eq("#{task.id}")
+
+          event_2 = Bosh::Director::Models::Event.all.last
+          expect(event_2.parent_id).to eq(event_1.id)
+          expect(event_2.user).to eq(task.username)
+          expect(event_2.action).to eq('delete')
+          expect(event_2.object_type).to eq('disk')
+          expect(event_2.object_name).to eq('disk-cid-1')
+          expect(event_2.instance).to eq(orphan_disk_1.instance_name)
+          expect(event_2.deployment).to eq(orphan_disk_1.deployment_name)
+          expect(event_2.error).to be_nil
+          expect(event_2.task).to eq("#{task.id}")
+        end
+
         context 'when the snapshot is not found in the cloud' do
           it 'logs the error and continues to delete the remaining disks' do
             expect(cloud).to receive(:delete_snapshot).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
@@ -256,14 +289,47 @@ module Bosh::Director
         end
 
         context 'when disk is not found in the cloud' do
-          it 'logs the error to the debug log AND continues to delete the remaining disks' do
+          before {
             allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
-            expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
+          }
 
+          it 'logs the error to the debug log AND continues to delete the remaining disks' do
+            expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
             expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
 
             subject.delete_orphan_disk(orphan_disk_1)
             expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+          end
+
+          it 'should store event with error' do
+            expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+            expect(cloud).to receive(:delete_snapshot).with('snap-cid-a')
+            expect(cloud).to receive(:delete_snapshot).with('snap-cid-b')
+            expect(cloud).to_not receive(:delete_snapshot).with('snap-cid-2')
+            expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
+            subject.delete_orphan_disk(orphan_disk_1)
+            expect(Models::Event.all.count).to eq(2)
+
+            event_1 = Bosh::Director::Models::Event.first
+            expect(event_1.user).to eq(task.username)
+            expect(event_1.action).to eq('delete')
+            expect(event_1.object_type).to eq('disk')
+            expect(event_1.object_name).to eq('disk-cid-1')
+            expect(event_1.instance).to eq(orphan_disk_1.instance_name)
+            expect(event_1.deployment).to eq(orphan_disk_1.deployment_name)
+            expect(event_1.error).to be_nil
+            expect(event_1.task).to eq("#{task.id}")
+
+            event_2 = Bosh::Director::Models::Event.all.last
+            expect(event_2.parent_id).to eq(event_1.id)
+            expect(event_2.user).to eq(task.username)
+            expect(event_2.action).to eq('delete')
+            expect(event_2.object_type).to eq('disk')
+            expect(event_2.object_name).to eq('disk-cid-1')
+            expect(event_2.instance).to eq(orphan_disk_1.instance_name)
+            expect(event_2.deployment).to eq(orphan_disk_1.deployment_name)
+            expect(event_2.error).to eq('Bosh::Clouds::DiskNotFound')
+            expect(event_2.task).to eq("#{task.id}")
           end
         end
 

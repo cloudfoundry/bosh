@@ -72,6 +72,13 @@ describe 'orphaned disks', type: :integration do
 
     result = bosh_runner.run('disks --orphaned')
     expect(result).not_to include orphaned_disk_cid
+    output = bosh_runner.run('events', deployment_name: 'simple', json: true)
+
+    events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+    expect(events).to include(
+      {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'delete', 'object_type' => 'disk', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'delete', 'object_type' => 'disk', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+    )
   end
 
   it 'does not detach and reattach disks unnecessarily' do

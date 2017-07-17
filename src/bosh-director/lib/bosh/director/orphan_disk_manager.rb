@@ -82,6 +82,10 @@ module Bosh::Director
 
     def delete_orphan_disk(orphan_disk)
       begin
+        instance_name = orphan_disk.instance_name
+        deployment_name = orphan_disk.deployment_name
+        orphan_disk_cid = orphan_disk.disk_cid
+        parent_id = add_event('delete', deployment_name, instance_name, orphan_disk_cid)
         orphan_disk.orphan_snapshots.each do |orphan_snapshot|
           delete_orphan_snapshot(orphan_snapshot)
         end
@@ -89,9 +93,11 @@ module Bosh::Director
         cloud = CloudFactory.create_with_latest_configs.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
-      rescue Bosh::Clouds::DiskNotFound
+      rescue Bosh::Clouds::DiskNotFound => e
         @logger.debug("Disk not found in IaaS: #{orphan_disk.disk_cid}")
         orphan_disk.destroy
+      ensure
+        add_event('delete', deployment_name, instance_name, orphan_disk_cid, parent_id, e)
       end
     end
 

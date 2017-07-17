@@ -3,6 +3,12 @@ require 'timecop'
 
 module Bosh::Director
   describe Jobs::CleanupArtifacts do
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
+
+    before { allow(Config).to receive(:current_job).and_return(update_job) }
+
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
       let(:config) { {'remove_all' => remove_all} }
