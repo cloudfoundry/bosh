@@ -34,6 +34,12 @@ module Bosh::Dev::Sandbox
         FileUtils.mkdir_p @uaa_webapps_path
         FileUtils.cp WAR_FILE_PATH, @uaa_webapps_path
       end
+
+      @config_path = File.join(sandbox_root, 'uaa_config')
+      FileUtils.mkdir_p(@config_path)
+      write_config_path('symmetric')
+
+      @uaa_process = create_uaa_process
     end
 
     def self.install
@@ -51,22 +57,34 @@ module Bosh::Dev::Sandbox
     end
 
     def start
-      uaa_process.start
+      @uaa_process.start
 
       begin
         @connector.try_to_connect(3000)
       rescue
-        output_service_log(uaa_process.description, uaa_process.stdout_contents, uaa_process.stderr_contents)
+        output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
       end
+      @service_started = true
     end
 
     def stop
-      uaa_process.stop
+      @uaa_process.stop
     end
 
     def reconfigure(encryption)
+      encryption = 'symmetric' if encryption != 'asymmetric'
+
+      @requires_restart = (@encryption != encryption)
       @encryption = encryption
+      write_config_path(@encryption)
+    end
+
+    def restart_if_needed
+      if @requires_restart || !@service_started
+        stop
+        start
+      end
     end
 
     private
@@ -75,9 +93,7 @@ module Bosh::Dev::Sandbox
       Bosh::Retryable.new({tries: 6})
     end
 
-    def uaa_process
-      @service.stop if @service
-
+    def create_uaa_process
       opts = {
           'uaa.http_port' => @port,
           'uaa.server_port' => @server_port,
@@ -85,18 +101,17 @@ module Bosh::Dev::Sandbox
           'uaa.webapps' => @uaa_webapps_path
       }
 
-      @service = Service.new(
+      Service.new(
           [executable_path, 'run', '-config', server_xml],
           {
               output: @log_location,
               env: {
-                  'CATALINA_OPTS' => opts.map { |k, v| "-D#{k}=#{v}" }.join(" "),
-                  'UAA_CONFIG_PATH' => config_path
+                  'CATALINA_OPTS' => ' -Xms512M -Xmx512M ' + opts.map { |k, v| "-D#{k}=#{v}" }.join(" "),
+                  'UAA_CONFIG_PATH' => @config_path
               }
           },
           @logger
       )
-
     end
 
     def working_dir
@@ -111,13 +126,20 @@ module Bosh::Dev::Sandbox
       File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
-    def config_path
-      base_path = 'spec/assets/uaa_config'
-      if @encryption == 'asymmetric'
-        return File.expand_path(File.join(base_path, 'asymmetric'), REPO_ROOT)
-      end
+    def write_config_path(encryption)
+      spec_assets_base_path = 'spec/assets/uaa_config'
 
-      File.expand_path(File.join(base_path, 'symmetric'), REPO_ROOT)
+      if encryption == 'asymmetric'
+        FileUtils.cp(
+            File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
+            @config_path
+        )
+      else
+        FileUtils.cp(
+            File.expand_path(File.join(spec_assets_base_path, 'symmetric', 'uaa.yml'), REPO_ROOT),
+            @config_path
+        )
+      end
     end
 
     DEBUG_HEADER = '*' * 20
