@@ -64,6 +64,9 @@ module Bosh::Dev::Sandbox
       nginx_blobs_path = File.join(RELEASE_ROOT, 'blobs', 'nginx')
       @runner.run("cp -R #{nginx_blobs_path} #{File.join(@working_dir)}")
 
+      patches_path = File.join(RELEASE_ROOT, 'src', 'patches')
+      @runner.run("cp -R #{patches_path} #{File.join(@working_dir)}")
+
       Dir.chdir(@working_dir) do
         packaging_script_path = File.join(RELEASE_ROOT, 'packages', 'nginx', 'packaging')
         @runner.run("bash #{packaging_script_path}", env: {
