@@ -33,7 +33,7 @@ module DBSpecHelper
           @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432, Bosh::Core::Shell.new, user || 'postgres', password || '', host)
         when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
         when 'sqlite'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
@@ -77,11 +77,6 @@ module DBSpecHelper
 
       FileUtils.cp_r(files_to_migrate, @migration_dir)
       Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
-    end
-
-    def migrate_all
-      reset_database
-      Sequel::TimestampMigrator.new(@db, @director_migrations_dir, {}).run
     end
 
     def migrate(migration_file)
