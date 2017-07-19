@@ -3,6 +3,7 @@ require_relative '../spec_helper'
 describe 'vm delete', type: :integration do
   include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
+  with_reset_hm_before_each
 
   it 'delete the vm by its vm_cid' do
     deploy_from_scratch
@@ -12,6 +13,12 @@ describe 'vm delete', type: :integration do
     expect(current_sandbox.cpi.has_vm(instance.vm_cid)).to be_truthy
     bosh_runner.run("delete-vm #{instance.vm_cid}", deployment_name: 'simple')
     expect(current_sandbox.cpi.has_vm(instance.vm_cid)).not_to be_truthy
+    expect(director.vms.count).to eq(2)
+
+    #wait for resurrection
+    resurrected_instance = director.wait_for_vm(instance.job_name, instance.index, 300, deployment_name: 'simple')
+    expect(resurrected_instance.vm_cid).to_not eq(instance.vm_cid)
+    expect(director.vms.count).to eq(3)
 
     #no reference to instance
     network ={'a' => {'ip' => '192.168.1.5', 'type' => 'dynamic'}}
