@@ -16,14 +16,14 @@ When working on a specific component, switch to that directory before running `r
 
 ```
 # first change into the component's directory
-bosh$ cd bosh-director
-bosh/bosh-director$ bundle exec rspec
+bosh$ cd src/bosh-director
+bosh/src/bosh-director$ bundle exec rspec
 ```
 
 To run unit tests for all components, use the `spec:unit` rake task from the project root:
 
 ```
-bosh$ bundle exec rake spec:unit
+bosh/src$ bundle exec rake spec:unit
 ```
 
 The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3. All code needs to run on Ruby 2.x.x.
@@ -31,22 +31,22 @@ The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
 ```
 
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `spec/integration` directory. Run the integration tests with the `spec:integration` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. Run the integration tests with the `spec:integration` rake task:
 
 ```
-bosh$ bundle exec rake spec:integration
+bosh/src$ bundle exec rake spec:integration
 ```
 
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
 ```
 
 ### Acceptance Tests (BATs)
