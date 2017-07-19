@@ -1,6 +1,7 @@
-require_relative '../../spec_helper'
+require_relative '../../../gocli/spec_helper.rb'
 
-describe 'Links', type: :integration do
+# Make sure to enable the test suite below when you want to generate blobstore and db dumps for mysql and postgresql
+xdescribe 'Links', type: :integration do
   with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false})
 
   let(:manifest_hash) do
@@ -80,7 +81,7 @@ describe 'Links', type: :integration do
     upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
-  it 'runs my test3' do
+  it 'deploys a simple deployment so we can take the database and blobstore dump' do
     deploy_simple_manifest(manifest_hash: manifest_hash)
     bosh_runner.run('-d simple stop --hard ')
     # sleep 60 * 3

@@ -195,6 +195,33 @@ module Bosh::Director
               end
             end
           end
+
+          context 'when the ip_addresses field holds dns entries' do
+            let(:logger) { double(:logger) }
+            let(:event_log) { double(:event_logger) }
+
+            before do
+              allow(logger).to receive(:warn)
+              allow(Config).to receive(:logger).and_return(logger)
+              allow(Config).to receive(:event_log).and_return(event_log)
+
+              link_spec['instances'] << {
+                'name' => 'link-provider-name',
+                'id' => 'link-provider-id',
+                'address' => 'ip-address',
+                'ip_addresses' => {'manual' => 'dns-address'}
+              }
+              link_spec['default_network'] = 'manual'
+            end
+
+            it 'logs the fact that ip_address could not be provided' do
+              log_message = 'IP address not available for the link provider instance: link-provider-name/link-provider-id'
+              expect(logger).to receive(:warn).with(log_message)
+              expect(event_log).to receive(:warn).with(log_message)
+
+              BaseLinkLookup.new(link_network_options).update_addresses!(link_spec)
+            end
+          end
         end
       end
     end
