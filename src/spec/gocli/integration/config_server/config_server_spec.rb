@@ -881,7 +881,11 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
     end
 
+    # Q. Why is this context commented?
+    # A. variable generation based on release spec has been disabled since default CA was removed from config-server.
+    # Ref: Tracker stories #138578557 and #139470935
     xcontext 'when release job spec properties have types' do
+
       let(:manifest_hash) do
         Bosh::Spec::Deployments.test_release_manifest.merge(
           {
