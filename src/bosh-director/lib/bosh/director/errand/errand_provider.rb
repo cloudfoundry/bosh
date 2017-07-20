@@ -9,7 +9,7 @@ module Bosh::Director
       @deployment_planner_provider = deployment_planner_provider
     end
 
-    def get(deployment_name, errand_name)
+    def get(deployment_name, errand_name, when_changed, keep_alive)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       event_log_stage.advance_and_track('Preparing deployment') do
         changes_exist = true
@@ -43,7 +43,8 @@ module Bosh::Director
           deployment_planner,
           errand_name,
           errand_instance_group,
-          changes_exist,
+          when_changed && !changes_exist,
+          keep_alive,
           deployment_name,
           @logger)
       end

@@ -24,9 +24,9 @@ module Bosh::Director
       lock_helper.with_deployment_lock(@deployment_name) do
         deployment_plan_provider = Errand::DeploymentPlannerProvider.new(logger)
         errand_provider = Errand::ErrandProvider.new(@logs_fetcher, @instance_manager, event_manager, logger, task_result, deployment_plan_provider)
-        @errand = errand_provider.get(@deployment_name, @errand_name)
+        @errand = errand_provider.get(@deployment_name, @errand_name, @when_changed, @keep_alive)
         checkpoint_block = lambda { task_checkpoint }
-        @errand.run(@keep_alive, @when_changed, &checkpoint_block)
+        @errand.run(&checkpoint_block)
       end
     end
 
