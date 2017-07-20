@@ -38,9 +38,9 @@ module Bosh::Director
         let(:instance_groups) { [instance_group] }
 
         it 'provides an errand that will run on the first instance in that group' do
-          expect(Errand::Runner).to receive(:new).with(instance, job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+          expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
           expect(Errand::ErrandStep).to receive(:new).with(
-            runner, deployment_planner, job_name, instance_group, false, keep_alive, deployment_name, logger
+            runner, deployment_planner, job_name, instance, instance_group, false, keep_alive, deployment_name, logger
           ).and_return(errand_step)
           returned_errand = subject.get(deployment_name, 'errand-job-name', when_changed, keep_alive)
           expect(returned_errand).to eq(errand_step)
@@ -81,9 +81,9 @@ module Bosh::Director
             expect(package_compile_step).to receive(:perform)
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
             expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
-            expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
+            expect(Errand::Runner).to receive(:new).with(instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::ErrandStep).to receive(:new).with(
-              runner, deployment_planner, instance_group_name, instance_group, false, keep_alive, deployment_name, logger
+              runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger
             ).and_return(errand_step)
             returned_errand = subject.get(deployment_name, instance_group_name, when_changed, keep_alive)
             expect(returned_errand).to eq(errand_step)
@@ -97,9 +97,9 @@ module Bosh::Director
               expect(package_compile_step).to receive(:perform)
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
               expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
-              expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+              expect(Errand::Runner).to receive(:new).with(instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
               expect(Errand::ErrandStep).to receive(:new).with(
-                runner, deployment_planner, instance_group_name, instance_group, false, keep_alive, deployment_name, logger
+                runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger
               ).and_return(errand_step)
               returned_errand = subject.get(deployment_name, instance_group_name, when_changed, keep_alive)
               expect(returned_errand).to eq(errand_step)

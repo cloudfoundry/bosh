@@ -36,12 +36,13 @@ module Bosh::Director
           target_instance = errand_instance_group.instances.first
         end
 
-        runner = Errand::Runner.new(target_instance, errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
+        runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
 
         return Errand::ErrandStep.new(
           runner,
           deployment_planner,
           errand_name,
+          target_instance,
           errand_instance_group,
           when_changed && !changes_exist,
           keep_alive,

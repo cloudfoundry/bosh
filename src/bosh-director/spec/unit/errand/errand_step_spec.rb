@@ -7,6 +7,7 @@ module Bosh::Director
         runner,
         deployment_planner,
         errand_name,
+        instance,
         instance_group,
         changes_exist,
         keep_alive,
@@ -23,6 +24,7 @@ module Bosh::Director
     let(:job_renderer) { instance_double(JobRenderer) }
     let(:deployment_name) { 'deployment-name' }
     let(:errand_result) { Errand::Result.new(exit_code, nil, nil, nil) }
+    let(:instance) { instance_double(DeploymentPlan::Instance) }
     let(:keep_alive) { 'maybe' }
 
     describe '#run' do
@@ -32,23 +34,15 @@ module Bosh::Director
 
       context 'when instance group is lifecycle service' do
         let(:is_errand) { false }
+        let(:checkpoint_block) { Proc.new {} }
 
         context 'errand success' do
           let(:exit_code) { 0 }
           it 'returns the result string' do
-            expect(runner).to receive(:run).and_return(errand_result)
-            result = errand_step.run(&lambda {})
+            expect(runner).to receive(:run).with(instance, &checkpoint_block).
+              and_return(errand_result)
+            result = errand_step.run(&checkpoint_block)
             expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
-          end
-        end
-
-        context 'when the task is cancelled' do
-          it 'cancels the errand run and raises the error' do
-            expect(runner).to(receive(:run)) { |&cancel_block| cancel_block.call }
-            expect(runner).to receive(:cancel)
-            expect {
-              errand_step.run(&lambda { raise TaskCancelled })
-            }.to raise_error(TaskCancelled)
           end
         end
       end

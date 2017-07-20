@@ -1,10 +1,11 @@
 module Bosh::Director
   class Errand::ErrandStep
-    def initialize(runner, deployment_planner, errand_name, errand_instance_group, skip_errand, keep_alive, deployment_name, logger)
+    def initialize(runner, deployment_planner, name, instance, instance_group, skip_errand, keep_alive, deployment_name, logger)
       @runner = runner
       @deployment_planner = deployment_planner
-      @errand_name = errand_name
-      @errand_instance_group = errand_instance_group
+      @name = name
+      @instance = instance
+      @instance_group = instance_group
       @skip_errand = skip_errand
       @keep_alive = keep_alive
       @logger = logger
@@ -16,20 +17,19 @@ module Bosh::Director
         @logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
         return
       end
-      cancel_block = cancel_block(checkpoint_block, @runner)
       result = nil
-      if @errand_instance_group.is_errand?
-        job_manager = Errand::JobManager.new(@deployment_planner, @errand_instance_group, @logger)
-        @errand_instance_updater = Errand::ErrandInstanceUpdater.new(job_manager, @logger, @errand_name, @deployment_name)
-        @errand_instance_updater.with_updated_instances(@errand_instance_group, @keep_alive) do
+      if @instance_group.is_errand?
+        job_manager = Errand::JobManager.new(@deployment_planner, @instance_group, @logger)
+        @errand_instance_updater = Errand::ErrandInstanceUpdater.new(job_manager, @logger, @name, @deployment_name)
+        @errand_instance_updater.with_updated_instances(@instance_group, @keep_alive) do
           @logger.info('Starting to run errand')
-          result = @runner.run(&cancel_block)
+          result = @runner.run(@instance, &checkpoint_block)
         end
       else
         @logger.info('Starting to run errand')
-        result = @runner.run(&cancel_block)
+        result = @runner.run(@instance, &checkpoint_block)
       end
-      result.short_description(@errand_name)
+      result.short_description(@name)
     ensure
       @deployment_planner.job_renderer.clean_cache!
     end
@@ -37,26 +37,13 @@ module Bosh::Director
     def ignore_cancellation?
       @errand_instance_updater && @errand_instance_updater.ignore_cancellation?
     end
-
-    private
-
-    def cancel_block(checkpoint_block, runner)
-      lambda do
-        begin
-          checkpoint_block.call
-        rescue TaskCancelled => e
-          runner.cancel
-          raise e
-        end
-      end
-    end
   end
 
   class Errand::ErrandInstanceUpdater
-    def initialize(job_manager, logger, errand_name, deployment_name)
+    def initialize(job_manager, logger, name, deployment_name)
       @job_manager = job_manager
       @logger = logger
-      @errand_name = errand_name
+      @name = name
       @deployment_name = deployment_name
     end
 
@@ -127,7 +114,7 @@ module Bosh::Director
           user: Config.current_job.username,
           action: 'run',
           object_type: 'errand',
-          object_name: @errand_name,
+          object_name: @name,
           task: Config.current_job.task_id,
           deployment: @deployment_name,
           instance: instance_name,

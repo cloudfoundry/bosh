@@ -110,7 +110,7 @@ module Bosh::Director
 
         it 'runs the specified errand job on the found service instance' do
           expect(Errand::Runner).to receive(:new).
-            with(instance, 'errand1', true, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+            with('errand1', true, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
             and_return(runner)
           expect(runner).to receive(:run).and_return(errand_result)
           subject.perform
@@ -226,13 +226,13 @@ module Bosh::Director
 
                 before do
                   allow(Errand::Runner).to receive(:new).
-                    with(instance, 'fake-errand-name', false, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+                    with('fake-errand-name', false, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
                     and_return(runner)
                 end
                 let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
                 before do
                   allow(runner).to receive(:run).
-                    with(no_args).
+                    with(instance).
                     and_return(errand_result)
                 end
 
@@ -263,7 +263,7 @@ module Bosh::Director
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
 
                     expect(runner).to receive(:run).
-                      with(no_args).
+                      with(instance).
                       ordered.
                       and_return(errand_result)
 
@@ -306,7 +306,7 @@ module Bosh::Director
                   it 'cleans up the vms anyway' do
                     error = Exception.new
                     allow(job_manager).to receive(:create_missing_vms).with(no_args).ordered
-                    expect(runner).to receive(:run).with(no_args).and_raise(error)
+                    expect(runner).to receive(:run).with(instance).and_raise(error)
                     expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(error)
@@ -316,7 +316,7 @@ module Bosh::Director
                     it 'raises the original exception and warns about the clean up failure' do
                       original_error = Exception.new('original error')
                       cleanup_error = Exception.new('cleanup error')
-                      expect(runner).to receive(:run).with(no_args).and_raise(original_error)
+                      expect(runner).to receive(:run).with(instance).and_raise(original_error)
                       expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                       expect { subject.perform }.to raise_error(original_error)
@@ -328,54 +328,10 @@ module Bosh::Director
                 context 'when the errand runs but cleanup fails' do
                   it 'raises clean up error' do
                     cleanup_error = Exception.new('cleanup error')
-                    expect(runner).to receive(:run).with(no_args)
+                    expect(runner).to receive(:run).with(instance)
                     expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                     expect { subject.perform }.to raise_error(cleanup_error)
-                  end
-                end
-
-                context 'when the errand is canceled' do
-                  before { allow(Api::TaskManager).to receive(:new).and_return(task_manager) }
-                  let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
-
-                  before { allow(task).to receive(:state).and_return('cancelling') }
-
-                  context 'when agent is able to cancel run_errand task successfully' do
-                    it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
-                      expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
-                      expect(job_manager).to receive(:update_instances).with(no_args).ordered
-                      expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                      expect(runner).to receive(:cancel).with(no_args).ordered
-                      expect(job_manager).to receive(:delete_vms).with(no_args).ordered
-
-                      expect { subject.perform }.to raise_error(TaskCancelled)
-                      event_2 = Bosh::Director::Models::Event.all.last
-                      expect(event_2.error).to eq("Task 42 cancelled")
-                    end
-
-                    it 'does not allow cancellation while cleaning up errand VMs' do
-                      expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
-                      expect(job_manager).to receive(:update_instances).with(no_args).ordered
-                      expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                      expect(runner).to receive(:cancel).with(no_args).ordered
-                      expect(job_manager).to(receive(:delete_vms).with(no_args).ordered) { job.task_checkpoint }
-
-                      expect { subject.perform }.to raise_error(TaskCancelled)
-                    end
-                  end
-
-                  context 'when the agent throws an exception while cancelling run_errand task' do
-                    it 'raises RpcRemoteException and cleans up errand VMs' do
-                      error = RpcRemoteException.new
-                      expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
-                      expect(job_manager).to receive(:update_instances).with(no_args).ordered
-                      expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                      expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)
-                      expect(job_manager).to receive(:delete_vms).with(no_args).ordered
-
-                      expect { subject.perform }.to raise_error(error)
-                    end
                   end
                 end
 
