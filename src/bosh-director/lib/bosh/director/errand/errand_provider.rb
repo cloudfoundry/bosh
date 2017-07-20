@@ -17,9 +17,11 @@ module Bosh::Director
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
         job_renderer = deployment_planner.job_renderer
 
+        errand_is_job_name = true
         errand_instance_group = find_instance_group_by_errand_job_name(errand_name, deployment_planner)
 
         if errand_instance_group.nil?
+          errand_is_job_name = false
           errand_instance_group = must_errand_instance_group(deployment_planner, errand_name, deployment_name)
         end
 
@@ -34,7 +36,7 @@ module Bosh::Director
           target_instance = errand_instance_group.instances.first
         end
 
-        runner = Errand::Runner.new(target_instance, errand_name, @task_result, @instance_manager, @logs_fetcher)
+        runner = Errand::Runner.new(target_instance, errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
 
         return Errand::ErrandObject.new(
           runner,

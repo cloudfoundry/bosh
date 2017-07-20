@@ -295,7 +295,6 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_all
     with_tmp_dir_before_all
 
-
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
       deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.manifest_with_errand)
       expect_errands('fake-errand-name')
@@ -432,6 +431,71 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       expect(agent_log.scan('{"protocol":3,"method":"run_script","arguments":["post-start",').size).to eq(1)
       expect(agent_log.scan('{"protocol":3,"method":"run_errand",').size).to eq(1)
       expect(agent_log.scan('{"protocol":3,"method":"fetch_logs",').size).to eq(1)
+    end
+  end
+
+  context 'errand name != first job' do
+    let(:manifest_hash) do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand_job_on_service_instance
+      manifest_hash['jobs'][0]['templates'].unshift(
+        {'release' => 'bosh-release', 'name' => 'foobar'}
+      )
+      manifest_hash
+    end
+
+    with_reset_sandbox_before_each
+
+    it 'should run the requested bin/run on the first instance' do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
+      expect(output).to include('fake-errand-stdout')
+      expect(exit_code).to eq(0)
+    end
+  end
+
+  describe 'behavior on older stemcells' do
+    let(:cloud_properties) { {'legacy_agent_path' => get_legacy_agent_path('before-info-endpoint-20170719')} }
+
+    let(:manifest_hash) do
+      Bosh::Spec::Deployments.manifest_with_errand_job_on_service_instance
+    end
+
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['resource_pools'][0]['cloud_properties'] = cloud_properties
+      cloud_config_hash
+    end
+
+    let(:agent_binary) { 'legacy-agent-name' }
+
+    with_reset_sandbox_before_each
+
+    context 'errand name = first job' do
+      it 'should run the errand on the first instance' do
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
+
+        output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    context 'errand name != first job' do
+      let(:manifest_hash_with_later_errand) do
+        manifest_hash['jobs'][0]['templates'].unshift(
+          {'release' => 'bosh-release', 'name' => 'foobar'}
+        )
+        manifest_hash
+      end
+
+      it 'errors with helpful message' do
+        deploy_from_scratch(manifest_hash: manifest_hash_with_later_errand, cloud_config_hash: cloud_config_hash)
+
+        output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name, failure_expected: true)
+        expect(output).to include('Multiple jobs are configured on an older stemcell, and "errand1" is not the first job')
+        expect(exit_code).to eq(1)
+      end
     end
   end
 

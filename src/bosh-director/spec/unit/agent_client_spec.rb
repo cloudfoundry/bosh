@@ -347,6 +347,18 @@ module Bosh::Director
         it_acts_as_synchronous_message :get_state
         it_acts_as_synchronous_message :list_disk
         it_acts_as_synchronous_message :start
+        it_acts_as_synchronous_message :info
+      end
+    end
+
+    describe '#info' do
+      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+
+      it 'is returns api version 0 if the info endpoint is not implemented' do
+        allow(client).to receive(:send_message).and_raise(RpcRemoteException, "unknown message info")
+
+        expect(Config.logger).to receive(:warn).with("Ignoring info 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message info>")
+        expect(client.info).to eq({ 'api_version' => 0 })
       end
     end
 

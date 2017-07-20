@@ -39,6 +39,11 @@ module Bosh::Dev
         'upload-blob-action-error-file-not-found',
         'd380e1b780d86dc885ebd4dbec920d31b9f6288a34b8a083324fd6659931ab0e', # darwin
         '20d2d4c5812a0ae4a54623b5d93ccf04e8106dea47e546bbd774e8bb2730bbf1' # linux
+      ),
+      LegacyAgentInfo.new(
+        'before-info-endpoint-20170719',
+        'c5e115ba3197b1aca3c311cebe94aee8e6ef7f1523770af6879484de773e470e', # darwin
+        '60f3364e828ba1a49532aa97163a4053f0fbf6aa679509cbd0d5dabf412bbf37' # linux
       )
     ]
 

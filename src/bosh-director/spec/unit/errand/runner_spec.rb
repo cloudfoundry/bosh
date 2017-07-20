@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Runner do
-    subject { described_class.new(instance, 'fake-job-name', task_result, instance_manager, logs_fetcher) }
+    subject { described_class.new(instance, 'fake-job-name', errand_is_job_name, task_result, instance_manager, logs_fetcher) }
+    let(:errand_is_job_name) { true }
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
@@ -19,7 +20,8 @@ module Bosh::Director
         instance_double('Bosh::Director::DeploymentPlan::Instance',
           index: 0,
           configuration_hash: 'configuration_hash',
-          current_packages: {'current' => 'packages'}
+          current_packages: {'current' => 'packages'},
+          job_name: 'fake-job-name'
         )
       end
 
@@ -33,8 +35,10 @@ module Bosh::Director
         vm_model = Models::Vm.make(agent_id: 'agent-id', instance_id: is.id)
         is.add_vm vm_model
         is.active_vm = vm_model
+        is.spec = { 'job' => { 'template' => template_name} }
         is
       end
+      let(:template_name) { 'fake-job-name' }
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
 
@@ -65,12 +69,40 @@ module Bosh::Director
               and_return(['fake-logs-blobstore-id', 'fake-logs-blob-sha1'])
 
             allow(agent_client).to receive(:wait_for_task).and_return(agent_task_result)
+
+            allow(agent_client).to receive(:info).
+              and_return({'api_version' => 1})
+          end
+
+          context 'the errand is not the first job on an old stemcell' do
+            let(:template_name) { 'first-job' }
+            let(:errand_is_job_name) { true }
+            let(:fake_block) { Proc.new {} }
+
+            before do
+              allow(agent_client).to receive(:info).
+                and_return({'api_version' => 0})
+            end
+
+            context 'user pass in instance group name' do
+              let(:errand_is_job_name) { false }
+
+              it 'should not error' do
+                subject.run(&fake_block)
+              end
+            end
+
+            it 'returns an error' do
+              expect{ subject.run(&fake_block) }.to raise_error(DirectorError, 'Multiple jobs are configured on an older stemcell, and "fake-job-name" is not the first job')
+            end
           end
 
           it 'runs a block argument to run function while polling for errand to finish' do
             fake_block = Proc.new {}
 
-            expect(agent_client).to receive(:run_errand).with(no_args)
+            expect(agent_client).to receive(:info)
+
+            expect(agent_client).to receive(:run_errand).with('fake-job-name')
 
             expect(agent_client).to receive(:wait_for_task) do |args, &blk|
               expect(args).to eq('fake-agent-task-id')
@@ -190,6 +222,23 @@ module Bosh::Director
             expect { subject.run }.to raise_error(error)
           end
 
+          context 'when the errand name matches the instance group name' do
+            let(:errand_is_job_name) { false }
+            it 'runs the errand without errand name' do
+              fake_block = Proc.new {}
+
+              expect(agent_client).to receive(:run_errand).with(no_args)
+
+              expect(agent_client).to receive(:wait_for_task) do |args, &blk|
+                expect(args).to eq('fake-agent-task-id')
+                expect(blk).to eq(fake_block)
+                agent_task_result
+              end
+
+              subject.run(&fake_block)
+            end
+          end
+
           context 'when errand is canceled' do
             before do
               allow(agent_client).to receive(:wait_for_task) do |args, &blk|
@@ -244,7 +293,10 @@ module Bosh::Director
         end
 
         context 'when agent does not support run_errand command' do
-          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
+          before do
+            allow(agent_client).to receive(:run_errand).with('fake-job-name').and_raise(error)
+            allow(agent_client).to receive(:info).and_return({ 'api_version' => 0 })
+          end
           let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
 
           it 'raises an error' do
@@ -263,7 +315,10 @@ module Bosh::Director
         end
 
         context 'when agent times out responding to start errand task status check' do
-          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
+          before do
+            allow(agent_client).to receive(:run_errand).with('fake-job-name').and_raise(error)
+            allow(agent_client).to receive(:info).and_return({ 'api_version' => 0 })
+          end
           let(:error) { RpcRemoteException.new('timeout') }
 
           it 'raises original timeout error' do

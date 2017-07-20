@@ -51,7 +51,7 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
-    context 'when running an errand on a lifecycle service instance by job name' do
+    context 'when running an errand on a lifecycle service instance by instance group name' do
       let(:errand_name) {'errand1'}
 
       describe '#perform' do
@@ -110,7 +110,7 @@ module Bosh::Director
 
         it 'runs the specified errand job on the found service instance' do
           expect(Errand::Runner).to receive(:new).
-            with(instance, 'errand1', task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+            with(instance, 'errand1', true, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
             and_return(runner)
           expect(runner).to receive(:run).and_return(errand_result)
           subject.perform
@@ -174,15 +174,15 @@ module Bosh::Director
           # end
 
           context 'when instance group representing an errand exists' do
-            let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
-            before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_job) }
+            let(:deployment_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
+            before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_instance_group) }
 
             context 'when instance group can run as an errand (usually means lifecycle: errand)' do
-              before { allow(deployment_job).to receive(:is_errand?).and_return(true) }
-              before { allow(deployment_job).to receive(:bind_instances) }
+              before { allow(deployment_instance_group).to receive(:is_errand?).and_return(true) }
+              before { allow(deployment_instance_group).to receive(:bind_instances) }
 
               context 'when instance group has at least 1 instance' do
-                before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
+                before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
                 let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
                 let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
 
@@ -213,7 +213,7 @@ module Bosh::Director
 
                 before do
                   allow(Errand::JobManager).to receive(:new).
-                    with(planner, deployment_job, logger).
+                    with(planner, deployment_instance_group, logger).
                     and_return(job_manager)
                 end
                 let(:job_manager) do
@@ -226,7 +226,7 @@ module Bosh::Director
 
                 before do
                   allow(Errand::Runner).to receive(:new).
-                    with(instance, 'fake-errand-name', task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+                    with(instance, 'fake-errand-name', false, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
                     and_return(runner)
                 end
                 let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
@@ -256,7 +256,7 @@ module Bosh::Director
                       result
                     end
 
-                    expect(deployment_job).to receive(:bind_instances)
+                    expect(deployment_instance_group).to receive(:bind_instances)
 
                     expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
 
@@ -392,7 +392,7 @@ module Bosh::Director
                 context 'when errand is run with when-changed' do
                   before do
                     allow(JobRenderer).to receive_message_chain(:create, :render_job_instances).with([instance_plan])
-                    allow(deployment_job).to receive(:needed_instance_plans).and_return([instance_plan])
+                    allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
                   end
 
                   let(:when_changed) { true }
@@ -520,7 +520,7 @@ module Bosh::Director
               end
 
               context 'when instance group representing an errand has 0 instances' do
-                before { allow(deployment_job).to receive(:instances).with(no_args).and_return([]) }
+                before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([]) }
 
                 it 'raises an error because errand cannot be run on a job with 0 instances' do
                   allow(subject).to receive(:with_deployment_lock).and_yield
@@ -533,7 +533,7 @@ module Bosh::Director
             end
 
             context "when instance group cannot run as an errand (e.g. marked as 'lifecycle: service')" do
-              before { allow(deployment_job).to receive(:is_errand?).and_return(false) }
+              before { allow(deployment_instance_group).to receive(:is_errand?).and_return(false) }
 
               it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
                 allow(subject).to receive(:with_deployment_lock).and_yield
