@@ -38,7 +38,7 @@ module Bosh::Director
 
         runner = Errand::Runner.new(target_instance, errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
 
-        return Errand::ErrandObject.new(
+        return Errand::ErrandStep.new(
           runner,
           deployment_planner,
           errand_name,

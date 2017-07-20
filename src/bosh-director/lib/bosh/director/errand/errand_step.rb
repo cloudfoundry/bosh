@@ -1,5 +1,5 @@
 module Bosh::Director
-  class Errand::ErrandObject
+  class Errand::ErrandStep
     def initialize(runner, deployment_planner, errand_name, errand_instance_group, changes_exist, deployment_name, logger)
       @runner = runner
       @deployment_planner = deployment_planner

@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Errand::ErrandObject do
-    subject(:errand_object) do
-      Errand::ErrandObject.new(
+  describe Errand::ErrandStep do
+    subject(:errand_step) do
+      Errand::ErrandStep.new(
         runner,
         deployment_planner,
         errand_name,
@@ -34,7 +34,7 @@ module Bosh::Director
           let(:exit_code) { 0 }
           it 'returns the result string' do
             expect(runner).to receive(:run).and_return(errand_result)
-            result = errand_object.run(false, false, &lambda {})
+            result = errand_step.run(false, false, &lambda {})
             expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
           end
         end
@@ -44,7 +44,7 @@ module Bosh::Director
             expect(runner).to(receive(:run)) { |&cancel_block| cancel_block.call }
             expect(runner).to receive(:cancel)
             expect {
-              errand_object.run(false, false, &lambda { raise TaskCancelled })
+              errand_step.run(false, false, &lambda { raise TaskCancelled })
             }.to raise_error(TaskCancelled)
           end
         end
@@ -66,7 +66,7 @@ module Bosh::Director
             blk.call
           end
           expect(runner).to receive(:run).and_return(errand_result)
-          result = errand_object.run(keep_alive, false, &lambda {})
+          result = errand_step.run(keep_alive, false, &lambda {})
           expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
         end
       end

@@ -19,7 +19,7 @@ module Bosh::Director
       let(:deployment_name) { 'fake-dep-name' }
       let(:job_renderer) { JobRenderer.create }
       let(:runner) { instance_double(Errand::Runner) }
-      let(:errand_object) { instance_double(Errand::ErrandObject) }
+      let(:errand_step) { instance_double(Errand::ErrandStep) }
       let(:instance) { instance_double(DeploymentPlan::Instance) }
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
 
@@ -37,11 +37,11 @@ module Bosh::Director
 
         it 'provides an errand that will run on the first instance in that group' do
           expect(Errand::Runner).to receive(:new).with(instance, job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
-          expect(Errand::ErrandObject).to receive(:new).with(
+          expect(Errand::ErrandStep).to receive(:new).with(
             runner, deployment_planner, job_name, instance_group, true, deployment_name, logger
-          ).and_return(errand_object)
+          ).and_return(errand_step)
           returned_errand = subject.get(deployment_name, 'errand-job-name')
-          expect(returned_errand).to eq(errand_object)
+          expect(returned_errand).to eq(errand_step)
         end
       end
 
@@ -80,11 +80,11 @@ module Bosh::Director
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
             expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
             expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
-            expect(Errand::ErrandObject).to receive(:new).with(
+            expect(Errand::ErrandStep).to receive(:new).with(
               runner, deployment_planner, instance_group_name, instance_group, true, deployment_name, logger
-            ).and_return(errand_object)
+            ).and_return(errand_step)
             returned_errand = subject.get(deployment_name, instance_group_name)
-            expect(returned_errand).to eq(errand_object)
+            expect(returned_errand).to eq(errand_step)
           end
 
           context 'and the lifecycle errand instance group name is the same as the job name' do
@@ -96,11 +96,11 @@ module Bosh::Director
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
               expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
               expect(Errand::Runner).to receive(:new).with(instance, instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
-              expect(Errand::ErrandObject).to receive(:new).with(
+              expect(Errand::ErrandStep).to receive(:new).with(
                 runner, deployment_planner, instance_group_name, instance_group, true, deployment_name, logger
-              ).and_return(errand_object)
+              ).and_return(errand_step)
               returned_errand = subject.get(deployment_name, instance_group_name)
-              expect(returned_errand).to eq(errand_object)
+              expect(returned_errand).to eq(errand_step)
             end
           end
         end
