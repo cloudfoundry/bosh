@@ -9,6 +9,7 @@ module Bosh::Director
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:thread_pool) { double(Bosh::ThreadPool) }
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -17,6 +18,12 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(job)
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
+      allow(Bosh::ThreadPool).to receive(:new).and_return(thread_pool)
+
+      allow(thread_pool).to receive(:wrap) do |&blk|
+        blk.call(thread_pool) if blk
+      end
+      allow(thread_pool).to receive(:process).and_yield
     end
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
@@ -301,8 +308,6 @@ module Bosh::Director
                 end
 
                 context 'when the errand fails to run' do
-                  let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
-
                   it 'cleans up the vms anyway' do
                     error = Exception.new
                     allow(job_manager).to receive(:create_missing_vms).with(no_args).ordered

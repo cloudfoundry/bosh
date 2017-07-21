@@ -38,7 +38,7 @@ module Bosh::Director
 
         runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
 
-        return Errand::ErrandStep.new(
+        errand_step = Errand::ErrandStep.new(
           runner,
           deployment_planner,
           errand_name,
@@ -48,6 +48,8 @@ module Bosh::Director
           keep_alive,
           deployment_name,
           @logger)
+
+        return Errand::ParallelStep.new(Config.max_threads, [errand_step])
       end
     end
 

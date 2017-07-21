@@ -43,7 +43,8 @@ module Bosh::Director
             runner, deployment_planner, job_name, instance, instance_group, false, keep_alive, deployment_name, logger
           ).and_return(errand_step)
           returned_errand = subject.get(deployment_name, 'errand-job-name', when_changed, keep_alive)
-          expect(returned_errand).to eq(errand_step)
+          expect(returned_errand.steps[0]).to eq(errand_step)
+
         end
       end
 
@@ -86,7 +87,7 @@ module Bosh::Director
               runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger
             ).and_return(errand_step)
             returned_errand = subject.get(deployment_name, instance_group_name, when_changed, keep_alive)
-            expect(returned_errand).to eq(errand_step)
+            expect(returned_errand.steps[0]).to eq(errand_step)
           end
 
           context 'and the lifecycle errand instance group name is the same as the job name' do
@@ -102,7 +103,7 @@ module Bosh::Director
                 runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger
               ).and_return(errand_step)
               returned_errand = subject.get(deployment_name, instance_group_name, when_changed, keep_alive)
-              expect(returned_errand).to eq(errand_step)
+              expect(returned_errand.steps[0]).to eq(errand_step)
             end
           end
         end
