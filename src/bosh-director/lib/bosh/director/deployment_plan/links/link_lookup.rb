@@ -19,9 +19,14 @@ module Bosh::Director
     private
 
     class BaseLinkLookup
+      include IpUtil
+
       def initialize(link_network_options)
         @preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
         @use_dns_entries = link_network_options.fetch(:use_dns_entry, true)
+
+        @logger = Config.logger
+        @event_log = Config.event_log
       end
 
       def update_addresses!(link_spec)
@@ -40,9 +45,17 @@ module Bosh::Director
             end
 
             raise Bosh::Director::LinkLookupError, 'Unable to retrieve network addresses. Please redeploy provider deployment' unless addresses
-            raise Bosh::Director::LinkLookupError, "Invalid network name: #{network_name}" unless addresses[network_name]
+            raise Bosh::Director::LinkLookupError, "Invalid network name: #{network_name}" unless addresses.key?(network_name)
 
             instance['address'] = addresses[network_name]
+
+            if !@use_dns_entries && !ip_address?(instance['address'])
+              message = "IP address not available for the link provider instance: #{instance['name']}/#{instance['id']}"
+              @logger.warn(message)
+              @event_log.warn(message)
+            end
+
+            instance['address']
           end
         end
       end

@@ -48,4 +48,8 @@ module Bosh::Director
                { :timeout => timeout, :deployment_name => deployment_name } ).lock { yield }
     end
   end
+
+  class LockHelperImpl
+    include LockHelper
+  end
 end

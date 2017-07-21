@@ -942,8 +942,8 @@ module Bosh::Spec
         'properties' => {
           'errand1' => {
             'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout',
-            'stderr' => 'fake-errand-stderr',
+            'stdout' => 'fake-errand-stdout-service',
+            'stderr' => 'fake-errand-stderr-service',
             'run_package_file' => true,
           },
         },

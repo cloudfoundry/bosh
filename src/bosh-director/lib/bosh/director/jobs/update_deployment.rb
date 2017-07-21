@@ -74,7 +74,7 @@ module Bosh::Director
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_models, @options)
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
-            deployment_assembler.bind_models
+            deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
           end
 
           if deployment_plan.instance_models.any?(&:ignore)
@@ -86,10 +86,6 @@ module Bosh::Director
 
           begin
             current_variable_set = deployment_plan.model.current_variable_set
-
-            if is_deploy_action
-              update_instance_groups_variable_set(deployment_plan.instance_groups, current_variable_set)
-            end
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
 
@@ -140,12 +136,6 @@ module Bosh::Director
       end
 
       private
-
-      def update_instance_groups_variable_set(instance_groups, current_variable_set)
-        instance_groups.each do |instance_group|
-          instance_group.assign_variable_set(current_variable_set)
-        end
-      end
 
       def remove_unused_variable_sets(deployment, instance_groups)
         variable_sets_to_keep = []

@@ -116,8 +116,8 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(base_job)
       Config.instance_variable_set(:@current_job, base_job)
       expect(logger).to receive(:info).with('Applying VM state').ordered
-      expect(logger).to receive(:info).with('Running pre-start for fake-job/0 (uuid-1)').ordered
-      expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered
+      expect(logger).to receive(:info).with('Running pre-start for fake-job/uuid-1 (0)').ordered
+      expect(logger).to receive(:info).with('Starting instance fake-job/uuid-1 (0)').ordered
       expect(logger).to receive(:debug).with('Task was cancelled. Stop waiting for the desired state').ordered
 
       expect { state_applier.apply(update_config) }.to raise_error Bosh::Director::TaskCancelled, 'Task 42 cancelled'
@@ -174,7 +174,7 @@ module Bosh::Director
             expect(state_applier).to receive(:sleep).with(1.0).twice
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/0 (uuid-1)' is not running after update. Review logs for failed jobs: broken_template"
+            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/uuid-1 (0)' is not running after update. Review logs for failed jobs: broken_template"
           end
 
           it 'does not update state on the instance model' do
@@ -191,7 +191,7 @@ module Bosh::Director
           end
 
           it 'raises AgentJobNotRunning with no failing jobs' do
-            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/0 (uuid-1)' is not running after update."
+            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/uuid-1 (0)' is not running after update."
           end
         end
 
@@ -211,13 +211,13 @@ module Bosh::Director
 
           it 'logs while waiting until instance is in desired state' do
             expect(logger).to receive(:info).with('Applying VM state').ordered
-            expect(logger).to receive(:info).with('Running pre-start for fake-job/0 (uuid-1)').ordered
-            expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered
-            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
-            expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
-            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
-            expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
-            expect(logger).to receive(:info).with('Running post-start for fake-job/0 (uuid-1)').ordered
+            expect(logger).to receive(:info).with('Running pre-start for fake-job/uuid-1 (0)').ordered
+            expect(logger).to receive(:info).with('Starting instance fake-job/uuid-1 (0)').ordered
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/uuid-1 (0) status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/uuid-1 (0) has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/uuid-1 (0) status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/uuid-1 (0) has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Running post-start for fake-job/uuid-1 (0)').ordered
 
             state_applier.apply(update_config)
           end
@@ -246,7 +246,7 @@ module Bosh::Director
               expect(state_applier).to receive(:sleep).with(1.0).twice
               expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-              expect { state_applier.apply(update_config) }.to raise_error AgentJobNotStopped, "'fake-job/0 (uuid-1)' is still running despite the stop command"
+              expect { state_applier.apply(update_config) }.to raise_error AgentJobNotStopped, "'fake-job/uuid-1 (0)' is still running despite the stop command"
             end
 
             it 'does not update state on the instance model' do

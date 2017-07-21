@@ -14,6 +14,7 @@ module Bosh
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
+          @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
@@ -68,9 +69,9 @@ module Bosh
 
           changed_disk_pairs = PersistentDiskCollection.changed_disk_pairs(
             existing_disk_collection,
-            instance_model.variable_set,
+            instance.previous_variable_set,
             desired_disks_collection,
-            instance_model.deployment.current_variable_set
+            instance.desired_variable_set
           )
 
           changed_disk_pairs.each do |disk_pair|
@@ -107,9 +108,6 @@ module Bosh
           desired_network_plans = network_plans.select(&:desired?)
           obsolete_network_plans = network_plans.select(&:obsolete?)
 
-          old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
-          new_network_settings = network_settings.to_hash
-
           changed = false
           if obsolete_network_plans.any?
             @logger.debug("#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
@@ -121,7 +119,13 @@ module Bosh
             changed = true
           end
 
-          if network_settings_changed?(old_network_settings, new_network_settings)
+          old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
+          new_network_settings = network_settings_hash
+
+          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(old_network_settings, @instance.previous_variable_set)
+          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(new_network_settings, @instance.desired_variable_set)
+
+          if network_settings_changed?(interpolated_old_network_settings, interpolated_new_network_settings)
             @logger.debug("#{__method__} network settings changed FROM: #{old_network_settings} TO: #{new_network_settings} on instance #{@existing_instance}")
             changed = true
           end

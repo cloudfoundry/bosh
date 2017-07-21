@@ -77,7 +77,7 @@ describe 'cli: package compilation', type: :integration do
 
     cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
 
-    bosh_runner.run_in_dir("create-release", TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+    bosh_runner.run_in_dir('create-release --force', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
     bosh_runner.run_in_dir('upload-release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
 
     bosh_runner.run("update-cloud-config #{cloud_manifest.path}")

@@ -86,6 +86,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_arguments = arguments.clone
         if method == :create_vm
           expected_arguments[2] = {'cloud' => '<redacted>'}
+          expected_arguments[3] = redacted_network_settings
           expected_arguments[5] = {
             'bosh' => {
               'group' => 'my-group',
@@ -294,21 +295,178 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#create_vm' do
-    it_calls_cpi_method(:create_vm,
-      'fake-agent-id',
-      'fake-stemcell-cid',
-      {'cloud' => 'props'},
-      {'net' => 'props'},
-      ['fake-disk-cid'],
-      {
-        'bosh' => {
-          'group' => 'my-group',
-          'groups' => ['my-first-group'],
-          'password' => 'my-secret-password'
+    context 'when cloud_properties in network settings is valid and defined' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {
+              'smurf_1' => '<redacted>'
+            },
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {
+              'smurf_1' => 'cat_1_manual_network'
+            },
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
         },
-        'other' => 'value'
-      }
-    )
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash is nil' do
+      let(:redacted_network_settings) { nil }
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        nil,
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings is not a hash' do
+      let(:redacted_network_settings) { 'I am not a hash' }
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        'I am not a hash',
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash cloud properties is absent' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        },
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash cloud properties is not a hash' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1',
+            'cloud_properties' => 'i am not a hash'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1',
+            'cloud_properties' => 'i am not a hash'
+          }
+        },
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
   end
 
   describe '#delete_vm' do

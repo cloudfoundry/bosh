@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @variables_interpolator, @instance.variable_set).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set).spec
       end
 
       def as_apply_spec

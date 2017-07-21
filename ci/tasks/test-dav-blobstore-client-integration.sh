@@ -12,6 +12,7 @@ pushd bosh-src
   chmod +x ./blobs/davcli/davcli-*-amd64
 
   pushd blobs
+    cp -R $PWD/../src/patches .
     BOSH_INSTALL_TARGET=$PWD/../src/tmp/integration-nginx bash ../packages/nginx/packaging
   popd
 

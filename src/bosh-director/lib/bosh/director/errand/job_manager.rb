@@ -1,8 +1,8 @@
 module Bosh::Director
   class Errand::JobManager
-    def initialize(deployment, job, logger)
+    def initialize(deployment, instance_group, logger)
       @deployment = deployment
-      @job = job
+      @instance_group = instance_group
       @logger = logger
       @disk_manager = DiskManager.new(logger)
       @job_renderer = @deployment.job_renderer
@@ -13,18 +13,18 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider, @deployment.tags)
+      @vm_creator.create_for_instance_plans(@instance_group.instance_plans_with_missing_vms, @deployment.ip_provider, @deployment.tags)
     end
 
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_updater = JobUpdater.new(@deployment.ip_provider, @job, @disk_manager, @job_renderer)
+      job_updater = JobUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @job_renderer)
       job_updater.update
     end
 
     def delete_vms
-      bound_instance_plans = @job.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
+      bound_instance_plans = @instance_group.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
       if bound_instance_plans.empty?
         @logger.info('No errand vms to delete')
         return
@@ -42,7 +42,7 @@ module Bosh::Director
     private
 
     def bound_instance_plans
-      @job.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
+      @instance_group.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
     end
   end
 end

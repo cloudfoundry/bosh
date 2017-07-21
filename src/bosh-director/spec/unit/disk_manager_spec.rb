@@ -25,7 +25,8 @@ module Bosh::Director
       job
     end
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
-    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
+    let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
+    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', deployment_model, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10, )
       Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'vm-cpi')
@@ -117,6 +118,20 @@ module Bosh::Director
     describe '#update_persistent_disk' do
       before do
         allow(cloud_factory).to receive(:get).with(instance_model.active_vm.cpi).and_return(cloud)
+      end
+
+      it 'passes correct variable sets for comparing disks' do
+        desired_variable_set = Models::VariableSet.make(deployment: deployment_model)
+        instance_plan.instance.desired_variable_set = desired_variable_set
+
+        expect(Bosh::Director::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+          anything,
+          instance_plan.instance.previous_variable_set,
+          anything,
+          desired_variable_set
+        ).and_return([])
+
+        disk_manager.update_persistent_disk(instance_plan)
       end
 
       context 'when `enable_cpi_disk_resize` is enabled' do
@@ -243,7 +258,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (my-uuid-1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
 
@@ -265,7 +280,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (123-456-789)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/123-456-789 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
       end
@@ -283,7 +298,7 @@ module Bosh::Director
         end
 
         it 'logs when the disks are inactive' do
-          expect(logger).to receive(:warn).with("'job-name/1 (my-uuid-1)' has inactive disk inactive-disk")
+          expect(logger).to receive(:warn).with("'job-name/my-uuid-1 (1)' has inactive disk inactive-disk")
           disk_manager.update_persistent_disk(instance_plan)
         end
 
@@ -521,7 +536,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (my-uuid-1)' has invalid disks: agent reports '' while director record shows 'disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports '' while director record shows 'disk123'"
           end
         end
       end
@@ -543,13 +558,22 @@ module Bosh::Director
         let(:cloud_properties) { {'cloud' => '((cloud_placeholder))'} }
         let(:interpolated_cloud_properties) { {'cloud' => 'unicorns'} }
 
+        let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
         before do
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
           allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'uses the interpolated cloud config' do
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(5).times.with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          instance_plan.instance.desired_variable_set = desired_variable_set
+
+          # 1 call to check if disks has changed, 1 to figure out the change, 1 to interpolate before we send to CPI
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(3).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
+
+          # 1 call to check if disks has changed, 1 to figure out the change
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(2).times.with(cloud_properties, instance_plan.instance.previous_variable_set).and_return(interpolated_cloud_properties)
+
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
           expect {

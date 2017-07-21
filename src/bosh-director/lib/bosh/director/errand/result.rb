@@ -14,18 +14,19 @@ module Bosh::Director
 
     # Explicitly write out schema of the director task result
     # to avoid accidently leaking agent task result extra fields.
-    def self.from_agent_task_results(agent_task_result, logs_blobstore_id)
+    def self.from_agent_task_results(agent_task_result, logs_blobstore_id, logs_blob_sha1 = nil)
       AGENT_RUN_ERRAND_RESULT_SCHEMA.validate(agent_task_result)
-      new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id)
+      new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id, logs_blob_sha1)
     rescue Membrane::SchemaValidationError => e
       raise AgentInvalidTaskResult, e.message
     end
 
-    def initialize(exit_code, stdout, stderr, logs_blobstore_id)
+    def initialize(exit_code, stdout, stderr, logs_blobstore_id, logs_blob_sha1 = nil)
       @exit_code = exit_code
       @stdout = stdout
       @stderr = stderr
       @logs_blobstore_id = logs_blobstore_id
+      @logs_blob_sha1 = logs_blob_sha1
     end
 
     def short_description(job_name)
@@ -48,6 +49,7 @@ module Bosh::Director
         'stderr' => @stderr,
         'logs' => {
           'blobstore_id' => @logs_blobstore_id,
+          'sha1' => @logs_blob_sha1,
         },
       }
     end

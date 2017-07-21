@@ -259,6 +259,10 @@ jobs:
             DB_HOST: {{mysql-rds-host}}
             DB_USER: {{mysql-rds-user}}
             DB_PASSWORD: {{mysql-rds-password}}
+            AWS_ACCESS_KEY_ID: {{mysql-rds-aws-access-key-id}}
+            AWS_SECRET_ACCESS_KEY: {{mysql-rds-aws-secret-access-key}}
+            AWS_REGION: {{mysql-rds-aws-region}}
+            RDS_MYSQL_DB_IDENTIFIER: {{mysql-rds-db-identifier}}
         - task: test-postgresql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml

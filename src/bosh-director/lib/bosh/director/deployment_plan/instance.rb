@@ -22,6 +22,10 @@ module Bosh::Director
       # @return [Bosh::Director::Core::Templates::RenderedTemplatesArchive]
       attr_accessor :rendered_templates_archive
 
+      # @return [Bosh::Director::Models::VariableSet]
+      attr_accessor :desired_variable_set
+      attr_reader :previous_variable_set
+
       # @return [String] job state
       attr_reader :virtual_state
 
@@ -72,6 +76,9 @@ module Bosh::Director
         @template_hashes = nil
         @vm = nil
 
+        @desired_variable_set = nil
+        @previous_variable_set = nil
+
         # This state is coming from the agent, we
         # only need networks and job_state from it.
         @current_state = instance_state || {}
@@ -98,7 +105,7 @@ module Bosh::Director
         if @uuid.nil?
           "#{@job_name}/#{@index}"
         else
-          "#{@job_name}/#{@index} (#{@uuid})"
+          "#{@job_name}/#{@uuid} (#{@index})"
         end
       end
 
@@ -119,6 +126,8 @@ module Bosh::Director
             variable_set_id: @deployment_model.current_variable_set.id
           })
         @uuid = @model.uuid
+        @desired_variable_set = @model.variable_set
+        @previous_variable_set = @model.variable_set
       end
 
       def stemcell
@@ -142,6 +151,8 @@ module Bosh::Director
         @uuid = existing_instance_model.uuid
         check_model_not_bound
         @model = existing_instance_model
+        @desired_variable_set = existing_instance_model.variable_set
+        @previous_variable_set = existing_instance_model.variable_set
       end
 
       def bind_existing_reservations(reservations)
@@ -195,13 +206,11 @@ module Bosh::Director
       end
 
       def cloud_properties_changed?
-        return @cloud_properties_changed unless @cloud_properties_changed.nil?
-
         config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
         config_server_client = config_server_client_factory.create_client
 
-        proposed = config_server_client.interpolate_with_versioning(cloud_properties, variable_set)
-        existing = config_server_client.interpolate_with_versioning(@model.cloud_properties_hash, @model.variable_set)
+        proposed = config_server_client.interpolate_with_versioning(cloud_properties, @desired_variable_set)
+        existing = config_server_client.interpolate_with_versioning(@model.cloud_properties_hash, @previous_variable_set)
 
         @cloud_properties_changed = existing != proposed
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed
@@ -251,20 +260,8 @@ module Bosh::Director
         @model.update(availability_zone: availability_zone_name)
       end
 
-      def variable_set=(variable_set)
-        @variable_set = variable_set
-      end
-
-      def variable_set
-        if @variable_set
-          @variable_set
-        else
-          @model.variable_set
-        end
-      end
-
       def update_variable_set
-        @model.update(variable_set: variable_set)
+        @model.update(variable_set: @desired_variable_set)
       end
 
       def state

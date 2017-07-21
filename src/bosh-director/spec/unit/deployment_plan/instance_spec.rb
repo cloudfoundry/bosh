@@ -68,6 +68,15 @@ module Bosh::Director::DeploymentPlan
         instance.bind_existing_instance_model(instance_model)
         expect(instance.model).to eq(instance_model)
       end
+
+      it 'sets the instance desired and previous variable_set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+        instance_model.variable_set = variable_set_model
+        instance.bind_existing_instance_model(instance_model)
+
+        expect(instance.desired_variable_set).to eq(variable_set_model)
+        expect(instance.previous_variable_set).to eq(variable_set_model)
+      end
     end
 
     describe '#bind_new_instance_model' do
@@ -81,6 +90,14 @@ module Bosh::Director::DeploymentPlan
         expect(instance.model).not_to be_nil
         expect(instance.model.variable_set).to eq(variable_set_model)
         expect(instance.uuid).not_to be_nil
+      end
+
+      it 'sets the previous and desired variable set to current deployment variable set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
+        instance.bind_new_instance_model
+        expect(instance.desired_variable_set).to eq(variable_set_model)
+        expect(instance.previous_variable_set).to eq(variable_set_model)
       end
     end
 
@@ -232,14 +249,17 @@ module Bosh::Director::DeploymentPlan
             let(:merged_cloud_properties) { {'abcd'=>'((/placeholder3))', 'baz'=>'((/placeholder1))', 'a'=>'((/placeholder2))'} }
             let(:interpolated_merged_cloud_properties) { {'abcd'=>'p1', 'baz'=>'p2', 'a'=>'p3'} }
 
-            let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+            let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do
+              instance.desired_variable_set = desired_variable_set
               allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
-              allow(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, anything).and_return(interpolated_merged_cloud_properties)
-              allow(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, anything).and_return(instance_model.cloud_properties_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(instance_model.cloud_properties_hash)
             end
 
             it 'should NOT log the interpolated values' do
@@ -289,22 +309,60 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when called repeatedly on the same deployment plan instance' do
+      describe 'variables interpolation' do
+        let(:vm_type) do
+          VmType.new(
+            {
+              'name' => 'a',
+              'cloud_properties' => {'vm_cloud_prop' => '((/placeholder1))'}
+            }
+          )
+        end
+        let(:vm_extensions) do
+          [VmExtension.new(
+            {
+              'name' => 'b',
+              'cloud_properties' => {'vm_ext_cloud_prop' => '((/placeholder2))'}
+            }
+          )]
+        end
+        let(:availability_zone) do
+          AvailabilityZone.new(
+            'az',
+            {'az_cloud_prop' => '((/placeholder3))'}
+          )
+        end
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+        let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+        let(:merged_cloud_properties) { {'az_cloud_prop'=>'((/placeholder3))', 'vm_cloud_prop'=>'((/placeholder1))', 'vm_ext_cloud_prop'=>'((/placeholder2))'} }
+        let(:interpolated_merged_cloud_properties) { {'vm_cloud_prop'=>'p1', 'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3'} }
+        let(:interpolated_existing_cloud_properties) { {'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3', 'vm_cloud_prop'=>'p1'} }
 
         before do
+          instance.desired_variable_set = desired_variable_set
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
           allow(client_factory).to receive(:create_client).and_return(config_server_client)
-          allow(config_server_client).to receive(:interpolate)
         end
 
-        it 'returns the cached result' do
-          expect(client_factory).to receive(:create_client).at_most(:once)
-          expect(config_server_client).to receive(:interpolate_with_versioning).twice
+        it 'interpolates previous and desired cloud properties with the correct variable set' do
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(interpolated_existing_cloud_properties)
 
-          instance.cloud_properties_changed?
-          instance.cloud_properties_changed?
+          expect(instance.cloud_properties_changed?).to be_falsey
+        end
+
+        context 'when interpolated values are different' do
+          let(:interpolated_merged_cloud_properties) { {'vm_cloud_prop'=>'p1-new', 'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3'} }
+          let(:interpolated_existing_cloud_properties) { {'vm_ext_cloud_prop'=>'p2-old', 'az_cloud_prop'=>'p3', 'vm_cloud_prop'=>'p1'} }
+
+          it 'return true' do
+            expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+            expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(interpolated_existing_cloud_properties)
+
+            expect(instance.cloud_properties_changed?).to be_truthy
+          end
         end
       end
     end
@@ -373,69 +431,23 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#variable_set' do
-      let(:fixed_time) { Time.now }
-      let(:first_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1) }
-      let(:second_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1) }
-
-      before do
-        instance_model.update(variable_set: first_variable_set)
-        second_variable_set
-      end
-
-      context 'variable_set is not set' do
-        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
-        it 'should return the variable set from instance model' do
-          instance.bind_existing_instance_model(instance_model)
-          expect(instance.variable_set).to eq(first_variable_set)
-        end
-      end
-
-      context 'variable_set is set' do
-        let(:instance) { Instance.create_from_job(job, index, "recreate", deployment, current_state, availability_zone, logger) }
-
-        it 'should return the set variable_set' do
-          instance.bind_existing_instance_model(instance_model)
-          instance.variable_set = second_variable_set
-          expect(instance.variable_set).to eq(second_variable_set)
-        end
-      end
-    end
-
     describe '#update_variable_set' do
       let(:fixed_time) { Time.now }
 
-      context 'variable_set is set' do
-        it 'is updated on the model' do
-          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
-          selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
-          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+      it 'updates the instance model variable set to the desired_variable_set on the instance object' do
+        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
+        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-          instance.bind_existing_instance_model(instance_model)
+        instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+        instance.bind_existing_instance_model(instance_model)
 
-          instance.variable_set = selected_variable_set
+        instance.desired_variable_set = selected_variable_set
 
-          instance.update_variable_set
+        instance.update_variable_set
 
-          instance_model = Bosh::Director::Models::Instance.all.first
-          expect(instance_model.variable_set).to eq(selected_variable_set)
-        end
-      end
-
-      context 'variable_set is not defined' do
-        it 'updates the instance model with the variable_set from the database' do
-          Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
-          oldest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
-          instance_model.update(variable_set: oldest_variable_set)
-
-          instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-          instance.bind_existing_instance_model(instance_model)
-
-          instance.update_variable_set
-
-          expect(instance_model.variable_set).to eq(oldest_variable_set)
-        end
+        instance_model = Bosh::Director::Models::Instance.all.first
+        expect(instance_model.variable_set).to eq(selected_variable_set)
       end
     end
   end

@@ -31,7 +31,10 @@ module Bosh::Director
         errand_result_with_extras['unexpected-key'] = 'extra-value'
 
         subject = described_class.from_agent_task_results(
-          errand_result_with_extras, 'fake-logs-blobstore-id')
+          errand_result_with_extras,
+          'fake-logs-blobstore-id',
+          'fake-blob-sha1',
+        )
 
         expect(subject.to_hash).to eq(
           'exit_code' => 123,
@@ -39,6 +42,7 @@ module Bosh::Director
           'stderr' => 'fake-stderr',
           'logs' => {
             'blobstore_id' => 'fake-logs-blobstore-id',
+            'sha1' => 'fake-blob-sha1'
           },
         )
       end
@@ -71,26 +75,28 @@ module Bosh::Director
     end
 
     describe '#to_hash' do
-      it 'returns blobstore_id as when it is available' do
-        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', 'fake-blobstore-id')
+      it 'returns blobstore_id and sha1 when it is available' do
+        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', 'fake-blobstore-id', 'sha1-blob')
         expect(subject.to_hash).to eq(
           'exit_code' => 0,
           'stdout' => 'fake-stdout',
           'stderr' => 'fake-stderr',
           'logs' => {
             'blobstore_id' => 'fake-blobstore-id',
+            'sha1' => 'sha1-blob',
           },
         )
       end
 
-      it 'returns blobstore_id as nil when it is not available' do
-        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', nil)
+      it 'returns blobstore_id and sha1 as nil when it is not available' do
+        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', nil, nil)
         expect(subject.to_hash).to eq(
           'exit_code' => 0,
           'stdout' => 'fake-stdout',
           'stderr' => 'fake-stderr',
           'logs' => {
             'blobstore_id' => nil,
+            'sha1' => nil,
           },
         )
       end

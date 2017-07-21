@@ -250,12 +250,72 @@ module Bosh::Director::DeploymentPlan
               }
             }
           end
-          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', {}, ['foo-az']) }
+          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az']) }
           let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
+          let(:subnet_cloud_properties) { {} }
 
           context 'when dns is changed' do
             it 'should return true' do
               expect(instance_plan.networks_changed?).to be_truthy
+            end
+          end
+
+          context 'when variables exist in the spec' do
+            let(:current_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_current_networks_hash) { {'a' => {'b' => 'smurf'}} }
+
+            let(:desired_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
+
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+
+            let(:mock_network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
+            let(:mock_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+            let(:mock_desired_instance) { instance_double(Bosh::Director::DeploymentPlan::DesiredInstance) }
+            let(:mock_existing_instance) { instance_double(Bosh::Director::Models::Instance) }
+            let(:simple_instance_plan) { InstancePlan.new(existing_instance: mock_existing_instance, desired_instance: mock_desired_instance, instance: mock_instance) }
+
+            let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+            before do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+
+              allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
+              allow(mock_instance).to receive(:job_name)
+              allow(mock_instance).to receive(:current_networks)
+              allow(mock_instance).to receive(:availability_zone)
+              allow(mock_instance).to receive(:index)
+              allow(mock_instance).to receive(:uuid)
+              allow(mock_instance).to receive(:previous_variable_set).and_return(previous_variable_set)
+              allow(mock_instance).to receive(:desired_variable_set).and_return(desired_variable_set)
+
+              allow(mock_desired_instance).to receive_message_chain(:instance_group, :default_network)
+
+              allow(mock_existing_instance).to receive(:spec_p).and_return(current_networks_hash)
+
+              allow(Bosh::Director::DeploymentPlan::NetworkSettings).to receive(:new).and_return(mock_network_settings)
+              allow(mock_network_settings).to receive(:to_hash).and_return(desired_networks_hash)
+            end
+
+
+            it 'compares the interpolated cloud_properties' do
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(simple_instance_plan.networks_changed?).to be_truthy
+            end
+
+            it 'does not log the interpolated cloud property changes' do
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(logger).to receive(:debug).with(
+                "networks_changed? network settings changed FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}"
+              )
+              expect(simple_instance_plan.networks_changed?).to be_truthy
             end
           end
         end
@@ -535,9 +595,28 @@ module Bosh::Director::DeploymentPlan
         it 'should log' do
           allow(logger).to receive(:debug)
 
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/1 (fake-uuid-1)')
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/fake-uuid-1 (1)')
 
           instance_plan.persistent_disk_changed?
+        end
+
+        context 'variables interpolation' do
+          let(:desired_variable_set) { instance_double(BD::Models::VariableSet) }
+
+          before do
+            instance.desired_variable_set = desired_variable_set
+          end
+
+          it 'should create PersistentDiskCollection with the correct variable sets' do
+            expect(BD::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+              anything,
+              instance.model.variable_set,
+              anything,
+              desired_variable_set
+            ).and_return([])
+
+            instance_plan.persistent_disk_changed?
+          end
         end
       end
 
@@ -657,7 +736,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1 (uuid-1)')
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/uuid-1 (1)')
           instance_plan.packages_changed?
         end
       end
@@ -685,7 +764,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = {'changed' => 'config'}
 
-          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{instance.model.uuid})")
+          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/#{instance.model.uuid} (1)")
           instance_plan.configuration_changed?
         end
       end
@@ -756,7 +835,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'should log the dns changes' do
             expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
-            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
             instance_plan.dns_changed?
           end
         end
@@ -775,7 +854,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/1 (fake-uuid-1)")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
             instance_plan.dns_changed?
           end
         end

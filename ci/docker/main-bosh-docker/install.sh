@@ -8,6 +8,7 @@ apt-get install -y --no-install-recommends \
   apt-transport-https \
   ca-certificates \
   curl \
+  dnsutils \
   git \
   iproute2 \
   openssh-client \
