@@ -519,39 +519,42 @@ module Bosh::Director
         describe 'log management' do
           it 'allows fetching logs from a particular instance' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
               :deployment => deployment,
               :job => 'nats',
               :index => '0',
               :state => 'started',
               :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows fetching logs from all instances of particular job' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
                 :deployment => deployment,
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
                 :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows fetching logs from all instances of particular deployment' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
                 :deployment => deployment,
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
                 :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/*/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
@@ -1590,8 +1593,9 @@ module Bosh::Director
         describe 'when a user has dev team admin membership' do
 
           before {
-            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
+            instance = Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
             Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6', :variable_set => Models::VariableSet.create(deployment: other_deployment))
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']
