@@ -35,7 +35,9 @@ module Bosh::Director
             link_info = job.consumes_link_info(instance_group.name, link_name)
 
             preferred_network_name = link_info['network']
-            use_dns_entry = !link_info['ip_addresses']
+
+            use_dns_entry = Config.local_dns_use_dns_addresses?
+            use_dns_entry = !link_info['ip_addresses'] if link_info.has_key?('ip_addresses')
 
             link_network_options = {
               :preferred_network_name => preferred_network_name,

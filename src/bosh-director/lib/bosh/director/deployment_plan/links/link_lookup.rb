@@ -54,8 +54,6 @@ module Bosh::Director
               @logger.warn(message)
               @event_log.warn(message)
             end
-
-            instance['address']
           end
         end
       end

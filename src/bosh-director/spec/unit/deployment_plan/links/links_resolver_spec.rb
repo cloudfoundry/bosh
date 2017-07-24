@@ -396,37 +396,135 @@ Unable to process links for deployment. Errors are:
       end
     end
 
-    context 'when link source specifies ip_addresses or network' do
-      let(:links) { {'db' => {"from" => 'db', 'ip_addresses' => true, 'network' => 'fake-dynamic-network'}} }
+    context 'link source network and ip_addresses' do
+      let(:links) { {'db' => {'from' => 'db', 'network' => 'fake-dynamic-network'}} }
       let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
 
       before do
         allow(link_lookup).to receive(:find_link_spec).and_return({'instances' => []})
       end
 
-      it 'respects both' do
-        expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-          anything,
-          anything,
-          anything,
-          {:preferred_network_name => 'fake-dynamic-network', :use_dns_entry => false}
-        ).and_return(link_lookup)
-
-        links_resolver.resolve(api_server_job)
-      end
-
-      context 'when not specified' do
-        let(:links) { {'db' => {"from" => 'db'}} }
-
-        it 'defaults both accordingly' do
+      context 'when link source specifies network' do
+        it 'respects value passed' do
           expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
             anything,
             anything,
             anything,
-            {:preferred_network_name => nil, :use_dns_entry => true}
+            {:preferred_network_name => 'fake-dynamic-network', :use_dns_entry => false}
           ).and_return(link_lookup)
 
           links_resolver.resolve(api_server_job)
+        end
+
+        context 'when not specified' do
+          let(:links) { {'db' => {'from' => 'db'}} }
+
+          it 'defaults to nil' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => false}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+      end
+
+      context 'when use_dns_addresses director flag is FALSE' do
+        before do
+          allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
+        end
+        context 'when ip_addresses key is not set' do
+          let(:links) { {'db' => {'from' => 'db'}} }
+
+          it 'it sets use_dns_entry to false' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => false}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+
+        context 'when ip_addresses key is TRUE' do
+          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => true }} }
+          it 'it sets use_dns_entry to false' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => false}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+
+        context 'when ip_addresses key is FALSE' do
+          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => false }} }
+          it 'it sets use_dns_entry to true' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => true}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+      end
+
+      context 'when use_dns_addresses director flag is TRUE' do
+        before do
+          allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
+        end
+        context 'when ip_addresses key is not set' do
+          let(:links) { {'db' => {'from' => 'db'}} }
+
+          it 'it sets use_dns_entry to TRUE' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => true}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+
+        context 'when ip_addresses key is TRUE' do
+          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => true }} }
+          it 'it sets use_dns_entry to false' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => false}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
+        end
+
+        context 'when ip_addresses key is FALSE' do
+          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => false }} }
+          it 'it sets use_dns_entry to true' do
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+              anything,
+              anything,
+              anything,
+              {:preferred_network_name => nil, :use_dns_entry => true}
+            ).and_return(link_lookup)
+
+            links_resolver.resolve(api_server_job)
+          end
         end
       end
     end

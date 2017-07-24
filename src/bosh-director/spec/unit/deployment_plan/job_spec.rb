@@ -92,6 +92,97 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
               expect { job.add_link_from_manifest('job_name', 'consumes', 'link_name', link_config) }.to_not raise_error
             end
           end
+
+          context 'ip_addresses field in consume link section' do
+            context 'when key is not specified' do
+              before do
+                job.add_link_from_release('instance_group_name', 'provides', 'link_name', {'from' => 'link_name'})
+                job.add_link_from_manifest('instance_group_name', 'provides', 'link_name', {'properties' => ['plant'], 'from' => 'link_name'})
+                job.add_link_from_manifest('instance_group_name', 'consumes', 'consumed_link_name', {'from' => 'provider_link_name'})
+              end
+
+              it 'does not add the key to the link infos consume section' do
+                expected_link_infos = {
+                  'instance_group_name' => {
+                    'provides' => {
+                      'link_name' => {
+                        'properties' =>['plant'],
+                        'from' => 'link_name'
+                      }
+                    },
+                    'consumes' => {
+                      'consumed_link_name' => {
+                        'from' => 'provider_link_name'
+                      }
+                    }
+                  }
+                }
+
+                expect(job.link_infos).to eq(expected_link_infos)
+              end
+            end
+
+            context 'when key is specified' do
+              before do
+                job.add_link_from_release('instance_group_name', 'provides', 'link_name', {'from' => 'link_name'})
+                job.add_link_from_manifest('instance_group_name', 'provides', 'link_name', {'properties' => ['plant'], 'from' => 'link_name'})
+              end
+
+              context 'when key value is a boolean' do
+                it 'should inject correct values in the link infos for true' do
+                  expected_link_infos = {
+                      'instance_group_name' => {
+                        'provides' => {
+                          'link_name' => {
+                            'properties' =>['plant'],
+                            'from' => 'link_name'
+                          }
+                        },
+                        'consumes' => {
+                          'consumed_link_name' => {
+                            'from' => 'provider_link_name',
+                            'ip_addresses' => true
+                          }
+                        }
+                      }
+                    }
+
+                  job.add_link_from_manifest('instance_group_name', 'consumes', 'consumed_link_name', {'from' => 'provider_link_name', 'ip_addresses' => true})
+                  expect(job.link_infos).to eq(expected_link_infos)
+                end
+
+                it 'should inject correct values in the link infos for false' do
+                  expected_link_infos = {
+                    'instance_group_name' => {
+                      'provides' => {
+                        'link_name' => {
+                          'properties' =>['plant'],
+                          'from' => 'link_name'
+                        }
+                      },
+                      'consumes' => {
+                        'consumed_link_name' => {
+                          'from' => 'provider_link_name',
+                          'ip_addresses' => false
+                        }
+                      }
+                    }
+                  }
+
+                  job.add_link_from_manifest('instance_group_name', 'consumes', 'consumed_link_name', {'from' => 'provider_link_name', 'ip_addresses' => false})
+                  expect(job.link_infos).to eq(expected_link_infos)
+                end
+              end
+
+              context 'when key value is NOT a boolean' do
+                it 'should throw an error' do
+                  expect {
+                    job.add_link_from_manifest('instance_group_name', 'consumes', 'consumed_link_name', {'from' => 'provider_link_name', 'ip_addresses' => 'smurf'})
+                  }.to raise_error /Cannot specify non boolean values for 'ip_addresses' field for link 'consumed_link_name' in job 'foo' in instance group 'instance_group_name'./
+                end
+              end
+            end
+          end
         end
 
         describe '#bind_properties' do

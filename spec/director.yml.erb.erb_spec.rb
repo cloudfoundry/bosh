@@ -43,8 +43,9 @@ describe 'director.yml.erb.erb' do
           'log_access_events_to_syslog' => false,
           'flush_arp' => false,
           'local_dns' => {
-            'enabled' => false,
+            'enabled' => true,
             'include_index' => false,
+            'use_dns_addresses' => true,
           },
           'ignore_missing_gateway' => false,
           'disks' => {
@@ -118,6 +119,14 @@ describe 'director.yml.erb.erb' do
     context 'when using the verify-multidigest binary' do
       it 'should configure the paths' do
         expect(parsed_yaml['verify_multidigest_path']).to eq('/var/vcap/packages/verify_multidigest/bin/verify-multidigest')
+      end
+    end
+
+    describe 'local_dns' do
+      it 'configures local dns values' do
+        expect(parsed_yaml['local_dns']['enabled']).to eq(true)
+        expect(parsed_yaml['local_dns']['include_index']).to eq(false)
+        expect(parsed_yaml['local_dns']['use_dns_addresses']).to eq(true)
       end
     end
 
