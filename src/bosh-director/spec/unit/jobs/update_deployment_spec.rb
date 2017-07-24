@@ -96,7 +96,14 @@ module Bosh::Director
 
             let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
+            let(:client_factory) { instance_double(ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(ConfigServer::ConfigServerClient) }
+
             before do
+              allow(ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              allow(config_server_client).to receive(:generate_values)
+
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
@@ -234,7 +241,7 @@ module Bosh::Director
 
             let(:logger) { instance_double(Logging::Logger) }
             let(:client_factory) { instance_double(ConfigServer::ClientFactory) }
-            let(:config_server_client) { instance_double(ConfigServer::DisabledClient) }
+            let(:config_server_client) { instance_double(ConfigServer::ConfigServerClient) }
 
             before do
               allow(planner).to receive(:variables).and_return(variables)

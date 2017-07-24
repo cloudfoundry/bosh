@@ -1,7 +1,7 @@
 require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
-  class EnabledClient
+  class ConfigServerClient
     def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
       @director_name = director_name
@@ -429,28 +429,6 @@ module Bosh::Director::ConfigServer
         )
         raise e
       end
-    end
-  end
-
-  class DisabledClient
-    def interpolate(src, options={})
-      Bosh::Common::DeepCopy.copy(src)
-    end
-
-    def interpolate_with_versioning(src, variable_set, options={})
-      Bosh::Common::DeepCopy.copy(src)
-    end
-
-    def interpolate_cross_deployment_link(link_spec, consumer_variable_set, provider_variable_set)
-      Bosh::Common::DeepCopy.copy(link_spec)
-    end
-
-    def prepare_and_get_property(manifest_provided_prop, default_prop, type, deployment_name, options = {})
-      manifest_provided_prop.nil? ? default_prop : manifest_provided_prop
-    end
-
-    def generate_values(variables, deployment_name)
-      # do nothing. When config server is not enabled, nothing to do
     end
   end
 end

@@ -598,7 +598,7 @@ module Bosh
 
       context 'cloud_properties, networks_settings, env interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
         let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
 

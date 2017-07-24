@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::Disk
   describe PersistentDiskComparator do
     let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
-    let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+    let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
     before do
       allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)

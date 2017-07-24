@@ -218,7 +218,7 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
           end
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-          let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+          let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
           let(:options) {{}}
 
 

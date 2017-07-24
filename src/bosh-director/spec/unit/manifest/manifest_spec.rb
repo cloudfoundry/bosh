@@ -201,7 +201,7 @@ module Bosh::Director
 
       it 'does not call config server client even if config server is enabled' do
         allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:interpolate)
+        expect(Bosh::Director::ConfigServer::ConfigServerClient).to_not receive(:interpolate)
         Manifest.generate_empty_manifest
       end
     end
