@@ -24,5 +24,9 @@ module Bosh::Director
       end
       results.join("\n")
     end
+
+    def ignore_cancellation?
+      @steps.any?(&:ignore_cancellation?)
+    end
   end
 end
