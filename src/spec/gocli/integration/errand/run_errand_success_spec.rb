@@ -173,7 +173,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         errand_task_id = bosh_runner.get_most_recent_task_id
         task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
         expect(task_result).to match('"exit_code":0')
-        expect(task_result).to match(/"stdout":"new-stdout\\nadditional-stdout/)
+        expect(task_result).to match(/"stdout":"job=fake-errand-name index=0 id=.{36}\\nnew-stdout\\nadditional-stdout/)
       end
     end
   end
