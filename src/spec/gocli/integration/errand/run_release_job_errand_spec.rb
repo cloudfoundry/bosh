@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe 'run-errand success', type: :integration, with_tmp_dir: true do
+describe 'run release job errand', type: :integration, with_tmp_dir: true do
   let(:deployment_name) { manifest_hash['name'] }
 
   with_reset_sandbox_before_each
