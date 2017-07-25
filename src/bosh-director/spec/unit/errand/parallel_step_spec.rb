@@ -3,8 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::ParallelStep do
     subject(:parallel_step) { Errand::ParallelStep.new(4, [ errand_step1, errand_step2 ]) }
-    let(:errand_step1) { instance_double(Errand::ErrandStep, ignore_cancellation?: false) }
-    let(:errand_step2) { instance_double(Errand::ErrandStep, ignore_cancellation?: false) }
+    let(:errand_step1) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
+    let(:errand_step2) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:checkpoint_block) { Proc.new{} }
 
     describe '#run' do

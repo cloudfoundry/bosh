@@ -1,5 +1,5 @@
 module Bosh::Director
-  class Errand::ErrandStep
+  class Errand::LifecycleErrandStep
     def initialize(runner, deployment_planner, name, instance, instance_group, skip_errand, keep_alive, deployment_name, logger)
       @runner = runner
       @deployment_planner = deployment_planner
@@ -18,14 +18,9 @@ module Bosh::Director
         return
       end
       result = nil
-      if @instance_group.is_errand?
-        instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, @instance_group, @logger)
-        @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, @name, @deployment_name)
-        @errand_instance_updater.with_updated_instances(@instance_group, @keep_alive) do
-          @logger.info('Starting to run errand')
-          result = @runner.run(@instance, &checkpoint_block)
-        end
-      else
+      instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, @instance_group, @logger)
+      @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, @name, @deployment_name)
+      @errand_instance_updater.with_updated_instances(@instance_group, @keep_alive) do
         @logger.info('Starting to run errand')
         result = @runner.run(@instance, &checkpoint_block)
       end

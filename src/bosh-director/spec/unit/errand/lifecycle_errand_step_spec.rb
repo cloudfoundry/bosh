@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Errand::ErrandStep do
+  describe Errand::LifecycleErrandStep do
     subject(:errand_step) do
-      Errand::ErrandStep.new(
+      Errand::LifecycleErrandStep.new(
         runner,
         deployment_planner,
         errand_name,
@@ -30,21 +30,6 @@ module Bosh::Director
     describe '#run' do
       before do
         expect(job_renderer).to receive(:clean_cache!)
-      end
-
-      context 'when instance group is lifecycle service' do
-        let(:is_errand) { false }
-        let(:checkpoint_block) { Proc.new {} }
-
-        context 'errand success' do
-          let(:exit_code) { 0 }
-          it 'returns the result string' do
-            expect(runner).to receive(:run).with(instance, &checkpoint_block).
-              and_return(errand_result)
-            result = errand_step.run(&checkpoint_block)
-            expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
-          end
-        end
       end
 
       context 'when instance group is lifecycle errand' do

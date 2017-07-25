@@ -527,7 +527,7 @@ module Bosh::Director
         end
 
         context 'when the errand indicates that cancellation should be ignored even though the task is timed out or canceled' do
-          let(:errand) { instance_double(Errand::ErrandStep,  run: nil,  ignore_cancellation?: true) }
+          let(:errand) { instance_double(Errand::LifecycleErrandStep, run: nil, ignore_cancellation?: true) }
           let(:errand_provider) { instance_double(Errand::ErrandProvider, get:errand) }
           let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
           let(:task) { instance_double('Bosh::Director::Models::Task', id: 42, state: 'cancelling', username: 'username' ) }
