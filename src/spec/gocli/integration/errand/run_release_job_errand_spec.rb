@@ -33,6 +33,33 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'when there are multiple errand jobs on the instance group' do
+    let(:manifest_hash) do
+      hash = Bosh::Spec::Deployments.manifest_with_errand_job_on_service_instance
+      hash['jobs'][0]['templates'] << emoji_errand_job
+      hash
+    end
+
+    let(:emoji_errand_job) { {'release' => 'bosh-release', 'name' => 'emoji-errand'} }
+
+    it 'is able to run the first errand' do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
+
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output.scan(/fake-errand-stdout-service/).size).to eq(1)
+    end
+
+    it 'is able to run the second errand' do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand emoji-errand', deployment_name: deployment_name)
+
+      expect(output.scan(/errand is/).size).to eq(1)
+    end
+  end
+
   context 'when lifecycle service instance groups and lifecycle errand instance groups have the errand job' do
     let(:manifest_hash) do
       hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -50,7 +77,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       deploy_from_scratch(manifest_hash: manifest_hash)
 
       output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
-      puts output
 
       expect(output).to match /job=service_with_errand index=0/
       expect(output).to match /job=service_with_errand index=1/
@@ -59,9 +85,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       expect(output.scan(/fake-errand-stdout[^\-]/).size).to eq(1)
 
       expect(output).to match /Succeeded/
-
-      output = bosh_runner.run('task 4 --result', deployment_name: deployment_name)
-      puts output
     end
   end
 end
