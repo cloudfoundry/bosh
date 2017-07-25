@@ -10,7 +10,7 @@ module Bosh::Spec
       availability_zone,
       instance_uuid,
       job_name,
-      nats_port,
+      nats_config,
       logger,
       agent_base_dir
     )
@@ -21,8 +21,8 @@ module Bosh::Spec
       @availability_zone = availability_zone
       @instance_uuid = instance_uuid
       @job_name = job_name
-      @nats_port = nats_port
       @logger = logger
+      @nats_config = nats_config
       @agent_base_dir = agent_base_dir
     end
 
@@ -52,7 +52,7 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = Yajl::Encoder.encode(
           method: 'set_dummy_status',
           status: 'failing',
@@ -64,7 +64,7 @@ module Bosh::Spec
 
     def fail_start_task
       @logger.info("Failing task #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = Yajl::Encoder.encode(
           method: 'set_task_fail',
           status: 'fail_task',

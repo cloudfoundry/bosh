@@ -2,9 +2,12 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
 
-    def initialize(nats_uri, nats_server_ca_path)
+    def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
       @nats_uri = nats_uri
       @nats_server_ca_path = nats_server_ca_path
+      @nats_client_private_key_path = nats_client_private_key_path
+      @nats_client_certificate_path = nats_client_certificate_path
+
       @logger = Config.logger
       @lock = Mutex.new
       @inbox_name = "director.#{Config.process_uuid}"
@@ -70,8 +73,19 @@ module Bosh::Director
               redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
               @logger.error(redacted_message)
             end
-
-            @nats = NATS.connect(uri: @nats_uri, ssl: true, tls: {ca_file: @nats_server_ca_path} )
+            options = {
+              :uri => @nats_uri,
+              :ssl => true,
+              :tls => {
+                :private_key_file => @nats_client_private_key_path,
+                :cert_chain_file  => @nats_client_certificate_path,
+                # Can enable verify_peer functionality optionally by passing
+                # the location of a ca_file.
+                :verify_peer => true,
+                :ca_file => @nats_server_ca_path
+              }
+            }
+            @nats = NATS.connect(options)
           end
         end
       end

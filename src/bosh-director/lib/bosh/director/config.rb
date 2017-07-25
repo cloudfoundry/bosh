@@ -53,7 +53,9 @@ module Bosh::Director
         :director_ips,
         :config_server_enabled,
         :config_server,
-        :enable_nats_delivered_templates
+        :enable_nats_delivered_templates,
+        :nats_client_private_key_path,
+        :nats_client_certificate_path,
       )
 
       def clear
@@ -121,6 +123,8 @@ module Bosh::Director
         @nats_uri = config['mbus']
         @nats_ca = config['nats_ca']
         @nats_server_ca_path = config.fetch('nats_server_ca_path')
+        @nats_client_private_key_path = config['nats_tls']['private_key_path']
+        @nats_client_certificate_path = config['nats_tls']['certificate_path']
 
         @default_ssh_options = config['default_ssh_options']
 
@@ -333,7 +337,7 @@ module Bosh::Director
         if @nats_rpc.nil?
           @lock.synchronize do
             if @nats_rpc.nil?
-              @nats_rpc = NatsRpc.new(nats_uri, @nats_server_ca_path)
+              @nats_rpc = NatsRpc.new(nats_uri, @nats_server_ca_path, @nats_client_private_key_path, @nats_client_certificate_path)
             end
           end
         end

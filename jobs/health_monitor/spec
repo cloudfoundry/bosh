@@ -6,6 +6,9 @@ templates:
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
   nats_server_ca.cert.erb: config/nats_server_ca.cert
+  nats_private_key.erb: config/nats/private_key
+  nats_certificate.erb: config/nats/certifcate.pem
+
 
 packages:
   - health_monitor
@@ -51,6 +54,11 @@ properties:
   hm.em_threadpool_size:
     description: EM thread pool size
     default: 20
+
+  hm.nats.certs.private_key:
+    description: Private Key for establishing mutual TLS with NATs
+  hm.nats.certs.certificate:
+    description: Certificate for establishing mutual TLS with NATs
 
   #
   # NATS options (to get alerts from agents)

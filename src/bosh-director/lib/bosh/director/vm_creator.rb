@@ -166,7 +166,10 @@ module Bosh::Director
       if Config.nats_ca
         env['bosh'] ||= {}
         env['bosh']['mbus'] ||= {}
-        env['bosh']['mbus']['ca'] = Config.nats_ca
+        env['bosh']['mbus']['cert'] ||= {}
+        env['bosh']['mbus']['cert']['ca'] = Config.nats_ca
+        env['bosh']['mbus']['cert']['certificate'] = File.read(Config.nats_client_certificate_path)
+        env['bosh']['mbus']['cert']['private_key'] = File.read(Config.nats_client_private_key_path)
       end
 
       if Config.encryption?

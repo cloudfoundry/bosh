@@ -7,12 +7,12 @@ module Bosh::Spec
   class Director
     include Support::TableHelpers
 
-    def initialize(runner, waiter, agents_base_dir, director_nats_port, db, logger)
+    def initialize(runner, waiter, agents_base_dir, db, director_nats_config, logger)
       @runner = runner
       @waiter = waiter
       @agents_base_dir = agents_base_dir
-      @director_nats_port = director_nats_port
       @db = db
+      @director_nats_config = director_nats_config
       @logger = logger
       @nats_recording = []
     end
@@ -34,7 +34,7 @@ module Bosh::Spec
           instance_data[:bootstrap] == 'true',
           instance_data[:disk_cids],
           File.join(@agents_base_dir, "agent-base-dir-#{instance_data[:agent_id]}"),
-          @director_nats_port,
+          @director_nats_config,
           @logger,
         )
       end
@@ -121,7 +121,7 @@ module Bosh::Spec
 
       Thread.new do
         EventMachine.run do
-          @nats_client = NATS.connect(uri: nats_uri, ssl: true) do
+          @nats_client = NATS.connect(@director_nats_config) do
             @nats_client.subscribe('>') do |msg, reply, sub|
               @nats_recording << [sub, msg]
             end

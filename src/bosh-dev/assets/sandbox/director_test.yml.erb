@@ -176,3 +176,8 @@ nats_ca: |
   HCu8gfq+3WRUgddCQnYJUXtig2yAqmHf/WGR9yYYnfMUDKa85i0inolq1EnLvgVV
   K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
   -----END CERTIFICATE-----
+
+
+nats_tls:
+  certificate_path: <%= nats_tls['certificate_path'] %>
+  private_key_path: <%= nats_tls['private_key_path'] %>

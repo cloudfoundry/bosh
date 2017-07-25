@@ -21,6 +21,8 @@ templates:
   scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
   nats_server_ca.cert.erb: config/nats_server_ca.cert
+  nats_private_key.erb: config/nats/private_key
+  nats_certificate.pem.erb: config/nats/certificate.pem
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   sync_dns_ctl.erb: bin/sync_dns_ctl
   bbr_backup: bin/bbr/backup
@@ -189,6 +191,12 @@ properties:
   director.default_ssh_options.gateway_user:
     description: 'Default user to use with bosh ssh command'
     default: vcap
+
+  # NATs mutual TLS properties
+  director.nats.private_key:
+    description: Private Key for NATs mutual TLS
+  director.nats.certificate:
+    description: Certificate for NATs mutual TLS
 
   nats.user:
     description: Username to connect to nats with

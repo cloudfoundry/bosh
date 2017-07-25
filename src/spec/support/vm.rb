@@ -15,7 +15,7 @@ module Bosh::Spec
       index,
       ignore,
       agent_base_dir,
-      nats_port,
+      nats_config,
       logger
     )
       @waiter = waiter
@@ -30,7 +30,7 @@ module Bosh::Spec
       @index = index
       @ignore = ignore
       @agent_base_dir = agent_base_dir
-      @nats_port = nats_port
+      @nats_config = nats_config
       @logger = logger
     end
 
@@ -60,7 +60,7 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}", ssl: true) do
+      NATS.start(@nats_config) do
         msg = Yajl::Encoder.encode(
           method: 'set_dummy_status',
           status: 'failing',
@@ -72,7 +72,7 @@ module Bosh::Spec
 
     def fail_start_task
       @logger.info("Failing task #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}", ssl: true) do
+      NATS.start(@nats_config) do
         msg = Yajl::Encoder.encode(
           method: 'set_task_fail',
           status: 'fail_task',

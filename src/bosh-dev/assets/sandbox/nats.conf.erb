@@ -6,7 +6,9 @@ log_file: "<%= nats_log_path %>"
 
 # TLS
 tls {
-cert_file:  "<%= nats_conf['cert_file'] %>"
-key_file:   "<%= nats_conf['key_file'] %>"
-timeout:    2
+cert_file: "<%= nats_certificate_paths['server']['certificate_path'] %>"
+key_file:  "<%= nats_certificate_paths['server']['private_key_path'] %>"
+ca_file:   "<%= nats_certificate_paths['ca_path'] %>"
+verify:    true
+timeout: 2
 }

@@ -362,7 +362,12 @@ describe Bosh::Director::Config do
     end
 
     it 'initializes a new nats rpc client with the appropriate params' do
-      expect(Bosh::Director::NatsRpc).to receive(:new).with(test_config['mbus'], test_config['nats_server_ca_path']).and_return(some_client)
+      expect(Bosh::Director::NatsRpc).to receive(:new)
+                                           .with(test_config['mbus'],
+                                                 test_config['nats_server_ca_path'],
+                                                 test_config['nats_tls']['private_key_path'],
+                                                 test_config['nats_tls']['certificate_path'])
+                                           .and_return(some_client)
       expect(described_class.nats_rpc).to eq(some_client)
     end
   end
@@ -379,6 +384,19 @@ describe Bosh::Director::Config do
     context 'when nats_ca is specified' do
       it 'returns non-nil' do
         expect(described_class.nats_ca).to eq("begin nats ca\nnats ca contents\nend nats ca\n")
+      end
+    end
+
+    context 'when nats_tls is specified' do
+      context 'when private_key is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_private_key_path).to eq("/path/to/sample_nats_tls_private_key")
+        end
+      end
+      context 'when certificate is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_certificate_path).to eq("/path/to/sample_nats_tls_certificate.pem")
+        end
       end
     end
   end

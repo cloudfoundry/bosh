@@ -3,14 +3,14 @@ module Bosh::Spec
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
   class Director
-    def initialize(runner, waiter, agents_base_dir, director_nats_port, db, logger)
+    def initialize(runner, waiter, agents_base_dir, db, director_nats_config, logger)
       @runner = runner
       @waiter = waiter
       @agents_base_dir = agents_base_dir
-      @director_nats_port = director_nats_port
       @db = db
       @logger = logger
       @nats_recording = []
+      @director_nats_config = director_nats_config
     end
 
     def vms(deployment_name = '', options={})
@@ -28,7 +28,7 @@ module Bosh::Spec
           vm_data[:index],
           vm_data[:ignore],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
-          @director_nats_port,
+          @director_nats_config,
           @logger,
         )
       end
@@ -107,7 +107,7 @@ module Bosh::Spec
 
       Thread.new do
         EventMachine.run do
-          @nats_client = NATS.connect(uri: nats_uri, ssl: true) do
+          @nats_client = NATS.connect(@director_nats_config) do
             @nats_client.subscribe('>') do |msg, reply, sub|
               @nats_recording << [sub, msg]
             end

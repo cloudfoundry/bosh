@@ -19,6 +19,8 @@ params = {
     'user' => p('nats.user'),
     'password' => p('nats.password'),
     'ca_path' => '/var/vcap/jobs/health_monitor/config/nats_server_ca.cert',
+    'private_key' => '/var/vcap/jobs/health_monitor/config/nats/private_key',
+    'certificate' => '/var/vcap/jobs/health_monitor/config/nats/certificate.pem'
   },
   'director' => director,
   'intervals' => {

@@ -12,8 +12,8 @@ module IntegrationExampleGroup
       bosh_runner,
       waiter,
       current_sandbox.agent_tmp_path,
-      current_sandbox.nats_port,
       current_sandbox.db,
+      current_sandbox.director_nats_config,
       logger,
     )
   end

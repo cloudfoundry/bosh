@@ -6,6 +6,7 @@ templates:
   nats.cfg.erb: config/nats.cfg
   nats_cert.pem.erb: config/nats_cert.pem
   nats_key.key.erb: config/nats_key.key
+  nats_ca.pem.erb: config/nats_ca.pem
 
 packages:
   - gonats
@@ -32,6 +33,8 @@ properties:
     description: go nats certificate for TLS
   nats.private_key:
     description: go nats private key for TLS
+  nats.ca:
+    description: go nats ca for mutual TLS
   nats.auth_timeout:
     description: Timeout (in seconds) for clients to send auth credentials
     default: 1

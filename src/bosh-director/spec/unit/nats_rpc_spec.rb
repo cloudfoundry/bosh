@@ -4,9 +4,24 @@ describe Bosh::Director::NatsRpc do
   let(:nats) { instance_double('NATS') }
   let(:nats_url) { 'fake-nats-url' }
   let(:nats_server_ca_path) { '/path/to/happiness.pem' }
-  let(:nats_options) { {uri: nats_url, ssl: true, :tls => { :ca_file => nats_server_ca_path }} }
+  let(:nats_client_private_key_path) { '/path/to/success.pem' }
+  let(:nats_client_certificate_path) { '/path/to/enlightenment.pem' }
+  let(:nats_options) {
+    {
+      uri: nats_url,
+      ssl: true,
+      :tls => {
+        :private_key_file => nats_client_private_key_path,
+        :cert_chain_file => nats_client_certificate_path,
+        :verify_peer => true,
+        :ca_file => nats_server_ca_path
+      }
+    }
+  }
   let(:some_logger){ instance_double(Logger) }
-  subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path) }
+  subject(:nats_rpc) {
+    Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
+  }
 
   before do
     allow(NATS).to receive(:connect).with(nats_options).and_return(nats)

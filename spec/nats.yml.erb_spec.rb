@@ -48,6 +48,8 @@ describe 'nats.yml.erb' do
       tls {
         cert_file:  "/var/vcap/jobs/nats/config/nats_cert.pem"
         key_file:   "/var/vcap/jobs/nats/config/nats_key.key"
+        ca_file:    "/var/vcap/jobs/nats/config/nats_ca.pem"
+        verify:     true
         timeout:    2
       }
 

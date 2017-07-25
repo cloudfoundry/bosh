@@ -58,4 +58,6 @@ nats_ca: |
   nats ca contents
   end nats ca
 nats_server_ca_path: 'some-nats-server-ca-path'
-
+nats_tls:
+  private_key_path: /path/to/sample_nats_tls_private_key
+  certificate_path: /path/to/sample_nats_tls_certificate.pem

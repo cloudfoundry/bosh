@@ -12,7 +12,11 @@ describe Bosh::Monitor::Runner do
           :user      => Bhm.mbus.user,
           :pass      => Bhm.mbus.password,
           :autostart => false,
-          :tls => { :ca_file => Bhm.mbus.ca_path },
+          :tls => {
+            :ca_file => Bhm.mbus.ca_path,
+            :private_key_file => Bhm.mbus.private_key_path,
+            :cert_chain_file  => Bhm.mbus.certificate_path
+          },
           :ssl => true
       }
       expect(NATS).to receive(:connect).with(expected_nats_connect_options)
