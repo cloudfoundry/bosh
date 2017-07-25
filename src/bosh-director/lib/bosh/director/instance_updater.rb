@@ -86,7 +86,7 @@ module Bosh::Director
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             @vm_deleter.delete_for_instance(instance_model)
           end
-          release_obsolete_ips(instance_plan)
+          instance_plan.release_obsolete_network_plans(@ip_provider)
           instance.update_state
           instance.update_variable_set
           update_dns(instance_plan)
@@ -102,7 +102,7 @@ module Bosh::Director
           recreated = true
         end
 
-        release_obsolete_ips(instance_plan)
+        instance_plan.release_obsolete_network_plans(@ip_provider)
 
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
@@ -172,16 +172,6 @@ module Bosh::Director
         end
       end
       return action, context
-    end
-
-    def release_obsolete_ips(instance_plan)
-      instance_plan.network_plans
-        .select(&:obsolete?)
-        .each do |network_plan|
-        reservation = network_plan.reservation
-        @ip_provider.release(reservation)
-      end
-      instance_plan.release_obsolete_network_plans
     end
 
     def stop(instance_plan)

@@ -179,7 +179,11 @@ module Bosh
           network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
         end
 
-        def release_obsolete_network_plans
+        def release_obsolete_network_plans(ip_provider)
+          network_plans.select(&:obsolete?).each do |network_plan|
+            reservation = network_plan.reservation
+            ip_provider.release(reservation)
+          end
           network_plans.delete_if(&:obsolete?)
         end
 
