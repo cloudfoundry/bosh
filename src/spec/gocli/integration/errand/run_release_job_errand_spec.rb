@@ -63,13 +63,20 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
   context 'when lifecycle service instance groups and lifecycle errand instance groups have the errand job' do
     let(:manifest_hash) do
       hash = Bosh::Spec::Deployments.manifest_with_errand
-      hash['jobs'] <<  service_job_with_errand
+      hash['jobs'] <<  service_instance_group_with_errand
+      hash['jobs'] <<  second_service_instance_group_with_errand
       hash
     end
 
-    let(:service_job_with_errand) do
+    let(:service_instance_group_with_errand) do
       instance_group = Bosh::Spec::Deployments.service_job_with_errand
       instance_group['instances'] = 2
+      instance_group
+    end
+
+    let(:second_service_instance_group_with_errand) do
+      instance_group = Bosh::Spec::Deployments.service_job_with_errand
+      instance_group['name'] = 'second_service_with_errand'
       instance_group
     end
 
@@ -80,8 +87,9 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
 
       expect(output).to match /job=service_with_errand index=0/
       expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=second_service_with_errand index=0/
       expect(output).to match /job=fake-errand-name index=0/
-      expect(output.scan(/fake-errand-stdout-service/).size).to eq(2)
+      expect(output.scan(/fake-errand-stdout-service/).size).to eq(3)
       expect(output.scan(/fake-errand-stdout[^\-]/).size).to eq(1)
 
       expect(output).to match /Succeeded/
