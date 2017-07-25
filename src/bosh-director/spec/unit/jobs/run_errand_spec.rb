@@ -219,12 +219,12 @@ module Bosh::Director
                 let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
                 before do
-                  allow(Errand::JobManager).to receive(:new).
+                  allow(Errand::InstanceGroupManager).to receive(:new).
                     with(planner, deployment_instance_group, logger).
-                    and_return(job_manager)
+                    and_return(instance_group_manager)
                 end
-                let(:job_manager) do
-                  instance_double('Bosh::Director::Errand::JobManager', {
+                let(:instance_group_manager) do
+                  instance_double('Bosh::Director::Errand::InstanceGroupManager', {
                     update_instances: nil,
                     delete_vms: nil,
                     create_missing_vms: nil,
@@ -265,16 +265,16 @@ module Bosh::Director
 
                     expect(deployment_instance_group).to receive(:bind_instances)
 
-                    expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
+                    expect(instance_group_manager).to receive(:create_missing_vms).with(no_args).ordered
 
-                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(instance_group_manager).to receive(:update_instances).with(no_args).ordered
 
                     expect(runner).to receive(:run).
                       with(instance).
                       ordered.
                       and_return(errand_result)
 
-                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered
+                    expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect(job_renderer).to receive(:clean_cache!).ordered
 
@@ -310,9 +310,9 @@ module Bosh::Director
                 context 'when the errand fails to run' do
                   it 'cleans up the vms anyway' do
                     error = Exception.new
-                    allow(job_manager).to receive(:create_missing_vms).with(no_args).ordered
+                    allow(instance_group_manager).to receive(:create_missing_vms).with(no_args).ordered
                     expect(runner).to receive(:run).with(instance).and_raise(error)
-                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered
+                    expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(error)
                   end
@@ -322,7 +322,7 @@ module Bosh::Director
                       original_error = Exception.new('original error')
                       cleanup_error = Exception.new('cleanup error')
                       expect(runner).to receive(:run).with(instance).and_raise(original_error)
-                      expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
+                      expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                       expect { subject.perform }.to raise_error(original_error)
                       expect(log_string).to include('cleanup error')
@@ -334,7 +334,7 @@ module Bosh::Director
                   it 'raises clean up error' do
                     cleanup_error = Exception.new('cleanup error')
                     expect(runner).to receive(:run).with(instance)
-                    expect(job_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
+                    expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                     expect { subject.perform }.to raise_error(cleanup_error)
                   end
@@ -344,7 +344,7 @@ module Bosh::Director
                   let(:keep_alive) { true }
 
                   it 'does not delete instances' do
-                    expect(job_manager).to_not receive(:delete_vms)
+                    expect(instance_group_manager).to_not receive(:delete_vms)
 
                     expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                   end
@@ -382,7 +382,7 @@ module Bosh::Director
                         let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
 
                         it 'does not run the errand and does not output ' do
-                          expect(job_manager).to_not receive(:create_missing_vms)
+                          expect(instance_group_manager).to_not receive(:create_missing_vms)
                           expect(runner).to_not receive(:run)
 
                           subject.perform
@@ -401,7 +401,7 @@ module Bosh::Director
                         end
 
                         it 'runs the errands' do
-                          expect(job_manager).to receive(:create_missing_vms)
+                          expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
                           expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
@@ -419,7 +419,7 @@ module Bosh::Director
                         end
 
                         it 'runs the errands' do
-                          expect(job_manager).to receive(:create_missing_vms)
+                          expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
                           expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
@@ -441,7 +441,7 @@ module Bosh::Director
                         end
 
                         it 'runs the errand' do
-                          expect(job_manager).to receive(:create_missing_vms)
+                          expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
                           expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
@@ -455,7 +455,7 @@ module Bosh::Director
                         end
 
                         it 'runs the errands' do
-                          expect(job_manager).to receive(:create_missing_vms)
+                          expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
                           expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
@@ -471,7 +471,7 @@ module Bosh::Director
                       allow(instance).to receive(:current_packages).and_return({'packages' => 'successful_packages_spec'})
                       allow(instance).to receive(:configuration_hash).and_return('successful_configuration_hash')
 
-                      expect(job_manager).to receive(:create_missing_vms)
+                      expect(instance_group_manager).to receive(:create_missing_vms)
                       expect(runner).to receive(:run)
 
                       subject.perform

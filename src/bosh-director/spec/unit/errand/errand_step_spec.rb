@@ -51,13 +51,13 @@ module Bosh::Director
         let(:is_errand) { true }
         let(:exit_code) { 0 }
 
-        let(:job_manager) { instance_double(Errand::JobManager) }
+        let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
         let(:errand_instance_updater) { instance_double(Errand::ErrandInstanceUpdater) }
 
         it 'creates the vm, then runs the errand' do
-          expect(Errand::JobManager).to receive(:new).with(deployment_planner, instance_group, logger).and_return(job_manager)
+          expect(Errand::InstanceGroupManager).to receive(:new).with(deployment_planner, instance_group, logger).and_return(instance_group_manager)
           expect(Errand::ErrandInstanceUpdater).to receive(:new)
-               .with(job_manager, logger, errand_name, deployment_name)
+               .with(instance_group_manager, logger, errand_name, deployment_name)
                .and_return(errand_instance_updater)
           expect(errand_instance_updater).to receive(:with_updated_instances).with(instance_group, keep_alive) do |&blk|
             blk.call
