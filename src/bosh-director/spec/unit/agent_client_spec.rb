@@ -582,7 +582,7 @@ module Bosh::Director
           allow(Config).to receive(:base_dir).and_return(tasks_dir)
           allow(Config).to receive(:cloud_options).and_return({})
           task = Models::Task.make(:id => task_id, :state => 'cancelling')
-          testjob_class.perform(task_id)
+          testjob_class.perform(task_id, 'workername1')
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
         end
       end

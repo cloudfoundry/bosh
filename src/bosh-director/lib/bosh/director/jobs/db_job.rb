@@ -15,6 +15,10 @@ module Bosh::Director
         raise DirectorError, "Invalid director job class `#{job_class}'. It should specify queue value." unless queue_name
       end
 
+      def before(job)
+        @worker_name = job.locked_by
+      end
+
       def perform
         Config.db.transaction(:retry_on => [Sequel::DatabaseConnectionError]) do
           if Models::Task.where(id: @task_id, state: 'queued').update(state: 'processing') != 1
@@ -29,7 +33,7 @@ module Bosh::Director
             perform_args = decode(encode(@args))
           end
 
-          @job_class.perform(@task_id, *perform_args)
+          @job_class.perform(@task_id, @worker_name, *perform_args)
         end
 
         if process_status.signaled?

@@ -25,7 +25,10 @@ module Bosh::Director
     let(:args) { ['1', '2'] }
 
     context 'fake fork' do
+      let(:delayed_job) { instance_double(Delayed::Backend::Sequel::Job, locked_by: 'workername1') }
+
       before do
+        db_job.before(delayed_job)
         allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
       end
 
@@ -80,14 +83,14 @@ module Bosh::Director
         let(:signaled) { true }
         it 'fails task' do
           allow(db_job).to receive(:puts) # suppress the noise, failing to use Logging::Logger in multithreaded calls
-          allow(job_class).to receive(:perform).with(task.id, *args)
+          allow(job_class).to receive(:perform).with(task.id, 'workername1', *args)
           db_job.perform
           expect(Models::Task.first(id: 42).state).to eq('error')
         end
       end
 
       it 'performs new job' do
-        expect(job_class).to receive(:perform).with(task.id, *args)
+        expect(job_class).to receive(:perform).with(task.id, 'workername1', *args)
         db_job.perform
       end
 
@@ -141,7 +144,7 @@ module Bosh::Director
           let(:args) { nil }
 
           it 'executes arguments' do
-            expect(job_class).to receive(:perform).with(task.id).and_return nil
+            expect(job_class).to receive(:perform).with(task.id, nil).and_return nil
 
             Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
           end
@@ -151,7 +154,7 @@ module Bosh::Director
           let(:args) { [ 'string', 0, false ] }
 
           it 'executes arguments' do
-            expect(job_class).to receive(:perform).with(task.id, 'string', 0, false).and_return nil
+            expect(job_class).to receive(:perform).with(task.id, nil, 'string', 0, false).and_return nil
 
             Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
           end

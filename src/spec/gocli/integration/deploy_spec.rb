@@ -46,6 +46,24 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
   end
 
+  context 'a very simple deploy' do
+    with_reset_sandbox_before_each
+
+    before do
+      deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.simple_manifest)
+    end
+
+    it 'should contain the worker name in the debug log' do
+      output = bosh_runner.run("task --debug 3")
+
+      # sanity test with static expectation
+      expect(output).to match(/Starting task: 3$/)
+
+      # we currently run three workers
+      expect(output).to match(/Running from worker 'worker_(0|1|2)'$/)
+    end
+  end
+
   context 'when dns is enabled' do
     with_reset_sandbox_before_each
 
