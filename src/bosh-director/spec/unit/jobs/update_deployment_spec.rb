@@ -58,7 +58,6 @@ module Bosh::Director
 
         before do
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
-          allow(job).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -206,7 +205,6 @@ module Bosh::Director
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
             expect(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
-            expect(job).to_not receive(:run_post_deploys)
 
             job.perform
           end
@@ -296,14 +294,6 @@ module Bosh::Director
 
           it 'performs an update' do
             expect(job.perform).to eq('/deployments/deployment-name')
-          end
-
-          context 'when the deployment makes no changes to existing vms' do
-            it 'will not run post-deploy scripts' do
-              expect(job).to_not receive(:run_post_deploys)
-
-              job.perform
-            end
           end
 
           context 'when the deployment makes changes to existing vms' do

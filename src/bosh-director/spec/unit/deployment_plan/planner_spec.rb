@@ -90,7 +90,6 @@ module Bosh::Director
             logger: logger,
           })
           planner.cloud_planner = cloud_planner
-          allow(Config).to receive(:dns_enabled?).and_return(false)
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
           task = Models::Task.make(state: 'processing')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)

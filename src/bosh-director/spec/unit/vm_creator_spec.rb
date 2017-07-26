@@ -54,8 +54,6 @@ module Bosh
           logger
         )
         instance.bind_existing_instance_model(instance_model)
-        allow(instance).to receive(:apply_spec).and_return({})
-        allow(instance).to receive(:spec).and_return({})
         instance
       end
       let(:reservation) do
