@@ -247,7 +247,6 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: rds-trigger, trigger: true }
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -860,7 +859,3 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
-
-  - name: rds-trigger
-    type: time
-    source: {interval: 1h}
