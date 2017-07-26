@@ -209,7 +209,7 @@ module Bosh::Director
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
-                allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
+                allow(job).to receive(:create_instance_group_with_all_the_jobs_so_everything_compiles)
               }
 
               it 'skips links binding' do
