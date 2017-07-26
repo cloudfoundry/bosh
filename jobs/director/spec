@@ -29,7 +29,7 @@ packages:
 - director
 - nginx
 - libpq
-- postgres
+- postgres-9.4
 - mysql
 - ruby
 - s3cli
