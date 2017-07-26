@@ -46,7 +46,6 @@ module Bosh::Director
             errand_instance_group.instances.map do |target_instance|
               Errand::LifecycleServiceStep.new(
                 runner,
-                deployment_planner,
                 errand_name,
                 target_instance,
                 @logger)

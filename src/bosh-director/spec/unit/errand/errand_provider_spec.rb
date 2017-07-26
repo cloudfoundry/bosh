@@ -40,7 +40,7 @@ module Bosh::Director
         it 'provides an errand that will run on the first instance in that group' do
           expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
           expect(Errand::LifecycleServiceStep).to receive(:new).with(
-            runner, deployment_planner, job_name, instance, logger
+            runner, job_name, instance, logger
           ).and_return(errand_step)
           returned_errand = subject.get(deployment_name, 'errand-job-name', when_changed, keep_alive)
           expect(returned_errand.steps[0]).to eq(errand_step)
@@ -71,10 +71,10 @@ module Bosh::Director
 
             expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::LifecycleServiceStep).to receive(:new).with(
-              runner, deployment_planner, job_name, instance1, logger
+              runner, job_name, instance1, logger
             ).and_return(errand_step1)
             expect(Errand::LifecycleServiceStep).to receive(:new).with(
-              runner, deployment_planner, job_name, instance2, logger
+              runner, job_name, instance2, logger
             ).and_return(errand_step2)
             expect(Errand::LifecycleErrandStep).to receive(:new).with(
               runner, deployment_planner, job_name, instance3, instance_group2, false, keep_alive, deployment_name, logger

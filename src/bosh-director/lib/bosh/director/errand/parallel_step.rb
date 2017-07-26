@@ -7,6 +7,14 @@ module Bosh::Director
       @steps = steps
     end
 
+    def prepare
+      Bosh::ThreadPool.new(max_threads: @max_in_flight, logger: Config.logger).wrap do |pool|
+        @steps.each do |step|
+          pool.process { step.prepare }
+        end
+      end
+    end
+
     def run(&checkpoint_block)
       results = []
       mutex = Mutex.new
@@ -30,3 +38,4 @@ module Bosh::Director
     end
   end
 end
+

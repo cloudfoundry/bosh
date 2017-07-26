@@ -1,7 +1,7 @@
 module Bosh::Director
   class Errand::ErrandInstanceUpdater
-    def initialize(job_manager, logger, name, deployment_name)
-      @job_manager = job_manager
+    def initialize(instance_group_manager, logger, name, deployment_name)
+      @instance_group_manager = instance_group_manager
       @logger = logger
       @name = name
       @deployment_name = deployment_name
@@ -11,7 +11,9 @@ module Bosh::Director
       instance_name = instance_group.instances.first.model.name
 
       begin
-        update_instances
+        @logger.info('Starting to update job instances')
+        @instance_group_manager.update_instances
+
         parent_id = add_event(instance_name)
         block_result = blk.call
         add_event(instance_name, parent_id, block_result.exit_code)
@@ -20,8 +22,18 @@ module Bosh::Director
         cleanup_vms_and_log_error(keep_alive)
         raise
       else
-        cleanup_vms( keep_alive)
+        cleanup_vms(keep_alive)
         return block_result
+      end
+    end
+
+    def create_vms(keep_alive)
+      begin
+        @logger.info('Starting to create missing vms')
+        @instance_group_manager.create_missing_vms
+      rescue Exception => e
+        cleanup_vms_and_log_error(keep_alive)
+        raise
       end
     end
 
@@ -30,14 +42,6 @@ module Bosh::Director
     end
 
     private
-
-    def update_instances
-      @logger.info('Starting to create missing vms')
-      @job_manager.create_missing_vms
-
-      @logger.info('Starting to update job instances')
-      @job_manager.update_instances
-    end
 
     def cleanup_vms_and_log_error(keep_alive)
       begin
@@ -60,7 +64,7 @@ module Bosh::Director
       @ignore_cancellation = true
 
       @logger.info('Starting to delete job vms')
-      @job_manager.delete_vms
+      @instance_group_manager.delete_vms
 
       @ignore_cancellation = false
     end

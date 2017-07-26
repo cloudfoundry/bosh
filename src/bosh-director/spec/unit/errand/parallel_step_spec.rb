@@ -6,26 +6,33 @@ module Bosh::Director
     let(:errand_step1) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:errand_step2) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:checkpoint_block) { Proc.new{} }
+    let(:mutex) { Mutex.new }
+    let(:resource) { ConditionVariable.new }
+
+    describe '#prepare' do
+      it 'runs all prepare steps in parallel' do
+        expect(errand_step1).to receive(:prepare) do
+          mutex.synchronize { resource.wait(mutex) }
+        end
+        expect(errand_step2).to receive(:prepare) do
+          mutex.synchronize { resource.signal }
+        end
+
+        subject.prepare
+      end
+    end
 
     describe '#run' do
       it 'runs all the steps in parallel' do
-        mutex = Mutex.new
-        resource = ConditionVariable.new
-
         expect(errand_step1).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
-
-          mutex.synchronize do
-            resource.wait(mutex)
-          end
+          mutex.synchronize { resource.wait(mutex) }
           'step1'
         end
+
         expect(errand_step2).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
-
-          mutex.synchronize {
-            resource.signal
-          }
+          mutex.synchronize { resource.signal }
           'step2'
         end
 
