@@ -236,8 +236,6 @@ module Bosh::Director
         before {
           release = Bosh::Director::Models::Release.create(name: release_name)
           release_version = release.add_version(:version => '0.1-dev')
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
           release_version.add_template(
             :name => deployment_manifest['jobs'].first['templates'].first['name'],
             :version => 'foo_version',
@@ -245,7 +243,7 @@ module Bosh::Director
             fingerprint: 'foo_fingerprint',
             :blobstore_id => 'foo_blobstore_id',
             :sha1 => 'foo_sha1',
-            :package_names_json => '["foo", "bar"]')
+            :package_names_json => '["postgres", "ruby"]')
 
           stemcell = create_stemcell
 

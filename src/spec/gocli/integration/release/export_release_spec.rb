@@ -216,68 +216,8 @@ Can't use release 'test_release/1'. It references packages without source code a
       }.to raise_error(RuntimeError, /Error: Release version 'appcloud\/0.1' not found in deployment 'minimal' manifest/)
     end
 
-    it 'puts a tarball in the blobstore' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
-        File.open('config/final.yml', 'w') do |final|
-          final.puts YAML.dump(
-                         'blobstore' => {
-                             'provider' => 'local',
-                             'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
-                         },
-                     )
-        end
-      end
-
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
-      task_id = bosh_runner.get_most_recent_task_id
-
-      result_data = bosh_runner.run("task #{task_id} --result")
-
-      regex = /^{"blobstore_id".*$/
-      tarball_data= JSON.parse(result_data.match(regex)[0])
-      files = Dir.entries(current_sandbox.blobstore_storage_dir)
-      expect(files).to include(tarball_data['blobstore_id'])
-
-      Dir.mktmpdir do |temp_dir|
-        tarball_path = File.join(current_sandbox.blobstore_storage_dir, tarball_data['blobstore_id'])
-        `tar xzf #{tarball_path} -C #{temp_dir}`
-        files = Dir.entries(temp_dir)
-        expect(files).to include("compiled_packages","release.MF","jobs")
-      end
-    end
-
-    it 'downloads a tarball from the blobstore to the current directory' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
-        File.open('config/final.yml', 'w') do |final|
-          final.puts YAML.dump(
-                         'blobstore' => {
-                             'provider' => 'local',
-                             'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
-                         },
-                     )
-        end
-      end
-
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
-      expect(out).to match /Downloading resource '[0-9a-f-]{36}' to '.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz'.../
-      expect(out).to match /Succeeded/
-
-      output_file = File.basename(out.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
-
-      dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, "client-sandbox", "bosh_work_dir")
-      files = Dir.entries(dir)
-      expect(files).to include(output_file)
-
-      Dir.mktmpdir do |temp_dir|
-        tarball_path = File.join(dir, output_file)
-        `tar xzf #{tarball_path} -C #{temp_dir}`
-        files = Dir.entries(temp_dir)
-        expect(files).to include("compiled_packages","release.MF","jobs")
-      end
-    end
-
     it 'logs the packages and jobs names and versions while copying them' do
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
+      out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
 
       expect(out).to match /copying packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
       expect(out).to match /copying packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -288,7 +228,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'logs the full release.MF in the director debug log' do
-      export_release_output = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
+      export_release_output = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
       task_number =  export_release_output[/Task \d+ done/][/\d+/]
 
       debug_task_output = bosh_runner.run("task #{task_number} --debug")
@@ -301,6 +241,100 @@ Can't use release 'test_release/1'. It references packages without source code a
       expect(debug_task_output).to include('- name: job_using_pkg_1')
       expect(debug_task_output).to include('- name: job_using_pkg_1_and_2')
       expect(debug_task_output).to include('- name: job_using_pkg_2')
+    end
+
+    describe 'tarballs' do
+      before do
+        Dir.chdir(ClientSandbox.test_release_dir) do
+          File.open('config/final.yml', 'w') do |final|
+            final.puts YAML.dump(
+                           'blobstore' => {
+                               'provider' => 'local',
+                               'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
+                           },
+                       )
+          end
+        end
+      end
+
+      it 'puts a tarball in the blobstore' do
+        out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
+        task_id = bosh_runner.get_most_recent_task_id
+
+        result_data = bosh_runner.run("task #{task_id} --result")
+
+        regex = /^{"blobstore_id".*$/
+        tarball_data= JSON.parse(result_data.match(regex)[0])
+        files = Dir.entries(current_sandbox.blobstore_storage_dir)
+        expect(files).to include(tarball_data['blobstore_id'])
+
+        Dir.mktmpdir do |temp_dir|
+          tarball_path = File.join(current_sandbox.blobstore_storage_dir, tarball_data['blobstore_id'])
+          `tar xzf #{tarball_path} -C #{temp_dir}`
+          files = Dir.entries(temp_dir)
+          expect(files).to include('compiled_packages', 'release.MF', 'jobs')
+        end
+      end
+
+      it 'downloads a tarball from the blobstore to the current directory' do
+        out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
+        expect(out).to match /Downloading resource '[0-9a-f-]{36}' to '.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz'.../
+        expect(out).to match /Succeeded/
+
+        output_file = File.basename(out.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
+
+        dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')
+        files = Dir.entries(dir)
+        expect(files).to include(output_file)
+
+        Dir.mktmpdir do |temp_dir|
+          tarball_path = File.join(dir, output_file)
+          `tar xzf #{tarball_path} -C #{temp_dir}`
+          files = Dir.entries(temp_dir)
+          expect(files).to include('compiled_packages', 'release.MF', 'jobs')
+        end
+      end
+    end
+  end
+
+  context 'with a release with transitive package dependencies' do
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.minimal_manifest }
+
+    before do
+      upload_cloud_config(cloud_config_hash: cloud_config)
+
+      bosh_runner.run("upload-release #{spec_asset('test_release_with_dependent_packages.tgz')}")
+      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        File.open('config/final.yml', 'w') do |final|
+          final.puts YAML.dump(
+                         'blobstore' => {
+                             'provider' => 'local',
+                             'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
+                         },
+                     )
+        end
+      end
+    end
+
+    it 'does not include packages that are second (or higher) order dependencies' do
+      working_dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')
+      command_output = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
+
+      output_file = File.basename(command_output.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
+
+      files = Dir.entries(working_dir)
+      expect(files).to include(output_file)
+
+      Dir.mktmpdir do |temp_dir|
+        tarball_path = File.join(working_dir, output_file)
+        `tar xzf #{tarball_path} -C #{temp_dir}`
+        packages = Dir.entries(temp_dir+'/compiled_packages')
+        expect(packages).to contain_exactly('.','..','pkg_4_depends_on_3.tgz', 'pkg_5_depends_on_4_and_1.tgz')
+      end
     end
   end
 
