@@ -60,7 +60,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       expect(output).to match(/Starting task: 3$/)
 
       # we currently run three workers
-      expect(output).to match(/Running from worker 'worker_(0|1|2)'$/)
+      expect(output).to match(/Running from worker 'worker_(0|1|2)' on some-name\/some-id \(127\.1\.127\.1\)$/)
     end
   end
 

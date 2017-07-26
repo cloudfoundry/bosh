@@ -1,6 +1,9 @@
 ---
 name: <%= director_name %>
 uuid: deadbeef
+runtime:
+  ip: 127.1.127.1
+  instance: some-name/some-id
 
 port: <%= director_ruby_port %>
 mbus: nats://localhost:<%= nats_port %>

@@ -21,6 +21,7 @@ module Bosh::Director
     before { FileUtils.mkdir_p(task_dir) }
 
     before { allow(Config).to receive(:cloud_options).and_return({}) }
+    before { allow(Config).to receive(:runtime).and_return({'instance' => 'name/id', 'ip' => '127.0.127.0'}) }
 
     def make_runner(job_class, task_id)
       JobRunner.new(job_class, task_id, 'workername1')
@@ -88,7 +89,7 @@ module Bosh::Director
 
       logger = Logging::Repository.instance().fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
-      expect(logger).to receive(:info).with("Running from worker 'workername1'")
+      expect(logger).to receive(:info).with("Running from worker 'workername1' on name/id (127.0.127.0)")
 
       runner.run
     end

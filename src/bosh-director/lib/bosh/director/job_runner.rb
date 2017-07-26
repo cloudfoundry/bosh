@@ -25,7 +25,7 @@ module Bosh::Director
     def run(*args)
       Config.current_job = nil
 
-      @task_logger.info("Running from worker '#{@worker_name}'")
+      @task_logger.info("Running from worker '#{@worker_name}' on #{Config.runtime['instance']} (#{Config.runtime['ip']})")
       @task_logger.info("Starting task: #{@task_id}")
       started_at = Time.now
 

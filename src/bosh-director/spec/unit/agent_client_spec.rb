@@ -579,6 +579,7 @@ module Bosh::Director
           end
           task_id = 1
           tasks_dir = Dir.mktmpdir
+          allow(Config).to receive(:runtime).and_return({'instance' => 'name/id', 'ip' => '127.0.127.0'})
           allow(Config).to receive(:base_dir).and_return(tasks_dir)
           allow(Config).to receive(:cloud_options).and_return({})
           task = Models::Task.make(:id => task_id, :state => 'cancelling')

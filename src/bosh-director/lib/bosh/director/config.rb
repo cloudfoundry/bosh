@@ -52,7 +52,8 @@ module Bosh::Director
         :director_ips,
         :config_server_enabled,
         :config_server,
-        :enable_nats_delivered_templates
+        :enable_nats_delivered_templates,
+        :runtime
       )
 
       def clear
@@ -125,6 +126,10 @@ module Bosh::Director
         @cloud_options = config['cloud']
         @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''
+
+        @runtime = config.fetch('runtime', {})
+        @runtime['ip'] ||= '127.0.0.1'
+        @runtime['instance'] ||= 'unknown'
 
         @compiled_package_cache = nil
 

@@ -7,6 +7,7 @@ module Bosh::Director
     let(:task_dir) { File.join(tasks_dir, 'tasks', task_id.to_s) }
     before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
     before { allow(Config).to receive(:cloud_options).and_return({}) }
+    before { allow(Config).to receive(:runtime).and_return({'instance' => 'name/id', 'ip' => '127.0.127.0'}) }
 
     describe 'described_class.job_type' do
       it 'should complain that the method is not implemented' do
