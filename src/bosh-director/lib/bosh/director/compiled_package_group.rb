@@ -18,7 +18,7 @@ module Bosh::Director
             :dependency_key => package_dependency_key
           ]
         end.compact
-      end.flatten
+      end.flatten.uniq
     end
 
     def stemcell_sha1

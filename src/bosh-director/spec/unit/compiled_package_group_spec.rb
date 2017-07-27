@@ -13,6 +13,7 @@ module Bosh::Director
 
     describe '#compiled_packages' do
       let(:job) { Models::Template.make(release: release, package_names_json: package_names.to_json) }
+      let(:job2) { Models::Template.make(release: release, package_names_json: package_names.to_json) }
       let(:package_names) { [package1.name, package2.name] }
       let(:package1) { Models::Package.make(release: release, dependency_set_json: ['pkg-2'].to_json) }
       let(:package2) { Models::Package.make(name: 'pkg-2', version: '2', release: release) }
@@ -22,6 +23,7 @@ module Bosh::Director
 
       before do
         release_version.add_template(job)
+        release_version.add_template(job2)
         release_version.add_package(package1)
         release_version.add_package(package2)
       end
@@ -34,7 +36,7 @@ module Bosh::Director
         allow(Models::CompiledPackage).to receive(:[]).and_call_original
         package_group.compiled_packages
         package_group.compiled_packages
-        expect(Models::CompiledPackage).to have_received(:[]).twice
+        expect(Models::CompiledPackage).to have_received(:[]).exactly(4).times
       end
 
       context 'when jobs include packages with transitive dependencies' do

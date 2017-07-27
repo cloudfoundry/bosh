@@ -496,7 +496,6 @@ Error 100: Unable to process links for deployment. Errors are:
 
         expect(out).to include('Started copying packages')
         expect(out).to include('Started copying packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f. Done')
-        expect(out).to include('Started copying packages > pkg_2/4b74be7d5aa14487c7f7b0d4516875f7c0eeb010. Done')
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
