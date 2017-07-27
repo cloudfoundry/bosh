@@ -521,7 +521,6 @@ Error: Unable to process links for deployment. Errors are:
         expect(out).to include('Compiling packages: pkg_2/fa48497a19f12e925b32fcb8f5ca2b42144e4444')
         expect(out).to include('Compiling packages: pkg_3_depends_on_2/2dfa256bc0b0750ae9952118c428b0dcd1010305')
         expect(out).to include('copying packages: pkg_1/7a4094dc99aa72d2d156d99e022d3baa37fb7c4b')
-        expect(out).to include('copying packages: pkg_2/fa48497a19f12e925b32fcb8f5ca2b42144e4444')
         expect(out).to include('copying packages: pkg_3_depends_on_2/2dfa256bc0b0750ae9952118c428b0dcd1010305')
         expect(out).to include('copying jobs: addon/1c5442ca2a20c46a3404e89d16b47c4757b1f0ca')
         expect(out).to include('copying jobs: api_server/db761328436e7557b071dbcf4ddcc4417ef9b1bf')
