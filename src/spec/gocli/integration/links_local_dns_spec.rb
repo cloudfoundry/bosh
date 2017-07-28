@@ -88,6 +88,23 @@ describe 'Links with local_dns enabled', type: :integration do
             expect(addresses).to eq(["#{mysql_0_instance.id}.mysql.manual-network.simple.bosh"])
           end
 
+          context 'when deployment manifest features specifies use_dns_addresses to FALSE' do
+            before do
+              manifest['features'] = {'use_dns_addresses' => false}
+            end
+
+            it 'outputs ip address when accessing instance.address of the link' do
+              deploy_simple_manifest(manifest_hash: manifest)
+              instances = director.instances
+              api_instance = director.find_instance(instances, 'my_api', '0')
+              template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+              addresses = template['databases']['main'].map do |elem|
+                elem['address']
+              end
+              expect(addresses).to eq(['10.10.0.3'])
+            end
+          end
+
           context "when 'ip_addresses' is set to true on the consumer jobs link options" do
             before do
               api_job_spec['templates'][0]['consumes']['db']['ip_addresses'] = true
@@ -106,6 +123,27 @@ describe 'Links with local_dns enabled', type: :integration do
               end
 
               expect(addresses).to eq(['10.10.0.3'])
+            end
+
+            context 'when deployment manifest features specifies use_dns_addresses to TRUE' do
+              before do
+                manifest['features'] = {'use_dns_addresses' => true}
+              end
+
+              it 'outputs ip address when accessing instance.address of the link' do
+                deploy_simple_manifest(manifest_hash: manifest)
+
+                instances = director.instances
+                api_instance = director.find_instance(instances, 'my_api', '0')
+
+                template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+
+                addresses = template['databases']['main'].map do |elem|
+                  elem['address']
+                end
+
+                expect(addresses).to eq(['10.10.0.3'])
+              end
             end
           end
         end
@@ -321,6 +359,24 @@ describe 'Links with local_dns enabled', type: :integration do
       expect(addresses).to eq(['10.10.0.3'])
     end
 
+    context 'when deployment manifest features specifies use_dns_addresses to TRUE' do
+      before do
+        manifest['features'] = {'use_dns_addresses' => true}
+      end
+
+      it 'outputs DNS address when accessing instance.address of the link' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        instances = director.instances
+        api_instance = director.find_instance(instances, 'my_api', '0')
+        mysql_instance = director.find_instance(instances, 'mysql', '0')
+        template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+        addresses = template['databases']['main'].map do |elem|
+          elem['address']
+        end
+        expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+      end
+    end
+
     context 'when ip_addresses field is explicitly set to FALSE in the consume link section' do
       before do
         api_job_spec['templates'][0]['consumes']['db']['ip_addresses'] = false
@@ -340,6 +396,27 @@ describe 'Links with local_dns enabled', type: :integration do
         end
 
         expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+      end
+
+      context 'when deployment manifest features specifies use_dns_addresses to FALSE' do
+        before do
+          manifest['features'] = {'use_dns_addresses' => false}
+        end
+
+        it 'outputs DNS address when accessing instance.address of the link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          instances = director.instances
+          api_instance = director.find_instance(instances, 'my_api', '0')
+          mysql_instance = director.find_instance(instances, 'mysql', '0')
+
+          template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+          addresses = template['databases']['main'].map do |elem|
+            elem['address']
+          end
+
+          expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+        end
       end
     end
 

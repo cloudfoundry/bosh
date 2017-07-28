@@ -54,6 +54,9 @@ module Bosh::Director
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
 
+      # @return [DeploymentPlan::DeploymentFeatures] Returns the features object of deployment
+      attr_reader :features
+
       attr_reader :job_renderer
 
       attr_accessor :addons
@@ -90,6 +93,7 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
+        @features = DeploymentFeatures.new
 
         @addons = []
 
@@ -258,6 +262,10 @@ module Bosh::Director
 
       def set_variables(variables_obj)
         @variables = variables_obj
+      end
+
+      def set_features(features_obj)
+        @features = features_obj
       end
     end
   end

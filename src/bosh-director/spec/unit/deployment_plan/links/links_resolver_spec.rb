@@ -431,42 +431,84 @@ Unable to process links for deployment. Errors are:
         end
       end
 
-      context 'use_dns_addresses director flag' do
-        context 'when use_dns_addresses director flag is FALSE' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
+      context 'use_dns_addresses director and deployment level flag' do
+        context 'when deployment use_dns_addresses is NOT defined' do
+          context 'when director use_dns_addresses flag is FALSE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
+            end
+
+            let(:links) { {'db' => {'from' => 'db'}} }
+
+            it 'it passes global_use_dns_entry as false' do
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+                anything,
+                anything,
+                anything,
+                {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
+              ).and_return(link_lookup)
+
+              links_resolver.resolve(api_server_instance_group)
+            end
           end
 
-          let(:links) { {'db' => {'from' => 'db'}} }
+          context 'when director use_dns_addresses flag is TRUE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
+            end
 
-          it 'it passes global_use_dns_entry as false' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
-            ).and_return(link_lookup)
+            let(:links) { {'db' => {'from' => 'db'}} }
 
-            links_resolver.resolve(api_server_instance_group)
+            it 'it passes global_use_dns_entry as true' do
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+                anything,
+                anything,
+                anything,
+                {:preferred_network_name => nil, :global_use_dns_entry => true, :link_use_ip_address => nil}
+              ).and_return(link_lookup)
+
+              links_resolver.resolve(api_server_instance_group)
+            end
           end
         end
 
-        context 'when use_dns_addresses director flag is TRUE' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
+        context 'when deployment use_dns_addresses is defined' do
+          context 'when it is FALSE' do
+            before do
+              deployment_manifest['features'] = {'use_dns_addresses' => false}
+            end
+
+            let(:links) { {'db' => {'from' => 'db'}} }
+
+            it 'it passes global_use_dns_entry as false' do
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+                anything,
+                anything,
+                anything,
+                {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
+              ).and_return(link_lookup)
+
+              links_resolver.resolve(api_server_instance_group)
+            end
           end
 
-          let(:links) { {'db' => {'from' => 'db'}} }
+          context 'when it is TRUE' do
+            before do
+              deployment_manifest['features'] = {'use_dns_addresses' => true}
+            end
 
-          it 'it passes global_use_dns_entry as true' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => true, :link_use_ip_address => nil}
-            ).and_return(link_lookup)
+            let(:links) { {'db' => {'from' => 'db'}} }
 
-            links_resolver.resolve(api_server_instance_group)
+            it 'it passes global_use_dns_entry as TRUE' do
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
+                anything,
+                anything,
+                anything,
+                {:preferred_network_name => nil, :global_use_dns_entry => true, :link_use_ip_address => nil}
+              ).and_return(link_lookup)
+
+              links_resolver.resolve(api_server_instance_group)
+            end
           end
         end
       end

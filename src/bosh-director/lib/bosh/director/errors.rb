@@ -312,8 +312,9 @@ module Bosh::Director
   # CPI config
   CpiDuplicateName = err(550000)
 
-  # Variables
+  # Spec Parser
   VariablesInvalidFormat = err(560000)
+  FeaturesInvalidFormat = err(560001)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)

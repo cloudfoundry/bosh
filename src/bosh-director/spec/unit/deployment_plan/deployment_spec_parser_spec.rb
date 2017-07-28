@@ -514,6 +514,34 @@ module Bosh::Director
         end
       end
 
+      describe 'features key' do
+        context 'when features spec is valid' do
+          it 'parses provided features' do
+            features_spec = {'use_dns_addresses' => true}
+            manifest_hash.merge!('features' => features_spec)
+
+            features_obj = parsed_deployment.features
+            expect(features_obj.use_dns_addresses).to eq(true)
+          end
+        end
+
+        context 'when features spec is NOT valid' do
+          it 'throws an error' do
+            features_spec = {'use_dns_addresses' => 6}
+            manifest_hash.merge!('features' => features_spec)
+
+            expect{ parsed_deployment.features }.to raise_error Bosh::Director::FeaturesInvalidFormat
+          end
+        end
+
+        context 'when features spec is NOT specified' do
+          it 'defaults features object' do
+            features_obj = parsed_deployment.features
+            expect(features_obj.use_dns_addresses).to be_nil
+          end
+        end
+      end
+
       describe 'addons' do
         context 'when addon spec is valid' do
           it 'parses provided addons' do

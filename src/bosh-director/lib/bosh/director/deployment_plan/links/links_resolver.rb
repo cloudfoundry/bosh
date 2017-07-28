@@ -35,7 +35,13 @@ module Bosh::Director
             link_info = job.consumes_link_info(instance_group.name, link_name)
 
             preferred_network_name = link_info['network']
-            global_use_dns_entry = Config.local_dns_use_dns_addresses?
+
+            if @deployment_plan.features.use_dns_addresses.nil?
+              global_use_dns_entry = Config.local_dns_use_dns_addresses?
+            else
+              global_use_dns_entry = @deployment_plan.features.use_dns_addresses
+            end
+
             link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
 
             link_network_options = {
