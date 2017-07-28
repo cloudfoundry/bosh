@@ -35,13 +35,13 @@ module Bosh::Director
             link_info = job.consumes_link_info(instance_group.name, link_name)
 
             preferred_network_name = link_info['network']
-
-            use_dns_entry = Config.local_dns_use_dns_addresses?
-            use_dns_entry = !link_info['ip_addresses'] if link_info.has_key?('ip_addresses')
+            global_use_dns_entry = Config.local_dns_use_dns_addresses?
+            link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
 
             link_network_options = {
               :preferred_network_name => preferred_network_name,
-              :use_dns_entry => use_dns_entry
+              :global_use_dns_entry => global_use_dns_entry,
+              :link_use_ip_address => link_use_ip_address
             }
 
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network_options)
@@ -54,7 +54,7 @@ module Bosh::Director
             link_spec.delete('default_network')
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
-              instance.delete('ip_addresses')
+              instance.delete('dns_addresses')
             end
 
             instance_group.add_resolved_link(job.name, link_name, link_spec)

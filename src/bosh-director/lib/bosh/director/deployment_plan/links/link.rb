@@ -26,8 +26,8 @@ module Bosh::Director
               'id' => instance.uuid,
               'az' => availability_zone,
               'address' => instance_plan.network_address,
-              'addresses' => instance_plan.network_addresses(true),
-              'ip_addresses' => instance_plan.network_addresses(false),
+              'addresses' => instance_plan.network_addresses(false),
+              'dns_addresses' => instance_plan.network_addresses(true),
             }
           end
         }

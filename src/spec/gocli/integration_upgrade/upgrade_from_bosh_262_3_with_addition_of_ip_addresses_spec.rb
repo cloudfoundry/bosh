@@ -65,11 +65,9 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           }
         }}
 
-        it 'gives a dns address for the link address' do
-          deploy_simple_manifest(manifest_hash: manifest_hash)
-          instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
-          hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
-          expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
+        it 'raises an error requesting provider redeployment' do
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+          expect(output).to match /Unable to retrieve default network from provider. Please redeploy provider deployment/
         end
       end
 
@@ -169,9 +167,11 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           }
         }}
 
-        it 'raises an error to re-deploy provider deployment because we cannot guarantee IP addresses since use_dns_addresses is defaulting to false (although local_dns is disabled, has nothing to do with it)' do
-          output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
-          expect(output).to match /Unable to retrieve default network from provider. Please redeploy provider deployment/
+        it 'uses the spec address of the provider deployment' do
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+          instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
+          hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
+          expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
         end
       end
 
@@ -184,11 +184,9 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           }
         }}
 
-        it 'gives whatever address provided by the provider link (it may be DNS or IP address)' do
-          deploy_simple_manifest(manifest_hash: manifest_hash)
-          instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
-          hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
-          expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
+        it 'raises an error requesting provider redeployment' do
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+          expect(output).to match /Unable to retrieve default network from provider. Please redeploy provider deployment/
         end
       end
 
