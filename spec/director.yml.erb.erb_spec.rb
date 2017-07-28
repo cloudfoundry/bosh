@@ -6,6 +6,7 @@ require 'json'
 describe 'director.yml.erb.erb' do
   let(:deployment_manifest_fragment) do
     {
+      'job' => {'name' => 'i_like_bosh'},
       'properties' => {
         'ntp' => [
           '0.north-america.pool.ntp.org',
