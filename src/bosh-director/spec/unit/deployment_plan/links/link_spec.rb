@@ -33,7 +33,7 @@ module Bosh::Director
         allow(source_instance_group).to receive(:needed_instance_plans).and_return([needed_instance_plan])
 
         allow(needed_instance_plan).to receive(:instance).and_return(needed_instance)
-        expect(needed_instance_plan).to receive(:network_addresses).with(true).and_return({'network1' => 'network-address-1', 'network2' => 'network-address-2'})
+        expect(needed_instance_plan).to receive(:network_addresses).with(true).and_return({'network1' => 'dns-address-1', 'network2' => 'dns-address-2'})
         expect(needed_instance_plan).to receive(:network_addresses).with(false).and_return({'network1' => '10.0.0.1', 'network2' => '10.0.0.2'})
 
         allow(needed_instance).to receive(:index).and_return(0)
@@ -68,8 +68,8 @@ module Bosh::Director
                  'id' => 'instance-uuid',
                  'az' => 'my_az',
                  'address' => '10.0.0.1',
-                 'addresses' => {'network1' => 'network-address-1', 'network2' => 'network-address-2'},
-                 'ip_addresses' => {'network1' => '10.0.0.1', 'network2' => '10.0.0.2'}
+                 'addresses' => {'network1' => '10.0.0.1', 'network2' => '10.0.0.2'},
+                 'dns_addresses' => {'network1' => 'dns-address-1', 'network2' => 'dns-address-2'},
                }
              ]
            })

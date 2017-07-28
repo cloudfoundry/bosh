@@ -9,43 +9,51 @@ module Bosh::Director
       @deployment_planner_provider = deployment_planner_provider
     end
 
-    def get(deployment_name, errand_name)
+    def get(deployment_name, errand_name, when_changed, keep_alive)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       event_log_stage.advance_and_track('Preparing deployment') do
-        changes_exist = true
-
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
         job_renderer = deployment_planner.job_renderer
 
         errand_is_job_name = true
-        errand_instance_group = find_instance_group_by_errand_job_name(errand_name, deployment_planner)
+        errand_instance_groups = find_instance_groups_by_errand_job_name(errand_name, deployment_planner)
 
-        if errand_instance_group.nil?
+        if errand_instance_groups.empty?
           errand_is_job_name = false
-          errand_instance_group = must_errand_instance_group(deployment_planner, errand_name, deployment_name)
+          errand_instance_groups = [must_errand_instance_group(deployment_planner, errand_name, deployment_name)]
         end
 
-        if errand_instance_group.is_errand?
-          @logger.info('Starting to prepare for deployment')
-          errand_instance_group.bind_instances(deployment_planner.ip_provider)
-          target_instance = errand_instance_group.instances.first
-          needed_instance_plans = needed_instance_plans(errand_instance_group, job_renderer)
-          changes_exist = changes_exist?(needed_instance_plans, target_instance)
-          compile_step(deployment_planner).perform
-        else
-          target_instance = errand_instance_group.instances.first
+        runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
+
+        errand_steps = errand_instance_groups.map do |errand_instance_group|
+          if errand_instance_group.is_errand?
+            errand_instance_group.bind_instances(deployment_planner.ip_provider)
+            needed_instance_plans = needed_instance_plans(errand_instance_group, job_renderer)
+            target_instance = errand_instance_group.instances.first
+            changes_exist = changes_exist?(needed_instance_plans, target_instance)
+            compile_step(deployment_planner).perform
+            Errand::LifecycleErrandStep.new(
+              runner,
+              deployment_planner,
+              errand_name,
+              target_instance,
+              errand_instance_group,
+              when_changed && !changes_exist,
+              keep_alive,
+              deployment_name,
+              @logger)
+          else
+            errand_instance_group.instances.map do |target_instance|
+              Errand::LifecycleServiceStep.new(
+                runner,
+                errand_name,
+                target_instance,
+                @logger)
+            end
+          end
         end
 
-        runner = Errand::Runner.new(target_instance, errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
-
-        return Errand::ErrandObject.new(
-          runner,
-          deployment_planner,
-          errand_name,
-          errand_instance_group,
-          changes_exist,
-          deployment_name,
-          @logger)
+        return Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten)
       end
     end
 
@@ -102,15 +110,16 @@ module Bosh::Director
       needed_instance_plans
     end
 
-    def find_instance_group_by_errand_job_name(errand_name, deployment_plan)
+    def find_instance_groups_by_errand_job_name(errand_name, deployment_plan)
+      instance_groups = []
       deployment_plan.instance_groups.each do |instance_group|
         instance_group.jobs.each do |job|
           if job.name == errand_name && job.runs_as_errand?
-            return instance_group
+            instance_groups << instance_group
           end
         end
       end
-      nil
+      instance_groups
     end
 
     def compile_step(deployment_plan)

@@ -17,7 +17,7 @@ module Bosh
         stemcell
       end
       let(:env) { DeploymentPlan::Env.new({}) }
-      let(:job) do
+      let(:instance_group) do
         template_model = BD::Models::Template.make
         job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name', deployment.name)
         job.bind_existing_model(template_model)
@@ -30,17 +30,15 @@ module Bosh
         instance_group.jobs << job
         instance_group.default_network = {"gateway" => "name"}
         instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-        allow(instance_group).to receive(:username).and_return('fake-username')
-        allow(instance_group).to receive(:task_id).and_return('fake-task-id')
-        allow(instance_group).to receive(:event_manager).and_return(event_manager)
         instance_group
       end
+      let(:job) { instance_double(BD::Jobs::BaseJob) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
-            job,
+            instance_group,
             5,
             'started',
             deployment,
@@ -49,11 +47,6 @@ module Bosh
             logger
         )
         instance.bind_existing_instance_model(instance_model)
-        allow(instance).to receive(:apply_spec).and_return({})
-        allow(instance).to receive(:deployment).and_return(deployment)
-        allow(instance).to receive(:job).and_return(job)
-        allow(instance).to receive(:spec).and_return(JSON.parse('{"networks":[["name",{"ip":"1.2.3.4"}]],"job":{"name":"job_name"},"deployment":"bosh"}'))
-        allow(instance).to receive(:id).and_return(1)
         instance
       end
 
@@ -65,7 +58,7 @@ module Bosh
       end
 
       describe '#delete_for_instance' do
-        let!(:local_dns_record) { Models::LocalDnsRecord.create(ip: '1.2.3.4', instance_id: instance.id) }
+        let!(:local_dns_record) { Models::LocalDnsRecord.create(ip: '1.2.3.4', instance_id: instance.model.id) }
 
         before do
           expect(instance_model).to receive(:active_vm=).with(nil).and_call_original
@@ -74,6 +67,10 @@ module Bosh
         end
 
         it 'deletes the instance and stores an event' do
+          expect(job).to receive(:event_manager).twice.and_return(event_manager)
+          expect(job).to receive(:username).twice.and_return('fake-username')
+          expect(job).to receive(:task_id).twice.and_return('fake-task-id')
+
           expect(logger).to receive(:info).with('Deleting VM')
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
           expect(Models::LocalDnsRecord.all).to eq([local_dns_record])

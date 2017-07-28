@@ -4,28 +4,8 @@ require 'bosh/director/models/deployment'
 module Bosh::Director::Models
   describe Deployment do
     subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
-    let(:manifest) { <<-HERE }
----
-tags:
-  tag1: value1
-  tag2: value2
-HERE
 
     describe '#tags' do
-      it 'returns the tags in deployment manifest' do
-        expect(deployment.tags).to eq({
-          'tag1' => 'value1',
-          'tag2' => 'value2',
-        })
-      end
-
-      context 'when tags are not present' do
-        let(:manifest) { '---{}' }
-
-        it 'returns empty list' do
-          expect(deployment.tags).to eq({})
-        end
-      end
 
       context 'when manifest is nil' do
         let(:manifest) { nil }
@@ -35,40 +15,81 @@ HERE
         end
       end
 
-      context 'when tags use variables' do
-        let(:mock_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
-        let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+      context 'when manifest is not nil' do
 
-        let(:manifest) { <<-HERE }
+        context 'when tags are present' do
+
+          let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+          let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+
+          before do
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+            allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+            allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+          end
+
+          context 'when tags do NOT use variables' do
+            let(:manifest) { <<-HERE }
+---
+tags:
+  tag1: value1
+  tag2: value2
+            HERE
+
+            let(:interpolated_tags) do
+              {
+                'tag1' => 'value1',
+                'tag2' => 'value2'
+              }
+            end
+
+            it 'returns the tags in deployment manifest' do
+              expect(deployment.tags).to eq({
+                'tag1' => 'value1',
+                'tag2' => 'value2',
+              })
+            end
+          end
+
+          context 'when tags use variables' do
+            let(:manifest) { <<-HERE }
 ---
 tags:
   tagA: ((tag-var1))
   tagO: ((/tag-var2))
-        HERE
+            HERE
 
-        let(:tags) do
-          {
-              'tagA' => '((tag-var1))',
-              'tagO'=> '((/tag-var2))'
-          }
+            let(:tags) do
+              {
+                'tagA' => '((tag-var1))',
+                'tagO'=> '((/tag-var2))'
+              }
+            end
+
+            let(:interpolated_tags) do
+              {
+                'tagA' => 'apples',
+                'tagO' => 'oranges'
+              }
+            end
+
+            before do
+              VariableSet.make(id: 1, deployment: deployment)
+            end
+
+            it 'substitutes the variables in the tags section' do
+              expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
+              expect(deployment.tags).to eq(interpolated_tags)
+            end
+          end
         end
 
-        let(:interpolated_tags) do
-          {
-            'tagA' => 'apples',
-            'tagO' => 'oranges'
-          }
-        end
+        context 'when tags are NOT present' do
+          let(:manifest) { '---{}' }
 
-        before do
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
-          allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
-          VariableSet.make(id: 1, deployment: deployment)
-        end
-
-        it 'substitutes the variables in the tags section' do
-          expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
-          expect(deployment.tags).to eq(interpolated_tags)
+          it 'returns empty list' do
+            expect(deployment.tags).to eq({})
+          end
         end
       end
     end
@@ -181,6 +202,8 @@ tags:
     end
 
     describe '#runtime_configs=' do
+      let(:manifest) { '---{}' }
+
       before do
         rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
         rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
@@ -190,6 +213,7 @@ tags:
         deployment.add_runtime_config(rc2)
         deployment.add_runtime_config(rc3)
       end
+
       it 'removes existing records & assigns the new runtime config records' do
         rc4 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc4-prop', name: 'rc4').save
         rc5 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc5-prop', name: 'rc5').save

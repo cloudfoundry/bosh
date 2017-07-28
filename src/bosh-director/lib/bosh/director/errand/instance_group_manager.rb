@@ -1,5 +1,5 @@
 module Bosh::Director
-  class Errand::JobManager
+  class Errand::InstanceGroupManager
     def initialize(deployment, instance_group, logger)
       @deployment = deployment
       @instance_group = instance_group

@@ -85,9 +85,6 @@ module Bosh::Director
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
-      @blobstore = double(:blobstore)
-      allow(Config).to receive(:blobstore).and_return(@blobstore)
-
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
       allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
@@ -839,7 +836,6 @@ module Bosh::Director
           Bosh::Director::Config.trusted_certs = DIRECTOR_TEST_CERTS
 
           allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
-          allow(vm_creator).to receive(:apply_state)
           allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)

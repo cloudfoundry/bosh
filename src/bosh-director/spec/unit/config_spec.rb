@@ -106,8 +106,12 @@ describe Bosh::Director::Config do
     context 'when hash has value set' do
       it 'returns the configuration value' do
         test_config['local_dns']['enabled'] = true
+        test_config['local_dns']['include_index'] = true
+        test_config['local_dns']['use_dns_addresses'] = true
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(true)
+        expect(described_class.local_dns_include_index?).to eq(true)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(true)
       end
     end
 
@@ -115,6 +119,8 @@ describe Bosh::Director::Config do
       it 'returns default value of false' do
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(false)
+        expect(described_class.local_dns_include_index?).to eq(false)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(false)
       end
     end
   end

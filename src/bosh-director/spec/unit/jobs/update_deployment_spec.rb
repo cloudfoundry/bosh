@@ -58,7 +58,6 @@ module Bosh::Director
 
         before do
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
-          allow(job).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -96,7 +95,14 @@ module Bosh::Director
 
             let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
+            let(:client_factory) { instance_double(ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(ConfigServer::ConfigServerClient) }
+
             before do
+              allow(ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              allow(config_server_client).to receive(:generate_values)
+
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
@@ -199,7 +205,6 @@ module Bosh::Director
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
             expect(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
-            expect(job).to_not receive(:run_post_deploys)
 
             job.perform
           end
@@ -234,7 +239,7 @@ module Bosh::Director
 
             let(:logger) { instance_double(Logging::Logger) }
             let(:client_factory) { instance_double(ConfigServer::ClientFactory) }
-            let(:config_server_client) { instance_double(ConfigServer::DisabledClient) }
+            let(:config_server_client) { instance_double(ConfigServer::ConfigServerClient) }
 
             before do
               allow(planner).to receive(:variables).and_return(variables)
@@ -289,14 +294,6 @@ module Bosh::Director
 
           it 'performs an update' do
             expect(job.perform).to eq('/deployments/deployment-name')
-          end
-
-          context 'when the deployment makes no changes to existing vms' do
-            it 'will not run post-deploy scripts' do
-              expect(job).to_not receive(:run_post_deploys)
-
-              job.perform
-            end
           end
 
           context 'when the deployment makes changes to existing vms' do

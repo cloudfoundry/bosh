@@ -268,7 +268,7 @@ module Bosh::Director::DeploymentPlan
             let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
 
             let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
             let(:mock_network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
             let(:mock_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }

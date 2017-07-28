@@ -6,8 +6,8 @@ module Bosh::Director
         raise NotImplementedError.new('Subclasses must return a symbol representing type')
       end
 
-      def self.perform(task_id, *args)
-        Bosh::Director::JobRunner.new(self, task_id).run(*args)
+      def self.perform(task_id, worker_name, *args)
+        Bosh::Director::JobRunner.new(self, task_id, worker_name).run(*args)
       end
 
       def self.schedule_message

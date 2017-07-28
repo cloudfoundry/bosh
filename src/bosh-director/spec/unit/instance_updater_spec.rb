@@ -274,9 +274,9 @@ module Bosh::Director
         reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
         instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
 
-        expect(Bosh::Director::RenderedTemplatesPersister).to_not receive(:persist).with(logger, blobstore_client, instance_plan)
-
-        updater.update(instance_plan)
+        expect{
+          updater.update(instance_plan)
+        }.not_to change { Models::RenderedTemplatesArchive.count }
 
         expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
         expect(instance_model.update_completed).to eq true

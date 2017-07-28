@@ -22,138 +22,172 @@ module Bosh::Director
     let(:signaled) { false }
     let(:task_dataset) { instance_double(Sequel::Dataset) }
 
-    before do
-      allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
-    end
-
     let(:args) { ['1', '2'] }
 
-    it "doesn't accept job class that is not a subclass of base job" do
-      expect {
-        Jobs::DBJob.new(Class.new, task.id, args)
-      }.to raise_error(DirectorError, /invalid director job/i)
-    end
+    context 'fake fork' do
+      let(:delayed_job) { instance_double(Delayed::Backend::Sequel::Job, locked_by: 'workername1') }
 
-    it "doesn't accept job class that does not have 'perform' method" do
-      job_class_without_perform = Class.new(Jobs::BaseJob) do
-        @queue = :normal
+      before do
+        db_job.before(delayed_job)
+        allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
       end
 
-      expect {
-        Jobs::DBJob.new(job_class_without_perform, task.id, args)
-      }.to raise_error(DirectorError, /invalid director job/i)
-    end
+      it "doesn't accept job class that is not a subclass of base job" do
+        expect {
+          Jobs::DBJob.new(Class.new, task.id, args)
+        }.to raise_error(DirectorError, /invalid director job/i)
+      end
 
-    it "doesn't accept job class without queue value" do
-      job_class_without_queue = Class.new(Jobs::BaseJob) do
-        define_method :perform do
-          'foo'
+      it "doesn't accept job class that does not have 'perform' method" do
+        job_class_without_perform = Class.new(Jobs::BaseJob) do
+          @queue = :normal
         end
+
+        expect {
+          Jobs::DBJob.new(job_class_without_perform, task.id, args)
+        }.to raise_error(DirectorError, /invalid director job/i)
       end
 
-      expect {
-        Jobs::DBJob.new(job_class_without_queue, task.id, args)
-      }.to raise_error(DirectorError, /invalid director job/i)
-    end
-
-    context 'task state must transition from queued to processed' do
-      it 'always updates state' do
-        db_job.perform
-        expect(Models::Task.where(id: task.id ).first.state).to eq('processing')
-      end
-
-      it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do
-        expect(task_dataset).to receive(:update).once.and_return(1)
-        expect(Models::Task).to receive(:where).once.and_return(task_dataset)
-
-        db_job.perform
-      end
-
-      it 'raises error when task is not in queue state' do
-        task.update(state: 'processing')
-        expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
-      end
-    end
-
-    context 'when forked process is signaled' do
-      let(:signaled) { true }
-      it 'fails task' do
-        allow(db_job).to receive(:puts) # suppress the noise, failing to use Logging::Logger in multithreaded calls
-        allow(job_class).to receive(:perform).with(task.id, *args)
-        db_job.perform
-        expect(Models::Task.first(id: 42).state).to eq('error')
-      end
-    end
-
-    it 'performs new job' do
-      expect(job_class).to receive(:perform).with(task.id, *args)
-      db_job.perform
-    end
-
-    it 'gets queue name from job class' do
-      expect(db_job.queue_name).to eq(:normal)
-    end
-
-    context 'when worker should have access to filesystem' do
-      let(:job_class) do
-        Class.new(Jobs::BaseJob) do
+      it "doesn't accept job class without queue value" do
+        job_class_without_queue = Class.new(Jobs::BaseJob) do
           define_method :perform do
             'foo'
           end
-          @queue = :normal
-          @local_fs = true
+        end
+
+        expect {
+          Jobs::DBJob.new(job_class_without_queue, task.id, args)
+        }.to raise_error(DirectorError, /invalid director job/i)
+      end
+
+      context 'task state must transition from queued to processed' do
+        it 'always updates state' do
+          db_job.perform
+          expect(Models::Task.where(id: task.id ).first.state).to eq('processing')
+        end
+
+        it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do
+          expect(task_dataset).to receive(:update).once.and_return(1)
+          expect(Models::Task).to receive(:where).once.and_return(task_dataset)
+
+          db_job.perform
+        end
+
+        it 'raises error when task is not in queue state' do
+          task.update(state: 'processing')
+          expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+      end
+      end
+
+      context 'when forked process is signaled' do
+        let(:signaled) { true }
+        it 'fails task' do
+          allow(db_job).to receive(:puts) # suppress the noise, failing to use Logging::Logger in multithreaded calls
+          allow(job_class).to receive(:perform).with(task.id, 'workername1', *args)
+          db_job.perform
+          expect(Models::Task.first(id: 42).state).to eq('error')
         end
       end
 
-      before { allow(Config).to receive(:director_pool).and_return('local.hostname') }
-
-      it 'set specific queue for the job' do
-        expect(db_job.queue_name).to eq('local.hostname')
-      end
-    end
-
-    context 'when db connection times out when pulling record' do
-      before do
-        allow(task_dataset).to receive(:update).once.and_return(1)
-      end
-
-      it 'retries on Sequel::DatabaseConnectionError' do
-        expect(Models::Task).to receive(:where).and_raise(Sequel::DatabaseConnectionError).once.ordered
-        expect(Models::Task).to receive(:where).and_return(task_dataset).ordered
-
+      it 'performs new job' do
+        expect(job_class).to receive(:perform).with(task.id, 'workername1', *args)
         db_job.perform
       end
-    end
 
-    context 'passing arguments to executed jobs' do
-      let(:job_class) do
-        Class.new(Jobs::BaseJob) do
-          @queue = :normal
+      it 'gets queue name from job class' do
+        expect(db_job.queue_name).to eq(:normal)
+      end
 
-          def perform
-            true
+      context 'when worker should have access to filesystem' do
+        let(:job_class) do
+          Class.new(Jobs::BaseJob) do
+            define_method :perform do
+              'foo'
+            end
+            @queue = :normal
+            @local_fs = true
+          end
+        end
+
+        before { allow(Config).to receive(:director_pool).and_return('local.hostname') }
+
+        it 'set specific queue for the job' do
+          expect(db_job.queue_name).to eq('local.hostname')
+        end
+      end
+
+      context 'when db connection times out when pulling record' do
+        before do
+          allow(task_dataset).to receive(:update).once.and_return(1)
+        end
+
+        it 'retries on Sequel::DatabaseConnectionError' do
+          expect(Models::Task).to receive(:where).and_raise(Sequel::DatabaseConnectionError).once.ordered
+          expect(Models::Task).to receive(:where).and_return(task_dataset).ordered
+
+          db_job.perform
+        end
+      end
+
+      context 'passing arguments to executed jobs' do
+        let(:job_class) do
+          Class.new(Jobs::BaseJob) do
+            @queue = :normal
+
+            def perform
+              true
+            end
+          end
+        end
+
+        context 'without arguments' do
+          let(:args) { nil }
+
+          it 'executes arguments' do
+            expect(job_class).to receive(:perform).with(task.id, nil).and_return nil
+
+            Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
+          end
+        end
+
+        context 'with basic arguments' do
+          let(:args) { [ 'string', 0, false ] }
+
+          it 'executes arguments' do
+            expect(job_class).to receive(:perform).with(task.id, nil, 'string', 0, false).and_return nil
+
+            Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
           end
         end
       end
+    end
 
-      context 'without arguments' do
-        let(:args) { nil }
-
-        it 'executes arguments' do
-          expect(job_class).to receive(:perform).with(task.id).and_return nil
-
-          Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
-        end
+    context 'testing forked process behavior' do
+      before do
+        allow(Process).to receive(:fork).and_yield.and_return(-1)
+        allow(Process).to receive(:waitpid).with(-1)
       end
 
-      context 'with basic arguments' do
-        let(:args) { [ 'string', 0, false ] }
+      it 'emits exceptions to the logger' do
+        skip('bad things are happening with eventmachine... waiting for resolution')
+        expect(Config.logger).to receive(:error) do |message|
+          expect(message.split("\n")[0]).to eq("Fatal error from event machine: Could not connect to server on http://127.0.0.1:12345")
 
-        it 'executes arguments' do
-          expect(job_class).to receive(:perform).with(task.id, 'string', 0, false).and_return nil
-
-          Bosh::Director::Jobs::DBJob.new(job_class, task.id, args).perform
+          # we should also be including the backtrace
+          expect(message).to match(%r{/gems/nats-})
+          expect(message).to match(%r{/gems/eventmachine-})
         end
+
+        expect {
+          Bosh::Director::ForkedProcess.run do
+            nats = Bosh::Director::NatsRpc.new('http://127.0.0.1:12345', '/Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/nats_server/certs/rootCA.pem', '/Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/nats_server/certs/director/private_key', '/Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/nats_server/certs/director/certificate.pem')
+            nats.send_message('topic', {})
+
+            sleep 10
+
+            raise 'we should never raise because eventmachine is expected to raise an error'
+          end
+        }.to raise_error(NATS::ConnectError)
       end
     end
   end

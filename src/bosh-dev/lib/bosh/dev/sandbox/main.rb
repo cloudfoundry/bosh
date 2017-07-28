@@ -295,7 +295,7 @@ module Bosh::Dev::Sandbox
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
-      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false})
+      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false, use_dns_addresses: false})
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)

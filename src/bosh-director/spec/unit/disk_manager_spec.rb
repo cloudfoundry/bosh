@@ -553,7 +553,7 @@ module Bosh::Director
 
       context 'when cloud properties has placeholders' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
         let(:cloud_properties) { {'cloud' => '((cloud_placeholder))'} }
         let(:interpolated_cloud_properties) { {'cloud' => 'unicorns'} }

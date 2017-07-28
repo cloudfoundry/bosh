@@ -23,40 +23,24 @@ module Bosh::Director
 
       def initialize(link_network_options)
         @preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
-        @use_dns_entries = link_network_options.fetch(:use_dns_entry, true)
+        @global_use_dns_entry = link_network_options.fetch(:global_use_dns_entry)
+        @link_use_ip_address = link_network_options.fetch(:link_use_ip_address, nil)
 
         @logger = Config.logger
         @event_log = Config.event_log
       end
 
-      def update_addresses!(link_spec)
-        network_name = @preferred_network_name || link_spec['default_network']
+      private
 
-        unless @use_dns_entries
-          raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment' unless network_name
-        end
-
-        if network_name
-          link_spec['instances'].each do |instance|
-            if @use_dns_entries
-              addresses = instance['addresses']
-            else
-              addresses = instance['ip_addresses']
-            end
-
-            raise Bosh::Director::LinkLookupError, 'Unable to retrieve network addresses. Please redeploy provider deployment' unless addresses
-            raise Bosh::Director::LinkLookupError, "Invalid network name: #{network_name}" unless addresses.key?(network_name)
-
-            instance['address'] = addresses[network_name]
-
-            if !@use_dns_entries && !ip_address?(instance['address'])
-              message = "IP address not available for the link provider instance: #{instance['name']}/#{instance['id']}"
-              @logger.warn(message)
-              @event_log.warn(message)
-            end
-
-            instance['address']
-          end
+      def log_warning_if_applicable(address, dns_required, instance_name, instance_id)
+        if dns_required && ip_address?(address)
+          message = "DNS address not available for the link provider instance: #{instance_name}/#{instance_id}"
+          @logger.warn(message)
+          @event_log.warn(message)
+        elsif !dns_required && !ip_address?(address)
+          message = "IP address not available for the link provider instance: #{instance_name}/#{instance_id}"
+          @logger.warn(message)
+          @event_log.warn(message)
         end
       end
     end
@@ -75,7 +59,7 @@ module Bosh::Director
         return nil unless instance_group
 
         if @link_path.disk?
-          DiskLink.new(@link_path.deployment, @link_path.name).spec
+          return DiskLink.new(@link_path.deployment, @link_path.name).spec
         else
           job = instance_group.jobs.find { |job| job.name == @link_path.template }
           return nil unless job
@@ -85,10 +69,40 @@ module Bosh::Director
 
           link_spec = Link.new(@link_path.deployment, @link_path.name, instance_group, job).spec
 
-          update_addresses!(link_spec)
-
-          link_spec
+          return update_addresses!(link_spec)
         end
+      end
+
+      private
+
+      def update_addresses!(link_spec)
+        if @link_use_ip_address.nil?
+          use_dns_address = @global_use_dns_entry
+        else
+          use_dns_address = !@link_use_ip_address
+        end
+
+        network_name = @preferred_network_name || link_spec['default_network']
+
+        link_spec['instances'].each do |instance|
+          if use_dns_address
+            addresses = instance['dns_addresses']
+          else
+            addresses = instance['addresses']
+          end
+
+          raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{network_name}'" unless addresses.key?(network_name)
+
+          instance['address'] = addresses[network_name]
+          log_warning_if_applicable(instance['address'], use_dns_address, instance['name'], instance['id'])
+        end
+
+        link_spec['instances'].each do |instance|
+          instance.delete('addresses')
+          instance.delete('dns_addresses')
+        end
+
+        link_spec
       end
     end
 
@@ -112,8 +126,55 @@ module Bosh::Director
         return nil unless link_spec
 
         update_addresses!(link_spec)
+      end
 
-        link_spec
+      private
+
+      def update_addresses!(link_spec)
+        link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
+
+        if !link_spec_copy.has_key?('default_network')
+          if !@link_use_ip_address.nil?
+            raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+          end
+
+          if @preferred_network_name
+            link_spec_copy['instances'].each do |instance|
+              desired_addresses = instance['addresses']
+              raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{@preferred_network_name}'" unless desired_addresses.key?(@preferred_network_name)
+              instance['address'] = desired_addresses[@preferred_network_name]
+              log_warning_if_applicable(instance['address'], @global_use_dns_entry, instance['name'], instance['id'])
+            end
+          end
+        else
+          if @link_use_ip_address.nil?
+            use_dns_entries = @global_use_dns_entry
+          else
+            use_dns_entries = !@link_use_ip_address
+          end
+
+          network_name = @preferred_network_name || link_spec_copy['default_network']
+
+          link_spec_copy['instances'].each do |instance|
+            if use_dns_entries
+              desired_addresses = instance['dns_addresses']
+            else
+              desired_addresses = instance['addresses']
+            end
+
+            raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{network_name}'" unless desired_addresses.key?(network_name)
+
+            instance['address'] = desired_addresses[network_name]
+            log_warning_if_applicable(instance['address'], use_dns_entries, instance['name'], instance['id'])
+          end
+        end
+
+        link_spec_copy['instances'].each do |instance|
+          instance.delete('addresses')
+          instance.delete('dns_addresses')
+        end
+
+        link_spec_copy
       end
     end
   end
