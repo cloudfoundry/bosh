@@ -19,7 +19,7 @@ chmod +x /usr/local/bin/bosh-cli
 
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/$BAT_INFRASTRUCTURE/cpi.yml \
-  -o bosh-deployment/powerdns.yml \
+  -o bosh-deployment/misc/powerdns.yml \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-src/ci/bats/ops/remove-health-monitor.yml \
   -o bosh-deployment/local-bosh-release.yml \
