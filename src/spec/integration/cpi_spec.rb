@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pp'
 
 describe 'CPI calls', type: :integration do
   with_reset_sandbox_before_each
@@ -7,74 +8,23 @@ describe 'CPI calls', type: :integration do
     expect(invocation.inputs['metadata']['name']).to eq("#{invocation.inputs['metadata']['job']}/#{invocation.inputs['metadata']['id']}")
   end
 
+  let(:ca_cert) {
+    File.read(current_sandbox.nats_certificate_paths['ca_path'])
+  }
+  let(:client_cert) {
+    File.read(current_sandbox.nats_certificate_paths['clients']['director']['certificate_path'])
+  }
+  let(:client_key) {
+    File.read(current_sandbox.nats_certificate_paths['clients']['director']['private_key_path'])
+  }
+
   let(:expected_mbus) {
     {
       'urls' => [ /nats:\/\/127\.0\.0\.1:\d+/ ],
       'cert' => {
-        'ca' => '-----BEGIN CERTIFICATE-----
-MIICsjCCAhugAwIBAgIJAJgyGeIL1aiPMA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
-BAYTAkFVMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBX
-aWRnaXRzIFB0eSBMdGQwIBcNMTUwMzE5MjE1NzAxWhgPMjI4ODEyMzEyMTU3MDFa
-MEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJ
-bnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJ
-AoGBAOTD37e9wnQz5fHVPdQdU8rjokOVuFj0wBtQLNO7B2iN+URFaP2wi0KOU0ye
-njISc5M/mpua7Op72/cZ3+bq8u5lnQ8VcjewD1+f3LCq+Os7iE85A/mbEyT1Mazo
-GGo9L/gfz5kNq78L9cQp5lrD04wF0C05QtL8LVI5N9SqT7mlAgMBAAGjgacwgaQw
-HQYDVR0OBBYEFNtN+q97oIhvyUEC+/Sc4q0ASv4zMHUGA1UdIwRuMGyAFNtN+q97
-oIhvyUEC+/Sc4q0ASv4zoUmkRzBFMQswCQYDVQQGEwJBVTETMBEGA1UECBMKU29t
-ZS1TdGF0ZTEhMB8GA1UEChMYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkggkAmDIZ
-4gvVqI8wDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQCZKuxfGc/RrMlz
-aai4+5s0GnhSuq0CdfnpwZR+dXsjMO6dlrD1NgQoQVhYO7UbzktwU1Hz9Mc3XE7t
-HCu8gfq+3WRUgddCQnYJUXtig2yAqmHf/WGR9yYYnfMUDKa85i0inolq1EnLvgVV
-K4iijxtW0XYe5R1Od6lWOEKZ6un9Ag==
------END CERTIFICATE-----
-',
-        'certificate' => '-----BEGIN CERTIFICATE-----
-MIICyjCCAjOgAwIBAgIQWR44AOP45jyrWhM1ye4PLDANBgkqhkiG9w0BAQsFADBF
-MQswCQYDVQQGEwJBVTETMBEGA1UECBMKU29tZS1TdGF0ZTEhMB8GA1UEChMYSW50
-ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMB4XDTE3MDcyMTE1NDA0OVoXDTE4MDcyMTE1
-NDA0OVowJjEMMAoGA1UEBhMDVVNBMRYwFAYDVQQKEw1DbG91ZCBGb3VuZHJ5MIIB
-IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxX8BDg2lGXd225rg7fQV0rts
-n/O4N9wWduwUdfN5Wnl0WTGu+di40Cq+BAitbsnwtDyAbIevzHPzGXEen3ecgDHi
-z2ZkVFsZ3xhSFj0Zsrrriy7K1ZzniLS3dB28Pm+4+szg6qeJr+iG4dC9E4mJCDWW
-NzM97J6LVL3PUVaqmgDvAgi/lA91aCVdF1zcSOrw1GLWU8OmTTtS2m9nStqccLLu
-Kxmb1z9OF6OLiHMcdgS+q4yOML19kqKVVU3X14l894uIPdwbfoPpwjV27OL7rDLR
-w+5RDPUxx7mZ4BlztrBRY8atJzWJRZD40OPY0tesaINi0ib8tMkROzgNlFzfcQID
-AQABo1YwVDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwIwDAYD
-VR0TAQH/BAIwADAfBgNVHSMEGDAWgBTbTfqve6CIb8lBAvv0nOKtAEr+MzANBgkq
-hkiG9w0BAQsFAAOBgQCYtkT2QSG2dTqORAF+19taPxoIyp2/pRihMrEI3BMwSzKY
-+yw7mmY+EMExJxEiMi1qhy2+hdc3WSgR9Z7jS4qEGV1wByHYQzIqagPuDnldtFTe
-gqQtnH6IptYQfsRSYk0N4aDSN/CBHdrTPvqIWn3HJE4u3pXQDGqkwndVNpL20w==
------END CERTIFICATE-----
-',
-        'private_key' => '-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEAxX8BDg2lGXd225rg7fQV0rtsn/O4N9wWduwUdfN5Wnl0WTGu
-+di40Cq+BAitbsnwtDyAbIevzHPzGXEen3ecgDHiz2ZkVFsZ3xhSFj0Zsrrriy7K
-1ZzniLS3dB28Pm+4+szg6qeJr+iG4dC9E4mJCDWWNzM97J6LVL3PUVaqmgDvAgi/
-lA91aCVdF1zcSOrw1GLWU8OmTTtS2m9nStqccLLuKxmb1z9OF6OLiHMcdgS+q4yO
-ML19kqKVVU3X14l894uIPdwbfoPpwjV27OL7rDLRw+5RDPUxx7mZ4BlztrBRY8at
-JzWJRZD40OPY0tesaINi0ib8tMkROzgNlFzfcQIDAQABAoIBABtfJctH0tj7uKpp
-BcGU8a1aMozcn2yGgUqMH63VR71lVd3CyAhyo/Kd6eXvOfI/5K9mLzpbd97zNv8Q
-sXjSgAs4XsH14/PZCHXmDgJtB3HA/EI3Av+mFmTY/xAFywAwRcfku0tqWufZZ1BG
-uN3LUwWjP6V44Z04wADHqcMRKuXa+vEqTq04hgvscoQtztiPxbMQpFdE936diFFt
-51j1Tu8kuE0P9XazgDIQGrX6OZ06G9UIVb7Fq3dRbglygxEftESgTmZLTrFIZo7s
-PUJ82P71T3i9M/g+zjx0yJUJ6xWzd+zoH8KuJW3Ph6reR3PfW9eWNZR/Z/s7voLL
-jxGM6lECgYEA4eMXmG/mdubtL6N4ZHs+Rdnbe1wSHqMtRAbr3XLO4SsSozYOMdex
-b2Hq8UP/ffwpWa3yG+7hbtYS7//T7R+2EEq9dV9FLmliSocdcPFLTsyt9Gj1u3m8
-Gyh2r6gZ3VqFDTV4onh1YZO4uP4L886rwm0NIu8cENUDVAg+hcJhlAUCgYEA39MB
-gR6aJcDRZ4X6T27JuAEkePyPi8p+mb+xoF4EPMuYz7ZiEQ637JbEG7dyP+BCWdNZ
-mZmO4bKzEFNnPoValiAJCPW1iO0ih0PO/fxvW5gs43+JGDKc4E2cOwddsSVkEZQ/
-Mqdeb63fMomX4OWnLEYX06NuOunl/UaIZtddhX0CgYBS0w+txyn74wSI+SmFvmLA
-/faqLsI+FZrdXKRTWGteyIpW6dUelXXr3z1kJYiiyzjmNw+VCmwCVeAvu+AbDAuX
-wa/iP4KAWAfAR/aVmQQB6q7F9U5U5XgBhT6vfbWuIiizBS4sdHqlwqJywkPjq53y
-9kVgz8e8rD5CK5uxM+rPeQKBgQDE5SZJo9YOqBSOcTnFbrxc9gRTujm8y6GbNxrW
-7F3l7WS8NMEIKF577hUOHM6QioNT6azEhmU+/qivD++e/Ei4D+5ix2Ou1IyvWWNZ
-4xtDBBdY+fRsKPoAB8YL12sATtg87qC5uqpErDvQhWHqIZxyQibrsrVhdikwKUAM
-2CAZMQKBgQDfO1urCLD4VsDyIVvO4o91rG7KAv1G35/K4cfngVxTOUBXCJlOAkbZ
-IHNCvVbw6A12/buDR9Q3AGeZ8uVxqsAfd3Z/Qt5n4Gxmm7/J6Jq/dS4HMwnrMP+G
-aWGW0XQO02QdbPeqrUk2RwJCWKN2qn+PCdA23b798UU6eNxOvHSUog==
------END RSA PRIVATE KEY-----
-'
+        'ca' => ca_cert,
+        'certificate' =>  client_cert,
+        'private_key' => client_key
       }
     }
   }
@@ -111,6 +61,14 @@ aWGW0XQO02QdbPeqrUk2RwJCWKN2qn+PCdA23b798UU6eNxOvHSUog==
       })
 
       expect(invocations[2].method_name).to eq('create_vm')
+
+      puts '======================='
+      pp invocations[2].inputs
+      puts '======================='
+      pp expected_mbus
+      puts '======================='
+
+
       expect(invocations[2].inputs).to match({
         'agent_id' => String,
         'stemcell_id' => String,

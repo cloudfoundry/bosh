@@ -53,7 +53,7 @@ module Bosh::Dev::Sandbox
     attr_reader :cpi
 
     attr_reader :nats_log_path
-    attr_reader :nats_certificate_paths
+    attr_reader :nats_host
 
     attr_accessor :trusted_certs
 
@@ -88,7 +88,6 @@ module Bosh::Dev::Sandbox
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
 
-      @nats_certificate_paths = nats_certificate_paths
       @nats_log_path = File.join(@logs_path, 'nats.log')
 
       FileUtils.mkdir_p(@logs_path)
@@ -194,7 +193,7 @@ module Bosh::Dev::Sandbox
         remove_dev_tools: @remove_dev_tools,
         director_ips: @director_ips,
         nats_server_ca_path: get_nats_server_ca_path,
-        nats_tls: nats_conf,
+        nats_tls: nats_certificate_paths['clients']['director'],
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -314,15 +313,40 @@ module Bosh::Dev::Sandbox
       File.join(SANDBOX_ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
+    def nats_certificate_paths
+      {
+        'ca_path' => get_nats_server_ca_path,
+
+        'server' => {
+          'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
+          'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
+        },
+        'clients' => {
+          'director' => {
+            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
+            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
+          },
+          'agent' => {
+            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'agent', 'certificate.pem'),
+            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'agent', 'private_key'),
+          },
+          'health_monitor' => {
+            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
+            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
+          }
+        }
+      }
+    end
+
     def director_nats_config
       {
         uri: "nats://localhost:#{nats_port}",
         ssl: true,
         tls: {
-          :private_key_file => @nats_certificate_paths['clients']['director']['private_key_path'],
-          :cert_chain_file  => @nats_certificate_paths['clients']['director']['certificate_path'],
+          :private_key_file => nats_certificate_paths['clients']['director']['private_key_path'],
+          :cert_chain_file  => nats_certificate_paths['clients']['director']['certificate_path'],
           :verify_peer => true,
-          :ca_file => @nats_certificate_paths['ca_path'],
+          :ca_file => nats_certificate_paths['ca_path'],
         }
       }
     end
@@ -462,38 +486,6 @@ module Bosh::Dev::Sandbox
       else
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
-    end
-
-    def nats_conf
-      {
-        'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
-        'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
-      }
-    end
-
-    def nats_certificate_paths
-      {
-        'ca_path' => get_nats_server_ca_path,
-
-        'server' => {
-          'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
-          'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
-        },
-        'clients' => {
-          'director' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
-          },
-          'agent' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'agent', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'agent', 'private_key'),
-          },
-          'health_monitor' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
-          }
-        }
-      }
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

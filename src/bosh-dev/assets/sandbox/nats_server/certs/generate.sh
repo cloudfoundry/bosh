@@ -1,36 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
-function generateCert {
-  name=$1
-  ip=$2
+#HOSTNAME="$(hostname)"
+HOSTNAME="127.0.0.1"
+CREDS_FILE='./creds.yml'
+TEMPLATE_FILE='./manifest.yml'
 
-  cat >openssl-exts.conf <<-EOL
-extensions = san
-[san]
-subjectAltName = IP:${ip}
-EOL
+rm -rf ./creds.yml ./nats/ ./director/ ./agent/ ./health_monitor/
 
-  echo "Generating private key..."
-  openssl genrsa -out ${name}.key 2048
+mkdir -p ./nats
+mkdir -p ./director
+mkdir -p ./agent
+mkdir -p ./health_monitor
 
-  echo "Generating certificate signing request for ${ip}..."
-  # golang requires to have SAN for the IP
-  openssl req -new -nodes -key ${name}.key \
-    -out ${name}.csr \
-    -subj "/C=US/O=BOSH/CN=${ip}"
+gobosh int --vars-store=${CREDS_FILE} -v hostname=$HOSTNAME ${TEMPLATE_FILE}
 
-  echo "Generating certificate ${ip}..."
-  openssl x509 -req -in ${name}.csr \
-    -CA rootCA.pem -CAkey rootCA.key -CAcreateserial \
-    -out ${name}.crt -days 99999 \
-    -extfile ./openssl-exts.conf
+gobosh int --path=/default_ca/ca ${CREDS_FILE} | sed '/^$/d' > rootCA.pem
+gobosh int --path=/default_ca/private_key ${CREDS_FILE} | sed '/^$/d' > rootCA.key
 
-  echo "Deleting certificate signing request and config..."
-  rm ${name}.csr
-  rm ./openssl-exts.conf
-}
+gobosh int --path=/nats/certificate ${CREDS_FILE} | sed '/^$/d' > nats/certificate.pem
+gobosh int --path=/nats/private_key ${CREDS_FILE} | sed '/^$/d' > nats/private_key
 
-generateCert server-new 127.0.0.1 # <--- Replace with public Director IP
+gobosh int --path=/director_client/certificate ${CREDS_FILE} | sed '/^$/d' > director/certificate.pem
+gobosh int --path=/director_client/private_key ${CREDS_FILE} | sed '/^$/d' > director/private_key
 
-echo "Finished..."
+gobosh int --path=/agent_client/certificate ${CREDS_FILE} | sed '/^$/d' > agent/certificate.pem
+gobosh int --path=/agent_client/private_key ${CREDS_FILE} | sed '/^$/d' > agent/private_key
+
+gobosh int --path=/hm_client/certificate ${CREDS_FILE} | sed '/^$/d' > health_monitor/certificate.pem
+gobosh int --path=/hm_client/private_key ${CREDS_FILE} | sed '/^$/d' > health_monitor/private_key
+
