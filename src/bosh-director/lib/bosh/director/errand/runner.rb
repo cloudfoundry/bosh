@@ -41,7 +41,7 @@ module Bosh::Director
       agent_task_id = nil
 
       begin
-        event_log_stage.advance_and_track("#{instance.job_name}/#{instance.index}") do
+        event_log_stage.advance_and_track(instance.to_s) do
           if @errand_is_job_name
             run_errand_result = agent.run_errand(@errand_name)
           else

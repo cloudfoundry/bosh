@@ -3,13 +3,14 @@ module Bosh::Director
 
     # @param [Class] job_class Job class to instantiate and run
     # @param [Integer] task_id Existing task id
-    def initialize(job_class, task_id)
+    def initialize(job_class, task_id, worker_name)
       unless job_class.kind_of?(Class) &&
         job_class <= Jobs::BaseJob
         raise DirectorError, "Invalid director job class '#{job_class}'"
       end
 
       @task_id = task_id
+      @worker_name = worker_name
       setup_task_logging_for_files
       task_manager = Bosh::Director::Api::TaskManager.new
 
@@ -24,6 +25,7 @@ module Bosh::Director
     def run(*args)
       Config.current_job = nil
 
+      @task_logger.info("Running from worker '#{@worker_name}' on #{Config.runtime['instance']} (#{Config.runtime['ip']})")
       @task_logger.info("Starting task: #{@task_id}")
       started_at = Time.now
 

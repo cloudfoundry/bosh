@@ -122,6 +122,12 @@ module Bosh::Director
         let(:desired_disks) { PersistentDiskCollection.new(logger) }
         let(:existing_disks) { PersistentDiskCollection.new(logger) }
         let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+        let(:deployment) { instance_double(Bosh::Director::Models::Deployment) }
+
+        before do
+          allow(variable_set).to receive(:deployment).and_return(deployment)
+          allow(deployment).to receive(:name).and_return('simple')
+        end
 
         context 'unchanged' do
           context 'disk ordering unchanged' do

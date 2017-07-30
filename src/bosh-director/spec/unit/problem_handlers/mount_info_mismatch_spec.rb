@@ -12,7 +12,10 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
   before(:each) do
     @agent = double('agent')
+
     deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
+    Bosh::Director::Models::VariableSet.make(deployment_id: deployment.id)
+
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
     @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, cpi: 'cpi1')

@@ -31,13 +31,7 @@ module Bosh::Director
                 @logger.info('Creating missing VM')
                 disks = [instance.model.managed_persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks, tags)
-                instance_plan.network_plans
-                  .select(&:obsolete?)
-                  .each do |network_plan|
-                  reservation = network_plan.reservation
-                  ip_provider.release(reservation)
-                end
-                instance_plan.release_obsolete_network_plans
+                instance_plan.release_obsolete_network_plans(ip_provider)
               end
             end
           end

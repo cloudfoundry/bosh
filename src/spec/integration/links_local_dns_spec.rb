@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Links', type: :integration do
-  with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false})
+  with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true})
 
   def upload_links_release
     FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => false)

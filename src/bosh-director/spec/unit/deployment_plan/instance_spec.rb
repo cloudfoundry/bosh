@@ -250,7 +250,7 @@ module Bosh::Director::DeploymentPlan
             let(:interpolated_merged_cloud_properties) { {'abcd'=>'p1', 'baz'=>'p2', 'a'=>'p3'} }
 
             let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::EnabledClient) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
             let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
             let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
@@ -333,7 +333,7 @@ module Bosh::Director::DeploymentPlan
           )
         end
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
         let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:merged_cloud_properties) { {'az_cloud_prop'=>'((/placeholder3))', 'vm_cloud_prop'=>'((/placeholder1))', 'vm_ext_cloud_prop'=>'((/placeholder2))'} }

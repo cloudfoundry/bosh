@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe EnabledClient do
-    subject(:client) { EnabledClient.new(http_client, director_name, logger) }
+  describe ConfigServerClient do
+    subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
     let(:deployment_attrs) { { id: 1, name: deployment_name } }
@@ -97,7 +97,44 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when object to be interpolated is NOT nil' do
+
         context 'when object to be interpolated is a hash' do
+
+          context 'when hash does NOT contain any placeholders' do
+            let(:raw_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => '1',
+                  'nil_allowed' => nil,
+                  'empty_allowed' => ''
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => 'string'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => {}}}
+                ],
+                'my_value_will_be_a_hash' => {}
+              }
+            end
+
+            it 'does not raise an error' do
+              expect {
+                client.interpolate(raw_hash)
+              }.to_not raise_error
+            end
+
+            it 'returns an equivalent hash' do
+              interpolated_hash = client.interpolate(raw_hash)
+              expect(interpolated_hash).to eq(raw_hash)
+            end
+          end
+
           context 'when all placeholders syntax is correct' do
             let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
             let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
@@ -334,6 +371,7 @@ module Bosh::Director::ConfigServer
             end
           end
         end
+
         context 'when object to be interpolated is NOT a hash' do
           it 'raises an error' do
             expect {
@@ -347,7 +385,7 @@ module Bosh::Director::ConfigServer
           it 'should return nil' do
             expect(client.interpolate(nil)).to be_nil
           end
-        end
+      end
     end
 
     describe '#interpolate_with_versioning' do
@@ -493,9 +531,45 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when object to be interpolated is NOT nil' do
-        context 'when object to be interpolated is a hash' do
-          context 'when all placeholders syntax is correct' do
 
+        context 'when object to be interpolated is a hash' do
+
+          context 'when hash does NOT contain any placeholders' do
+            let(:raw_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => '1',
+                  'nil_allowed' => nil,
+                  'empty_allowed' => ''
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => 'string'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => {}}}
+                ],
+                'my_value_will_be_a_hash' => {}
+              }
+            end
+
+            it 'does not raise an error' do
+              expect {
+                client.interpolate_with_versioning(raw_hash, variable_set_model)
+              }.to_not raise_error
+            end
+
+            it 'returns an equivalent hash' do
+                interpolated_hash = client.interpolate_with_versioning(raw_hash, variable_set_model)
+                expect(interpolated_hash).to eq(raw_hash)
+            end
+          end
+
+          context 'when all placeholders syntax is correct' do
 
             let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
             let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
@@ -882,7 +956,6 @@ module Bosh::Director::ConfigServer
                 end
               end
             end
-
           end
 
           context 'when some placeholders have invalid name syntax' do
@@ -923,7 +996,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      context 'when object to be interpolated in is nil' do
+      context 'when object to be interpolated is nil' do
         it 'should return nil' do
           expect(client.interpolate_with_versioning(nil, variable_set_model)).to be_nil
         end
@@ -1006,7 +1079,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      context 'when links spec passed is not a hash' do
+      context 'when links spec passed is NOT a hash' do
         it 'throws an error' do
           expect {
             client.interpolate_cross_deployment_link('vroooom', consumer_variable_set, provider_variable_set)
@@ -1015,6 +1088,34 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when links spec passed is a hash' do
+
+        context 'when links spec hash does NOT contain any placeholders' do
+          let(:links_properties_spec) do
+            {
+              'age' => 6,
+              'hash_value' => '0123456789',
+              'dots_allowed' => true,
+              'nil_allowed' => true,
+              'empty_allowed' => true,
+              'nested_allowed' => {
+                'level_1' => ''
+              },
+              'absolute_allowed' => 'why?'
+            }
+          end
+
+          it 'does not raise an error' do
+            expect {
+              client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+            }.to_not raise_error
+          end
+
+          it 'returns a hash equivalent to the links spec hash' do
+            interpolated_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+            expect(interpolated_spec).to eq(links_properties_spec)
+          end
+        end
+
         context 'when the consumer variable_set already has all the variables' do
           before do
             mock_config_store.each do |name, value|
@@ -1199,9 +1300,23 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when property value is NOT nil' do
+
+        context 'when property value does NOT contain a placeholder' do
+          it 'does not raise an error' do
+            expect {
+              expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name))
+            }.to_not raise_error
+          end
+
+          it 'returns the provided property value' do
+            expect {
+              expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
+            }.to_not raise_error
+          end
+        end
+
         context 'when property value is NOT a full placeholder (NOT padded with brackets)' do
           it 'returns that property value' do
-            expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
             expect(client.prepare_and_get_property('((my_smurf', 'my_default_value', nil, deployment_name)).to eq('((my_smurf')
             expect(client.prepare_and_get_property('my_smurf))', 'my_default_value', 'whatever', deployment_name)).to eq('my_smurf))')
             expect(client.prepare_and_get_property('((my_smurf))((vroom))', 'my_default_value', 'whatever', deployment_name)).to eq('((my_smurf))((vroom))')
@@ -1464,7 +1579,9 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#generate_values' do
+      
       context 'when given a variables object' do
+
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
             [
@@ -1628,7 +1745,7 @@ module Bosh::Director::ConfigServer
             expect(event_3.context).to eq({'id'=>3,'name'=>'/placeholder_c'})
           end
 
-          context 'when variable options contains a ca key' do
+          context 'when variable options contains a CA key' do
 
             context 'when variable type is certificate & ca is relative' do
               let(:variables_spec) do
@@ -1796,8 +1913,6 @@ module Bosh::Director::ConfigServer
               expect(models.length).to eq(0)
             end
           end
-
-
         end
       end
     end
@@ -1806,84 +1921,6 @@ module Bosh::Director::ConfigServer
       result = SampleSuccessResponse.new
       result.body = body
       result
-    end
-  end
-
-  describe DisabledClient do
-    subject(:disabled_client) { DisabledClient.new }
-    let(:deployment_name) { 'smurf_deployment' }
-
-    it 'responds to all methods of EnabledClient and vice versa' do
-      expect(EnabledClient.instance_methods - DisabledClient.instance_methods).to be_empty
-      expect(DisabledClient.instance_methods - EnabledClient.instance_methods).to be_empty
-    end
-
-    it 'has the same arity as EnabledClient methods' do
-      EnabledClient.instance_methods.each do |method_name|
-        expect(EnabledClient.instance_method(method_name).arity).to eq(DisabledClient.instance_method(method_name).arity)
-      end
-    end
-
-    describe '#interpolate' do
-      let(:src) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate(src)).to eq(src)
-      end
-    end
-
-    describe '#interpolate_with_versioning' do
-      let(:src) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-      let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate_with_versioning(src, variable_set)).to eq(src)
-      end
-    end
-
-    describe '#interpolate_cross_deployment_link' do
-      let(:link_spec) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      let(:consumer_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-      let(:provider_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate_cross_deployment_link(link_spec, consumer_variable_set, provider_variable_set)).to eq(link_spec)
-      end
-    end
-
-    describe '#prepare_and_get_property' do
-      it 'returns manifest property value if defined' do
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name)).to eq('provided prop')
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name, {})).to eq('provided prop')
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name, {'whatever' => 'hello'})).to eq('provided prop')
-      end
-      it 'returns default value when manifest value is nil' do
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name)).to eq('default value is here')
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {})).to eq('default value is here')
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {'whatever' => 'hello'})).to eq('default value is here')
-      end
-    end
-
-    describe '#generate_values' do
-      it 'exists' do
-        expect { disabled_client.generate_values(anything, anything) }.to_not raise_error
-      end
     end
   end
 

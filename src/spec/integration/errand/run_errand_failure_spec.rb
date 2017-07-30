@@ -26,7 +26,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       it 'does not delete/create the errand vm' do
         output, exit_code = bosh_runner.run("run errand fake-errand-name --download-logs --logs-dir #{@tmp_dir} --keep-alive",
           {failure_expected: true, return_exit_code: true})
-        expect(output).to include("[stdout]\nNone")
+        expect(output).to match(/\[stdout\]\njob=fake-errand-name index=0 id=.{36}/)
         expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(exit_code).to_not eq(0)
 
@@ -43,7 +43,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
       expect_running_vms_with_names_and_count('foobar' => 1)
 
-      expect(output).to include("[stdout]\nNone")
+      expect(output).to match(/\[stdout\]\njob=fake-errand-name index=0 id=.{36}/)
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
       expect(output).to include("Errand 'fake-errand-name' completed with error (exit code 23)")
       expect(output =~ /Logs saved in '(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)

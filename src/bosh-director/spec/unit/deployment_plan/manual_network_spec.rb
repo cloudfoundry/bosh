@@ -29,7 +29,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     )
   end
 
+  let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+  let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+  let(:interpolated_tags) { {} }
+
   before do
+    allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+    allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+    allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+
     release = Bosh::Director::Models::Release.make(name: 'bosh-release')
     template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
     release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)

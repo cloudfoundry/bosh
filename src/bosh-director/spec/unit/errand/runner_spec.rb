@@ -18,10 +18,12 @@ module Bosh::Director
     context 'when there is at least 1 instance' do
       let(:instance) do
         instance_double('Bosh::Director::DeploymentPlan::Instance',
+          uuid: 'fake-id',
           index: 0,
           configuration_hash: 'configuration_hash',
           current_packages: {'current' => 'packages'},
-          job_name: 'fake-job-name'
+          job_name: 'fake-job-name',
+          to_s: 'fake-job-name/fake-id (0)'
         )
       end
 
@@ -135,7 +137,7 @@ module Bosh::Director
           it 'records errand running in the event log' do
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
             expect(Config.event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
-            expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/0').and_yield
+            expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/fake-id (0)').and_yield
             subject.run(instance)
           end
 

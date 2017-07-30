@@ -239,6 +239,12 @@ module Bosh::Director
           errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
         end
 
+        if source.has_key?('ip_addresses')
+          unless !!source['ip_addresses'] == source['ip_addresses']
+            errors.push("Cannot specify non boolean values for 'ip_addresses' field for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
+          end
+        end
+
         errors
       end
 

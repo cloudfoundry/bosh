@@ -54,8 +54,6 @@ module Bosh
           logger
         )
         instance.bind_existing_instance_model(instance_model)
-        allow(instance).to receive(:apply_spec).and_return({})
-        allow(instance).to receive(:spec).and_return({})
         instance
       end
       let(:reservation) do
@@ -598,7 +596,7 @@ module Bosh
 
       context 'cloud_properties, networks_settings, env interpolation' do
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
         let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
 
