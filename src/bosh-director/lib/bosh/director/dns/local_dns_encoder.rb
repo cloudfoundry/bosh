@@ -8,10 +8,12 @@ module Bosh::Director
     def encode_az(name)
       @azmutex.synchronize do
         unless @azcache.has_key?(name)
-          begin
+          vs = Models::LocalDnsEncodedAz.where(name: name)
+
+          if vs.nil? || vs.first.nil?
             v = Models::LocalDnsEncodedAz.create(name: name)
-          rescue Sequel::UniqueConstraintViolation
-            v = Models::LocalDnsEncodedAz.where(name: name).first
+          else
+            v = vs.first
           end
 
           @azcache[name] = v.id

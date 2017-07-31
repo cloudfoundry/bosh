@@ -24,8 +24,7 @@ module Bosh::Director
       end
 
       it 'should cache lookups' do
-        # TODO reconsider a better way to test this (avoid a not test)
-        expect(Models::LocalDnsEncodedAz).to_not receive(:where)
+        expect(Models::LocalDnsEncodedAz).to receive(:where).once
 
         id1a = local_dns_encoder.encode_az('az1')
         id1b = local_dns_encoder.encode_az('az1')
