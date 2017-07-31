@@ -107,7 +107,7 @@ module Bosh
 
         if link_spec.has_key?("instances")
           link_instances = link_spec["instances"].map do |instance_link_spec|
-            EvaluationLinkInstance.new(link_spec["source_instance_group"], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
+            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
           end
           return EvaluationLink.new(link_instances, link_spec["properties"])
         end

@@ -171,6 +171,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             "properties" => {"mysql" => nil},
             "instances" => [
               {
+                'name' => 'mysql',
                 "index" => 0,
                 "bootstrap" => true,
                 "id" => instance1.uuid,
@@ -178,6 +179,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 "address" => "127.0.0.3",
               },
               {
+                'name' => 'mysql',
                 "index" => 1,
                 "bootstrap" => false,
                 "id" => instance2.uuid,
@@ -365,6 +367,7 @@ Unable to process links for deployment. Errors are:
           "properties" => {"mysql" => nil},
           'instances' => [
             {
+              'name' => 'mysql',
               'index' => 0,
               "bootstrap" => true,
               'id' => instance1.uuid,
@@ -372,6 +375,7 @@ Unable to process links for deployment. Errors are:
               'address' => '127.0.0.3',
             },
             {
+              'name' => 'mysql',
               'index' => 1,
               "bootstrap" => false,
               'id' => instance2.uuid,
@@ -752,6 +756,7 @@ Unable to process links for deployment. Errors are:
           "properties" => {"mysql" => nil},
           'instances' => [
             {
+              'name' => 'mysql',
               'index' => 0,
               "bootstrap" => true,
               'id' => instance1.uuid,
@@ -759,6 +764,7 @@ Unable to process links for deployment. Errors are:
               'address' => '127.0.0.3',
             },
             {
+              'name' => 'mysql',
               'index' => 1,
               "bootstrap" => false,
               'id' => instance2.uuid,
