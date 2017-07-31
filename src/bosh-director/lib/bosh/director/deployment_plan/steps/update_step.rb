@@ -29,11 +29,11 @@ module Bosh::Director
 
         def vm_creator
           return @vm_creator if @vm_creator
-          job_renderer = @deployment_plan.job_renderer
+          template_blob_cache = @deployment_plan.template_blob_cache
           agent_broadcaster = AgentBroadcaster.new
           disk_manager = DiskManager.new(@logger)
           vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster)
         end
 
         def setup_step

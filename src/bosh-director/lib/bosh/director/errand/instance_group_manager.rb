@@ -5,11 +5,11 @@ module Bosh::Director
       @instance_group = instance_group
       @logger = logger
       @disk_manager = DiskManager.new(logger)
-      @job_renderer = @deployment.job_renderer
+      @template_blob_cache = @deployment.template_blob_cache
       agent_broadcaster = AgentBroadcaster.new
       @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
+      @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @template_blob_cache, agent_broadcaster)
     end
 
     def create_missing_vms
@@ -19,7 +19,7 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_updater = JobUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @job_renderer)
+      job_updater = JobUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @template_blob_cache)
       job_updater.update
     end
 

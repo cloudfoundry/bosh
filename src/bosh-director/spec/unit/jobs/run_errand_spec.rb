@@ -156,19 +156,24 @@ module Bosh::Director
             ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
             ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
-            instance_double(
-              'Bosh::Director::DeploymentPlan::Planner',
-              ip_provider: ip_provider,
-              job_renderer: job_renderer,
-              instance_groups: [],
-            )
-          end
-          let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
-          let(:job_renderer) { JobRenderer.create.tap { |jr| allow(jr).to receive(:render_job_instances) } }
-          let(:cloud_config) { Models::CloudConfig.make }
-          let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
+          instance_double(
+            'Bosh::Director::DeploymentPlan::Planner',
+            ip_provider: ip_provider,
+            template_blob_cache: template_blob_cache,
+            instance_groups: [],
+          )
+        end
+        let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
+        let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
+        let(:cloud_config) { Models::CloudConfig.make }
+        let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
-          before { allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step) }
+
+        before do
+          allow(template_blob_cache).to receive(:clean_cache!)
+          allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, logger)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
+        end
 
           # context 'when specified errand name refers to a known errand' do # TODO this becomes one of very few tests here
           #   let(:errand_provider) { double(Bosh::Director::DeploymentPlan::ErrandProvider) }
@@ -277,7 +282,7 @@ module Bosh::Director
 
                     expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 
-                    expect(job_renderer).to receive(:clean_cache!).ordered
+                expect(template_blob_cache).to receive(:clean_cache!).ordered
 
                     expect(called_after_block_check).to receive(:call).ordered
 
@@ -351,11 +356,11 @@ module Bosh::Director
                   end
                 end
 
-                context 'when errand is run with when-changed' do
-                  before do
-                    allow(JobRenderer).to receive_message_chain(:create, :render_job_instances).with([instance_plan])
-                    allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
-                  end
+              context 'when errand is run with when-changed' do
+                before do
+                  allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, logger)
+                  allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
+                end
 
                   let(:when_changed) { true }
                   let(:instance_model) { Models::Instance.make }

@@ -69,7 +69,7 @@ module Bosh::Director::Core::Templates
   describe JobTemplateLoader do
     describe '#process' do
       subject(:job_template_loader) do
-        JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new, dns_encoder)
+        JobTemplateLoader.new(logger, TemplateBlobCache.new, dns_encoder)
       end
 
       let(:logger) { double('Logger', debug: nil) }

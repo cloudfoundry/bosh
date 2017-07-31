@@ -1,12 +1,12 @@
 module Bosh::Director
   class JobUpdaterFactory
-    def initialize(logger, job_renderer)
+    def initialize(logger, template_blob_cache)
       @logger = logger
-      @job_renderer = job_renderer
+      @template_blob_cache = template_blob_cache
     end
 
     def new_job_updater(ip_provider, job)
-      JobUpdater.new(ip_provider, job, DiskManager.new(@logger), @job_renderer)
+      JobUpdater.new(ip_provider, job, DiskManager.new(@logger), @template_blob_cache)
     end
   end
 end

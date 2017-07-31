@@ -29,7 +29,7 @@ module Bosh::Director
         let(:compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
         let(:update_step) { instance_double(DeploymentPlan::Steps::UpdateStep) }
         let(:notifier) { instance_double(DeploymentPlan::Notifier) }
-        let(:job_renderer) { JobRenderer.create }
+        let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
         let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator) }
         let(:planner_factory) do
           instance_double(
@@ -45,7 +45,7 @@ module Bosh::Director
             instance_groups: [deployment_instance_group],
             instance_groups_starting_on_deploy: [deployment_instance_group],
             errand_instance_groups: [errand_instance_group],
-            job_renderer: job_renderer,
+            template_blob_cache: template_blob_cache,
             model: deployment_model
           )
         end
@@ -61,7 +61,6 @@ module Bosh::Director
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
-          allow(JobRenderer).to receive(:create).and_return(job_renderer)
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
           allow(planner).to receive(:variables).and_return(DeploymentPlan::Variables.new([]))
@@ -69,6 +68,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
           allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
+          allow(template_blob_cache).to receive(:clean_cache!)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
           allow(Bosh::Director::Models::RuntimeConfig).to receive(:find_by_ids).and_return([])
         end
@@ -79,7 +79,11 @@ module Bosh::Director
             allow(update_step).to receive(:perform).ordered
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
-            allow(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(
+              deployment_instance_group.unignored_instance_plans,
+              template_blob_cache,
+              anything,
+            )
             allow(notifier).to receive(:send_start_event)
             allow(notifier).to receive(:send_end_event).ordered
           end
@@ -112,7 +116,7 @@ module Bosh::Director
               allow(deployment_instance_group).to receive(:unignored_instance_plans).and_return(instance_plans)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
 
-              allow(job_renderer).to receive(:render_job_instances)
+              allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
               allow(instance_plan1).to receive(:instance).and_return(instance1)
               allow(instance_plan2).to receive(:instance).and_return(instance2)
             end
@@ -194,7 +198,7 @@ module Bosh::Director
             expect(compile_step).to receive(:perform).ordered
             expect(update_step).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
-            allow(job_renderer).to receive(:render_job_instances)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
@@ -204,13 +208,16 @@ module Bosh::Director
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
-            expect(job_renderer).to receive(:render_job_instances).with(deployment_instance_group.unignored_instance_plans)
+            expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+              deployment_instance_group.unignored_instance_plans,
+              template_blob_cache,
+              anything)
 
             job.perform
           end
 
           it 'should clean job blob cache at the end of the deploy' do
-            expect(job_renderer).to receive(:clean_cache!).ordered
+            expect(template_blob_cache).to receive(:clean_cache!)
 
             job.perform
           end
@@ -430,7 +437,7 @@ Unable to render instance groups for deployment. Errors are:
 
           before do
             allow(notifier).to receive(:send_start_event)
-            allow(job_renderer).to receive(:render_job_instances).and_raise(error_msgs)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).and_raise(error_msgs)
             allow(planner).to receive(:instance_models).and_return([])
             allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
@@ -514,7 +521,7 @@ Unable to render instance groups for deployment. Errors are:
           let(:options) { {'dry_run' => true} }
 
           before do
-            allow(job_renderer).to receive(:render_job_instances)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)

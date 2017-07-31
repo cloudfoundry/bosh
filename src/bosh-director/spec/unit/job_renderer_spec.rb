@@ -2,8 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { described_class.new(logger, caching_job_template_fetcher) }
-    let(:caching_job_template_fetcher) { Core::Templates::CachingJobTemplateFetcher.new }
     let(:instance_group) do
       instance_group = DeploymentPlan::InstanceGroup.new(logger)
       instance_group.name = 'test-instance-group'
@@ -11,6 +9,7 @@ module Bosh::Director
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:blobstore_files) { [] }
+    let(:cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
 
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
@@ -31,9 +30,9 @@ module Bosh::Director
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
     end
 
-    describe '#render_job_instances' do
+    describe '#render_job_instances_with_cache' do
       def perform
-        renderer.render_job_instances([instance_plan])
+        JobRenderer.render_job_instances_with_cache([instance_plan], cache, logger)
       end
 
       before do
@@ -105,18 +104,6 @@ module Bosh::Director
             expect(error.message).to eq(expected)
           }
         end
-      end
-    end
-
-    describe '#clean_cache!' do
-      it 'should clean up all downloaded blobs after rendering all instance plans' do
-        renderer.render_job_instances([instance_plan])
-
-        blobstore_files.each { |file| expect(File).to be_exist(file) }
-
-        renderer.clean_cache!
-
-        blobstore_files.each { |file| expect(File).to_not be_exist(file) }
       end
     end
   end

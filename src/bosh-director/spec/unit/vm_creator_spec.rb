@@ -5,14 +5,14 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-        logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
+        logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster
       ) }
 
       let(:disk_manager) { DiskManager.new(logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
-      let(:job_renderer) { instance_double(JobRenderer) }
+      let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:agent_client) do
         instance_double(
@@ -183,7 +183,7 @@ module Bosh
         Config.flush_arp = true
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         allow(job).to receive(:instance_plans).and_return([instance_plan])
-        allow(job_renderer).to receive(:render_job_instances).with([instance_plan])
+        allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, logger)
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
@@ -396,7 +396,7 @@ module Bosh
 
       it 'updates instance job templates with new IP' do
         allow(cloud).to receive(:create_vm)
-        expect(job_renderer).to receive(:render_job_instances).with([instance_plan])
+        expect(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, logger)
         expect(instance).to receive(:apply_initial_vm_state)
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

@@ -2,8 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobUpdater do
-    subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, job_renderer) }
-    let(:job_renderer) { JobRenderer.create }
+    subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
 
     let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
@@ -144,7 +144,7 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, job_renderer)
+                                                      .with(ip_provider, template_blob_cache)
                                                       .and_return(canary_updater, changed_updater, unchanged_updater)
         end
 
@@ -298,7 +298,7 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, job_renderer)
+                                                      .with(ip_provider, template_blob_cache)
                                                       .and_return(canary_updater, changed_updater)
         end
 

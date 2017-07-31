@@ -113,7 +113,7 @@ module Bosh::Director
               "/deployments/#{deployment_plan.name}"
             end
           ensure
-            deployment_plan.job_renderer.clean_cache!
+            deployment_plan.template_blob_cache.clean_cache!
           end
         end
       rescue Exception => e
@@ -193,12 +193,12 @@ module Bosh::Director
 
       def multi_job_updater(deployment_plan)
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.job_renderer))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache))
         end
       end
 
       def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
-        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
+        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
         unless errors.empty?
@@ -208,11 +208,15 @@ module Bosh::Director
         end
       end
 
-      def render_instance_groups_templates(instance_groups, job_renderer)
+      def render_instance_groups_templates(instance_groups, template_blob_cache)
         errors = []
         instance_groups.each do |instance_group|
           begin
-            job_renderer.render_job_instances(instance_group.unignored_instance_plans)
+            JobRenderer.render_job_instances_with_cache(
+              instance_group.unignored_instance_plans,
+              template_blob_cache,
+              logger,
+            )
           rescue Exception => e
             errors.push e
           end

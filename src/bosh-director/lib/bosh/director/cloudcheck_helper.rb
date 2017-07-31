@@ -65,69 +65,69 @@ module Bosh::Director
       delete_vm_from_cloud(instance_model)
 
       instance_plan_to_create = create_instance_plan(instance_model)
-      job_renderer = JobRenderer.create
-      vm_creator(job_renderer).create_for_instance_plan(
-        instance_plan_to_create,
-        Array(instance_model.managed_persistent_disk_cid),
-        instance_plan_to_create.tags,
-        true
-      )
 
-      powerdns_manager = PowerDnsManagerProvider.create
-      local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
-      dns_names_to_ip = {}
-
-      root_domain = Config.root_domain
-
-      apply_spec = instance_plan_to_create.existing_instance.spec
-      apply_spec['networks'].each do |network_name, network|
-        index_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
-          instance_model.index,
-          instance_model.job,
-          network_name,
-          instance_model.deployment.name,
-          root_domain,
-        )
-        dns_names_to_ip[index_dns_name] = network['ip']
-
-        id_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
-          instance_model.uuid,
-          instance_model.job,
-          network_name,
-          instance_model.deployment.name,
-          root_domain,
-        )
-        dns_names_to_ip[id_dns_name] = network['ip']
-      end
-
-      @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
-      powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
-      local_dns_manager.update_dns_record_for_instance(instance_model)
-
-      powerdns_manager.flush_dns_cache
-
-      cloud_check_procedure = lambda do
-        blobstore_client = App.instance.blobstores.blobstore
-
-        cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
-        templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
-
-        templates_persister.persist(instance_plan_to_create)
-
-        # for backwards compatibility with instances that don't have update config
-        update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
-
-        InstanceUpdater::StateApplier.new(
+      Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
+        vm_creator(template_cache).create_for_instance_plan(
           instance_plan_to_create,
-          agent_client(instance_model.credentials, instance_model.agent_id),
-          cleaner,
-          @logger,
-          {}
-        ).apply(update_config, run_post_start)
+          Array(instance_model.managed_persistent_disk_cid),
+          instance_plan_to_create.tags,
+          true
+        )
+
+        powerdns_manager = PowerDnsManagerProvider.create
+        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
+        dns_names_to_ip = {}
+
+        root_domain = Config.root_domain
+
+        apply_spec = instance_plan_to_create.existing_instance.spec
+        apply_spec['networks'].each do |network_name, network|
+          index_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
+            instance_model.index,
+            instance_model.job,
+            network_name,
+            instance_model.deployment.name,
+            root_domain,
+          )
+          dns_names_to_ip[index_dns_name] = network['ip']
+
+          id_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
+            instance_model.uuid,
+            instance_model.job,
+            network_name,
+            instance_model.deployment.name,
+            root_domain,
+          )
+          dns_names_to_ip[id_dns_name] = network['ip']
+        end
+
+        @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
+        powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
+        local_dns_manager.update_dns_record_for_instance(instance_model)
+
+        powerdns_manager.flush_dns_cache
+
+        cloud_check_procedure = lambda do
+          blobstore_client = App.instance.blobstores.blobstore
+
+          cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
+          templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
+
+          templates_persister.persist(instance_plan_to_create)
+
+          # for backwards compatibility with instances that don't have update config
+          update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
+
+          InstanceUpdater::StateApplier.new(
+            instance_plan_to_create,
+            agent_client(instance_model.credentials, instance_model.agent_id),
+            cleaner,
+            @logger,
+            {}
+          ).apply(update_config, run_post_start)
+        end
+        InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
       end
-      InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
-    ensure
-      job_renderer.clean_cache! if job_renderer
     end
 
     private
@@ -191,10 +191,10 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
-    def vm_creator(job_renderer)
+    def vm_creator(template_cache)
       disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
-      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, template_cache, agent_broadcaster)
     end
 
     def validate_spec(spec)

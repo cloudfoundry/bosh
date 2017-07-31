@@ -8,7 +8,7 @@ module Bosh::Director
         agent_broadcaster = AgentBroadcaster.new
         powerdns_manager = PowerDnsManagerProvider.create
         vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, deployment_plan.job_renderer, agent_broadcaster)
+        vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, deployment_plan.template_blob_cache, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(deployment_plan.ip_provider, powerdns_manager, disk_manager)
         instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
 

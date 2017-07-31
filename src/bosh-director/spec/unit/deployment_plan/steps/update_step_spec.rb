@@ -17,10 +17,11 @@ module Bosh::Director
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
       let(:cleanup_stemcell_reference) { instance_double('Bosh::Director::DeploymentPlan::Steps::CleanupStemcellReferencesStep') }
       let(:persist_deployment) { instance_double('Bosh::Director::DeploymentPlan::Steps::PersistDeploymentStep') }
+      let(:template_blob_cache) { instance_double'Bosh::Director::Core::Templates::TemplateBlobCache' }
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          job_renderer: JobRenderer.create,
+          template_blob_cache: template_blob_cache,
         )
       end
 
