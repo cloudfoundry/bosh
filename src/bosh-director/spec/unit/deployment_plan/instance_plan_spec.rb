@@ -685,18 +685,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#addressable_network_name' do
-      let(:network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
-      before do
-        allow(network_settings).to receive(:addressable_network_name).and_return('net_public')
-        allow(NetworkSettings).to receive(:new).and_return(network_settings)
-      end
-
-      it 'fetches appropriate network name' do
-        expect(instance_plan.addressable_network_name).to eq('net_public')
-      end
-    end
-
     describe '#root_domain' do
       it 'fetches root domain' do
         expect(instance_plan.root_domain).to eq('bosh')

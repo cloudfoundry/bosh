@@ -236,10 +236,6 @@ module Bosh
           network_settings.network_addresses(prefer_dns_entry)
         end
 
-        def addressable_network_name
-          network_settings.addressable_network_name
-        end
-
         def root_domain
           @powerdns_manager.root_domain
         end

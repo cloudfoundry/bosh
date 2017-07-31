@@ -61,7 +61,7 @@ module Bosh::Director
             expect(needed_instance_plan).to receive(:network_address).and_return('10.0.0.1')
           end
 
-          it 'returns correct spec structure' do
+          it 'returns correct spec structure, with network name' do
             allow(needed_instance_plan).to receive(:root_domain).and_return('smurf.tld')
             expect(job).to receive(:provides_link_info).with(source_instance_group_name, link_name).and_return(smurf_link_info)
             expect(source_instance_group).to receive(:default_network_name).and_return('network1')
