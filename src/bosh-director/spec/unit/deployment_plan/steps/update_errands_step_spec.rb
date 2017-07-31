@@ -10,7 +10,9 @@ module Bosh::Director
       let(:event_log) { Config.event_log }
 
       let(:errand_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-      let(:errand_instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: errand_instance) }
+      let(:lifecycle) { 'errand' }
+      let(:instance_model) { instance_double('Bosh::Director::Models::Instance', lifecycle: lifecycle) }
+      let(:errand_instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: errand_instance, instance_model: instance_model) }
       let(:errand_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', unignored_instance_plans: [errand_instance_plan]) }
 
       let(:ignored_errand_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
@@ -27,7 +29,7 @@ module Bosh::Director
         )
       end
 
-      let(:obsolete_instance_plans) { [ instance_double('Bosh::Director::DeploymentPlan::InstancePlan')]}
+      let(:obsolete_instance_plans) { [ instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance_model: instance_model)]}
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
 
       before do

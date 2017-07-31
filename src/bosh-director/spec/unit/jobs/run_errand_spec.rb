@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::RunErrand do
-    subject(:job) { described_class.new('fake-dep-name', errand_name, keep_alive, when_changed) }
+    subject(:job) { described_class.new('fake-dep-name', errand_name, keep_alive, when_changed, instances) }
 
     let(:keep_alive) { false }
     let(:when_changed) { false }
@@ -10,6 +10,7 @@ module Bosh::Director
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:thread_pool) { double(Bosh::ThreadPool) }
+    let(:instances) { [] }
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
