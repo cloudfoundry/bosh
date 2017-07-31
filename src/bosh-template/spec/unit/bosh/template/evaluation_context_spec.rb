@@ -29,14 +29,14 @@ module Bosh
               'instance_group' => 'fake-instance-group-1',
               'default_network' => 'default',
               'domain' => 'otherbosh',
-              'instances' => [{'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]
+              'instances' => [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}]
             },
             'fake-link-2' => {
               'deployment_name' => 'fake-deployment',
               'instance_group' => 'fake-instance-group-2',
               'default_network' => 'default',
               'domain' => 'otherbosh',
-              'instances' => [{'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]
+              'instances' => [{'address' => '123.456.789.102', 'properties' => {'prop2' => 'value'}}]
             }
           },
           'networks' => {
