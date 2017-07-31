@@ -153,7 +153,7 @@ module Bosh::Director
           end
 
           network_name = @preferred_network_name || link_spec_copy['default_network']
-          link_spec['default_network'] = network_name
+          link_spec_copy['default_network'] = network_name
 
           link_spec_copy['instances'].each do |instance|
             if use_dns_entries

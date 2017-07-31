@@ -976,7 +976,7 @@ module Bosh::Director
 
             let(:expected_spec) do
               {
-                'default_network' => 'net-2',
+                'default_network' => 'net-3',
                 'instances' => [
                   {
                     'address' => 'dns-net-3-addr',
