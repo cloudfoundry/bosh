@@ -10,6 +10,8 @@ module Bosh
         ERB.new(erb).result(context.get_binding)
       end
 
+      let(:dns_encoder) { double('some dns encoder', encode_query: 'some.fqdn') }
+
       before do
         @spec = {
           'job' => {
@@ -22,8 +24,20 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
-            'fake-link-2' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
+            'fake-link-1' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-1',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'instances' => [{'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]
+            },
+            'fake-link-2' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-2',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'instances' => [{'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]
+            }
           },
           'networks' => {
             'network1' => {
@@ -42,7 +56,7 @@ module Bosh
           'resource_pool' => 'a'
         }
 
-        @context = EvaluationContext.new(@spec)
+        @context = EvaluationContext.new(@spec, dns_encoder)
       end
 
       it 'unrolls properties into OpenStruct' do
@@ -85,6 +99,10 @@ module Bosh
       it 'evaluates link properties' do
         expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
         expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
+      end
+
+      it 'evaluates link addresses using the given dns encoder' do
+        expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
       end
 
       it 'should throw a nice error when a link cannot be found' do
