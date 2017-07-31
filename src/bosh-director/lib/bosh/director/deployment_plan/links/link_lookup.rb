@@ -16,8 +16,6 @@ module Bosh::Director
       end
     end
 
-    private
-
     class BaseLinkLookup
       include IpUtil
 
@@ -83,6 +81,7 @@ module Bosh::Director
         end
 
         network_name = @preferred_network_name || link_spec['default_network']
+        link_spec['default_network'] = network_name
 
         link_spec['instances'].each do |instance|
           if use_dns_address
@@ -154,6 +153,7 @@ module Bosh::Director
           end
 
           network_name = @preferred_network_name || link_spec_copy['default_network']
+          link_spec['default_network'] = network_name
 
           link_spec_copy['instances'].each do |instance|
             if use_dns_entries

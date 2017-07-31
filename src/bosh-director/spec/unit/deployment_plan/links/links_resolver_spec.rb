@@ -419,7 +419,7 @@ Unable to process links for deployment. Errors are:
             anything,
             anything,
             anything,
-            {:preferred_network_name => 'fake-dynamic-network', :global_use_dns_entry => false, :link_use_ip_address => nil}
+            {:preferred_network_name => 'fake-dynamic-network', :global_use_dns_entry => false, :link_use_ip_address => true}
           ).and_return(link_lookup)
 
           links_resolver.resolve(api_server_instance_group)

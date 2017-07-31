@@ -318,6 +318,16 @@ module Bosh::Director
                     :link_use_ip_address => false
                   }
                 end
+                let(:expected_link_spec) {{
+                  'default_network' => 'net-2',
+                  'instances' => [
+                    {
+                      'name' => 'instance-1',
+                      'id' => 'instance-1-guid',
+                      'address' => expected_address
+                    }
+                  ]
+                }}
                 let(:expected_address) { 'dns-record-net-2' }
 
                 it 'sets spec.address to the corresponding value from chosen network' do
@@ -418,12 +428,13 @@ module Bosh::Director
               context 'when preferred network is set' do
                 let(:link_network_options) do
                   {
-                    :preferred_network_name => 'net-2',
+                    :preferred_network_name => network_name,
                     :global_use_dns_entry => global_use_dns_entry,
                     :link_use_ip_address => false
                   }
                 end
                 let(:expected_address) { 'dns-record-net-2' }
+                let(:network_name) { 'net-2' }
 
                 it 'sets spec.address to the corresponding value from chosen network' do
                   look_up = PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network_options)

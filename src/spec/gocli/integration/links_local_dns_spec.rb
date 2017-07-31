@@ -73,7 +73,6 @@ describe 'Links with local_dns enabled', type: :integration do
     end
 
     context 'when job requires link' do
-
       context 'when link is provided' do
         context 'when network is manual' do
           it 'outputs dns address when accessing instance.address of the link' do
@@ -173,6 +172,18 @@ describe 'Links with local_dns enabled', type: :integration do
 
               expect(task_event_logs).to match("\"type\":\"warning\",\"message\":\"IP address not available for the link provider instance: mysql/#{mysql_instance.id}\"")
             end
+          end
+        end
+
+        context 'using link.address helper' do
+          let(:rendered_template) do
+            api_instance = director.find_instance(director.instances, 'my_api', '0')
+            YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+          end
+
+          it 'returns a query string for az and healthiness' do
+            deploy_simple_manifest(manifest_hash: manifest)
+            expect(rendered_template['i_eat_links']['address']).to eq('q-a1s0.mysql.manual-network.simple.bosh')
           end
         end
       end
@@ -489,9 +500,6 @@ describe 'Links with local_dns enabled', type: :integration do
           instances = director.instances(deployment_name: 'consumer_deployment')
           api_instance = director.find_instance(instances, 'my_api', '0')
           template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
-
-          provider_instances = director.instances(deployment_name: 'provider_deployment')
-          mysql_instance = director.find_instance(provider_instances, 'mysql', '0')
 
           addresses = template['databases']['backup'].map do |elem|
             elem['address']
