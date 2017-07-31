@@ -75,60 +75,119 @@ module Bosh::Director::DeploymentPlan
 
       context 'manual network' do
         describe '#network_address' do
+          let(:prefer_dns_addresses) { true }
           it 'returns the ip address for manual networks on the instance' do
-            expect(network_settings.network_address).to eq('10.0.0.6')
+            expect(network_settings.network_address(prefer_dns_addresses)).to eq('10.0.0.6')
           end
         end
       end
     end
 
     describe '#network_address' do
-      context 'when it is a manual network' do
-        context 'and local dns is disabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+      context 'when prefer_dns_entry is set to true' do
+        let (:prefer_dns_entry) {true}
+
+        context 'when it is a manual network' do
+          context 'and local dns is disabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+            end
+
+            it 'returns the ip address for the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('10.0.0.6')
+            end
           end
 
-          it 'returns the ip address for the instance' do
-            expect(network_settings.network_address).to eq('10.0.0.6')
+          context 'when local dns is enabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+            end
+
+            it 'returns the dns record for that network' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
           end
         end
 
-        context 'when local dns is enabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+        context 'when it is a dynamic network' do
+          let(:dynamic_network) do
+            subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
+            DynamicNetwork.new('net_a', subnets, logger)
+          end
+          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
+
+          context 'when local dns is disabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+            end
+
+            it 'returns the dns record name of the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
           end
 
-          it 'returns the dns record for that network' do
-            expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+          context 'when local dns is enabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+            end
+
+            it 'returns the dns record name of the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
           end
         end
       end
 
-      context 'when it is a dynamic network' do
-        let(:dynamic_network) do
-          subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-          DynamicNetwork.new('net_a', subnets, logger)
+      context 'when prefer_dns_entry is set to false' do
+        let (:prefer_dns_entry) {false}
+
+        context 'when it is a manual network' do
+          context 'and local dns is disabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+            end
+
+            it 'returns the ip address for the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('10.0.0.6')
+            end
+          end
+
+          context 'when local dns is enabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+            end
+
+            it 'returns the ip address for the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('10.0.0.6')
+            end
+          end
         end
-        let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
 
-        context 'when local dns is disabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+        context 'when it is a dynamic network' do
+          let(:dynamic_network) do
+            subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
+            DynamicNetwork.new('net_a', subnets, logger)
+          end
+          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
+
+          context 'when local dns is disabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
+            end
+
+            it 'returns the dns record name of the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
           end
 
-          it 'returns the dns record name of the instance' do
-            expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
-          end
-        end
+          context 'when local dns is enabled' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+            end
 
-        context 'when local dns is enabled' do
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
-          end
-
-          it 'returns the dns record name of the instance' do
-            expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            it 'returns the dns record name of the instance' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
           end
         end
       end

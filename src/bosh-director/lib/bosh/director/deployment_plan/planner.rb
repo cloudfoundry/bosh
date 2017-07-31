@@ -267,6 +267,10 @@ module Bosh::Director
       def set_features(features_obj)
         @features = features_obj
       end
+
+      def use_dns_addresses?
+        @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
     end
   end
 end

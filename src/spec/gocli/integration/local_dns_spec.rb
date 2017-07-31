@@ -172,6 +172,111 @@ describe 'local DNS', type: :integration do
     end
   end
 
+  context 'spec.address should respect use_dns_addresses director and deployment level flag (manual networks only)' do
+    it 'uses an IP address by default (use_dns_addresses director flag is false by default)' do
+      dep_manifest = initial_manifest(1, 1)
+      deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+      instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+      template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('spec.address=192.168.1.2')
+    end
+
+    context 'when flag at deployment level is true' do
+      it 'uses DNS address' do
+        dep_manifest = initial_manifest(1, 1)
+        dep_manifest['features'] = {'use_dns_addresses' => true}
+        deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+        instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+        template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include("spec.address=#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh")
+      end
+
+      context 'when instance is recreated' do
+        before do
+          dep_manifest = initial_manifest(1, 1)
+          dep_manifest['features'] = {'use_dns_addresses' => true}
+          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+          bosh_runner.run('recreate job_to_test_local_dns/0', deployment_name: deployment_name)
+        end
+
+        it 'renders with the same value' do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include("spec.address=#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh")
+        end
+      end
+
+      context 'when resurrected', hm: true do
+        with_reset_hm_before_each
+
+        before do
+          dep_manifest = initial_manifest(1, 1)
+          dep_manifest['features'] = {'use_dns_addresses' => true}
+          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+          vm = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          director.kill_vm_and_wait_for_resurrection(vm, deployment_name: deployment_name)
+        end
+
+        it 'renders with the same value' do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include("spec.address=#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh")
+        end
+      end
+    end
+
+    context 'when flag at deployment level is false' do
+      it 'uses an IP address by default' do
+        dep_manifest = initial_manifest(1, 1)
+        dep_manifest['features'] = {'use_dns_addresses' => false}
+        deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+        instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+        template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+        expect(template).to include('spec.address=192.168.1.2')
+      end
+
+      context 'when instance is recreated' do
+        before do
+          dep_manifest = initial_manifest(1, 1)
+          dep_manifest['features'] = {'use_dns_addresses' => false}
+          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+          bosh_runner.run('recreate job_to_test_local_dns/0', deployment_name: deployment_name)
+        end
+
+        it 'renders with the same value' do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.address=192.168.1.2')
+        end
+      end
+
+      context 'when resurrected', hm: true do
+        with_reset_hm_before_each
+
+        before do
+          dep_manifest = initial_manifest(1, 1)
+          dep_manifest['features'] = {'use_dns_addresses' => false}
+          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+
+          vm = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          director.kill_vm_and_wait_for_resurrection(vm, deployment_name: deployment_name)
+        end
+
+        it 'renders with the same value' do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.address=192.168.1.2')
+        end
+      end
+    end
+  end
+
   def initial_manifest(number_of_instances, max_in_flight)
     manifest_deployment = Bosh::Spec::Deployments.test_release_manifest
     manifest_deployment.merge!(

@@ -9,6 +9,7 @@ module Bosh
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
           @network_reservation_repository = network_reservation_repository
+          @use_dns_addresses = options.fetch('use_dns_addresses', false)
           @tags = options.fetch('tags', {})
         end
 
@@ -20,7 +21,8 @@ module Bosh
             existing_instance: existing_instance_model,
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(existing_instance_model.job),
-            recreate_deployment: @recreate_deployment
+            recreate_deployment: @recreate_deployment,
+            use_dns_addresses: @use_dns_addresses
           )
         end
 
@@ -38,6 +40,7 @@ module Bosh
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            use_dns_addresses: @use_dns_addresses,
             tags: @tags,
           )
         end
@@ -52,6 +55,7 @@ module Bosh
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            use_dns_addresses: @use_dns_addresses,
             tags: @tags,
           )
         end

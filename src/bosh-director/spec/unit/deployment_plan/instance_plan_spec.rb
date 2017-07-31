@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, tags: tags) }
+    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, use_dns_addresses: use_dns_addresses, logger: logger, tags: tags) }
 
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
 
@@ -30,6 +30,7 @@ module Bosh::Director::DeploymentPlan
       }
     end
 
+    let(:use_dns_addresses) { false }
     let(:tags) do
       {'key1' => 'value1'}
     end
@@ -654,6 +655,33 @@ module Bosh::Director::DeploymentPlan
           }
         }
         )
+      end
+    end
+
+    describe '#network_address' do
+      let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+      let(:network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
+
+      before do
+        allow(instance_plan).to receive(:network_settings).and_return(network_settings)
+      end
+
+      context 'when use_dns_addresses is FALSE' do
+        let(:use_dns_addresses) { false }
+
+        it 'calls it with correct value' do
+          expect(network_settings).to receive(:network_address).with(use_dns_addresses)
+          instance_plan.network_address
+        end
+      end
+
+      context 'when use_dns_addresses is TRUE' do
+        let(:use_dns_addresses) { true }
+
+        it 'calls it with correct value' do
+          expect(network_settings).to receive(:network_address).with(use_dns_addresses)
+          instance_plan.network_address
+        end
       end
     end
 

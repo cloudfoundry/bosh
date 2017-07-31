@@ -34,7 +34,7 @@ module Bosh::Director
           'properties_need_filtering' => true,
           'dns_domain_name' => powerdns_manager.root_domain,
           'links' => instance_group.resolved_links,
-          'address' => instance_plan.network_settings.network_address,
+          'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }
 

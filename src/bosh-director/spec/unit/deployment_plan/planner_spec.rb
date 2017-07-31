@@ -286,6 +286,84 @@ module Bosh::Director
             expect(subject.errand_instance_groups).to match_array([instance_group_2, instance_group_3])
           end
         end
+
+        describe '#use_dns_addresses?' do
+          context 'when director use_dns_addresses flag is TRUE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
+            end
+
+            context 'when deployment use_dns_addresses is defined' do
+              context 'when deployment use_dns_addresses is TRUE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(true))
+                end
+
+                it 'returns TRUE' do
+                  expect(subject.use_dns_addresses?).to eq(true)
+                end
+              end
+
+              context 'when deployment use_dns_addresses is FALSE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(false))
+                end
+
+                it 'returns FALSE' do
+                  expect(subject.use_dns_addresses?).to eq(false)
+                end
+              end
+            end
+
+            context 'when deployment use_dns_addresses is NOT defined' do
+              before do
+                subject.set_features(DeploymentFeatures.new)
+              end
+
+              it 'returns TRUE' do
+                expect(subject.use_dns_addresses?).to eq(true)
+              end
+            end
+          end
+
+          context 'when director use_dns_addresses flag is FALSE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
+            end
+
+            context 'when deployment use_dns_addresses is defined' do
+              context 'when deployment use_dns_addresses is TRUE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(true))
+                end
+
+                it 'returns TRUE' do
+                  expect(subject.use_dns_addresses?).to eq(true)
+                end
+              end
+
+              context 'when deployment use_dns_addresses is FALSE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(false))
+                end
+
+                it 'returns FALSE' do
+                  expect(subject.use_dns_addresses?).to eq(false)
+                end
+              end
+            end
+
+            context 'when deployment use_dns_addresses is NOT defined' do
+              before do
+                subject.set_features(DeploymentFeatures.new)
+              end
+
+              it 'returns FALSE' do
+                expect(subject.use_dns_addresses?).to eq(false)
+              end
+            end
+          end
+        end
       end
     end
   end
