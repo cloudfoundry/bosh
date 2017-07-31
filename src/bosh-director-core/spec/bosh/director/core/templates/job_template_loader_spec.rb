@@ -68,7 +68,10 @@ end
 module Bosh::Director::Core::Templates
   describe JobTemplateLoader do
     describe '#process' do
-      subject(:job_template_loader) { JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new) }
+      subject(:job_template_loader) do
+        JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new, dns_encoder)
+      end
+
       let(:logger) { double('Logger', debug: nil) }
       let(:dns_encoder) { double('fake dns encoder') }
 
@@ -88,29 +91,68 @@ module Bosh::Director::Core::Templates
           blobstore_id: 'blob-id'
         )
 
+        monit_erb = instance_double(SourceErb)
+        job_template_erb = instance_double(SourceErb)
+        fake_renderer = instance_double(JobTemplateRenderer)
+
+        expect(SourceErb).to receive(:new).with(
+          'monit',
+          'monit',
+          'monit file erb contents',
+          'plan-job-name',
+        ).and_return(monit_erb)
+
+        expect(SourceErb).to receive(:new).with(
+          'test',
+          'test_dst',
+          'test contents',
+          'plan-job-name'
+        ).and_return(job_template_erb)
+
+        expect(JobTemplateRenderer).to receive(:new).with(
+          'plan-job-name',
+          'release-job-name',
+          monit_erb,
+          [job_template_erb],
+          logger,
+          dns_encoder
+        ).and_return fake_renderer
+
         generated_renderer = job_template_loader.process(job)
-
-        expect(generated_renderer.monit_erb.erb.filename).to eq('plan-job-name/monit')
-        expect(generated_renderer.monit_erb.erb.src).to eq ERB.new('monit file erb contents').src
-
-        source_erb = generated_renderer.source_erbs.first
-        expect(source_erb.src_name).to eq('test')
-        expect(source_erb.dest_name).to eq('test_dst')
-        expect(source_erb.erb.filename).to eq('plan-job-name/test')
-        expect(source_erb.erb.src).to eq ERB.new('test contents').src
+        expect(generated_renderer).to eq(fake_renderer)
       end
 
-      it 'returns only monit erb object when no other templates exist' do
-        tarball_path = create_job_tarball('foo-release-job', 'monit file erb contents', {})
+      it 'includes only monit erb object when no other templates exist' do
+        tarball_path = create_job_tarball('release-job-no-templates', 'monit file erb contents', {})
 
-        job = double('Bosh::Director::DeploymentPlan::Job', download_blob: tarball_path, name: 'plan-job-name', blobstore_id: 'blob-id')
+        job = double(
+          'Bosh::Director::DeploymentPlan::Job',
+          download_blob: tarball_path,
+          name: 'plan-job-name',
+          blobstore_id: 'blob-id'
+        )
+
+        monit_erb = instance_double(SourceErb)
+        fake_renderer = instance_double(JobTemplateRenderer)
+
+        expect(SourceErb).to receive(:new).once.with(
+          'monit',
+          'monit',
+          'monit file erb contents',
+          'plan-job-name',
+        ).and_return(monit_erb)
+
+        expect(JobTemplateRenderer).to receive(:new).with(
+          'plan-job-name',
+          'release-job-no-templates',
+          monit_erb,
+          [],
+          logger,
+          dns_encoder
+        ).and_return fake_renderer
 
         generated_renderer = job_template_loader.process(job)
-
-        expect(generated_renderer.monit_erb.erb.filename).to eq('plan-job-name/monit')
-        expect(generated_renderer.monit_erb.erb.src).to eq ERB.new('monit file erb contents').src
-
-        expect(generated_renderer.source_erbs).to eq([])
+        expect(generated_renderer).to eq(fake_renderer)
       end
     end
   end

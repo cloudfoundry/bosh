@@ -10,12 +10,13 @@ module Bosh::Director::Core::Templates
 
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(name, template_name, monit_erb, source_erbs, logger)
+    def initialize(name, template_name, monit_erb, source_erbs, logger, dns_encoder = nil)
       @name = name
       @template_name = template_name
       @monit_erb = monit_erb
       @source_erbs = source_erbs
       @logger = logger
+      @dns_encoder = dns_encoder
     end
 
     def render(spec)
@@ -25,13 +26,13 @@ module Bosh::Director::Core::Templates
 
       spec = namespace_links_to_current_job(spec)
 
-      template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
+      template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
-        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
+        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
 
         begin
           file_contents = source_erb.render(template_context, @logger)

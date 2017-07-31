@@ -31,9 +31,10 @@ module Bosh::Director::Core::Templates
         }
       end
       let(:logger) { instance_double('Logger', debug: nil) }
+      let(:dns_encoder) { double('some DNS encoder')}
 
       subject(:job_template_renderer) do
-        JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb], logger)
+        JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb], logger, dns_encoder)
       end
 
       context 'when templates do not contain local properties' do
@@ -104,13 +105,14 @@ module Bosh::Director::Core::Templates
                       'smurfs' => {'name'=>'snoopy'}
                   },
                   'properties_need_filtering' => true,
-              }
+              },
+              dns_encoder
           ).at_least(2).times
         end
 
         context 'rendering templates returns errors' do
           let(:job_template_renderer) do
-            JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb, source_erb], logger)
+            JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb, source_erb], logger, dns_encoder)
           end
 
           before do
@@ -173,10 +175,9 @@ module Bosh::Director::Core::Templates
           job_template_renderer.render(raw_spec)
         end
         it 'should have EvaluationContext called with correct spec' do
-          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec).at_least(2).times
+          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).at_least(2).times
         end
       end
-
     end
   end
 end
