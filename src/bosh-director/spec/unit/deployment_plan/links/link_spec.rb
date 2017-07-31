@@ -78,7 +78,7 @@ module Bosh::Director
               'domain' => 'smurf.tld',
               'default_network' => 'smurf_network',
               'networks' => ['private_network_name', 'smurf_network'],
-              'source_instance_group' => 'my_source_instance_group_name',
+              'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
               'instances' => [
                 {
@@ -109,7 +109,7 @@ module Bosh::Director
               'domain' => 'bosh',
               'default_network' => 'smurf_network',
               'networks' => ['private_network_name', 'smurf_network'],
-              'source_instance_group' => 'my_source_instance_group_name',
+              'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
               'instances' => []
             })

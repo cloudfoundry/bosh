@@ -34,7 +34,7 @@ module Bosh::Director
           'domain' => root_domain,
           'default_network' => network,
           'networks' => @source_instance_group.networks.map { |network| network.name },
-          'source_instance_group' => @source_instance_group.name,
+          'instance_group' => @source_instance_group.name,
           'properties' => @job.provides_link_info(@source_instance_group.name, @name)['mapped_properties'],
           'instances' => @source_instance_group.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance

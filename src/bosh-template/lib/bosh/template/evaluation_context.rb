@@ -94,14 +94,6 @@ module Bosh
       end
 
       def link(name)
-        # the spec passed into initialize is a DeploymentPlan::InstanceSpec
-        #
-        # dns root tld is available as spec['dns_domain_name']
-        # source instance group is available as result['source_instance_group']
-        # deployment name is available as result['deployment_name']
-        # network is available as link_spec['network']
-        # az is available as link_spec['az']
-
         link_spec = lookup_property(@links, name)
         raise UnknownLink.new(name) if link_spec.nil?
 
