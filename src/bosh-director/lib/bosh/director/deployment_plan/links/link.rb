@@ -11,11 +11,19 @@ module Bosh::Director
       end
 
       def spec
+        instance_plan = @source_instance_group.needed_instance_plans.first
+        if instance_plan
+          root_domain = instance_plan.root_domain
+        else
+          root_domain = Bosh::Director::Config.root_domain
+        end
+
         {
           'deployment_name' => @provider_deployment_name,
+          'domain' => root_domain,
+          'default_network' => @source_instance_group.default_network_name,
           'networks' => @source_instance_group.networks.map { |network| network.name },
           'properties' => @job.provides_link_info(@source_instance_group.name, @name)['mapped_properties'],
-          'default_network' => @source_instance_group.default_network_name,
           'instances' => @source_instance_group.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone

@@ -164,11 +164,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           spec = {
             'deployment_name' => api_server_instance_group.deployment_name,
+            'domain' => 'bosh',
+            'default_network' => 'fake-manual-network',
+            'source_instance_group' => 'mysql',
             "networks" => ["fake-manual-network", "fake-dynamic-network"],
             "properties" => {"mysql" => nil},
             "instances" => [
               {
-                "name" => "mysql",
                 "index" => 0,
                 "bootstrap" => true,
                 "id" => instance1.uuid,
@@ -176,7 +178,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 "address" => "127.0.0.3",
               },
               {
-                "name" => "mysql",
                 "index" => 1,
                 "bootstrap" => false,
                 "id" => instance2.uuid,
@@ -357,11 +358,13 @@ Unable to process links for deployment. Errors are:
 
         link_spec = {
           'deployment_name' => api_server_instance_group.deployment_name,
+          'domain' => 'bosh',
+          'default_network' => 'fake-manual-network',
+          'source_instance_group' => 'mysql',
           'networks' => ['fake-manual-network', 'fake-dynamic-network'],
           "properties" => {"mysql" => nil},
           'instances' => [
             {
-              'name' => 'mysql',
               'index' => 0,
               "bootstrap" => true,
               'id' => instance1.uuid,
@@ -369,7 +372,6 @@ Unable to process links for deployment. Errors are:
               'address' => '127.0.0.3',
             },
             {
-              'name' => 'mysql',
               'index' => 1,
               "bootstrap" => false,
               'id' => instance2.uuid,
@@ -392,6 +394,8 @@ Unable to process links for deployment. Errors are:
         links_resolver.resolve(api_server_instance_group)
         link_spec = api_server_instance_group.resolved_links['api-server-template']['db']
         expect(link_spec['instances'].first['name']).to eq('mysql')
+        expect(link_spec['deployment_name']).to eq(api_server_instance_group.deployment_name)
+        expect(link_spec['source_instance_group']).to eq('mysql')
       end
     end
 
@@ -741,11 +745,13 @@ Unable to process links for deployment. Errors are:
 
         link_spec = {
           'deployment_name' => api_server_instance_group.deployment_name,
+          'domain' => 'bosh',
+          'default_network' => 'fake-manual-network',
+          'source_instance_group' => 'mysql',
           'networks' => ['fake-manual-network', 'fake-dynamic-network'],
           "properties" => {"mysql" => nil},
           'instances' => [
             {
-              'name' => 'mysql',
               'index' => 0,
               "bootstrap" => true,
               'id' => instance1.uuid,
@@ -753,7 +759,6 @@ Unable to process links for deployment. Errors are:
               'address' => '127.0.0.3',
             },
             {
-              'name' => 'mysql',
               'index' => 1,
               "bootstrap" => false,
               'id' => instance2.uuid,
