@@ -45,7 +45,7 @@ def write_tar(configuration_files, manifest, monit, options)
   io
 end
 
-def create_job(name, monit, configuration_files, options = {})
+def create_job_tarball(name, monit, configuration_files, options = {})
   manifest = {
     'name' => name,
     'templates' => {},
@@ -57,8 +57,12 @@ def create_job(name, monit, configuration_files, options = {})
   end
 
   io = write_tar(configuration_files, manifest, monit, options)
+  ball = gzip(io.string)
 
-  gzip(io.string)
+  tmp_file = Tempfile.new('blob')
+  File.open(tmp_file.path, 'w') { |f| f.write(ball) }
+
+  tmp_file.path
 end
 
 module Bosh::Director::Core::Templates
@@ -66,43 +70,47 @@ module Bosh::Director::Core::Templates
     describe '#process' do
       subject(:job_template_loader) { JobTemplateLoader.new(logger, CachingJobTemplateFetcher.new) }
       let(:logger) { double('Logger', debug: nil) }
+      let(:dns_encoder) { double('fake dns encoder') }
 
       it 'returns the jobs template erb objects' do
-        template_contents = create_job('foo', 'monit file',
-                                       { 'test' => {
-                                         'destination' => 'test_dst',
-                                         'contents' => 'test contents' }
-                                       })
+        tarball_path = create_job_tarball(
+          'release-job-name',
+          'monit file erb contents',
+          { 'test' => {
+            'destination' => 'test_dst',
+            'contents' => 'test contents' }
+          }
+        )
 
-        tmp_file = Tempfile.new('blob')
-        File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
+        job = double('Bosh::Director::DeploymentPlan::Job',
+          download_blob: tarball_path,
+          name: 'plan-job-name',
+          blobstore_id: 'blob-id'
+        )
 
-        container = job_template_loader.process(job_template)
+        generated_renderer = job_template_loader.process(job)
 
-        expect(container.monit_erb.erb.filename).to eq('foo/monit')
-        expect(container.monit_erb.erb.src).to eq ERB.new('monit file').src
+        expect(generated_renderer.monit_erb.erb.filename).to eq('plan-job-name/monit')
+        expect(generated_renderer.monit_erb.erb.src).to eq ERB.new('monit file erb contents').src
 
-        source_erb = container.source_erbs.first
+        source_erb = generated_renderer.source_erbs.first
         expect(source_erb.src_name).to eq('test')
         expect(source_erb.dest_name).to eq('test_dst')
-        expect(source_erb.erb.filename).to eq('foo/test')
+        expect(source_erb.erb.filename).to eq('plan-job-name/test')
         expect(source_erb.erb.src).to eq ERB.new('test contents').src
       end
 
       it 'returns only monit erb object when no other templates exist' do
-        template_contents = create_job('foo', 'monit file', {})
+        tarball_path = create_job_tarball('foo-release-job', 'monit file erb contents', {})
 
-        tmp_file = Tempfile.new('blob')
-        File.open(tmp_file.path, 'w') { |f| f.write(template_contents) }
-        job_template = double('Bosh::Director::DeploymentPlan::Job', download_blob: tmp_file.path, name: 'foo', blobstore_id: 'blob-id')
+        job = double('Bosh::Director::DeploymentPlan::Job', download_blob: tarball_path, name: 'plan-job-name', blobstore_id: 'blob-id')
 
-        container = job_template_loader.process(job_template)
+        generated_renderer = job_template_loader.process(job)
 
-        expect(container.monit_erb.erb.filename).to eq('foo/monit')
-        expect(container.monit_erb.erb.src).to eq ERB.new('monit file').src
+        expect(generated_renderer.monit_erb.erb.filename).to eq('plan-job-name/monit')
+        expect(generated_renderer.monit_erb.erb.src).to eq ERB.new('monit file erb contents').src
 
-        expect(container.source_erbs).to eq([])
+        expect(generated_renderer.source_erbs).to eq([])
       end
     end
   end

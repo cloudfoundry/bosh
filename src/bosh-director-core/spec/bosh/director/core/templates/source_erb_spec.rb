@@ -4,8 +4,8 @@ require 'logger'
 
 module Bosh::Director::Core::Templates
   describe SourceErb do
-    let(:erb_contents) { 'the fake rendered results' }
-    subject { SourceErb.new('source-name.erb', 'dest-name.txt', erb_contents, 'fake-job-template-name') }
+    let(:erb_contents) { '<%= "erb code to render" %>' } # not contents that HAVE been rendered -- contents that WILL be rendered
+    subject { SourceErb.new('source-filename.erb', 'dest-filename.txt', erb_contents, 'fake-job-name') }
 
     describe '#render' do
       let(:context) do
@@ -14,7 +14,7 @@ module Bosh::Director::Core::Templates
       let(:logger) { instance_double('Logger') }
 
       it 'renders the erb for the given template context' do
-        expect(subject.render(context, logger)).to eq('the fake rendered results')
+        expect(subject.render(context, logger)).to eq('erb code to render')
       end
 
       context 'when an error occurs in erb rendering' do
@@ -26,14 +26,14 @@ module Bosh::Director::Core::Templates
         let(:original_error) { "undefined method `no_method' for nil:NilClass" }
 
         let(:expected_message) do
-          "Error filling in template 'source-name.erb' (line 1: #{original_error})"
+          "Error filling in template 'source-filename.erb' (line 1: #{original_error})"
         end
 
         it 'logs the error and the new message with the original backtrace' do
           expect(logger).to receive(:debug).with("#<NoMethodError: #{original_error}>")
           expect(logger).to receive(:debug) do |message|
             expect(message).to include(expected_message)
-            expect(message).to include("fake-job-template-name/source-name.erb:1:in 'get_binding'")
+            expect(message).to include("fake-job-name/source-filename.erb:1:in 'get_binding'")
           end
 
           expect {
