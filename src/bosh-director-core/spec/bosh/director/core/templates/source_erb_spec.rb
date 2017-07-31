@@ -9,7 +9,7 @@ module Bosh::Director::Core::Templates
 
     describe '#render' do
       let(:context) do
-        Bosh::Template::EvaluationContext.new({})
+        Bosh::Template::EvaluationContext.new({}, nil)
       end
       let(:logger) { instance_double('Logger') }
 
