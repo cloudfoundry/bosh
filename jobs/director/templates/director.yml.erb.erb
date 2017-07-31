@@ -430,6 +430,20 @@ if p('blobstore.provider') == "s3"
   unless sse_kms_key_id.nil?
     agent_blobstore_options['sse_kms_key_id'] = sse_kms_key_id
   end
+elsif p('blobstore.provider') == 'gcs'
+  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
+  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
+  agent_blobstore_options['json_key'] = p(['agent.blobstore.json_key', 'blobstore.json_key'], nil)
+
+  storage_class = p(['agent.blobstore.storage_class', 'blobstore.storage_class'], nil)
+  unless storage_class.nil?
+    agent_blobstore_options['storage_class'] = storage_class
+  end
+
+  encryption_key = p(['agent.blobstore.encryption_key', 'blobstore.encryption_key'], nil)
+  unless encryption_key.nil?
+    agent_blobstore_options['encryption_key'] = encryption_key
+  end
 else
   agent_blobstore_options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
   agent_blobstore_options['user'] = p('blobstore.agent.user')
