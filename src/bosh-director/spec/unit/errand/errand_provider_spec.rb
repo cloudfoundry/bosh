@@ -7,8 +7,8 @@ module Bosh::Director
     end
 
     describe '#get' do
-      let(:deployment_planner) { instance_double(DeploymentPlan::Planner, job_renderer: job_renderer, ip_provider: ip_provider) }
       let(:deployment_planner_provider) { instance_double(Errand::DeploymentPlannerProvider) }
+      let(:deployment_planner) { instance_double(DeploymentPlan::Planner, availability_zones: [], template_blob_cache: template_blob_cache, ip_provider: ip_provider) }
       let(:task_result) { instance_double(TaskDBWriter) }
       let(:instance_manager) { instance_double(Api::InstanceManager) }
       let(:logs_fetcher) { instance_double (LogsFetcher) }
@@ -17,7 +17,7 @@ module Bosh::Director
       let(:task) { Models::Task.make(:id => 42, :username => 'user') }
       let(:event_log) { EventLog::Log.new(task_writer) }
       let(:deployment_name) { 'fake-dep-name' }
-      let(:job_renderer) { JobRenderer.create }
+      let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:runner) { instance_double(Errand::Runner) }
       let(:errand_step) { instance_double(Errand::LifecycleErrandStep) }
       let(:instance) { instance_double(DeploymentPlan::Instance) }
@@ -70,7 +70,6 @@ module Bosh::Director
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(package_compile_step).to receive(:perform)
             allow(instance_group2).to receive(:bind_instances)
-            allow(job_renderer).to receive(:render_job_instances)
             allow(Errand::Runner).to receive(:new).and_return(runner)
           end
 
@@ -138,6 +137,7 @@ module Bosh::Director
         end
 
         context 'when there is a lifecycle: errand instance group with that name' do
+          let(:dns_encoder) { DnsEncoder.new({}) }
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
               name: instance_group_name,
@@ -150,6 +150,7 @@ module Bosh::Director
 
           before do
             allow(instance).to receive(:model).and_return(instance_model)
+            allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(instance_group).to receive(:bind_instances)
             allow(package_compile_step).to receive(:perform)
@@ -158,7 +159,7 @@ module Bosh::Director
           it 'returns an errand object that will run on the first instance in that instance group' do
             expect(package_compile_step).to receive(:perform)
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
-            expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
+            expect(JobRenderer).to receive(:render_job_instances_with_cache).with(needed_instance_plans, template_blob_cache, dns_encoder, logger)
             expect(Errand::Runner).to receive(:new).with(instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::LifecycleErrandStep).to receive(:new).with(
               runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger
@@ -174,7 +175,7 @@ module Bosh::Director
             it 'returns an errand object that will run on the first instance in that instance group' do
               expect(package_compile_step).to receive(:perform)
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
-              expect(job_renderer).to receive(:render_job_instances).with(needed_instance_plans)
+              expect(JobRenderer).to receive(:render_job_instances_with_cache).with(needed_instance_plans, template_blob_cache, dns_encoder, logger)
               expect(Errand::Runner).to receive(:new).with(instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
                 runner, deployment_planner, instance_group_name, instance, instance_group, false, keep_alive, deployment_name, logger

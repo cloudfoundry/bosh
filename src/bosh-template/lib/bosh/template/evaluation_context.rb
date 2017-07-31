@@ -102,7 +102,7 @@ module Bosh
           link_instances = link_spec["instances"].map do |instance_link_spec|
             EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
           end
-          return EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment'], link_spec['root_domain'], @dns_encoder)
+          return EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['domain'], @dns_encoder)
         end
         raise UnknownLink.new(name)
       end

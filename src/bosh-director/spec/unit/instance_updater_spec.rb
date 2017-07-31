@@ -5,7 +5,7 @@ module Bosh::Director
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache) }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
     let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -43,7 +43,8 @@ module Bosh::Director
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
-    let (:disk_manager) { instance_double(DiskManager) }
+    let(:disk_manager) { instance_double(DiskManager) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
 
     before do
       Models::VariableSet.create(deployment: deployment_model)
@@ -55,6 +56,7 @@ module Bosh::Director
       allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
       allow(DiskManager).to receive(:new).and_return(disk_manager)
+      allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
     end
 

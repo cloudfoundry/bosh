@@ -249,6 +249,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
             spec = {
               'deployment_name' => provider_dep.name,
+              'default_network' => 'fake-manual-network',
               'networks' => ['fake-manual-network', 'fake-dynamic-network'],
               "properties" => {"mysql" => nil},
               'instances' => [
@@ -288,6 +289,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             spec = {
               'deployment_name' => provider_dep.name,
               'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+              'default_network' => 'fake-manual-network',
               "properties" => {"mysql" => nil},
               'instances' => [
                 {
@@ -403,8 +405,8 @@ Unable to process links for deployment. Errors are:
       end
     end
 
-    context 'link source network and ip_addresses' do
-      let(:links) { {'db' => {'from' => 'db', 'network' => 'fake-dynamic-network'}} }
+    context 'when link source specifies ip_addresses or network' do
+      let(:links) { {'db' => {"from" => 'db', 'ip_addresses' => true, 'network' => 'fake-dynamic-network'}} }
       let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
 
       before do

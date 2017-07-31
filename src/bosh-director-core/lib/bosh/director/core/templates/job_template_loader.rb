@@ -8,7 +8,7 @@ module Bosh::Director
 
   module Core::Templates
     class JobTemplateLoader
-      def initialize(logger, template_blob_cache, dns_encoder = nil)
+      def initialize(logger, template_blob_cache, dns_encoder)
         @logger = logger
         @template_blob_cache = template_blob_cache
         @dns_encoder = dns_encoder

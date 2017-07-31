@@ -117,7 +117,11 @@ module Bosh::Director
 
         whitelisted_link_spec_keys = [
           'instances',
-          'properties'
+          'properties',
+          'instance_group',
+          'default_network',
+          'deployment_name',
+          'domain'
         ]
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }

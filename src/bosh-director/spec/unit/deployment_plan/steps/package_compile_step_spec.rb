@@ -8,7 +8,8 @@ module Bosh::Director
     let(:cloud) { Config.cloud }
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:release_version_model) { Models::ReleaseVersion.make(version: 'new') }
@@ -558,7 +559,7 @@ module Bosh::Director
       let(:reuse_compilation_vms) { true }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster) }
+      let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
       let(:disk_manager) { DiskManager.new(logger) }
 
       it 'reuses compilation VMs' do

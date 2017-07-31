@@ -31,7 +31,8 @@ module Bosh::Director
 
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster) }
+    let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([]) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:compilation_config) do
@@ -273,7 +274,7 @@ module Bosh::Director
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
         let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
-
+        let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([availability_zone]) }
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do
@@ -415,11 +416,12 @@ module Bosh::Director
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
         allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
         allow(Config).to receive(:logger).and_return(logger)
         allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)
+        allow(deployment_plan).to receive(:availability_zones).and_return([])
 
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
       end

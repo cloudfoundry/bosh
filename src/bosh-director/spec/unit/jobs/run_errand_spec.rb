@@ -11,6 +11,7 @@ module Bosh::Director
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:thread_pool) { double(Bosh::ThreadPool) }
     let(:instances) { [] }
+    let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -20,6 +21,8 @@ module Bosh::Director
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
       allow(Bosh::ThreadPool).to receive(:new).and_return(thread_pool)
+      allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything, logger)
+      allow(template_blob_cache).to receive(:clean_cache!)
 
       allow(thread_pool).to receive(:wrap) do |&blk|
         blk.call(thread_pool) if blk
@@ -90,8 +93,9 @@ module Bosh::Director
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
             ip_provider: ip_provider,
-            job_renderer: job_renderer,
+            template_blob_cache: template_blob_cache,
             instance_groups: [errand_instance_group],
+            availability_zones: []
           )
         end
 
@@ -108,7 +112,6 @@ module Bosh::Director
 
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
-        let(:job_renderer) { JobRenderer.create.tap { |jr| allow(jr).to receive(:render_job_instances) } }
         let(:errand_job){ instance_double('Bosh::Director::DeploymentPlan::Job', name: 'errand1', runs_as_errand?: true )}
 
 
@@ -161,17 +164,16 @@ module Bosh::Director
             ip_provider: ip_provider,
             template_blob_cache: template_blob_cache,
             instance_groups: [],
+            availability_zones: []
           )
         end
         let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
-        let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
 
         before do
           allow(template_blob_cache).to receive(:clean_cache!)
-          allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, logger)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
         end
 
@@ -358,7 +360,7 @@ module Bosh::Director
 
               context 'when errand is run with when-changed' do
                 before do
-                  allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, logger)
+                  allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, anything, logger)
                   allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
                 end
 

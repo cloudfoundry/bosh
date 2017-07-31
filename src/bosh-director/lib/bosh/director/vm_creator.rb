@@ -7,11 +7,12 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
-    def initialize(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster)
+    def initialize(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
       @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
       @agent_broadcaster = agent_broadcaster
 
       @config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
@@ -113,7 +114,7 @@ module Bosh::Director
       unless instance_plan.instance.compilation?
         # re-render job templates with updated dynamic network settings
         @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
-        JobRenderer.render_job_instances_with_cache([instance_plan], @template_blob_cache, @logger)
+        JobRenderer.render_job_instances_with_cache([instance_plan], @template_blob_cache, @dns_encoder, @logger)
       end
     end
 

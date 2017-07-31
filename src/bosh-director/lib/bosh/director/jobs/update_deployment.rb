@@ -87,14 +87,16 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
+            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan.availability_zones.map(&:name))
+
+            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
             if dry_run?
               return "/deployments/#{deployment_plan.name}"
             else
               compilation_step(deployment_plan).perform
 
-              update_step(deployment_plan).perform
+              update_step(deployment_plan, dns_encoder).perform
 
               if check_for_changes(deployment_plan)
                 PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
@@ -181,24 +183,24 @@ module Bosh::Director
         DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
       end
 
-      def update_step(deployment_plan)
+      def update_step(deployment_plan, dns_encoder)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           deployment_plan,
-          multi_job_updater(deployment_plan)
+          multi_job_updater(deployment_plan, dns_encoder)
         )
       end
 
       # Job dependencies
 
-      def multi_job_updater(deployment_plan)
+      def multi_job_updater(deployment_plan, dns_encoder)
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder))
         end
       end
 
-      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
-        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache)
+      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
+        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache, dns_encoder)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
         unless errors.empty?
@@ -208,13 +210,14 @@ module Bosh::Director
         end
       end
 
-      def render_instance_groups_templates(instance_groups, template_blob_cache)
+      def render_instance_groups_templates(instance_groups, template_blob_cache, dns_encoder)
         errors = []
         instance_groups.each do |instance_group|
           begin
             JobRenderer.render_job_instances_with_cache(
               instance_group.unignored_instance_plans,
               template_blob_cache,
+              dns_encoder,
               logger,
             )
           rescue Exception => e

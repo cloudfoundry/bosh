@@ -33,8 +33,9 @@ module Bosh::Director
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
+    let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, template_cache, agent_broadcaster) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, template_cache, dns_encoder, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:template_cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:agent_client) { instance_double(AgentClient) }

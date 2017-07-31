@@ -50,7 +50,6 @@ module Bosh::Director
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
             end
 
-            link_spec.delete('default_network')
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
               instance.delete('dns_addresses')

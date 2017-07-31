@@ -11,7 +11,8 @@ module Bosh::Director
         tags: ['tags'],
         template_blob_cache: template_blob_cache,
         skip_drain: skip_drain,
-        name: 'fake-deployment'
+        name: 'fake-deployment',
+        availability_zones: [],
       })
     end
     let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache')}
@@ -37,14 +38,21 @@ module Bosh::Director
     let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
     let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
 
+    let(:dns_encoder) { instance_double(DnsEncoder) }
+
     before do
       fake_app
+      allow(LocalDnsEncoderManager).
+        to receive(:new_encoder_with_updated_index).
+        with([]).
+        and_return(dns_encoder)
       allow(VmCreator).to receive(:new).
         with(
           anything,
           anything,
           anything,
           template_blob_cache,
+          dns_encoder,
           anything)
         .and_return vm_creator
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
@@ -62,7 +70,7 @@ module Bosh::Director
       end
     end
 
-    describe '#update' do
+    describe '#update_instances' do
       it 'binds vms to instances, creates jobs configurations and updates dns' do
         job_updater = instance_double('Bosh::Director::JobUpdater')
         expect(JobUpdater).to receive(:new).with(
@@ -70,6 +78,7 @@ module Bosh::Director
           job,
           an_instance_of(DiskManager),
           template_blob_cache,
+          dns_encoder,
         ).and_return(job_updater)
         expect(job_updater).to receive(:update).with(no_args)
 

@@ -18,13 +18,11 @@ module Bosh::Director
         add_hosts_record(index, instance_group_name, network_name, deployment_name, ip, domain)
       end
 
-      az_idx = @dns_query_encoder.encode_az(az_name)
-
       @record_infos << [
         instance_id,
         Canonicalizer.canonicalize(instance_group_name),
         az_name,
-        az_idx,
+        @dns_query_encoder.id_for_az(az_name),
         Canonicalizer.canonicalize(network_name),
         Canonicalizer.canonicalize(deployment_name),
         ip,

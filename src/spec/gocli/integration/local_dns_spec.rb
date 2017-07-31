@@ -5,7 +5,7 @@ describe 'local DNS', type: :integration do
   with_reset_sandbox_before_each(dns_enabled: false, local_dns: {'enabled' => true, 'include_index' => false})
 
   let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
-  let(:network_name) { 'a' }
+  let(:network_name) { 'local-dns' }
 
   before do
     cloud_config['networks'][0]['name'] = network_name
@@ -17,12 +17,10 @@ describe 'local DNS', type: :integration do
 
   let(:ip_regexp) { /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ }
   let(:instance_group_name) { 'job_to_test_local_dns' }
-  let(:canonical_job_name) { 'job-to-test-local-dns' }
+  let(:canonical_instance_group_name) { 'job-to-test-local-dns' }
   let(:deployment_name) { 'simple.local_dns' }
   let(:canonical_deployment_name) { 'simplelocal-dns' }
   let(:canonical_network_name) { 'local-dns' }
-  let(:uuid_hostname_regexp) { /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
-  let(:index_hostname_regexp) { /\d+\.#{canonical_job_name}\.#{canonical_network_name}\.#{canonical_deployment_name}\.bosh/ }
 
   context 'small 1 instance deployment' do
     it 'sends sync_dns action agent and updates /etc/hosts' do
@@ -288,9 +286,13 @@ describe 'local DNS', type: :integration do
           'update_watch_time' => 20
         },
 
-        'jobs' => [Bosh::Spec::Deployments.simple_job(
-          name: instance_group_name,
-          instances: number_of_instances)]
+        'jobs' => [
+          Bosh::Spec::Deployments.simple_job(
+            name: instance_group_name,
+            instances: number_of_instances,
+            azs: ['z1', 'z2']
+          )
+        ]
       })
     manifest_deployment['name'] = deployment_name
     manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
@@ -322,8 +324,15 @@ describe 'local DNS', type: :integration do
 
   def generate_instance_dns
     director.instances(deployment_name: deployment_name).map do |instance|
+      host_name = [
+        instance.id,
+        canonical_instance_group_name,
+        canonical_network_name,
+        canonical_deployment_name,
+        'bosh'
+      ].join('.')
       {
-        'hostname' => "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh",
+        'hostname' => host_name,
         'ip' => instance.ips[0],
       }
     end
@@ -331,17 +340,24 @@ describe 'local DNS', type: :integration do
 
   def generate_instance_records
     director.instances(deployment_name: deployment_name).map do |instance|
-      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh"]
+      [instance.ips[0], "#{instance.id}.#{canonical_instance_group_name}.#{canonical_network_name}.#{canonical_deployment_name}.bosh"]
     end
   end
 
   def generate_instance_record_infos
     director.instances(deployment_name: deployment_name).map do |instance|
-      az = instance.availability_zone.empty? ? nil : instance.availability_zone
+      if instance.availability_zone.empty?
+        az = nil
+        az_index = nil
+      else
+        az = instance.availability_zone
+        az_index = Regexp.new(/\d+/)
+      end
       [
         instance.id,
         Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
         az,
+        az_index,
         Bosh::Director::Canonicalizer.canonicalize('local_dns'),
         Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
         instance.ips[0],

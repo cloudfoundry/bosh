@@ -3,28 +3,31 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe InstanceSpec do
     include Support::StemcellHelpers
-    subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan)}
-    let(:job_spec) { {'name' => 'smurf-job', 'release' => 'release', 'templates' => []} }
-    let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
-    let(:properties) { {'key' => 'value'} }
+    subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan) }
+    let(:job_spec) { { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] } }
+    let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
+    let(:properties) { { 'key' => 'value' } }
     let(:links) do
-      {'smurf-job' =>
-        {'link_name' =>
-          {'deployment_name' => 'dep1',
-          'some_key' => 'some_value',
-          "networks"=> ["default"],
-          "properties"=> {
-            "listen_port"=> "Kittens"
-          },
-          "instances"=> [{
-                           "name"=> "provider",
-                           "index"=> 0,
-                           "bootstrap"=> true,
-                           "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
-                           "az"=> "z1",
-                           "address"=> "10.244.0.4"
-                         }
-          ]}
+      { 'smurf-job' =>
+        { 'link_name' =>
+          { 'deployment_name' => 'dep1',
+            'some_key' => 'some_value',
+            "networks" => ["default"],
+            "properties" => {
+              "listen_port" => "Kittens"
+            },
+            "instances" => [{
+              "name" => "provider",
+              "index" => 0,
+              "bootstrap" => true,
+              "id" => "3d46803d-1527-4209-8e1f-822105fece7c",
+              "az" => "z1",
+              "address" => "10.244.0.4"
+            }],
+            'instance_group' => 'smurf-ig',
+            'default_network' => 'smurf-net',
+            'domain' => 'smurf.bosh'
+          }
         }
       }
     end
@@ -133,21 +136,25 @@ module Bosh::Director::DeploymentPlan
       let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:expected_links) do
         {
-         'smurf-job' => {
-           'link_name' => {
-             "properties"=> {
-               "listen_port"=> "Kittens"
-             },
-             "instances"=> [{
-                              "name"=> "provider",
-                              "index"=> 0,
-                              "bootstrap"=> true,
-                              "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
-                              "az"=> "z1",
-                              "address"=> "10.244.0.4"
-                            }
-             ]}
-           }
+          'smurf-job' => {
+            'link_name' => {
+              "properties" => {
+                "listen_port" => "Kittens"
+              },
+              "instances" => [{
+                "name" => "provider",
+                "index" => 0,
+                "bootstrap" => true,
+                "id" => "3d46803d-1527-4209-8e1f-822105fece7c",
+                "az" => "z1",
+                "address" => "10.244.0.4"
+              }],
+              'instance_group' => 'smurf-ig',
+              'default_network' => 'smurf-net',
+              'deployment_name' => 'dep1',
+              'domain' => 'smurf.bosh'
+            }
+          }
         }
       end
 

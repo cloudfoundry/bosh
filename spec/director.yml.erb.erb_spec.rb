@@ -82,7 +82,7 @@ describe 'director.yml.erb.erb' do
   let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')) }
 
   subject(:parsed_yaml) do
-    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
+    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 

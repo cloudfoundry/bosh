@@ -2,7 +2,6 @@
 # encoding is needed for correctly comparing expected ERB below
 require 'spec_helper'
 require 'bosh/director/core/templates/job_template_loader'
-require 'bosh/director/core/templates/caching_job_template_fetcher'
 require 'archive/tar/minitar'
 require 'stringio'
 require 'yaml'

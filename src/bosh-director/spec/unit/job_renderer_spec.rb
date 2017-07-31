@@ -10,6 +10,7 @@ module Bosh::Director
     let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:blobstore_files) { [] }
     let(:cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
+    let(:encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([]) }
 
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
@@ -32,7 +33,7 @@ module Bosh::Director
 
     describe '#render_job_instances_with_cache' do
       def perform
-        JobRenderer.render_job_instances_with_cache([instance_plan], cache, logger)
+        JobRenderer.render_job_instances_with_cache([instance_plan], cache, encoder, logger)
       end
 
       before do

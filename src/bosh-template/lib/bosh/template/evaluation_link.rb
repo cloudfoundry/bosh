@@ -8,12 +8,12 @@ module Bosh
       attr_reader :instances
       attr_reader :properties
 
-      def initialize(instances, properties, instance_group, default_network, deployment, root_domain, dns_encoder)
+      def initialize(instances, properties, instance_group, default_network, deployment_name, root_domain, dns_encoder)
         @instances = instances
         @properties = properties
         @instance_group = instance_group
         @default_network = default_network
-        @deployment = deployment
+        @deployment_name = deployment_name
         @root_domain = root_domain
         @dns_encoder = dns_encoder
       end
@@ -47,7 +47,7 @@ module Bosh
         full_criteria = criteria.merge(
           instance_group: @instance_group,
           default_network: @default_network,
-          deployment: @deployment,
+          deployment_name: @deployment_name,
           root_domain: @root_domain,
         )
 

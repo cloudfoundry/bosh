@@ -32,7 +32,7 @@ module Bosh::Director
         allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStep).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, anything).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, anything, anything).and_return(vm_creator)
         allow(CleanupStemcellReferencesStep).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
         allow(PersistDeploymentStep).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end
@@ -43,6 +43,7 @@ module Bosh::Director
           expect(pre_cleanup).to receive(:perform).ordered
           expect(update_active_vm_cpis).to receive(:perform).ordered
           expect(setup).to receive(:perform).ordered
+          allow(deployment_plan).to receive(:availability_zones).and_return([]).ordered
           expect(update_jobs).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered
           expect(logger).to receive(:info).with('Committing updates').ordered

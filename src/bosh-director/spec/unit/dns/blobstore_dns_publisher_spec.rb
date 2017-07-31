@@ -4,12 +4,7 @@ module Bosh::Director
   describe BlobstoreDnsPublisher do
     include IpUtil
 
-    let(:dns_encoder) do
-      v = instance_double(LocalDnsEncoder)
-      allow(v).to receive(:encode_az).with('az1').and_return(1)
-      allow(v).to receive(:encode_az).with('az2').and_return(2)
-      v
-    end
+    let(:dns_encoder) { DnsEncoder.new({ 'az1' => 1, 'az2' => 2 }) }
     let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
