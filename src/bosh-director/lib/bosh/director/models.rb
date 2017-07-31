@@ -1,4 +1,5 @@
 require 'bosh/director/models/agent_dns_version'
+require 'bosh/director/models/availability_zone'
 require 'bosh/director/models/cloud_config'
 require 'bosh/director/models/compiled_package'
 require 'bosh/director/models/cpi_config'

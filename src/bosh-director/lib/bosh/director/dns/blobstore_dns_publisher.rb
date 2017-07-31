@@ -62,7 +62,12 @@ module Bosh::Director
         local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
       end
 
-      dns_records = DnsRecords.new(version, Config.local_dns_include_index?)
+      az_hash = Models::AvailabilityZone.all.inject({}) do |lookup_table, new_item|
+
+        lookup_table.merge({new_item.name => new_item.id})
+      end
+
+      dns_records = DnsRecords.new(version, Config.local_dns_include_index?, az_hash, @logger)
       local_dns_records.each do |dns_record|
         dns_records.add_record(
           dns_record.instance.uuid,

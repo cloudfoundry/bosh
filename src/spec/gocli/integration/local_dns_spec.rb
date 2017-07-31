@@ -4,8 +4,8 @@ require 'fileutils'
 describe 'local DNS', type: :integration do
   with_reset_sandbox_before_each(dns_enabled: false, local_dns: {'enabled' => true, 'include_index' => false})
 
-  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
-  let(:network_name) { 'local_dns' }
+  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
+  let(:network_name) { 'a' }
 
   before do
     cloud_config['networks'][0]['name'] = network_name
@@ -56,7 +56,7 @@ describe 'local DNS', type: :integration do
         (0..9).each do |index|
           records_json = parse_agent_records_json(index)
           expect(records_json['records']).to match_array(generate_instance_records)
-          expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'domain', 'agent_id'])
+          expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id'])
           expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
           expect(records_json['version']).to eq(10)
         end

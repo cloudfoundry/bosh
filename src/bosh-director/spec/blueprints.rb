@@ -99,6 +99,10 @@ module Bosh::Director::Models
     variable_set { VariableSet.make }
   end
 
+  AvailabilityZone.blueprint do
+    name { Sham.name }
+  end
+
   IpAddress.blueprint do
     address { NetAddr::CIDR.create(Sham.ip) }
     instance  { Instance.make }
