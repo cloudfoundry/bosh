@@ -1,10 +1,11 @@
 module Bosh::Director
   class BlobstoreDnsPublisher
-    def initialize(blobstore_provider, domain_name, agent_broadcaster, logger)
+    def initialize(blobstore_provider, domain_name, agent_broadcaster, dns_query_encoder, logger)
       @blobstore_provider = blobstore_provider
       @domain_name = domain_name
       @logger = logger
       @agent_broadcaster = agent_broadcaster
+      @dns_query_encoder = dns_query_encoder
     end
 
     def publish_and_broadcast
@@ -62,12 +63,7 @@ module Bosh::Director
         local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
       end
 
-      az_hash = Models::AvailabilityZone.all.inject({}) do |lookup_table, new_item|
-
-        lookup_table.merge({new_item.name => new_item.id})
-      end
-
-      dns_records = DnsRecords.new(version, Config.local_dns_include_index?, az_hash, @logger)
+      dns_records = DnsRecords.new(version, Config.local_dns_include_index?, @dns_query_encoder)
       local_dns_records.each do |dns_record|
         dns_records.add_record(
           dns_record.instance.uuid,

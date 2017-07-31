@@ -112,6 +112,7 @@
   "20170607182149_add_task_id_to_locks": "226cef42c81d5cee602f091a0bc184c57c2bc628",
   "20170616173221_remove_users_table": "5f35086a0f65d81477731b7995fd933a10c9299e",
   "20170616185237_migrate_spec_json_links": "bd36243e6583c7a9c925e44ddbf27b2aa1ef54ed",
+  "20170628221611_add_canonical_az_names_and_ids": "0fa4a46b5100f4b08a1914c5e86fdedfba1079dc",
   "20170705204352_add_cpi_to_disks": "047e88df8dbe6cc449d675472bb4f838d8e6e85e",
   "20170705211620_add_templates_json_to_templates": "ed9969aab2493052530e36d012cd892948641f2c"
 }

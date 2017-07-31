@@ -34,8 +34,7 @@ module Bosh::Director
             instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
             instance_plans_with_missing_vms: instance_plans_with_missing_vms,
             ip_provider: ip_provider,
-            tags: tags,
-            availability_zone_names: ['az1', 'az2'])
+            tags: tags)
         end
 
         context 'when the director database contains no instances' do
@@ -62,23 +61,6 @@ module Bosh::Director
             expect(local_dns_repo).to receive(:update_for_instance).with(instance_model_1).ordered
             expect(dns_publisher).to receive(:publish_and_broadcast).ordered
             subject.perform
-          end
-
-          it 'writes the new AZ names to the DB' do
-            expect(Models::AvailabilityZone).to receive(:create).with({'name' => 'az1'})
-            expect(Models::AvailabilityZone).to receive(:create).with({'name' => 'az2'})
-            subject.perform
-          end
-
-
-          context 'when some AZ name has previously been recorded' do
-            it 'does not write already present AZ names to the DB' do
-              expect(Models::AvailabilityZone).to receive(:create).with({'name' => 'az1'}).and_raise Sequel::UniqueConstraintViolation
-              expect(Models::AvailabilityZone).to receive(:create).with({'name' => 'az2'})
-              expect {
-                subject.perform
-              }.not_to raise_error
-            end
           end
         end
       end

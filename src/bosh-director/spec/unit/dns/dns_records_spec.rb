@@ -4,17 +4,14 @@ module Bosh::Director
   describe DnsRecords do
     let(:include_index_records) { false }
     let(:version) { 2 }
-    let(:dns_records) do
-      az_hash = {
-        'az1' => 3,
-        'az2' => 7,
-        'az3' => 11
-      }
-
-      DnsRecords.new(version, include_index_records, az_hash, logger)
+    let(:dns_encoder) do
+      v = instance_double(LocalDnsEncoder)
+      allow(v).to receive(:encode_az).with('az1').and_return(3)
+      allow(v).to receive(:encode_az).with('az2').and_return(7)
+      allow(v).to receive(:encode_az).with('az3').and_return(11)
+      v
     end
-
-    let(:logger) { double }
+    let(:dns_records) { DnsRecords.new(version, include_index_records, dns_encoder) }
 
     describe '#to_json' do
       context 'with records' do
@@ -32,23 +29,15 @@ module Bosh::Director
              'record_keys' =>
                  ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id'],
              'record_infos' => [
-                 ['uuid1', 'group-name1', 'az1', '3', 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
-                 ['uuid2', 'group-name2', 'az2', '7', 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1']],
+                 ['uuid1', 'group-name1', 'az1', 3, 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
+                 ['uuid2', 'group-name2', 'az2', 7, 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1']],
           }
           expect(JSON.parse(dns_records.to_json)).to eq(expected_records)
         end
 
         it 'returns the shasum' do
-          expect(dns_records.shasum).to eq('f817c4ea212c65e66c755df452c6a31cb53fb614')
+          expect(dns_records.shasum).to eq('b8f11296db60f1f3e5b41e2a74eea0376868889d')
         end
-
-        context 'when a record with unrecognized AZ name is presented' do
-          it 'logs a message' do
-            expect(logger).to receive(:debug).with /unknown-az/
-            dns_records.add_record('uuid2', 'index2', 'group-name2', 'unknown-az', 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1')
-          end
-        end
-
 
         context 'when index records are enabled' do
           let(:include_index_records) { true }
@@ -64,8 +53,8 @@ module Bosh::Director
                 'record_keys' =>
                     ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id'],
                 'record_infos' => [
-                    ['uuid1', 'group-name1', 'az1', '3', 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
-                    ['uuid2', 'group-name2', 'az2', '7', 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1']]
+                    ['uuid1', 'group-name1', 'az1', 3, 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
+                    ['uuid2', 'group-name2', 'az2', 7, 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1']]
             }
             expect(JSON.parse(dns_records.to_json)).to eq(expected_records)
           end
@@ -86,9 +75,9 @@ module Bosh::Director
               'record_keys' =>
                 ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id'],
               'record_infos' => [
-                ['uuid1', 'group-name1', 'az1', '3', 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
-                ['uuid2', 'group-name2', 'az2', '7', 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1'],
-                ['uuid3', 'group-name3', 'az3', '11', 'net-name3', 'dep-name3', 'ip-addr3', 'bosh3.tld', 'fake-agent-uuid3']]
+                ['uuid1', 'group-name1', 'az1', 3, 'net-name1', 'dep-name1', 'ip-addr1', 'bosh1.tld', 'fake-agent-uuid1'],
+                ['uuid2', 'group-name2', 'az2', 7, 'net-name2', 'dep-name2', 'ip-addr2', 'bosh1.tld', 'fake-agent-uuid1'],
+                ['uuid3', 'group-name3', 'az3', 11, 'net-name3', 'dep-name3', 'ip-addr3', 'bosh3.tld', 'fake-agent-uuid3']]
             }
             expect(JSON.parse(dns_records.to_json)).to eq(expected_records)
           end

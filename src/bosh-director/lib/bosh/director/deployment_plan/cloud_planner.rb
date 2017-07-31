@@ -37,10 +37,6 @@ module Bosh::Director
         @availability_zones.values
       end
 
-      def availability_zone_names
-        @availability_zones.keys
-      end
-
       def resource_pools
         @resource_pools.values
       end

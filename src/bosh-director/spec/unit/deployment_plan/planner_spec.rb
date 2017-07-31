@@ -83,10 +83,7 @@ module Bosh::Director
             global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
             ip_provider_factory: IpProviderFactory.new(true, logger),
             disk_types: [],
-            availability_zones_list: {
-              'az1'=> DeploymentPlan::AvailabilityZone,
-              'az2'=> DeploymentPlan::AvailabilityZone,
-            },
+            availability_zones_list: {},
             vm_type: vm_type,
             resource_pools: resource_pools,
             compilation: nil,
@@ -109,10 +106,6 @@ module Bosh::Director
 
           plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config_consolidator, deployment_model, 'recreate' => true)
           expect(plan.recreate).to eq(true)
-        end
-
-        it 'find az names on the cloud planner' do
-          expect(planner.availability_zone_names).to eq(['az1','az2'])
         end
 
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do

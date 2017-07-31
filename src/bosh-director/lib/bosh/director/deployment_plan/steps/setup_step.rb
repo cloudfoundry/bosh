@@ -12,7 +12,6 @@ module Bosh::Director
         end
 
         def perform
-          push_any_new_azs(@deployment_plan.availability_zone_names)
           create_vms
         end
 
@@ -37,16 +36,6 @@ module Bosh::Director
 
           @base_job.task_checkpoint
         end
-
-        def push_any_new_azs(az_names)
-          az_names.each do |az|
-            begin
-              Models::AvailabilityZone.create({'name' => az})
-            rescue Sequel::UniqueConstraintViolation => e
-            end
-          end
-        end
-
       end
     end
   end
