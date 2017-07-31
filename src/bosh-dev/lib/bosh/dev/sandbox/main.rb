@@ -353,7 +353,7 @@ module Bosh::Dev::Sandbox
         load_db_and_populate_blobstore(@test_initial_state)
       end
 
-      @uaa_service.start if @user_authentication == 'uaa'
+      @uaa_service.restart_if_needed if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
 
       @director_service.start(director_config, @drop_database)
