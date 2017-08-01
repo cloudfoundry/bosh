@@ -103,7 +103,12 @@ Can't use release 'test_release/1'. It references packages without source code a
       deploy({})
       out = bosh_runner.run("export release test_release/2 centos-7/3001")
 
-      expect(out).to_not include('Started compiling packages > pkg_1/')
+      packages_compiled_lines = out.split("\n").select do |line|
+        line.include?('Started compiling packages >')
+      end
+
+      expect(packages_compiled_lines.count).to eq 4
+
       expect(out).to include('Started compiling packages > pkg_2/e7f5b11c43476d74b2d12129b93cba584943e8d3')
       expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
       expect(out).to include('Started compiling packages > pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4')
