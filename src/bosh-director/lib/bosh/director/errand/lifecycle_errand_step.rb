@@ -32,7 +32,7 @@ module Bosh::Director
       end
       result.short_description(@name)
     ensure
-      @deployment_planner.job_renderer.clean_cache!
+      @deployment_planner.template_blob_cache.clean_cache!
     end
 
     def ignore_cancellation?

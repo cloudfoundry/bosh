@@ -11,7 +11,7 @@ module Bosh::Director
     describe '.create' do
       it 'should create a dns repo and blobstore_dns_publisher and make a new dns manager' do
         expect(LocalDnsRepo).to receive(:new).with(logger, Config.root_domain)
-        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, logger)
+        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, anything, logger)
 
         expect(LocalDnsManager.create(Config.root_domain, logger)).to be_a(LocalDnsManager)
       end

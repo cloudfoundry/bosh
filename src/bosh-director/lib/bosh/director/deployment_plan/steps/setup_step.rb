@@ -12,10 +12,16 @@ module Bosh::Director
         end
 
         def perform
+          persist_dns_az_encodings
           create_vms
         end
 
         private
+
+        def persist_dns_az_encodings
+          azs = @deployment_plan.availability_zones.map(&:name)
+          LocalDnsEncoderManager.persist_az_names(azs)
+        end
 
         def create_vms
           @logger.info('Creating missing VMs')

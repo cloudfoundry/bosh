@@ -1,6 +1,5 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_instance'
-require 'bosh/director/core/templates/caching_job_template_fetcher'
 require 'bosh/director/formatter_helper'
 
 module Bosh::Director::Core::Templates

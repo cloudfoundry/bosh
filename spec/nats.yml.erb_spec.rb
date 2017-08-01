@@ -25,7 +25,7 @@ describe 'nats.yml.erb' do
   let(:erb_cfg) { File.read(File.join(File.dirname(__FILE__), '../jobs/nats/templates/nats.cfg.erb')) }
 
   subject(:parsed_cfg) do
-    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
+    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
     ERB.new(erb_cfg).result(binding)
   end
 

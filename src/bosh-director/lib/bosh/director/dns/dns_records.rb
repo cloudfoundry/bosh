@@ -3,12 +3,13 @@ module Bosh::Director
 
     attr_reader :version
 
-    def initialize(version, include_index_records)
+    def initialize(version, include_index_records, dns_query_encoder)
       @version = version
-      @record_keys = ['id', 'instance_group', 'az', 'network', 'deployment', 'ip', 'domain', 'agent_id']
+      @record_keys = ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id']
       @record_infos = []
       @records = []
       @include_index_records = include_index_records
+      @dns_query_encoder = dns_query_encoder
     end
 
     def add_record(instance_id, index, instance_group_name, az_name, network_name, deployment_name, ip, domain, agent_id)
@@ -21,6 +22,7 @@ module Bosh::Director
         instance_id,
         Canonicalizer.canonicalize(instance_group_name),
         az_name,
+        @dns_query_encoder.id_for_az(az_name),
         Canonicalizer.canonicalize(network_name),
         Canonicalizer.canonicalize(deployment_name),
         ip,

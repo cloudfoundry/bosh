@@ -35,18 +35,11 @@ module Bosh::Director
             link_info = job.consumes_link_info(instance_group.name, link_name)
 
             preferred_network_name = link_info['network']
-
-            if @deployment_plan.features.use_dns_addresses.nil?
-              global_use_dns_entry = Config.local_dns_use_dns_addresses?
-            else
-              global_use_dns_entry = @deployment_plan.features.use_dns_addresses
-            end
-
             link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
 
             link_network_options = {
               :preferred_network_name => preferred_network_name,
-              :global_use_dns_entry => global_use_dns_entry,
+              :global_use_dns_entry => @deployment_plan.use_dns_addresses?,
               :link_use_ip_address => link_use_ip_address
             }
 
@@ -57,7 +50,6 @@ module Bosh::Director
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
             end
 
-            link_spec.delete('default_network')
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
               instance.delete('dns_addresses')

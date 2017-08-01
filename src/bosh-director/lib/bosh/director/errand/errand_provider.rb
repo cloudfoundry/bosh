@@ -9,11 +9,12 @@ module Bosh::Director
       @deployment_planner_provider = deployment_planner_provider
     end
 
-    def get(deployment_name, errand_name, when_changed, keep_alive)
+    def get(deployment_name, errand_name, when_changed, keep_alive, requested_instances)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       event_log_stage.advance_and_track('Preparing deployment') do
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
-        job_renderer = deployment_planner.job_renderer
+        dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_planner.availability_zones.map(&:name))
+        template_blob_cache = deployment_planner.template_blob_cache
 
         errand_is_job_name = true
         errand_instance_groups = find_instance_groups_by_errand_job_name(errand_name, deployment_planner)
@@ -21,39 +22,50 @@ module Bosh::Director
         if errand_instance_groups.empty?
           errand_is_job_name = false
           errand_instance_groups = [must_errand_instance_group(deployment_planner, errand_name, deployment_name)]
+          if requested_instances.any?
+            raise "Filtering by instances is not supported when running errand by instance group name"
+          end
         end
 
         runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
 
+        matcher = Errand::InstanceMatcher.new(requested_instances)
+
         errand_steps = errand_instance_groups.map do |errand_instance_group|
           if errand_instance_group.is_errand?
             errand_instance_group.bind_instances(deployment_planner.ip_provider)
-            needed_instance_plans = needed_instance_plans(errand_instance_group, job_renderer)
+            needed_instance_plans = needed_instance_plans(errand_instance_group, template_blob_cache, dns_encoder)
             target_instance = errand_instance_group.instances.first
             changes_exist = changes_exist?(needed_instance_plans, target_instance)
             compile_step(deployment_planner).perform
-            Errand::LifecycleErrandStep.new(
-              runner,
-              deployment_planner,
-              errand_name,
-              target_instance,
-              errand_instance_group,
-              when_changed && !changes_exist,
-              keep_alive,
-              deployment_name,
-              @logger)
-          else
-            errand_instance_group.instances.map do |target_instance|
-              Errand::LifecycleServiceStep.new(
+
+            if matcher.matches?(target_instance)
+              Errand::LifecycleErrandStep.new(
                 runner,
+                deployment_planner,
                 errand_name,
                 target_instance,
+                errand_instance_group,
+                when_changed && !changes_exist,
+                keep_alive,
+                deployment_name,
                 @logger)
+            end
+          else
+            errand_instance_group.instances.map do |target_instance|
+              if matcher.matches?(target_instance)
+                Errand::LifecycleServiceStep.new(runner, errand_name, target_instance, @logger)
+              end
             end
           end
         end
 
-        return Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten)
+        unmatched = matcher.unmatched_criteria
+        if unmatched.any?
+          raise "No instances match selection criteria: [#{ unmatched.join(', ') }]"
+        end
+
+        return Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten.compact)
       end
     end
 
@@ -104,9 +116,9 @@ module Bosh::Director
       errand_instance_group
     end
 
-    def needed_instance_plans(errand_instance_group, job_renderer)
+    def needed_instance_plans(errand_instance_group, template_blob_cache, dns_encoder)
       needed_instance_plans = errand_instance_group.needed_instance_plans
-      job_renderer.render_job_instances(needed_instance_plans)
+      JobRenderer.render_job_instances_with_cache(needed_instance_plans, template_blob_cache, dns_encoder, @logger)
       needed_instance_plans
     end
 

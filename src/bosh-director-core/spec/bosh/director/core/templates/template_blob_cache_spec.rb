@@ -1,11 +1,30 @@
 require 'spec_helper'
 
-require 'bosh/director/core/templates/caching_job_template_fetcher'
+require 'bosh/director/core/templates/template_blob_cache'
 
 module Bosh::Director::Core::Templates
-  describe CachingJobTemplateFetcher do
+  describe TemplateBlobCache do
     let(:job_template) { double('Bosh::Director::DeploymentPlan::Job', download_blob: '/template1', blobstore_id: 'blob-id') }
     let(:job_template2) { double('Bosh::Director::DeploymentPlan::Job', download_blob: '/template2', blobstore_id: 'blob-id2') }
+
+    describe '#with_fresh_cache' do
+      class ConsistencyDummy
+        def ensure_this_cache_is_cleaned(cache)
+          expect(cache).to receive(:clean_cache!)
+        end
+      end
+
+      it 'cleans the cache after the work is done' do
+        dummy = ConsistencyDummy.new
+        expect(dummy).
+          to receive(:ensure_this_cache_is_cleaned).
+          with(an_instance_of(TemplateBlobCache))
+
+        TemplateBlobCache.with_fresh_cache do |cache|
+          dummy.ensure_this_cache_is_cleaned(cache)
+        end
+      end
+    end
 
     describe '#download_blob' do
       context 'when the blob has not been downloaded' do
@@ -56,7 +75,7 @@ module Bosh::Director::Core::Templates
         subject.clean_cache!
         subject.download_blob(job_template)
         expect(job_template).to have_received(:download_blob).twice
-        end
+      end
     end
   end
 end

@@ -16,3 +16,6 @@ databases:
     address: <%= instance.address %>
 <% end %>
   backup_properties: <%= link('backup_db').p('foo') %>
+
+i_eat_links:
+  address: <%= link('db').address(azs: ['z1']) %>

@@ -112,4 +112,51 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       expect(output).to match /Creating vm failed/
     end
   end
+
+  context 'when filtering to a particular set of instances' do
+    let(:manifest_hash) do
+      hash = Bosh::Spec::Deployments.manifest_with_errand
+      hash['jobs'] << service_instance_group_with_errand
+      hash['jobs'] << second_service_instance_group_with_errand
+      hash
+    end
+
+    let(:service_instance_group_with_errand) do
+      instance_group = Bosh::Spec::Deployments.service_job_with_errand
+      instance_group['instances'] = 2
+      instance_group
+    end
+
+    let(:second_service_instance_group_with_errand) do
+      instance_group = Bosh::Spec::Deployments.service_job_with_errand
+      instance_group['instances'] = 2
+      instance_group['name'] = 'second_service_with_errand'
+      instance_group
+    end
+
+    it 'runs all in an instance group' do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand errand1 --instance second_service_with_errand', deployment_name: deployment_name)
+
+      expect(output).to match /job=second_service_with_errand index=0/
+      expect(output).to match /job=second_service_with_errand index=1/
+
+      expect(output).to_not match /job=service_with_errand/
+      expect(output).to_not match /job=fake-errand-name/
+    end
+
+    it 'runs on specific instances' do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand errand1 --instance second_service_with_errand/0 --instance service_with_errand/1', deployment_name: deployment_name)
+
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=second_service_with_errand index=0/
+
+      expect(output).to_not match /job=service_with_errand index=0/
+      expect(output).to_not match /job=second_service_with_errand index=1/
+      expect(output).to_not match /job=fake-errand-name/
+    end
+  end
 end

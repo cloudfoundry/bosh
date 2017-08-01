@@ -7,6 +7,7 @@ module Bosh::Director
         lambda { App.instance.blobstores.blobstore },
         root_domain,
         AgentBroadcaster.new,
+        LocalDnsEncoderManager.create_dns_encoder,
         logger)
 
       new(root_domain, local_dns_repo, dns_publisher, logger)

@@ -28,7 +28,7 @@ module Bosh
       attr_reader :spec
 
       # @param [Hash] spec Template spec
-      def initialize(spec)
+      def initialize(spec, dns_encoder)
         unless spec.is_a?(Hash)
           raise EvaluationFailed,
                 'Invalid spec provided for template evaluation context, ' +
@@ -45,6 +45,7 @@ module Bosh
         @spec = openstruct(spec, BackCompatOpenStruct)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)
+        @dns_encoder = dns_encoder
 
         @links = spec['links'] || {}
       end
@@ -94,14 +95,14 @@ module Bosh
       end
 
       def link(name)
-        result = lookup_property(@links, name)
-        raise UnknownLink.new(name) if result.nil?
+        link_spec = lookup_property(@links, name)
+        raise UnknownLink.new(name) if link_spec.nil?
 
-        if result.has_key?("instances")
-          instance_array = result["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
+        if link_spec.has_key?("instances")
+          link_instances = link_spec["instances"].map do |instance_link_spec|
+            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
           end
-          return EvaluationLink.new(instance_array, result["properties"])
+          return EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['domain'], @dns_encoder)
         end
         raise UnknownLink.new(name)
       end
@@ -124,15 +125,15 @@ module Bosh
       # @param [String] name of the link
       # @yield [Object] link, which is an array of instances
       def if_link(name)
-        link_found = lookup_property(@links, name)
-        if link_found.nil? || !link_found.has_key?("instances")
+        link_spec = lookup_property(@links, name)
+        if link_spec.nil? || !link_spec.has_key?("instances")
           return ActiveElseBlock.new(self)
         else
-          instance_array = link_found["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
+          link_instances = link_spec["instances"].map do |instance_link_spec|
+            EvaluationLinkInstance.new(instance_link_spec["name"], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
           end
 
-          yield EvaluationLink.new(instance_array, link_found["properties"])
+          yield EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['root_domain'], @dns_encoder)
           InactiveElseBlock.new
         end
       end

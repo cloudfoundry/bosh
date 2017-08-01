@@ -57,7 +57,7 @@ module Bosh::Director
       # @return [DeploymentPlan::DeploymentFeatures] Returns the features object of deployment
       attr_reader :features
 
-      attr_reader :job_renderer
+      attr_reader :template_blob_cache
 
       attr_accessor :addons
 
@@ -98,7 +98,7 @@ module Bosh::Director
         @addons = []
 
         @logger = Config.logger
-        @job_renderer = JobRenderer.create
+        @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
       end
 
       def_delegators :@cloud_planner,
@@ -266,6 +266,14 @@ module Bosh::Director
 
       def set_features(features_obj)
         @features = features_obj
+      end
+
+      def use_dns_addresses?
+        @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
+
+      def availability_zone_names
+        @cloud_planner.availability_zone_names
       end
     end
   end
