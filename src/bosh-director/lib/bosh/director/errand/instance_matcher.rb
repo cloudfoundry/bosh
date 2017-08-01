@@ -7,11 +7,11 @@ module Bosh::Director
       end
     end
 
-    def matches?(instance)
+    def matches?(instance, instances_in_group)
       return true if @slugs.empty?
       found = false
       @slugs.each do |slug|
-        if slug.matches?(instance)
+        if slug.matches?(instance, instances_in_group)
           @matched_requests.add(slug)
           found = true
         end
@@ -36,10 +36,15 @@ module Bosh::Director
       @original = original
     end
 
-    def matches?(instance)
+    def matches?(instance, instances_in_group)
       if @index_or_id.nil? || @index_or_id.empty?
         return instance.job_name == @group_name
       end
+
+      if @index_or_id == 'first' && instance.job_name == @group_name
+        return instances_in_group.map(&:uuid).sort.first == instance.uuid
+      end
+
       instance.job_name == @group_name &&
         (instance.uuid == @index_or_id || instance.index.to_s == @index_or_id.to_s)
     end

@@ -39,7 +39,7 @@ module Bosh::Director
             changes_exist = changes_exist?(needed_instance_plans, target_instance)
             compile_step(deployment_planner).perform
 
-            if matcher.matches?(target_instance)
+            if matcher.matches?(target_instance, errand_instance_group.instances)
               Errand::LifecycleErrandStep.new(
                 runner,
                 deployment_planner,
@@ -53,7 +53,7 @@ module Bosh::Director
             end
           else
             errand_instance_group.instances.map do |target_instance|
-              if matcher.matches?(target_instance)
+              if matcher.matches?(target_instance, errand_instance_group.instances)
                 Errand::LifecycleServiceStep.new(runner, errand_name, target_instance, @logger)
               end
             end
