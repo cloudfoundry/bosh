@@ -118,7 +118,6 @@ module Bosh::Director::DeploymentPlan::Steps
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
-      allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
@@ -127,9 +126,10 @@ module Bosh::Director::DeploymentPlan::Steps
     end
 
     before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:blobstore) { instance_double(Bosh::Blobstore::Sha1VerifiableBlobstoreClient) }
 
-    before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
+    before { allow(blobstore).to receive(:get) }
+    before { allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) do
@@ -137,6 +137,7 @@ module Bosh::Director::DeploymentPlan::Steps
         Bosh::Director::Models::Vm.make(cid: 'vm-cid-1', instance: instance, active: true)
         instance
       end
+
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -163,11 +164,13 @@ module Bosh::Director::DeploymentPlan::Steps
     end
 
     context 'when the director database contains no instances' do
+      let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
       let(:multi_job_updater) do
         Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.new(
-          Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache)
+          Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder)
         )
       end
+
       before do
         allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
         allow(agent_client).to receive(:prepare)
