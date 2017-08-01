@@ -62,7 +62,7 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
-    context 'when running an errand on a lifecycle service instance by instance group name' do
+    context 'when running an errand on a lifecycle service instance by release job name' do
       let(:errand_name) {'errand1'}
 
       describe '#perform' do
@@ -177,17 +177,6 @@ module Bosh::Director
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
         end
 
-          # context 'when specified errand name refers to a known errand' do # TODO this becomes one of very few tests here
-          #   let(:errand_provider) { double(Bosh::Director::DeploymentPlan::ErrandProvider) }
-          #   let(:fake_errand) { double(Bosh::Director::Errand) }
-          #
-          #   it '' do
-          #     expect(planner).to receive(:errand_provider).and_return(errand_provider)
-          #     expect(errand_provider).to receive(:get).with('derp').and_return(fake_errand)
-          #     expect(fake_errand).to receive(:run)
-          #   end
-          # end
-
           context 'when instance group representing an errand exists' do
             let(:deployment_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
             before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_instance_group) }
@@ -199,7 +188,7 @@ module Bosh::Director
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
                 let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
-                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
+                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance_id') }
 
                 before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', {timeout: 10, deployment_name: 'fake-dep-name'}).and_return(lock) }
 

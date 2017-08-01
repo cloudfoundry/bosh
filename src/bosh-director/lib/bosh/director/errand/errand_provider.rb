@@ -23,7 +23,7 @@ module Bosh::Director
           errand_is_job_name = false
           errand_instance_groups = [must_errand_instance_group(deployment_planner, errand_name, deployment_name)]
           if requested_instances.any?
-            raise "Filtering by instances is not supported when running errand by instance group name"
+            raise RunErrandError, 'Filtering by instances is not supported when running errand by instance group name'
           end
         end
 

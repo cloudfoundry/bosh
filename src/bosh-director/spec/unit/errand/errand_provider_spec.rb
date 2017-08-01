@@ -188,11 +188,9 @@ module Bosh::Director
           context 'and instances are specified' do
             let(:instance_slugs) { ['group_name/0'] }
             it 'raises' do
-              #TODO: Create an exception class and test for it
-
               expect {
                 subject.get(deployment_name, instance_group_name, when_changed, keep_alive, instance_slugs)
-              }.to raise_error
+              }.to raise_error(RunErrandError, 'Filtering by instances is not supported when running errand by instance group name')
             end
           end
         end

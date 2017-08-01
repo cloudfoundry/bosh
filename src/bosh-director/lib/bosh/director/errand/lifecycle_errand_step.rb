@@ -5,13 +5,11 @@ module Bosh::Director
       @deployment_planner = deployment_planner
       @name = name
       @instance = instance
-      @instance_group = instance_group
       @skip_errand = skip_errand
       @keep_alive = keep_alive
       @logger = logger
-      @deployment_name = deployment_name
-      instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, @instance_group, @logger)
-      @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, @name, @deployment_name)
+      instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, instance_group, @logger)
+      @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, @name, deployment_name)
     end
 
     def prepare
@@ -25,14 +23,16 @@ module Bosh::Director
         return
       end
 
-      result = nil
-      @errand_instance_updater.with_updated_instances(@instance_group, @keep_alive) do
-        @logger.info('Starting to run errand')
-        result = @runner.run(@instance, &checkpoint_block)
+      begin
+        result = nil
+        @errand_instance_updater.with_updated_instances(@instance.to_s, @keep_alive) do
+          @logger.info('Starting to run errand')
+          result = @runner.run(@instance, &checkpoint_block)
+        end
+        result.short_description(@name)
+      ensure
+        @deployment_planner.template_blob_cache.clean_cache!
       end
-      result.short_description(@name)
-    ensure
-      @deployment_planner.template_blob_cache.clean_cache!
     end
 
     def ignore_cancellation?

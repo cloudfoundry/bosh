@@ -1,15 +1,14 @@
 module Bosh::Director
   class Errand::ErrandInstanceUpdater
-    def initialize(instance_group_manager, logger, name, deployment_name)
+    def initialize(instance_group_manager, logger, errand_name, deployment_name)
       @instance_group_manager = instance_group_manager
       @logger = logger
-      @name = name
+      @errand_name = errand_name
       @deployment_name = deployment_name
+      @ignore_cancellation = false
     end
 
-    def with_updated_instances(instance_group, keep_alive, &blk)
-      instance_name = instance_group.instances.first.model.name
-
+    def with_updated_instances(instance_name, keep_alive, &blk)
       begin
         @logger.info('Starting to update job instances')
         @instance_group_manager.update_instances
@@ -77,7 +76,7 @@ module Bosh::Director
           user: Config.current_job.username,
           action: 'run',
           object_type: 'errand',
-          object_name: @name,
+          object_name: @errand_name,
           task: Config.current_job.task_id,
           deployment: @deployment_name,
           instance: instance_name,
