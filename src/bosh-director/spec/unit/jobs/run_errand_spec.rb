@@ -95,7 +95,8 @@ module Bosh::Director
             ip_provider: ip_provider,
             template_blob_cache: template_blob_cache,
             instance_groups: [errand_instance_group],
-            availability_zones: []
+            availability_zones: [],
+            instance_group: nil,
           )
         end
 
