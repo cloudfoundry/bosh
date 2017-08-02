@@ -11,6 +11,7 @@ module Bosh::Director
 
     def get(deployment_name, errand_name, when_changed, keep_alive, requested_instances)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+      result = nil
       event_log_stage.advance_and_track('Preparing deployment') do
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
         dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_planner.availability_zones.map(&:name))
@@ -24,6 +25,11 @@ module Bosh::Director
           errand_instance_groups = [must_errand_instance_group(deployment_planner, errand_name, deployment_name)]
           if requested_instances.any?
             raise RunErrandError, 'Filtering by instances is not supported when running errand by instance group name'
+          end
+        else
+          if !deployment_planner.instance_group(errand_name).nil?
+            Config.event_log.warn("Ambiguous request: the requested errand name '#{errand_name}' matches both a job " +
+              "name and an errand instance group name. Executing errand on all relevant instances with job '#{errand_name}'.")
           end
         end
 
@@ -65,8 +71,9 @@ module Bosh::Director
           raise "No instances match selection criteria: [#{ unmatched.join(', ') }]"
         end
 
-        return Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten.compact)
+        result = Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten.compact)
       end
+      result
     end
 
     private

@@ -13,8 +13,7 @@ module Bosh::Director
       let(:instance_manager) { instance_double(Api::InstanceManager) }
       let(:logs_fetcher) { instance_double (LogsFetcher) }
       let(:event_manager) { instance_double(Bosh::Director::Api::EventManager) }
-      let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
-      let(:task) { Models::Task.make(:id => 42, :username => 'user') }
+      let(:task_writer) { StringIO.new }
       let(:event_log) { EventLog::Log.new(task_writer) }
       let(:deployment_name) { 'fake-dep-name' }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
@@ -30,6 +29,7 @@ module Bosh::Director
         allow(deployment_planner_provider).to receive(:get_by_name).with(deployment_name).and_return(deployment_planner)
         allow(deployment_planner).to receive(:instance_groups).and_return(instance_groups)
         allow(Config).to receive(:event_log).and_return(event_log)
+        allow(deployment_planner).to receive(:instance_group)
       end
 
       context 'when running an errand by release job name' do
@@ -38,7 +38,7 @@ module Bosh::Director
         let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], is_errand?: false) }
         let(:instance_groups) { [instance_group] }
 
-        it 'provides an errand that will run on the first instance in that group' do
+        it 'provides an errand that will run on the instance in that group' do
           expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
           expect(Errand::LifecycleServiceStep).to receive(:new).with(
             runner, job_name, instance, logger
@@ -48,7 +48,6 @@ module Bosh::Director
         end
 
         context 'when multiple instances within multiple instance groups have that job' do
-          let(:job) { instance_double(DeploymentPlan::Job, name: job_name, runs_as_errand?: true) }
           let(:needed_instance_plans) { [] }
           let(:service_group_name) { 'service-group-name' }
           let(:errand_group_name) { 'errand-group-name' }
@@ -73,6 +72,52 @@ module Bosh::Director
             allow(Errand::Runner).to receive(:new).and_return(runner)
           end
 
+          context 'when running an errand where instance group name and the release job name are the same' do
+            let(:ambiguous_errand_name) { 'ambiguous-errand-name' }
+            let(:job_name) { ambiguous_errand_name }
+            let(:service_group_name) { ambiguous_errand_name }
+
+            before do
+              allow(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+              allow(Errand::LifecycleServiceStep).to receive(:new).with(
+                runner, job_name, instance1, logger
+              ).and_return(errand_step1)
+              allow(Errand::LifecycleServiceStep).to receive(:new).with(
+                runner, job_name, instance2, logger
+              ).and_return(errand_step2)
+              allow(Errand::LifecycleErrandStep).to receive(:new).with(
+                runner, deployment_planner, job_name, instance3, instance_group2, false, keep_alive, deployment_name, logger
+              ).and_return(errand_step3)
+              allow(deployment_planner).to receive(:instance_group).with(ambiguous_errand_name).and_return(instance_group2)
+            end
+
+            it 'treats the name as a job name and runs the errand on all instances that have the release job' do
+              returned_errands = subject.get(deployment_name, ambiguous_errand_name, when_changed, keep_alive, instance_slugs)
+              expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2, errand_step3)
+            end
+
+            it 'prints a warning to the task output' do
+              subject.get(deployment_name, ambiguous_errand_name, when_changed, keep_alive, instance_slugs)
+
+              output = task_writer.string
+              lines = output.split("\n")
+
+              line_0_json = JSON.parse(lines[0])
+              expect(line_0_json['state']).to eq('started')
+              expect(line_0_json['stage']).to eq('Preparing deployment')
+
+              line_1_json = JSON.parse(lines[1])
+              expect(line_1_json['type']).to eq('warning')
+              expect(line_1_json['message']).to eq("Ambiguous request: the requested errand name 'ambiguous-errand-name' " +
+                "matches both a job name and an errand instance group name. Executing errand on all relevant " +
+                "instances with job 'ambiguous-errand-name'.")
+
+              line_2_json = JSON.parse(lines[2])
+              expect(line_2_json['state']).to eq('finished')
+              expect(line_2_json['stage']).to eq('Preparing deployment')
+            end
+          end
+
           it 'runs the job on all instances' do
             expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::LifecycleServiceStep).to receive(:new).with(
@@ -87,6 +132,20 @@ module Bosh::Director
 
             returned_errands = subject.get(deployment_name, 'errand-job-name', when_changed, keep_alive, instance_slugs)
             expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2, errand_step3)
+          end
+
+          it 'writes to the event log' do
+            subject.get(deployment_name, 'errand-job-name', when_changed, keep_alive, instance_slugs)
+            output = task_writer.string
+            lines = output.split("\n")
+
+            line_0_json = JSON.parse(lines[0])
+            expect(line_0_json['state']).to eq('started')
+            expect(line_0_json['stage']).to eq('Preparing deployment')
+
+            line_1_json = JSON.parse(lines[1])
+            expect(line_1_json['state']).to eq('finished')
+            expect(line_1_json['stage']).to eq('Preparing deployment')
           end
 
           context 'when selecting an instance from a service group' do

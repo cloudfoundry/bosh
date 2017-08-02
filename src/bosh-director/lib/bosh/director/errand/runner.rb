@@ -12,7 +12,6 @@ module Bosh::Director
       @instance_manager = instance_manager
       @agent_task_id = nil
       @logs_fetcher = logs_fetcher
-
     end
 
     # Runs errand on job instances
