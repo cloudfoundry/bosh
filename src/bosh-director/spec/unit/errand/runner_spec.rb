@@ -10,9 +10,16 @@ module Bosh::Director
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
+
     before  do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:result).and_return(task_result)
+      current_job = instance_double(Jobs::BaseJob,
+        username: 'some-name',
+        event_manager: Api::EventManager.new(true),
+        task_id: 'some-id'
+      )
+      allow(Config).to receive(:current_job).and_return(current_job)
     end
 
     context 'when there is at least 1 instance' do
@@ -144,6 +151,66 @@ module Bosh::Director
           it 'creates a new errand run in the database if none exists' do
             expect { subject.run(instance) }.to change { Models::ErrandRun.count }.by(1)
             expect(Models::ErrandRun.first.successful).to be_truthy
+          end
+
+          it 'creates events' do
+            expect do
+              subject.run instance
+            end.to change { Models::Event.count }.from(0).to(2)
+            parent_event = Models::Event.first
+            expect(parent_event.parent_id).to eq(nil)
+            expect(parent_event.user).to eq('some-name')
+            expect(parent_event.action).to eq('run')
+            expect(parent_event.object_type).to eq('errand')
+            expect(parent_event.object_name).to eq('fake-job-name')
+            expect(parent_event.task).to eq('some-id')
+            expect(parent_event.deployment).to eq('fake-dep-name')
+            expect(parent_event.instance).to eq('fake-job-name/fake-id (0)')
+            expect(parent_event.error).to eq(nil)
+            expect(parent_event.context).to eq({})
+
+            result_event = Models::Event.last
+            expect(result_event.parent_id).to eq(parent_event.id)
+            expect(result_event.user).to eq('some-name')
+            expect(result_event.action).to eq('run')
+            expect(result_event.object_type).to eq('errand')
+            expect(result_event.object_name).to eq('fake-job-name')
+            expect(result_event.task).to eq('some-id')
+            expect(result_event.deployment).to eq('fake-dep-name')
+            expect(result_event.instance).to eq('fake-job-name/fake-id (0)')
+            expect(result_event.error).to eq(nil)
+            expect(result_event.context).to eq({'exit_code' => 0})
+          end
+
+          it 'will always record a terminal event even if there is an error' do
+            expect(instance_manager).to receive(:agent_client_for).and_raise 'disaster'
+
+            expect do
+              expect { subject.run instance }.to raise_error 'disaster'
+            end.to change { Models::Event.count }.from(0).to(2)
+            parent_event = Models::Event.first
+            expect(parent_event.parent_id).to eq(nil)
+            expect(parent_event.user).to eq('some-name')
+            expect(parent_event.action).to eq('run')
+            expect(parent_event.object_type).to eq('errand')
+            expect(parent_event.object_name).to eq('fake-job-name')
+            expect(parent_event.task).to eq('some-id')
+            expect(parent_event.deployment).to eq('fake-dep-name')
+            expect(parent_event.instance).to eq('fake-job-name/fake-id (0)')
+            expect(parent_event.error).to eq(nil)
+            expect(parent_event.context).to eq({})
+
+            result_event = Models::Event.last
+            expect(result_event.parent_id).to eq(parent_event.id)
+            expect(result_event.user).to eq('some-name')
+            expect(result_event.action).to eq('run')
+            expect(result_event.object_type).to eq('errand')
+            expect(result_event.object_name).to eq('fake-job-name')
+            expect(result_event.task).to eq('some-id')
+            expect(result_event.deployment).to eq('fake-dep-name')
+            expect(result_event.instance).to eq('fake-job-name/fake-id (0)')
+            expect(result_event.error).to eq('disaster')
+            expect(result_event.context).to eq({})
           end
 
           context 'when the errand has run previously' do

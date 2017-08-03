@@ -8,16 +8,14 @@ module Bosh::Director
       @ignore_cancellation = false
     end
 
-    def with_updated_instances(instance_name, keep_alive, &blk)
+    def with_updated_instances(keep_alive, &blk)
+
       begin
         @logger.info('Starting to update job instances')
         @instance_group_manager.update_instances
 
-        parent_id = add_event(instance_name)
         block_result = blk.call
-        add_event(instance_name, parent_id, block_result.exit_code)
       rescue Exception => e
-        add_event(instance_name, parent_id, nil, e)
         cleanup_vms_and_log_error(keep_alive)
         raise
       else
@@ -66,24 +64,6 @@ module Bosh::Director
       @instance_group_manager.delete_vms
 
       @ignore_cancellation = false
-    end
-
-    def add_event(instance_name, parent_id = nil, exit_code = nil, error = nil)
-      context = exit_code.nil? ? {} : {exit_code: exit_code}
-      event = Config.current_job.event_manager.create_event(
-        {
-          parent_id: parent_id,
-          user: Config.current_job.username,
-          action: 'run',
-          object_type: 'errand',
-          object_name: @errand_name,
-          task: Config.current_job.task_id,
-          deployment: @deployment_name,
-          instance: instance_name,
-          error: error,
-          context: context,
-        })
-      event.id
     end
   end
 end

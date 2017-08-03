@@ -16,7 +16,6 @@ module Bosh::Director
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(Config).to receive(:record_events).and_return(true)
-      allow(job).to receive(:event_manager).and_return(event_manager)
       allow(Config).to receive(:current_job).and_return(job)
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
@@ -31,7 +30,6 @@ module Bosh::Director
     end
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -280,29 +278,6 @@ module Bosh::Director
 
                     expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                   end
-                end
-
-                it 'should store event' do
-                  subject.perform
-                  event_1 = Bosh::Director::Models::Event.first
-                  expect(event_1.user).to eq(task.username)
-                  expect(event_1.action).to eq('run')
-                  expect(event_1.object_type).to eq('errand')
-                  expect(event_1.object_name).to eq('fake-errand-name')
-                  expect(event_1.instance).to eq('foo-job/instance_id')
-                  expect(event_1.deployment).to eq('fake-dep-name')
-                  expect(event_1.task).to eq("#{task.id}")
-
-                  event_2 = Bosh::Director::Models::Event.all.last
-                  expect(event_2.parent_id).to eq(event_1.id)
-                  expect(event_2.user).to eq(task.username)
-                  expect(event_2.action).to eq('run')
-                  expect(event_2.object_type).to eq('errand')
-                  expect(event_2.object_name).to eq('fake-errand-name')
-                  expect(event_2.instance).to eq('foo-job/instance_id')
-                  expect(event_2.deployment).to eq('fake-dep-name')
-                  expect(event_2.context).to eq({"exit_code" => 0})
-                  expect(event_2.task).to eq("#{task.id}")
                 end
 
                 context 'when the errand fails to run' do

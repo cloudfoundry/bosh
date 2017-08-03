@@ -25,7 +25,7 @@ module Bosh::Director
 
       begin
         result = nil
-        @errand_instance_updater.with_updated_instances(@instance.to_s, @keep_alive) do
+        @errand_instance_updater.with_updated_instances(@keep_alive) do
           @logger.info('Starting to run errand')
           result = @runner.run(@instance, &checkpoint_block)
         end

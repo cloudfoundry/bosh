@@ -88,7 +88,7 @@ module Bosh::Director
         it 'runs the errand' do
           allow(instance).to receive(:to_s).and_return('instance-name')
           expect(template_blob_cache).to receive(:clean_cache!)
-          expect(errand_instance_updater).to receive(:with_updated_instances).with('instance-name', keep_alive) do |&blk|
+          expect(errand_instance_updater).to receive(:with_updated_instances).with(keep_alive) do |&blk|
             blk.call
           end
 
