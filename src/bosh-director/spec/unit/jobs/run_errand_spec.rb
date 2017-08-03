@@ -16,7 +16,6 @@ module Bosh::Director
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(Config).to receive(:record_events).and_return(true)
-      allow(job).to receive(:event_manager).and_return(event_manager)
       allow(Config).to receive(:current_job).and_return(job)
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
@@ -31,7 +30,6 @@ module Bosh::Director
     end
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -62,7 +60,7 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
-    context 'when running an errand on a lifecycle service instance by instance group name' do
+    context 'when running an errand on a lifecycle service instance by release job name' do
       let(:errand_name) {'errand1'}
 
       describe '#perform' do
@@ -95,7 +93,8 @@ module Bosh::Director
             ip_provider: ip_provider,
             template_blob_cache: template_blob_cache,
             instance_groups: [errand_instance_group],
-            availability_zones: []
+            availability_zones: [],
+            instance_group: nil,
           )
         end
 
@@ -177,17 +176,6 @@ module Bosh::Director
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
         end
 
-          # context 'when specified errand name refers to a known errand' do # TODO this becomes one of very few tests here
-          #   let(:errand_provider) { double(Bosh::Director::DeploymentPlan::ErrandProvider) }
-          #   let(:fake_errand) { double(Bosh::Director::Errand) }
-          #
-          #   it '' do
-          #     expect(planner).to receive(:errand_provider).and_return(errand_provider)
-          #     expect(errand_provider).to receive(:get).with('derp').and_return(fake_errand)
-          #     expect(fake_errand).to receive(:run)
-          #   end
-          # end
-
           context 'when instance group representing an errand exists' do
             let(:deployment_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
             before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_instance_group) }
@@ -199,7 +187,7 @@ module Bosh::Director
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
                 let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
-                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
+                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance_id') }
 
                 before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', {timeout: 10, deployment_name: 'fake-dep-name'}).and_return(lock) }
 
@@ -290,29 +278,6 @@ module Bosh::Director
 
                     expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
                   end
-                end
-
-                it 'should store event' do
-                  subject.perform
-                  event_1 = Bosh::Director::Models::Event.first
-                  expect(event_1.user).to eq(task.username)
-                  expect(event_1.action).to eq('run')
-                  expect(event_1.object_type).to eq('errand')
-                  expect(event_1.object_name).to eq('fake-errand-name')
-                  expect(event_1.instance).to eq('foo-job/instance_id')
-                  expect(event_1.deployment).to eq('fake-dep-name')
-                  expect(event_1.task).to eq("#{task.id}")
-
-                  event_2 = Bosh::Director::Models::Event.all.last
-                  expect(event_2.parent_id).to eq(event_1.id)
-                  expect(event_2.user).to eq(task.username)
-                  expect(event_2.action).to eq('run')
-                  expect(event_2.object_type).to eq('errand')
-                  expect(event_2.object_name).to eq('fake-errand-name')
-                  expect(event_2.instance).to eq('foo-job/instance_id')
-                  expect(event_2.deployment).to eq('fake-dep-name')
-                  expect(event_2.context).to eq({"exit_code" => 0})
-                  expect(event_2.task).to eq("#{task.id}")
                 end
 
                 context 'when the errand fails to run' do

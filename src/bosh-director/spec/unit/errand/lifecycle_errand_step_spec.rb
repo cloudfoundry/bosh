@@ -21,7 +21,7 @@ module Bosh::Director
     let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, is_errand?: true) }
     let(:errand_name) { 'errand_name' }
     let(:skip_errand) { false }
-    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
+    let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
     let(:errand_result) { Errand::Result.new(exit_code, nil, nil, nil) }
     let(:instance) { instance_double(DeploymentPlan::Instance) }
@@ -72,20 +72,47 @@ module Bosh::Director
     end
 
     describe '#run' do
-      before do
-        expect(template_blob_cache).to receive(:clean_cache!)
+      context 'when skip errand is true' do
+        let(:skip_errand) { true }
+
+        it 'logs and returns early' do
+          expect(logger).to receive(:info).with('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
+          expect(errand_instance_updater).not_to receive(:with_updated_instances)
+          errand_step.run(&lambda {})
+        end
       end
 
       context 'when instance group is lifecycle errand' do
         let(:exit_code) { 0 }
 
-        it 'then runs the errand' do
-          expect(errand_instance_updater).to receive(:with_updated_instances).with(instance_group, keep_alive) do |&blk|
+        it 'runs the errand' do
+          allow(instance).to receive(:to_s).and_return('instance-name')
+          expect(template_blob_cache).to receive(:clean_cache!)
+          expect(errand_instance_updater).to receive(:with_updated_instances).with(keep_alive) do |&blk|
             blk.call
           end
-          expect(runner).to receive(:run).and_return(errand_result)
-          result = errand_step.run(&lambda {})
+
+          block_evidence = false
+          the_block = lambda {
+            block_evidence = true
+          }
+
+          expect(runner).to receive(:run).with(instance) do |&blk|
+            blk.call
+          end.and_return(errand_result)
+
+          result = errand_step.run(&the_block)
+
+          expect(block_evidence).to be(true)
           expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+        end
+      end
+
+      context 'when something goes wrong' do
+        it 'cleans the cache' do
+          expect(template_blob_cache).to receive(:clean_cache!)
+          expect(errand_instance_updater).to receive(:with_updated_instances).and_raise('omg')
+          expect { errand_step.run(&lambda{}) }.to raise_error 'omg'
         end
       end
     end
