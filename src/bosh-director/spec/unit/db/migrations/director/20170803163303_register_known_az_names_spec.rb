@@ -65,5 +65,15 @@ module Bosh::Director
         {name: 'z1'},
       )
     end
+
+    it 'does not insert tombstone if the local dns records table is empty' do
+      expect(db[:local_dns_records].all.count).to eq 0
+
+      expect {
+        DBSpecHelper.migrate(migration_file)
+      }.not_to change {
+        db[:local_dns_records].all.count
+      }
+    end
   end
 end

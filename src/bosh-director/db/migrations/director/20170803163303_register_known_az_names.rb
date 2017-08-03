@@ -8,7 +8,10 @@ Sequel.migration do
       self[:local_dns_encoded_azs] << { name: az_entry[:availability_zone] }
     end
 
-    self[:local_dns_records] << { instance_id: nil, ip: 'tombstone' }
+    self[:local_dns_records] << {
+      instance_id: nil,
+      ip: 'flush-dns',
+    } if self[:local_dns_records].all.count > 0
   end
 end
 
