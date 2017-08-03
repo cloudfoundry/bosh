@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::Result do
     describe '.from_agent_task_result' do
+      let(:errand_name) { 'errand-name' }
       let(:agent_run_errand_result) do
         {
           'exit_code' => 123,
@@ -15,14 +16,14 @@ module Bosh::Director
         it "raises an error when #{field_name} is missing from agent run errand result" do
           invalid_errand_result = agent_run_errand_result.reject { |k, _| k == field_name }
           expect {
-            described_class.from_agent_task_results(invalid_errand_result, nil)
+            described_class.from_agent_task_results(errand_name, invalid_errand_result, nil)
           }.to raise_error(AgentInvalidTaskResult, /#{field_name}.*missing/i)
         end
       end
 
       it 'does not raise an error if fetch_logs results is nil (not available)' do
         expect {
-          described_class.from_agent_task_results(agent_run_errand_result, nil)
+          described_class.from_agent_task_results(errand_name, agent_run_errand_result, nil)
         }.to_not raise_error
       end
 
@@ -31,12 +32,14 @@ module Bosh::Director
         errand_result_with_extras['unexpected-key'] = 'extra-value'
 
         subject = described_class.from_agent_task_results(
+          errand_name,
           errand_result_with_extras,
           'fake-logs-blobstore-id',
           'fake-blob-sha1',
         )
 
         expect(subject.to_hash).to eq(
+          'errand_name' => 'errand-name',
           'exit_code' => 123,
           'stdout' => 'fake-stdout',
           'stderr' => 'fake-stderr',
@@ -51,24 +54,24 @@ module Bosh::Director
     describe '#short_description' do
       context 'when errand exit_code is 0' do
         it 'returns successful errand completion message as task short result (not result file)' do
-          subject = described_class.new(0, '', '', '')
-          expect(subject.short_description('fake-job-name')).to eq(
+          subject = described_class.new('fake-job-name', 0, '', '', '')
+          expect(subject.short_description).to eq(
             "Errand 'fake-job-name' completed successfully (exit code 0)")
         end
       end
 
       context 'when errand exit_code is non-0' do
         it 'returns error errand completion message as task short result (not result file)' do
-          subject = described_class.new(123, '', '', '')
-          expect(subject.short_description('fake-job-name')).to eq(
+          subject = described_class.new('fake-job-name', 123, '', '', '')
+          expect(subject.short_description).to eq(
             "Errand 'fake-job-name' completed with error (exit code 123)")
         end
       end
 
       context 'when errand exit_code is >128' do
         it 'returns error errand cancellation message as task short result (not result file)' do
-          subject = described_class.new(143, '', '', '')
-          expect(subject.short_description('fake-job-name')).to eq(
+          subject = described_class.new('fake-job-name', 143, '', '', '')
+          expect(subject.short_description).to eq(
             "Errand 'fake-job-name' was canceled (exit code 143)")
         end
       end
@@ -76,8 +79,9 @@ module Bosh::Director
 
     describe '#to_hash' do
       it 'returns blobstore_id and sha1 when it is available' do
-        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', 'fake-blobstore-id', 'sha1-blob')
+        subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', 'fake-blobstore-id', 'sha1-blob')
         expect(subject.to_hash).to eq(
+          'errand_name' => 'errand-name',
           'exit_code' => 0,
           'stdout' => 'fake-stdout',
           'stderr' => 'fake-stderr',
@@ -89,8 +93,9 @@ module Bosh::Director
       end
 
       it 'returns blobstore_id and sha1 as nil when it is not available' do
-        subject = described_class.new(0, 'fake-stdout', 'fake-stderr', nil, nil)
+        subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
         expect(subject.to_hash).to eq(
+          'errand_name' => 'errand-name',
           'exit_code' => 0,
           'stdout' => 'fake-stdout',
           'stderr' => 'fake-stderr',

@@ -5,7 +5,6 @@ module Bosh::Director
     subject(:errand_step) do
       Errand::LifecycleServiceStep.new(
         runner,
-        errand_name,
         instance,
         logger
       )
@@ -13,7 +12,7 @@ module Bosh::Director
 
     let(:runner) { instance_double(Errand::Runner) }
     let(:errand_name) { 'errand_name' }
-    let(:errand_result) { Errand::Result.new(exit_code, nil, nil, nil) }
+    let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
     let(:instance) { instance_double(DeploymentPlan::Instance) }
     let(:exit_code) { 0 }
 

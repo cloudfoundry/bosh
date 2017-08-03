@@ -60,7 +60,7 @@ module Bosh::Director
           else
             errand_instance_group.instances.map do |target_instance|
               if matcher.matches?(target_instance, errand_instance_group.instances)
-                Errand::LifecycleServiceStep.new(runner, errand_name, target_instance, @logger)
+                Errand::LifecycleServiceStep.new(runner, target_instance, @logger)
               end
             end
           end

@@ -23,7 +23,7 @@ module Bosh::Director
     let(:skip_errand) { false }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
-    let(:errand_result) { Errand::Result.new(exit_code, nil, nil, nil) }
+    let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
     let(:instance) { instance_double(DeploymentPlan::Instance) }
     let(:keep_alive) { 'maybe' }
     let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
