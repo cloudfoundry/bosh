@@ -555,12 +555,12 @@ module Bosh
           end
 
           it 'should include the ca in ENV' do
-            allow(Config).to receive(:nats_ca).and_return('nats begin\nnats content\nnats end\n')
-            allow(Config).to receive(:nats_client_certificate_path).and_return('/path/to/tls/certificate')
-            allow(Config).to receive(:nats_client_private_key_path).and_return('/path/to/tls/private_key')
+            allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
+            allow(Config).to receive(:nats_agent_certificate_path).and_return('/path/to/tls/certificate')
+            allow(Config).to receive(:nats_agent_private_key_path).and_return('/path/to/tls/private_key')
 
-            allow(File).to receive(:read).with(Config.nats_client_certificate_path).and_return('certificate begin\ncertificate content\ncertificate end\n')
-            allow(File).to receive(:read).with(Config.nats_client_private_key_path).and_return('pkey begin\npkey content\npkey end\n')
+            allow(File).to receive(:read).with(Config.nats_agent_certificate_path).and_return('certificate begin\ncertificate content\ncertificate end\n')
+            allow(File).to receive(:read).with(Config.nats_agent_private_key_path).and_return('pkey begin\npkey content\npkey end\n')
 
             expect(cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id',
@@ -584,7 +584,7 @@ module Bosh
         end
         context 'is NOT provided' do
           it 'should not have the mbus key in ENV' do
-            Config.nats_ca = nil
+            Config.nats_server_ca = nil
             Config.nats_uri = nil
 
             expect(cloud).to receive(:create_vm).with(

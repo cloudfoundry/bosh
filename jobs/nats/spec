@@ -4,9 +4,9 @@ name: nats
 templates:
   nats_ctl.erb: bin/nats_ctl
   nats.cfg.erb: config/nats.cfg
-  nats_cert.pem.erb: config/nats_cert.pem
-  nats_key.key.erb: config/nats_key.key
-  nats_ca.pem.erb: config/nats_ca.pem
+  nats_client_ca.pem.erb: config/nats_client_ca.pem
+  nats_server_certificate.pem.erb: config/nats_server_certificate.pem
+  nats_server_private_key.erb: config/nats_server_private_key
 
 packages:
   - gonats
@@ -29,12 +29,12 @@ properties:
     description: Username clients must use to access nats mbus
   nats.password:
     description: Password clients must use to access nats mbus
-  nats.certificate:
-    description: go nats certificate for TLS
-  nats.private_key:
-    description: go nats private key for TLS
-  nats.ca:
-    description: go nats ca for mutual TLS
   nats.auth_timeout:
     description: Timeout (in seconds) for clients to send auth credentials
     default: 1
+  nats.tls.ca:
+    description: CA cert to trust when communicating with NATS server
+  nats.tls.server.certificate:
+    description: Certificate for NATs mutual TLS
+  nats.tls.server.private_key:
+    description: Private Key for NATs mutual TLS

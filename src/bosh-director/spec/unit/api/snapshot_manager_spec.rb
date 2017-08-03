@@ -126,6 +126,9 @@ module Bosh::Director
       let(:config) { YAML.load_file(asset('test-director-config.yml')) }
 
       before do
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with('/path/to/server_ca_path').and_return('whatever makes you happy')
+
         Config.configure(config)
         allow(Config).to receive(:enable_snapshots).and_return(true)
       end

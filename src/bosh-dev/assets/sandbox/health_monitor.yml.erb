@@ -6,9 +6,9 @@ mbus:
   endpoint: nats://localhost:<%= nats_port %>
   user:
   password:
-  ca_path: <%= nats_certificate_paths['ca_path'] %>
-  private_key_path: <%= nats_certificate_paths['clients']['health_monitor']['private_key_path'] %>
-  certificate_path: <%= nats_certificate_paths['clients']['health_monitor']['certificate_path'] %>
+  server_ca_path: <%= nats_certificate_paths['ca_path'] %>
+  client_private_key_path: <%= nats_certificate_paths['clients']['health_monitor']['private_key_path'] %>
+  client_certificate_path: <%= nats_certificate_paths['clients']['health_monitor']['certificate_path'] %>
 
 director: &director
   endpoint: <%= director_url %>

@@ -18,9 +18,9 @@ params = {
     'endpoint' => "nats://#{p('nats.address')}:#{p('nats.port')}",
     'user' => p('nats.user'),
     'password' => p('nats.password'),
-    'ca_path' => '/var/vcap/jobs/health_monitor/config/nats_server_ca.cert',
-    'private_key' => '/var/vcap/jobs/health_monitor/config/nats/private_key',
-    'certificate' => '/var/vcap/jobs/health_monitor/config/nats/certificate.pem'
+    'server_ca_path' => '/var/vcap/jobs/health_monitor/config/nats_server_ca.pem',
+    'client_certificate_path' => '/var/vcap/jobs/health_monitor/config/nats_client_certificate.pem',
+    'client_private_key_path' => '/var/vcap/jobs/health_monitor/config/nats_client_private_key'
   },
   'director' => director,
   'intervals' => {

@@ -78,9 +78,9 @@ module Bosh::Monitor
         :pass      => @mbus.password,
         :autostart => false,
         :tls => {
-          :ca_file => @mbus.ca_path,
-          :private_key_file => @mbus.private_key_path,
-          :cert_chain_file  => @mbus.certificate_path
+          :ca_file => @mbus.server_ca_path,
+          :private_key_file => @mbus.client_private_key_path,
+          :cert_chain_file  => @mbus.client_certificate_path
         },
         :ssl => true
       }

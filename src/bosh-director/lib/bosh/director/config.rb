@@ -33,7 +33,7 @@ module Bosh::Director
         :max_vm_create_tries,
         :flush_arp,
         :nats_uri,
-        :nats_ca,
+        :nats_server_ca,
         :default_ssh_options,
         :keep_unreachable_vms,
         :enable_post_deploy,
@@ -56,6 +56,8 @@ module Bosh::Director
         :enable_nats_delivered_templates,
         :nats_client_private_key_path,
         :nats_client_certificate_path,
+        :nats_agent_private_key_path,
+        :nats_agent_certificate_path,
         :runtime
       )
 
@@ -122,11 +124,13 @@ module Bosh::Director
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
-        @nats_ca = config['nats_ca']
-        @nats_server_ca_path = config.fetch('nats_server_ca_path')
-        @nats_client_private_key_path = config['nats_tls']['private_key_path']
-        @nats_client_certificate_path = config['nats_tls']['certificate_path']
-
+        @nats_server_ca_path = config['nats']['server_ca_path']
+        @nats_client_certificate_path = config['nats']['client_certificate_path']
+        @nats_client_private_key_path = config['nats']['client_private_key_path']
+        @nats_agent_certificate_path = config['nats']['agent']['client_certificate_path']
+        @nats_agent_private_key_path = config['nats']['agent']['client_private_key_path']
+        @nats_server_ca = File.read(@nats_server_ca_path)
+        
         @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']
@@ -336,10 +340,6 @@ module Bosh::Director
 
       def nats_uri
         @nats_uri
-      end
-
-      def nats_ca
-        @nats_ca
       end
 
       def nats_rpc

@@ -20,7 +20,11 @@ module Bosh::Director
         config
       end
 
-      before { App.new(config) }
+      before do
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with('/path/to/server_ca_path').and_return('whatever makes you happy')
+        App.new(config)
+      end
 
       it 'requires auth' do
         post '/', 'fake-data', { 'CONTENT_TYPE' => 'multipart/form-data' }

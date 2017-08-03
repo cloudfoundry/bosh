@@ -193,7 +193,8 @@ module Bosh::Dev::Sandbox
         remove_dev_tools: @remove_dev_tools,
         director_ips: @director_ips,
         nats_server_ca_path: get_nats_server_ca_path,
-        nats_tls: nats_certificate_paths['clients']['director'],
+        nats_director_tls: nats_certificate_paths['clients']['director'],
+        nats_agent_tls: nats_certificate_paths['clients']['agent']
       }
       DirectorConfig.new(attributes, @port_provider)
     end

@@ -2,6 +2,7 @@ require 'rspec'
 require 'yaml'
 require 'bosh/template/evaluation_context'
 require 'json'
+require 'template_example_group'
 
 describe 'health_monitor.yml.erb' do
   let(:deployment_manifest_fragment) do
@@ -68,7 +69,9 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['mbus']['endpoint']).to eq('nats://0.0.0.0:4222')
       expect(parsed_yaml['mbus']['user']).to eq('my-user')
       expect(parsed_yaml['mbus']['password']).to eq('my-password')
-      expect(parsed_yaml['mbus']['ca_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_server_ca.cert')
+      expect(parsed_yaml['mbus']['server_ca_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_server_ca.pem')
+      expect(parsed_yaml['mbus']['client_certificate_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_client_certificate.pem')
+      expect(parsed_yaml['mbus']['client_private_key_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_client_private_key')
       expect(parsed_yaml['director']['endpoint']).to eq('https://0.0.0.0:25555')
       expect(parsed_yaml['director']['user']).to eq('admin')
       expect(parsed_yaml['director']['password']).to eq('admin_password')
@@ -331,6 +334,63 @@ describe 'health_monitor.yml.erb' do
           expect(plugin['options']['params']).to eq(true)
           expect(plugin['options']['ttl']).to eq(60)
         end
+      end
+    end
+  end
+end
+
+describe 'tls' do
+  describe 'nats_server_ca.pem.erb' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { '../jobs/health_monitor/templates/nats_server_ca.pem.erb' }
+      let(:properties) do
+        {
+          'properties' => {
+            'nats' => {
+              'tls' => {
+                'ca' => content
+              }
+            }
+          }
+        }
+      end
+    end
+  end
+
+  describe 'nats_client_certificate.pem.erb' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { '../jobs/health_monitor/templates/nats_client_certificate.pem.erb' }
+      let(:properties) do
+        {
+          'properties' => {
+            'nats' => {
+              'tls' => {
+                'health_monitor' => {
+                  'certificate' => content
+                }
+              }
+            }
+          }
+        }
+      end
+    end
+  end
+
+  describe 'nats_client_private_key.erb' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { '../jobs/health_monitor/templates/nats_client_private_key.erb' }
+      let(:properties) do
+        {
+          'properties' => {
+            'nats' => {
+              'tls' => {
+                'health_monitor' => {
+                  'private_key' => content
+                }
+              }
+            }
+          }
+        }
       end
     end
   end

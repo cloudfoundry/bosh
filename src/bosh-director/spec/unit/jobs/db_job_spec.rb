@@ -169,7 +169,6 @@ module Bosh::Director
       end
 
       it 'emits exceptions to the logger' do
-        skip('bad things are happening with eventmachine... waiting for resolution')
         expect(Config.logger).to receive(:error) do |message|
           expect(message.split("\n")[0]).to eq("Fatal error from event machine: Could not connect to server on http://127.0.0.1:12345")
 

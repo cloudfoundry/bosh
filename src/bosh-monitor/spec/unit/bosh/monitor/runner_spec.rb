@@ -13,9 +13,9 @@ describe Bosh::Monitor::Runner do
           :pass      => Bhm.mbus.password,
           :autostart => false,
           :tls => {
-            :ca_file => Bhm.mbus.ca_path,
-            :private_key_file => Bhm.mbus.private_key_path,
-            :cert_chain_file  => Bhm.mbus.certificate_path
+            :ca_file => Bhm.mbus.server_ca_path,
+            :cert_chain_file  => Bhm.mbus.client_certificate_path,
+            :private_key_file => Bhm.mbus.client_private_key_path
           },
           :ssl => true
       }

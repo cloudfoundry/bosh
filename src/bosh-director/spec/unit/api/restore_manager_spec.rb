@@ -18,6 +18,9 @@ module Bosh::Director
     end
 
     before do
+      allow(File).to receive(:read).and_call_original
+      allow(File).to receive(:read).with('/path/to/server_ca_path').and_return('whatever makes you happy')
+
       App.new(config)
       ENV['LD_LIBRARY_PATH'] = 'fake-path'
     end

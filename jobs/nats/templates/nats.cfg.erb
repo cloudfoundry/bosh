@@ -13,9 +13,9 @@ authorization {
 }
 
 tls {
-  cert_file:  "/var/vcap/jobs/nats/config/nats_cert.pem"
-  key_file:   "/var/vcap/jobs/nats/config/nats_key.key"
-  ca_file:    "/var/vcap/jobs/nats/config/nats_ca.pem"
+  cert_file:  "/var/vcap/jobs/nats/config/nats_server_certificate.pem"
+  key_file:   "/var/vcap/jobs/nats/config/nats_server_private_key"
+  ca_file:    "/var/vcap/jobs/nats/config/nats_client_ca.pem"
   verify:     true
   timeout:    2
 }

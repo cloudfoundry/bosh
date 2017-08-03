@@ -30,7 +30,8 @@ module Bosh::Dev::Sandbox
       :remove_dev_tools,
       :director_ips,
       :nats_server_ca_path,
-      :nats_tls
+      :nats_director_tls,
+      :nats_agent_tls
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -74,7 +75,8 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])
       @nats_server_ca_path = attrs.fetch(:nats_server_ca_path)
-      @nats_tls = attrs.fetch(:nats_tls)
+      @nats_director_tls = attrs.fetch(:nats_director_tls)
+      @nats_agent_tls = attrs.fetch(:nats_agent_tls)
     end
 
     def render(template_path)

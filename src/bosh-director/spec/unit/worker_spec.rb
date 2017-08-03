@@ -3,29 +3,9 @@ require 'spec_helper'
 describe 'worker' do
   subject(:worker) { Bosh::Director::Worker.new(config) }
   let(:config_hash) do
-    {
-      'dir' => '/tmp/boshdir ',
-      'db' => {
-        'adapter' => 'sqlite'
-      },
-      'verify_multidigest_path' => '/some/path',
-      'blobstore' => {
-        'provider' => 's3cli',
-        'options' => {
-          's3cli_path' => true
-        }
-      },
-      'record_events' => true,
-      'config_server' => {
-        'enabled' => false
-      },
-      'nats_server_ca_path' => '/path/to/nats/ca/cert',
-      'nats_tls' => {
-        'private_key_path' => '/path/to/nats/tls/private_key',
-        'certificate_path' => '/path/to/nats/tls/certificate.pem'
-      }
-    }
+    SpecHelper.spec_get_director_config
   end
+
   let(:config) { Bosh::Director::Config.load_hash(config_hash) }
 
   describe 'when workers is sent USR1' do

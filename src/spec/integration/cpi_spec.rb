@@ -12,10 +12,10 @@ describe 'CPI calls', type: :integration do
     File.read(current_sandbox.nats_certificate_paths['ca_path'])
   }
   let(:client_cert) {
-    File.read(current_sandbox.nats_certificate_paths['clients']['director']['certificate_path'])
+    File.read(current_sandbox.nats_certificate_paths['clients']['agent']['certificate_path'])
   }
   let(:client_key) {
-    File.read(current_sandbox.nats_certificate_paths['clients']['director']['private_key_path'])
+    File.read(current_sandbox.nats_certificate_paths['clients']['agent']['private_key_path'])
   }
 
   let(:expected_mbus) {
@@ -61,13 +61,6 @@ describe 'CPI calls', type: :integration do
       })
 
       expect(invocations[2].method_name).to eq('create_vm')
-
-      puts '======================='
-      pp invocations[2].inputs
-      puts '======================='
-      pp expected_mbus
-      puts '======================='
-
 
       expect(invocations[2].inputs).to match({
         'agent_id' => String,

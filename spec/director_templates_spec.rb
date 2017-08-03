@@ -2,6 +2,7 @@ require 'rspec'
 require 'yaml'
 require 'bosh/template/evaluation_context'
 require 'json'
+require 'template_example_group'
 
 describe 'director.yml.erb.erb' do
   let(:deployment_manifest_fragment) do
@@ -27,10 +28,7 @@ describe 'director.yml.erb.erb' do
           'user' => 'nats',
           'password' => '1a0312a24c0a0',
           'address' => '10.10.0.7',
-          'port' => 4222,
-          'cert' => {
-            'ca' => 'some-cert-value'
-          }
+          'port' => 4222
         },
         'director' => {
           'name' => 'vpc-bosh-idora',
@@ -145,8 +143,29 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
     end
 
-    it 'should have the path for nats server ca cert' do
-      expect(parsed_yaml['nats_server_ca_path']).to eq('/var/vcap/jobs/director/config/nats_server_ca.cert')
+    context 'nats' do
+      it 'should have the path to server ca certificate' do
+        expect(parsed_yaml['nats']['server_ca_path']).to eq('/var/vcap/jobs/director/config/nats_server_ca.pem')
+      end
+
+      context 'director' do
+        it 'should have the path to director certificate' do
+          expect(parsed_yaml['nats']['client_certificate_path']).to eq('/var/vcap/jobs/director/config/nats_client_certificate.pem')
+        end
+        it 'should have the path to director private key' do
+          expect(parsed_yaml['nats']['client_private_key_path']).to eq('/var/vcap/jobs/director/config/nats_client_private_key')
+        end
+      end
+
+      context 'agent' do
+        it 'should have the path to agent certificate' do
+          expect(parsed_yaml['nats']['agent']['client_certificate_path']).to eq('/var/vcap/jobs/director/config/nats_agent_certificate.pem')
+        end
+      
+        it 'should have the path to agent private key' do
+          expect(parsed_yaml['nats']['agent']['client_private_key_path']).to eq('/var/vcap/jobs/director/config/nats_agent_private_key')
+        end
+      end
     end
 
     context 'when domain name specified without all other dns properties' do
@@ -429,6 +448,105 @@ describe 'director.yml.erb.erb' do
 
     it 'configures the cpi correctly' do
       expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
+    end
+  end
+end
+
+describe 'nats' do
+  describe 'nats_server_ca.pem.erb' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { '../jobs/director/templates/nats_server_ca.pem.erb' }
+      let(:properties) do
+        {
+          'properties' => {
+            'nats' => {
+              'tls' => {
+                'ca' => content
+              }
+            }
+          }
+        }
+      end
+    end
+  end
+
+  describe 'director' do
+    describe 'nats_client_certificate.pem.erb' do
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/nats_client_certificate.pem.erb' }
+        let(:properties) do
+          {
+            'properties' => {
+              'nats' => {
+                'tls' => {
+                  'director' => {
+                    'certificate' => content
+                  }
+                }
+              }
+            }
+          }
+        end
+      end
+    end
+
+    describe 'nats_client_private_key.erb' do
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/nats_client_private_key.erb' }
+        let(:properties) do
+          {
+            'properties' => {
+              'nats' => {
+                'tls' => {
+                  'director' => {
+                    'private_key' => content
+                  }
+                }
+              }
+            }
+          }
+        end
+      end
+    end
+  end
+
+  describe 'agent' do
+    describe 'nats_client_certificate.pem.erb' do
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/nats_agent_certificate.pem.erb' }
+        let(:properties) do
+          {
+            'properties' => {
+              'nats' => {
+                'tls' => {
+                  'agent' => {
+                    'certificate' => content
+                  }
+                }
+              }
+            }
+          }
+        end
+      end
+    end
+
+    describe 'nats_client_private_key.erb' do
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/nats_agent_private_key.erb' }
+        let(:properties) do
+          {
+            'properties' => {
+              'nats' => {
+                'tls' => {
+                  'agent' => {
+                    'private_key' => content
+                  }
+                }
+              }
+            }
+          }
+        end
+      end
     end
   end
 end

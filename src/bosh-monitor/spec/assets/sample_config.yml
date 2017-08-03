@@ -6,7 +6,9 @@ mbus:
   endpoint: nats://127.0.0.1:4222
   user: test-user
   password: test-password
-  ca_path: test-ca-path
+  server_ca_path: test-ca-path
+  client_certificate_path: test-certificate-path
+  client_private_key_path: test-private_key-path
 
 director: &director
   endpoint: http://127.0.0.1:25555
