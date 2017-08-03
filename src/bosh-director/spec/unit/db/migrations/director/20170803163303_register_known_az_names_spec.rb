@@ -52,5 +52,18 @@ module Bosh::Director
         {name: 'z2'},
       )
     end
+
+    it 'does not attempt to register a null az' do
+      add_instance_to_az('z1')
+      add_instance_to_az(nil)
+      add_instance_to_az(nil)
+
+      DBSpecHelper.migrate(migration_file)
+
+      azs = db[:local_dns_encoded_azs].select(:name).all
+      expect(azs).to contain_exactly(
+        {name: 'z1'},
+      )
+    end
   end
 end
