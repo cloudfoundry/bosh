@@ -57,6 +57,14 @@ module Bosh::Director
           expect(body.last['orphaned_at']).to eq("#{orphaned_at}")
           expect(body.last['cloud_properties']).to be_empty
         end
+
+        it 'deletes an orphan disk' do
+          expect(Jobs::DeleteOrphanDisks).to receive(:enqueue)
+            .with('admin', ['random-disk-cid-1'], kind_of(JobQueue))
+            .and_call_original
+          delete '/random-disk-cid-1'
+          expect_redirect_to_queued_task(last_response)
+        end
       end
     end
   end
