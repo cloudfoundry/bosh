@@ -3,12 +3,13 @@ module Bosh::Director
     def initialize(runner, deployment_planner, name, instance, instance_group, skip_errand, keep_alive, deployment_name, logger)
       @runner = runner
       @deployment_planner = deployment_planner
+      @errand_name = name
       @instance = instance
       @skip_errand = skip_errand
       @keep_alive = keep_alive
       @logger = logger
       instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, instance_group, @logger)
-      @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, name, deployment_name)
+      @errand_instance_updater = Errand::ErrandInstanceUpdater.new(instance_group_manager, @logger, @errand_name, deployment_name)
     end
 
     def prepare
@@ -19,7 +20,7 @@ module Bosh::Director
     def run(&checkpoint_block)
       if @skip_errand
         @logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-        return
+        return Errand::Result.new(@errand_name, -1, 'no configuration changes', '', nil)
       end
 
       begin
@@ -28,7 +29,7 @@ module Bosh::Director
           @logger.info('Starting to run errand')
           result = @runner.run(@instance, &checkpoint_block)
         end
-        result.short_description
+        result
       ensure
         @deployment_planner.template_blob_cache.clean_cache!
       end

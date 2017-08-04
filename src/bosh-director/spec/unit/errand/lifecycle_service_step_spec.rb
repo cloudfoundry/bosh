@@ -2,14 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::LifecycleServiceStep do
-    subject(:errand_step) do
-      Errand::LifecycleServiceStep.new(
-        runner,
-        instance,
-        logger
-      )
-    end
-
+    subject(:errand_step) { Errand::LifecycleServiceStep.new(runner, instance, logger) }
     let(:runner) { instance_double(Errand::Runner) }
     let(:errand_name) { 'errand_name' }
     let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
@@ -31,11 +24,12 @@ module Bosh::Director
     describe '#run' do
       let(:checkpoint_block) { Proc.new {} }
 
-      it 'returns the result string' do
+      it 'returns the result' do
         expect(runner).to receive(:run).with(instance, &checkpoint_block).
           and_return(errand_result)
         result = errand_step.run(&checkpoint_block)
-        expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+        expect(result.short_description).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+        expect(result.exit_code).to eq(0)
       end
     end
   end

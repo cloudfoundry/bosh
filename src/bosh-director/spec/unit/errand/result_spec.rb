@@ -60,6 +60,14 @@ module Bosh::Director
         end
       end
 
+      context 'when errand exit_code is -1 (for skipped errands)' do
+        it 'returns successful errand completion message as task short result (not result file)' do
+          subject = described_class.new('fake-job-name', -1, 'no change', '', '')
+          expect(subject.short_description).to eq(
+            "Errand 'fake-job-name' did not run (no change)")
+        end
+      end
+
       context 'when errand exit_code is non-0' do
         it 'returns error errand completion message as task short result (not result file)' do
           subject = described_class.new('fake-job-name', 123, '', '', '')

@@ -11,8 +11,7 @@ module Bosh::Director
 
     def run(&checkpoint_block)
       @logger.info('Starting to run errand')
-      result = @runner.run(@instance, &checkpoint_block)
-      result.short_description
+      @runner.run(@instance, &checkpoint_block)
     end
 
     def ignore_cancellation?

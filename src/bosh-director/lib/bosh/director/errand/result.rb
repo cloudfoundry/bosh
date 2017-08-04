@@ -36,6 +36,8 @@ module Bosh::Director
 
       if @exit_code == 0
         "#{title_prefix} completed successfully #{exit_code_suffix}"
+      elsif @exit_code == -1
+        "#{title_prefix} did not run (#{@stdout})"
       elsif @exit_code > 128
         "#{title_prefix} was canceled #{exit_code_suffix}"
       else

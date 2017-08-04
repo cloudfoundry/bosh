@@ -80,6 +80,12 @@ module Bosh::Director
           expect(errand_instance_updater).not_to receive(:with_updated_instances)
           errand_step.run(&lambda {})
         end
+
+        it 'returns an empty result' do
+          errand_step_run = errand_step.run(&lambda {})
+          expect(errand_step_run.short_description).to eq("Errand 'errand_name' did not run (no configuration changes)")
+          expect(errand_step_run.exit_code).to eq(-1)
+        end
       end
 
       context 'when instance group is lifecycle errand' do
@@ -104,7 +110,8 @@ module Bosh::Director
           result = errand_step.run(&the_block)
 
           expect(block_evidence).to be(true)
-          expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+          expect(result.short_description).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+          expect(result.exit_code).to eq(0)
         end
       end
 
