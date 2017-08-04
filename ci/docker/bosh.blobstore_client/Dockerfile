@@ -1,10 +1,5 @@
 FROM ubuntu:latest
 
-RUN locale-gen en_US.UTF-8
-RUN dpkg-reconfigure locales
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-
 RUN apt-get update; apt-get -y upgrade; apt-get clean
 
 RUN apt-get install -y git curl tar make; apt-get clean
@@ -12,6 +7,13 @@ RUN apt-get install -y git curl tar make; apt-get clean
 RUN apt-get install -y python-dateutil python-magic; apt-get clean
 
 RUN apt-get install -y libsqlite3-dev libmysqlclient-dev libpq-dev; apt-get clean
+
+RUN apt-get install -y locales; apt-get clean
+
+RUN locale-gen en_US.UTF-8
+RUN dpkg-reconfigure locales
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
 
 # chruby
 RUN mkdir /tmp/chruby && \
@@ -47,3 +49,18 @@ RUN cd /tmp && \
     cp -R s3cmd S3 /usr/local/bin && \
     cd /tmp && \
     rm -rf s3cmd-1.6.0/ v1.6.0.tar.gz
+
+ENV GCLOUD_VERSION=157.0.0
+ENV GCLOUD_SHA1SUM=383522491db5feb9f03053f29aaf6a1cf778e070
+
+RUN mkdir /tmp/gcloud-install && \
+    cd /tmp/gcloud-install && \
+    curl -L -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+    echo "${GCLOUD_SHA1SUM}  google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz" > gcloud_${GCLOUD_VERSION}_SHA1SUM && \
+    sha1sum -cw --status gcloud_${GCLOUD_VERSION}_SHA1SUM && \
+    tar xvf google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+    mv google-cloud-sdk / && cd /google-cloud-sdk  && ./install.sh && \
+    cd /tmp && \
+    rm -rf gcloud-install
+
+ENV PATH=$PATH:/google-cloud-sdk/bin
