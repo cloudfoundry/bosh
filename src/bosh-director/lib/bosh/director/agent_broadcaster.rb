@@ -66,6 +66,7 @@ module Bosh::Director
           pending_clone = pending.clone
         end
 
+        unresponsive_agents = []
         pending_clone.each do |instance|
           agent_client = agent_client(instance.credentials, instance.agent_id)
           agent_client.cancel_sync_dns(instance_to_request_id[instance])
@@ -73,7 +74,11 @@ module Bosh::Director
           lock.synchronize do
             num_unresponsive += 1
           end
-          @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
+
+          unresponsive_agents << instance.agent_id
+        end
+        if num_unresponsive > 0
+          @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
         end
 
         elapsed_time = ((Time.now - start_time) * 1000).ceil
