@@ -151,7 +151,7 @@ GEM
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (1.2.1)
-    eventmachine (1.2.3)
+    eventmachine (1.2.5)
     excon (0.49.0)
     fakefs (0.6.7)
     ffi (1.9.17)
