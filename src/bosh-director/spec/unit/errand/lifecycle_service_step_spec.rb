@@ -28,7 +28,7 @@ module Bosh::Director
         expect(runner).to receive(:run).with(instance, &checkpoint_block).
           and_return(errand_result)
         result = errand_step.run(&checkpoint_block)
-        expect(result.successful?).to eq(truecc )
+        expect(result.successful?).to eq(true)
         expect(result.exit_code).to eq(0)
       end
     end
