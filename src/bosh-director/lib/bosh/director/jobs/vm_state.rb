@@ -45,6 +45,7 @@ module Bosh::Director
 
         {
           :vm_cid => instance.vm_cid,
+          :vm_created_at => instance.vm_created_at,
           :disk_cid => instance.managed_persistent_disk_cid,
           :disk_cids => instance.active_persistent_disks.collection.map{|d| d.model.disk_cid},
           :ips => ips(instance),
