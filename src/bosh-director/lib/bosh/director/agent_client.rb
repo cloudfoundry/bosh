@@ -237,7 +237,7 @@ module Bosh::Director
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
       options = { 'logging' => true }
-      options = { 'logging' => false } if method_name == :sync_dns
+      options['logging'] = false if method_name == :sync_dns
 
       if @encryption_handler
         @logger.info("Request: #{request}") if options['logging']

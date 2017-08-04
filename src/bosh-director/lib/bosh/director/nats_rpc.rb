@@ -29,7 +29,7 @@ module Bosh::Director
       request_id = generate_request_id
       request["reply_to"] = "#{@inbox_name}.#{request_id}"
       @lock.synchronize do
-        @requests[request_id] = callback
+        @requests[request_id] = [callback, options]
       end
 
       sanitized_log_message = sanitize_log_message(request)
@@ -84,10 +84,10 @@ module Bosh::Director
     end
 
     def handle_response(message, subject)
-      @logger.debug("RECEIVED: #{subject} #{message}")
       begin
         request_id = subject.split(".").last
-        callback = @lock.synchronize { @requests.delete(request_id) }
+        callback, options = @lock.synchronize { @requests.delete(request_id) }
+        @logger.debug("RECEIVED: #{subject} #{message}") if options.fetch('logging', true)
         if callback
           message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)
