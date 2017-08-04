@@ -226,6 +226,29 @@ module Bhm
         end
       end
 
+      describe '#get_deleted_agents_for_deployment' do
+        it 'can provide agent information for a deployment' do
+          instance_1 = Bhm::Instance.create({'id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true})
+          instance_2 = Bhm::Instance.create({'id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true})
+          instance_3 = Bhm::Instance.create({'id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true})
+
+          manager.sync_deployments([{'name' => 'mycloud'}])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
+
+          agents = manager.get_deleted_agents_for_deployment('mycloud')
+          expect(agents.size).to eq(3)
+          agents['iuuid3'].deployment == 'mycloud'
+          agents['iuuid3'].job == 'mutator'
+          agents['iuuid3'].index == '28'
+        end
+
+        it 'can provide agent information for missing deployment' do
+          agents = manager.get_deleted_agents_for_deployment('mycloud')
+
+          expect(agents.size).to eq(0)
+        end
+      end
+
 
       describe '#get_instances_for_deployment' do
         before do

@@ -57,7 +57,9 @@ module Bosh::Monitor::Plugins
       end
 
       def state_for(deployment)
-        agents = @instance_manager.get_agents_for_deployment(deployment)
+        #do not forget about instances with deleted vm, which expect to have vm
+        agents = @instance_manager.get_agents_for_deployment(deployment).values +
+                 @instance_manager.get_deleted_agents_for_deployment(deployment).values
         unhealthy_count = unhealthy_count(agents)
 
         DeploymentState.new(deployment, agents.count, unhealthy_count, {
@@ -71,7 +73,7 @@ module Bosh::Monitor::Plugins
       def unhealthy_count(agents)
         count = 0
 
-        agents.values.each do |agent|
+        agents.each do |agent|
           key = JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
 
           if time = @unhealthy_agents.fetch(key, false)
@@ -111,7 +113,7 @@ module Bosh::Monitor::Plugins
       end
 
       def summary
-        "deployment: '#{@eployment}'; #{@unhealthy_count} of #{@agent_count} agents are unhealthy (#{(unhealthy_percent * 100).round(1)}%)"
+        "deployment: '#{@deployment}'; #{@unhealthy_count} of #{@agent_count} agents are unhealthy (#{(unhealthy_percent * 100).round(1)}%)"
       end
 
       private
