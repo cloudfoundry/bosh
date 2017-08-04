@@ -35,7 +35,7 @@ module Bosh::Director
       sanitized_log_message = sanitize_log_message(request)
       request_body = JSON.generate(request)
 
-      @logger.debug("SENT: #{client} #{sanitized_log_message}") if options.fetch('logging', true)
+      @logger.debug("SENT: #{client} #{sanitized_log_message}") if options['logging']
 
       EM.schedule do
         subscribe_inbox
@@ -87,7 +87,7 @@ module Bosh::Director
       begin
         request_id = subject.split(".").last
         callback, options = @lock.synchronize { @requests.delete(request_id) }
-        @logger.debug("RECEIVED: #{subject} #{message}") if options.fetch('logging', true)
+        @logger.debug("RECEIVED: #{subject} #{message}") if options['logging']
         if callback
           message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)

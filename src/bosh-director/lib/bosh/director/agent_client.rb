@@ -128,7 +128,7 @@ module Bosh::Director
     end
 
     def sync_dns(*args, &blk)
-      send_nats_request(:sync_dns, args, &blk)
+      send_nats_request_quietly(:sync_dns, args, &blk)
     end
 
     def cancel_sync_dns(request_id)
@@ -233,11 +233,8 @@ module Bosh::Director
       end
     end
 
-    def send_nats_request(method_name, args, &callback)
+    def send_nats_request_with_options(method_name, args, options, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
-
-      options = { 'logging' => true }
-      options['logging'] = false if method_name == :sync_dns
 
       if @encryption_handler
         @logger.info("Request: #{request}") if options['logging']
@@ -247,6 +244,14 @@ module Bosh::Director
 
       recipient = "#{@service_name}.#{@client_id}"
       @nats_rpc.send_request(recipient, request, options, &callback)
+    end
+
+    def send_nats_request_quietly(method_name, args, &callback)
+      send_nats_request_with_options(method_name, args, { 'logging' => false }, &callback)
+    end
+
+    def send_nats_request(method_name, args, &callback)
+      send_nats_request_with_options(method_name, args, { 'logging' => true }, &callback)
     end
 
     def handle_method(method_name, args, &blk)
@@ -359,7 +364,7 @@ module Bosh::Director
     end
 
     def fire_and_forget(message_name, *args)
-      request_id = send_nats_request(message_name, args)
+      request_id = send_nats_request_quietly(message_name, args)
       @nats_rpc.cancel_request(request_id)
     rescue => e
       @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
