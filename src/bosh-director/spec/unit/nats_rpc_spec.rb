@@ -24,12 +24,14 @@ describe Bosh::Director::NatsRpc do
   }
 
   before do
-    allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
     allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
     allow(some_logger).to receive(:debug)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
+    allow(nats).to receive(:flush) do |&blk|
+      blk.call()
+    end
   end
 
   describe '#nats' do
@@ -70,6 +72,10 @@ describe Bosh::Director::NatsRpc do
   end
 
   describe 'send_request' do
+    before do
+      allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+    end
+
     it 'should publish a message to the client' do
       expect(nats).to receive(:subscribe).with('director.123.>')
       expect(nats).to receive(:publish) do |subject, message|
@@ -80,6 +86,9 @@ describe Bosh::Director::NatsRpc do
           'arguments' => [5],
           'reply_to' => 'director.123.req1'
         })
+      end
+      expect(nats).to receive(:flush) do |&blk|
+        blk.call()
       end
 
       request_id = nats_rpc.send_request('test_client',  {'method' => 'a', 'arguments' => [5]})
@@ -117,6 +126,24 @@ describe Bosh::Director::NatsRpc do
         called_times += 1
       end
       expect(called_times).to eql(1)
+    end
+
+    it 'will NOT call flush after receiving the first response' do
+      subscribe_callback = nil
+      expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
+        subscribe_callback = block
+      end
+
+      expect(nats).to receive(:publish).twice do
+        subscribe_callback.call('', nil, 'director.123.req1')
+      end
+
+      expect(nats).to receive(:flush).once do |&blk|
+        blk.call()
+      end
+
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]})
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]})
     end
 
     context 'logging' do
@@ -165,6 +192,10 @@ describe Bosh::Director::NatsRpc do
   end
 
   describe 'cancel_request' do
+    before do
+      allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+    end
+
     it 'should not fire after cancel was called' do
       subscribe_callback = nil
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|

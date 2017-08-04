@@ -12,6 +12,7 @@ module Bosh::Director
       @lock = Mutex.new
       @inbox_name = "director.#{Config.process_uuid}"
       @requests = {}
+      @handled_response = false
     end
 
     # Returns a lazily connected NATS client
@@ -47,7 +48,13 @@ module Bosh::Director
       @logger.debug("SENT: #{client} #{sanitized_log_message}")
       EM.schedule do
         subscribe_inbox
-        nats.publish(client, request_body)
+        if @handled_response
+          nats.publish(client, request_body)
+        else
+          nats.flush do
+            nats.publish(client, request_body)
+          end
+        end
       end
       request_id
     end
@@ -101,6 +108,7 @@ module Bosh::Director
         @lock.synchronize do
           if @subject_id.nil?
             @subject_id = client.subscribe("#{@inbox_name}.>") do |message, _, subject|
+              @handled_response = true
               handle_response(message, subject)
             end
           end
