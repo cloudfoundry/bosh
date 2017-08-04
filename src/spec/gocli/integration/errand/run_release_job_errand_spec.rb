@@ -134,7 +134,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       instance_group
     end
 
-    it 'runs all in an instance group' do
+    it 'runs all in an instance group or on specific instances' do
       deploy_from_scratch(manifest_hash: manifest_hash)
 
       output = bosh_runner.run('run-errand errand1 --instance second_service_with_errand', deployment_name: deployment_name)
@@ -144,10 +144,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
 
       expect(output).to_not match /job=service_with_errand/
       expect(output).to_not match /job=fake-errand-name/
-    end
-
-    it 'runs on specific instances' do
-      deploy_from_scratch(manifest_hash: manifest_hash)
 
       output = bosh_runner.run('run-errand errand1 --instance second_service_with_errand/0 --instance service_with_errand/1', deployment_name: deployment_name)
 

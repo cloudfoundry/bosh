@@ -82,9 +82,8 @@ module Bosh::Director
         end
 
         it 'returns an empty result' do
-          errand_step_run = errand_step.run(&lambda {})
-          expect(errand_step_run.short_description).to eq("Errand 'errand_name' did not run (no configuration changes)")
-          expect(errand_step_run.exit_code).to eq(-1)
+          result = errand_step.run(&lambda {})
+          expect(result.skipped?).to eq(true)
         end
       end
 
@@ -110,8 +109,7 @@ module Bosh::Director
           result = errand_step.run(&the_block)
 
           expect(block_evidence).to be(true)
-          expect(result.short_description).to eq("Errand 'errand_name' completed successfully (exit code 0)")
-          expect(result.exit_code).to eq(0)
+          expect(result.successful?).to eq(true)
         end
       end
 

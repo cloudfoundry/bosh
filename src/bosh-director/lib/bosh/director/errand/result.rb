@@ -30,21 +30,6 @@ module Bosh::Director
       @logs_blob_sha1 = logs_blob_sha1
     end
 
-    def short_description
-      title_prefix = "Errand '#{@errand_name}'"
-      exit_code_suffix = "(exit code #{@exit_code})"
-
-      if @exit_code == 0
-        "#{title_prefix} completed successfully #{exit_code_suffix}"
-      elsif @exit_code == -1
-        "#{title_prefix} did not run (#{@stdout})"
-      elsif @exit_code > 128
-        "#{title_prefix} was canceled #{exit_code_suffix}"
-      else
-        "#{title_prefix} completed with error #{exit_code_suffix}"
-      end
-    end
-
     def to_hash
       {
         'errand_name' => @errand_name,
@@ -56,6 +41,22 @@ module Bosh::Director
           'sha1' => @logs_blob_sha1,
         },
       }
+    end
+
+    def skipped?
+      @exit_code < 0
+    end
+
+    def cancelled?
+      @exit_code > 128
+    end
+
+    def errored?
+      @exit_code > 0 && @exit_code <= 128
+    end
+
+    def successful?
+      @exit_code == 0
     end
   end
 end

@@ -272,11 +272,11 @@ module Bosh::Director
 
                     expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 
-                expect(template_blob_cache).to receive(:clean_cache!).ordered
+                    expect(template_blob_cache).to receive(:clean_cache!).ordered
 
                     expect(called_after_block_check).to receive(:call).ordered
 
-                    expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                   end
                 end
 
@@ -319,7 +319,7 @@ module Bosh::Director
                   it 'does not delete instances' do
                     expect(instance_group_manager).to_not receive(:delete_vms)
 
-                    expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                   end
                 end
 
@@ -377,7 +377,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
 
@@ -395,7 +395,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
                     end
@@ -417,7 +417,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
 
@@ -431,7 +431,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
                     end

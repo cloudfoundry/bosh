@@ -51,40 +51,6 @@ module Bosh::Director
       end
     end
 
-    describe '#short_description' do
-      context 'when errand exit_code is 0' do
-        it 'returns successful errand completion message as task short result (not result file)' do
-          subject = described_class.new('fake-job-name', 0, '', '', '')
-          expect(subject.short_description).to eq(
-            "Errand 'fake-job-name' completed successfully (exit code 0)")
-        end
-      end
-
-      context 'when errand exit_code is -1 (for skipped errands)' do
-        it 'returns successful errand completion message as task short result (not result file)' do
-          subject = described_class.new('fake-job-name', -1, 'no change', '', '')
-          expect(subject.short_description).to eq(
-            "Errand 'fake-job-name' did not run (no change)")
-        end
-      end
-
-      context 'when errand exit_code is non-0' do
-        it 'returns error errand completion message as task short result (not result file)' do
-          subject = described_class.new('fake-job-name', 123, '', '', '')
-          expect(subject.short_description).to eq(
-            "Errand 'fake-job-name' completed with error (exit code 123)")
-        end
-      end
-
-      context 'when errand exit_code is >128' do
-        it 'returns error errand cancellation message as task short result (not result file)' do
-          subject = described_class.new('fake-job-name', 143, '', '', '')
-          expect(subject.short_description).to eq(
-            "Errand 'fake-job-name' was canceled (exit code 143)")
-        end
-      end
-    end
-
     describe '#to_hash' do
       it 'returns blobstore_id and sha1 when it is available' do
         subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', 'fake-blobstore-id', 'sha1-blob')
@@ -112,6 +78,80 @@ module Bosh::Director
             'sha1' => nil,
           },
         )
+      end
+    end
+
+    describe '#successful?' do
+      context 'when exit_code is 0' do
+        it 'returns true' do
+          subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.successful?).to eq(true)
+        end
+      end
+
+      context 'when exit code is not 0' do
+        it 'returns false' do
+          subject = described_class.new('errand-name', 1, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.successful?).to eq(false)
+        end
+      end
+    end
+
+    describe '#errored?' do
+      context 'when exit_code is between 1 - 128 inclusive' do
+        it 'returns true' do
+          subject = described_class.new('errand-name', 1, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.errored?).to eq(true)
+          subject = described_class.new('errand-name', 128, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.errored?).to eq(true)
+        end
+      end
+
+      context 'when exit code is not 1 - 128 inclusive' do
+        it 'returns false' do
+          subject = described_class.new('errand-name', -1, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.errored?).to eq(false)
+          subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.errored?).to eq(false)
+          subject = described_class.new('errand-name', 129, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.errored?).to eq(false)
+        end
+      end
+    end
+
+    describe '#cancelled?' do
+      context 'when exit_code is 129 or above' do
+        it 'returns true' do
+          subject = described_class.new('errand-name', 129, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.cancelled?).to eq(true)
+        end
+      end
+
+      context 'when exit code is below 129, but above -1' do
+        it 'returns false' do
+          subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.cancelled?).to eq(false)
+          subject = described_class.new('errand-name', 128, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.cancelled?).to eq(false)
+        end
+      end
+    end
+
+    describe '#skipped?' do
+      context 'when exit_code is negative' do
+        it 'returns true' do
+          subject = described_class.new('errand-name', -1, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.skipped?).to eq(true)
+        end
+      end
+
+      context 'when exit code is not negative' do
+        it 'returns false' do
+          subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.skipped?).to eq(false)
+          subject = described_class.new('errand-name', 1, 'fake-stdout', 'fake-stderr', nil, nil)
+          expect(subject.skipped?).to eq(false)
+        end
       end
     end
   end
