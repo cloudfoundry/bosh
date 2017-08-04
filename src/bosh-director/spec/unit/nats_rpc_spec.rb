@@ -4,6 +4,7 @@ describe Bosh::Director::NatsRpc do
   let(:nats) { instance_double('NATS') }
   let(:nats_url) { 'fake-nats-url' }
   subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url) }
+  let(:options) {{}}
 
   before do
     allow(NATS).to receive(:connect).and_return(nats)
@@ -26,7 +27,7 @@ describe Bosh::Director::NatsRpc do
         })
       end
 
-      request_id = nats_rpc.send_request('test_client',  {'method' => 'a', 'arguments' => [5]})
+      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options)
       expect(request_id).to eql('req1')
     end
 
@@ -40,7 +41,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       callback_called = false
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         callback_called = true
       end
       expect(callback_called).to be(true)
@@ -57,7 +58,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       called_times = 0
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         called_times += 1
       end
       expect(called_times).to eql(1)
@@ -90,7 +91,7 @@ describe Bosh::Director::NatsRpc do
                                  })
         end
 
-        request_id = nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments})
+        request_id = nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments}, options)
         expect(request_id).to eql('req1')
       end
 
@@ -107,8 +108,16 @@ describe Bosh::Director::NatsRpc do
                                  })
         end
 
-        request_id = nats_rpc.send_request('test_any_method', {:method => :any_method, :arguments => arguments})
+        request_id = nats_rpc.send_request('test_any_method', {:method => :any_method, :arguments => arguments}, options)
         expect(request_id).to eql('req1')
+      end
+
+      it 'if passed options with logging=false, it does not log' do
+        expect(logger).to_not receive(:debug)
+
+        allow(nats).to receive(:subscribe)
+        allow(nats).to receive(:publish)
+        nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments}, {'logging' => false})
       end
     end
   end
@@ -123,7 +132,7 @@ describe Bosh::Director::NatsRpc do
       expect(nats).to receive(:publish)
 
       called = false
-      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         called = true
       end
       expect(request_id).to eql('req1')

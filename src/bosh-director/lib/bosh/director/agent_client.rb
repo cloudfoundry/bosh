@@ -236,14 +236,17 @@ module Bosh::Director
     def send_nats_request(method_name, args, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
+      options = { 'logging' => true }
+      options = { 'logging' => false } if method_name == :sync_dns
+
       if @encryption_handler
-        @logger.info("Request: #{request}")
+        @logger.info("Request: #{request}") if options['logging']
         request = {'encrypted_data' => @encryption_handler.encrypt(request) }
         request['session_id'] = @encryption_handler.session_id
       end
 
       recipient = "#{@service_name}.#{@client_id}"
-      @nats_rpc.send_request(recipient, request, &callback)
+      @nats_rpc.send_request(recipient, request, options, &callback)
     end
 
     def handle_method(method_name, args, &blk)

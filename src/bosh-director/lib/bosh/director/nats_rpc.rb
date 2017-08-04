@@ -25,7 +25,7 @@ module Bosh::Director
     end
 
     # Sends a request (encoded as JSON) and listens for the response
-    def send_request(client, request, &callback)
+    def send_request(client, request, options, &callback)
       request_id = generate_request_id
       request["reply_to"] = "#{@inbox_name}.#{request_id}"
       @lock.synchronize do
@@ -35,7 +35,8 @@ module Bosh::Director
       sanitized_log_message = sanitize_log_message(request)
       request_body = JSON.generate(request)
 
-      @logger.debug("SENT: #{client} #{sanitized_log_message}")
+      @logger.debug("SENT: #{client} #{sanitized_log_message}") if options.fetch('logging', true)
+
       EM.schedule do
         subscribe_inbox
         nats.publish(client, request_body)
