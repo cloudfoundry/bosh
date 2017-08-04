@@ -120,7 +120,7 @@ namespace :spec do
         end
       end
       puts command
-      abort unless sh(command)
+      abort unless system(command)
     end
   end
 
@@ -134,7 +134,7 @@ namespace :spec do
     command = unit_cmd(build, log_file)
 
     # inject command name so coverage results for each component don't clobber others
-    if sh({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file
+    if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file
       puts "----- BEGIN #{build}"
       puts "            #{command}"
       print File.read(log_file)
