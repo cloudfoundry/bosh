@@ -73,6 +73,7 @@ module Bosh::Director::Core::Templates
 
       let(:logger) { double('Logger', debug: nil) }
       let(:dns_encoder) { double('fake dns encoder') }
+      let(:release) {double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version:'0.1')}
 
       it 'returns the jobs template erb objects' do
         tarball_path = create_job_tarball(
@@ -87,7 +88,8 @@ module Bosh::Director::Core::Templates
         job = double('Bosh::Director::DeploymentPlan::Job',
           download_blob: tarball_path,
           name: 'plan-job-name',
-          blobstore_id: 'blob-id'
+          blobstore_id: 'blob-id',
+          release: release
         )
 
         monit_erb = instance_double(SourceErb)
@@ -109,7 +111,7 @@ module Bosh::Director::Core::Templates
         ).and_return(job_template_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          'plan-job-name',
+          job,
           'release-job-name',
           monit_erb,
           [job_template_erb],
@@ -128,7 +130,8 @@ module Bosh::Director::Core::Templates
           'Bosh::Director::DeploymentPlan::Job',
           download_blob: tarball_path,
           name: 'plan-job-name',
-          blobstore_id: 'blob-id'
+          blobstore_id: 'blob-id',
+          release: release,
         )
 
         monit_erb = instance_double(SourceErb)
@@ -142,7 +145,7 @@ module Bosh::Director::Core::Templates
         ).and_return(monit_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          'plan-job-name',
+          job,
           'release-job-no-templates',
           monit_erb,
           [],

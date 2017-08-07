@@ -371,7 +371,11 @@ module Bosh
 
         def templates
           @existing_instance.templates.map do |template_model|
-            template = Job.new(nil, template_model.name, @instance.model.deployment.name)
+            model_release_version = @instance.model.deployment.release_versions.find { |release_version| release_version.templates.map(&:id).include? (template_model.id) }
+            release_spec= {'name' => model_release_version.release.name, 'version' => model_release_version.version}
+            job_release_version = ReleaseVersion.new(@instance.model.deployment, release_spec)
+            job_release_version.bind_model
+            template = Job.new(job_release_version, template_model.name, @instance.model.deployment.name)
             template.bind_existing_model(template_model)
             template
           end
