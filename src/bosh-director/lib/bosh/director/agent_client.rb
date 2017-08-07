@@ -237,7 +237,7 @@ module Bosh::Director
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
       if @encryption_handler
-        @logger.info("Request: #{request}") if options['logging']
+        @logger.info("Request: #{request}") unless options['logging'] == false
         request = {'encrypted_data' => @encryption_handler.encrypt(request) }
         request['session_id'] = @encryption_handler.session_id
       end

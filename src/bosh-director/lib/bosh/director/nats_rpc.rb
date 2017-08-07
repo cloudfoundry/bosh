@@ -35,7 +35,7 @@ module Bosh::Director
       sanitized_log_message = sanitize_log_message(request)
       request_body = JSON.generate(request)
 
-      @logger.debug("SENT: #{client} #{sanitized_log_message}") if options['logging']
+      @logger.debug("SENT: #{client} #{sanitized_log_message}") unless options['logging'] == false
 
       EM.schedule do
         subscribe_inbox
