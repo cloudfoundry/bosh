@@ -29,13 +29,13 @@ module Bosh::Director
       request_id = generate_request_id
       request["reply_to"] = "#{@inbox_name}.#{request_id}"
       @lock.synchronize do
-        @requests[request_id] = callback
+        @requests[request_id] = [callback, options]
       end
 
       sanitized_log_message = sanitize_log_message(request)
       request_body = JSON.generate(request)
 
-      @logger.debug("SENT: #{client} #{sanitized_log_message}") if options.fetch('logging', true)
+      @logger.debug("SENT: #{client} #{sanitized_log_message}") unless options['logging'] == false
 
       EM.schedule do
         subscribe_inbox
@@ -84,10 +84,10 @@ module Bosh::Director
     end
 
     def handle_response(message, subject)
-      @logger.debug("RECEIVED: #{subject} #{message}")
       begin
         request_id = subject.split(".").last
-        callback = @lock.synchronize { @requests.delete(request_id) }
+        callback, options = @lock.synchronize { @requests.delete(request_id) }
+        @logger.debug("RECEIVED: #{subject} #{message}") if options['logging']
         if callback
           message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)

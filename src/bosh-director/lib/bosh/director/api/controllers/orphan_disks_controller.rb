@@ -14,6 +14,13 @@ module Bosh::Director
         orphan_json = @orphan_disk_manager.list_orphan_disks
         json_encode(orphan_json)
       end
+
+      delete '/:cid' do
+        job_queue = JobQueue.new
+        task = Bosh::Director::Jobs::DeleteOrphanDisks.enqueue(current_user, [params[:cid]], job_queue)
+
+        redirect "/tasks/#{task.id}"
+      end
     end
   end
 end

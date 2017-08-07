@@ -115,8 +115,15 @@ describe Bosh::Director::NatsRpc do
       it 'if passed options with logging=false, it does not log' do
         expect(logger).to_not receive(:debug)
 
-        allow(nats).to receive(:subscribe)
-        allow(nats).to receive(:publish)
+        subscribe_callback = nil
+        allow(nats).to receive(:subscribe).with('director.123.>') do |&block|
+          subscribe_callback = block
+        end
+
+        allow(nats).to receive(:publish)do
+          subscribe_callback.call('success response', nil, 'director.123.req1')
+        end
+
         nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments}, {'logging' => false})
       end
     end

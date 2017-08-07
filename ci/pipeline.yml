@@ -699,6 +699,8 @@ jobs:
         - get: bosh-src
           passed:
           - candidate-release
+        - get: dns-release
+        - get: candidate-warden-ubuntu-stemcell
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -810,6 +812,12 @@ resources:
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
+  - name: dns-release
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/dns-release
+      branch: master
+
   #
   # BATS
   #
@@ -838,6 +846,12 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+  - name: candidate-warden-ubuntu-stemcell
+    type: s3
+    source:
+      bucket: bosh-core-stemcells-candidate
+      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
 
   - name: warden-ubuntu-trusty
     type: bosh-io-stemcell

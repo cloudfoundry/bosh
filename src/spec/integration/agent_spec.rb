@@ -62,20 +62,19 @@ describe 'Agent', type: :integration do
       end
 
       context 'starting a new instance' do
-        it 'should call these methods in the following order' do
+        it 'should call and log these methods in the following order' do
           updated_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
           output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
           sent_messages = get_messages_sent_to_agent(output)
 
           hash_key1 = sent_messages.keys[0]
           hash_key2 = sent_messages.keys[1]
-          first_is_first = sent_messages[hash_key1].length == 2 ? true : false
+          first_is_first = sent_messages[hash_key1].length == 1 ? true : false
           agent1 = sent_messages[first_is_first ? hash_key1 : hash_key2]
           agent2 = sent_messages[first_is_first ? hash_key2 : hash_key1]
 
           expect(agent1[0]['method']).to eq('get_state')
-          expect(agent1[1]['method']).to eq('delete_arp_entries')
-          expect(agent1.length).to eq(2)
+          expect(agent1.length).to eq(1)
 
           expect(agent2[0]['method']).to eq('ping')
           agent2.shift

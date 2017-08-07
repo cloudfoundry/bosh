@@ -19,19 +19,13 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	var innerDirectorUser = "jumpbox"
 	var directorBackupName = "director-backup"
 
-	BeforeEach(func() {
-		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 15 * time.Minute).Should(gexec.Exit(0))
-	})
+	BeforeEach(startInnerBosh)
 
 	AfterEach(func() {
 		err := os.RemoveAll(directorBackupName)
 		Expect(err).ToNot(HaveOccurred())
 
-		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 10 * time.Minute).Should(gexec.Exit(0))
+		stopInnerBosh()
 	})
 
 	Context("database backup", func() {

@@ -82,3 +82,8 @@
 - type: replace
   path: /instance_groups/name=bosh/properties/director/cpi_job?
   value: docker_cpi
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/local_dns?/enabled?
+  value: true
+

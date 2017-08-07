@@ -1,0 +1,12 @@
+---
+name: link-provider
+
+templates: {}
+
+packages: []
+
+properties: {}
+
+provides:
+- name: some-service
+  type: whatever
