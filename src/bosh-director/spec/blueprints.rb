@@ -234,6 +234,7 @@ module Bosh::Director::Models
   Vm.blueprint do
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
+    created_at { Time.now }
   end
 
   module Dns

@@ -245,3 +245,4 @@ Bosh::Blobstore.autoload(:SimpleBlobstoreClient, 'bosh/blobstore_client/simple_b
 Bosh::Blobstore.autoload(:LocalClient, 'bosh/blobstore_client/local_client')
 Bosh::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/blobstore_client/davcli_blobstore_client')
 Bosh::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/blobstore_client/s3cli_blobstore_client')
+Bosh::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/blobstore_client/gcscli_blobstore_client')

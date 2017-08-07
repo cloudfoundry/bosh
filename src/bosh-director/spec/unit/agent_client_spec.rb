@@ -276,7 +276,7 @@ module Bosh::Director
         end
 
         it 'sends delete_arp_entries to the agent' do
-          expect(client).to receive(:send_nats_request) do |message_name, args|
+          expect(client).to receive(:send_nats_request_quietly) do |message_name, args|
             expect(message_name).to eq(:delete_arp_entries)
             expect(args).to eq([ips: ['10.10.10.1', '10.10.10.2']])
           end
@@ -285,14 +285,14 @@ module Bosh::Director
         end
 
         it 'cancels the request on the NatsRPC to avoid memory leaks' do
-          allow(client).to receive(:send_nats_request).and_return(request_id)
+          allow(client).to receive(:send_nats_request_quietly).and_return(request_id)
           expect(nats_rpc).to receive(:cancel_request).with(request_id)
 
           client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2'])
         end
 
         it 'does not raise an exception for failures' do
-          allow(client).to receive(:send_nats_request).and_raise(RpcRemoteException, 'random failure!')
+          allow(client).to receive(:send_nats_request_quietly).and_raise(RpcRemoteException, 'random failure!')
 
           expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: delete_arp_entries on client: 'fake-agent-id'")
           expect { client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2']) }.to_not raise_error
@@ -310,7 +310,7 @@ module Bosh::Director
       end
 
       it 'sends sync_dns to the agent' do
-        expect(client).to receive(:send_nats_request) do |message_name, args|
+        expect(client).to receive(:send_nats_request_quietly) do |message_name, args|
           expect(message_name).to eq(:sync_dns)
           expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1'])
         end
@@ -318,7 +318,7 @@ module Bosh::Director
       end
 
       it 'sends sync_dns to the agent with version parameter' do
-        expect(client).to receive(:send_nats_request) do |message_name, args|
+        expect(client).to receive(:send_nats_request_quietly) do |message_name, args|
           expect(message_name).to eq(:sync_dns)
           expect(args).to eq([blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1])
         end

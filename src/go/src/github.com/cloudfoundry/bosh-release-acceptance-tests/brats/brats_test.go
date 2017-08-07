@@ -15,17 +15,9 @@ import (
 
 var _ = Describe("Brats", func() {
 
-	BeforeEach(func() {
-		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 15 * time.Minute).Should(gexec.Exit(0))
-	})
+	BeforeEach(startInnerBosh)
 
-	AfterEach(func() {
-		session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 5 * time.Minute).Should(gexec.Exit(0))
-	})
+	AfterEach(stopInnerBosh)
 
 	Context("blobstore nginx", func() {
 		Context("When nginx writes to access log", func() {
@@ -53,4 +45,3 @@ var _ = Describe("Brats", func() {
 		})
 	})
 })
-

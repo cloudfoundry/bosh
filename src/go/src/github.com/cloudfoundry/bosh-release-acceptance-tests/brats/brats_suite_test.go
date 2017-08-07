@@ -22,7 +22,17 @@ func TestBrats(t *testing.T) {
 	RunSpecs(t, "Brats Suite")
 }
 
-var outerBoshBinaryPath , boshBinaryPath, innerBoshPath, innerBoshJumpboxPrivateKeyPath, bbrBinaryPath, innerDirectorIP, boshRelease string
+var (
+	outerBoshBinaryPath,
+	boshBinaryPath,
+	innerBoshPath,
+	innerBoshJumpboxPrivateKeyPath,
+	bbrBinaryPath,
+	innerDirectorIP,
+	boshRelease,
+	candidateWardenLinuxStemcellPath,
+	dnsReleasePath string
+)
 
 var _ = BeforeSuite(func() {
 	outerBoshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
@@ -33,6 +43,8 @@ var _ = BeforeSuite(func() {
 	bbrBinaryPath = assertEnvExists("BBR_BINARY_PATH")
 	boshRelease = assertEnvExists("BOSH_RELEASE")
 	innerDirectorIP = "10.245.0.34"
+	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
+	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 
 	assertEnvExists("BOSH_ENVIRONMENT")
 })
@@ -49,4 +61,16 @@ func assertEnvExists(envName string) string {
 		Fail(fmt.Sprintf("Expected %s", envName))
 	}
 	return val
+}
+
+func startInnerBosh() {
+	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+}
+
+func stopInnerBosh() {
+	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 }
