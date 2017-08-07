@@ -1,6 +1,7 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
+require 'bosh/director/core/templates/template_blob_cache'
 require 'bosh/template/evaluation_context'
 require 'bosh/director/formatter_helper'
 require 'common/deep_copy'
@@ -10,8 +11,9 @@ module Bosh::Director::Core::Templates
 
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(name, template_name, monit_erb, source_erbs, logger, dns_encoder = nil)
-      @name = name
+    def initialize(job_template, template_name, monit_erb, source_erbs, logger, dns_encoder = nil)
+      @name = job_template.name
+      @release = job_template.release
       @template_name = template_name
       @monit_erb = monit_erb
       @source_erbs = source_erbs
@@ -25,6 +27,11 @@ module Bosh::Director::Core::Templates
       end
 
       spec = namespace_links_to_current_job(spec)
+
+      spec['release'] = {
+        'name' => @release.name,
+        'version' => @release.version
+      }
 
       template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
       monit = monit_erb.render(template_context, @logger)
