@@ -292,6 +292,11 @@ jobs:
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
+      - task: test-gcs
+        file: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.yml
+        params:
+          google_project: {{blobstore_client_google_project}}
+          google_json_key_data: {{blobstore_client_google_json_key_data}}
 
   - name: blobstore-performance
     public: true
