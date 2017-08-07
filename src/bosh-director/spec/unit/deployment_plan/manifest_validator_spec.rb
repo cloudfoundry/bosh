@@ -14,7 +14,7 @@ module Bosh
             manifest_validator.validate(manifest_hash, nil)
           }.to raise_error(
               Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'disk_types' section, but it can only be used in cloud-config."
+              "Deployment manifest contains 'disk_types' section, but it can only be used with cloud-config enabled on your bosh director."
             )
         end
 
@@ -24,7 +24,7 @@ module Bosh
             manifest_validator.validate(manifest_hash, nil)
           }.to raise_error(
               Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'vm_types' section, but it can only be used in cloud-config."
+              "Deployment manifest contains 'vm_types' section, but it can only be used with cloud-config enabled on your bosh director."
             )
         end
 
@@ -34,7 +34,7 @@ module Bosh
             manifest_validator.validate(manifest_hash, nil)
           }.to raise_error(
               Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'azs' section, but it can only be used in cloud-config."
+              "Deployment manifest contains 'azs' section, but it can only be used with cloud-config enabled on your bosh director."
             )
         end
 
@@ -51,7 +51,7 @@ module Bosh
               manifest_validator.validate(manifest_hash, nil)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidProperty,
-                "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config."
+                "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config enabled on your bosh director."
               )
           end
         end
