@@ -5,7 +5,6 @@ sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
 sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
 
 export PATH=/var/vcap/packages/golang/bin:$PATH
-export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
 
 RUN_DIR=/var/vcap/sys/run/nats
 LOG_DIR=/var/vcap/sys/log/nats
