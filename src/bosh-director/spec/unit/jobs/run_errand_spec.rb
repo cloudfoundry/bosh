@@ -50,7 +50,7 @@ module Bosh::Director
       }
     end
 
-    let(:errand_result) { Errand::Result.from_agent_task_results(agent_run_errand_result, nil) }
+    let(:errand_result) { Errand::Result.from_agent_task_results(errand_name, agent_run_errand_result, nil) }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
@@ -116,7 +116,7 @@ module Bosh::Director
 
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
-        let(:errand_result) { Errand::Result.new(0, nil, nil, nil) }
+        let(:errand_result) { Errand::Result.new(errand_name, 0, nil, nil, nil) }
 
         it 'runs the specified errand job on the found service instance' do
           expect(Errand::Runner).to receive(:new).
@@ -272,11 +272,11 @@ module Bosh::Director
 
                     expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 
-                expect(template_blob_cache).to receive(:clean_cache!).ordered
+                    expect(template_blob_cache).to receive(:clean_cache!).ordered
 
                     expect(called_after_block_check).to receive(:call).ordered
 
-                    expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                   end
                 end
 
@@ -319,7 +319,7 @@ module Bosh::Director
                   it 'does not delete instances' do
                     expect(instance_group_manager).to_not receive(:delete_vms)
 
-                    expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                   end
                 end
 
@@ -377,7 +377,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
 
@@ -395,7 +395,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
                     end
@@ -417,7 +417,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
 
@@ -431,7 +431,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("Errand 'fake-errand-name' completed successfully (exit code 0)")
+                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
                         end
                       end
                     end
@@ -494,8 +494,8 @@ module Bosh::Director
         end
 
         context 'when the errand indicates that cancellation should be ignored even though the task is timed out or canceled' do
-          let(:errand) { instance_double(Errand::LifecycleErrandStep, prepare: nil, run: nil, ignore_cancellation?: true) }
-          let(:errand_provider) { instance_double(Errand::ErrandProvider, get:errand) }
+          let(:errand) { instance_double(Errand::LifecycleErrandStep, prepare: nil, run: [], ignore_cancellation?: true) }
+          let(:errand_provider) { instance_double(Errand::ErrandProvider, get: errand) }
           let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
           let(:task) { instance_double('Bosh::Director::Models::Task', id: 42, state: 'cancelling', username: 'username' ) }
           before do
@@ -514,4 +514,3 @@ module Bosh::Director
     end
   end
 end
-

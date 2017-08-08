@@ -206,6 +206,7 @@ module Bosh::Director
       end
 
       vm_options[:cid] = vm_cid
+      vm_options[:created_at] = Time.now
       vm_model = Models::Vm.create(vm_options)
       vm_model.save
 

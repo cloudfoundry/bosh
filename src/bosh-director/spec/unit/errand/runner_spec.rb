@@ -129,6 +129,7 @@ module Bosh::Director
           it 'writes run_errand response with exit_code, stdout, stderr and logs result to task result file' do
             expect(task_result).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
+                'errand_name' => 'fake-job-name',
                 'exit_code' => 0,
                 'stdout' => 'fake-stdout',
                 'stderr' => 'fake-stderr',
@@ -279,6 +280,7 @@ module Bosh::Director
           it 'writes run_errand response with nil fetched lobs blobstore id if fetching logs fails' do
             expect(task_result).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
+                'errand_name' => 'fake-job-name',
                 'exit_code' => 0,
                 'stdout' => 'fake-stdout',
                 'stderr' => 'fake-stderr',

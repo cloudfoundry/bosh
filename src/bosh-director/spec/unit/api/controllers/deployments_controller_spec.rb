@@ -34,6 +34,7 @@ module Bosh::Director
       end
 
       let(:cloud_config) { Models::CloudConfig.make }
+      let (:time) {Time.now}
       before do
         App.new(config)
         basic_authorize 'admin', 'admin'
@@ -519,39 +520,42 @@ module Bosh::Director
         describe 'log management' do
           it 'allows fetching logs from a particular instance' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
               :deployment => deployment,
               :job => 'nats',
               :index => '0',
               :state => 'started',
               :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows fetching logs from all instances of particular job' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
                 :deployment => deployment,
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
                 :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows fetching logs from all instances of particular deployment' do
             deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
-            Models::Instance.create(
+            instance = Models::Instance.create(
                 :deployment => deployment,
                 :job => 'nats',
                 :index => '0',
                 :state => 'started',
                 :variable_set => Models::VariableSet.create(deployment: deployment)
             )
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/*/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
@@ -697,6 +701,7 @@ module Bosh::Director
                 'agent_id' => "agent-#{i}",
                 'cid' => "cid-#{i}",
                 'instance_id' => instance.id,
+                'created_at' => time
               }
 
               vm = Models::Vm.create(vm_params)
@@ -710,7 +715,6 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             body = JSON.parse(last_response.body)
             expect(body.size).to eq(8)
-
             body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
               expect(instance_with_vm).to eq(
                 'agent_id' => "agent-#{i}",
@@ -720,6 +724,7 @@ module Bosh::Director
                 'id' => "instance-#{i}",
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                 'ips' => [],
+                'vm_created_at' => time.utc.iso8601
               )
             end
           end
@@ -742,7 +747,8 @@ module Bosh::Director
                 vm_params = {
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
-                  'instance_id': instance.id,
+                  'instance_id' => instance.id,
+                  'created_at' => time
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -773,6 +779,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
+                  'vm_created_at' => time.utc.iso8601
                 )
               end
             end
@@ -796,6 +803,7 @@ module Bosh::Director
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
+                  'created_at' => time
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -819,6 +827,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
+                  'vm_created_at' => time.utc.iso8601
                 )
               end
             end
@@ -864,7 +873,19 @@ module Bosh::Director
 
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
-                Models::Instance.create(instance_params)
+                instance = Models::Instance.create(instance_params)
+                if i < 6
+                  vm_params = {
+                    'agent_id' => "agent-#{i}",
+                    'cid' => "cid-#{i}",
+                    'instance_id' => instance.id,
+                    'created_at' => time
+                  }
+
+                  vm = Models::Vm.create(vm_params)
+                  instance.active_vm = vm
+                end
+
               end
 
               get '/test_deployment/instances'
@@ -874,16 +895,31 @@ module Bosh::Director
               expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance, i|
-                expect(instance).to eq(
-                                        'agent_id' => nil,
-                                        'cid' => nil,
-                                        'job' => "job-#{i}",
-                                        'index' => i,
-                                        'id' => "instance-#{i}",
-                                        'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
-                                        'ips' => [],
-                                        'expects_vm' => true
-                                    )
+                if i < 6
+                  expect(instance).to eq(
+                    'agent_id' => "agent-#{i}",
+                    'cid' => "cid-#{i}",
+                    'job' => "job-#{i}",
+                    'index' => i,
+                    'id' => "instance-#{i}",
+                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'ips' => [],
+                    'vm_created_at' => time.utc.iso8601,
+                    'expects_vm' => true
+                  )
+                else
+                  expect(instance).to eq(
+                    'agent_id' => nil,
+                    'cid' => nil,
+                    'job' => "job-#{i}",
+                    'index' => i,
+                    'id' => "instance-#{i}",
+                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'ips' => [],
+                    'vm_created_at' => nil,
+                    'expects_vm' => true
+                  )
+                end
               end
             end
 
@@ -927,6 +963,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                                           'ips' => ["1.2.3.#{i}"],
+                                          'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
                 end
@@ -964,6 +1001,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                                           'ips' => ["1.2.3.#{i}"],
+                                          'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
                 end
@@ -1006,6 +1044,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'vm_created_at' => nil,
                                          'expects_vm' => true
                                      )
                 end
@@ -1029,6 +1068,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'vm_created_at' => nil,
                                          'expects_vm' => false
                                      )
                 end
@@ -1054,6 +1094,7 @@ module Bosh::Director
                                        'id' => 'instance-1',
                                        'az' => nil,
                                        'ips' => [],
+                                       'vm_created_at' => nil,
                                        'expects_vm' => false
                                    )
               end
@@ -1604,8 +1645,9 @@ module Bosh::Director
         describe 'when a user has dev team admin membership' do
 
           before {
-            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
+            instance = Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
             Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6', :variable_set => Models::VariableSet.create(deployment: other_deployment))
+            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']

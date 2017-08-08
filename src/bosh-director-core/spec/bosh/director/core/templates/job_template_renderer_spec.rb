@@ -30,11 +30,14 @@ module Bosh::Director::Core::Templates
           }
         }
       end
+
+      let(:release) { double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version: '0.1') }
+      let(:job_template) { double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name', release: release) }
       let(:logger) { instance_double('Logger', debug: nil) }
       let(:dns_encoder) { double('some DNS encoder')}
 
       subject(:job_template_renderer) do
-        JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb], logger, dns_encoder)
+        JobTemplateRenderer.new(job_template, 'template-name', monit_erb, [source_erb], logger, dns_encoder)
       end
 
       context 'when templates do not contain local properties' do
@@ -77,7 +80,8 @@ module Bosh::Director::Core::Templates
                       'smurfs' =>{ 'name' => 'snoopy' },
                   }
               },
-              'properties_need_filtering' => true
+              'properties_need_filtering' => true,
+              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
           }
         end
 
@@ -105,14 +109,14 @@ module Bosh::Director::Core::Templates
                       'smurfs' => {'name'=>'snoopy'}
                   },
                   'properties_need_filtering' => true,
-              },
-              dns_encoder
+                  'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
+              }, dns_encoder
           ).at_least(2).times
         end
 
         context 'rendering templates returns errors' do
           let(:job_template_renderer) do
-            JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb, source_erb], logger, dns_encoder)
+            JobTemplateRenderer.new(job_template, 'template-name', monit_erb, [source_erb, source_erb], logger, dns_encoder)
           end
 
           before do
@@ -150,7 +154,8 @@ module Bosh::Director::Core::Templates
                   'backup_db' =>
                       { 'properties' =>{ 'moop' => 'yar'}, 'instances' =>[{ 'name' => 'postgres1' },{ 'name' => 'postgres' }]}
                 }
-              }
+              },
+              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
           }
         end
 
@@ -166,7 +171,8 @@ module Bosh::Director::Core::Templates
                       { 'properties' => { 'foo' => 'bar'}, 'instances' =>[{ 'name' => 'mysql1' }, { 'name' => 'mysql' }]},
                   'backup_db' =>
                       { 'properties' =>{ 'moop' => 'yar'}, 'instances' =>[{ 'name' => 'postgres1' },{ 'name' => 'postgres' }]}
-              }
+              },
+              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
           }
         end
 

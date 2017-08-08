@@ -53,7 +53,11 @@ module Bosh
           'id' => 'deadbeef',
           'bootstrap' => true,
           'az' => 'foo-az',
-          'resource_pool' => 'a'
+          'resource_pool' => 'a',
+          'release' => {
+            'name' => 'test',
+            'version' => '1.0'
+          }
         }
 
         @context = EvaluationContext.new(@spec, dns_encoder)
@@ -81,7 +85,7 @@ module Bosh
 
       it 'supports looking up template availability zone' do
         expect(eval_template('<%= spec.az %>', @context)).to eq(@context.spec.az)
-        end
+      end
 
       it 'exposes an resource pool' do
         expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
@@ -89,6 +93,14 @@ module Bosh
 
       it 'supports looking up whether template is bootstrap or not' do
         expect(eval_template('<%= spec.bootstrap %>', @context)).to eq('true')
+      end
+
+      it 'supports looking up template release name' do
+        expect(eval_template('<%= spec.release.name %>', @context)).to eq(@context.spec.release.name)
+      end
+
+      it 'supports looking up template release version' do
+        expect(eval_template('<%= spec.release.version %>', @context)).to eq(@context.spec.release.version)
       end
 
       it 'evaluates links' do

@@ -1,0 +1,4 @@
+---
+name: bosh-gcscli
+files:
+- bosh-gcscli/bosh-gcscli-*-linux-amd64

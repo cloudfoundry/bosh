@@ -12,6 +12,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       before do
         instance_manager = double(Bhm::InstanceManager)
         allow(instance_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
+        allow(instance_manager).to receive(:get_deleted_agents_for_deployment).with('deployment').and_return({})
         allow(Bhm).to receive_messages(instance_manager: instance_manager)
 
         alerts.times do |i|
@@ -24,7 +25,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         it 'reports as "normal"' do
           state = tracker.state_for(deployment)
           expect(state).to be_normal
-          expect(state.summary).to eq("deployment: ''; 0 of 10 agents are unhealthy (0.0%)")
+          expect(state.summary).to eq("deployment: 'deployment'; 0 of 10 agents are unhealthy (0.0%)")
         end
       end
 
@@ -35,7 +36,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         it 'reports as "managed"' do
           state = tracker.state_for(deployment)
           expect(state).to be_managed
-          expect(state.summary).to eq("deployment: ''; 1 of 10 agents are unhealthy (10.0%)")
+          expect(state.summary).to eq("deployment: 'deployment'; 1 of 10 agents are unhealthy (10.0%)")
         end
       end
 
@@ -47,7 +48,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
           it 'reports as "managed"' do
             state = tracker.state_for(deployment)
             expect(state).to be_managed
-            expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
+            expect(state.summary).to eq("deployment: 'deployment'; 2 of 10 agents are unhealthy (20.0%)")
           end
         end
 
@@ -58,7 +59,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
           it 'reports as "meltdown"' do
             state = tracker.state_for(deployment)
             expect(state).to be_meltdown
-            expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
+            expect(state.summary).to eq("deployment: 'deployment'; 2 of 10 agents are unhealthy (20.0%)")
           end
         end
       end
@@ -75,7 +76,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
           state = tracker.state_for(deployment)
           expect(state).to be_meltdown
-          expect(state.summary).to eq("deployment: ''; 2 of 10 agents are unhealthy (20.0%)")
+          expect(state.summary).to eq("deployment: 'deployment'; 2 of 10 agents are unhealthy (20.0%)")
         end
       end
 

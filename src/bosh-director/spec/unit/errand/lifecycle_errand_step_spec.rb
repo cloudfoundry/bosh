@@ -23,7 +23,7 @@ module Bosh::Director
     let(:skip_errand) { false }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
-    let(:errand_result) { Errand::Result.new(exit_code, nil, nil, nil) }
+    let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
     let(:instance) { instance_double(DeploymentPlan::Instance) }
     let(:keep_alive) { 'maybe' }
     let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
@@ -80,6 +80,11 @@ module Bosh::Director
           expect(errand_instance_updater).not_to receive(:with_updated_instances)
           errand_step.run(&lambda {})
         end
+
+        it 'returns an empty result' do
+          result = errand_step.run(&lambda {})
+          expect(result.skipped?).to eq(true)
+        end
       end
 
       context 'when instance group is lifecycle errand' do
@@ -104,7 +109,7 @@ module Bosh::Director
           result = errand_step.run(&the_block)
 
           expect(block_evidence).to be(true)
-          expect(result).to eq("Errand 'errand_name' completed successfully (exit code 0)")
+          expect(result.successful?).to eq(true)
         end
       end
 

@@ -19,6 +19,8 @@ describe Bosh::Director::NatsRpc do
     }
   }
   let(:some_logger){ instance_double(Logger) }
+  let(:options) {{}}
+
   subject(:nats_rpc) {
     Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
   }
@@ -91,7 +93,7 @@ describe Bosh::Director::NatsRpc do
         blk.call()
       end
 
-      request_id = nats_rpc.send_request('test_client',  {'method' => 'a', 'arguments' => [5]})
+      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options)
       expect(request_id).to eql('req1')
     end
 
@@ -105,7 +107,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       callback_called = false
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         callback_called = true
       end
       expect(callback_called).to be(true)
@@ -113,6 +115,7 @@ describe Bosh::Director::NatsRpc do
 
     it 'should execute the callback once even when two messages were received' do
       subscribe_callback = nil
+      expect(some_logger).to_not receive(:warn)
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
         subscribe_callback = block
       end
@@ -122,7 +125,7 @@ describe Bosh::Director::NatsRpc do
       end
 
       called_times = 0
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         called_times += 1
       end
       expect(called_times).to eql(1)
@@ -142,8 +145,8 @@ describe Bosh::Director::NatsRpc do
         blk.call()
       end
 
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]})
-      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]})
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options)
+      nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options)
     end
 
     context 'logging' do
@@ -168,7 +171,7 @@ describe Bosh::Director::NatsRpc do
                                  })
         end
 
-        request_id = nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments})
+        request_id = nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments}, options)
         expect(request_id).to eql('req1')
       end
 
@@ -185,8 +188,23 @@ describe Bosh::Director::NatsRpc do
                                  })
         end
 
-        request_id = nats_rpc.send_request('test_any_method', {:method => :any_method, :arguments => arguments})
+        request_id = nats_rpc.send_request('test_any_method', {:method => :any_method, :arguments => arguments}, options)
         expect(request_id).to eql('req1')
+      end
+
+      it 'if passed options with logging=false, it does not log' do
+        expect(some_logger).to_not receive(:debug)
+
+        subscribe_callback = nil
+        allow(nats).to receive(:subscribe).with('director.123.>') do |&block|
+          subscribe_callback = block
+        end
+
+        allow(nats).to receive(:publish)do
+          subscribe_callback.call('success response', nil, 'director.123.req1')
+        end
+
+        nats_rpc.send_request('test_upload_blob', {:method => :upload_blob, :arguments => arguments}, {'logging' => false})
       end
     end
   end
@@ -204,7 +222,7 @@ describe Bosh::Director::NatsRpc do
       expect(nats).to receive(:publish)
 
       called = false
-      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}) do
+      request_id = nats_rpc.send_request('test_client', {'method' => 'a', 'arguments' => [5]}, options) do
         called = true
       end
       expect(request_id).to eql('req1')

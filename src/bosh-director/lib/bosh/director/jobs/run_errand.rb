@@ -28,7 +28,7 @@ module Bosh::Director
         @errand = errand_provider.get(@deployment_name, @errand_name, @when_changed, @keep_alive, @instances)
         @errand.prepare
         checkpoint_block = lambda { task_checkpoint }
-        @errand.run(&checkpoint_block)
+        Errand::ResultSet.new(@errand.run(&checkpoint_block)).summary
       end
     end
 

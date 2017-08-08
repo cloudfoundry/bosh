@@ -30,7 +30,7 @@ module Bosh::Director
           end
         end
       end
-      results.join("\n")
+      results
     end
 
     def ignore_cancellation?

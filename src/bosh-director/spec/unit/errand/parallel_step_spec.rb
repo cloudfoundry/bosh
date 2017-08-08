@@ -23,21 +23,24 @@ module Bosh::Director
     end
 
     describe '#run' do
+      let(:result1) { instance_double(Bosh::Director::Errand::Result) }
+      let(:result2) { instance_double(Bosh::Director::Errand::Result) }
+
       it 'runs all the steps in parallel' do
         expect(errand_step1).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
           mutex.synchronize { resource.wait(mutex) }
-          'step1'
+          result1
         end
 
         expect(errand_step2).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
           mutex.synchronize { resource.signal }
-          'step2'
+          result2
         end
 
         results = subject.run(&checkpoint_block)
-        expect(results.split("\n")).to contain_exactly('step1', 'step2')
+        expect(results).to contain_exactly(result1, result2)
       end
     end
 
