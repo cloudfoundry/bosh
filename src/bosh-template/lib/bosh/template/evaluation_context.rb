@@ -5,6 +5,7 @@ require 'bosh/template/unknown_link'
 require 'bosh/template/property_helper'
 require 'bosh/template/evaluation_link_instance'
 require 'bosh/template/evaluation_link'
+require 'bosh/template/manual_link_dns_encoder'
 
 module Bosh
   module Template
@@ -98,11 +99,26 @@ module Bosh
         link_spec = lookup_property(@links, name)
         raise UnknownLink.new(name) if link_spec.nil?
 
-        if link_spec.has_key?("instances")
-          link_instances = link_spec["instances"].map do |instance_link_spec|
-            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
+        if link_spec.has_key?('instances')
+          link_instances = link_spec['instances'].map do |instance_link_spec|
+            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec['index'], instance_link_spec['id'], instance_link_spec['az'], instance_link_spec['address'], instance_link_spec['properties'], instance_link_spec['bootstrap'])
           end
-          return EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['domain'], @dns_encoder)
+
+          if link_spec.has_key?('address')
+            encoder_to_inject = ManualLinkDnsEncoder.new(link_spec['address'])
+          else
+            encoder_to_inject = @dns_encoder
+          end
+
+          return EvaluationLink.new(
+            link_instances,
+            link_spec['properties'],
+            link_spec['instance_group'],
+            link_spec['default_network'],
+            link_spec['deployment_name'],
+            link_spec['domain'],
+            encoder_to_inject,
+          )
         end
         raise UnknownLink.new(name)
       end
@@ -126,14 +142,14 @@ module Bosh
       # @yield [Object] link, which is an array of instances
       def if_link(name)
         link_spec = lookup_property(@links, name)
-        if link_spec.nil? || !link_spec.has_key?("instances")
+        if link_spec.nil? || !link_spec.has_key?('instances')
           return ActiveElseBlock.new(self)
         else
-          link_instances = link_spec["instances"].map do |instance_link_spec|
-            EvaluationLinkInstance.new(instance_link_spec["name"], instance_link_spec["index"], instance_link_spec["id"], instance_link_spec["az"], instance_link_spec["address"], instance_link_spec["properties"], instance_link_spec["bootstrap"])
+          link_instances = link_spec['instances'].map do |instance_link_spec|
+            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec['index'], instance_link_spec['id'], instance_link_spec['az'], instance_link_spec['address'], instance_link_spec['properties'], instance_link_spec['bootstrap'])
           end
 
-          yield EvaluationLink.new(link_instances, link_spec["properties"], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['root_domain'], @dns_encoder)
+          yield EvaluationLink.new(link_instances, link_spec['properties'], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['root_domain'], @dns_encoder)
           InactiveElseBlock.new
         end
       end

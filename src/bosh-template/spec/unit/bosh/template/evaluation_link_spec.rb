@@ -7,7 +7,17 @@ module Bosh
   module Template
     describe EvaluationLink do
       describe '#address' do
-        let(:subject) { EvaluationLink.new(instances, properties, instance_group, default_network, deployment, root_domain, dns_encoder) }
+        let(:subject) do
+          EvaluationLink.new(
+            instances,
+            properties,
+            instance_group,
+            default_network,
+            deployment,
+            root_domain,
+            dns_encoder,
+          )
+        end
         let(:instances) { [] }
         let(:properties) { {} }
         let(:instance_group) { 'potato_group' }
