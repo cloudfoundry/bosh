@@ -87,7 +87,7 @@ module Bosh::Director
       begin
         request_id = subject.split(".").last
         callback, options = @lock.synchronize { @requests.delete(request_id) }
-        @logger.debug("RECEIVED: #{subject} #{message}") if options['logging']
+        @logger.debug("RECEIVED: #{subject} #{message}") if (options && options['logging'])
         if callback
           message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)

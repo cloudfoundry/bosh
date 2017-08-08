@@ -5,12 +5,16 @@ describe Bosh::Director::NatsRpc do
   let(:nats_url) { 'fake-nats-url' }
   subject(:nats_rpc) { Bosh::Director::NatsRpc.new(nats_url) }
   let(:options) {{}}
+  let(:logger) { double(:logger) }
 
   before do
     allow(NATS).to receive(:connect).and_return(nats)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
+    allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+    allow(logger).to receive(:debug)
+    allow(logger).to receive(:warn)
   end
 
   describe 'send_request' do
@@ -49,6 +53,7 @@ describe Bosh::Director::NatsRpc do
 
     it 'should execute the callback once even when two messages were received' do
       subscribe_callback = nil
+      expect(logger).to_not receive(:warn)
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
         subscribe_callback = block
       end
