@@ -169,7 +169,7 @@ namespace :spec do
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
     puts "Release unit tests (ERB templates)"
-    system("cd .. && rspec --tty --backtrace -c -f p spec/")
+    abort unless system("cd .. && rspec --tty --backtrace -c -f p spec/")
   end
 
   namespace :unit do
