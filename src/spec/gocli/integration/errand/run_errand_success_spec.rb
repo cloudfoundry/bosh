@@ -304,6 +304,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       output = scrub_random_ids(table(@output))
 
+      expect(output[0]['instance']).to match('fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
       expect(output[0]['stdout']).to match('fake-errand-stdout')
       expect(output[0]['stderr']).to match('fake-errand-stderr')
       expect(output[0]['exit_code']).to match('0')

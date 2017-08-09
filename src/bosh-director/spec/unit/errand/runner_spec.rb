@@ -129,6 +129,7 @@ module Bosh::Director
           it 'writes run_errand response with exit_code, stdout, stderr and logs result to task result file' do
             expect(task_result).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
+                'instance' => {'group' => 'fake-job-name', 'id' => 'fake-id'},
                 'errand_name' => 'fake-job-name',
                 'exit_code' => 0,
                 'stdout' => 'fake-stdout',
@@ -148,11 +149,6 @@ module Bosh::Director
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/fake-id (0)').and_yield
             subject.run(instance)
           end
-
-          # it 'creates a new errand run in the database if none exists' do
-          #   expect { subject.run(instance) }.to change { Models::ErrandRun.count }.by(1)
-          #   expect(Models::ErrandRun.first.successful).to be_truthy
-          # end
 
           it 'creates events' do
             expect do
@@ -214,60 +210,6 @@ module Bosh::Director
             expect(result_event.context).to eq({})
           end
 
-          context 'when the errand has run previously' do
-            let(:was_successful) { false }
-
-            before do
-              # Models::ErrandRun.make(successful: was_successful,
-              #   instance_id: instance_model.id,
-              #   successful_configuration_hash: 'last_successful_run_configuration',
-              #   successful_packages_spec: '{"packages" => "last_successful_run_packages"}'
-              # )
-              # allow(instance).to receive(:current_packages).and_return({'successful' => 'package_spec'})
-              # allow(instance).to receive(:configuration_hash).and_return('successful_hash')
-            end
-
-            # it 'updates the errand run model to reflect successful run' do
-            #   expect { subject.run(instance) }.to change {
-            #     Models::ErrandRun.where({successful: true,
-            #       successful_configuration_hash: 'successful_hash',
-            #       successful_packages_spec: '{"successful":"package_spec"}'}).count
-            #   }.by 1
-            # end
-
-            # context 'when the errand does not succeed' do
-            #   let(:exit_code) { 42 }
-            #
-            #   it 'updates the errand run model to reflect unsuccessful run' do
-            #     subject.run(instance)
-            #
-            #     errand_run = Models::ErrandRun.first
-            #     expect(errand_run.successful).to be_falsey
-            #     expect(errand_run.successful_configuration_hash).to eq('')
-            #     expect(errand_run.successful_packages_spec).to eq('')
-            #   end
-            # end
-
-            # context 'when an unrescued error occurs' do
-            #   let(:was_successful) { true }
-            #
-            #   before do
-            #     allow(agent_client).to receive(:wait_for_task).and_raise
-            #   end
-            #
-            #   it 'updates the errand run to be unsuccessful and then raises the error' do
-            #     expect{
-            #       subject.run(instance)
-            #     }.to raise_error(Exception)
-            #     errand_run = Models::ErrandRun.first
-            #
-            #     expect(errand_run.successful).to be_falsey
-            #     expect(errand_run.successful_configuration_hash).to eq ''
-            #     expect(errand_run.successful_packages_spec).to eq ''
-            #   end
-            # end
-          end
-
           it 'returns an errand result' do
             expect(subject.run(instance)).to be_a(Bosh::Director::Errand::Result)
           end
@@ -280,6 +222,7 @@ module Bosh::Director
           it 'writes run_errand response with nil fetched lobs blobstore id if fetching logs fails' do
             expect(task_result).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
+                'instance' => {'group' => 'fake-job-name', 'id' => 'fake-id'},
                 'errand_name' => 'fake-job-name',
                 'exit_code' => 0,
                 'stdout' => 'fake-stdout',
@@ -336,6 +279,8 @@ module Bosh::Director
             it 'writes the errand result received from the agent\'s cancellation' do
               expect(task_result).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
+                  'instance' => {'group' => 'fake-job-name', 'id' => 'fake-id'},
+                  'errand_name' => 'fake-job-name',
                   'exit_code' => 0,
                   'stdout' => 'fake-stdout',
                   'stderr' => 'fake-stderr',
@@ -345,7 +290,7 @@ module Bosh::Director
                   },
                 )
               end
-              expect { subject.run(instance) { raise TaskCancelled } }.to raise_error
+              expect { subject.run(instance) { raise TaskCancelled } }.to raise_error(TaskCancelled)
             end
 
             it 'raises cancel error even if fetching logs fails' do
@@ -356,17 +301,20 @@ module Bosh::Director
             it 'writes run_errand response with nil blobstore_id if fetching logs fails' do
               expect(task_result).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
+                  'instance' => {'group' => 'fake-job-name', 'id' => 'fake-id'},
+                  'errand_name' => 'fake-job-name',
                   'exit_code' => 0,
                   'stdout' => 'fake-stdout',
                   'stderr' => 'fake-stderr',
                   'logs' => {
                     'blobstore_id' => nil,
+                    'sha1' => nil,
                   },
                 )
               end
 
               expect(logs_fetcher).to receive(:fetch).and_raise(DirectorError)
-              expect { subject.run(instance) { raise TaskCancelled } }.to raise_error
+              expect { subject.run(instance) { raise TaskCancelled } }.to raise_error(TaskCancelled)
             end
           end
         end

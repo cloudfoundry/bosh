@@ -14,14 +14,15 @@ module Bosh::Director
 
     # Explicitly write out schema of the director task result
     # to avoid accidently leaking agent task result extra fields.
-    def self.from_agent_task_results(errand_name, agent_task_result, logs_blobstore_id, logs_blob_sha1 = nil)
+    def self.from_agent_task_results(instance, errand_name, agent_task_result, logs_blobstore_id, logs_blob_sha1 = nil)
       AGENT_RUN_ERRAND_RESULT_SCHEMA.validate(agent_task_result)
-      new(errand_name, *agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id, logs_blob_sha1)
+      new(instance, errand_name, *agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id, logs_blob_sha1)
     rescue Membrane::SchemaValidationError => e
       raise AgentInvalidTaskResult, e.message
     end
 
-    def initialize(errand_name, exit_code, stdout, stderr, logs_blobstore_id, logs_blob_sha1 = nil)
+    def initialize(instance, errand_name, exit_code, stdout, stderr, logs_blobstore_id, logs_blob_sha1 = nil)
+      @instance = instance
       @errand_name = errand_name
       @exit_code = exit_code
       @stdout = stdout
@@ -32,6 +33,10 @@ module Bosh::Director
 
     def to_hash
       {
+        'instance' => {
+          'group' => @instance.job_name,
+          'id' => @instance.uuid,
+        },
         'errand_name' => @errand_name,
         'exit_code' => @exit_code,
         'stdout' => @stdout,

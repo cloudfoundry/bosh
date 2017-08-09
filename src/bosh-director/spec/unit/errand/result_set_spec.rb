@@ -10,12 +10,13 @@ module Bosh::Director
         cancelled_result1,
       ]
     end
-    let(:successful_result1) { Errand::Result.new(errand_name, 0, '', '', nil) }
-    let(:successful_result2) { Errand::Result.new(errand_name, 0, '', '', nil) }
-    let(:errored_result1) { Errand::Result.new(errand_name, 1, '', '', nil) }
-    let(:errored_result2) { Errand::Result.new(errand_name, 1, '', '', nil) }
-    let(:errored_result3) { Errand::Result.new(errand_name, 1, '', '', nil) }
-    let(:cancelled_result1) { Errand::Result.new(errand_name, 256, '', '', nil) }
+    let(:instance) { instance_double(DeploymentPlan::Instance) }
+    let(:successful_result1) { Errand::Result.new(instance, errand_name, 0, '', '', nil) }
+    let(:successful_result2) { Errand::Result.new(instance, errand_name, 0, '', '', nil) }
+    let(:errored_result1) { Errand::Result.new(instance, errand_name, 1, '', '', nil) }
+    let(:errored_result2) { Errand::Result.new(instance, errand_name, 1, '', '', nil) }
+    let(:errored_result3) { Errand::Result.new(instance, errand_name, 1, '', '', nil) }
+    let(:cancelled_result1) { Errand::Result.new(instance, errand_name, 256, '', '', nil) }
     let(:errand_name) { 'test-errand' }
 
     describe '#summary' do

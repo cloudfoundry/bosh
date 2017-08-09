@@ -49,8 +49,9 @@ module Bosh::Director
         'stderr' => 'fake-stderr',
       }
     end
+    let(:instance) { instance_double(DeploymentPlan::Instance, uuid: 'instance-uuid', job_name: 'instance-group') }
 
-    let(:errand_result) { Errand::Result.from_agent_task_results(errand_name, agent_run_errand_result, nil) }
+    let(:errand_result) { Errand::Result.from_agent_task_results(instance, errand_name, agent_run_errand_result, nil) }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :run_errand }
@@ -118,7 +119,7 @@ module Bosh::Director
 
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
-        let(:errand_result) { Errand::Result.new(errand_name, 0, nil, nil, nil) }
+        let(:errand_result) { Errand::Result.new(instance, errand_name, 0, nil, nil, nil) }
 
         it 'runs the specified errand job on the found service instance' do
           expect(Errand::Runner).to receive(:new).
