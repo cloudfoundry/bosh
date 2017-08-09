@@ -1,18 +1,22 @@
 module Bosh::Director
   class Errand::InstanceMatcher
-    def initialize(requested_slug_strings)
+    def initialize(requested_instance_filters)
       @matched_requests = Set.new
-      @slugs = requested_slug_strings.map do |req|
-        Errand::InstanceSlug.from_slug_string(req)
+      @filters = requested_instance_filters.map do |req|
+        if req.is_a?(Hash)
+          Errand::InstanceFilter.new(req['group'], req['id'], req)
+        else
+          Errand::InstanceFilter.new(nil,nil, req)
+        end
       end
     end
 
     def matches?(instance, instances_in_group)
-      return true if @slugs.empty?
+      return true if @filters.empty?
       found = false
-      @slugs.each do |slug|
-        if slug.matches?(instance, instances_in_group)
-          @matched_requests.add(slug)
+      @filters.each do |filter|
+        if filter.matches?(instance, instances_in_group)
+          @matched_requests.add(filter)
           found = true
         end
       end
@@ -20,15 +24,12 @@ module Bosh::Director
     end
 
     def unmatched_criteria
-      (@slugs - @matched_requests.to_a).map(&:to_s)
+      (@filters - @matched_requests.to_a).compact.map(&:original)
     end
   end
 
-  class Errand::InstanceSlug
-    def self.from_slug_string(slug_string)
-      group_name, index_or_id = slug_string.split('/')
-      new(group_name, index_or_id, slug_string)
-    end
+  class Errand::InstanceFilter
+    attr_reader :original
 
     def initialize(group_name, index_or_id, original)
       @group_name = group_name
@@ -46,11 +47,7 @@ module Bosh::Director
       end
 
       instance.job_name == @group_name &&
-        (instance.uuid == @index_or_id || instance.index.to_s == @index_or_id.to_s)
-    end
-
-    def to_s
-      @original
+        (instance.uuid == @index_or_id || instance.index.to_s == @index_or_id.to_s )
     end
   end
 end
