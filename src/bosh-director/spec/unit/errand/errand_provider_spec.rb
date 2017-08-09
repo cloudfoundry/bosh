@@ -150,7 +150,7 @@ module Bosh::Director
           end
 
           context 'when selecting an instance from a service group' do
-            let(:instance_slugs) { ['service-group-name/uuid-2'] }
+            let(:instance_slugs) { [{'group' => 'service-group-name', 'id' => 'uuid-2'}] }
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleServiceStep).to receive(:new).with(
                 runner, instance2, logger
@@ -161,7 +161,7 @@ module Bosh::Director
           end
 
           context 'when selecting an instance from a errand group' do
-            let(:instance_slugs) { ['errand-group-name'] }
+            let(:instance_slugs) { [{'group' => 'errand-group-name'}] }
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
                 runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger
@@ -172,11 +172,11 @@ module Bosh::Director
           end
 
           context 'when selecting an instance that does not exist' do
-            let(:instance_slugs) { ['bogus-group-name/0'] }
+            let(:instance_slugs) { [{'group' => 'bogus-group-name', 'id' => '0'}] }
             it 'only creates an errand for the requested slug' do
               expect{
                 subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
-              }.to raise_error('No instances match selection criteria: [bogus-group-name/0]')
+              }.to raise_error('No instances match selection criteria: [{"group"=>"bogus-group-name", "id"=>"0"}]')
             end
           end
         end
