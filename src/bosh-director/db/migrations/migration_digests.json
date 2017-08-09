@@ -116,5 +116,6 @@
   "20170628221611_add_canonical_az_names_and_ids": "a75f52e04ad63156fd43861f1f7849ea76029fa1",
   "20170705204352_add_cpi_to_disks": "047e88df8dbe6cc449d675472bb4f838d8e6e85e",
   "20170705211620_add_templates_json_to_templates": "ed9969aab2493052530e36d012cd892948641f2c",
-  "20170803163303_register_known_az_names": "51ab548d8187c75a1a7dff34861f658dfc11dae9"
+  "20170803163303_register_known_az_names": "51ab548d8187c75a1a7dff34861f658dfc11dae9",
+  "20170804191205_add_deployment_and_errand_name_to_errand_runs": "4429f1e811e064c236ee4c32b3964992ec7004e5"
 }

@@ -12,17 +12,18 @@ module Bosh::Director::DeploymentPlan
         { 'link_name' =>
           { 'deployment_name' => 'dep1',
             'some_key' => 'some_value',
-            "networks" => ["default"],
-            "properties" => {
-              "listen_port" => "Kittens"
+            'networks' => ['default'],
+            'properties' => {
+              'listen_port' => 'Kittens'
             },
-            "instances" => [{
-              "name" => "provider",
-              "index" => 0,
-              "bootstrap" => true,
-              "id" => "3d46803d-1527-4209-8e1f-822105fece7c",
-              "az" => "z1",
-              "address" => "10.244.0.4"
+            'address' => 'some.address.com',
+            'instances' => [{
+              'name' => 'provider',
+              'index' => 0,
+              'bootstrap' => true,
+              'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
+              'az' => 'z1',
+              'address' => '10.244.0.4'
             }],
             'instance_group' => 'smurf-ig',
             'default_network' => 'smurf-net',
@@ -44,7 +45,7 @@ module Bosh::Director::DeploymentPlan
         spec: job_spec,
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {"gateway" => "default"},
+        default_network: { 'gateway' => 'default' },
         vm_type: vm_type,
         vm_extensions: [],
         stemcell: stemcell,
@@ -138,16 +139,17 @@ module Bosh::Director::DeploymentPlan
         {
           'smurf-job' => {
             'link_name' => {
-              "properties" => {
-                "listen_port" => "Kittens"
+              'properties' => {
+                'listen_port' => 'Kittens'
               },
-              "instances" => [{
-                "name" => "provider",
-                "index" => 0,
-                "bootstrap" => true,
-                "id" => "3d46803d-1527-4209-8e1f-822105fece7c",
-                "az" => "z1",
-                "address" => "10.244.0.4"
+              'address' => 'some.address.com',
+              'instances' => [{
+                'name' => 'provider',
+                'index' => 0,
+                'bootstrap' => true,
+                'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
+                'az' => 'z1',
+                'address' => '10.244.0.4'
               }],
               'instance_group' => 'smurf-ig',
               'default_network' => 'smurf-net',

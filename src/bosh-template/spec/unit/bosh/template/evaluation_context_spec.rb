@@ -36,6 +36,7 @@ module Bosh
               'instance_group' => 'fake-instance-group-2',
               'default_network' => 'default',
               'domain' => 'otherbosh',
+              'address' => 'some-address',
               'instances' => [{'address' => '123.456.789.102', 'properties' => {'prop2' => 'value'}}]
             }
           },
@@ -115,6 +116,10 @@ module Bosh
 
       it 'evaluates link addresses using the given dns encoder' do
         expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
+      end
+
+      it 'evaluates manual spec address ignoring the dns encoder' do
+        expect(eval_template("<%= link('fake-link-2').address %>", @context)).to eq('some-address')
       end
 
       it 'should throw a nice error when a link cannot be found' do

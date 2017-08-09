@@ -203,10 +203,7 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
-  ErrandRun.blueprint do
-    instance_id { Instance.make.id }
-    successful  { false }
-  end
+  ErrandRun.blueprint {}
 
   Blob.blueprint do
     blobstore_id { Sham.blobstore_id }

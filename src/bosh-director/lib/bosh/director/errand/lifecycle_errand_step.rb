@@ -1,11 +1,10 @@
 module Bosh::Director
   class Errand::LifecycleErrandStep
-    def initialize(runner, deployment_planner, name, instance, instance_group, skip_errand, keep_alive, deployment_name, logger)
+    def initialize(runner, deployment_planner, name, instance, instance_group, keep_alive, deployment_name, logger)
       @runner = runner
       @deployment_planner = deployment_planner
       @errand_name = name
       @instance = instance
-      @skip_errand = skip_errand
       @keep_alive = keep_alive
       @logger = logger
       instance_group_manager = Errand::InstanceGroupManager.new(@deployment_planner, instance_group, @logger)
@@ -18,11 +17,6 @@ module Bosh::Director
     end
 
     def run(&checkpoint_block)
-      if @skip_errand
-        @logger.info('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-        return Errand::Result.new(@errand_name, -1, 'no configuration changes', '', nil)
-      end
-
       begin
         result = nil
         @errand_instance_updater.with_updated_instances(@keep_alive) do
@@ -37,6 +31,16 @@ module Bosh::Director
 
     def ignore_cancellation?
       @errand_instance_updater && @errand_instance_updater.ignore_cancellation?
+    end
+
+    def state_hash
+      digest = ::Digest::SHA1.new
+
+      digest << @instance.uuid
+      digest << @instance.configuration_hash.to_s
+      digest << @instance.current_packages.to_s
+
+      digest.hexdigest
     end
   end
 end

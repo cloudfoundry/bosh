@@ -60,16 +60,6 @@ module Bosh::Director
         end
       end
 
-      def add_shared_provided_links_to_deployment_plan(instance_group, job)
-        job.provided_links(instance_group.name).each do |provided_link|
-          if provided_link.shared
-            link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
-            @logger.debug("Saving link spec for instance_group '#{instance_group.name}', job: '#{job.name}', link: '#{provided_link}', spec: '#{link_spec}'")
-            @deployment_plan.add_deployment_link_spec(instance_group.name, job.name, provided_link.name, provided_link.type, link_spec)
-          end
-        end
-      end
-
       def ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
         return if instance_group.link_paths.empty?
         instance_group.link_paths[job.name].to_a.each do |link_name, _|
@@ -77,6 +67,16 @@ module Bosh::Director
             raise Bosh::Director::UnusedProvidedLink,
               "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
                 'but the release job does not consume it.'
+          end
+        end
+      end
+
+      def add_shared_provided_links_to_deployment_plan(instance_group, job)
+        job.provided_links(instance_group.name).each do |provided_link|
+          if provided_link.shared
+            link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
+            @logger.debug("Saving link spec for instance_group '#{instance_group.name}', job: '#{job.name}', link: '#{provided_link}', spec: '#{link_spec}'")
+            @deployment_plan.add_deployment_link_spec(instance_group.name, job.name, provided_link.name, provided_link.type, link_spec)
           end
         end
       end

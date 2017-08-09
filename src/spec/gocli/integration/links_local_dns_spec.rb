@@ -57,7 +57,7 @@ describe 'Links with local_dns enabled', type: :integration do
   let(:provider_network_name) { 'manual-network' }
 
   let(:manifest) do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::Deployments.simple_manifest
     manifest['jobs'] = [api_job_spec, mysql_job_spec]
     manifest
   end
@@ -176,6 +176,32 @@ describe 'Links with local_dns enabled', type: :integration do
         end
 
         context 'using link.address helper' do
+          let(:job_link_overrided_spec) do
+            job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'my_api',
+              templates: [
+                {
+                  'name' => 'api_server',
+                  'consumes' => {
+                    'db' => {
+                      'address' => 'broker.external-db.com',
+                      'instances' => [],
+                      'properties' => {'foo' => 'bar'},
+                    },
+                    'backup_db' => {
+                      'address' => 'nothing',
+                      'instances' => [],
+                      'properties' => {'foo' => 'bar'},
+                    }
+                  }
+                }],
+              instances: 1
+            )
+            job_spec['networks'] = [{ 'name' => 'manual-network'}]
+            job_spec['azs'] = ['z1']
+            job_spec
+          end
+
           let(:rendered_template) do
             api_instance = director.find_instance(director.instances, 'my_api', '0')
             YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
@@ -184,6 +210,12 @@ describe 'Links with local_dns enabled', type: :integration do
           it 'returns a query string for az and healthiness' do
             deploy_simple_manifest(manifest_hash: manifest)
             expect(rendered_template['i_eat_links']['address']).to eq('q-a1s0.mysql.manual-network.simple.bosh')
+          end
+
+          it 'respects address provided in a manual link' do
+            manifest['jobs'] = [job_link_overrided_spec]
+            deploy_simple_manifest(manifest_hash: manifest)
+            expect(rendered_template['i_eat_links']['address']).to eq('broker.external-db.com')
           end
         end
       end

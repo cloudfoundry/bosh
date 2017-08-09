@@ -32,12 +32,6 @@ module Bosh::Director
           end
         end
 
-        errand_run = Models::ErrandRun.find_or_create(instance_id: instance.model.id)
-        errand_run.update(successful: false,
-          successful_configuration_hash: '',
-          successful_packages_spec: ''
-        )
-
         agent_task_result = nil
         event_log_stage = Config.event_log.begin_stage('Running errand', 1)
         agent_task_id = nil
@@ -69,14 +63,6 @@ module Bosh::Director
         if agent_task_result
           errand_result = Errand::Result.from_agent_task_results(@errand_name, agent_task_result, logs_blobstore_id, logs_blobstore_sha1)
           @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
-        end
-
-        if errand_result && errand_result.exit_code == 0
-          errand_run.update(
-            successful: true,
-            successful_configuration_hash: instance.configuration_hash,
-            successful_packages_spec: JSON.dump(instance.current_packages)
-          )
         end
 
         # Prefer to raise cancel error because

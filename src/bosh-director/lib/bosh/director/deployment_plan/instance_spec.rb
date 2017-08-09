@@ -121,7 +121,8 @@ module Bosh::Director
           'instance_group',
           'default_network',
           'deployment_name',
-          'domain'
+          'domain',
+          'address',
         ]
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }

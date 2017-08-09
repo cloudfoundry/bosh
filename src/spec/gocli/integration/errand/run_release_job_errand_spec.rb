@@ -3,6 +3,14 @@ require_relative '../../spec_helper'
 describe 'run release job errand', type: :integration, with_tmp_dir: true do
   let(:deployment_name) { manifest_hash['name'] }
 
+  let(:service_instance_group_with_errand) do
+    instance_group = Bosh::Spec::Deployments.service_job_with_errand
+    instance_group['instances'] = 2
+    instance_group
+  end
+
+  let(:emoji_errand_job) { {'release' => 'bosh-release', 'name' => 'emoji-errand'} }
+
   with_reset_sandbox_before_each
 
   context 'when running errands on service instances' do
@@ -40,8 +48,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       hash
     end
 
-    let(:emoji_errand_job) { {'release' => 'bosh-release', 'name' => 'emoji-errand'} }
-
     it 'is able to run the first errand' do
       deploy_from_scratch(manifest_hash: manifest_hash)
 
@@ -66,12 +72,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       hash['jobs'] << service_instance_group_with_errand
       hash['jobs'] << second_service_instance_group_with_errand
       hash
-    end
-
-    let(:service_instance_group_with_errand) do
-      instance_group = Bosh::Spec::Deployments.service_job_with_errand
-      instance_group['instances'] = 2
-      instance_group
     end
 
     let(:second_service_instance_group_with_errand) do
@@ -113,18 +113,76 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'the --when-changed flag' do
+    let(:manifest_hash) do
+      hash = Bosh::Spec::Deployments.manifest_with_errand
+      hash['jobs'] << service_instance_group_with_errand
+      hash
+    end
+
+    before do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+    end
+
+    it 'does not run the errand on the second invocation if nothing has changed' do
+      output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+
+      output = bosh_runner.run('run-errand errand1 --when-changed', deployment_name: deployment_name)
+      expect(output).to_not match /job=service_with_errand/
+      expect(output).to_not match /job=service_with_errand/
+      expect(output).to_not match /job=fake-errand-name/
+    end
+
+    it 'runs the errand if the instances selected change' do
+      output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+
+      output = bosh_runner.run('run-errand errand1 --instance service_with_errand/0 --when-changed', deployment_name: deployment_name)
+      expect(output).to match /job=service_with_errand index=0/
+    end
+
+    it 'runs the errand if the configuration on the selected instances change' do
+      output = bosh_runner.run('run-errand errand1 --when-changed', deployment_name: deployment_name)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+
+      manifest_hash['jobs'][1]['templates'] << emoji_errand_job
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand errand1 --when-changed', deployment_name: deployment_name)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+    end
+
+    it 'runs the errand if the errand failed on any of the selected instances' do
+      manifest_hash['jobs'][1]['properties']['errand1']['exit_code'] = 1
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name, failure_expected: true)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+
+      output = bosh_runner.run('run-errand errand1 --when-changed', deployment_name: deployment_name, failure_expected: true)
+      expect(output).to match /job=service_with_errand index=0/
+      expect(output).to match /job=service_with_errand index=1/
+      expect(output).to match /job=fake-errand-name index=0/
+    end
+  end
+
   context 'when filtering to a particular set of instances' do
     let(:manifest_hash) do
       hash = Bosh::Spec::Deployments.manifest_with_errand
       hash['jobs'] << service_instance_group_with_errand
       hash['jobs'] << second_service_instance_group_with_errand
       hash
-    end
-
-    let(:service_instance_group_with_errand) do
-      instance_group = Bosh::Spec::Deployments.service_job_with_errand
-      instance_group['instances'] = 2
-      instance_group
     end
 
     let(:second_service_instance_group_with_errand) do
