@@ -5,13 +5,13 @@ module Bosh::Director
     end
 
     def summary
-      "#{counts_for(:successful?)} succeeded, #{counts_for(:errored?)} errored, #{counts_for(:cancelled?)} canceled, #{counts_for(:skipped?)} skipped"
+      "#{counts_for(:successful?)} succeeded, #{counts_for(:errored?)} errored, #{counts_for(:cancelled?)} canceled"
     end
 
     private
 
     def counts_for(method)
-      @results.count{ |r| r.send(method) }
+      @results.count{ |r| r.public_send(method) }
     end
   end
 end

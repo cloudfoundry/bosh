@@ -136,23 +136,5 @@ module Bosh::Director
         end
       end
     end
-
-    describe '#skipped?' do
-      context 'when exit_code is negative' do
-        it 'returns true' do
-          subject = described_class.new('errand-name', -1, 'fake-stdout', 'fake-stderr', nil, nil)
-          expect(subject.skipped?).to eq(true)
-        end
-      end
-
-      context 'when exit code is not negative' do
-        it 'returns false' do
-          subject = described_class.new('errand-name', 0, 'fake-stdout', 'fake-stderr', nil, nil)
-          expect(subject.skipped?).to eq(false)
-          subject = described_class.new('errand-name', 1, 'fake-stdout', 'fake-stderr', nil, nil)
-          expect(subject.skipped?).to eq(false)
-        end
-      end
-    end
   end
 end

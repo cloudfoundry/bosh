@@ -17,5 +17,15 @@ module Bosh::Director
     def ignore_cancellation?
       false
     end
+
+    def state_hash
+      digest = ::Digest::SHA1.new
+
+      digest << @instance.uuid
+      digest << @instance.configuration_hash.to_s
+      digest << @instance.current_packages.to_s
+
+      digest.hexdigest
+    end
   end
 end

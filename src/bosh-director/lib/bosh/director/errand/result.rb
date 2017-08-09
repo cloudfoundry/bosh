@@ -43,10 +43,6 @@ module Bosh::Director
       }
     end
 
-    def skipped?
-      @exit_code < 0
-    end
-
     def cancelled?
       @exit_code > 128
     end

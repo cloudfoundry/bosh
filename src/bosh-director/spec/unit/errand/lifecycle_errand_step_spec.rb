@@ -9,7 +9,6 @@ module Bosh::Director
         errand_name,
         instance,
         instance_group,
-        skip_errand,
         keep_alive,
         deployment_name,
         logger
@@ -20,11 +19,16 @@ module Bosh::Director
     let(:runner) { instance_double(Errand::Runner) }
     let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, is_errand?: true) }
     let(:errand_name) { 'errand_name' }
-    let(:skip_errand) { false }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
     let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
-    let(:instance) { instance_double(DeploymentPlan::Instance) }
+    let(:instance) {
+      instance_double(DeploymentPlan::Instance,
+        uuid: '321-cba',
+        configuration_hash: instance_configuration_hash,
+        current_packages: {'successful' => 'package_spec'})
+    }
+    let(:instance_configuration_hash) { 'abc123' }
     let(:keep_alive) { 'maybe' }
     let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
     let(:errand_instance_updater) { instance_double(Errand::ErrandInstanceUpdater) }
@@ -57,37 +61,14 @@ module Bosh::Director
 
       context 'when creating instances fails' do
         it 'should raise' do
-          expect(errand_instance_updater).to receive(:create_vms).and_raise("OMG")
-          expect { errand_step.prepare }.to raise_error("OMG")
-        end
-      end
-
-      context 'when there are no changes' do
-        let(:skip_errand) { true }
-        it 'should not update the instances' do
-          expect(errand_instance_updater).not_to receive(:create_vms)
-          errand_step.prepare
+          expect(errand_instance_updater).to receive(:create_vms).and_raise('OMG')
+          expect { errand_step.prepare }.to raise_error('OMG')
         end
       end
     end
 
     describe '#run' do
-      context 'when skip errand is true' do
-        let(:skip_errand) { true }
-
-        it 'logs and returns early' do
-          expect(logger).to receive(:info).with('Skip running errand because since last errand run was successful and there have been no changes to job configuration')
-          expect(errand_instance_updater).not_to receive(:with_updated_instances)
-          errand_step.run(&lambda {})
-        end
-
-        it 'returns an empty result' do
-          result = errand_step.run(&lambda {})
-          expect(result.skipped?).to eq(true)
-        end
-      end
-
-      context 'when instance group is lifecycle errand' do
+      context 'success' do
         let(:exit_code) { 0 }
 
         it 'runs the errand' do
@@ -118,6 +99,19 @@ module Bosh::Director
           expect(template_blob_cache).to receive(:clean_cache!)
           expect(errand_instance_updater).to receive(:with_updated_instances).and_raise('omg')
           expect { errand_step.run(&lambda{}) }.to raise_error 'omg'
+        end
+      end
+    end
+
+    describe '#state_hash' do
+      it 'returns digest of instance uuid, configuration_hash, and package_spec' do
+        expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest('321-cbaabc123{"successful"=>"package_spec"}'))
+      end
+
+      describe 'when the instance configuration hash is nil' do
+        let(:instance_configuration_hash) { nil }
+        it 'returns digest of instance uuid, and package_spec' do
+          expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest('321-cba{"successful"=>"package_spec"}'))
         end
       end
     end

@@ -95,6 +95,7 @@ module Bosh::Director
             instance_groups: [errand_instance_group],
             availability_zones: [],
             instance_group: nil,
+            model: deployment_model,
           )
         end
 
@@ -104,10 +105,11 @@ module Bosh::Director
             instances: [instance],
             is_errand?: false,
             jobs: [errand_job],
+            bind_instances: nil,
           )
         end
 
-        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model ) }
+        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}) }
 
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
@@ -163,7 +165,8 @@ module Bosh::Director
             ip_provider: ip_provider,
             template_blob_cache: template_blob_cache,
             instance_groups: [],
-            availability_zones: []
+            availability_zones: [],
+            model: deployment_model,
           )
         end
         let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
@@ -187,7 +190,7 @@ module Bosh::Director
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
                 let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
-                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance_id') }
+                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance_id', uuid: 'instance_id', configuration_hash: 'hash', current_packages: {}) }
 
                 before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', {timeout: 10, deployment_name: 'fake-dep-name'}).and_return(lock) }
 
@@ -276,7 +279,7 @@ module Bosh::Director
 
                     expect(called_after_block_check).to receive(:call).ordered
 
-                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                    expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                   end
                 end
 
@@ -319,7 +322,7 @@ module Bosh::Director
                   it 'does not delete instances' do
                     expect(instance_group_manager).to_not receive(:delete_vms)
 
-                    expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                    expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                   end
                 end
 
@@ -334,16 +337,15 @@ module Bosh::Director
                   context 'when errand has been run before' do
                     let!(:errand_model) do
                       Models::ErrandRun.make(
-                        successful: errand_success,
-                        instance_id: instance_model.id,
-                        successful_configuration_hash: successful_configuration_hash,
-                        successful_packages_spec: JSON.dump(successful_packages_spec)
+                        deployment: deployment_model,
+                        errand_name: errand_name,
+                        successful_state_hash: successful_state_hash,
                       )
                     end
+                    let(:single_errand_state_hash) { ::Digest::SHA1.hexdigest('instance_id' + successful_configuration_hash + successful_packages_spec.to_s) }
+                    let(:successful_state_hash) { ::Digest::SHA1.hexdigest(single_errand_state_hash) }
 
                     context 'when errand succeeded on the previous run' do
-                      let(:errand_success) { true }
-
                       context 'when the errand configuration has NOT changed' do
                         let(:successful_configuration_hash) { 'last_successful_config' }
                         let(:successful_packages_spec) { {'packages' => 'last_successful_packages'} }
@@ -354,13 +356,12 @@ module Bosh::Director
                         end
                         let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
 
-                        it 'does not run the errand and does not output ' do
+                        it 'does not run the errand' do
                           expect(instance_group_manager).to_not receive(:create_missing_vms)
                           expect(runner).to_not receive(:run)
 
-                          subject.perform
+                          expect(subject.perform).to eq('skipped - no changes detected')
                         end
-
                       end
 
                       context 'when the errand packages has changed' do
@@ -377,7 +378,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                          expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                         end
                       end
 
@@ -395,17 +396,15 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                          expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                         end
                       end
                     end
 
                     context 'when errand failed on the previous run' do
                       let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: instance) }
-                      let(:errand_success) { false }
                       let(:successful_configuration_hash) { '' }
                       let(:successful_packages_spec) { '' }
-
 
                       context 'when the errand configuration has NOT changed' do
                         before do
@@ -417,7 +416,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                          expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                         end
                       end
 
@@ -431,7 +430,7 @@ module Bosh::Director
                           expect(instance_group_manager).to receive(:create_missing_vms)
                           expect(runner).to receive(:run)
 
-                          expect(subject.perform).to eq("1 succeeded, 0 errored, 0 canceled, 0 skipped")
+                          expect(subject.perform).to eq('1 succeeded, 0 errored, 0 canceled')
                         end
                       end
                     end

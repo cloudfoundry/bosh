@@ -9,7 +9,7 @@ module Bosh::Director
       @deployment_planner_provider = deployment_planner_provider
     end
 
-    def get(deployment_name, errand_name, when_changed, keep_alive, requested_instances)
+    def get(deployment_name, errand_name, keep_alive, requested_instances)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       result = nil
       event_log_stage.advance_and_track('Preparing deployment') do
@@ -38,11 +38,11 @@ module Bosh::Director
         matcher = Errand::InstanceMatcher.new(requested_instances)
 
         errand_steps = errand_instance_groups.map do |errand_instance_group|
+          errand_instance_group.bind_instances(deployment_planner.ip_provider)
+
           if errand_instance_group.is_errand?
-            errand_instance_group.bind_instances(deployment_planner.ip_provider)
-            needed_instance_plans = needed_instance_plans(errand_instance_group, template_blob_cache, dns_encoder)
+            render_templates(errand_instance_group, template_blob_cache, dns_encoder)
             target_instance = errand_instance_group.instances.first
-            changes_exist = changes_exist?(needed_instance_plans, target_instance)
             compile_step(deployment_planner).perform
 
             if matcher.matches?(target_instance, errand_instance_group.instances)
@@ -52,7 +52,6 @@ module Bosh::Director
                 errand_name,
                 target_instance,
                 errand_instance_group,
-                when_changed && !changes_exist,
                 keep_alive,
                 deployment_name,
                 @logger)
@@ -71,36 +70,12 @@ module Bosh::Director
           raise "No instances match selection criteria: [#{ unmatched.join(', ') }]"
         end
 
-        result = Errand::ParallelStep.new(Config.max_threads, errand_steps.flatten.compact)
+        result = Errand::ParallelStep.new(Config.max_threads, errand_name, deployment_planner.model, errand_steps.flatten.compact)
       end
       result
     end
 
     private
-
-    def changes_exist?(needed_instance_plans, target_instance)
-      last_errand_run = Models::ErrandRun.where(instance_id: target_instance.model.id).first
-
-      if last_errand_run
-        changed_instance_plans = needed_instance_plans.select do |plan|
-          if JSON.dump(plan.instance.current_packages) != last_errand_run.successful_packages_spec
-            @logger.info("Packages changed FROM: #{last_errand_run.successful_packages_spec} TO: #{plan.instance.current_packages}")
-            next true
-          end
-
-          if plan.instance.configuration_hash != last_errand_run.successful_configuration_hash
-            @logger.info("Configuration changed FROM: #{last_errand_run.successful_configuration_hash} TO: #{plan.instance.configuration_hash}")
-            next true
-          end
-        end
-
-        if last_errand_run.successful && changed_instance_plans.empty?
-          return false
-        end
-      end
-
-      true
-    end
 
     def must_errand_instance_group(deployment_planner, errand_name, deployment_name)
       errand_instance_group = deployment_planner.instance_group(errand_name)
@@ -123,7 +98,7 @@ module Bosh::Director
       errand_instance_group
     end
 
-    def needed_instance_plans(errand_instance_group, template_blob_cache, dns_encoder)
+    def render_templates(errand_instance_group, template_blob_cache, dns_encoder)
       needed_instance_plans = errand_instance_group.needed_instance_plans
       JobRenderer.render_job_instances_with_cache(needed_instance_plans, template_blob_cache, dns_encoder, @logger)
       needed_instance_plans
