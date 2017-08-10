@@ -31,9 +31,11 @@ RSpec.configure do |c|
   c.filter_run_excluding :db => :postgresql unless ENV['DB'] == 'postgresql'
   c.include BlueShell::Matchers
   c.before(:suite) do
-    unless ENV['TEST_ENV_NUMBER']
-      agent_build_cmd = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent/bin/build', __FILE__)
-      unless system(agent_build_cmd)
+    agent_dir = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent', __FILE__)
+    unless File.exists?("#{agent_dir}/out/bosh-agent") || ENV['TEST_ENV_NUMBER']
+      puts "Building agent in #{agent_dir}..."
+
+      unless system("#{agent_dir}/bin/build")
         raise 'Bosh agent build failed'
       end
     end
