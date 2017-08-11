@@ -306,7 +306,6 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
-      @with_invalid_nats_server_ca_path = options.fetch(:with_invalid_nats_server_ca_path, false)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
     end
 
@@ -480,9 +479,7 @@ module Bosh::Dev::Sandbox
     end
 
     def get_nats_server_ca_path
-      if @with_invalid_nats_server_ca_path
-        '/path/to/non/existent/certs'
-      elsif @with_incorrect_nats_server_ca
+      if @with_incorrect_nats_server_ca
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
       else
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
