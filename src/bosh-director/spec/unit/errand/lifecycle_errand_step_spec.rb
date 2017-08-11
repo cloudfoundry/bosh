@@ -21,7 +21,7 @@ module Bosh::Director
     let(:errand_name) { 'errand_name' }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
-    let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
+    let(:errand_result) { Errand::Result.new(instance, errand_name, exit_code, nil, nil, nil) }
     let(:instance) {
       instance_double(DeploymentPlan::Instance,
         uuid: '321-cba',

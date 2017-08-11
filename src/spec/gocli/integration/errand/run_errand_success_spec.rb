@@ -299,11 +299,12 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.manifest_with_errand)
       expect_errands('fake-errand-name')
 
-      @output, @exit_code = bosh_runner.run("run-errand fake-errand-name",
+      @output, @exit_code = bosh_runner.run('run-errand fake-errand-name',
         {return_exit_code: true, json: true, deployment_name: 'errand'})
 
       output = scrub_random_ids(table(@output))
 
+      expect(output[0]['instance']).to match('fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
       expect(output[0]['stdout']).to match('fake-errand-stdout')
       expect(output[0]['stderr']).to match('fake-errand-stderr')
       expect(output[0]['exit_code']).to match('0')
@@ -312,7 +313,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       output = bosh_runner.run('events --object-type errand', deployment_name: 'errand', json: true)
       events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
       expect(events).to contain_exactly(
-        {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => "exit_code: 0", 'error' => ''},
+        {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => 'exit_code: 0', 'error' => ''},
         {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => '', 'error' => ''},
       )
     end

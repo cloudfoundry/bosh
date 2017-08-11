@@ -61,7 +61,7 @@ module Bosh::Director
         end
 
         if agent_task_result
-          errand_result = Errand::Result.from_agent_task_results(@errand_name, agent_task_result, logs_blobstore_id, logs_blobstore_sha1)
+          errand_result = Errand::Result.from_agent_task_results(instance, @errand_name, agent_task_result, logs_blobstore_id, logs_blobstore_sha1)
           @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
         end
 

@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:errand_step) { Errand::LifecycleServiceStep.new(runner, instance, logger) }
     let(:runner) { instance_double(Errand::Runner) }
     let(:errand_name) { 'errand_name' }
-    let(:errand_result) { Errand::Result.new(errand_name, exit_code, nil, nil, nil) }
+    let(:errand_result) { Errand::Result.new(instance, errand_name, exit_code, nil, nil, nil) }
     let(:instance) { instance_double(DeploymentPlan::Instance, uuid: '321-cba', configuration_hash: instance_configuration_hash, current_packages: {'successful' => 'package_spec'}) }
     let(:instance_configuration_hash) { 'abc123' }
     let(:exit_code) { 0 }
