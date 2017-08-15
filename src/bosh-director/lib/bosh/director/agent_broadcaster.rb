@@ -35,7 +35,19 @@ module Bosh::Director
         pending.add(instance)
         instance_to_request_id[instance] = agent_client(instance.credentials, instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
-          Models::AgentDnsVersion.find_or_create(agent_id: instance.agent_id).update(dns_version: version) if valid_response
+
+          if valid_response
+            updated_rows = Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+
+            if updated_rows == 0
+              begin
+                Models::AgentDnsVersion.create(agent_id: instance.agent_id, dns_version: version)
+              rescue Sequel::UniqueConstraintViolation
+                Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+              end
+            end
+          end
+
           lock.synchronize do
             if valid_response
               num_successful += 1
