@@ -164,6 +164,5 @@ nats:
   server_ca_path: <%= nats_server_ca_path %>
   client_certificate_path: <%= nats_director_tls['certificate_path'] %>
   client_private_key_path: <%= nats_director_tls['private_key_path'] %>
-  agent:
-    client_certificate_path: <%= nats_agent_tls['certificate_path'] %>
-    client_private_key_path: <%= nats_agent_tls['private_key_path'] %>
+  client_ca_certificate_path: <%= nats_client_ca_certificate_path %>
+  client_ca_private_key_path: <%= nats_client_ca_private_key_path %>

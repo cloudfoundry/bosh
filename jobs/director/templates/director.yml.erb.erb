@@ -16,12 +16,10 @@ params = {
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'nats' => {
     'server_ca_path' => '/var/vcap/jobs/director/config/nats_server_ca.pem',
+    'client_ca_certificate_path' => '/var/vcap/jobs/director/config/nats_client_ca_certificate.pem',
+    'client_ca_private_key_path' => '/var/vcap/jobs/director/config/nats_client_ca_private_key',
     'client_certificate_path' => '/var/vcap/jobs/director/config/nats_client_certificate.pem',
     'client_private_key_path' => '/var/vcap/jobs/director/config/nats_client_private_key',
-    'agent' => {
-      'client_certificate_path' => '/var/vcap/jobs/director/config/nats_agent_certificate.pem',
-      'client_private_key_path' => '/var/vcap/jobs/director/config/nats_agent_private_key'
-    }
   },
   'dir' => '/var/vcap/store/director',
   'db' => {

@@ -193,8 +193,9 @@ module Bosh::Dev::Sandbox
         remove_dev_tools: @remove_dev_tools,
         director_ips: @director_ips,
         nats_server_ca_path: get_nats_server_ca_path,
-        nats_director_tls: nats_certificate_paths['clients']['director'],
-        nats_agent_tls: nats_certificate_paths['clients']['agent']
+        nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
+        nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
+        nats_director_tls: nats_certificate_paths['clients']['director']
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -484,6 +485,14 @@ module Bosh::Dev::Sandbox
       else
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
+    end
+
+    def get_nats_client_ca_certificate_path
+      File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+    end
+
+    def get_nats_client_ca_private_key_path
+      File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

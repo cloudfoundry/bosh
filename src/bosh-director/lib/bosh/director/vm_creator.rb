@@ -163,8 +163,10 @@ module Bosh::Director
         env['bosh']['mbus'] ||= {}
         env['bosh']['mbus']['cert'] ||= {}
         env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
-        env['bosh']['mbus']['cert']['certificate'] = File.read(Config.nats_agent_certificate_path)
-        env['bosh']['mbus']['cert']['private_key'] = File.read(Config.nats_agent_private_key_path)
+        cert_generator = CertGenerator.new(@logger)
+        agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{agent_id}.agent.bosh"
+        env['bosh']['mbus']['cert']['certificate'] = agent_cert_key_result[:cert].to_pem
+        env['bosh']['mbus']['cert']['private_key'] = agent_cert_key_result[:key].to_pem
       end
 
       if Config.encryption?

@@ -399,6 +399,16 @@ describe Bosh::Director::Config do
     end
 
     context 'when nats_tls is specified' do
+      context 'when ca certificate is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_ca_certificate_path).to eq("/path/to/client_ca_certificate_path")
+        end
+      end
+      context 'when ca private_key is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_ca_private_key_path).to eq("/path/to/client_ca_private_key_path")
+        end
+      end
       context 'when private_key is specified' do
         it 'returns non-nil' do
           expect(described_class.nats_client_private_key_path).to eq("/path/to/director_private_key_path")

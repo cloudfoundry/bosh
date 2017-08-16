@@ -16,20 +16,14 @@ describe 'CPI calls', type: :integration do
     let(:ca_cert) {
       File.read(current_sandbox.nats_certificate_paths['ca_path'])
     }
-    let(:client_cert) {
-      File.read(current_sandbox.nats_certificate_paths['clients']['agent']['certificate_path'])
-    }
-    let(:client_key) {
-      File.read(current_sandbox.nats_certificate_paths['clients']['agent']['private_key_path'])
-    }
 
     let(:expected_mbus) {
       {
         'urls' => [ /nats:\/\/127\.0\.0\.1:\d+/ ],
         'cert' => {
           'ca' => ca_cert,
-          'certificate' =>  client_cert,
-          'private_key' => client_key
+          'certificate' =>  String,
+          'private_key' => String
         }
       }
     }
@@ -84,6 +78,12 @@ describe 'CPI calls', type: :integration do
           }
         }
       })
+
+      agent_id = invocations[2].inputs['agent_id']
+      raw_cert = invocations[2].inputs['env']['bosh']['mbus']['cert']['certificate']
+      cert = OpenSSL::X509::Certificate.new raw_cert
+      cn = cert.subject.to_a.select { |attr| attr[0] == 'CN' }.first
+      expect("#{agent_id}.agent.bosh").to eq(cn[1])
 
       expect(invocations[3].method_name).to eq('set_vm_metadata')
       expect(invocations[3].inputs).to match({

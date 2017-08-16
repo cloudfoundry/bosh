@@ -235,6 +235,7 @@ module Bosh::Director
   DeploymentInvalidResourceSpecification = err(190019)
   DeploymentIgnoredInstancesModification = err(190020)
   DeploymentIgnoredInstancesDeletion = err(190021)
+  DeploymentGeneratorCAInvalid = err(190022)
 
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)

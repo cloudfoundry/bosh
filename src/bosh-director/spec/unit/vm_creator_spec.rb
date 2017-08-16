@@ -554,32 +554,46 @@ module Bosh
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
           end
 
-          it 'should include the ca in ENV' do
-            allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
-            allow(Config).to receive(:nats_agent_certificate_path).and_return('/path/to/tls/certificate')
-            allow(Config).to receive(:nats_agent_private_key_path).and_return('/path/to/tls/private_key')
+          context 'when ca is included' do
+            let(:cert_generator) {instance_double 'Bosh::Director::CertGenerator'}
+            let(:cert) {instance_double 'OpenSSL::X509::Certificate'}
+            let(:private_key) {instance_double 'OpenSSL::PKey::RSA'}
 
-            allow(File).to receive(:read).with(Config.nats_agent_certificate_path).and_return('certificate begin\ncertificate content\ncertificate end\n')
-            allow(File).to receive(:read).with(Config.nats_agent_private_key_path).and_return('pkey begin\npkey content\npkey end\n')
+            before do
+              director_config = SpecHelper.spec_get_director_config
+              allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
+              allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
+            end
 
-            expect(cloud).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id',
-              kind_of(Hash), network_settings, ['fake-disk-cid'],
-              {
-                'bosh' => {
-                  'mbus' => {
-                    'cert' => {
-                      'ca' => 'nats begin\nnats content\nnats end\n',
-                      'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
-                      'private_key' => 'pkey begin\npkey content\npkey end\n',
-                    }
-                  },
-                  'group' => kind_of(String),
-                  'groups' => kind_of(Array),
+            it 'should generate cert with agent ID in ENV' do
+              allow(private_key).to receive(:to_pem).and_return('pkey begin\npkey content\npkey end\n')
+              allow(cert).to receive(:to_pem).and_return('certificate begin\ncertificate content\ncertificate end\n')
+              allow(CertGenerator).to receive(:new).and_return(cert_generator)
+              expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh/).and_return({
+                :cert => cert,
+                :key => private_key
+              })
+              allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
+
+              expect(cloud).to receive(:create_vm).with(
+                kind_of(String), 'stemcell-id',
+                kind_of(Hash), network_settings, ['fake-disk-cid'],
+                {
+                  'bosh' => {
+                    'mbus' => {
+                      'cert' => {
+                        'ca' => 'nats begin\nnats content\nnats end\n',
+                        'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
+                        'private_key' => 'pkey begin\npkey content\npkey end\n',
+                      }
+                    },
+                    'group' => kind_of(String),
+                    'groups' => kind_of(Array),
+                  }
                 }
-              }
-            ).and_return('new-vm-cid')
-            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+              ).and_return('new-vm-cid')
+              subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+            end
           end
         end
         context 'is NOT provided' do
