@@ -8,6 +8,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `WwgxHeQcbxfu_iaGwvpVAIJ_LnBtyxGY`
+  - USN-3392-2: Linux kernel (Xenial HWE) regression
+  - built from 3363.x (cd1977bf5be749915e7a4f333594f22d7b758494)
+
 * `fDoVJrsbjPIaU3i.gPBkDnsy0LW5EtV4`
   - USN-3385-2: Linux kernel (Xenial HWE) vulnerabilities
   - built from 3363.x (ac0318bf394e8323e861232486da3cc0e6ab95f5)
