@@ -131,7 +131,7 @@ module Bosh::Director
         unless acquired
           if Time.now - started > @timeout
             lock = current_lock
-            task_id = lock ? lock.task_id : "expired"
+            task_id = lock ? lock.task_id : "gone"
             raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}. Locking task id is #{task_id}"
           end
           sleep(0.5)

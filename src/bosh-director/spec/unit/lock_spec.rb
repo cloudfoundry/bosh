@@ -67,15 +67,15 @@ module Bosh::Director
       expect(ran_once).to be(true)
     end
 
-    it 'should return info about expired task' do
-      lock_a = Lock.new('foo', )
-      lock_b = Lock.new('foo', timeout: 0.1)
+    it 'should return info about gone task' do
+      lock_a = Lock.new('foo')
+      lock_b = Lock.new('foo')
 
       lock_a.lock do
         allow(lock_b).to receive(:current_lock).and_return(nil)
         expect do
-          lock_b.lock {  something }
-        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is expired/)
+          lock_b.lock { something }
+        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is gone/)
       end
     end
 
