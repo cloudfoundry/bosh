@@ -54,7 +54,7 @@ describe 'local DNS', type: :integration do
         (0..9).each do |index|
           records_json = parse_agent_records_json(index)
           expect(records_json['records']).to match_array(generate_instance_records)
-          expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id'])
+          expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'])
           expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
           expect(records_json['version']).to eq(10)
         end
@@ -362,7 +362,8 @@ describe 'local DNS', type: :integration do
         Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
         instance.ips[0],
         'bosh',
-        instance.agent_id
+        instance.agent_id,
+        instance.index.to_i
       ]
     end
   end

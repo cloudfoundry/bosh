@@ -163,6 +163,62 @@ module Bosh::Director
         end
       end
 
+      context 'that we are able to update the AgentDnsVersion' do
+        let!(:instances) { [instance1]}
+
+        before do
+          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
+            expect(agent).to receive(:sync_dns) do |&blk|
+              blk.call({'value' => 'synced'})
+              Timecop.freeze(end_time)
+            end
+            agent
+          end
+        end
+
+        context 'when there are no prior existing records for the instances' do
+          it 'will create new records for the instances' do
+            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+
+            expect(Models::AgentDnsVersion.all.length).to eq(1)
+            expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
+          end
+        end
+
+        context 'when we need to update existing records for the instances' do
+          before do
+            Models::AgentDnsVersion.create(agent_id: instance1.agent_id, dns_version: 1)
+          end
+
+          it 'will update records for the instances' do
+            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+
+            expect(Models::AgentDnsVersion.all.length).to eq(1)
+            expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
+          end
+        end
+
+        context 'when another thread would have inserted the instance at the same time' do
+          before do
+            # placeholder since we override the create method in the next line
+            version = Models::AgentDnsVersion.create(agent_id: 'fake-agent', dns_version: 1)
+
+            expect(Models::AgentDnsVersion).to receive(:create) do
+              # pretend another parallel process inserted an agent record in the db to emulate the race
+              version.agent_id = instance1.agent_id
+              version.save
+
+              raise Sequel::UniqueConstraintViolation
+            end
+          end
+
+          it 'will still be able to update the AgentDnsVersion records' do
+            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+
+            expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
+          end
+        end
+      end
 
       context 'when some agents are unresponsive' do
         let!(:instances) { [instance1, instance2]}

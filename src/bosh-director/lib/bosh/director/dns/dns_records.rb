@@ -5,7 +5,7 @@ module Bosh::Director
 
     def initialize(version, include_index_records, dns_query_encoder)
       @version = version
-      @record_keys = ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id']
+      @record_keys = ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index']
       @record_infos = []
       @records = []
       @include_index_records = include_index_records
@@ -27,7 +27,8 @@ module Bosh::Director
         Canonicalizer.canonicalize(deployment_name),
         ip,
         domain,
-        agent_id
+        agent_id,
+        index,
       ]
     end
 
