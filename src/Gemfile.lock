@@ -333,7 +333,7 @@ DEPENDENCIES
   bosh-template!
   bosh_cli
   bosh_common!
-  bundler (~> 1.11.0)
+  bundler (~> 1.15.0)
   codeclimate-test-reporter
   eventmachine (= 1.0.4)
   fakefs
@@ -368,4 +368,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   1.11.2
+   1.15.3
