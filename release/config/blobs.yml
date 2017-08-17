@@ -70,10 +70,10 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-ruby/bundler-1.11.2.gem:
-  size: 263168
-  object_id: 83872b1a-048f-4337-8d6e-295d0fb9f99f
-  sha: 8eb956dec72da753d3d2a2126c78508b17af434e
+ruby/bundler-1.15.3.gem:
+  size: 336384
+  object_id: faae3244-82c9-400b-542b-2da1741f01e7
+  sha: bd1e1ba80789ea013a11a2909a154dcee118ebbc
 ruby/ruby-2.3.1.tar.gz:
   size: 17797997
   object_id: bcd99e02-ae75-4d74-beff-ab517520c75c
