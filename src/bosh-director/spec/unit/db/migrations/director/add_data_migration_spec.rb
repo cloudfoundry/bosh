@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170804191205_add_deployment_and_errand_name_to_errand_runs.rb')
+      expect(latest_db_migration_file).to eq('20170815175515_change_variable_ids_to_bigint.rb')
     end
   end
 end
