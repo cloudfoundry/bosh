@@ -160,6 +160,8 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
+          passed:
+            - "build-main-ruby-go"
         - get: bosh-cli
           trigger: true
         - get: bosh-deployment
@@ -246,6 +248,18 @@ jobs:
       - put: main-bats-aws
         params:
           build: "bosh-src/ci/docker/main-bats-aws"
+        get_params:
+          skip_download: true
+
+  - name: build-bosh-blobstore-client
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: bosh-blobstore-client
+        params:
+          build: "bosh-src/ci/docker/bosh-blobstore-client"
         get_params:
           skip_download: true
 
@@ -436,6 +450,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-ruby-go
+      email: {{dockerhub_email}}
+      username: {{dockerhub_username}}
+      password: {{dockerhub_password}}
+
+  - name: bosh-blobstore-client
+    type: docker-image
+    source:
+      repository: bosh/blobstore_client
       email: {{dockerhub_email}}
       username: {{dockerhub_username}}
       password: {{dockerhub_password}}
