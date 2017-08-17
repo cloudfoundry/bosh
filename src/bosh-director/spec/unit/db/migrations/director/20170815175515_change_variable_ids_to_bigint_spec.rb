@@ -86,21 +86,36 @@ module Bosh::Director
       end
 
       it 'variables id should change the type from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
+        if [:sqlite].include?(db.adapter_scheme)
+          skip('Running using SQLite, wherein int == bigint')
+        end
+
+        expect {
+          db[:variables] << {id: 8589934592, variable_set_id: 1, variable_id: 'some_id', variable_name: 'some_name'}
+
+          # MariaDB does not error when inserting record, and instead just truncates records
+          raise unless db[:variables].first[:id] == 8589934592
+        }.to raise_error
+
+        DBSpecHelper.migrate(migration_file)
+
+        can_insert_value_with_bigint(:variables, {id: 9223372036854775807, variable_set_id: 2, variable_id: 'some_id_2', variable_name: 'some_name_2'}, 'id = 9223372036854775807')
       end
 
-      expect {
-        db[:variables] << {id: 8589934592, variable_set_id: 1, variable_id: 'some_id', variable_name: 'some_name'}
+      it 'cascades on variable_sets deletion' do
+        DBSpecHelper.migrate(migration_file)
+        db[:variables] << {id: 1, variable_id: 'var_id_1', variable_name: 'var_1', variable_set_id: 1}
+        db[:variables] << {id: 2, variable_id: 'var_id_2', variable_name: 'var_2', variable_set_id: 1}
+        db[:variables] << {id: 3, variable_id: 'var_id_3', variable_name: 'var_3', variable_set_id: 2}
 
-        # MariaDB does not error when inserting record, and instead just truncates records
-        raise unless db[:variables].first[:id] == 8589934592
-      }.to raise_error
+        expect(db[:variables].count).to eq(3)
 
-      DBSpecHelper.migrate(migration_file)
+        db[:variable_sets].where('id = ?', 1).delete
 
-      can_insert_value_with_bigint(:variables, {id: 9223372036854775807, variable_set_id: 2, variable_id: 'some_id_2', variable_name: 'some_name_2'}, 'id = 9223372036854775807')
-    end
+        expect(db[:variables].count).to eq(1)
+        expect(db[:variables].first).to include({id: 3, variable_id: 'var_id_3', variable_name: 'var_3', variable_set_id: 2})
+      end
+
     end
 
   end
