@@ -1,29 +1,106 @@
+require 'thread'
+
 module Bosh::Monitor::Plugins
+
   class Json < Base
-    attr_reader :processes
+    attr_reader :process_manager
+
+    def initialize(options = {})
+      super(options)
+      @process_manager = options.fetch('process_manager', Bosh::Monitor::Plugins::ProcessManager.new(glob: '/var/vcap/jobs/*/bin/bosh-monitor/*', logger: logger))
+    end
 
     def run
+      process_manager.start
+    end
+
+    def process(event)
+      process_manager.send_event event
+    end
+  end
+
+  class ProcessManager
+    attr_reader :logger
+
+    def initialize(options)
+      @bin_glob = options.fetch(:glob)
+      @logger = options.fetch(:logger)
+
+      @lock = Mutex.new
+      @processes = {}
+    end
+
+    def start
+
       unless EM.reactor_running?
         logger.error("JSON delivery agent can only be started when event loop is running")
         return false
       end
 
-      @processes = Dir[bin_glob].map do |bin|
-        EventMachine::DeferrableChildProcess.open(bin)
-      end
+      start_processes
     end
 
-    def process(event)
-      event_json = event.to_json
-      @processes.each do |process|
-        process.send_data "#{event_json}\n"
+    def send_event(event)
+      @lock.synchronize do
+        @processes.each do |b, process|
+          process.send_data "#{event.to_json}\n"
+        end
       end
     end
 
     private
 
-    def bin_glob
-      options.fetch('bin_glob', '/var/vcap/jobs/*/bin/bosh-monitor/*')
+    def start_processes
+      @lock.synchronize do
+        Dir[@bin_glob].each do |bin|
+          @processes[bin] = start_process(bin)
+        end
+      end
+    end
+
+    def restart_process(bin)
+      @lock.synchronize do
+        @processes[bin] = start_process(bin)
+      end
+    end
+
+    def start_process(bin)
+      process = Bosh::Monitor::Plugins::DeferrableChildProcess.open(bin)
+      process.errback do
+        EM.defer { restart_process bin }
+      end
+
+      process
+    end
+  end
+
+  # EM's DeferrableChildProcess does not give an opportunity
+  # to get the exit status. So we are implementing our own unbind logic to handle the exit status.
+  # This way we can execute our process restart on the err callback (errback).
+  # https://stackoverflow.com/a/12092647
+  class DeferrableChildProcess < EventMachine::Connection
+    include EventMachine::Deferrable
+
+    def initialize
+      super
+      @data = []
+    end
+
+    def self.open cmd
+      EventMachine.popen(cmd, DeferrableChildProcess)
+    end
+
+    def receive_data data
+      @data << data
+    end
+
+    def unbind
+      status = get_status
+      if status.exitstatus != 0
+        fail(status)
+      else
+        succeed(@data.join, status)
+      end
     end
   end
 end

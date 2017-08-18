@@ -1,53 +1,78 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::Json do
-  subject(:plugin) { Bhm::Plugins::Json.new(options) }
+  let(:process_manager) { instance_double(Bosh::Monitor::Plugins::ProcessManager) }
 
-  let(:options) do
-    {
-        "bin_glob" => `which cat`.chomp
-    }
-  end
+  subject(:plugin) { Bhm::Plugins::Json.new({'process_manager' => process_manager}) }
 
-  let(:process) { double(:process).as_null_object }
+  # it "doesn't start if event loop isn't running" do
+  #   expect(plugin.run).to be(false)
+  # end
 
-  it "doesn't start if event loop isn't running" do
-    expect(plugin.run).to be(false)
-  end
+  it "send events to the process manager" do
+    expect(process_manager).to receive(:start)
+    plugin.run
 
-  it "sends alerts as JSON" do
-    alert = make_alert(timestamp: Time.now.to_i)
-
-    expect(EventMachine::DeferrableChildProcess).to receive(:open).with("/bin/cat").and_return(process)
-
-    EM.run do
-      plugin.run
-
-      expect(process).to receive(:send_data) do |payload|
-        json = JSON.parse(payload)
-        expect(json['kind']).to eq 'alert'
-      end
-      plugin.process(alert)
-
-      EM.stop
-    end
-  end
-
-  it "sends heartbeat metrics as JSON" do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i)
 
-    expect(EventMachine::DeferrableChildProcess).to receive(:open).with("/bin/cat").and_return(process)
+    expect(process_manager).to receive(:send_event).with(heartbeat)
+    plugin.process(heartbeat)
+  end
+end
+
+describe Bhm::Plugins::ProcessManager do
+  subject(:process_manager) do
+    Bhm::Plugins::ProcessManager.new({glob: '/*/json-plugin/*', logger: double('logger').as_null_object})
+  end
+
+  it "starts processes that match the glob" do
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin'])
+
+    process = double('some-process').as_null_object
+    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).once.with('/plugin').and_return(process)
+    allow(EventMachine).to receive(:defer).and_yield
 
     EM.run do
-      plugin.run
-
-      expect(process).to receive(:send_data) do |payload|
-        json = JSON.parse(payload)
-        expect(json['kind']).to eq 'heartbeat'
-      end
-      plugin.process(heartbeat)
+      process_manager.start
 
       EM.stop
     end
   end
+
+  it "restarts processes when they die" do
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/non-existent-plugin'])
+
+    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).twice.with('/non-existent-plugin').and_call_original
+    allow(EventMachine).to receive(:defer).and_yield
+
+    EM.run do
+      process_manager.start
+
+      EM.stop
+    end
+  end
+
+  it "sends events to all managed processes as JSON" do
+    alert = make_alert(timestamp: Time.now.to_i)
+
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/process-a', '/process-b'])
+
+    process_a = double('process-a').as_null_object
+    allow(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/process-a').and_return(process_a)
+
+    process_b = double('process-b').as_null_object
+    allow(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/process-b').and_return(process_b)
+
+    EM.run do
+      process_manager.start
+
+      process_manager.send_event(alert)
+
+      expect(process_a).to have_received(:send_data).with("#{alert.to_json}\n")
+      expect(process_b).to have_received(:send_data).with("#{alert.to_json}\n")
+
+      EM.stop
+    end
+  end
+
 end
