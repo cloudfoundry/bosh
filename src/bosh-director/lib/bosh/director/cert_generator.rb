@@ -1,5 +1,4 @@
 module Bosh::Director
-  # Creates VM model and call out to CPI to create VM in IaaS
   class CertGenerator
     @@lock = Mutex.new
     @@last_serial = 0

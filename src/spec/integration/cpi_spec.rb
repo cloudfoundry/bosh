@@ -11,20 +11,14 @@ describe 'CPI calls', type: :integration do
   let(:ca_cert) {
     File.read(current_sandbox.nats_certificate_paths['ca_path'])
   }
-  let(:client_cert) {
-    File.read(current_sandbox.nats_certificate_paths['clients']['agent']['certificate_path'])
-  }
-  let(:client_key) {
-    File.read(current_sandbox.nats_certificate_paths['clients']['agent']['private_key_path'])
-  }
 
   let(:expected_mbus) {
     {
       'urls' => [ /nats:\/\/127\.0\.0\.1:\d+/ ],
       'cert' => {
         'ca' => ca_cert,
-        'certificate' =>  client_cert,
-        'private_key' => client_key
+        'certificate' => /-----BEGIN CERTIFICATE-----\nMII/,
+        'private_key' => /-----BEGIN RSA PRIVATE KEY-----\nMII/
       }
     }
   }

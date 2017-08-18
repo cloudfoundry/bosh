@@ -159,11 +159,11 @@ describe 'director.yml.erb.erb' do
 
       context 'agent' do
         it 'should have the path to agent certificate' do
-          expect(parsed_yaml['nats']['agent']['client_certificate_path']).to eq('/var/vcap/jobs/director/config/nats_agent_certificate.pem')
+          expect(parsed_yaml['nats']['client_ca_certificate_path']).to eq('/var/vcap/jobs/director/config/nats_client_ca_certificate.pem')
         end
       
         it 'should have the path to agent private key' do
-          expect(parsed_yaml['nats']['agent']['client_private_key_path']).to eq('/var/vcap/jobs/director/config/nats_agent_private_key')
+          expect(parsed_yaml['nats']['client_ca_private_key_path']).to eq('/var/vcap/jobs/director/config/nats_client_ca_private_key')
         end
       end
     end
@@ -510,16 +510,16 @@ describe 'nats' do
     end
   end
 
-  describe 'agent' do
-    describe 'nats_client_certificate.pem.erb' do
+  describe 'client ca' do
+    describe 'nats_client_ca_certificate.pem.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_agent_certificate.pem.erb' }
+        let(:file_name) { '../jobs/director/templates/nats_client_ca_certificate.pem.erb' }
         let(:properties) do
           {
             'properties' => {
               'nats' => {
                 'tls' => {
-                  'agent' => {
+                  'client_ca' => {
                     'certificate' => content
                   }
                 }
@@ -530,15 +530,15 @@ describe 'nats' do
       end
     end
 
-    describe 'nats_client_private_key.erb' do
+    describe 'nats_client_ca_private_key.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_agent_private_key.erb' }
+        let(:file_name) { '../jobs/director/templates/nats_client_ca_private_key.erb' }
         let(:properties) do
           {
             'properties' => {
               'nats' => {
                 'tls' => {
-                  'agent' => {
+                  'client_ca' => {
                     'private_key' => content
                   }
                 }
