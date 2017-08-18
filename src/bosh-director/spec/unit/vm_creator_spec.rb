@@ -555,7 +555,7 @@ module Bosh
           end
 
           context 'when ca is included' do
-            let(:cert_generator) {instance_double 'Bosh::Director::CertGenerator'}
+            let(:cert_generator) {instance_double 'Bosh::Director::NatsClientCertGenerator'}
             let(:cert) {instance_double 'OpenSSL::X509::Certificate'}
             let(:private_key) {instance_double 'OpenSSL::PKey::RSA'}
 
@@ -568,7 +568,7 @@ module Bosh
             it 'should generate cert with agent ID in ENV' do
               allow(private_key).to receive(:to_pem).and_return('pkey begin\npkey content\npkey end\n')
               allow(cert).to receive(:to_pem).and_return('certificate begin\ncertificate content\ncertificate end\n')
-              allow(CertGenerator).to receive(:new).and_return(cert_generator)
+              allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
               expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh/).and_return({
                 :cert => cert,
                 :key => private_key

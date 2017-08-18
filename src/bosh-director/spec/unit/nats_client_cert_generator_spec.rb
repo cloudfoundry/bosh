@@ -3,9 +3,9 @@ require 'timecop'
 
 module Bosh
   module Director
-    describe CertGenerator do
+    describe NatsClientCertGenerator do
       subject do
-        CertGenerator.new( logger )
+        NatsClientCertGenerator.new(logger )
       end
 
       let(:Config) {instance_double('Config')}

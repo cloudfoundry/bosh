@@ -1,5 +1,5 @@
 module Bosh::Director
-  class CertGenerator
+  class NatsClientCertGenerator
     @@lock = Mutex.new
     @@last_serial = 0
 
