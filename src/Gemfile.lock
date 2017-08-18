@@ -1,7 +1,7 @@
 PATH
   remote: bosh-core
   specs:
-    bosh-core (0.0.0)
+    bosh-core (261.5.0)
       gibberish (~> 1.4.0)
       yajl-ruby (~> 1.2.0)
 
@@ -21,20 +21,20 @@ PATH
 PATH
   remote: bosh-director-core
   specs:
-    bosh-director-core (0.0.0)
-      bosh-template (~> 0.0.0)
-      bosh_common (~> 0.0.0)
+    bosh-director-core (261.5.0)
+      bosh-template (~> 261.5.0)
+      bosh_common (~> 261.5.0)
 
 PATH
   remote: bosh-director
   specs:
-    bosh-director (0.0.0)
+    bosh-director (261.5.0)
       bcrypt-ruby (~> 3.0.1)
-      bosh-core (~> 0.0.0)
-      bosh-director-core (~> 0.0.0)
-      bosh-registry (~> 0.0.0)
-      bosh-template (~> 0.0.0)
-      bosh_common (~> 0.0.0)
+      bosh-core (~> 261.5.0)
+      bosh-director-core (~> 261.5.0)
+      bosh-registry (~> 261.5.0)
+      bosh-template (~> 261.5.0)
+      bosh_common (~> 261.5.0)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -56,7 +56,7 @@ PATH
 PATH
   remote: bosh-monitor
   specs:
-    bosh-monitor (0.0.0)
+    bosh-monitor (261.5.0)
       aws-sdk (= 1.60.2)
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.21.0)
@@ -73,7 +73,7 @@ PATH
 PATH
   remote: bosh-registry
   specs:
-    bosh-registry (0.0.0)
+    bosh-registry (261.5.0)
       aws-sdk
       bosh_cpi
       fog-openstack
@@ -85,19 +85,19 @@ PATH
 PATH
   remote: bosh-stemcell
   specs:
-    bosh-stemcell (0.0.0)
-      bosh-core (~> 0.0.0)
+    bosh-stemcell (261.5.0)
+      bosh-core (~> 261.5.0)
 
 PATH
   remote: bosh-template
   specs:
-    bosh-template (0.0.0)
+    bosh-template (261.5.0)
       semi_semantic (~> 1.2.0)
 
 PATH
   remote: bosh_common
   specs:
-    bosh_common (0.0.0)
+    bosh_common (261.5.0)
       logging (~> 1.8.2)
       semi_semantic (~> 1.2.0)
 
