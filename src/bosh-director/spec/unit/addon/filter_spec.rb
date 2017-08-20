@@ -5,6 +5,10 @@ module Bosh::Director
     describe Filter do
       subject(:addon_include) { Filter.parse(filter_hash, type, addon_level) }
       let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
+      let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
+      let(:deployment_name) { "deployment_1" }
+      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, teams: teams) }
+      let(:deployment) { instance_double(DeploymentPlan::Planner, name: deployment_name, model: deployment_model) }
       let(:addon_level) { RUNTIME_LEVEL }
 
       shared_examples :common_filter_checks do
@@ -13,7 +17,7 @@ module Bosh::Director
 
           it 'raises' do
             expect {
-              addon_include.applies?('anything', instance_group)
+              addon_include.applies?(deployment, instance_group)
             }.to raise_error AddonIncompleteFilterJobSection,
               "Job {\"name\"=>\"\", \"release\"=>\"release_name\"} in runtime config's #{type} section must have both name and release."
           end
@@ -24,7 +28,7 @@ module Bosh::Director
 
           it 'raises' do
             expect {
-              addon_include.applies?('anything', instance_group)
+              addon_include.applies?(deployment, instance_group)
             }.to raise_error AddonIncompleteFilterJobSection,
               "Job {\"name\"=>\"job-name\", \"release\"=>\"\"} in runtime config's #{type} section must have both name and release."
           end
@@ -36,7 +40,7 @@ module Bosh::Director
 
             it 'raises' do
               expect {
-                addon_include.applies?('anything', instance_group)
+                addon_include.applies?(deployment, instance_group)
               }.to raise_error AddonIncompleteFilterStemcellSection,
                 "Stemcell {\"os\"=>\"\"} in runtime config's #{type} section must have an os name."
             end
@@ -47,7 +51,7 @@ module Bosh::Director
 
             it 'applies' do
               allow(instance_group).to receive(:has_os?).with('my_os').and_return(true)
-              expect(addon_include.applies?('anything', instance_group)).to be(true)
+              expect(addon_include.applies?(deployment, instance_group)).to be(true)
             end
           end
 
@@ -56,7 +60,7 @@ module Bosh::Director
 
             it 'does not apply' do
               allow(instance_group).to receive(:has_os?).with('my_os').and_return(false)
-              expect(addon_include.applies?('anything', instance_group)).to be(false)
+              expect(addon_include.applies?(deployment, instance_group)).to be(false)
             end
           end
         end
@@ -66,16 +70,35 @@ module Bosh::Director
 
           describe 'when the deployment name matches one from the include spec' do
             it 'applies' do
-              expect(addon_include.applies?('deployment_1', nil)).to be(true)
+              expect(addon_include.applies?(deployment, nil)).to be(true)
             end
           end
 
           describe 'when the deployment name does not match one from the filter spec' do
+            let(:deployment_name) { "deployment_3" }
             it 'does not apply' do
-              expect(addon_include.applies?('deployment_blarg', nil)).to be(false)
+              expect(addon_include.applies?(deployment, nil)).to be(false)
             end
           end
         end
+
+        describe 'when the filter spec has only a teams section' do
+          let(:filter_hash) { {'teams' => ['team_1', 'team_2']} }
+
+          describe 'when the one of the teams matches one from the include spec' do
+            it 'applies' do
+              expect(addon_include.applies?(deployment, nil)).to be(true)
+            end
+          end
+
+          describe 'when the none of the teams does not match one from the filter spec' do
+            let(:filter_hash) { {'teams' => ['team_5']} }
+            it 'does not apply' do
+              expect(addon_include.applies?(deployment, nil)).to be(false)
+            end
+          end
+        end
+
 
         describe 'when the filter spec has only a networks section' do
           let(:filter_hash) { {'networks' => ['net_1', 'net_2']} }
@@ -83,7 +106,7 @@ module Bosh::Director
           describe 'when the network name matches one from the include spec' do
             it 'applies' do
               allow(instance_group).to receive(:has_network?).with('net_1').and_return(true)
-              expect(addon_include.applies?('anything', instance_group)).to be(true)
+              expect(addon_include.applies?(deployment, instance_group)).to be(true)
             end
           end
 
@@ -91,7 +114,7 @@ module Bosh::Director
             it 'does not apply' do
               allow(instance_group).to receive(:has_network?).with('net_1').and_return(false)
               allow(instance_group).to receive(:has_network?).with('net_2').and_return(false)
-              expect(addon_include.applies?('anything', instance_group)).to be(false)
+              expect(addon_include.applies?(deployment, instance_group)).to be(false)
             end
           end
         end
@@ -102,14 +125,14 @@ module Bosh::Director
           describe 'when the instance group contains a matching job from the include spec' do
             it 'applies' do
               allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(true)
-              expect(addon_include.applies?('', instance_group)).to be(true)
+              expect(addon_include.applies?(deployment, instance_group)).to be(true)
             end
           end
 
           describe 'when the instance group does not contain a matching job from the filter spec' do
             it 'does not apply' do
               allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(false)
-              expect(addon_include.applies?('', instance_group)).to be(false)
+              expect(addon_include.applies?(deployment, instance_group)).to be(false)
             end
           end
 
@@ -127,7 +150,7 @@ module Bosh::Director
               it 'applies' do
                 allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(true)
                 allow(instance_group).to receive(:has_job?).with('job_name_2', 'release_name_2').and_return(true)
-                expect(addon_include.applies?('', instance_group)).to be(true)
+                expect(addon_include.applies?(deployment, instance_group)).to be(true)
               end
             end
 
@@ -135,7 +158,7 @@ module Bosh::Director
               it 'applies' do
                 allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(true)
                 allow(instance_group).to receive(:has_job?).with('job_name_2', 'release_name_2').and_return(false)
-                expect(addon_include.applies?('', instance_group)).to be(true)
+                expect(addon_include.applies?(deployment, instance_group)).to be(true)
               end
             end
 
@@ -143,7 +166,7 @@ module Bosh::Director
               it 'does not apply' do
                 allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(false)
                 allow(instance_group).to receive(:has_job?).with('job_name_2', 'release_name_2').and_return(false)
-                expect(addon_include.applies?('', instance_group)).to be(false)
+                expect(addon_include.applies?(deployment, instance_group)).to be(false)
               end
             end
           end
@@ -162,14 +185,15 @@ module Bosh::Director
             describe 'when the deployment name matches and the instance group contains the job' do
               it 'applies' do
                 expect(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(true)
-                expect(addon_include.applies?('deployment_2', instance_group)).to be(true)
+                expect(addon_include.applies?(deployment, instance_group)).to be(true)
               end
             end
 
             describe 'when the deployment name does not match and the instance group contains job' do
+              let(:deployment_name) { "deployment_3" }
               it 'does not apply' do
                 allow(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(true)
-                expect(addon_include.applies?('deployment_3', instance_group)).to be(false)
+                expect(addon_include.applies?(deployment, instance_group)).to be(false)
               end
             end
 
@@ -177,7 +201,7 @@ module Bosh::Director
               it 'does not apply' do
                 expect(instance_group).to receive(:has_job?).with('job_name', 'release_name').and_return(false)
                 expect(instance_group).to receive(:has_job?).with('job_name_2', 'release_name_2').and_return(false)
-                expect(addon_include.applies?('deployment_1', instance_group)).to be(false)
+                expect(addon_include.applies?(deployment, instance_group)).to be(false)
               end
             end
           end
@@ -194,6 +218,7 @@ module Bosh::Director
                 "Deployment filter is not allowed for deployment level addons."
             end
           end
+
           context 'when addon is not in deployment manifest' do
             let(:addon_level) { RUNTIME_LEVEL }
             it 'raises' do
@@ -213,7 +238,16 @@ module Bosh::Director
 
             it 'applies' do
               expect(addon_include.applies?(nil, nil)).to be(true)
-              expect(addon_include.applies?('anything', instance_group)).to be(true)
+              expect(addon_include.applies?(deployment, instance_group)).to be(true)
+            end
+          end
+
+          describe 'when addon is in deployment manifest and has team filter' do
+            let(:addon_level) { DEPLOYMENT_LEVEL }
+            let(:filter_hash) { {'teams' => ['team_5']} }
+
+            it 'does not do anything' do
+              expect(addon_include.applies?(deployment, nil)).to be(true)
             end
           end
 
@@ -229,7 +263,16 @@ module Bosh::Director
 
             it 'does not apply' do
               expect(addon_include.applies?(nil, nil)).to be(false)
-              expect(addon_include.applies?('anything', instance_group)).to be(false)
+              expect(addon_include.applies?(deployment, instance_group)).to be(false)
+            end
+          end
+
+          describe 'when addon is in deployment manifest and has team filter' do
+            let(:addon_level) { DEPLOYMENT_LEVEL }
+            let(:filter_hash) { {'teams' => ['team_5']} }
+
+            it 'does not do anything' do
+              expect(addon_include.applies?(deployment, nil)).to be(false)
             end
           end
 

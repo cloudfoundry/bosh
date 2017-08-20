@@ -21,9 +21,12 @@ module Bosh::Director
 
       let(:cloud_config) { Models::CloudConfig.make }
 
+      let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
+
       let(:deployment_model) do
         deployment_model = Models::Deployment.make
         deployment_model.cloud_config_id = cloud_config.id
+        deployment_model.teams = teams
         deployment_model.save
         deployment_model
       end
@@ -206,19 +209,19 @@ module Bosh::Director
           }
 
           it 'applies' do
-            expect(addon.applies?(deployment_name, nil)).to eq(true)
+            expect(addon.applies?(deployment, nil)).to eq(true)
           end
         end
 
         context 'when the addon is not applicable by deployment name' do
-          let(:include_spec) { {'deployments' => [deployment_name]} }
+          let(:include_spec) { {'deployments' => ["blarg"]} }
           let(:deployment_instance_group) {
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
           }
 
           it 'does not apply' do
-            expect(addon.applies?('blarg', nil)).to eq(false)
+            expect(addon.applies?(deployment, nil)).to eq(false)
           end
         end
 
@@ -230,7 +233,7 @@ module Bosh::Director
           }
 
           it 'applies' do
-            expect(addon.applies?(deployment_name, nil)).to eq(true)
+            expect(addon.applies?(deployment, nil)).to eq(true)
           end
         end
 
@@ -243,7 +246,7 @@ module Bosh::Director
           }
 
           it 'applies' do
-            expect(addon.applies?(deployment_name, nil)).to eq(true)
+            expect(addon.applies?(deployment, nil)).to eq(true)
           end
         end
 
@@ -257,7 +260,7 @@ module Bosh::Director
             }
 
             it 'does not apply' do
-              expect(addon.applies?(deployment_name, nil)).to eq(false)
+              expect(addon.applies?(deployment, nil)).to eq(false)
             end
           end
 
@@ -284,8 +287,8 @@ module Bosh::Director
             end
 
             it 'exludes specified job only' do
-              expect(addon.applies?(deployment_name, deployment.instance_group('foobar'))).to eq(false)
-              expect(addon.applies?(deployment_name, deployment.instance_group('foobar1'))).to eq(true)
+              expect(addon.applies?(deployment, deployment.instance_group('foobar'))).to eq(false)
+              expect(addon.applies?(deployment, deployment.instance_group('foobar1'))).to eq(true)
             end
           end
         end
