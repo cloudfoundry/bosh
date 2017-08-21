@@ -1,3 +1,5 @@
+require 'common/logging/filters'
+
 module Bosh::Director
   class JobRunner
 
@@ -49,7 +51,8 @@ module Bosh::Director
       shared_appender = Logging.appenders.file(
         'DirectorJobRunnerFile',
         filename: debug_log,
-        layout: ThreadFormatter.layout
+        layout: ThreadFormatter.layout,
+        filters: Bosh::Common::Logging.default_filters,
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level

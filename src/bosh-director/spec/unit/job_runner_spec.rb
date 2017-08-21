@@ -84,14 +84,27 @@ module Bosh::Director
       expect(config.result).to eq(task_result)
     end
 
-    it 'sets up task logs: debug, event, result' do
+    it 'logs the worker name and process information' do
       runner = make_runner(sample_job_class, 42)
 
       logger = Logging::Repository.instance().fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
       expect(logger).to receive(:info).with("Running from worker 'workername1' on name/id (127.0.127.0)")
-
       runner.run
+    end
+
+    it 'should not log standard blacklist messages' do
+      make_runner(sample_job_class, 42)
+
+      Config.logger.debug('before')
+      Config.logger.debug('(10.01s) SELECT NULL')
+      Config.logger.debug('after')
+
+      log_contents = File.read(task_dir+'/debug')
+
+      expect(log_contents).to include('before')
+      expect(log_contents).to include('after')
+      expect(log_contents).not_to include('SELECT NULL')
     end
 
     it 'handles task cancellation' do

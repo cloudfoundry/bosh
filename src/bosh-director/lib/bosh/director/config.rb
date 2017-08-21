@@ -2,6 +2,7 @@ require 'fileutils'
 require 'logging'
 require 'socket'
 require 'uri'
+require 'common/logging/filters'
 
 module Bosh::Director
 
@@ -99,6 +100,8 @@ module Bosh::Director
             layout: ThreadFormatter.layout
           )
         end
+
+        shared_appender.add_filters(Bosh::Common::Logging.default_filters)
 
         @logger = Logging::Logger.new('Director')
         @logger.add_appenders(shared_appender)

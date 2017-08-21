@@ -3,7 +3,7 @@ module Bosh::Director
   class TaskAppender < Logging::Appender
     def initialize(name, opts = {})
       super
-      @db_writer = opts.getopt(:db_writer)
+      @db_writer = opts.fetch(:db_writer)
     end
 
     private

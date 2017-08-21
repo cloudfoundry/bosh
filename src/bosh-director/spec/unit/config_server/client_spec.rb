@@ -216,24 +216,24 @@ module Bosh::Director::ConfigServer
                 {'response' => 'Invalid JSON response',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
 
-                {'response' => {'x' => {}},
+                {'response' => '{"x" : {}}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
-                {'response' => {'data' => {'value' => 'x'}},
+                {'response' => '{"data" : {"value" : "x"}}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
-                {'response' => {'data' => []},
+                {'response' => '{"data" : []}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
 
-                {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
+                {'response' => '{"data" : [{"name" : "name1", "id" : "id1", "val" : "x"}]}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
 
-                {'response' => {'data' => [{'name' => 'name1', 'value' => 'x'}]},
+                {'response' => '{"data" : [{"name" : "name1", "value" : "x"}]}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\''},
 
               ].each do |entry|
                 it 'raises an error' do
-                  allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
+                  allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response']))
                   expect {
                     client.interpolate(manifest_hash)
                   }.to raise_error { |error|
@@ -856,16 +856,16 @@ module Bosh::Director::ConfigServer
                   {'response' => 'Invalid JSON response',
                    'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response"},
 
-                  {'response' => {'id' => 'some-id'},
+                  {'response' => '{"id" : "some-id"}',
                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'value'"},
 
-                  {'response' => {'value' => 'some-value-foo'},
+                  {'response' => '{"value" : "some-value-foo"}',
                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => {},
+                  {'response' => '{}',
                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}, {'name' => 'name2', 'id' => 'id2', 'val' => 'y'}],
+                  {'response' => '[{"name" : "name1", "id" : "id1", "val" : "x"}, {"name" : "name2", "id" : "id2", "val" : "y"}]',
                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to be a hash, got 'Array'"},
                 ].each do |entry|
                   it 'raises an error' do
@@ -873,7 +873,7 @@ module Bosh::Director::ConfigServer
                     allow(variable_model).to receive(:variable_name).and_return('/bad')
                     allow(variable_model).to receive(:variable_id).and_return('20')
                     allow(variable_set_model).to receive(:find_variable_by_name).with('/bad').and_return(variable_model)
-                    allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response'].to_json))
+                    allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response']))
 
                     expect {
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
