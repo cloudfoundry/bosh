@@ -122,7 +122,7 @@ module Bhm
         context 'bad alert' do
           it 'does not increment alerts_processed' do
             expect(event_processor).to receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
-            alert = Yajl::Encoder.encode({'id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+            alert = JSON.dump({'id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
               manager.process_event(:alert, 'hm.agent.alert.007', alert)
@@ -133,7 +133,7 @@ module Bhm
 
         context 'good alert' do
           it 'increments alerts_processed' do
-            good_alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+            good_alert = JSON.dump({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
               manager.process_event(:alert, 'hm.agent.alert.007', good_alert)
@@ -315,7 +315,7 @@ module Bhm
           manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
           expect(manager.analyze_agents).to eq(3)
 
-          alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+          alert = JSON.dump({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
           # Alert for already managed agent
           manager.process_event(:alert, 'hm.agent.alert.007', alert)

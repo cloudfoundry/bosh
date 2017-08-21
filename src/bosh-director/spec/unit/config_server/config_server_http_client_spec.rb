@@ -42,7 +42,7 @@ module Bosh::Director::ConfigServer
       let(:request_body) { {'stuff' => 'hello'} }
 
       it 'makes a POST call to config server @ /v1/data/{key} with body and returns response' do
-        expect(http_client).to receive(:post).with(anything, Yajl::Encoder.encode(request_body), {'Content-Type' => 'application/json'})
+        expect(http_client).to receive(:post).with(anything, JSON.dump(request_body), {'Content-Type' => 'application/json'})
         subject.post(request_body)
       end
     end

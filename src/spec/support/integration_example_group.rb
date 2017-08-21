@@ -1,5 +1,4 @@
 require 'yaml'
-require 'yajl'
 require 'bosh/dev/sandbox/main'
 require 'bosh/dev/legacy_agent_manager'
 require 'bosh/dev/verify_multidigest_manager'

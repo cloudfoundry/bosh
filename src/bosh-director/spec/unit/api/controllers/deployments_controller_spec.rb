@@ -1181,7 +1181,7 @@ module Bosh::Director
               ['mycloud',
               [['job', 0]], false])
             expect(Delayed::Job).not_to receive(:enqueue)
-            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+            put '/mycloud/scan_and_fix', JSON.dump('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
             expect(last_response).not_to be_redirect
           end
 

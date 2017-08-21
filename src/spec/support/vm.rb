@@ -53,7 +53,7 @@ module Bosh::Spec
     def fail_job
       @logger.info("Failing job #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
-        msg = Yajl::Encoder.encode(
+        msg = JSON.dump(
           method: 'set_dummy_status',
           status: 'failing',
           reply_to: 'integration.tests',
@@ -65,7 +65,7 @@ module Bosh::Spec
     def fail_start_task
       @logger.info("Failing task #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
-        msg = Yajl::Encoder.encode(
+        msg = JSON.dump(
           method: 'set_task_fail',
           status: 'fail_task',
           reply_to: 'integration.tests',
@@ -108,7 +108,7 @@ module Bosh::Spec
 
     def get_state
       spec_path = File.join(@agent_base_dir, 'bosh', 'spec.json')
-      Yajl::Parser.parse(File.read(spec_path))
+      JSON.parse(File.read(spec_path))
     end
 
     def read_etc_hosts

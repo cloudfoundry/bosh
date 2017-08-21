@@ -24,7 +24,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'logging',         '~>2.2.2'
   spec.add_dependency 'em-http-request', '~>0.3.0'
   spec.add_dependency 'nats',      '=0.5.0.beta.12'
-  spec.add_dependency 'yajl-ruby', '~>1.2.0'
   spec.add_dependency 'thin',      '~>1.5.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'aws-sdk',   '1.60.2'
