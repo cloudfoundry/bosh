@@ -11,14 +11,6 @@ namespace :fly do
     })
   end
 
-  # bundle exec rake fly:integration
-  desc 'Fly integration specs'
-  task :integration do
-    execute('test-integration', '-p --inputs-from bosh/integration-2.3-postgres', {
-        DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil)
-    })
-  end
-
   # bundle exec rake fly:integration_gocli
   desc 'Fly integration gocli specs'
   task :integration_gocli do
@@ -32,32 +24,6 @@ namespace :fly do
     execute('run', '-p', {
         COMMAND: %Q|\"#{args[:command]}\"|
     })
-  end
-
-  desc 'Fly integration parallel specs'
-  task :integration_parallel do
-
-    num_workers = 3
-    num_groups = 24
-
-    groups = (1..num_groups).group_by { |i| i%num_workers }.values
-        .map { |group_values| group_values.join(',') }
-
-    task_names = groups.each_with_index.map do |group, index|
-      name = "integration_#{index + 1}"
-      task name do
-        execute('test-integration', '-p --inputs-from bosh/integration-2.3-postgres', {
-            DB: (ENV['DB'] || 'postgresql'),
-            SPEC_PATH: (ENV['SPEC_PATH'] || nil),
-            GROUP: group,
-            NUM_GROUPS: num_groups
-        })
-      end
-      name
-    end
-
-    multitask _parallel_integration: task_names
-    Rake::MultiTask[:_parallel_integration].invoke
   end
 
   desc 'Fly integration gocli parallel specs'
