@@ -94,7 +94,7 @@ module Bosh::Director
 
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_agent_id('fake-agent-id') }
         let(:task) do
           {
               'agent_task_id' => 'fake-agent_task_id',
@@ -259,7 +259,7 @@ module Bosh::Director
 
     context 'task is fired and forgotten' do
       describe 'delete_arp_entries' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_agent_id('fake-agent-id') }
         let(:task) do
           {
             'agent_task_id' => 'fake-agent_task_id',
@@ -301,7 +301,7 @@ module Bosh::Director
     end
 
     describe '#sync_dns' do
-      subject(:client) {AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1)}
+      subject(:client) {AgentClient.with_agent_id('fake-agent-id', timeout: 0.1)}
       let(:nats_rpc) {instance_double(Bosh::Director::NatsRpc)}
 
       before do
@@ -333,25 +333,10 @@ module Bosh::Director
         )
         client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1)
       end
-
-      context 'when encryption is turned on' do
-        it 'does not log sync_dns calls' do
-          expect(nats_rpc).to receive(:send_request).with(
-            'agent.fake-agent-id',
-            anything,
-            {'logging' => false}
-          )
-          expect(logger).not_to receive(:info)
-
-          credentials = Bosh::Core::EncryptionHandler.generate_credentials
-          encrypted_client = AgentClient.with_vm_credentials_and_agent_id(credentials, 'fake-agent-id', timeout: 0.1)
-          encrypted_client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1)
-        end
-      end
     end
 
     describe '#cancel_sync_dns' do
-      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id', timeout: 0.1) }
+      subject(:client) { AgentClient.with_agent_id('fake-agent-id', timeout: 0.1) }
       let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc) }
 
       before do
@@ -368,7 +353,7 @@ module Bosh::Director
 
     context 'task is synchronous' do
       describe 'it does not have agent_task_id' do
-        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        subject(:client) { AgentClient.with_agent_id('fake-agent-id') }
 
         before do
           allow(Config).to receive(:nats_rpc)
@@ -385,7 +370,7 @@ module Bosh::Director
     end
 
     describe '#info' do
-      subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+      subject(:client) { AgentClient.with_agent_id('fake-agent-id') }
 
       it 'is returns api version 0 if the info endpoint is not implemented' do
         allow(client).to receive(:send_message).and_raise(RpcRemoteException, "unknown message info")
@@ -404,24 +389,18 @@ module Bosh::Director
         { 'network_a' => { 'ip' => '1.2.3.4' } }
       end
 
-      let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
       subject(:client) do
-        AgentClient.with_vm_credentials_and_agent_id(credentials, 'fake-agent-id')
+        AgentClient.with_agent_id('fake-agent-id')
       end
 
-      it 'should use provided credentials' do
+      it 'should returns pong when pinged' do
         nats_rpc = double('nats_rpc')
 
         allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
-        Config.encryption = true
-
         allow(App).to receive_messages(instance: double('App Instance').as_null_object)
 
-        handler = Bosh::Core::EncryptionHandler.new('fake-agent-id', credentials)
         expect(nats_rpc).to receive(:send_request) do |*args, &blk|
-          data = args[1]['encrypted_data']
-          handler.decrypt(data) # decrypt to initiate session
-          blk.call('encrypted_data' => handler.encrypt('value' => 'pong'))
+          blk.call({'value' => 'pong'})
         end
 
         expect(client.ping).to eq('pong')
@@ -619,33 +598,6 @@ module Bosh::Director
           testjob_class.perform(task_id, 'workername1')
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
         end
-      end
-    end
-
-    describe 'encryption' do
-      it 'should encrypt message' do
-        credentials = Bosh::Core::EncryptionHandler.generate_credentials
-        client_opts = { timeout: 0.1, :credentials => credentials }
-        response = { 'value' => 5 }
-
-        expect(@nats_rpc).to receive(:send_request) { |*args, &blk|
-          expect(args[0]).to eq('foo.bar')
-          request = args[1]
-          data = request['encrypted_data']
-
-          handler = Bosh::Core::EncryptionHandler.new('bar', credentials)
-
-          message = handler.decrypt(data)
-          expect(message['method']).to eq('baz')
-          expect(message['arguments']).to eq([1, 2, 3])
-          expect(message['sequence_number'].to_i).to be > Time.now.to_i
-          expect(message['client_id']).to eq('bar')
-
-          blk.call('encrypted_data' => handler.encrypt(response))
-        }
-
-        client = AgentClient.new('foo', 'bar', client_opts)
-        expect(client.baz(1, 2, 3)).to eq(5)
       end
     end
 

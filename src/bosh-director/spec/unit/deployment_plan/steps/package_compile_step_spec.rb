@@ -266,7 +266,7 @@ module Bosh::Director
         expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling)).exactly(10).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
           compile_package_stub(args)
         end
@@ -336,7 +336,7 @@ module Bosh::Director
           end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
           expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
             compile_package_stub(args)
           end
@@ -437,7 +437,7 @@ module Bosh::Director
           'networks' => net
         }
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
         allow(agent).to receive(:wait_until_ready)
         allow(agent).to receive(:update_settings)
         allow(agent).to receive(:apply).with(initial_state)
@@ -510,7 +510,7 @@ module Bosh::Director
           with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready).ordered
         expect(agent).to receive(:update_settings).ordered
@@ -571,7 +571,7 @@ module Bosh::Director
         end
 
         agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
@@ -629,7 +629,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
@@ -686,7 +686,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient')
           expect(agent).to receive(:wait_until_ready).and_raise(exception)
-          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+          expect(AgentClient).to receive(:with_agent_id).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
 
@@ -837,7 +837,7 @@ module Bosh::Director
           Bosh::Director::Config.trusted_certs = DIRECTOR_TEST_CERTS
 
           allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
-          allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
+          allow(AgentClient).to receive_messages(with_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
           allow(client).to receive(:wait_until_ready)

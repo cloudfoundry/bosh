@@ -21,7 +21,6 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
     @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id)
     @instance.active_vm = @vm
-    @instance.update(credentials: {'credentials' => 'json'})
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
@@ -29,7 +28,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
     @handler = make_handler(@disk.id)
     allow(@handler).to receive(:cloud).and_return(cloud)
-    allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
+    allow(@handler).to receive(:agent_client).with(@instance.agent_id).and_return(@agent)
     allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
   end
 

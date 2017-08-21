@@ -24,7 +24,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
+    def self.with_agent_id(agent_id, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -32,8 +32,6 @@ module Bosh::Director
           upload_blob: UPLOAD_BLOB_MAX_RETRIES,
         }
       }
-
-      defaults.merge!(credentials: vm_credentials) if vm_credentials
 
       self.new('agent', agent_id, defaults.merge(options))
     end
@@ -45,12 +43,6 @@ module Bosh::Director
       @timeout = options[:timeout] || 45
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
-
-      if options[:credentials]
-        @encryption_handler =
-          Bosh::Core::EncryptionHandler.new(@client_id, options[:credentials])
-      end
-
       @resource_manager = Api::ResourceManager.new
     end
 
@@ -235,13 +227,6 @@ module Bosh::Director
 
     def send_nats_request_with_options(method_name, args, options, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
-
-      if @encryption_handler
-        @logger.info("Request: #{request}") unless options['logging'] == false
-        request = {'encrypted_data' => @encryption_handler.encrypt(request) }
-        request['session_id'] = @encryption_handler.session_id
-      end
-
       recipient = "#{@service_name}.#{@client_id}"
       @nats_rpc.send_request(recipient, request, options, &callback)
     end
@@ -262,15 +247,6 @@ module Bosh::Director
       timeout_time = Time.now.to_f + @timeout
 
       request_id = send_nats_request(method_name, args) do |response|
-        if @encryption_handler
-          begin
-            response = @encryption_handler.decrypt(response['encrypted_data'])
-          rescue Bosh::Core::EncryptionHandler::CryptError => e
-            response['exception'] = "CryptError: #{e.inspect} #{e.backtrace}"
-          end
-          @logger.info("Response: #{response}")
-        end
-
         result.synchronize do
           inject_compile_log(response)
           result.merge!(response)

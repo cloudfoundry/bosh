@@ -3,11 +3,10 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::InstanceManager do
     let(:deployment) { Models:: Deployment.make(name: deployment_name) }
-    let(:credentials) { {'foo' => 'bar'} }
     let(:active_vm) { true }
-    let!(:vm) { Models::Vm.make(agent_id: 'random-id', credentials_json: JSON.generate(credentials), instance_id: instance.id, active: active_vm) }
+    let!(:vm) { Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: active_vm) }
     let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
-    let!(:vm_1) { Models::Vm.make(agent_id: 'random-id1', credentials_json: JSON.generate(credentials), instance_id: instance_1.id, active: active_vm) }
+    let!(:vm_1) { Models::Vm.make(agent_id: 'random-id1', instance_id: instance_1.id, active: active_vm) }
     let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
@@ -77,7 +76,7 @@ module Bosh::Director
 
           it 'enqueues a job' do
             instance_2 = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job)
-            Models::Vm.make(agent_id: 'random-id2', credentials_json: JSON.generate(credentials), instance_id: instance_2.id, active: true)
+            Models::Vm.make(agent_id: 'random-id2', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(
               username, Jobs::FetchLogs, 'fetch logs', [[instance_2.id], options], deployment).and_return(task)
@@ -89,7 +88,7 @@ module Bosh::Director
       context 'when development is provided' do
         let!(:instance_2) do
           instance = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job_2)
-          Models::Vm.make(agent_id: 'random-id2', credentials_json: JSON.generate(credentials), instance_id: instance.id, active: active_vm)
+          Models::Vm.make(agent_id: 'random-id2', instance_id: instance.id, active: active_vm)
           instance
         end
         let(:job_2) { 'FAKE_JOB_2' }
@@ -114,7 +113,7 @@ module Bosh::Director
 
           it 'enqueues a job' do
             instance_2 = Models::Instance.make(uuid: 'fakeId126', deployment: deployment, job: job_3)
-            Models::Vm.make(agent_id: 'random-id3', credentials_json: JSON.generate(credentials), instance_id: instance_2.id, active: true)
+            Models::Vm.make(agent_id: 'random-id3', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(
               username, Jobs::FetchLogs, 'fetch logs', [[instance_2.id], options], deployment).and_return(task)
@@ -182,7 +181,7 @@ module Bosh::Director
     describe '#agent_client_for' do
       it 'creates an agent client for the specified instance' do
         fake_agent_client = instance_double(AgentClient)
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, vm.agent_id).and_return(fake_agent_client)
+        expect(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(fake_agent_client)
         agent_client = subject.agent_client_for(instance)
         expect(agent_client).to eq(fake_agent_client)
       end

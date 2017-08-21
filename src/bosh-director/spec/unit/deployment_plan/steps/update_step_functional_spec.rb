@@ -16,7 +16,7 @@ module Bosh::Director::DeploymentPlan::Steps
     let!(:stemcell) { Bosh::Director::Models::Stemcell.make({'name' => 'fake-stemcell', 'version' => 'fake-stemcell-version'}) }
 
     before do
-      allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+      allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:apply)
       allow(agent_client).to receive(:drain).and_return(0)
       allow(agent_client).to receive(:stop)
