@@ -9,6 +9,7 @@ source /etc/profile.d/chruby.sh
 chruby 2.1.2
 
 cd bosh-src
+gem install bundler -v 1.15.3
 bundle install
 bundle exec rake release:create_dev_release
 
