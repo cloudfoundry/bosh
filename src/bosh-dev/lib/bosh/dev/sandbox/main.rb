@@ -388,6 +388,8 @@ module Bosh::Dev::Sandbox
     def do_reset
       @cpi.kill_agents
 
+      FileUtils.rm(@nats_log_path)
+
       @director_service.stop
 
       if @drop_database
@@ -396,6 +398,10 @@ module Bosh::Dev::Sandbox
       else
         @database.truncate_db
       end
+
+      @nats_process.stop
+      @nats_process.start
+      @nats_socket_connector.try_to_connect
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
@@ -471,7 +477,7 @@ module Bosh::Dev::Sandbox
       conf = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(
-        %W[#{gnatsd_path} -c #{conf} -T -D ],
+        %W[#{gnatsd_path} -c #{conf} -T -DV ],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )

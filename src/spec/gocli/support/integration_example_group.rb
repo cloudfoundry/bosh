@@ -420,4 +420,62 @@ RSpec.configure do |config|
   config.include(IntegrationSandboxHelpers, type: :upgrade)
   config.extend(IntegrationSandboxBeforeHelpers, type: :integration)
   config.extend(IntegrationSandboxBeforeHelpers, type: :upgrade)
+  config.after(:each) do |example|
+    if example.exception
+      print_agent_logs(current_sandbox.sandbox_path('bosh_cloud_test'))
+      print_tasks_logs(current_sandbox.sandbox_path('boshdir/tasks'))
+      print_nats_logs
+    end
+  end
+end
+
+def print_agent_logs(bosh_cloud_test_path)
+  agent_file_paths = []
+  Find.find(bosh_cloud_test_path) do |path|
+    if  path =~ /agent\..*\.log$/
+      agent_file_paths << path
+    end
+  end
+
+  agent_file_paths.each do |path|
+    file = File.open(path, "rb")
+    contents = file.read
+    puts "START AGENT=========================================="
+    puts "#{path}"
+    puts "=========================================="
+    puts contents
+    puts "END AGENT =========================================="
+    file.close
+  end
+end
+
+def print_tasks_logs(bosh_tasks_logs)
+  task_file_paths = []
+  Find.find(bosh_tasks_logs) do |path|
+    if  path =~ /\/debug$/
+      task_file_paths << path
+    end
+  end
+
+  task_file_paths.each do |path|
+    file = File.open(path, "rb")
+    contents = file.read
+    puts "START TASK DEBUG =========================================="
+    puts "#{path}"
+    puts "=========================================="
+    puts contents
+    puts "END TASK DEBUG =========================================="
+    file.close
+  end
+end
+
+def print_nats_logs
+    file = File.open("#{current_sandbox.sandbox_path('logs')}/nats.log", "rb")
+    contents = file.read
+    puts "START NATS DEBUG =========================================="
+    puts "#{file.path}"
+    puts "=========================================="
+    puts contents
+    puts "END NATS DEBUG =========================================="
+    file.close
 end
