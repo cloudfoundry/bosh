@@ -177,6 +177,14 @@ module Bosh::Director
       it 'filters by given criteria' do
         expect(subject.filter_by(deployment, uuid: instance.uuid).all).to eq [instance]
       end
+
+      it 'can get array as input' do
+        expect(subject.filter_by(deployment, [Sequel.like(:uuid, "#{instance.uuid}")]).all).to eq [instance]
+      end
+
+      it 'can get hash as input' do
+        expect(subject.filter_by(deployment, { uuid: instance.uuid }).all).to eq [instance]
+      end
     end
 
     describe '#agent_client_for' do

@@ -30,7 +30,8 @@ module Bosh::Director
       # @return [Array] List of instances that matched the filter
       # @raise [InstanceNotFound]
       def filter_by(deployment, filter)
-        InstanceLookup.new.by_filter(filter.merge(deployment_id: deployment.id))
+        return InstanceLookup.new.by_filter(filter.merge(deployment_id: deployment.id)) if filter.is_a?(Hash)
+        return InstanceLookup.new.by_filter(filter << { deployment_id: deployment.id }) if filter.is_a?(Array)
       end
 
       # @param [Models::Instance] instance Instance

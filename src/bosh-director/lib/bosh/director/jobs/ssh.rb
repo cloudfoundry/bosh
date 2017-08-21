@@ -1,6 +1,7 @@
 module Bosh::Director
   module Jobs
     class Ssh < BaseJob
+      include Bosh::Director::IpUtil
       DEFAULT_SSH_DATA_LIFETIME = 300
       SSH_TAG = "ssh"
 
@@ -21,17 +22,32 @@ module Bosh::Director
 
       def perform
         target = Target.new(@target_payload)
-
         filter = {}
-        filter[:job] = target.job if target.job
-        filter.merge!(target.id_filter)
+        if target.job && ip_address?(target.job)
+          ip_address = target.job
+          net_address = ip_to_netaddr(ip_address)
+          ip_error_message = "{:ip=>#{ip_address}}"
+          ipaddress_model = Models::IpAddress.where(address: net_address.to_i).first
+          if ipaddress_model.nil?
+            filter = []
+            filter << Sequel.like(:spec_json, "%\\\"#{ip_address}\\\"%")
+          else
+            filter[:id] = ipaddress_model.instance_id
+          end
+        else
+          filter[:job] = target.job if target.job
+          filter.merge!(target.id_filter)
+        end
 
         deployment = Models::Deployment[@deployment_id]
-
-        instances = @instance_manager.filter_by(deployment, filter).reject { |i| i.active_vm.nil? }
+        begin
+          instances = @instance_manager.filter_by(deployment, filter).reject { |i| i.active_vm.nil? }
+        rescue InstanceNotFound
+          instances = []
+        end
 
         if instances.empty?
-          raise "No instance with a VM in deployment '#{deployment.name}' matched filter #{filter}"
+          raise "No instance with a VM in deployment '#{deployment.name}' matched filter #{ip_error_message || filter}"
         end
 
         ssh_info = instances.map do |instance|

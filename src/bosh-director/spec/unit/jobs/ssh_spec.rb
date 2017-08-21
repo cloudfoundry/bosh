@@ -15,6 +15,8 @@ module Bosh::Director
     let(:instance_manager) { Api::InstanceManager.new }
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:spec) { {} }
+    let(:is) { Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1', spec: spec) }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
@@ -23,7 +25,6 @@ module Bosh::Director
     end
 
     before do
-      is = Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
       vm = Models::Vm.make(cid: 'cid', instance_id: is.id)
       is.active_vm = vm
       Models::Instance.make(job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
@@ -80,8 +81,20 @@ module Bosh::Director
       expect(event.error).to eq('error')
     end
 
+    context 'when no active vm for instance' do
+      it 'raises an error' do
+        is.active_vm = nil
+        expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:job=>\"fake-job\", :index=>[1]}"
+      end
+    end
+
     context 'when instance id was passed in' do
       let(:target) { {'job' => 'fake-job', 'ids' => ['fake-uuid-1']} }
+
+      it "identifies job is not ip address" do
+        expect(Models::IpAddress).not_to receive(:where)
+        job.perform
+      end
 
       context 'when id is instance uuid' do
         it 'finds instance by its id and generates response with id' do
@@ -108,6 +121,59 @@ module Bosh::Director
           job.perform
           event = Bosh::Director::Models::Event.first
           expect(event.instance).to eq('fake-job/fake-uuid-1')
+        end
+      end
+    end
+
+    context 'when ip address was passed in' do
+      let(:target) {{'job' => '1.1.1.1'}}
+
+      context 'when ip_address not exist' do
+        it 'raises an error' do
+          expect {job.perform}.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+        end
+      end
+
+      context 'when ip address is stored in db' do
+        before do
+          ip_addresses_params = {
+              'instance_id' => is.id,
+              'task_id' => task.id,
+              'address' => NetAddr::CIDR.create("1.1.1.1")
+          }
+          Models::IpAddress.create(ip_addresses_params)
+        end
+
+        context 'when instance does not have active vm' do
+          it 'raises an error' do
+            is.active_vm = nil
+            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+          end
+        end
+
+        context 'when instance has active vm' do
+          it 'finds instance by ip address and generates response' do
+            job.perform
+            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+          end
+        end
+      end
+
+      context 'when ip address is in memory' do
+        let(:spec) { {networks: {ip: "1.1.1.1"}} }
+
+        context 'when instance does not have active vm' do
+          it 'raises an error' do
+            is.active_vm = nil
+            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+          end
+        end
+
+        context 'when instance has active vm' do
+          it 'finds instance by ip address and generates response' do
+            job.perform
+            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+          end
         end
       end
     end
