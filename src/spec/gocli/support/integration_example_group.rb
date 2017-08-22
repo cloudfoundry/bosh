@@ -422,9 +422,9 @@ RSpec.configure do |config|
   config.extend(IntegrationSandboxBeforeHelpers, type: :upgrade)
   config.after(:each) do |example|
     if example.exception
-      print_nats_logs
-      print_tasks_logs(current_sandbox.sandbox_path('boshdir/tasks'))
       print_agent_logs(current_sandbox.sandbox_path('bosh_cloud_test'))
+      print_tasks_logs(current_sandbox.sandbox_path('boshdir/tasks'))
+      print_nats_logs
     end
   end
 end
