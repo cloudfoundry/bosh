@@ -1,7 +1,5 @@
 module Bosh::Director
   class NatsClientCertGenerator
-    @@lock = Mutex.new
-    @@last_serial = 0
 
     def initialize(logger)
       @logger = logger
@@ -32,16 +30,9 @@ module Bosh::Director
       cert = OpenSSL::X509::Certificate.new
       cert.version = 2
 
-      serial = (Time.now.to_f*1000).to_i
-      @@lock.synchronize do
-        if serial <= @@last_serial
-          serial = @@last_serial+1
-        end
-        @@last_serial = serial
-      end
-      cert.serial = serial
+      cert.serial = SecureRandom.hex(16).to_i(16)
 
-      cert.subject = OpenSSL::X509::Name.parse "/DC=org/DC=bosh/CN=#{common_name}"
+      cert.subject = OpenSSL::X509::Name.parse "/C=USA/O=Cloud Foundry/CN=#{common_name}"
       cert.issuer = @root_ca.subject # root CA is the issuer
       cert.public_key = key.public_key
       cert.not_before = Time.now
@@ -50,8 +41,9 @@ module Bosh::Director
       ef.subject_certificate = cert
       ef.issuer_certificate = @root_ca
       cert.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
-      cert.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+      cert.add_extension(ef.create_extension("basicConstraints","CA:false",true))
       cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth",true))
+      # cert.add_extension(ef.create_extension('subjectAltName', san_list.join(',')))
       cert.sign(@root_key, OpenSSL::Digest::SHA256.new)
 
       { :cert => cert, :key => key, :ca_key => @root_key.public_key }
