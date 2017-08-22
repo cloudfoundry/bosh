@@ -72,7 +72,7 @@ module Bosh
         it 'certs have different serial numbers' do
           result1 = subject.generate_nats_client_certificate 'test.123'
           result2 = subject.generate_nats_client_certificate 'test.456'
-          expect(result1[:cert].serial < result2[:cert].serial).to be_truthy
+          expect(result1[:cert].serial).to_not eq(result2[:cert].serial)
         end
 
         it 'cert has 2 years validity' do
