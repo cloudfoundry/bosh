@@ -18,7 +18,12 @@ end
 
 describe Bhm::Plugins::ProcessManager do
   subject(:process_manager) do
-    Bhm::Plugins::ProcessManager.new({glob: '/*/json-plugin/*', logger: double('logger').as_null_object, check_interval: 0.2})
+    Bhm::Plugins::ProcessManager.new({
+      glob: '/*/json-plugin/*',
+      logger: double('logger').as_null_object,
+      check_interval: 0.2,
+      restart_wait: 0.1
+    })
   end
 
   it "doesn't start if event loop isn't running" do
@@ -26,7 +31,7 @@ describe Bhm::Plugins::ProcessManager do
   end
 
   it "starts processes that match the glob" do
-    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin'])
+    allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin'])
 
     process = double('some-process').as_null_object
     expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).once.with('/plugin').and_return(process)
@@ -40,15 +45,13 @@ describe Bhm::Plugins::ProcessManager do
   end
 
   it "restarts processes when they die" do
-    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/non-existent-plugin'])
-
-    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).twice.with('/non-existent-plugin').and_call_original
-    allow(EventMachine).to receive(:defer).and_yield
+    allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/non-existent-plugin'])
+    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).at_least(2).times.with('/non-existent-plugin').and_call_original
 
     EM.run do
+      allow(EventMachine).to receive(:add_timer).with(0.1).twice.and_yield
+      expect(EventMachine).to receive(:add_timer) { EM.stop }
       process_manager.start
-
-      EM.stop
     end
   end
 

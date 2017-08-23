@@ -24,6 +24,7 @@ module Bosh::Monitor::Plugins
       @bin_glob = options.fetch(:glob)
       @logger = options.fetch(:logger)
       @check_interval = options.fetch(:check_interval, 60)
+      @restart_wait = options.fetch(:restart_wait, 1)
 
       @lock = Mutex.new
       @processes = {}
@@ -72,7 +73,7 @@ module Bosh::Monitor::Plugins
     def start_process(bin)
       process = Bosh::Monitor::Plugins::DeferrableChildProcess.open(bin)
       process.errback do
-        EM.defer { restart_process bin }
+        EventMachine.add_timer(@restart_wait) { restart_process bin }
       end
 
       process
