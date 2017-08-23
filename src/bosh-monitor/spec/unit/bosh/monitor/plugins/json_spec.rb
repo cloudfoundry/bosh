@@ -5,10 +5,6 @@ describe Bhm::Plugins::Json do
 
   subject(:plugin) { Bhm::Plugins::Json.new({'process_manager' => process_manager}) }
 
-  # it "doesn't start if event loop isn't running" do
-  #   expect(plugin.run).to be(false)
-  # end
-
   it "send events to the process manager" do
     expect(process_manager).to receive(:start)
     plugin.run
@@ -22,7 +18,11 @@ end
 
 describe Bhm::Plugins::ProcessManager do
   subject(:process_manager) do
-    Bhm::Plugins::ProcessManager.new({glob: '/*/json-plugin/*', logger: double('logger').as_null_object})
+    Bhm::Plugins::ProcessManager.new({glob: '/*/json-plugin/*', logger: double('logger').as_null_object, check_interval: 0.2})
+  end
+
+  it "doesn't start if event loop isn't running" do
+    expect(process_manager.start).to be(false)
   end
 
   it "starts processes that match the glob" do
@@ -51,6 +51,28 @@ describe Bhm::Plugins::ProcessManager do
       EM.stop
     end
   end
+
+  it "detects and starts new processes" do
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return([], ['/plugin'])
+    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/plugin')
+
+    EM.run do
+      process_manager.start
+
+      EM.add_timer(5) do
+        # By this time the test is failing
+        puts("Timeout canceling the event machine")
+        EM.stop
+      end
+
+      EM.add_periodic_timer(0.5) do
+        if process_manager.instance_variable_get(:@processes).size == 1
+          EM.stop
+        end
+      end
+    end
+  end
+
 
   it "sends events to all managed processes as JSON" do
     alert = make_alert(timestamp: Time.now.to_i)
