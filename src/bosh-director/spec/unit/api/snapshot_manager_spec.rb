@@ -153,16 +153,29 @@ module Bosh::Director
       end
 
       describe '#take_snapshot' do
-        let(:metadata) {
+        let(:expected_metadata) {
           {
-            agent_id: 'agent0',
-            director_name: 'Test Director',
-            director_uuid: Config.uuid,
             deployment: 'deployment',
             job: 'job',
-            index: 0
+            index: 0,
+            director_name: 'Test Director',
+            director_uuid: Config.uuid,
+            agent_id: 'agent0',
+            instance_id: '12abdc456',
           }
         }
+
+        before(:each) do
+          allow(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+        end
+
+        it 'takes the snapshot' do
+          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
+
+          expect {
+            expect(described_class.take_snapshot(@instance)).to eq %w[snap0c]
+          }.to change { Models::Snapshot.count }.by 1
+        end
 
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
@@ -170,24 +183,31 @@ module Bosh::Director
             expect(cloud_factory).to receive(:get_for_az).with(@instance2.availability_zone).and_return(cloud)
 
             expect {
-              described_class.take_snapshot(@instance2, {})
+              described_class.take_snapshot(@instance2)
             }.to_not change { Models::Snapshot.count }
           end
         end
 
-        it 'takes the snapshot' do
-          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-          expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+        context 'with custom tags' do
+          let(:custom_tags){
+            {
+              tag1: 'value1',
+              tag2: 'value2'
+            }
+          }
 
-          expect {
-            expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
-          }.to change { Models::Snapshot.count }.by 1
+          it 'adds the custom tags to the snapshot metadata' do
+            expect(@instance.deployment).to receive(:tags).and_return(custom_tags)
+
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge({:custom_tags => custom_tags})).and_return('snap0c')
+
+            described_class.take_snapshot(@instance)
+          end
         end
 
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
-            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-            expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -206,7 +226,6 @@ module Bosh::Director
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
             allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
-            expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end
