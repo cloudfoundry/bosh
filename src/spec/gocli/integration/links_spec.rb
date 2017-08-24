@@ -129,7 +129,7 @@ describe 'Links', type: :integration do
             instances: 1
         )
         job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value", "fibonacci" => 1}}
+        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, 'name_space' => {'prop_a' => 'job_value', 'fibonacci' => 1}}
         job_spec
       end
 
@@ -171,11 +171,11 @@ describe 'Links', type: :integration do
         instances = director.instances
         link_instance = director.find_instance(instances, 'other2', '0')
         template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}, "fibonacci"=>1}])
+        expect(template['links']).to contain_exactly(['address', '192.168.1.2'], ['properties', {'listen_port' =>8082, 'name_space' =>{'prop_a' => 'job_value'}, 'fibonacci' =>1}])
 
         link_instance = director.find_instance(instances, 'new_job', '0')
         template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.4"], ["properties", {"listen_port"=>9999, "name_space"=>{"prop_a"=>"default"}}])
+        expect(template['links']).to contain_exactly(['address', '192.168.1.4'], ['properties', {'listen_port' =>9999, 'name_space' =>{'prop_a' => 'default'}}])
       end
     end
 
@@ -303,7 +303,7 @@ describe 'Links', type: :integration do
         it 'should not throw an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
           expect(exit_code).to eq(0)
-          expect(out).to include("Succeeded")
+          expect(out).to include('Succeeded')
         end
       end
 
@@ -481,7 +481,7 @@ Error: Unable to process links for deployment. Errors are:
 
       it 'should successfully compile a release without complaining about missing links in sha2 mode', sha2: true do
         deploy_simple_manifest(manifest_hash: manifest)
-        out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
+        out = bosh_runner.run('export-release bosh-release/0+dev.1 toronto-os/1', deployment_name: 'simple')
 
         expect(out).to include('Preparing package compilation: Finding packages to compile')
         expect(out).to match(/Compiling packages: pkg_2\/[a-f0-9]+/)
@@ -515,7 +515,7 @@ Error: Unable to process links for deployment. Errors are:
 
       it 'should successfully compile a release without complaining about missing links in sha1 mode', sha1: true do
         deploy_simple_manifest(manifest_hash: manifest)
-        out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
+        out = bosh_runner.run('export-release bosh-release/0+dev.1 toronto-os/1', deployment_name: 'simple')
 
         expect(out).to include('Preparing package compilation: Finding packages to compile')
         expect(out).to match(/Compiling packages: pkg_2\/[a-f0-9]+/)
@@ -1067,7 +1067,7 @@ Error: Unable to process links for deployment. Errors are:
           templates: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
-          azs: ["z1"]
+          azs: ['z1']
         )
       end
 
@@ -1084,7 +1084,7 @@ Error: Unable to process links for deployment. Errors are:
           templates: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.11'],
-          azs: ["z1"]
+          azs: ['z1']
         )
       end
 
@@ -1390,7 +1390,7 @@ Error: Unable to process links for deployment. Errors are:
             }
           end
 
-          it "should choose link from correct network" do
+          it 'should choose link from correct network' do
             upload_cloud_config(cloud_config_hash: cloud_config)
             deploy_simple_manifest(manifest_hash: manifest)
           end
@@ -1560,7 +1560,7 @@ Error: Unable to process links for deployment. Errors are:
         expect(output_2).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(1\)/)
         expect(output_2).to match(/Updating instance postgres: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        current_deployments = bosh_runner.run("deployments", json: true)
+        current_deployments = bosh_runner.run('deployments', json: true)
         #THERE IS WHITESPACE AT THE END OF THE TABLE. DO NOT REMOVE IT
         expect(table(current_deployments)).to eq([{'name' => 'simple', 'release_s' => 'release_with_minimal_links/0+dev.2', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
 
@@ -1692,7 +1692,7 @@ Error: Unable to process links for deployment. Errors are:
         it 'should NOT be able to reach the links from the co-located job' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).to eq(1)
-          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
           expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
           expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
           expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
@@ -1723,7 +1723,7 @@ Error: Unable to process links for deployment. Errors are:
         it 'should NOT be able to reach the links from the co-located job' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).to eq(1)
-          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
           expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
           expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
           expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
@@ -1752,7 +1752,7 @@ Error: Unable to process links for deployment. Errors are:
         it 'should NOT be able to reach the links from the co-located jobs' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).to eq(1)
-          expect(out).to include("Error: Unable to render instance groups for deployment. Errors are:")
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
           expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
           expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
           expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
@@ -1849,8 +1849,8 @@ Error: Unable to process links for deployment. Errors are:
 
       deploy_simple_manifest(manifest_hash: manifest)
 
-      my_sql_instance = director.instance("mysql", '0', deployment_name: 'simple')
-      template = YAML.load(my_sql_instance.read_job_template("addon", 'config.yml'))
+      my_sql_instance = director.instance('mysql', '0', deployment_name: 'simple')
+      template = YAML.load(my_sql_instance.read_job_template('addon', 'config.yml'))
 
       template['databases'].each do |_, database|
         database.each do |instance|
@@ -1914,7 +1914,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_nil_properties]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
 
       expect(exit_code).to eq(0)
     end
@@ -1924,7 +1924,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest,  return_exit_code: true)
 
       expect(exit_code).to eq(0)
     end
@@ -1933,7 +1933,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['jobs'] = [job_with_manual_consumes_link]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
       expect(exit_code).to eq(0)
 
       link_instance = director.instance('property_job', '0')
@@ -1970,7 +1970,7 @@ Error: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Error: Unable to process links for deployment. Errors are:")
+      expect(out).to include('Error: Unable to process links for deployment. Errors are:')
       expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")

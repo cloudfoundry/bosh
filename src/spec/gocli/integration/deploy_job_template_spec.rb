@@ -54,6 +54,38 @@ describe 'deploy job template', type: :integration do
     expect(template).to include("spec.address=#{instance.id}.foobar.a.simple.bosh")
   end
 
+  it 'does not redeploy if the order of properties get changed' do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'].first['properties'] = {
+        'test_property' =>
+        {
+            'q2GB' => 'foo',
+            'q4GB' => 'foo',
+            'q8GB' => 'foo',
+            'q46GB' => 'foo',
+            'q82GB' => 'foo',
+            'q64GB' => 'foo',
+            'q428GB' => 'foo',
+        }
+      }
+      manifest_hash['jobs'].first['instances'] = 1
+
+      deploy_from_scratch(manifest_hash: manifest_hash)
+      expect(director.instances.count).to eq(1)
+
+      instance = director.instance('foobar', '0')
+      template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+      expected_rendered_template = '"test_property={"q2GB"=>"foo", "q428GB"=>"foo", "q46GB"=>"foo", "q4GB"=>"foo", "q64GB"=>"foo", "q82GB"=>"foo", "q8GB"=>"foo"}"'
+      expect(template).to include(expected_rendered_template)
+
+      output = deploy(manifest_hash: manifest_hash)
+      expect(output).to_not match(/Updating instance foobar/)
+
+      instance = director.instance('foobar', '0')
+      template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include(expected_rendered_template)
+  end
+
   context 'health monitor', hm: true do
     with_reset_hm_before_each
 

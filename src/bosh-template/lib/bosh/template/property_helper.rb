@@ -46,6 +46,16 @@ module Bosh
         ref
       end
 
+      def sort_property(property)
+        if property.is_a?(Hash)
+          property.each do |k, v|
+            property[k] = sort_property(v)
+          end.sort.to_h
+        else
+          property
+        end
+      end
+
       # Inject property with a given name and value to dst.
       # @param [Hash] dst Property destination
       # @param [String] name Property name (dot-separated)
