@@ -399,14 +399,14 @@ module Bosh::Director::ConfigServer
     def add_event(options)
       Bosh::Director::Config.current_job.event_manager.create_event(
         {
-          user:        Bosh::Director::Config.current_job.username,
+          user: Bosh::Director::Config.current_job.username,
           object_type: 'variable',
-          task:        Bosh::Director::Config.current_job.task_id,
-          action:      options.fetch(:action),
+          task: Bosh::Director::Config.current_job.task_id,
+          action: options.fetch(:action),
           object_name: options.fetch(:object_name),
-          deployment:  options.fetch(:deployment_name),
-          context:     options.fetch(:context, {}),
-          error:       options.fetch(:error, nil)
+          deployment: options.fetch(:deployment_name),
+          context: options.fetch(:context, {}),
+          error: options.fetch(:error, nil)
         })
     end
 
