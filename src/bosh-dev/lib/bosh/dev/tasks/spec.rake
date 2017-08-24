@@ -16,19 +16,16 @@ namespace :spec do
   namespace :integration do
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task :gocli => :install_dependencies do
-      compile_dependencies
       run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
     task :health_monitor => :install_dependencies do
-      compile_dependencies
       run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
     end
 
     desc 'Run BOSH gocli upgrade tests against a local sandbox'
     task :upgrade => :install_dependencies do
-      compile_dependencies
       run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
@@ -61,6 +58,8 @@ namespace :spec do
           Bosh::Dev::VerifyMultidigestManager.install
         end
       end
+
+      compile_dependencies
     end
 
     desc 'Download BOSH Agent. Use only for local dev environment'

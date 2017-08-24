@@ -379,6 +379,13 @@ module Bosh
           }
         )
 
+        begin
+          sleep 0.1
+          Process.getpgid(agent_pid)
+        rescue => e
+          raise RuntimeError, "Expected agent to be running: #{e}"
+        end
+
         Process.detach(agent_pid)
 
         agent_pid
