@@ -33,7 +33,7 @@ module Bosh::Spec
           instance_data[:bootstrap] == 'true',
           instance_data[:disk_cids],
           File.join(@agents_base_dir, "agent-base-dir-#{instance_data[:agent_id]}"),
-          @director_nats_port,
+          @director_nats_config,
           @logger,
         )
       end

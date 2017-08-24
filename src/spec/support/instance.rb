@@ -17,7 +17,7 @@ module Bosh::Spec
       bootstrap,
       disk_cids,
       agent_base_dir,
-      nats_port,
+      nats_config,
       logger
     )
       @waiter = waiter
@@ -34,7 +34,7 @@ module Bosh::Spec
       @bootstrap = bootstrap
       @disk_cids = disk_cids
       @agent_base_dir = agent_base_dir
-      @nats_port = nats_port
+      @nats_config = nats_config
       @logger = logger
     end
 
@@ -64,7 +64,7 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@vm_cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = JSON.dump(
           method: 'set_dummy_status',
           status: 'failing',
@@ -76,7 +76,7 @@ module Bosh::Spec
 
     def fail_start_task
       @logger.info("Failing task #{@vm_cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = JSON.dump(
           method: 'set_task_fail',
           status: 'fail_task',
