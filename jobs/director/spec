@@ -83,9 +83,6 @@ properties:
     description: SSL Certificate for director (PEM encoded)
   director.ssl.key:
     description: SSL private key for director (PEM encoded)
-  director.encryption:
-    description: Enable/Disable agent-director encryption (true|false)
-    default: false
   director.max_tasks:
     description: Max number of tasks per each type to keep in disk
     default: 100

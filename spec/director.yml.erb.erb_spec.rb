@@ -32,7 +32,6 @@ describe 'director.yml.erb.erb' do
         'director' => {
           'name' => 'vpc-bosh-idora',
           'backend_port' => 25556,
-          'encryption' => false,
           'max_tasks' => 100,
           'max_threads' => 32,
           'enable_snapshots' => true,
