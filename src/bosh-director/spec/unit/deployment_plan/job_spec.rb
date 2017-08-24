@@ -203,6 +203,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                 'description' => 'max memory',
                 'default' => 2048
               },
+              'map_property' => {
+                'description' => 'its a map',
+              },
+              'array_property' => {
+                'description' => 'shockingly, an array'
+              }
             }
           end
 
@@ -213,6 +219,11 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                 'unneeded' => 'abc',
                 'dont_override' => 'def'
               },
+              'map_property' =>{
+                "n2"=>"foo",
+                "n1"=>"foo",
+              },
+              'array_property' =>["m3","m1"],
               'dea_max_memory' => 1024
             }
           end
@@ -238,6 +249,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
             expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
             expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, deployment_name, options).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with({"n2" => "foo", "n1" => "foo"}, nil, nil, deployment_name, options).and_return({"n2" => "foo", "n1" => "foo"})
+            expect(config_server_client).to receive(:prepare_and_get_property).with(["m3","m1"], nil, nil, deployment_name, options).and_return(["m3","m1"])
 
             subject.bind_properties('instance_group_name', deployment_name)
 
@@ -247,7 +260,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                                              'deep_property' =>{
                                                'dont_override' => 'def'
                                              },
-                                             'dea_max_memory' =>1024
+                                             'dea_max_memory' =>1024,
+                                             'map_property' => {
+                                               "n1"=>"foo",
+                                               "n2"=>"foo",
+                                             },
+                                             'array_property' =>["m3","m1"],
                                            }
                                          })
           end
@@ -256,6 +274,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
             expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
             expect(config_server_client).to receive(:prepare_and_get_property).with(nil, 2048, nil, deployment_name, options).and_return(2048)
+            expect(config_server_client).to receive(:prepare_and_get_property).with({"n2" => "foo", "n1" => "foo"}, nil, nil, deployment_name, options).and_return({"n2" => "foo", "n1" => "foo"})
+            expect(config_server_client).to receive(:prepare_and_get_property).with(["m3","m1"], nil, nil, deployment_name, options).and_return(["m3","m1"])
 
             user_defined_prop.delete('dea_max_memory')
             subject.bind_properties('instance_group_name', deployment_name)
@@ -266,7 +286,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                                              'deep_property' =>{
                                                'dont_override' => 'def'
                                              },
-                                             'dea_max_memory' =>2048
+                                             'dea_max_memory' =>2048,
+                                             'map_property' => {
+                                               "n1"=>"foo",
+                                               "n2"=>"foo",
+                                             },
+                                             'array_property' =>["m3","m1"],
                                            }
                                          })
           end
@@ -275,6 +300,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
             expect(config_server_client).to receive(:prepare_and_get_property).with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options).and_return('www.cc.com')
             expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
             expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, nil, deployment_name, options).and_return(1024)
+            expect(config_server_client).to receive(:prepare_and_get_property).with({"n2" => "foo", "n1" => "foo"}, nil, nil, deployment_name, options).and_return({"n2" => "foo", "n1" => "foo"})
+            expect(config_server_client).to receive(:prepare_and_get_property).with(["m3","m1"], nil, nil, deployment_name, options).and_return(["m3","m1"])
 
             subject.bind_properties('instance_group_name', deployment_name)
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
@@ -321,6 +348,8 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
               ).and_return('generated secret')
               expect(config_server_client).to receive(:prepare_and_get_property).with('def', nil, nil, deployment_name, options).and_return('def')
               expect(config_server_client).to receive(:prepare_and_get_property).with(1024, 2048, 'vroom', deployment_name, options).and_return(1024)
+              expect(config_server_client).to receive(:prepare_and_get_property).with({"n2" => "foo", "n1" => "foo"}, nil, nil, deployment_name, options).and_return({"n2" => "foo", "n1" => "foo"})
+              expect(config_server_client).to receive(:prepare_and_get_property).with(["m3","m1"], nil, nil, deployment_name, options).and_return(["m3","m1"])
               subject.bind_properties('instance_group_name', deployment_name, options)
 
               expect(subject.properties).to eq({
@@ -329,7 +358,12 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
                                                    'deep_property' =>{
                                                      'dont_override' => 'def'
                                                    },
-                                                   'dea_max_memory' =>1024
+                                                   'dea_max_memory' =>1024,
+                                                   'map_property' => {
+                                                     "n1"=>"foo",
+                                                     "n2"=>"foo",
+                                                   },
+                                                   'array_property' =>["m3","m1"],
                                                  }
                                                })
             end

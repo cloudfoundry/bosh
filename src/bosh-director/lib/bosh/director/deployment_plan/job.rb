@@ -214,8 +214,8 @@ module Bosh::Director
             deployment_name,
             options
           )
-
-          set_property(bound_properties, name, property_value_to_use)
+          sorted_property = sort_property(property_value_to_use)
+          set_property(bound_properties, name, sorted_property)
         end
         @properties[instance_group_name] = bound_properties
       end
