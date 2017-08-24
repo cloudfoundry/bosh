@@ -1,3 +1,5 @@
+require 'common/logging/filters'
+
 module Bosh::Director
   class JobRunner
 
@@ -49,7 +51,8 @@ module Bosh::Director
       shared_appender = Logging.appenders.file(
         'DirectorJobRunnerFile',
         filename: debug_log,
-        layout: ThreadFormatter.layout
+        layout: ThreadFormatter.layout,
+        filters: Bosh::Common::Logging.default_filters,
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
@@ -93,21 +96,7 @@ module Bosh::Director
       @task.checkpoint_time = Time.now
       @task.save
 
-      result = nil
-      if job.dry_run?
-        Bosh::Director::Config.db.transaction(:rollback => :always) do
-          if Bosh::Director::Config.dns_db
-            Bosh::Director::Config.dns_db.transaction(:rollback => :always) do
-              result = job.perform
-            end
-          else
-            result = job.perform
-          end
-        end
-      else
-        result = job.perform
-      end
-
+      result = job.perform
 
       @task_logger.info('Done')
       finish_task(:done, result)

@@ -183,7 +183,7 @@ module Bosh
         Config.name = 'fake-director-name'
         Config.max_vm_create_tries = 2
         Config.flush_arp = true
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
@@ -403,38 +403,6 @@ module Bosh
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
 
-      it 'should create credentials when encryption is enabled' do
-        Config.encryption = true
-        expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
-          kind_of(Hash), network_settings, ['fake-disk-cid'],
-          {'bosh' =>
-            {
-              'group' => expected_group,
-              'groups' => expected_groups,
-              'credentials' =>
-                {'crypt_key' => kind_of(String),
-                  'sign_key' => kind_of(String)}}})
-                           .and_return('new-vm-cid')
-
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-
-        new_vm = Models::Vm.find(cid: 'new-vm-cid')
-        instance_with_new_vm = Models::Instance.all.select { |i| i.active_vm == new_vm }.first
-        expect(instance_with_new_vm).not_to be_nil
-        expect(instance_with_new_vm.credentials).not_to be_nil
-
-        expect(Base64.strict_decode64(instance_with_new_vm.credentials['crypt_key'])).to be_kind_of(String)
-        expect(Base64.strict_decode64(instance_with_new_vm.credentials['sign_key'])).to be_kind_of(String)
-
-        expect {
-          Base64.strict_decode64(instance_with_new_vm.credentials['crypt_key'] + 'foobar')
-        }.to raise_error(ArgumentError, /invalid base64/)
-
-        expect {
-          Base64.strict_decode64(instance_with_new_vm.credentials['sign_key'] + 'barbaz')
-        }.to raise_error(ArgumentError, /invalid base64/)
-      end
-
       it 'should retry creating a VM if it is told it is a retryable error' do
         expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
         expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
@@ -460,17 +428,14 @@ module Bosh
         before { instance_model.active_vm = old_vm }
 
         it 'should not override the active vm on the instance model' do
-            Config.encryption = true
             expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
               kind_of(Hash), network_settings, ['fake-disk-cid'],
               {'bosh' =>
                 {
                   'group' => expected_group,
-                  'groups' => expected_groups,
-                  'credentials' =>
-                    {'crypt_key' => kind_of(String),
-                      'sign_key' => kind_of(String)}}})
-                               .and_return('new-vm-cid')
+                  'groups' => expected_groups
+                }
+              }).and_return('new-vm-cid')
 
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
 
@@ -504,7 +469,6 @@ module Bosh
       end
 
       it 'should have deep copy of environment' do
-        Config.encryption = true
         env_id = nil
 
         expect(cloud).to receive(:create_vm) do |*args|

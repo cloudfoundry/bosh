@@ -13,7 +13,7 @@ module Bosh::Director
     let(:credentials_json) { JSON.generate(credentials) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
-      vm_model = Models::Vm.make(agent_id: 'scool', credentials_json: credentials_json, instance_id: instance.id)
+      vm_model = Models::Vm.make(agent_id: 'scool', instance_id: instance.id)
       instance.active_vm = vm_model
       instance
     end
@@ -69,7 +69,7 @@ module Bosh::Director
         allow(state_applier).to receive(:apply)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(instance_plan).to receive(:already_detached?).and_return(true)
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         allow(updater).to receive(:needs_recreate?).and_return(false)
         allow(disk_manager).to receive(:update_persistent_disk)
         allow(instance).to receive(:update_instance_settings)
@@ -97,7 +97,7 @@ module Bosh::Director
 
     context 'when stopping instances' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -190,7 +190,7 @@ module Bosh::Director
       let(:instance_desired_state) { 'started' }
 
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -265,7 +265,7 @@ module Bosh::Director
         expect(instance_model.state).to eq('started')
         expect(Models::Event.count).to eq 0
 
-        expect(AgentClient).not_to receive(:with_vm_credentials_and_agent_id)
+        expect(AgentClient).not_to receive(:with_agent_id)
 
         subnet_spec = {
           'range' => '10.10.10.0/24',
@@ -295,7 +295,7 @@ module Bosh::Director
 
       it 'updates the instance settings' do
         allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
 
         allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
 
@@ -314,7 +314,7 @@ module Bosh::Director
 
     context 'when something goes wrong in the update procedure' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(rendered_templates_persistor).to receive(:persist)
       end

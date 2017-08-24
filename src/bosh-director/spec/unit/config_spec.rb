@@ -160,16 +160,39 @@ describe Bosh::Director::Config do
   end
 
   describe '#configure' do
-    context 'when the config specifies a file logger' do
-      before { test_config['logging']['file'] = 'fake-file' }
+    context 'logger' do
+      let(:log_dir) { Dir.mktmpdir }
+      let(:log_file) { File.join(log_dir,'logfile') }
+      after { FileUtils.rm_rf(log_dir) }
 
-      it 'configures the logger with a file appender' do
-        appender = Logging::Appender.new('file')
-        expect(Logging.appenders).to receive(:file).with(
-          'DirectorLogFile',
-          hash_including(filename: 'fake-file')
-        ).and_return(appender)
+      context 'when the config specifies a file logger' do
+        before { test_config['logging']['file'] = 'fake-file' }
+
+        it 'configures the logger with a file appender' do
+          appender = Logging::Appender.new('file')
+          expect(Logging.appenders).to receive(:file).with(
+            'DirectorLogFile',
+            hash_including(filename: 'fake-file')
+          ).and_return(appender)
+          described_class.configure(test_config)
+        end
+      end
+
+      it 'filters out log message that matches blacklist' do
+        test_config['logging']['file'] = log_file
+        test_config['logging']['level'] = 'debug'
+
         described_class.configure(test_config)
+
+        described_class.logger.debug('before')
+        described_class.logger.debug('(10.01s) SELECT NULL')
+        described_class.logger.debug('after')
+
+        log_contents = File.read(log_file)
+
+        expect(log_contents).to include('before')
+        expect(log_contents).to include('after')
+        expect(log_contents).not_to include('SELECT NULL')
       end
     end
 

@@ -178,9 +178,9 @@ describe 'deploy job update', type: :integration do
     event_list = []
     result.each_line do |line|
       begin
-        event = Yajl::Parser.new.parse(line)
+        event = JSON.parse(line)
         event_list << event if event
-      rescue Yajl::ParseError
+      rescue JSON::ParserError
       end
     end
     event_list

@@ -4,7 +4,6 @@ require 'securerandom'
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
   class VmCreator
-    include EncryptionHelper
     include PasswordHelper
 
     def initialize(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
@@ -60,7 +59,7 @@ module Bosh::Director
 
       begin
         MetadataUpdater.build.update_vm_metadata(instance_model, tags, factory)
-        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
+        agent_client = AgentClient.with_agent_id(instance_model.agent_id)
         agent_client.wait_until_ready
 
         if Config.flush_arp
@@ -167,13 +166,6 @@ module Bosh::Director
         agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{agent_id}.agent.bosh"
         env['bosh']['mbus']['cert']['certificate'] = agent_cert_key_result[:cert].to_pem
         env['bosh']['mbus']['cert']['private_key'] = agent_cert_key_result[:key].to_pem
-      end
-
-      if Config.encryption?
-        credentials = generate_agent_credentials
-        env['bosh'] ||= {}
-        env['bosh']['credentials'] = credentials
-        options[:credentials] = credentials
       end
 
       password = env.fetch('bosh', {}).fetch('password', "")

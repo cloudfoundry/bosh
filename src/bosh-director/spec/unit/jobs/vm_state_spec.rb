@@ -42,7 +42,7 @@ module Bosh::Director
 
     describe '#perform' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).with(anything, timeout: 5).and_return(agent)
         instance.active_vm = vm
         instance.save
       end
@@ -300,7 +300,7 @@ module Bosh::Director
         it 'does not try to contact the agent' do
           instance.active_vm = nil
 
-          expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
+          expect(AgentClient).to_not receive(:with_agent_id)
 
           Jobs::VmState.new(@deployment.id, 'full', true).perform
 

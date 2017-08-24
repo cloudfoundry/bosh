@@ -73,18 +73,18 @@ module Bosh::Director
 
     describe '#delete_arp_entries' do
       it 'successfully broadcast :delete_arp_entries call' do
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-            with(instance1.credentials, instance1.agent_id).and_return(agent)
+        expect(AgentClient).to receive(:with_agent_id).
+            with(instance1.agent_id).and_return(agent)
         expect(agent).to receive(:delete_arp_entries).with(ips: ip_addresses)
 
         agent_broadcast.delete_arp_entries('fake-vm-cid-to-exclude', ip_addresses)
       end
 
       it 'successfully filers out id-1 and broadcast :delete_arp_entries call' do
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-            with(instance1.credentials, instance1.agent_id).and_return(agent)
-        expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id).
-            with(instance2.credentials, instance2.agent_id)
+        expect(AgentClient).to receive(:with_agent_id).
+            with(instance1.agent_id).and_return(agent)
+        expect(AgentClient).to_not receive(:with_agent_id).
+            with(instance2.agent_id)
         expect(agent).to receive(:delete_arp_entries).with(ips: ip_addresses)
 
         agent_broadcast.delete_arp_entries('id-2', ip_addresses)
@@ -109,16 +109,16 @@ module Bosh::Director
           expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 2 agents ["agent-1", "agent-2"]')
           expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 2 agents in 10ms (2 successful, 0 failed, 0 unresponsive)')
 
-          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance1.credentials, instance1.agent_id).and_return(agent)
+          expect(AgentClient).to receive(:with_agent_id).
+              with(instance1.agent_id).and_return(agent)
 
           expect(agent).to receive(:sync_dns).with('fake-blob-id', 'fake-sha1', 1) do |&blk|
             blk.call({'value' => 'synced'})
             Timecop.freeze(end_time)
           end.and_return('instance-1-req-id')
 
-          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance2.credentials, instance2.agent_id).and_return(agent2)
+          expect(AgentClient).to receive(:with_agent_id).
+              with(instance2.agent_id).and_return(agent2)
 
           expect(agent2).to receive(:sync_dns).with('fake-blob-id', 'fake-sha1', 1) do |&blk|
             blk.call({'value' => 'synced'})
@@ -139,8 +139,8 @@ module Bosh::Director
             expect(logger).to receive(:error).with('agent_broadcaster: sync_dns[agent-2]: received unexpected response {"value"=>"unsynced"}')
             expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 2 agents in 10ms (1 successful, 1 failed, 0 unresponsive)')
 
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance1.credentials, instance1.agent_id) do
+            expect(AgentClient).to receive(:with_agent_id).
+              with(instance1.agent_id) do
               expect(agent).to receive(:sync_dns) do |&blk|
                 blk.call({'value' => 'synced'})
                 Timecop.freeze(end_time)
@@ -148,8 +148,8 @@ module Bosh::Director
               agent
             end
 
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance2.credentials, instance2.agent_id) do
+            expect(AgentClient).to receive(:with_agent_id).
+              with(instance2.agent_id) do
               expect(agent).to receive(:sync_dns) do |&blk|
                 blk.call({'value' => 'unsynced'})
               end
@@ -167,7 +167,7 @@ module Bosh::Director
         let!(:instances) { [instance1]}
 
         before do
-          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
+          expect(AgentClient).to receive(:with_agent_id) do
             expect(agent).to receive(:sync_dns) do |&blk|
               blk.call({'value' => 'synced'})
               Timecop.freeze(end_time)
@@ -229,8 +229,8 @@ module Bosh::Director
             expect(logger).to receive(:warn).with('agent_broadcaster: sync_dns: no response received for 1 agent(s): [agent-2]')
             expect(logger).to receive(:info).with(/agent_broadcaster: sync_dns: attempted 2 agents in \d+ms \(1 successful, 0 failed, 1 unresponsive\)/)
 
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance1.credentials, instance1.agent_id) do
+            expect(AgentClient).to receive(:with_agent_id).
+              with(instance1.agent_id) do
               expect(agent).to receive(:sync_dns) do |&blk|
                 blk.call({'value' => 'synced'})
                 Timecop.travel(end_time)
@@ -238,14 +238,14 @@ module Bosh::Director
               agent
             end
 
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance2.credentials, instance2.agent_id) do
+            expect(AgentClient).to receive(:with_agent_id).
+              with(instance2.agent_id) do
               expect(agent).to receive(:sync_dns).and_return('sync_dns_request_id_2')
               agent
             end.once
 
-            expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
-              with(instance2.credentials, instance2.agent_id) do
+            expect(AgentClient).to receive(:with_agent_id).
+              with(instance2.agent_id) do
               expect(agent).to receive(:cancel_sync_dns).with('sync_dns_request_id_2')
               agent
             end.once
@@ -267,7 +267,7 @@ module Bosh::Director
 
           expect(Timeout).to_not receive(:new)
 
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id) do
+          allow(AgentClient).to receive(:with_agent_id) do
             allow(agent).to receive(:sync_dns) do |&blk|
               blk.call({'value' => 'synced'})
             end

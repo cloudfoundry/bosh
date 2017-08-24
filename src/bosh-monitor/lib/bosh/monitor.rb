@@ -24,7 +24,6 @@ require 'nats/client'
 require 'sinatra'
 require 'thin'
 require 'securerandom'
-require 'yajl'
 
 # Helpers
 require 'bosh/monitor/yaml_helper'

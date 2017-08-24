@@ -117,5 +117,7 @@
   "20170705204352_add_cpi_to_disks": "047e88df8dbe6cc449d675472bb4f838d8e6e85e",
   "20170705211620_add_templates_json_to_templates": "ed9969aab2493052530e36d012cd892948641f2c",
   "20170803163303_register_known_az_names": "51ab548d8187c75a1a7dff34861f658dfc11dae9",
-  "20170804191205_add_deployment_and_errand_name_to_errand_runs": "4429f1e811e064c236ee4c32b3964992ec7004e5"
+  "20170804191205_add_deployment_and_errand_name_to_errand_runs": "4429f1e811e064c236ee4c32b3964992ec7004e5",
+  "20170815175515_change_variable_ids_to_bigint": "0488ede3a8d8611f8414e6a9c4f54ec9828a3bff",
+  "20170821141953_remove_unused_credentials_json_columns": "0daf4d1363029304fc84d0df7b7b69fa04713e37"
 }

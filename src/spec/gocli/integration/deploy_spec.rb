@@ -31,7 +31,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
-        expect(director.instances.length).to eq(0)
+        expect(director.vms.length).to eq(0)
       end
     end
 
@@ -41,7 +41,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         deploy_from_scratch(manifest_hash: manifest_hash, dry_run: true)
 
-        expect(director.instances).to eq ([])
+        expect(director.vms).to eq ([])
       end
     end
   end

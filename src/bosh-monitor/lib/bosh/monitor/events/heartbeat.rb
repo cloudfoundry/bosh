@@ -83,7 +83,7 @@ module Bosh::Monitor
       end
 
       def to_json
-        Yajl::Encoder.encode(self.to_hash)
+        JSON.dump(self.to_hash)
       end
 
       def to_plain_text

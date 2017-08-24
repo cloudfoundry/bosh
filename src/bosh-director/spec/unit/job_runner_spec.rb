@@ -84,14 +84,27 @@ module Bosh::Director
       expect(config.result).to eq(task_result)
     end
 
-    it 'sets up task logs: debug, event, result' do
+    it 'logs the worker name and process information' do
       runner = make_runner(sample_job_class, 42)
 
       logger = Logging::Repository.instance().fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
       expect(logger).to receive(:info).with("Running from worker 'workername1' on name/id (127.0.127.0)")
-
       runner.run
+    end
+
+    it 'should not log standard blacklist messages' do
+      make_runner(sample_job_class, 42)
+
+      Config.logger.debug('before')
+      Config.logger.debug('(10.01s) SELECT NULL')
+      Config.logger.debug('after')
+
+      log_contents = File.read(task_dir+'/debug')
+
+      expect(log_contents).to include('before')
+      expect(log_contents).to include('after')
+      expect(log_contents).not_to include('SELECT NULL')
     end
 
     it 'handles task cancellation' do
@@ -115,62 +128,6 @@ module Bosh::Director
       task.reload
       expect(task.state).to eq('error')
       expect(task.result).to eq('Oops')
-    end
-
-    context 'when a job is being dry-run' do
-      let(:sample_job_class) do
-        Class.new(Jobs::BaseJob) do
-          def dry_run?; true; end
-
-          def perform
-            Bosh::Director::Models::Dns::Domain.make
-            Bosh::Director::Models::Instance.find(job: 'test').update(index: 2)
-            'foo'
-          end
-        end
-      end
-
-      it 'should not alter the state of the database' do
-        expect(Bosh::Director::Models::Dns::Domain.all).to be_empty
-        Bosh::Director::Models::Instance.make(job: 'test', index: 1)
-
-        runner = JobRunner.new(sample_job_class, 42, 'workername1')
-        runner.run
-
-        expect(Bosh::Director::Models::Dns::Domain.all).to be_empty
-        expect(Bosh::Director::Models::Instance.find(job: 'test').index).to eq 1
-
-        task.reload
-        expect(task.state).to eq('done')
-        expect(task.result).to eq('foo')
-      end
-
-      context 'when there is no dns' do
-        let(:sample_job_class) do
-          Class.new(Jobs::BaseJob) do
-            def dry_run?; true; end
-
-            def perform
-              Bosh::Director::Models::Instance.find(job: 'test').update(index: 2)
-              'foo'
-            end
-          end
-        end
-
-        it 'should not alter the state of the database' do
-          Bosh::Director::Config.dns_db = nil
-          Bosh::Director::Models::Instance.make(job: 'test', index: 1)
-
-          runner = JobRunner.new(sample_job_class, 42, 'workername1')
-          runner.run
-
-          expect(Bosh::Director::Models::Instance.find(job: 'test').index).to eq 1
-
-          task.reload
-          expect(task.state).to eq('done')
-          expect(task.result).to eq('foo')
-        end
-      end
     end
   end
 

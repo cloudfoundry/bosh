@@ -160,7 +160,7 @@ module Bosh::Director
     end
 
     def agent_client(instance_model)
-      AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
+      AgentClient.with_agent_id(instance_model.agent_id)
     end
 
     def mount_disk(disk)

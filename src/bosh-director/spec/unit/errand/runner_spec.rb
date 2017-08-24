@@ -51,7 +51,7 @@ module Bosh::Director
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
 
-      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
+      before { allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client) }
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do

@@ -14,12 +14,6 @@ require 'parallel_tests/tasks'
 
 namespace :spec do
   namespace :integration do
-    desc 'Run BOSH integration tests against a local sandbox'
-    task :agent => :install_dependencies do
-      compile_dependencies
-      run_integration_specs
-    end
-
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task :gocli => :install_dependencies do
       compile_dependencies
@@ -29,7 +23,7 @@ namespace :spec do
     desc 'Run health monitor integration tests against a local sandbox'
     task :health_monitor => :install_dependencies do
       compile_dependencies
-      run_integration_specs(tags: 'hm')
+      run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
     end
 
     desc 'Run BOSH gocli upgrade tests against a local sandbox'
@@ -101,7 +95,7 @@ namespace :spec do
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
-      spec_path = options.fetch(:spec_path, 'spec/integration')
+      spec_path = options.fetch(:spec_path)
 
       puts "Launching parallel execution of #{spec_path}"
       run_in_parallel(spec_path, options)
@@ -128,8 +122,6 @@ namespace :spec do
       sh('go/src/github.com/nats-io/gnatsd/bin/build')
     end
   end
-
-  task :integration => %w(spec:integration:agent)
 
   task :integration_gocli => %w(spec:integration:gocli)
 
@@ -217,5 +209,5 @@ namespace :spec do
   task :unit => %w(spec:release_unit spec:unit:ruby)
 end
 
-desc 'Run unit and integration specs'
-task :spec => %w(spec:unit spec:integration)
+desc 'Run unit and gocli integration specs'
+task :spec => %w(spec:unit spec:integration:gocli)

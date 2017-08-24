@@ -311,7 +311,7 @@ module Bosh::Director
             end
 
             it 'returns the correct results' do
-              get "?before_time=#{URI.encode(Models::Event.all[16].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.all[14].timestamp.to_s)}"
+              get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[16].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.order(:timestamp).all[14].timestamp.to_s)}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
               expect(events.first['id']).to eq('16')
@@ -324,7 +324,7 @@ module Bosh::Director
             end
 
             it 'returns the correct result' do
-              get "?before_id=15&after_time=#{URI.encode(Models::Event.all[12].timestamp.to_s)}"
+              get "?before_id=15&after_time=#{URI.encode(Models::Event.order(:timestamp).all[12].timestamp.to_s)}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
               expect(events.first['id']).to eq('14')
@@ -347,7 +347,7 @@ module Bosh::Director
             make_events(210)
             expect(Models::Event.count).to eq(210)
 
-            get "?before_time=#{URI.encode(Models::Event.all[201].timestamp.to_s)}"
+            get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[201].timestamp.to_s)}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(200) # 200 limit
@@ -358,7 +358,7 @@ module Bosh::Director
 
           it 'supports date as Integer' do
             make_events(10)
-            get "?before_time=#{Models::Event.all[1].timestamp.to_i}"
+            get "?before_time=#{Models::Event.order(:timestamp).all[1].timestamp.to_i}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
@@ -367,7 +367,7 @@ module Bosh::Director
 
           it 'supports date as specified in the event table' do
             make_events(10)
-            get "?before_time=#{URI.encode(Models::Event.all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+            get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
@@ -390,7 +390,7 @@ module Bosh::Director
             make_events(210)
             expect(Models::Event.count).to eq(210)
 
-            get "?after_time=#{URI.encode(Models::Event.all[9].timestamp.to_s)}"
+            get "?after_time=#{URI.encode(Models::Event.order(:timestamp).all[9].timestamp.to_s)}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(200)
@@ -401,7 +401,7 @@ module Bosh::Director
 
           it 'supports date as Integer' do
             make_events(10)
-            get "?after_time=#{Models::Event.all[8].timestamp.to_i}"
+            get "?after_time=#{Models::Event.order(:timestamp).all[8].timestamp.to_i}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
@@ -410,7 +410,7 @@ module Bosh::Director
 
           it 'supports date as specified in the event table' do
             make_events(10)
-            get "?after_time=#{URI.encode(Models::Event.all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+            get "?after_time=#{URI.encode(Models::Event.order(:timestamp).all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)

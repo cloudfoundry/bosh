@@ -22,7 +22,7 @@ module Bosh::Director::ConfigServer
 
     def post(body)
       uri = build_base_uri
-      @http.post(uri.path, Yajl::Encoder.encode(body), {'Content-Type' => 'application/json'})
+      @http.post(uri.path, JSON.dump(body), {'Content-Type' => 'application/json'})
     end
 
     private

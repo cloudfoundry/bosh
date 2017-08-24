@@ -58,7 +58,7 @@ module Bosh::Registry
     end
 
     def json(payload)
-      Yajl::Encoder.encode(payload)
+      JSON.dump(payload)
     end
 
   end

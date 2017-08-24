@@ -29,7 +29,7 @@ module Bosh::Monitor
         }
 
         request = {
-          :body => Yajl::Encoder.encode(payload)
+          :body => JSON.dump(payload)
         }
 
         if options["http_proxy"]

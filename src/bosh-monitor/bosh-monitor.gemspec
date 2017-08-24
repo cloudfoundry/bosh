@@ -20,15 +20,14 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-monitor'
 
   spec.add_dependency 'eventmachine',    '~>1.2.0'
-  spec.add_dependency 'logging',         '~>1.8.2'
+  spec.add_dependency 'logging',         '~>2.2.2'
   spec.add_dependency 'em-http-request', '~>0.3.0'
   spec.add_dependency 'nats',      '~>0.8'
-  spec.add_dependency 'yajl-ruby', '~>1.2.0'
   spec.add_dependency 'thin',      '~>1.5.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'aws-sdk',   '1.60.2'
   spec.add_dependency 'dogapi',    '~> 1.21.0'
   spec.add_dependency 'riemann-client', '~>0.2.6'
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
-  spec.add_dependency 'httpclient',  '=2.7.1'
+  spec.add_dependency 'httpclient',  '~>2.8.3'
 end

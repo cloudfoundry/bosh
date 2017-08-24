@@ -192,7 +192,7 @@ module Bosh::Monitor
 
       case payload
         when String
-          message = Yajl::Parser.parse(payload)
+          message = JSON.parse(payload)
         when Hash
           message = payload
       end
@@ -209,7 +209,7 @@ module Bosh::Monitor
           @logger.warn("No handler found for '#{kind}' event")
       end
 
-    rescue Yajl::ParseError => e
+    rescue JSON::ParserError => e
       @logger.error("Cannot parse incoming event: #{e}")
     rescue Bhm::InvalidEvent => e
       @logger.error("Invalid event: #{e}")

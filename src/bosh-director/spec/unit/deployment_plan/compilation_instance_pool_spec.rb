@@ -103,7 +103,7 @@ module Bosh::Director
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:name).and_return('fake-director-name')
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)

@@ -37,7 +37,7 @@ describe Bhm::Plugins::Pagerduty do
 
     alert_request = {
       :proxy => "http://nowhere.com:3128",
-      :body => Yajl::Encoder.encode({
+      :body => JSON.dump({
         :service_key  => "zbzb",
         :event_type   => "trigger",
         :incident_key => alert.id,
@@ -48,7 +48,7 @@ describe Bhm::Plugins::Pagerduty do
 
     heartbeat_request = {
       :proxy => "http://nowhere.com:3128",
-      :body => Yajl::Encoder.encode({
+      :body => JSON.dump({
         :service_key  => "zbzb",
         :event_type   => "trigger",
         :incident_key => heartbeat.id,

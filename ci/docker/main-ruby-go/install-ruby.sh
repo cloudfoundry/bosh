@@ -38,7 +38,7 @@ install_ruby() {
     chruby "ruby-$version"
     ruby -v
     gem update --system
-    gem install bundler -v 1.11.2
+    gem install bundler -v 1.15.3
 
 }
 

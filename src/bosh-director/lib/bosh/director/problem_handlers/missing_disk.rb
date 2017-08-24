@@ -44,7 +44,7 @@ module Bosh::Director
 
         # If VM is present we try to unmount and detach disk from VM
         if @instance.vm_cid && cloud.has_vm(@instance.vm_cid)
-          agent_client = agent_client(@instance.credentials, @instance.agent_id)
+          agent_client = agent_client(@instance.agent_id)
           disk_list = []
 
           begin

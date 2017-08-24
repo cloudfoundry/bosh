@@ -127,9 +127,9 @@ module Bosh::Director::ConfigServer
 
         if variable['type'] == 'certificate' && variable['options'] && variable['options']['ca']
           variable['options']['ca'] = ConfigServerHelper.add_prefix_if_not_absolute(
-              variable['options']['ca'],
-              @director_name,
-              deployment_name
+            variable['options']['ca'],
+            @director_name,
+            deployment_name
           )
         end
 
@@ -181,7 +181,7 @@ module Bosh::Director::ConfigServer
       end
 
       if errors.length > 0
-        message = errors.map{|error| "- #{error.message}"}.join("\n")
+        message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
 
@@ -233,7 +233,7 @@ module Bosh::Director::ConfigServer
       end
 
       if errors.length > 0
-        message = errors.map{|error| "- #{error.message}"}.join("\n")
+        message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
 
@@ -258,7 +258,7 @@ module Bosh::Director::ConfigServer
       end
 
       if errors.length > 0
-        message = errors.map{|error| "- #{error.message}"}.join("\n")
+        message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
 
