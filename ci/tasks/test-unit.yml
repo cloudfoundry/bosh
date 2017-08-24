@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: jamlo/bosh-complete-ci
+    repository: bosh/main
 
 inputs:
   - name: bosh-src
