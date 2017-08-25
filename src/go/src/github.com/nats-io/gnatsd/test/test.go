@@ -76,6 +76,10 @@ func RunServerWithConfig(configFile string) (srv *server.Server, opts *server.Op
 	if opts.Users != nil {
 		a = auth.NewMultiUser(opts.Users)
 	}
+	if opts.TLSEnableCertAuthorization {
+		a = auth.NewCertificateAuth(opts.CertificateClients, &auth.Plain{Username: opts.Username, Password: opts.Password})
+	}
+
 	srv = RunServerWithAuth(opts, a)
 	return
 }

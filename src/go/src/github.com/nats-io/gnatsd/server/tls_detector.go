@@ -7,7 +7,7 @@ import (
 
 const (
 	TLS_CLIENT_HELLO = 1
-	MIN_HEADER_SIZE = 6
+	MIN_HEADER_SIZE  = 6
 )
 
 // http://blog.fourthbit.com/2014/12/23/traffic-analysis-of-an-ssl-slash-tls-session

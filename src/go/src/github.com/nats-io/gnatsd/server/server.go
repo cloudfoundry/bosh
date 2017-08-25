@@ -576,7 +576,7 @@ func (s *Server) createClient(conn net.Conn) *client {
 	// Re-Grab lock
 	c.mu.Lock()
 
-	if tlsRequired {
+	if tlsRequired && s.opts.TLSAllowLegacyClients{
 		peekConn := NewPeekableConn(conn)
 
 		hdr, err := peekConn.PeekFirst(7)
@@ -595,6 +595,7 @@ func (s *Server) createClient(conn net.Conn) *client {
 			c.Debugf("Detected TLS connection while peeking, moving on")
 		} else {
 			c.Debugf("Detected NON TLS connection while peeking, setting 'tlsRequired' to false")
+			c.isBOSHLegacyClient = true
 			tlsRequired = false
 		}
 
@@ -650,6 +651,11 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	// Set the Ping timer
 	c.setPingTimer()
+
+	if tlsRequired && s.opts.TLSEnableCertAuthorization {
+		cs := c.nc.(*tls.Conn).ConnectionState()
+		c.clientCertificate = cs.PeerCertificates[0]
+	}
 
 	// Spin up the read loop.
 	s.startGoRoutine(func() { c.readLoop() })

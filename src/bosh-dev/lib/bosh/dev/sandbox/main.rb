@@ -327,10 +327,6 @@ module Bosh::Dev::Sandbox
             'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
             'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
           },
-          'client_ca' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key'),
-          },
           'health_monitor' => {
             'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
             'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),

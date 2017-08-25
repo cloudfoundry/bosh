@@ -54,34 +54,6 @@ func TestTLSConnection(t *testing.T) {
 	}
 }
 
-func TestNonTLSConnectionsWithTLSServer(t *testing.T) {
-	srv, opts := RunServerWithConfig("./configs/tls.conf")
-	defer srv.Shutdown()
-
-	clientA := createClientConn(t, "localhost", 4443)
-
-	sendA, expectA := setupConnWithAuth(t, clientA, opts.Username, opts.Password)
-	sendA("SUB foo 22\r\n")
-	sendA("PING\r\n")
-	expectA(pongRe)
-
-	if err := checkExpectedSubs(1, srv); err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	clientB := createClientConn(t, "localhost", 4443)
-
-	sendB, expectB := setupConnWithAuth(t, clientB, opts.Username, opts.Password)
-	sendB("PUB foo 2\r\nok\r\n")
-	sendB("PING\r\n")
-	expectB(pongRe)
-
-	expectMsgs := expectMsgsCommand(t, expectA)
-
-	matches := expectMsgs(1)
-	checkMsg(t, matches[0], "foo", "22", "", "2", "ok")
-}
-
 func TestTLSClientCertificate(t *testing.T) {
 	srv, opts := RunServerWithConfig("./configs/tlsverify.conf")
 	defer srv.Shutdown()

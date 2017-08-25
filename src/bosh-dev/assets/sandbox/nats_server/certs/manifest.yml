@@ -7,6 +7,7 @@ variables:
   type: certificate
   options:
     ca: default_ca
+    common_name: default.nats.bosh
     alternative_names:
     - ((hostname))
     extended_key_usage:
@@ -15,23 +16,13 @@ variables:
   type: certificate
   options:
     ca: default_ca
-    alternative_names:
-    - ((hostname))
+    common_name: default.director.bosh
     extended_key_usage:
       - client_auth
 - name: hm_client
   type: certificate
   options:
     ca: default_ca
-    alternative_names:
-    - ((hostname))
-    extended_key_usage:
-      - client_auth
-- name: agent_client
-  type: certificate
-  options:
-    ca: default_ca
-    alternative_names:
-    - ((hostname))
+    common_name: default.hm.bosh
     extended_key_usage:
       - client_auth

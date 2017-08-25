@@ -187,7 +187,14 @@ func main() {
 func configureAuth(s *server.Server, opts *server.Options) {
 	// Client
 	// Check for multiple users first
-	if opts.Users != nil {
+	if opts.TLSEnableCertAuthorization {
+		plainAuth := &auth.Plain{
+			Username: opts.Username,
+			Password: opts.Password,
+		}
+		auth := auth.NewCertificateAuth(opts.CertificateClients, plainAuth)
+		s.SetClientAuthMethod(auth)
+	} else if opts.Users != nil {
 		auth := auth.NewMultiUser(opts.Users)
 		s.SetClientAuthMethod(auth)
 	} else if opts.Username != "" {

@@ -14,4 +14,9 @@ type ClientAuth interface {
 	GetOpts() *clientOpts
 	// Optionally map a user after auth.
 	RegisterUser(*User)
+
+	RegisterCertificateClient(*CertificateClient, string)
+	GetCertificateClientNameAndID() (string, string, error)
+
+	IsLegacyBoshClient() bool
 }

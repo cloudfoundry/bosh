@@ -5,11 +5,10 @@ HOSTNAME="127.0.0.1"
 CREDS_FILE='./creds.yml'
 TEMPLATE_FILE='./manifest.yml'
 
-rm -rf ./creds.yml ./nats/ ./director/ ./agent/ ./health_monitor/
+rm -rf ./creds.yml ./nats/ ./director/ ./health_monitor/
 
 mkdir -p ./nats
 mkdir -p ./director
-mkdir -p ./agent
 mkdir -p ./health_monitor
 
 gobosh int --vars-store=${CREDS_FILE} -v hostname=$HOSTNAME ${TEMPLATE_FILE}
@@ -22,9 +21,6 @@ gobosh int --path=/nats/private_key ${CREDS_FILE} | sed '/^$/d' > nats/private_k
 
 gobosh int --path=/director_client/certificate ${CREDS_FILE} | sed '/^$/d' > director/certificate.pem
 gobosh int --path=/director_client/private_key ${CREDS_FILE} | sed '/^$/d' > director/private_key
-
-gobosh int --path=/agent_client/certificate ${CREDS_FILE} | sed '/^$/d' > agent/certificate.pem
-gobosh int --path=/agent_client/private_key ${CREDS_FILE} | sed '/^$/d' > agent/private_key
 
 gobosh int --path=/hm_client/certificate ${CREDS_FILE} | sed '/^$/d' > health_monitor/certificate.pem
 gobosh int --path=/hm_client/private_key ${CREDS_FILE} | sed '/^$/d' > health_monitor/private_key

@@ -24,6 +24,12 @@ type User struct {
 	Permissions *Permissions `json:"permissions"`
 }
 
+// For multiple certificate clients.
+type CertificateClient struct {
+	ClientName  string       `json:"client_name"`
+	Permissions *Permissions `json:"permissions"`
+}
+
 // Authorization are the allowed subjects on a per
 // publish or subscribe basis.
 type Permissions struct {
@@ -46,41 +52,44 @@ type ClusterOpts struct {
 
 // Options block for gnatsd server.
 type Options struct {
-	Host           string        `json:"addr"`
-	Port           int           `json:"port"`
-	Trace          bool          `json:"-"`
-	Debug          bool          `json:"-"`
-	NoLog          bool          `json:"-"`
-	NoSigs         bool          `json:"-"`
-	Logtime        bool          `json:"-"`
-	MaxConn        int           `json:"max_connections"`
-	Users          []*User       `json:"-"`
-	Username       string        `json:"-"`
-	Password       string        `json:"-"`
-	Authorization  string        `json:"-"`
-	PingInterval   time.Duration `json:"ping_interval"`
-	MaxPingsOut    int           `json:"ping_max"`
-	HTTPHost       string        `json:"http_host"`
-	HTTPPort       int           `json:"http_port"`
-	HTTPSPort      int           `json:"https_port"`
-	AuthTimeout    float64       `json:"auth_timeout"`
-	MaxControlLine int           `json:"max_control_line"`
-	MaxPayload     int           `json:"max_payload"`
-	Cluster        ClusterOpts   `json:"cluster"`
-	ProfPort       int           `json:"-"`
-	PidFile        string        `json:"-"`
-	LogFile        string        `json:"-"`
-	Syslog         bool          `json:"-"`
-	RemoteSyslog   string        `json:"-"`
-	Routes         []*url.URL    `json:"-"`
-	RoutesStr      string        `json:"-"`
-	TLSTimeout     float64       `json:"tls_timeout"`
-	TLS            bool          `json:"-"`
-	TLSVerify      bool          `json:"-"`
-	TLSCert        string        `json:"-"`
-	TLSKey         string        `json:"-"`
-	TLSCaCert      string        `json:"-"`
-	TLSConfig      *tls.Config   `json:"-"`
+	Host                       string               `json:"addr"`
+	Port                       int                  `json:"port"`
+	Trace                      bool                 `json:"-"`
+	Debug                      bool                 `json:"-"`
+	NoLog                      bool                 `json:"-"`
+	NoSigs                     bool                 `json:"-"`
+	Logtime                    bool                 `json:"-"`
+	MaxConn                    int                  `json:"max_connections"`
+	Users                      []*User              `json:"-"`
+	CertificateClients         []*CertificateClient `json:"-"`
+	Username                   string               `json:"-"`
+	Password                   string               `json:"-"`
+	Authorization              string               `json:"-"`
+	PingInterval               time.Duration        `json:"ping_interval"`
+	MaxPingsOut                int                  `json:"ping_max"`
+	HTTPHost                   string               `json:"http_host"`
+	HTTPPort                   int                  `json:"http_port"`
+	HTTPSPort                  int                  `json:"https_port"`
+	AuthTimeout                float64              `json:"auth_timeout"`
+	MaxControlLine             int                  `json:"max_control_line"`
+	MaxPayload                 int                  `json:"max_payload"`
+	Cluster                    ClusterOpts          `json:"cluster"`
+	ProfPort                   int                  `json:"-"`
+	PidFile                    string               `json:"-"`
+	LogFile                    string               `json:"-"`
+	Syslog                     bool                 `json:"-"`
+	RemoteSyslog               string               `json:"-"`
+	Routes                     []*url.URL           `json:"-"`
+	RoutesStr                  string               `json:"-"`
+	TLSTimeout                 float64              `json:"tls_timeout"`
+	TLS                        bool                 `json:"-"`
+	TLSVerify                  bool                 `json:"-"`
+	TLSCert                    string               `json:"-"`
+	TLSKey                     string               `json:"-"`
+	TLSCaCert                  string               `json:"-"`
+	TLSConfig                  *tls.Config          `json:"-"`
+	TLSEnableCertAuthorization bool                 `json:"-"`
+	TLSAllowLegacyClients      bool                 `json:"-"`
 }
 
 // Configuration file authorization section.
@@ -90,6 +99,7 @@ type authorization struct {
 	pass string
 	// Multiple Users
 	users              []*User
+	certificateClients []*CertificateClient
 	timeout            float64
 	defaultPermissions *Permissions
 }
@@ -97,12 +107,14 @@ type authorization struct {
 // TLSConfigOpts holds the parsed tls config information,
 // used with flag parsing
 type TLSConfigOpts struct {
-	CertFile string
-	KeyFile  string
-	CaFile   string
-	Verify   bool
-	Timeout  float64
-	Ciphers  []uint16
+	CertFile                string
+	KeyFile                 string
+	CaFile                  string
+	Verify                  bool
+	EnableCertAuthorization bool
+	AllowLegacyClients      bool
+	Timeout                 float64
+	Ciphers                 []uint16
 }
 
 var tlsUsage = `
@@ -167,6 +179,7 @@ func ProcessConfigFile(configFile string) (*Options, error) {
 			opts.Username = auth.user
 			opts.Password = auth.pass
 			opts.AuthTimeout = auth.timeout
+
 			// Check for multiple users defined
 			if auth.users != nil {
 				if auth.user != "" {
@@ -174,6 +187,8 @@ func ProcessConfigFile(configFile string) (*Options, error) {
 				}
 				opts.Users = auth.users
 			}
+
+			opts.CertificateClients = auth.certificateClients
 		case "http":
 			hp, err := parseListen(v)
 			if err != nil {
@@ -227,8 +242,36 @@ func ProcessConfigFile(configFile string) (*Options, error) {
 				return nil, err
 			}
 			opts.TLSTimeout = tc.Timeout
+
+			if tc.EnableCertAuthorization && !tc.Verify {
+				return nil, fmt.Errorf("TLS 'verify' must be enabled to use 'enable_cert_authorization'")
+			}
+
+			if tc.AllowLegacyClients && !tc.EnableCertAuthorization {
+				return nil, fmt.Errorf("TLS 'enable_cert_authorization' must be enabled to use 'allow_legacy_clients'")
+			}
+
+			opts.TLSEnableCertAuthorization = tc.EnableCertAuthorization
+			opts.TLSAllowLegacyClients = tc.AllowLegacyClients
 		}
 	}
+
+	if opts.CertificateClients != nil && !opts.TLSEnableCertAuthorization {
+		return nil, fmt.Errorf("TLS 'enable_cert_authorization' must be enabled to use 'certificate_clients'")
+	}
+
+	if opts.CertificateClients == nil && opts.TLSEnableCertAuthorization {
+		return nil, fmt.Errorf("'certificate_clients' must be defined when 'enable_cert_authorization' is true")
+	}
+
+	if opts.TLSEnableCertAuthorization && opts.Users != nil {
+		return nil, fmt.Errorf("Can not have 'users' and 'client_certificates' defined at the same time")
+	}
+
+	if opts.TLSEnableCertAuthorization && opts.Username != "" && !opts.TLSAllowLegacyClients {
+		return nil, fmt.Errorf("Can not have 'user' and 'client_certificates' defined at the same time")
+	}
+
 	return opts, nil
 }
 
@@ -343,12 +386,18 @@ func parseAuthorization(am map[string]interface{}) (*authorization, error) {
 				return nil, err
 			}
 			auth.users = users
+		case "certificate_clients":
+			certificateClients, err := parseCertificateClients(mv)
+			if err != nil {
+				return nil, err
+			}
+			auth.certificateClients = certificateClients
 		case "default_permission", "default_permissions":
 			pm, ok := mv.(map[string]interface{})
 			if !ok {
 				return nil, fmt.Errorf("Expected default permissions to be a map/struct, got %+v", mv)
 			}
-			permissions, err := parseUserPermissions(pm)
+			permissions, err := parsePermissions(pm)
 			if err != nil {
 				return nil, err
 			}
@@ -364,6 +413,14 @@ func parseAuthorization(am map[string]interface{}) (*authorization, error) {
 			}
 		}
 
+		// Now check for permission defaults with certificate clients
+		if auth.certificateClients != nil && auth.defaultPermissions != nil {
+			for _, client := range auth.certificateClients {
+				if client.Permissions == nil {
+					client.Permissions = auth.defaultPermissions
+				}
+			}
+		}
 	}
 	return auth, nil
 }
@@ -389,12 +446,12 @@ func parseUsers(mv interface{}) ([]*User, error) {
 				user.Username = v.(string)
 			case "pass", "password":
 				user.Password = v.(string)
-			case "permission", "permissions", "authroization":
+			case "permission", "permissions", "authorization":
 				pm, ok := v.(map[string]interface{})
 				if !ok {
 					return nil, fmt.Errorf("Expected user permissions to be a map/struct, got %+v", v)
 				}
-				permissions, err := parseUserPermissions(pm)
+				permissions, err := parsePermissions(pm)
 				if err != nil {
 					return nil, err
 				}
@@ -410,8 +467,48 @@ func parseUsers(mv interface{}) ([]*User, error) {
 	return users, nil
 }
 
+// Helper function to parse multiple certificate_client array with optional permissions.
+func parseCertificateClients(mv interface{}) ([]*CertificateClient, error) {
+	// Make sure we have an array
+	cv, ok := mv.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Expected clients field to be an array, got %v", mv)
+	}
+	clients := []*CertificateClient{}
+	for _, u := range cv {
+		// Check its a map/struct
+		um, ok := u.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected client entry to be a map/struct, got %v", u)
+		}
+		client := &CertificateClient{}
+		for k, v := range um {
+			switch strings.ToLower(k) {
+			case "client_name":
+				client.ClientName = v.(string)
+			case "permissions":
+				pm, ok := v.(map[string]interface{})
+				if !ok {
+					return nil, fmt.Errorf("Expected client permissions to be a map/struct, got %+v", v)
+				}
+				permissions, err := parsePermissions(pm)
+				if err != nil {
+					return nil, err
+				}
+				client.Permissions = permissions
+			}
+		}
+		// Check to make sure we have at least username and password
+		if client.ClientName == "" {
+			return nil, fmt.Errorf("User entry requires a client name")
+		}
+		clients = append(clients, client)
+	}
+	return clients, nil
+}
+
 // Helper function to parse user/account permissions
-func parseUserPermissions(pm map[string]interface{}) (*Permissions, error) {
+func parsePermissions(pm map[string]interface{}) (*Permissions, error) {
 	p := &Permissions{}
 	for k, v := range pm {
 		switch strings.ToLower(k) {
@@ -509,6 +606,18 @@ func parseTLS(tlsm map[string]interface{}) (*TLSConfigOpts, error) {
 				return nil, fmt.Errorf("error parsing tls config, expected 'ca_file' to be filename")
 			}
 			tc.CaFile = caFile
+		case "enable_cert_authorization":
+			enableCertAuthorization, ok := mv.(bool)
+			if !ok {
+				return nil, fmt.Errorf("error parsing tls config, expected 'enable_cert_authorization' to be a boolean")
+			}
+			tc.EnableCertAuthorization = enableCertAuthorization
+		case "allow_legacy_clients":
+			allowLegacyClients, ok := mv.(bool)
+			if !ok {
+				return nil, fmt.Errorf("error parsing tls config, expected 'enable_cert_authorization' to be a boolean")
+			}
+			tc.AllowLegacyClients = allowLegacyClients
 		case "verify":
 			verify, ok := mv.(bool)
 			if !ok {

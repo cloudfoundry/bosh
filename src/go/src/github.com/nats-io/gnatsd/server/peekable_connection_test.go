@@ -1,8 +1,9 @@
-package server
+package server_test
 
 import (
 	"bytes"
 	"github.com/nats-io/gnatsd/server/fakes"
+	"github.com/nats-io/gnatsd/server"
 	"io"
 	"testing"
 )
@@ -10,9 +11,9 @@ import (
 func TestPeekableConn_Read(t *testing.T) {
 	fakeConnBytes := []byte{10, 11, 12}
 	fakeConn := &netfakes.FakeConn{}
-	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes,3)
+	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes, 3)
 
-	peekConn := NewPeekableConn(fakeConn)
+	peekConn := server.NewPeekableConn(fakeConn)
 
 	actualBytes := make([]byte, 3)
 	peekConn.Read(actualBytes)
@@ -34,9 +35,9 @@ func TestPeekableConn_PeekFirst(t *testing.T) {
 
 	fakeConn := &netfakes.FakeConn{}
 	fakeConnBytes := []byte{10, 11, 12, 13, 14, 15, 16}
-	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes,2)
+	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes, 2)
 
-	peekConn := NewPeekableConn(fakeConn)
+	peekConn := server.NewPeekableConn(fakeConn)
 	result, err := peekConn.PeekFirst(bytesToPeek)
 
 	if bytes.Compare(result, fakeConnBytes[:bytesToPeek]) != 0 {
@@ -55,10 +56,9 @@ func TestPeekableConn_PeekFirst_MultipleReads(t *testing.T) {
 	fakeConn := &netfakes.FakeConn{}
 	fakeConnBytes := []byte{10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
 
+	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes, 2)
 
-	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes,2)
-
-	peekConn := NewPeekableConn(fakeConn)
+	peekConn := server.NewPeekableConn(fakeConn)
 	result, err := peekConn.PeekFirst(bytesToPeek)
 
 	if bytes.Compare(result, fakeConnBytes[:bytesToPeek]) != 0 {
@@ -77,9 +77,9 @@ func TestPeekableConn_PeekFirst_NotEnoughBytes(t *testing.T) {
 	fakeConn := &netfakes.FakeConn{}
 	fakeConnBytes := []byte{10, 11, 12}
 
-	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes,4)
+	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes, 4)
 
-	peekConn := NewPeekableConn(fakeConn)
+	peekConn := server.NewPeekableConn(fakeConn)
 
 	_, err := peekConn.PeekFirst(bytesToPeek)
 	if err == nil {
@@ -95,9 +95,9 @@ func TestPeekableConn_PeekFirst_Then_Read(t *testing.T) {
 
 	fakeConnBytes := []byte{10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
 
-	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes,4)
+	fakeConn.ReadStub = fakeReadImpl(fakeConnBytes, 4)
 
-	peekConn := NewPeekableConn(fakeConn)
+	peekConn := server.NewPeekableConn(fakeConn)
 
 	_, err := peekConn.PeekFirst(bytesToPeek)
 	if err != nil {
@@ -133,7 +133,7 @@ func assertErrorIsNil(t *testing.T, err error) {
 	}
 }
 
-func fakeReadImpl(data []byte, maxBytesToReadPerOp int ) (func(b []byte) (n int, err error)){
+func fakeReadImpl(data []byte, maxBytesToReadPerOp int) func(b []byte) (n int, err error) {
 	fakeReadCursor := 0
 	return func(b []byte) (n int, err error) {
 
@@ -153,4 +153,3 @@ func fakeReadImpl(data []byte, maxBytesToReadPerOp int ) (func(b []byte) (n int,
 		return bytesCopied, nil
 	}
 }
-
