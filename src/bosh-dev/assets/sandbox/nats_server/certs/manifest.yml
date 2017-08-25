@@ -17,6 +17,8 @@ variables:
   options:
     ca: default_ca
     common_name: default.director.bosh
+    alternative_names:
+    - ((hostname))
     extended_key_usage:
       - client_auth
 - name: hm_client
@@ -24,5 +26,7 @@ variables:
   options:
     ca: default_ca
     common_name: default.hm.bosh
+    alternative_names:
+    - ((hostname))
     extended_key_usage:
       - client_auth

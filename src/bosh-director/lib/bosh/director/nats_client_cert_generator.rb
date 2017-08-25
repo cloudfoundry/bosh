@@ -43,7 +43,6 @@ module Bosh::Director
       cert.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
       cert.add_extension(ef.create_extension("basicConstraints","CA:false",true))
       cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth",true))
-      # cert.add_extension(ef.create_extension('subjectAltName', san_list.join(',')))
       cert.sign(@root_key, OpenSSL::Digest::SHA256.new)
 
       { :cert => cert, :key => key, :ca_key => @root_key.public_key }
