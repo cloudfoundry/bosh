@@ -55,7 +55,7 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is legacy' do
       it 'should deploy successfully' do
-        puts deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: false)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
       end
     end
 

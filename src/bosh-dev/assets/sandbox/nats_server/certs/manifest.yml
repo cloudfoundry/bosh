@@ -30,3 +30,10 @@ variables:
     - ((hostname))
     extended_key_usage:
       - client_auth
+- name: test_client
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: default.integration.test.bosh
+    extended_key_usage:
+    - client_auth

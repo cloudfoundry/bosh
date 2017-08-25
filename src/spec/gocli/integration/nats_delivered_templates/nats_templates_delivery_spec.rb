@@ -175,6 +175,8 @@ describe 'deliver rendered templates through nats', type: :integration do
   end
 
   context 'when agent does not support handling templates through nats' do
+    with_reset_sandbox_before_each(enable_nats_delivered_templates: true, nats_allow_legacy_clients: true)
+
     let(:vm_type) do
       {
         'name' => 'smurf-vm-type',
@@ -195,6 +197,8 @@ describe 'deliver rendered templates through nats', type: :integration do
   end
 
   context 'when agent fails to open blob for writing' do
+    with_reset_sandbox_before_each(enable_nats_delivered_templates: true, nats_allow_legacy_clients: true)
+
     let(:vm_type) do
       {
         'name' => 'smurf-vm-type',

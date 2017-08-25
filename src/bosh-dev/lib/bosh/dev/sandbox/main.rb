@@ -177,13 +177,6 @@ module Bosh::Dev::Sandbox
       @director_name || raise("Test inconsistency: Director name is not set")
     end
 
-    def nats_allow_legacy_clients=(new_value)
-      if @nats_allow_legacy_clients != new_value
-        @nats_needs_restart = true
-      end
-      @nats_allow_legacy_clients = new_value
-    end
-
     def director_config
       attributes = {
         sandbox_root: sandbox_root,
@@ -324,7 +317,12 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
-      @nats_allow_legacy_clients = options.fetch(:nats_allow_legacy_clients, false)
+      check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
+    end
+
+    def check_if_nats_need_reset(allow_legacy_clients)
+      @nats_needs_restart = @nats_allow_legacy_clients != allow_legacy_clients
+      @nats_allow_legacy_clients = allow_legacy_clients
     end
 
     def certificate_path
@@ -347,6 +345,10 @@ module Bosh::Dev::Sandbox
           'health_monitor' => {
             'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
             'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
+          },
+          'test_client' => {
+            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'certificate.pem'),
+            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'private_key'),
           }
         }
       }
@@ -357,8 +359,8 @@ module Bosh::Dev::Sandbox
         uri: "nats://localhost:#{nats_port}",
         ssl: true,
         tls: {
-          :private_key_file => nats_certificate_paths['clients']['director']['private_key_path'],
-          :cert_chain_file  => nats_certificate_paths['clients']['director']['certificate_path'],
+          :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],
+          :cert_chain_file  => nats_certificate_paths['clients']['test_client']['certificate_path'],
           :verify_peer => true,
           :ca_file => nats_certificate_paths['ca_path'],
         }

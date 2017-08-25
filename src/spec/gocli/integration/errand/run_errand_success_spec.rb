@@ -472,7 +472,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     let(:agent_binary) { 'legacy-agent-name' }
 
-    with_reset_sandbox_before_each
+    with_reset_sandbox_before_each(nats_allow_legacy_clients: true)
 
     context 'errand name = first job' do
       it 'should run the errand on the first instance' do

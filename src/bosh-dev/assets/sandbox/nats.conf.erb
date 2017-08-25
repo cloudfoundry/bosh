@@ -38,10 +38,16 @@ authorization {
     ]
   }
 
+  FULL_PERMISSIONS: {
+    publish: [">"]
+    subscribe: [">"]
+  }
+
   certificate_clients: [
     {client_name: director.bosh, permissions: $DIRECTOR_PERMISSIONS},
     {client_name: agent.bosh, permissions: $AGENT_PERMISSIONS},
     {client_name: hm.bosh, permissions: $HM_PERMISSIONS},
+    {client_name: integration.test.bosh, permissions: $FULL_PERMISSIONS},
   ]
 }
 
