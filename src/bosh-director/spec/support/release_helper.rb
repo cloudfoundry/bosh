@@ -58,6 +58,9 @@ module Bosh::Director::Test
           job["sha1"] ||= ::Digest::SHA1.file("#{job["name"]}.tgz").hexdigest
         end
         FileUtils.rm_rf(job_dir)
+
+        job.delete('templates')
+        job.delete(packages_dir_name)
       end
 
       packages = manifest[packages_dir_name] || []

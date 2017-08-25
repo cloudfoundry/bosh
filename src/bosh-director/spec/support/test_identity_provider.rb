@@ -8,6 +8,7 @@ module Support
 
     def initialize(uuid_provider)
       @permission_authorizer = Bosh::Director::PermissionAuthorizer.new(uuid_provider)
+      @uuid_provider = uuid_provider
     end
 
     def get_user(request_env, _)

@@ -9,6 +9,23 @@ module Bosh::Director::Models
       validates_format VALID_ID, [:name, :version]
     end
 
+    def self.find_or_init_from_release_meta(release:, job_meta:)
+      template = first(
+        name: job_meta['name'],
+        release_id: release.id,
+        fingerprint: job_meta['fingerprint'],
+        version: job_meta['version']
+      )
+
+      if template
+        template.sha1 = job_meta['sha1']
+      else
+        template ||= new(release_id: release.id, **job_meta.symbolize_keys)
+      end
+
+      template
+    end
+
     def package_names
       object_or_nil(self.package_names_json)
     end

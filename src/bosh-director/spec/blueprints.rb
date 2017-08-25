@@ -6,6 +6,7 @@ Sham.define do
   object_name      { |index| "deployment-#{index}" }
   password         { |index| "password-#{index}" }
   version          { |index| "version-#{index}" }
+  fingerprint      { |index| "fingerprint-#{index}" }
   manifest         { |index| "manifest-#{index}" }
   job              { |index| "job-#{index}"}
   vm_cid           { |index| "vm-cid-#{index}" }
@@ -67,6 +68,7 @@ module Bosh::Director::Models
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
     package_names_json  { "[]" }
+    fingerprint         { Sham.fingerprint }
   end
 
   Stemcell.blueprint do
