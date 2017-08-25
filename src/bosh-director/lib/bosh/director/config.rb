@@ -339,16 +339,12 @@ module Bosh::Director
         end
       end
 
-      def nats_uri
-        @nats_uri
-      end
-
       def nats_rpc
         # double-check locking to reduce synchronization
         if @nats_rpc.nil?
           @lock.synchronize do
             if @nats_rpc.nil?
-              @nats_rpc = NatsRpc.new(nats_uri, @nats_server_ca_path, @nats_client_private_key_path, @nats_client_certificate_path)
+              @nats_rpc = NatsRpc.new(@nats_uri, @nats_server_ca_path, @nats_client_private_key_path, @nats_client_certificate_path)
             end
           end
         end

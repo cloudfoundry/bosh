@@ -55,6 +55,9 @@ module Bosh::Dev::Sandbox
     attr_reader :nats_log_path
     attr_reader :nats_host
 
+    attr_reader :nats_user, :nats_password, :nats_allow_legacy_clients
+    attr_reader :nats_needs_restart
+
     attr_accessor :trusted_certs
 
     def self.from_env
@@ -83,15 +86,18 @@ module Bosh::Dev::Sandbox
       @port_provider = PortProvider.new(test_env_number)
 
       @logs_path = sandbox_path('logs')
+      FileUtils.mkdir_p(@logs_path)
+
       @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
 
+      @nats_user = 'mbus'
+      @nats_password = 'password'
+      @nats_allow_legacy_clients = false
+      @nats_needs_restart = false
       @nats_log_path = File.join(@logs_path, 'nats.log')
-
-      FileUtils.mkdir_p(@logs_path)
-
       setup_nats
 
       @uaa_service = UaaService.new(@port_provider, sandbox_root, base_log_path, @logger)
@@ -171,6 +177,13 @@ module Bosh::Dev::Sandbox
       @director_name || raise("Test inconsistency: Director name is not set")
     end
 
+    def nats_allow_legacy_clients=(new_value)
+      if @nats_allow_legacy_clients != new_value
+        @nats_needs_restart = true
+      end
+      @nats_allow_legacy_clients = new_value
+    end
+
     def director_config
       attributes = {
         sandbox_root: sandbox_root,
@@ -195,7 +208,10 @@ module Bosh::Dev::Sandbox
         nats_server_ca_path: get_nats_server_ca_path,
         nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
         nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
-        nats_director_tls: nats_certificate_paths['clients']['director']
+        nats_director_tls: nats_certificate_paths['clients']['director'],
+        nats_allow_legacy_clients: @nats_allow_legacy_clients,
+        nats_user: @nats_user,
+        nats_password: @nats_password,
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -308,6 +324,7 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
+      @nats_allow_legacy_clients = options.fetch(:nats_allow_legacy_clients, false)
     end
 
     def certificate_path
@@ -398,6 +415,16 @@ module Bosh::Dev::Sandbox
 
       unless @test_initial_state.nil?
         load_db_and_populate_blobstore(@test_initial_state)
+      end
+
+      # TODO: Move into its own service.
+      if @nats_needs_restart
+        @nats_process.stop
+        nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+        write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
+        setup_nats
+        @nats_process.start
+        @nats_socket_connector.try_to_connect
       end
 
       @uaa_service.restart_if_needed if @user_authentication == 'uaa'

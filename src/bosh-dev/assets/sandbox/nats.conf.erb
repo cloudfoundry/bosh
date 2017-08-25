@@ -5,6 +5,11 @@ listen: 0.0.0.0:<%= nats_port %> # host/port to listen for client connections
 log_file: "<%= nats_log_path %>"
 
 authorization {
+<% if nats_allow_legacy_clients %>
+  username: <%= nats_user %>
+  password: <%= nats_password %>
+<% end %>
+
   DIRECTOR_PERMISSIONS: {
     publish: [
       "agent.*",
@@ -47,4 +52,7 @@ tls {
   verify:    true
   timeout: 2
   enable_cert_authorization: true
+<% if nats_allow_legacy_clients %>
+  allow_legacy_clients: true
+<% end %>
 }

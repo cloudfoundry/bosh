@@ -38,3 +38,6 @@ properties:
     description: Certificate for NATs mutual TLS
   nats.tls.server.private_key:
     description: Private Key for NATs mutual TLS
+  nats.allow_legacy_agents:
+    default: true
+    description: Flag for allowing legacy agents
