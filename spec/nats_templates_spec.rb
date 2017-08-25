@@ -42,7 +42,7 @@ describe 'nats.cfg.erb' do
                 "agent.*",
                 "hm.director.alert"
               ]
-              subscribe: ["director.*.*"]
+              subscribe: ["director.>"]
             }
 
             AGENT_PERMISSIONS: {
@@ -50,7 +50,7 @@ describe 'nats.cfg.erb' do
                 "hm.agent.heartbeat._CLIENT_ID",
                 "hm.agent.alert._CLIENT_ID",
                 "hm.agent.shutdown._CLIENT_ID",
-                "director.*.*"
+                "director.*._CLIENT_ID.*"
               ]
               subscribe: ["agent._CLIENT_ID"]
             }
@@ -125,7 +125,7 @@ describe 'nats.cfg.erb' do
                 "agent.*",
                 "hm.director.alert"
               ]
-              subscribe: ["director.*.*"]
+              subscribe: ["director.>"]
             }
 
             AGENT_PERMISSIONS: {
@@ -133,7 +133,7 @@ describe 'nats.cfg.erb' do
                 "hm.agent.heartbeat._CLIENT_ID",
                 "hm.agent.alert._CLIENT_ID",
                 "hm.agent.shutdown._CLIENT_ID",
-                "director.*.*"
+                "director.*._CLIENT_ID.*"
               ]
               subscribe: ["agent._CLIENT_ID"]
             }

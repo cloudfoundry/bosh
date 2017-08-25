@@ -15,7 +15,7 @@ authorization {<% if p('nats.allow_legacy_agents') %>
       "agent.*",
       "hm.director.alert"
     ]
-    subscribe: ["director.*.*"]
+    subscribe: ["director.>"]
   }
 
   AGENT_PERMISSIONS: {
@@ -23,7 +23,7 @@ authorization {<% if p('nats.allow_legacy_agents') %>
       "hm.agent.heartbeat._CLIENT_ID",
       "hm.agent.alert._CLIENT_ID",
       "hm.agent.shutdown._CLIENT_ID",
-      "director.*.*"
+      "director.*._CLIENT_ID.*"
     ]
     subscribe: ["agent._CLIENT_ID"]
   }
