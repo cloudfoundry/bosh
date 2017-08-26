@@ -86,5 +86,40 @@ module Bosh::Director
         )
       end
     end
+
+    describe 'when ranges are subsumed by other ranges' do
+      let(:cidr_ranges) do
+        [
+          NetAddr::CIDR.create('192.168.0.11/32'),
+          NetAddr::CIDR.create('192.168.0.8/30'),
+          NetAddr::CIDR.create('192.168.0.8/32'),
+        ]
+      end
+
+      it 'combines the ranges' do
+        pending "does not work but we do not care since currently combinations are only used for logging"
+        expect(range_combiner.combine_ranges(cidr_ranges)).to eq(
+          [["192.168.0.8", "192.168.0.11"]]
+        )
+      end
+    end
+
+    describe 'when ranges are ipv4 and ipv6' do
+      let(:cidr_ranges) do
+        [
+          NetAddr::CIDR.create('192.168.0.8/30'),
+          NetAddr::CIDR.create('fd7a:eeed:e696:968f:0000:0000:0000:0005/128'),
+          NetAddr::CIDR.create('fd7a:eeed:e696:968f:0000:0000:0000:0005/64'),
+          NetAddr::CIDR.create('192.168.0.20/32'),
+        ]
+      end
+
+      it 'combines the ranges' do
+        expect(range_combiner.combine_ranges(cidr_ranges)).to eq(
+          [["192.168.0.8", "192.168.0.11"], ["192.168.0.20", "192.168.0.20"],
+           ["fd7a:eeed:e696:968f:0000:0000:0000:0000", "fd7a:eeed:e696:968f:ffff:ffff:ffff:ffff"]]
+        )
+      end
+    end
   end
 end
