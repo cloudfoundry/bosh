@@ -23,6 +23,7 @@ module Bosh::Director::Models
         template ||= new(release_id: release.id, **job_meta.symbolize_keys)
       end
 
+      template.spec = job_manifest
       template.package_names = parse_package_names(job_manifest)
       template.logs = job_manifest['logs']
       template.properties = job_manifest['properties']
@@ -31,6 +32,14 @@ module Bosh::Director::Models
       template.templates = job_manifest['templates']
 
       template
+    end
+
+    def spec
+      object_or_nil(self.spec_json)
+    end
+
+    def spec=(spec)
+      self.spec_json = json_encode(spec)
     end
 
     def package_names

@@ -30,12 +30,7 @@ module Bosh::Director
         JSON.generate([{
           name: template.name,
           fingerprint: template.fingerprint,
-          spec: {
-            name: template.name,
-            consumes: template.consumes,
-            templates: template.templates,
-            properties: template.properties,
-          }
+          spec: template.spec,
         }])
       end
     end

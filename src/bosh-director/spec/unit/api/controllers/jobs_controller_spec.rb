@@ -25,6 +25,7 @@ module Bosh::Director
           properties: {my: 'property'},
           templates: ['some', 'templates'],
           consumes: ['theworld'],
+          spec: {'some' => 'spec'},
         )
       end
 
@@ -49,12 +50,7 @@ module Bosh::Director
               expect(last_response.body).to eq(JSON.generate([{
                 name: 'test-job',
                 fingerprint: 'deadbeef',
-                spec: {
-                  name: 'test-job',
-                  consumes: ['theworld'],
-                  templates: ['some', 'templates'],
-                  properties: {my: 'property'},
-                }
+                spec: {'some' => 'spec'},
               }]))
             end
 
@@ -97,12 +93,7 @@ module Bosh::Director
               expect(last_response.body).to eq(JSON.generate([{
                 name: 'test-job',
                 fingerprint: 'deadbeef',
-                spec: {
-                  name: 'test-job',
-                  consumes: ['theworld'],
-                  templates: ['some', 'templates'],
-                  properties: {my: 'property'},
-                }
+                spec: {'some' => 'spec'},
               }]))
             end
           end
@@ -117,12 +108,7 @@ module Bosh::Director
               expect(last_response.body).to eq(JSON.generate([{
                 name: 'test-job',
                 fingerprint: 'deadbeef',
-                spec: {
-                  name: 'test-job',
-                  consumes: ['theworld'],
-                  templates: ['some', 'templates'],
-                  properties: {my: 'property'},
-                }
+                spec: {'some' => 'spec'},
               }]))
             end
           end
