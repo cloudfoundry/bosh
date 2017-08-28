@@ -1,5 +1,7 @@
 server {
-  listen      <%= p("blobstore.port") %>;
+  listen <%= p("blobstore.port") %>;
+  <% if p('blobstore.ipv6_listen') %>listen [::]:<%= p('blobstore.port') %>;<% end %>
+
   server_name "";
 
   access_log  /var/vcap/sys/log/blobstore/blobstore_access.log common_event_format;
