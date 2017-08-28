@@ -179,11 +179,15 @@ module Bosh::Director
       end
 
       it 'can get array as input' do
-        expect(subject.filter_by(deployment, [Sequel.like(:uuid, "#{instance.uuid}")]).all).to eq [instance]
+        expect(subject.filter_by(deployment, [Sequel.like(:uuid, "#{instance.uuid}"), job: job ]).all).to eq [instance]
       end
 
       it 'can get hash as input' do
-        expect(subject.filter_by(deployment, { uuid: instance.uuid }).all).to eq [instance]
+        expect(subject.filter_by(deployment, { uuid: instance.uuid, job: job }).all).to eq [instance]
+      end
+
+      it 'can get empty hash as input' do
+        expect(subject.filter_by(deployment, {}).all).to eq [instance, instance_1]
       end
     end
 

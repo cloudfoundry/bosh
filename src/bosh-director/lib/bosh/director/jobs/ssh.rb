@@ -23,14 +23,14 @@ module Bosh::Director
       def perform
         target = Target.new(@target_payload)
         filter = {}
-        if target.job && ip_address?(target.job)
+        if target.job && ip_address?(target.job) && instance_count(target.job) == 0
           ip_address = target.job
           net_address = ip_to_netaddr(ip_address)
           ip_error_message = "{:ip=>#{ip_address}}"
           ipaddress_model = Models::IpAddress.where(address: net_address.to_i).first
           if ipaddress_model.nil?
             filter = []
-            filter << Sequel.like(:spec_json, "%\\\"#{ip_address}\\\"%")
+            filter << Sequel.like(:spec_json, "%\\\"ip\\\":\\\"#{ip_address}\\\"%")
           else
             filter[:id] = ipaddress_model.instance_id
           end
@@ -96,6 +96,10 @@ module Bosh::Director
                 instance:    instance_name,
                 context:     {user: user}
             })
+      end
+
+      def instance_count(instance_job)
+        Models::Instance.where(job: instance_job).count
       end
 
       class Target

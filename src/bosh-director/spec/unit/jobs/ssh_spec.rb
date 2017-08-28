@@ -9,14 +9,15 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment.make(name: 'name-1') }
     let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
-    let(:target) { {'job' => 'fake-job', 'indexes' => [1]} }
+    let(:target) { {'job' => job_name, 'indexes' => [1]} }
     let(:agent) { double(AgentClient) }
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:spec) { {} }
-    let(:is) { Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1', spec: spec) }
+    let(:job_name) { 'fake-job' }
+    let(:is) { Models::Instance.make(job: job_name, index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1', spec: spec) }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
@@ -27,7 +28,7 @@ module Bosh::Director
     before do
       vm = Models::Vm.make(cid: 'cid', instance_id: is.id)
       is.active_vm = vm
-      Models::Instance.make(job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
+      Models::Instance.make(job: job_name, index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})
@@ -45,11 +46,11 @@ module Bosh::Director
     it 'returns default_ssh_options if they exist' do
       job.perform
 
-      expect(parsed_task_result).to eq([{'index' => 1, 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'id' => "fake-uuid-1", 'job' => 'fake-job'}])
+      expect(parsed_task_result).to eq([{'index' => 1, 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'id' => "fake-uuid-1", 'job' => job_name}])
     end
 
     context 'when instance does not have vm' do
-      let(:target) { {'job' => 'fake-job', 'indexes' => [1, 2]} }
+      let(:target) { {'job' => job_name, 'indexes' => [1, 2]} }
 
       it 'performs only for instances with vm' do
         instance_with_vm = Models::Instance.reject { |instance| instance.active_vm.nil? }.first
@@ -66,9 +67,9 @@ module Bosh::Director
       expect(event.user).to eq(task.username)
       expect(event.action).to eq('fake-command ssh')
       expect(event.object_type).to eq('instance')
-      expect(event.object_name).to eq('fake-job/fake-uuid-1')
+      expect(event.object_name).to eq("#{job_name}/fake-uuid-1")
       expect(event.deployment).to eq('name-1')
-      expect(event.instance).to eq('fake-job/fake-uuid-1')
+      expect(event.instance).to eq("#{job_name}/fake-uuid-1")
       expect(event.task).to eq("#{task.id}")
       expect(event.context).to eq({'user' => 'user-ssh'})
       expect(event.timestamp).to eq(Time.now)
@@ -84,7 +85,7 @@ module Bosh::Director
     context 'when no active vm for instance' do
       it 'raises an error' do
         is.active_vm = nil
-        expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:job=>\"fake-job\", :index=>[1]}"
+        expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:job=>\"#{job_name}\", :index=>[1]}"
       end
     end
 
@@ -99,7 +100,7 @@ module Bosh::Director
       context 'when id is instance uuid' do
         it 'finds instance by its id and generates response with id' do
           job.perform
-          expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+          expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => job_name, 'index' => 1}])
         end
 
         it 'stores event with instance uuid' do
@@ -114,7 +115,7 @@ module Bosh::Director
 
         it 'finds instance by its index and generates response with id' do
           job.perform
-          expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+          expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => job_name, 'index' => 1}])
         end
 
         it 'stores event with instance index' do
@@ -139,7 +140,7 @@ module Bosh::Director
           ip_addresses_params = {
               'instance_id' => is.id,
               'task_id' => task.id,
-              'address' => NetAddr::CIDR.create("1.1.1.1")
+              'address' => NetAddr::CIDR.create('1.1.1.1')
           }
           Models::IpAddress.create(ip_addresses_params)
         end
@@ -154,13 +155,13 @@ module Bosh::Director
         context 'when instance has active vm' do
           it 'finds instance by ip address and generates response' do
             job.perform
-            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => job_name, 'index' => 1}])
           end
         end
       end
 
       context 'when ip address is in memory' do
-        let(:spec) { {networks: {ip: "1.1.1.1"}} }
+        let(:spec) { {networks: {ip: '1.1.1.1'}} }
 
         context 'when instance does not have active vm' do
           it 'raises an error' do
@@ -172,8 +173,18 @@ module Bosh::Director
         context 'when instance has active vm' do
           it 'finds instance by ip address and generates response' do
             job.perform
-            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => 'fake-job', 'index' => 1}])
+            expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => job_name, 'index' => 1}])
           end
+        end
+      end
+
+      context 'when ip address is also an instance job name' do
+        let(:job_name) { '1.1.1.1' }
+        let(:target) { {'job' => job_name, 'ids' => ['fake-uuid-1']} }
+
+        it 'finds instance by based on job name and generates response' do
+          job.perform
+          expect(parsed_task_result).to eq([{'id' => 'fake-uuid-1', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap', 'job' => job_name, 'index' => 1}])
         end
       end
     end
