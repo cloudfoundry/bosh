@@ -9,7 +9,7 @@ module Bosh::Director::Models
       validates_format VALID_ID, [:name, :version]
     end
 
-    def self.find_or_init_from_release_meta(release:, job_meta:)
+    def self.find_or_init_from_release_meta(release:, job_meta:, job_manifest:)
       template = first(
         name: job_meta['name'],
         release_id: release.id,
@@ -22,6 +22,13 @@ module Bosh::Director::Models
       else
         template ||= new(release_id: release.id, **job_meta.symbolize_keys)
       end
+
+      template.package_names = parse_package_names(job_manifest)
+      template.logs = job_manifest['logs']
+      template.properties = job_manifest['properties']
+      template.provides = job_manifest['provides'] if job_manifest['provides']
+      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
+      template.templates = job_manifest['templates']
 
       template
     end
@@ -96,6 +103,13 @@ module Bosh::Director::Models
 
     def json_encode(value)
       value.nil? ? 'null' : JSON.generate(value)
+    end
+
+    def self.parse_package_names(job_manifest)
+      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
+        raise Bosh::Director::JobInvalidPackageSpec, "Job '#{name}' has invalid package spec format"
+      end
+      job_manifest['packages'] || []
     end
   end
 end

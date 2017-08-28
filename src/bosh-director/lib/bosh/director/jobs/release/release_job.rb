@@ -24,6 +24,7 @@ module Bosh::Director
       template = Models::Template.find_or_init_from_release_meta(
         release: @release_model,
         job_meta: @job_meta,
+        job_manifest: job_manifest,
       )
 
       if template.blobstore_id
@@ -37,13 +38,6 @@ module Bosh::Director
       end
 
       template.blobstore_id = BlobUtil.create_blob(job_tgz)
-
-      template.package_names = parse_package_names(job_manifest)
-      template.logs = job_manifest['logs']
-      template.properties = job_manifest['properties']
-      template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
-      template.templates = job_manifest['templates']
 
       template.save
     end
@@ -100,13 +94,6 @@ module Bosh::Director
       unless File.exists?(main_monit_file) || aux_monit_files.size > 0
         raise JobMissingMonit, "Job '#{name}' is missing monit file"
       end
-    end
-
-    def parse_package_names(job_manifest)
-      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
-        raise JobInvalidPackageSpec, "Job '#{name}' has invalid package spec format"
-      end
-      job_manifest['packages'] || []
     end
 
     def validate_logs(job_manifest)

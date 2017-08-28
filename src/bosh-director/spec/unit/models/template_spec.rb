@@ -17,6 +17,14 @@ module Bosh::Director::Models
               'sha1' => 'shahahaha',
               'version' => template.version,
             },
+            job_manifest: {
+              'properties' => {'park_place' => 'house', 'boardwalk' => 'hotel'},
+              'provides' => ['shelter'],
+              'consumes' => ['food'],
+              'templates' => {'tem' => 'bowls'},
+              'logs' => ['lincoln'],
+              'packages' => ['potato', 'tomato'],
+            },
           )
         }
 
@@ -28,8 +36,14 @@ module Bosh::Director::Models
           expect(Template.count).to eq(1)
         end
 
-        it 'sets sha1' do
+        it 'sets sha1, logs, package_names, properties, provides, consumes, and templates' do
           expect(existing_template.sha1).to eq('shahahaha')
+          expect(existing_template.package_names).to eq(['potato', 'tomato'])
+          expect(existing_template.logs).to eq(['lincoln'])
+          expect(existing_template.properties).to eq({'park_place' => 'house', 'boardwalk' => 'hotel'})
+          expect(existing_template.provides).to eq(['shelter'])
+          expect(existing_template.consumes).to eq(['food'])
+          expect(existing_template.templates).to eq({'tem' => 'bowls'})
         end
       end
 
@@ -43,6 +57,14 @@ module Bosh::Director::Models
               'name' => 'workworkwork',
               'sha1' => 'shahahaha',
               'version' => '3',
+            },
+            job_manifest: {
+              'properties' => {'park_place' => 'house', 'boardwalk' => 'hotel'},
+              'provides' => ['shelter'],
+              'consumes' => ['food'],
+              'templates' => {'tem' => 'bowls'},
+              'logs' => ['lincoln'],
+              'packages' => ['potato', 'tomato'],
             },
           )
         }
@@ -58,6 +80,12 @@ module Bosh::Director::Models
           expect(new_template.name).to eq('workworkwork')
           expect(new_template.sha1).to eq('shahahaha')
           expect(new_template.version).to eq('3')
+          expect(new_template.package_names).to eq(['potato','tomato'])
+          expect(new_template.logs).to eq(['lincoln'])
+          expect(new_template.properties).to eq({'park_place' => 'house', 'boardwalk' => 'hotel'})
+          expect(new_template.provides).to eq(['shelter'])
+          expect(new_template.consumes).to eq(['food'])
+          expect(new_template.templates).to eq({'tem' => 'bowls'})
         end
       end
     end
