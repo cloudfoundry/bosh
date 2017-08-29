@@ -1,0 +1,31 @@
+<%=
+  config = {
+      'port' => p('port'),
+      'cert' => p('cert'),
+      'address' => spec.address,
+      'az' => spec.az,
+      'bootstrap' => spec.bootstrap,
+      'deployment' => spec.deployment,
+      'id' => spec.id,
+      'index' => spec.index,
+      'ip' => spec.ip,
+      'name' => spec.name,
+      'network_data' => spec.networks.network1.foo,
+      'network_ip' => spec.networks.network1.ip,
+  }
+
+
+  if_link('primary_db') do |db_link|
+    config['db'] = {
+        'adapter' => db_link.p('adapter'),
+        'username' => db_link.p('username'),
+        'password' => db_link.p('password'),
+        'host' => db_link.instances.first.address,
+        'port' => db_link.p('port'),
+        'database' => db_link.p('name'),
+    }
+  end
+
+  require 'json'
+  JSON.dump(config)
+%>

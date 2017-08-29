@@ -1,6 +1,6 @@
 require 'rspec'
 require 'yaml'
-require 'bosh/template/evaluation_context'
+require 'bosh/template/test'
 require 'json'
 
 describe 'director.yml.erb.erb' do
@@ -78,13 +78,12 @@ describe 'director.yml.erb.erb' do
     }
   end
 
-  let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')) }
-
   subject(:parsed_yaml) do
-    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
-    YAML.load(ERB.new(erb_yaml).result(binding))
+    release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
+    job = release.job('director')
+    template = job.template('config/director.yml.erb')
+    YAML.load(template.render(deployment_manifest_fragment))
   end
-
 
   context 'given a generally valid manifest' do
     before do
