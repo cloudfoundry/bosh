@@ -33,6 +33,7 @@ module Bosh::Template::Test
         'ip' => @ip,
         'name' => @name,
         'networks' => @networks,
+        'job' => {'name' => @name}
       }
     end
   end

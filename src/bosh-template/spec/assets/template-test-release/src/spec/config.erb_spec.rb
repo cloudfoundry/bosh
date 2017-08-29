@@ -9,8 +9,8 @@ module Bosh::Template::Test
     describe 'template rendering' do
       let(:release_path) {File.join(File.dirname(__FILE__), '../..')}
 
-      let(:deployment_manifest_properties_fragment) do
-        {'properties' => {'cert' => '----- BEGIN ... -----'}}
+      let(:merged_manifest_properties) do
+        {'cert' => '----- BEGIN ... -----'}
       end
 
       let(:release) {ReleaseDir.new(release_path)}
@@ -21,15 +21,13 @@ module Bosh::Template::Test
         describe 'config/config-with-nested' do
           let(:template) {job.template('config/config-with-nested')}
           describe 'manifest properties' do
-            let(:deployment_manifest_properties_fragment) do
+            let(:merged_manifest_properties) do
               {
-                'properties' => {
-                  'nested' => {
-                    'properties' => {
-                      'works' => {
-                        'too' =>
-                          'nested-works-too'
-                      }
+                'nested' => {
+                  'properties' => {
+                    'works' => {
+                      'too' =>
+                        'nested-works-too'
                     }
                   }
                 }
@@ -37,7 +35,7 @@ module Bosh::Template::Test
             end
 
             it 'parses out the values' do
-              rendered_config = JSON.parse(template.render(deployment_manifest_properties_fragment))
+              rendered_config = JSON.parse(template.render(merged_manifest_properties))
               expect(rendered_config['works.too']).to eq('nested-works-too')
             end
           end
@@ -48,28 +46,26 @@ module Bosh::Template::Test
 
           describe 'manifest properties' do
             context 'when the port is not specified' do
-              let(:deployment_manifest_properties_fragment) do
-                {'properties' => {'cert' => '----- BEGIN ... -----'}}
+              let(:merged_manifest_properties) do
+                {'cert' => '----- BEGIN ... -----'}
               end
 
               it 'defaults to the spec file default' do
-                rendered_config = JSON.parse(template.render(deployment_manifest_properties_fragment))
+                rendered_config = JSON.parse(template.render(merged_manifest_properties))
                 expect(rendered_config['port']).to eq(8080)
               end
             end
 
             context 'whet the port is specified' do
-              let(:deployment_manifest_properties_fragment) do
+              let(:merged_manifest_properties) do
                 {
-                  'properties' => {
-                    'cert' => '----- BEGIN ... -----',
-                    'port' => 42,
-                  }
+                  'cert' => '----- BEGIN ... -----',
+                  'port' => 42,
                 }
               end
 
               it 'uses the value specified in the hash' do
-                rendered_json = template.render(deployment_manifest_properties_fragment)
+                rendered_json = template.render(merged_manifest_properties)
                 rendered_config = JSON.parse(rendered_json)
                 expect(rendered_config['port']).to eq(42)
               end
@@ -78,7 +74,7 @@ module Bosh::Template::Test
 
           describe 'instance spec info' do
             it 'has default spec values' do
-              rendered_config = JSON.parse(template.render(deployment_manifest_properties_fragment))
+              rendered_config = JSON.parse(template.render(merged_manifest_properties))
               expect(rendered_config['address']).to eq('my.bosh.com')
               expect(rendered_config['az']).to eq('az1')
               expect(rendered_config['bootstrap']).to eq(false)
@@ -89,12 +85,13 @@ module Bosh::Template::Test
               expect(rendered_config['name']).to eq('me')
               expect(rendered_config['network_data']).to eq('bar')
               expect(rendered_config['network_ip']).to eq('192.168.0.0')
+              expect(rendered_config['job_name']).to eq('me')
             end
 
             context 'when the spec has special values' do
               it 'is overridden' do
                 spec = InstanceSpec.new(bootstrap: true)
-                rendered_config = JSON.parse(template.render(deployment_manifest_properties_fragment, spec: spec))
+                rendered_config = JSON.parse(template.render(merged_manifest_properties, spec: spec))
                 expect(rendered_config['bootstrap']).to eq(true)
               end
             end
@@ -115,7 +112,7 @@ module Bosh::Template::Test
                   }
                 )
               ]
-              rendered_config = JSON.parse(template.render(deployment_manifest_properties_fragment, links: links))
+              rendered_config = JSON.parse(template.render(merged_manifest_properties, links: links))
               expect(rendered_config['db']['host']).to eq('my.database.com')
               expect(rendered_config['db']['adapter']).to eq('sqlite')
               expect(rendered_config['db']['username']).to eq('root')
