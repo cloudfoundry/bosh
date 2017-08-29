@@ -102,6 +102,32 @@ module Bosh::Director::Models
           })
         end
       end
+
+      context 'when unknown keys are present in the release_metadata' do
+        let(:release) { Release.make }
+        let(:new_template) {
+          Template.find_or_init_from_release_meta(
+            release: release,
+            job_meta: {
+              'fingerprint' => 'imunique',
+              'name' => 'workworkwork',
+              'sha1' => 'shahahaha',
+              'version' => '3',
+              'unknown' => 'key',
+            },
+            job_manifest: {},
+          )
+        }
+
+        it 'ignores them and only uses valid keys' do
+          expect(new_template.release_id).to eq(release.id)
+          expect(new_template.fingerprint).to eq('imunique')
+          expect(new_template.name).to eq('workworkwork')
+          expect(new_template.sha1).to eq('shahahaha')
+          expect(new_template.version).to eq('3')
+          expect(new_template.spec).to eq({})
+        end
+      end
     end
 
     describe '#properties' do

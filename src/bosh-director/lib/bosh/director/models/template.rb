@@ -20,7 +20,13 @@ module Bosh::Director::Models
       if template
         template.sha1 = job_meta['sha1']
       else
-        template ||= new(release_id: release.id, **job_meta.symbolize_keys)
+        template = new(
+          name: job_meta['name'],
+          release_id: release.id,
+          fingerprint: job_meta['fingerprint'],
+          version: job_meta['version'],
+          sha1: job_meta['sha1'],
+        )
       end
 
       template.spec = job_manifest

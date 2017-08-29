@@ -59,7 +59,6 @@ module Bosh::Director::Test
         end
         FileUtils.rm_rf(job_dir)
 
-        job.delete('templates')
         job.delete(packages_dir_name)
       end
 
