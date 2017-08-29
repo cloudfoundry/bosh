@@ -2,7 +2,7 @@ module Bosh::Template::Test
   class Link
     attr_reader :instances, :name, :properties
 
-    def initialize(instances:, name:, properties:)
+    def initialize(name:, instances: [], properties: {})
       @instances = instances
       @name = name
       @properties = properties

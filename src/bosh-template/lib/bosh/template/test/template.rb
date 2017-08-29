@@ -40,11 +40,19 @@ module Bosh::Template
 
       def links_hash(links)
         links_hash = {}
+        known_links = []
 
         consumes = @job_spec_hash.fetch('consumes', [])
         consumes.each do |consume|
+          known_links << consume['name']
           link = links.find {|l| l.name == consume['name']}
           links_hash[link.name] = link.to_h unless link.nil?
+        end
+
+        links.each do |link|
+          unless known_links.include?(link.name)
+            raise "Link '#{link.name}' is not declared as a consumed link in this job."
+          end
         end
 
         links_hash

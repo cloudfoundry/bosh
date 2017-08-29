@@ -120,6 +120,16 @@ module Bosh::Template::Test
               expect(rendered_config['db']['port']).to eq(4321)
               expect(rendered_config['db']['database']).to eq('webserverdb')
             end
+
+            context 'when the release does not consume the provided link' do
+              it 'errors' do
+                links = [Link.new(name: 'mongo-db')]
+
+                expect {
+                  template.render(merged_manifest_properties, links: links)
+                }.to raise_error "Link 'mongo-db' is not declared as a consumed link in this job."
+              end
+            end
           end
         end
       end
