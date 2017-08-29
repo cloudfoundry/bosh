@@ -112,7 +112,7 @@ module Bosh::Template::Test
                   }
                 )
               ]
-              rendered_config = JSON.parse(template.render(merged_manifest_properties, links: links))
+              rendered_config = JSON.parse(template.render(merged_manifest_properties, consumes: links))
               expect(rendered_config['db']['host']).to eq('my.database.com')
               expect(rendered_config['db']['adapter']).to eq('sqlite')
               expect(rendered_config['db']['username']).to eq('root')
@@ -126,7 +126,7 @@ module Bosh::Template::Test
                 links = [Link.new(name: 'mongo-db')]
 
                 expect {
-                  template.render(merged_manifest_properties, links: links)
+                  template.render(merged_manifest_properties, consumes: links)
                 }.to raise_error "Link 'mongo-db' is not declared as a consumed link in this job."
               end
             end

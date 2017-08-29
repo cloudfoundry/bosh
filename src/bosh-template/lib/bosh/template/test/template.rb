@@ -11,11 +11,11 @@ module Bosh::Template
         @template_path = template_path
       end
 
-      def render(manifest_properties_hash, spec: InstanceSpec.new, links: [])
+      def render(manifest_properties_hash, spec: InstanceSpec.new, consumes: [])
         spec_hash = {}
         spec_hash['properties'] = hash_with_defaults(manifest_properties_hash)
         sanitized_hash_with_spec = spec_hash.merge(spec.to_h)
-        sanitized_hash_with_spec['links'] = links_hash(links)
+        sanitized_hash_with_spec['links'] = links_hash(consumes)
 
         binding = Bosh::Template::EvaluationContext.new(sanitized_hash_with_spec, nil).get_binding
         raise "No such file at #{@template_path}" unless File.exist?(@template_path)
