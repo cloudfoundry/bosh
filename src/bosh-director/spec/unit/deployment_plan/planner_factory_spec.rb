@@ -403,9 +403,9 @@ LOGMESSAGE
                     allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
                     allow(skipped_link_path).to receive(:parse)
 
-                    templateModel = Models::Template.where(name: 'provides_template').first
-                    templateModel.properties = {"a" => {}}
-                    templateModel.save
+                    template_model = Models::Template.where(name: 'provides_template').first
+                    template_model.spec = template_model.spec.merge({properties: {"a" => {}}})
+                    template_model.save
 
                     planner
                   end
@@ -453,7 +453,7 @@ LOGMESSAGE
             job = hybrid_manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
-            template2 = Models::Template.make(name: 'provides_template', release: release, properties: {"a" => {default: "b"}})
+            template2 = Models::Template.make(name: 'provides_template', release: release, spec: {properties: {"a" => {default: "b"}}})
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
             release_version.add_template(template2)

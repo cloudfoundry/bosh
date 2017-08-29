@@ -48,5 +48,29 @@ module Bosh::Director
 
       expect(db[:templates].first[:spec_json].length).to eq(really_long_spec_json.length)
     end
+
+    it 'backfills values from logs, templates, provides, consumes, and properties' do
+      db[:templates] << {
+        name: 'some-job',
+        version: '23',
+        blobstore_id: 'abc123',
+        release_id: 1,
+        package_names_json: '{"old":"packages"}',
+        properties_json: '{"old":"properties"}',
+        provides_json: '{"old":"provides"}',
+        consumes_json: '{"old":"consumes"}',
+        logs_json: '{"old":"logs"}',
+        sha1: 'shasha',
+      }
+
+      DBSpecHelper.migrate(migration_file)
+
+      expect(JSON.load(db[:templates].first[:spec_json])).to eq({
+        'properties' => {'old' => 'properties'},
+        'provides' => {'old' => 'provides'},
+        'consumes' => {'old' => 'consumes'},
+        'logs' => {'old' => 'logs'},
+      })
+    end
   end
 end

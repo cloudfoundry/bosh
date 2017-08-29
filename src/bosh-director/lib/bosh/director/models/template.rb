@@ -25,17 +25,12 @@ module Bosh::Director::Models
 
       template.spec = job_manifest
       template.package_names = parse_package_names(job_manifest)
-      template.logs = job_manifest['logs']
-      template.properties = job_manifest['properties']
-      template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
-      template.templates = job_manifest['templates']
 
       template
     end
 
     def spec
-      object_or_nil(self.spec_json)
+      object_or_nil(self.spec_json) || {}
     end
 
     def spec=(spec)
@@ -50,57 +45,34 @@ module Bosh::Director::Models
       self.package_names_json = json_encode(packages)
     end
 
-    def logs=(logs_spec)
-      self.logs_json = json_encode(logs_spec)
-    end
-
     def logs
-      object_or_nil(self.logs_json)
+      spec['logs'] || []
     end
 
-    # @param [Object] property_spec Property spec from job spec
-    def properties=(property_spec)
-      self.properties_json = json_encode(property_spec)
-    end
-
-    # @return [Hash] Template properties (as provided in job spec)
-    # @return [nil] if no properties have been defined in job spec
     def properties
-      object_or_nil(self.properties_json) || {}
-    end
-
-    def consumes=(consumes_spec)
-      self.consumes_json = json_encode(consumes_spec)
+      spec['properties'] || {}
     end
 
     def consumes
-      object_or_nil(self.consumes_json)
-    end
-
-    def provides=(provides_spec)
-      self.provides_json = json_encode(provides_spec)
+      spec['consumes'] || []
     end
 
     def provides
-      object_or_nil(self.provides_json)
-    end
-
-    def templates=(templates_spec)
-      self.templates_json = json_encode(templates_spec)
-    end
-
-    def templates
-      object_or_nil(self.templates_json)
+      spec['provides'] || []
     end
 
     def runs_as_errand?
-      return false if self.templates == nil
+      return false if templates == nil
 
-      self.templates.values.include?('bin/run') ||
-        self.templates.values.include?('bin/run.ps1')
+      templates.values.include?('bin/run') ||
+        templates.values.include?('bin/run.ps1')
     end
 
     private
+
+    def templates
+      spec['templates'] || {}
+    end
 
     def object_or_nil(value)
       if value == 'null' || value == nil

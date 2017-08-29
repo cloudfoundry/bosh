@@ -3,7 +3,6 @@ require 'support/release_helper'
 
 module Bosh::Director
   describe ReleaseJob do
-
     describe 'update' do
       subject(:release_job) { described_class.new(job_meta, release_model, release_dir, double(:logger).as_null_object) }
       let(:release_dir) { Dir.mktmpdir }
@@ -125,7 +124,7 @@ module Bosh::Director
         expect { release_job.update }.to_not raise_error
       end
 
-      it 'saves the templates hash on the template' do
+      it 'saves the templates hash in the template spec' do
         job_with_interesting_templates =
           create_job('foo', 'monit', {
             'template source path' => {'destination' => 'rendered template path', 'contents' => 'whatever'}
@@ -135,7 +134,7 @@ module Bosh::Director
 
         saved_template = release_job.update
 
-        expect(saved_template.templates).to eq({'template source path' => 'rendered template path'})
+        expect(saved_template.spec['templates']).to eq({'template source path' => 'rendered template path'})
       end
 
       it 'whines on missing template' do

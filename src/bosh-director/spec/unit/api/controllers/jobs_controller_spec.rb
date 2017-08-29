@@ -22,9 +22,6 @@ module Bosh::Director
           name: 'test-job',
           release: release,
           fingerprint: 'deadbeef',
-          properties: {my: 'property'},
-          templates: ['some', 'templates'],
-          consumes: ['theworld'],
           spec: {'some' => 'spec'},
         )
       end

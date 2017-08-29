@@ -850,7 +850,7 @@ module Bosh::Director
               15.times do |i|
                 jobs << {
                     'name' => "job-#{i}",
-                    'templates' => [{ 'name' => 'job_using_pkg_1' }],
+                    'spec' => {'templates' => [{'name' => 'job_using_pkg_1'}]},
                     'instances' => 1,
                     'resource_pool' => 'a',
                     'networks' => [{ 'name' => 'a' }]
@@ -1345,7 +1345,7 @@ module Bosh::Director
                 release = Models::Release.make(name: 'bosh-release')
                 template1 = Models::Template.make(name: 'foobar', release: release)
                 template2 = Models::Template.make(name: 'errand1', release: release)
-                template3 = Models::Template.make(name: 'job_with_bin_run', release: release, templates: {'foo' => 'bin/run'})
+                template3 = Models::Template.make(name: 'job_with_bin_run', release: release, spec: {templates: {'foo' => 'bin/run'}})
                 release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
                 release_version.add_template(template1)
                 release_version.add_template(template2)
