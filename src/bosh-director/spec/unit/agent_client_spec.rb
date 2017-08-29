@@ -1,14 +1,25 @@
 require 'spec_helper'
 
-RSpec.configure do |config|
-  config.mock_with :rspec do |mocks|
-    # Remove after fixing several specs that stub out private methods
-    mocks.verify_partial_doubles = false
-  end
-end
-
 module Bosh::Director
   describe AgentClient do
+    before do
+      RSpec.configure do |config|
+        config.mock_with :rspec do |mocks|
+          # Remove after fixing several specs that stub out private methods
+          mocks.verify_partial_doubles = false
+        end
+      end
+    end
+
+    after do
+      RSpec.configure do |config|
+        config.mock_with :rspec do |mocks|
+          # Remove after fixing several specs that stub out private methods
+          mocks.verify_partial_doubles = true
+        end
+      end
+    end
+
     let(:options) { {'logging' => true} }
     def self.it_acts_as_asynchronous_message(message_name)
       describe "##{message_name}" do

@@ -792,7 +792,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(instance_plan_4).to receive(:instance).and_return(instance_4)
 
       allow(instance_group).to receive(:obsolete_instance_plans).and_return([instance_plan_3])
-      allow(instance_group).to receive(:ignored_instance_plans).and_return([instance_plan_4])
     end
 
     it 'sets the instance object desired_variable_set to the new variable set for all unignored_instance_plans' do
