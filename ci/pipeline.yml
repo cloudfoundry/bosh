@@ -680,7 +680,7 @@ resources:
   - name: gocli-release-bucket-linux
     type: s3
     source:
-      versioned_file: bosh-cli-0.0.101-linux-amd64
+      regexp: bosh-cli-(0.0.101)-linux-amd64
       bucket: bosh-cli-artifacts
 
   - name: bosh-cli
