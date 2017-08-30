@@ -25,14 +25,15 @@ module Bosh::Template
       private
 
       def hash_with_defaults(manifest_properties_hash)
-        hash_properties = manifest_properties_hash.clone
+        hash_properties = {}
         spec_properties = @job_spec_hash['properties']
 
         spec_properties.each_pair do |dotted_spec_key, property_def|
-          property_val = lookup_property(hash_properties, dotted_spec_key)
+          property_val = lookup_property(manifest_properties_hash, dotted_spec_key)
           if property_val.nil? && !property_def['default'].nil?
-            insert_property(hash_properties, dotted_spec_key, property_val || property_def['default'])
+            property_val = property_def['default']
           end
+          insert_property(hash_properties, dotted_spec_key, property_val)
         end
 
         hash_properties

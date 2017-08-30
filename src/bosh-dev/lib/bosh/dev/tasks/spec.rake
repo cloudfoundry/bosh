@@ -163,6 +163,12 @@ namespace :spec do
     sh("cd .. && rspec --tty --backtrace -c -f p spec/")
   end
 
+  desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
+  task :template_test_unit do
+    puts "Template test unit tests (ERB templates)"
+    sh("rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb")
+  end
+
   namespace :unit do
     desc 'Run all unit tests for ruby components'
     task :ruby do
@@ -200,7 +206,7 @@ namespace :spec do
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby)
+  task :unit => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
 end
 
 desc 'Run unit and gocli integration specs'

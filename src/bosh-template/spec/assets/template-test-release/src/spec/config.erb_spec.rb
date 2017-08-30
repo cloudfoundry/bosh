@@ -53,10 +53,11 @@ module Bosh::Template::Test
               it 'defaults to the spec file default' do
                 rendered_config = JSON.parse(template.render(merged_manifest_properties))
                 expect(rendered_config['port']).to eq(8080)
+                expect(rendered_config['cert']).to eq('----- BEGIN ... -----')
               end
             end
 
-            context 'whet the port is specified' do
+            context 'when the port is specified' do
               let(:merged_manifest_properties) do
                 {
                   'cert' => '----- BEGIN ... -----',
@@ -68,6 +69,30 @@ module Bosh::Template::Test
                 rendered_json = template.render(merged_manifest_properties)
                 rendered_config = JSON.parse(rendered_json)
                 expect(rendered_config['port']).to eq(42)
+              end
+            end
+
+            context 'when the manifest property is not in the spec' do
+              let(:template) {job.template('config/config-with-nested')}
+              let(:merged_manifest_properties) do
+                {
+                  'nested' => {
+                    'properties' => {
+                      'works' => {
+                        'too' =>
+                          'nested-works-too',
+                        'does-not-exist' =>
+                          'does-not-exist',
+                      }
+                    }
+                  }
+                }
+              end
+
+              it 'it should not be rendered' do
+                rendered_json = template.render(merged_manifest_properties)
+                rendered_config = JSON.parse(rendered_json)
+                expect(rendered_config['works'].has_key?('does-not-exist')).to eq(false)
               end
             end
           end
@@ -90,8 +115,9 @@ module Bosh::Template::Test
 
             context 'when the spec has special values' do
               it 'is overridden' do
-                spec = InstanceSpec.new(bootstrap: true)
+                spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true)
                 rendered_config = JSON.parse(template.render(merged_manifest_properties, spec: spec))
+                expect(rendered_config['address']).to eq('cloudfoundry.org')
                 expect(rendered_config['bootstrap']).to eq(true)
               end
             end

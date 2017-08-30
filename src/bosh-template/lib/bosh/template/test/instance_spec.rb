@@ -1,7 +1,7 @@
 module Bosh::Template::Test
   class InstanceSpec
     def initialize(
-      address: 'my.bosh.com',
+        address: 'my.bosh.com',
         az: 'az1',
         bootstrap: false,
         deployment: 'my-deployment',
