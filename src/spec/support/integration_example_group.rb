@@ -252,6 +252,20 @@ module IntegrationExampleGroup
     expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 
+  def expect_logs_not_to_contain(deployment_name, task_id, list_of_strings, options = {})
+    debug_output = bosh_runner.run("task #{task_id} --debug", options.merge(deployment_name: deployment_name))
+    cpi_output = bosh_runner.run("task #{task_id} --cpi", options.merge(deployment_name: deployment_name))
+    events_output = bosh_runner.run("task #{task_id} --event", options.merge(deployment_name: deployment_name))
+    result_output = bosh_runner.run("task #{task_id} --result", options.merge(deployment_name: deployment_name))
+
+    list_of_strings.each do |token|
+      expect(debug_output).to_not include(token)
+      expect(cpi_output).to_not include(token)
+      expect(events_output).to_not include(token)
+      expect(result_output).to_not include(token)
+    end
+  end
+
   def get_legacy_agent_path(legacy_agent_name)
     Bosh::Dev::LegacyAgentManager.generate_executable_full_path(legacy_agent_name)
   end
