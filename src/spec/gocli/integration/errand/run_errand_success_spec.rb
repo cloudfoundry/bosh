@@ -22,7 +22,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       output = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
       task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
-      director.wait_for_first_available_instance(60, deployment_name: deployment_name)
+      expect(director.wait_for_vm('fake-errand-name', '0', 150, deployment_name: deployment_name)).to_not be_nil
 
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
       expect(output['Tables'][0]['Rows']).to include({'type' => 'deployment', 'resource' => 'errand', 'expires_at' => anything, 'task_id' => /^[\d]*$/})
