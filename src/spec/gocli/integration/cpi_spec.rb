@@ -443,6 +443,18 @@ describe 'CPI calls', type: :integration do
         })
       end
     end
+
+    context "redacting sensitive information in logs" do
+      it "redacts certificates" do
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+        output = deploy_from_scratch(manifest_hash: manifest_hash)
+
+        deployment_name = manifest_hash["name"]
+        task_id = Bosh::Spec::OutputParser.new(output).task_id
+
+        expect_logs_not_to_contain(deployment_name, task_id, ["-----BEGIN"])
+      end
+    end
   end
 
   describe 'upload simple cpi config' do
