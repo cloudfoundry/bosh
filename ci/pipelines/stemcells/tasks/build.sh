@@ -55,6 +55,8 @@ done
 
 chown -R ubuntu:ubuntu bosh-src
 
+sudo chmod u+s $(which sudo)
+
 if [ $IAAS = "warden" ]; then
 sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
   pushd bosh-src/go/src/github.com/cloudfoundry/bosh-agent
