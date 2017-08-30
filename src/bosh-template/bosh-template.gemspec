@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.author       = 'Pivotal'
   spec.email        = 'support@cloudfoundry.com'
   spec.homepage     = 'https://github.com/cloudfoundry/bosh'
-  spec.license      = 'Apache 2.0'
+  spec.license      = 'Apache-2.0'
 
   spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
