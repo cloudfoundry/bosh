@@ -205,8 +205,34 @@ module Bosh::Director
           end
 
           context 'errands variables versioning' do
-            let(:errand_properties) { {'some-key' => 'some-value'} }
-            let(:resolved_links) { {'some-link-key' => 'some-link-value'} }
+            let(:errand_properties) { { 'some-key' => 'some-value' } }
+
+            let(:job_1_links) do
+              {
+                'consumed_link_1' => {
+                  'properties' => {
+                    'smurf_1'  => '((smurf_placeholder_1))'
+                  }
+                }
+              }
+            end
+
+            let(:job_2_links) do
+              {
+                'consumed_link_2' => {
+                  'properties' => {
+                    'smurf_2'  => '((smurf_placeholder_2))'
+                  }
+                }
+              }
+            end
+
+            let(:resolved_links) do
+              {
+                'job_1' => job_1_links,
+                'job_2' => job_2_links
+              }
+            end
 
             before do
               allow(errand_instance_group).to receive(:properties).and_return(errand_properties)
@@ -215,7 +241,8 @@ module Bosh::Director
 
             it 'versions the variables in errands' do
               expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name', variable_set_1)
-              expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(resolved_links, variable_set_1)
+              expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
+              expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
 
               job.perform
             end
@@ -491,9 +518,13 @@ Unable to render instance groups for deployment. Errors are:
               EXPECTED
             end
 
+            let(:variable_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+
             before do
-              allow(errand_instance_group).to receive(:properties).and_raise(errand_properties_error)
-              allow(errand_instance_group).to receive(:resolved_links).and_raise(errand_link_error)
+              allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
+              allow(errand_instance_group).to receive(:resolved_links).and_return( {'job_1' => {'link_1' =>{}}} )
+              allow(variable_interpolator).to receive(:interpolate_template_spec_properties).and_raise(errand_properties_error)
+              allow(variable_interpolator).to receive(:interpolate_link_spec_properties).and_raise(errand_link_error)
             end
 
             it 'formats the error messages for service & errand instance groups' do

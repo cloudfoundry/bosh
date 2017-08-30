@@ -243,10 +243,13 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          begin
-            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {}, current_variable_set)
-          rescue Exception => e
-            instance_group_errors.push e
+          instance_group_links = instance_group.resolved_links || {}
+          instance_group_links.each do |job_name, links|
+            begin
+              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+            rescue Exception => e
+              instance_group_errors.push e
+            end
           end
 
           unless instance_group_errors.empty?
