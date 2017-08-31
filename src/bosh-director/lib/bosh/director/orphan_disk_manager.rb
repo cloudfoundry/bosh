@@ -81,10 +81,9 @@ module Bosh::Director
     end
 
     def delete_orphan_disk(orphan_disk)
+      delete_orphan_disk_snapshots(orphan_disk)
+
       begin
-        orphan_disk.orphan_snapshots.each do |orphan_snapshot|
-          delete_orphan_snapshot(orphan_snapshot)
-        end
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
         cloud = CloudFactory.create_with_latest_configs.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
@@ -111,6 +110,20 @@ module Bosh::Director
               error:       error
           })
       event.id
+    end
+    
+    def delete_orphan_disk_snapshots(orphan_disk)
+      failed_orphan_snapshot_count = 0
+      orphan_disk.orphan_snapshots.each do |orphan_snapshot|
+        begin
+          delete_orphan_snapshot(orphan_snapshot)
+        rescue Exception => e
+          failed_orphan_snapshot_count += 1
+          @logger.warn(e.backtrace.join("\n"))
+          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk of #{orphan_disk.disk_cid}. Failed with: #{e.message}")
+        end
+      end
+      raise Bosh::Clouds::CloudError.new("Failed to delete #{failed_orphan_snapshot_count} snapshot(s) of disk #{orphan_disk.disk_cid}") if failed_orphan_snapshot_count > 0
     end
 
     def delete_orphan_snapshot(orphan_snapshot)

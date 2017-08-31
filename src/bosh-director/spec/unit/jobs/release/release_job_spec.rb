@@ -3,13 +3,12 @@ require 'support/release_helper'
 
 module Bosh::Director
   describe ReleaseJob do
-
     describe 'update' do
       subject(:release_job) { described_class.new(job_meta, release_model, release_dir, double(:logger).as_null_object) }
       let(:release_dir) { Dir.mktmpdir }
       after { FileUtils.rm_rf(release_dir) }
       let(:release_model) { Models::Release.make }
-      let(:job_meta) { {'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef'} }
+      let(:job_meta) { {'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef', 'fingerprint' => 'bar'} }
 
       before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
       let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
@@ -19,11 +18,17 @@ module Bosh::Director
       before { FileUtils.mkdir_p(File.dirname(job_tarball_path)) }
 
       before { allow(blobstore).to receive(:create).and_return('fake-blobstore-id') }
-      let(:template) { Models::Template.new() }
 
-      describe 'with existing blobstore_id' do
+      context 'when a template already exists' do
         before do
-          template.blobstore_id = 'original-blobstore-id'
+          Models::Template.make(
+            blobstore_id: 'original-blobstore-id',
+            name: 'foo',
+            version: '1',
+            sha1: 'deadbeef',
+            fingerprint: 'bar',
+            release_id: release_model.id,
+          )
         end
 
         it 'attempts to delete the existing blob from the blobstore' do
@@ -32,7 +37,7 @@ module Bosh::Director
           expect(blobstore).to receive(:delete).with('original-blobstore-id')
           expect(blobstore).to receive(:create).and_return('fake-blobstore-id')
 
-          saved_template = release_job.update(template)
+          saved_template = release_job.update
 
           expect(saved_template.name).to eq('foo')
           expect(saved_template.version).to eq('1')
@@ -47,7 +52,7 @@ module Bosh::Director
           expect(blobstore).to receive(:delete).and_raise Bosh::Blobstore::BlobstoreError
           expect(blobstore).to receive(:create)
 
-          saved_template = release_job.update(template)
+          saved_template = release_job.update
 
           expect(saved_template.blobstore_id).to eq('fake-blobstore-id')
         end
@@ -60,7 +65,7 @@ module Bosh::Director
           expect(blobstore).to_not receive(:delete)
           expect(blobstore).to receive(:create)
 
-          saved_template = release_job.update(template)
+          saved_template = release_job.update
 
           expect(saved_template.blobstore_id).to eq('fake-blobstore-id')
         end
@@ -77,7 +82,7 @@ module Bosh::Director
         end
 
         expect(Models::Template.count).to eq(0)
-        release_job.update(template)
+        release_job.update
 
         template = Models::Template.first
         expect(template.name).to eq('foo')
@@ -86,11 +91,11 @@ module Bosh::Director
         expect(template.sha1).to eq('deadbeef')
       end
 
-      it 'should fail if cannot extract job archive' do
+      it 'should fail when it cannot extract job archive' do
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
         expect(Bosh::Exec).to receive(:sh).and_return(result)
 
-        expect { release_job.update(template) }.to raise_error(JobInvalidArchive)
+        expect { release_job.update }.to raise_error(JobInvalidArchive)
       end
 
       it 'whines on missing manifest' do
@@ -99,7 +104,7 @@ module Bosh::Director
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_manifest) }
 
-        expect { release_job.update(template) }.to raise_error(JobMissingManifest)
+        expect { release_job.update }.to raise_error(JobMissingManifest)
       end
 
       it 'whines on missing monit file' do
@@ -107,7 +112,7 @@ module Bosh::Director
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, skip_monit: true)
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_monit) }
 
-        expect { release_job.update(template) }.to raise_error(JobMissingMonit)
+        expect { release_job.update }.to raise_error(JobMissingMonit)
       end
 
       it 'does not whine when it has a foo.monit file' do
@@ -116,10 +121,10 @@ module Bosh::Director
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_monit) }
 
-        expect { release_job.update(template) }.to_not raise_error
+        expect { release_job.update }.to_not raise_error
       end
 
-      it 'saves the templates hash on the template' do
+      it 'saves the templates hash in the template spec' do
         job_with_interesting_templates =
           create_job('foo', 'monit', {
             'template source path' => {'destination' => 'rendered template path', 'contents' => 'whatever'}
@@ -127,9 +132,9 @@ module Bosh::Director
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_with_interesting_templates) }
 
-        saved_template = release_job.update(template)
+        saved_template = release_job.update
 
-        expect(saved_template.templates).to eq({'template source path' => 'rendered template path'})
+        expect(saved_template.spec['templates']).to eq({'template source path' => 'rendered template path'})
       end
 
       it 'whines on missing template' do
@@ -138,7 +143,7 @@ module Bosh::Director
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_template) }
 
-        expect { release_job.update(template) }.to raise_error(JobMissingTemplateFile)
+        expect { release_job.update }.to raise_error(JobMissingTemplateFile)
       end
 
       it 'does not whine when no packages are specified' do
@@ -148,7 +153,7 @@ module Bosh::Director
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_packages) }
 
         job = nil
-        expect { job = release_job.update(template) }.to_not raise_error
+        expect { job = release_job.update }.to_not raise_error
         expect(job.package_names).to eq([])
       end
 
@@ -158,7 +163,7 @@ module Bosh::Director
             manifest: { 'name' => 'foo', 'templates' => {}, 'packages' => 'my-awesome-package' })
         File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_packages) }
 
-        expect { release_job.update(template) }.to raise_error(JobInvalidPackageSpec)
+        expect { release_job.update }.to raise_error(JobInvalidPackageSpec)
       end
 
       context 'when job spec file includes provides' do
@@ -166,28 +171,28 @@ module Bosh::Director
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => 'Invalid'})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies that it is an array of hashes' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies hash contains name and type' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies names are unique' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db', 'type' => 'first'}, {'name' => 'db', 'type' => 'second'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(
+          expect { release_job.update }.to raise_error(
             JobDuplicateLinkName,
             "Job 'foo' 'provides' specifies links with duplicate name 'db'"
           )
@@ -198,7 +203,7 @@ module Bosh::Director
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
-          release_job.update(template)
+          release_job.update
 
           template = Models::Template.first
           expect(template.provides).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}])
@@ -212,28 +217,28 @@ module Bosh::Director
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => 'Invalid'})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies that it is an array of string' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies hash contains name and type' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => [{'name' => 'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(JobInvalidLinkSpec)
+          expect { release_job.update }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies names are unique' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => [{'name' => 'db', 'type' => 'one'}, {'name' => 'db', 'type' => 'two'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
-          expect { release_job.update(template) }.to raise_error(
+          expect { release_job.update }.to raise_error(
               JobDuplicateLinkName,
               "Job 'foo' 'consumes' specifies links with duplicate name 'db'"
             )
@@ -244,7 +249,7 @@ module Bosh::Director
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
-          release_job.update(template)
+          release_job.update
 
           template = Models::Template.first
           expect(template.consumes).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'} ])

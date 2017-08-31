@@ -591,7 +591,7 @@ module Bosh::Director
         release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
         logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " +
             'from provided bits')
-        release_job.update(Models::Template.new())
+        release_job.update
       end
 
       # @param [Array<Array>] jobs Existing jobs metadata
@@ -606,7 +606,7 @@ module Bosh::Director
             if @fix
               logger.info("Fixing existing job '#{job_desc}'")
               release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
-              release_job.update(template)
+              release_job.update
             else
               logger.info("Using existing job '#{job_desc}'")
             end

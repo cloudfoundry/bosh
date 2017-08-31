@@ -1,7 +1,8 @@
 require 'rspec'
 require 'yaml'
-require 'bosh/template/evaluation_context'
 require 'json'
+require 'bosh/template/evaluation_context'
+require_relative './template_example_group'
 
 describe 'nats.cfg.erb' do
   context 'allow_legacy_agents is true' do

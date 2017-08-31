@@ -618,8 +618,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'deployment_name' => 'my_dep_name_1',
         'networks' => ['default_1'],
         'properties' => {
-          'listen_port' => 'Kittens'
-         },
+          'listen_port' => 'Kittens',
+          'disorder_property' => 'foo'
+        },
         'instances' => [{
                           'name'=> 'provider_1',
                           'index'=> 0,
@@ -637,7 +638,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'deployment_name' => 'my_dep_name_2',
         'networks'=> ['default_2'],
         'properties'=> {
-          'listen_port'=> 'Dogs'
+          'listen_port'=> 'Dogs',
+          'disorder_property' => 'foo'
         },
         'instances'=> [{
                          'name'=> 'provider_2',
@@ -656,37 +658,38 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'some-job-1' => {
           'my_link_name_1' => {
             'deployment_name' => 'my_dep_name_1',
+            'instances'=> [{
+              'name' => 'provider_1',
+              'index' => 0,
+              'bootstrap' => true,
+              'id' => 'vroom',
+              'az' => 'z1',
+              'address' => '10.244.0.4'
+            }],
             'networks'=> ['default_1'],
             'properties'=> {
-              'listen_port'=> 'Kittens'
+              'disorder_property' => 'foo',
+              'listen_port'=> 'Kittens',
             },
-            'instances'=> [{
-                             'name'=> 'provider_1',
-                             'index'=> 0,
-                             'bootstrap'=> true,
-                             'id'=> 'vroom',
-                             'az'=> 'z1',
-                             'address'=> '10.244.0.4'
-                           }
-            ]
+
           }
         },
         'some-job-2' => {
           'my_link_name_2' => {
             'deployment_name' => 'my_dep_name_2',
+            'instances' => [{
+              'name' => 'provider_2',
+              'index' => 0,
+              'bootstrap' => false,
+              'id' => 'hello',
+              'az' => 'z2',
+              'address' => '10.244.0.5'
+            }],
             'networks'=> ['default_2'],
             'properties'=> {
-              'listen_port'=> 'Dogs'
+              'disorder_property' => 'foo',
+              'listen_port'=> 'Dogs',
             },
-            'instances'=> [{
-                             'name'=> 'provider_2',
-                             'index'=> 0,
-                             'bootstrap'=> false,
-                             'id'=> 'hello',
-                             'az'=> 'z2',
-                             'address'=> '10.244.0.5'
-                           }
-            ]
           }
         }
       }
@@ -696,7 +699,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       subject.add_resolved_link('some-job-1','my_link_name_1', link_spec_1)
       subject.add_resolved_link('some-job-2','my_link_name_2', link_spec_2)
 
-      expect(subject.resolved_links).to eq(expected_resolved_links)
+      expect(subject.resolved_links.to_json).to eq(expected_resolved_links.to_json)
     end
 
   end
@@ -789,7 +792,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(instance_plan_4).to receive(:instance).and_return(instance_4)
 
       allow(instance_group).to receive(:obsolete_instance_plans).and_return([instance_plan_3])
-      allow(instance_group).to receive(:ignored_instance_plans).and_return([instance_plan_4])
     end
 
     it 'sets the instance object desired_variable_set to the new variable set for all unignored_instance_plans' do

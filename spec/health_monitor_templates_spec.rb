@@ -2,7 +2,7 @@ require 'rspec'
 require 'yaml'
 require 'bosh/template/evaluation_context'
 require 'json'
-require 'template_example_group'
+require_relative './template_example_group'
 
 describe 'health_monitor.yml.erb' do
   let(:deployment_manifest_fragment) do

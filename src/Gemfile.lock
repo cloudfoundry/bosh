@@ -82,7 +82,7 @@ PATH
 PATH
   remote: bosh-template
   specs:
-    bosh-template (0.0.0)
+    bosh-template (0.0.1)
       semi_semantic (~> 1.2.0)
 
 PATH

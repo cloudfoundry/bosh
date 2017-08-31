@@ -123,17 +123,21 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     release_id = version.release_id
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template',
-      consumes: consumes_links,
+    template_model = Bosh::Director::Models::Template.make(
+      name: 'api-server-template',
+      spec: {consumes: consumes_links},
       release_id: 1)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template',
-      provides: provided_links,
-      properties: {mysql: {description: 'some description'}},
+    template_model = Bosh::Director::Models::Template.make(
+      name: 'mysql-template',
+      spec: {
+        provides: provided_links,
+        properties: {mysql: {description: 'some description'}},
+      },
       release_id: 1)
     version.add_template(template_model)
 

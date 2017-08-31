@@ -8,6 +8,7 @@ module Support
 
     def initialize(uuid_provider)
       @permission_authorizer = Bosh::Director::PermissionAuthorizer.new(uuid_provider)
+      @uuid_provider = uuid_provider
     end
 
     def get_user(request_env, _)
@@ -35,6 +36,7 @@ module Support
         'admin' => ['bosh.admin'],
         'client-username' => ['bosh.admin'],
         'reader' => ['bosh.read'],
+        'director-reader' => ["bosh.#{@uuid_provider.uuid}.read"],
         'dev-team-member' => ['bosh.teams.dev.admin'],
         'dev-team-read-member' => ['bosh.teams.dev.read']
       }

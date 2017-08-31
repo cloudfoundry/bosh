@@ -1,0 +1,27 @@
+---
+name: web-server
+
+templates:
+  config.erb: config/config
+  config-with-nested.erb: config/config-with-nested
+
+packages: []
+
+properties:
+
+  port:
+    description: 'port the server will listen on'
+    default: 8080
+
+  cert:
+    description: 'the cert'
+
+  nested.properties.works.too:
+    description: 'nested property'
+
+consumes:
+  - name:     primary_db
+    type:     db
+  - name:     secondary_db
+    type:     db
+    optional: true

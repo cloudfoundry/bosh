@@ -279,6 +279,62 @@ module Bosh::Director
             expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
           end
         end
+
+        context 'when CPI is unable to delete a snapshot' do
+          context 'and multiple snapshot are available' do
+            before do
+              allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1a.snapshot_cid).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
+              allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid).ordered
+              allow(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
+            end
+
+            it 'deletes all other snapshots and raises' do
+              expect {
+                subject.delete_orphan_disk(orphan_disk_1)
+              }.to raise_error Bosh::Clouds::CloudError, 'Failed to delete 1 snapshot(s) of disk disk-cid-1'
+
+              expect(cloud).to have_received(:delete_snapshot).with(orphan_disk_snapshot_1a.snapshot_cid)
+              expect(cloud).to have_received(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid)
+              expect(cloud).to_not have_received(:delete_disk).with(orphan_disk_cid_1)
+            end
+
+            it 'logs error' do
+              allow(logger).to receive(:warn)
+              allow(logger).to receive(:info)
+
+              expect {
+                subject.delete_orphan_disk(orphan_disk_1)
+              }.to raise_error Bosh::Clouds::CloudError
+
+              expect(logger).to have_received(:info).with('Failed to deleted snapshot snap-cid-a disk of disk-cid-1. Failed with: Bad stuff happened!')
+              expect(logger).to have_received(:warn)
+            end
+
+            context 'when snapshot disk is not found' do
+              it 'logs the error and continues to delete the remaining disks' do
+                allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1a.snapshot_cid).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+                allow(logger).to receive(:debug)
+
+                subject.delete_orphan_disk(orphan_disk_1)
+
+                expect(logger).to have_received(:debug).with('Disk not found in IaaS: snap-cid-a')
+                expect(cloud).to have_received(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid)
+                expect(cloud).to have_received(:delete_disk).with(orphan_disk_cid_1)
+              end
+            end
+          end
+
+          context 'when a different exception than CloudError is thrown' do
+            it 'catches it and raises CloudError' do
+              allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1a.snapshot_cid).and_raise(Bosh::Clouds::ExternalCpi::UnknownError.new('Bad stuff happened!'))
+              allow(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
+
+              expect {
+                subject.delete_orphan_disk(orphan_disk_1)
+              }.to raise_error Bosh::Clouds::CloudError, 'Failed to delete 1 snapshot(s) of disk disk-cid-1'
+            end
+          end
+        end
       end
     end
   end
