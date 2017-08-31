@@ -49,7 +49,7 @@ var _ = Describe("BoshDns", func() {
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 6*time.Minute).Should(gexec.Exit(0))
 		})
 
 		AfterEach(stopInnerBosh)
