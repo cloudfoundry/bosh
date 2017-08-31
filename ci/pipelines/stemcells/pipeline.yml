@@ -233,6 +233,8 @@ jobs:
             - test-stemcells
             # - bats-centos
         - get: bosh-src
+      - task: assert-version-aligned
+        file: bosh-src/ci/tasks/assert-version-aligns.yml
       - task: copy-artifacts
         file: bosh-src/ci/pipelines/stemcells/tasks/publish.yml
         params:
