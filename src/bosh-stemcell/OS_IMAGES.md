@@ -8,6 +8,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `3RjPMdjnyOyr_DW83T66hvf0zUZH0XwG`
+  - Bump os-image to get logrotate 3.8.7.1ubuntu12
+  - built from 3363.x (5ce9a5f23bd75db4599c1eb833cebda476114d79)
+
 * `WwgxHeQcbxfu_iaGwvpVAIJ_LnBtyxGY`
   - USN-3392-2: Linux kernel (Xenial HWE) regression
   - built from 3363.x (cd1977bf5be749915e7a4f333594f22d7b758494)
