@@ -6,7 +6,7 @@ describe 'deploy', type: :integration do
     with_reset_sandbox_before_each
 
     context 'when there are template errors' do
-      it 'prints all template evaluation errors and does not register an event' do
+      it 'prints all template evaluation errors' do
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         manifest_hash['jobs'] = [
           {
@@ -30,8 +30,6 @@ Error 100: Unable to render instance groups for deployment. Errors are:
       - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
-
-        expect(bosh_runner.run('events')).not_to include 'create'
       end
     end
 
