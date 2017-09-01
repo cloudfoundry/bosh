@@ -179,7 +179,6 @@ module Bosh
         fake_app
 
         allow(Config).to receive(:cloud).and_return(cloud)
-        allow(Config).to receive(:blobstore_config)
         Config.name = 'fake-director-name'
         Config.max_vm_create_tries = 2
         Config.flush_arp = true
@@ -740,37 +739,6 @@ module Bosh
             expect(env_param).to eq(resolved_env_hash)
           end.and_return('new-vm-cid')
 
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        end
-      end
-
-      context 'blobstore information is provided' do
-        let(:blobstore_details) {
-          {
-            "provider" =>"local",
-            "options" =>{
-              "blobstore_path" => "bosh_test_blobstore"
-            }
-          }
-        }
-        before do
-          allow(Config).to receive(:blobstore_config).and_return(blobstore_details)
-        end
-
-        it 'should be included under ENV variable in an array' do
-          expect(cloud).to receive(:create_vm).with(
-            kind_of(String), 'stemcell-id',
-            kind_of(Hash), network_settings, ['fake-disk-cid'],
-            {
-              'bosh' => {
-                'blobstores' => [
-                  blobstore_details,
-                ],
-                'group' => kind_of(String),
-                'groups' => kind_of(Array),
-              }
-            }
-          ).and_return('new-vm-cid')
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
       end

@@ -25,7 +25,6 @@ describe 'vm_types and stemcells', type: :integration do
   let(:expected_env_hash) do
     hash_copy = Marshal.load(Marshal.dump(env_hash))
     hash_copy['bosh']['mbus'] = Hash
-    hash_copy['bosh']['blobstores'] = Array
     hash_copy
   end
 

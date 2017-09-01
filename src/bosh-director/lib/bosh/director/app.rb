@@ -24,7 +24,7 @@ module Bosh::Director
       @@instance = self
       config.configure_evil_config_singleton!
 
-      @blobstores = Blobstores.new
+      @blobstores = Blobstores.new(config)
     end
   end
 end

@@ -28,15 +28,6 @@ describe 'CPI calls', type: :integration do
       }
     }
 
-    let(:expected_blobstore_config) {
-      {
-        "provider" =>"local",
-        "options" =>{
-          "blobstore_path" => current_sandbox.blobstore_storage_dir
-        }
-      }
-    }
-
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
       deploy_from_scratch(manifest_hash: manifest_hash)
@@ -72,7 +63,6 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
-            'blobstores' => [expected_blobstore_config],
             'group' => String,
             'groups' => Array
           }
@@ -139,7 +129,6 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
-            'blobstores' => [expected_blobstore_config],
             'group' => String,
             'groups' => Array,
           }
@@ -201,7 +190,6 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' =>{
             'mbus' => expected_mbus,
-            'blobstores' => [expected_blobstore_config],
             'password' => 'foobar',
             'group' => 'testdirector-simple-foobar',
             'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -278,7 +266,6 @@ describe 'CPI calls', type: :integration do
             'bosh' => {
               'password' => 'foobar',
               'mbus' => expected_mbus,
-              'blobstores' => [expected_blobstore_config],
               'group' => expected_group,
               'groups' => expected_groups,
             }
@@ -392,7 +379,6 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' =>{
               'mbus' => expected_mbus,
-              'blobstores' => [expected_blobstore_config],
               'password' => 'foobar',
               'group' => expected_group,
               'groups' => expected_groups

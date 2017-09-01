@@ -146,11 +146,6 @@ module Bosh::Director
       vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
       options = {}
 
-      if Config.blobstore_config
-        env['bosh'] ||= {}
-        env['bosh']['blobstores'] ||= [ Config.blobstore_config ]
-      end
-
       if Config.nats_uri
         env['bosh'] ||= {}
         env['bosh']['mbus'] ||= {}
