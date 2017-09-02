@@ -97,10 +97,10 @@ describe 'deploy job with addons', type: :integration do
       expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
     end
 
-    context 'when team is specified' do
+    context 'when a team is specified' do
       with_reset_sandbox_before_each(user_authentication: 'uaa')
 
-      it 'allows addons to be added for specific team' do
+      it 'allows addons to be added for the specified team' do
         dev_team_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
         production_team_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
         director_client_env = { client: 'director-access', client_secret: 'secret' }
