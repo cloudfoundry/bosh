@@ -22,12 +22,12 @@ module Bosh::Dev::Sandbox
 
     def create_db
       @logger.info("Creating mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'create database `#{db_name}`;' > /dev/null 2>&1})
+      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'create database `#{db_name}`;' > /dev/null 2>&1}, redact: [@password])
     end
 
     def drop_db
       @logger.info("Dropping mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'drop database `#{db_name}`;' > /dev/null 2>&1})
+      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'drop database `#{db_name}`;' > /dev/null 2>&1}, redact: [@password])
     end
 
     def load_db_initial_state(initial_state_assets_dir)
@@ -37,7 +37,7 @@ module Bosh::Dev::Sandbox
 
     def load_db(dump_file_path)
       @logger.info("Loading dump '#{dump_file_path}' into mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
+      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} #{db_name} < #{dump_file_path} > /dev/null 2>&1}, redact: [@password])
     end
 
     def current_tasks
@@ -66,7 +66,7 @@ module Bosh::Dev::Sandbox
       table_names = `#{table_name_cmd}`.lines.to_a[1..-1].map(&:strip)
       table_names.reject!{|name| name == "schema_migrations" }
       truncates = table_names.map{|name| 'truncate table `' + name + '`' }.join(';')
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'SET FOREIGN_KEY_CHECKS=0; #{truncates}; SET FOREIGN_KEY_CHECKS=1;' #{db_name} > /dev/null 2>&1})
+      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'SET FOREIGN_KEY_CHECKS=0; #{truncates}; SET FOREIGN_KEY_CHECKS=1;' #{db_name} > /dev/null 2>&1}, redact: [@password])
     end
   end
 end

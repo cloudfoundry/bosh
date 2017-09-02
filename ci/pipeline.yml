@@ -9,7 +9,6 @@ groups:
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
-      - integration-2.3-postgres
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -21,6 +20,7 @@ groups:
       - bats-ubuntu
       - brats-ubuntu
       - upgrade-tests
+      - blobstore-performance
 
   - name: mysql
     jobs:
@@ -32,7 +32,6 @@ groups:
     jobs:
       - unit-2.3-postgres
       - unit-2.3-rds
-      - integration-2.3-postgres
 
   - name: finalize
     jobs:
@@ -119,8 +118,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.6
           privileged: true
@@ -137,8 +136,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-mysql-5.7
           privileged: true
@@ -155,8 +154,8 @@ jobs:
             params:
               RUBY_VERSION: 2.3.1
               DB: mysql
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
   - name: unit-2.3-postgres
     public: true
@@ -181,8 +180,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.3
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.4
           privileged: true
@@ -200,8 +199,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.4
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.5
           privileged: true
@@ -219,8 +218,8 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.5
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
 
         - task: test-postgres-9.6
           privileged: true
@@ -238,14 +237,14 @@ jobs:
               RUBY_VERSION: 2.3.1
               DB: postgresql
               DB_VERSION: 9.6
-            on_failure:
-              <<: *slack-alert
+          on_failure:
+            <<: *slack-alert
+
   - name: unit-2.3-rds
     public: true
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: rds-trigger, trigger: true }
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -257,6 +256,10 @@ jobs:
             DB_HOST: {{mysql-rds-host}}
             DB_USER: {{mysql-rds-user}}
             DB_PASSWORD: {{mysql-rds-password}}
+            AWS_ACCESS_KEY_ID: {{mysql-rds-aws-access-key-id}}
+            AWS_SECRET_ACCESS_KEY: {{mysql-rds-aws-secret-access-key}}
+            AWS_REGION: {{mysql-rds-aws-region}}
+            RDS_MYSQL_DB_IDENTIFIER: {{mysql-rds-db-identifier}}
         - task: test-postgresql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
@@ -268,6 +271,7 @@ jobs:
             DB_PASSWORD: {{postgresql-rds-password}}
           on_failure:
             <<: *slack-alert
+
   - name: blobstore-client-integration
     public: true
     serial: true
@@ -286,6 +290,24 @@ jobs:
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
+      - task: test-gcs
+        file: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.yml
+        params:
+          google_project: {{blobstore_client_google_project}}
+          google_json_key_data: {{blobstore_client_google_json_key_data}}
+
+  - name: blobstore-performance
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-src, trigger: true }
+      - { get: davcli, trigger: true }
+      - task: test
+        privileged: true
+        file: bosh-src/ci/tasks/test-blobstore-load.yml
+        on_failure:
+          <<: *slack-alert
 
   - name: integration-postgres-gocli-sha2
     public: true
@@ -303,7 +325,7 @@ jobs:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-1"]
+          tags: ["bosh-integration-7"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
@@ -314,7 +336,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-2"]
+          tags: ["bosh-integration-8"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
@@ -325,7 +347,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-3"]
+          tags: ["bosh-integration-9"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.1
@@ -382,47 +404,6 @@ jobs:
         on_failure:
           <<: *slack-alert
 
-  - name: integration-2.3-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - { get: bosh-src, trigger: true }
-      - { get: bosh-agent, trigger: true }
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-7"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-8"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration.yml
-          tags: ["bosh-integration-9"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.3.1
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
-
-        on_failure:
-          <<: *slack-alert
-
   - name: upgrade-tests
     public: true
     serial: true
@@ -455,21 +436,23 @@ jobs:
   - name: load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
+    - { get: warden-ubuntu-trusty }
+    - { get: bosh-candidate-release-tarballs }
     - { get: bosh-cli }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
-        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         <<: *slack-alert
@@ -477,21 +460,23 @@ jobs:
   - name: legacy-load-tests-postgres
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: postgresql
-        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         <<: *slack-alert
@@ -499,21 +484,23 @@ jobs:
   - name: load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
-        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         <<: *slack-alert
@@ -521,22 +508,24 @@ jobs:
   - name: legacy-load-tests-mysql
     public: true
     serial: true
+    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
+    - { get: bosh-candidate-release-tarballs }
+    - { get: warden-ubuntu-trusty }
 
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-load-tests"]
+      input_mapping:
+        bosh-candidate-stemcell: warden-ubuntu-trusty
+        bosh-candidate-release: bosh-candidate-release-tarballs
       params:
-        BOSH_SRC_PATH: bosh-src/src
         DB: mysql
-        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         <<: *slack-alert
@@ -571,15 +560,11 @@ jobs:
       - unit-2.3-mysql
       - unit-2.3-postgres
       - integration-mysql-gocli-sha1
-      - integration-2.3-postgres
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
       - upgrade-tests
+      - blobstore-performance
     - get: bosh-cli
     - get: candidate-version
       params:
@@ -675,6 +660,8 @@ jobs:
         - get: bosh-src
           passed:
           - candidate-release
+        - get: dns-release
+        - get: candidate-warden-ubuntu-stemcell
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -682,6 +669,7 @@ jobs:
             - candidate-release
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
+        tags: ["worker-brats"]
         privileged: true
         input_mapping:
           bosh-dev-release: bosh-release
@@ -742,6 +730,13 @@ resources:
       secret_access_key: {{candidate_release_secret_access_key}}
       versioned_file: "bosh-dev-release.tgz"
 
+  - name: davcli
+    type: s3
+    source:
+      regexp: davcli-(.*)-linux-amd64
+      bucket: davcli
+      region_name: us-east-1
+
   - name: bosh-fuzz-tests
     type: git
     source:
@@ -778,6 +773,12 @@ resources:
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
+  - name: dns-release
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/dns-release
+      branch: master
+
   #
   # BATS
   #
@@ -807,6 +808,17 @@ resources:
     source:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
 
+  - name: candidate-warden-ubuntu-stemcell
+    type: s3
+    source:
+      bucket: bosh-core-stemcells-candidate
+      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
+
+  - name: warden-ubuntu-trusty
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
     source:
@@ -822,7 +834,3 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
-
-  - name: rds-trigger
-    type: time
-    source: {interval: 1h}

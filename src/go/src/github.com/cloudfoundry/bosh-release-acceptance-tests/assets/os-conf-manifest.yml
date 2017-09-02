@@ -1,0 +1,32 @@
+---
+name: os-conf-deployment
+
+releases:
+- name: os-conf
+  version: latest
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+update:
+  canaries: 10
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
+
+instance_groups:
+- name: test-brats
+  instances: 1
+  azs: [z1]
+  jobs:
+  - name: user_add
+    release: os-conf
+    properties:
+      users: []
+  vm_type: default
+  persistent_disk_type: default
+  stemcell: default
+  networks:
+  - name: default

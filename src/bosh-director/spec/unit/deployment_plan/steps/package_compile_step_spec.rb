@@ -8,8 +8,9 @@ module Bosh::Director
     let(:cloud) { Config.cloud }
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:release_version_model) { Models::ReleaseVersion.make(version: 'new') }
     let(:reuse_compilation_vms) { false }
@@ -84,9 +85,6 @@ module Bosh::Director
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
-
-      @blobstore = double(:blobstore)
-      allow(Config).to receive(:blobstore).and_return(@blobstore)
 
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
       allow(Config).to receive(:current_job).and_return(@director_job)
@@ -268,7 +266,7 @@ module Bosh::Director
         expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling)).exactly(10).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
           compile_package_stub(args)
         end
@@ -332,10 +330,13 @@ module Bosh::Director
             expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
           end
 
-          expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times
+          expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times do |instance_plan|
+            # metadata_updater is called for every package compilation, and it expects there to be an active_vm
+            instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+          end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
           expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
             compile_package_stub(args)
           end
@@ -436,7 +437,7 @@ module Bosh::Director
           'networks' => net
         }
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
         allow(agent).to receive(:wait_until_ready)
         allow(agent).to receive(:update_settings)
         allow(agent).to receive(:apply).with(initial_state)
@@ -509,7 +510,7 @@ module Bosh::Director
           with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready).ordered
         expect(agent).to receive(:update_settings).ordered
@@ -558,16 +559,19 @@ module Bosh::Director
       let(:reuse_compilation_vms) { true }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
+      let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
       let(:disk_manager) { DiskManager.new(logger) }
 
       it 'reuses compilation VMs' do
         prepare_samples
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan|
+          # metadata_updater is called for every package compilation, and it expects there to be an active_vm
+          instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+        end
 
         agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
@@ -625,7 +629,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
@@ -682,7 +686,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient')
           expect(agent).to receive(:wait_until_ready).and_raise(exception)
-          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+          expect(AgentClient).to receive(:with_agent_id).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
 
@@ -833,8 +837,7 @@ module Bosh::Director
           Bosh::Director::Config.trusted_certs = DIRECTOR_TEST_CERTS
 
           allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
-          allow(vm_creator).to receive(:apply_state)
-          allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
+          allow(AgentClient).to receive_messages(with_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
           allow(client).to receive(:wait_until_ready)

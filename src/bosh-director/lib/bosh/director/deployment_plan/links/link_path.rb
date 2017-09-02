@@ -3,11 +3,11 @@ module Bosh::Director
     class LinkPath
       attr_reader :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
-      def initialize(deployment_plan_name, instance_groups, job_name, template_name)
+      def initialize(deployment_plan_name, instance_groups, instance_group_name, job_name)
         @deployment_plan_name = deployment_plan_name
         @instance_groups = instance_groups
-        @consumes_job_name = job_name
-        @consumes_template_name = template_name
+        @consumes_job_name = instance_group_name
+        @consumes_template_name = job_name
         @deployment = nil
         @job = nil
         @template = nil
@@ -23,18 +23,22 @@ module Bosh::Director
         # to the link paths, even if the link provider exist, since the user intent
         # was explicitly set to not consume any link
 
-        if link_info["skip_link"] && link_info["skip_link"] == true
+        if link_info['skip_link'] && link_info['skip_link'] == true
           @skip = true
           return
         end
 
-        if link_info.has_key?("from")
+
+        if link_info.has_key?('from')
           link_path = fulfill_explicit_link(link_info)
-        elsif link_info.has_key?("instances") || link_info.has_key?('properties')
+        elsif ( link_info.has_key?('instances') ||
+                link_info.has_key?('properties') ||
+                link_info.has_key?('address') )
           @manual_spec = {}
           @manual_spec['deployment_name'] = @deployment_plan_name
           @manual_spec['instances'] = link_info['instances']
           @manual_spec['properties'] = link_info['properties']
+          @manual_spec['address'] = link_info['address']
           return
         else
           link_path = fulfill_implicit_link(link_info)
@@ -58,17 +62,17 @@ module Bosh::Director
       private
 
       def fulfill_implicit_link(link_info)
-        link_type = link_info["type"]
-        link_network = link_info["network"]
+        link_type = link_info['type']
+        link_network = link_info['network']
         found_link_paths = []
 
         @instance_groups.each do |provides_instance_group|
           if instance_group_has_link_network(provides_instance_group, link_network)
             provides_instance_group.jobs.each do |provides_job|
               if provides_job.link_infos.has_key?(provides_instance_group.name) && provides_job.link_infos[provides_instance_group.name].has_key?('provides')
-                matching_links = provides_job.link_infos[provides_instance_group.name]["provides"].select { |_,v| v["type"] == link_type }
+                matching_links = provides_job.link_infos[provides_instance_group.name]['provides'].select { |_,v| v['type'] == link_type }
                 matching_links.each do |_, matching_link_values|
-                  link_name = matching_link_values.has_key?("as") ? matching_link_values['as'] : matching_link_values['name']
+                  link_name = matching_link_values.has_key?('as') ? matching_link_values['as'] : matching_link_values['name']
                   found_link_paths.push({:deployment => @deployment_plan_name, :job => provides_instance_group.name, :template => provides_job.name, :name => link_name})
                 end
               end
@@ -79,14 +83,14 @@ module Bosh::Director
         if found_link_paths.size == 1
           return found_link_paths[0]
         elsif found_link_paths.size > 1
-          all_link_paths = ""
+          all_link_paths = ''
           found_link_paths.each do |link_path|
             all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
           end
           raise "Multiple instance groups provide links of type '#{link_type}'. Cannot decide which one to use for instance group '#{@consumes_job_name}'.#{all_link_paths}"
         else
           # Only raise an exception if no linkpath was found, and the link is not optional
-          if !link_info["optional"]
+          if !link_info['optional']
              raise "Can't find link with type '#{link_type}' for job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}"
           end
         end
@@ -117,7 +121,7 @@ module Bosh::Director
           if instance_group_has_link_network(instance_group, link_network)
             instance_group.jobs.each do |job|
               job.provides_links_for_instance_group_name(instance_group.name).each do |_, source|
-                link_name = source.has_key?("as") ? source['as'] : source['name']
+                link_name = source.has_key?('as') ? source['as'] : source['name']
                 if link_name == name
                   found_link_paths.push({:deployment => @deployment_plan_name, :job => instance_group.name, :template => job.name, :name => source['name'], :as => source['as']})
                 end
@@ -150,7 +154,7 @@ module Bosh::Director
             disk: found_link_paths[0][:disk]
           }
         elsif found_link_paths.size > 1
-          all_link_paths = ""
+          all_link_paths = ''
           found_link_paths.each do |link_path|
             all_link_paths = all_link_paths + "\n   #{link_path[:name]}#{" aliased as '#{link_path[:as]}'" unless link_path[:as].nil?} (job: #{link_path[:template]}, instance group: #{link_path[:job]})"
           end
@@ -194,7 +198,7 @@ module Bosh::Director
         if found_link_paths.size == 1
           return found_link_paths[0]
         elsif found_link_paths.size > 1
-          all_link_paths = ""
+          all_link_paths = ''
           found_link_paths.each do |link_path|
             all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
           end

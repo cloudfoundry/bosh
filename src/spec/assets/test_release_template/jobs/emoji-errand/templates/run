@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo -e "errand is \xF0\x9F\x98\x80"

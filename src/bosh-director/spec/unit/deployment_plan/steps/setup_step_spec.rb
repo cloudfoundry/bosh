@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/director/dns/local_dns_encoder_manager'
 
 module Bosh::Director
   module DeploymentPlan::Steps
@@ -25,7 +26,7 @@ module Bosh::Director
           ]
         end
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-        let(:tags) { {'some' => 'tags'} }
+        let(:tags) { { 'some' => 'tags' } }
         let(:local_dns_repo) { instance_double(LocalDnsRepo) }
         let(:dns_publisher) { instance_double(BlobstoreDnsPublisher) }
 
@@ -34,17 +35,28 @@ module Bosh::Director
             instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
             instance_plans_with_missing_vms: instance_plans_with_missing_vms,
             ip_provider: ip_provider,
+            availability_zones: [
+              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
+              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone2'),
+            ],
             tags: tags)
         end
 
-        context 'when the director database contains no instances' do
-          before do
-            allow(vm_creator).to receive(:create_for_instance_plans)
-            allow(base_job).to receive(:task_checkpoint)
-            allow(local_dns_repo).to receive(:update_for_instance)
-            allow(dns_publisher).to receive(:publish_and_broadcast)
-          end
+        before do
+          allow(vm_creator).to receive(:create_for_instance_plans)
+          allow(base_job).to receive(:task_checkpoint)
+          allow(local_dns_repo).to receive(:update_for_instance)
+          allow(dns_publisher).to receive(:publish_and_broadcast)
+        end
 
+        context 'when deployment will be using named AZs' do
+          it 'registers the persistent IDs for those AZ names' do
+            expect(Bosh::Director::LocalDnsEncoderManager).to receive(:persist_az_names).with(['zone1', 'zone2'])
+            subject.perform
+          end
+        end
+
+        context 'when the director database contains no instances' do
           it 'creates vms for instance groups missing vms and checkpoints task' do
             expect(vm_creator).to receive(:create_for_instance_plans).with(
               instance_plans_with_missing_vms + instance_plans_with_hot_swap_and_needs_shutdown,

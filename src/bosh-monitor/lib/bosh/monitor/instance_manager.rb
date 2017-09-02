@@ -27,6 +27,11 @@ module Bosh::Monitor
       deployment ? deployment.agent_id_to_agent : {}
     end
 
+    def get_deleted_agents_for_deployment(deployment_name)
+      deployment = @deployment_name_to_deployments[deployment_name]
+      deployment ? deployment.instance_id_to_agent: {}
+    end
+
     def setup_events
       @processor.enable_pruning(Bhm.intervals.prune_events)
       Bhm.plugins.each do |plugin|
@@ -51,7 +56,7 @@ module Bosh::Monitor
     def agents_count
       agents = Set.new(@rogue_agents.keys)
       agents.merge(all_managed_agent_ids)
-      agents.size
+      agents.size + all_managed_deleted_agents.size
     end
 
     def deployments_count
@@ -187,7 +192,7 @@ module Bosh::Monitor
 
       case payload
         when String
-          message = Yajl::Parser.parse(payload)
+          message = JSON.parse(payload)
         when Hash
           message = payload
       end
@@ -204,7 +209,7 @@ module Bosh::Monitor
           @logger.warn("No handler found for '#{kind}' event")
       end
 
-    rescue Yajl::ParseError => e
+    rescue JSON::ParserError => e
       @logger.error("Cannot parse incoming event: #{e}")
     rescue Bhm::InvalidEvent => e
       @logger.error("Invalid event: #{e}")
@@ -304,6 +309,14 @@ module Bosh::Monitor
         agent_ids.merge(deployment.agent_ids)
       end
       agent_ids
+    end
+
+    def all_managed_deleted_agents
+      agents = Set.new
+      @deployment_name_to_deployments.values.each do |deployment|
+        agents.merge(deployment.instance_id_to_agent.values)
+      end
+      agents
     end
 
     def find_managed_agent_by_id(agent_id)

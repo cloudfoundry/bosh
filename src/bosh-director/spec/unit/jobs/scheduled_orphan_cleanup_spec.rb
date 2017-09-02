@@ -50,7 +50,54 @@ module Bosh::Director
       end
 
       it 'should show the count deleted' do
-        expect(subject.perform).to eq("Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}")
+        expect(subject.perform).to eq("Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 0 disk(s).")
+      end
+
+      context 'when CPI is unable to delete a disk' do
+        let(:orphan_disk_manager) { instance_double(OrphanDiskManager) }
+
+        before do
+          allow(OrphanDiskManager).to receive(:new).and_return(orphan_disk_manager)
+        end
+
+        context 'and multiple orphan disks' do
+          let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: one_day_one_second_ago) }
+
+          it 'cleans all disks and raises the error thrown by the CPI' do
+            allow(orphan_disk_manager).to receive(:delete_orphan_disk).with(orphan_disk_1).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
+            allow(orphan_disk_manager).to receive(:delete_orphan_disk).with(orphan_disk_2).ordered
+
+            expect{
+              subject.perform
+            }.to raise_error(Bosh::Clouds::CloudError, "Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).")
+
+            expect(orphan_disk_manager).to have_received(:delete_orphan_disk).with(orphan_disk_1)
+            expect(orphan_disk_manager).to have_received(:delete_orphan_disk).with(orphan_disk_2)
+          end
+        end
+
+        it 'logs the failer and raises the error thrown by the CPI' do
+          logger = double('logger', warn: nil, info: nil)
+          allow(orphan_disk_manager).to receive(:delete_orphan_disk).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
+          allow(subject).to receive(:logger).and_return(logger)
+
+          expect{
+            subject.perform
+          }.to raise_error(Bosh::Clouds::CloudError, "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).")
+
+          expect(logger).to have_received(:warn)
+          expect(logger).to have_received(:info).with("Failed to delete orphan disk with cid #{orphan_disk_1.disk_cid}. Failed with Bad stuff happened!")
+        end
+
+        context 'when a different exception than CloudError is thrown' do
+          it 'catches it and raises CloudError' do
+            allow(orphan_disk_manager).to receive(:delete_orphan_disk).and_raise(Bosh::Clouds::ExternalCpi::UnknownError.new('Bad stuff happened!'))
+
+            expect {
+              subject.perform
+            }.to raise_error Bosh::Clouds::CloudError, "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s)."
+          end
+        end
       end
     end
   end

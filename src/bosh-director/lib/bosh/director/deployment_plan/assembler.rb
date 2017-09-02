@@ -22,6 +22,7 @@ module Bosh::Director
 
       should_bind_links = options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
+      should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
       deployment_options = @deployment_plan.deployment_wide_options
       fix = deployment_options.fetch(:fix, false)
       tags = deployment_options.fetch(:tags, {})
@@ -37,7 +38,14 @@ module Bosh::Director
 
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
-      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate, 'tags' => tags})
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
+        instance_repo,
+        states_by_existing_instance,
+        @deployment_plan.skip_drain,
+         index_assigner,
+        network_reservation_repository,
+        {'recreate' => @deployment_plan.recreate, 'use_dns_addresses' => @deployment_plan.use_dns_addresses? ,'tags' => tags}
+      )
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_instance_groups = @deployment_plan.instance_groups
 
@@ -59,9 +67,18 @@ module Bosh::Director
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
+      bind_new_variable_set if should_bind_new_variable_set
     end
 
     private
+
+    def bind_new_variable_set
+      current_variable_set = @deployment_plan.model.current_variable_set
+
+      @deployment_plan.instance_groups.each do |instance_group|
+        instance_group.bind_new_variable_set(current_variable_set)
+      end
+    end
 
     # Binds release DB record(s) to a plan
     # @return [void]

@@ -39,7 +39,7 @@ module Bosh::Director
       attr_reader :tags
 
       # Job instances from the old manifest that are not in the new manifest
-      attr_reader :unneeded_instance_plans
+      attr_reader :instance_plans_for_obsolete_instance_groups
 
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
@@ -54,7 +54,10 @@ module Bosh::Director
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
 
-      attr_reader :job_renderer
+      # @return [DeploymentPlan::DeploymentFeatures] Returns the features object of deployment
+      attr_reader :features
+
+      attr_reader :template_blob_cache
 
       attr_accessor :addons
 
@@ -81,7 +84,7 @@ module Bosh::Director
         @tags = options.fetch('tags', {})
 
         @unneeded_vms = []
-        @unneeded_instance_plans = []
+        @instance_plans_for_obsolete_instance_groups = []
 
         @recreate = !!options['recreate']
         @fix = !!options['fix']
@@ -90,11 +93,12 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
+        @features = DeploymentFeatures.new
 
         @addons = []
 
         @logger = Config.logger
-        @job_renderer = JobRenderer.create
+        @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
       end
 
       def_delegators :@cloud_planner,
@@ -200,11 +204,7 @@ module Bosh::Director
       end
 
       def mark_instance_plans_for_deletion(instance_plans)
-        @unneeded_instance_plans = instance_plans
-      end
-
-      def unneeded_instances
-        @unneeded_instance_plans.map(&:existing_instance)
+        @instance_plans_for_obsolete_instance_groups = instance_plans
       end
 
       # Adds a instance_group by name
@@ -262,6 +262,18 @@ module Bosh::Director
 
       def set_variables(variables_obj)
         @variables = variables_obj
+      end
+
+      def set_features(features_obj)
+        @features = features_obj
+      end
+
+      def use_dns_addresses?
+        @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
+
+      def availability_zone_names
+        @cloud_planner.availability_zone_names
       end
     end
   end

@@ -133,20 +133,6 @@ module Bosh::Director::Models
       spec['env'] || {}
     end
 
-    def credentials
-      instance_active_vm = active_vm
-      instance_active_vm.nil? ? nil : object_or_nil(instance_active_vm.credentials_json)
-    end
-
-    def credentials=(spec)
-      json = json_encode(spec)
-      instance_active_vm = active_vm
-      unless instance_active_vm.nil?
-        instance_active_vm.update(credentials_json: json_encode(spec))
-      end
-      json
-    end
-
     def active_vm
       Vm.first(instance_id: id, active: true)
     end
@@ -167,6 +153,11 @@ module Bosh::Director::Models
     def vm_cid
       instance_active_vm = active_vm
       instance_active_vm.nil? ? nil : instance_active_vm.cid
+    end
+
+    def vm_created_at
+      instance_active_vm = active_vm
+      instance_active_vm.nil? || instance_active_vm.created_at.nil? ? nil : instance_active_vm.created_at.utc.iso8601
     end
 
     def lifecycle

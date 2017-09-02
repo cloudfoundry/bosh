@@ -29,7 +29,7 @@ describe Bosh::Clouds::ExternalCpi do
 
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"fake-request-id"}})
+      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
 
       expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
       call_cpi_method
@@ -37,7 +37,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     context 'if properties from cpi config are given' do
       let(:director_uuid) {'fake-director-uuid'}
-      let(:request_id) {'fake-request-id'}
+      let(:request_id) {'cpi-fake-request-id'}
       let(:cpi_config_properties) { {'key1' => {'nestedkey1' => 'nestedvalue1'}, 'key2' => 'value2'} }
       let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, cpi_config_properties ) }
       let(:logger) { double }
@@ -59,6 +59,17 @@ describe Bosh::Clouds::ExternalCpi do
         call_cpi_method
       end
 
+      it 'logs requests and responses with request id' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        lines = []
+        allow(logger).to receive(:debug) { |line| lines << line }
+
+        call_cpi_method
+        expect(lines[0]).to start_with "[external-cpi] [#{request_id}] request"
+        expect(lines[1]).to start_with "[external-cpi] [#{request_id}] response"
+      end
+
       it 'redacts properties from cpi config in logs' do
         stub_const('ENV', 'TMPDIR' => '/some/tmp')
 
@@ -75,6 +86,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_arguments = arguments.clone
         if method == :create_vm
           expected_arguments[2] = {'cloud' => '<redacted>'}
+          expected_arguments[3] = redacted_network_settings
           expected_arguments[5] = {
             'bosh' => {
               'group' => 'my-group',
@@ -88,7 +100,7 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %(External CPI sending request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
+        expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -228,14 +240,6 @@ describe Bosh::Clouds::ExternalCpi do
         end
       end
 
-      context 'when cpi returns NotSupported error' do
-        it_raises_an_error(Bosh::Clouds::NotSupported)
-
-        context 'when method not implemented by the cpi' do
-          it_raises_an_error(Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotSupported', 'Method foo not supported in photon CPI')
-        end
-      end
-
       context 'when cpi returns CloudError error' do
         it_raises_an_error(Bosh::Clouds::CloudError)
 
@@ -291,21 +295,178 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#create_vm' do
-    it_calls_cpi_method(:create_vm,
-      'fake-agent-id',
-      'fake-stemcell-cid',
-      {'cloud' => 'props'},
-      {'net' => 'props'},
-      ['fake-disk-cid'],
-      {
-        'bosh' => {
-          'group' => 'my-group',
-          'groups' => ['my-first-group'],
-          'password' => 'my-secret-password'
+    context 'when cloud_properties in network settings is valid and defined' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {
+              'smurf_1' => '<redacted>'
+            },
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {
+              'smurf_1' => 'cat_1_manual_network'
+            },
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
         },
-        'other' => 'value'
-      }
-    )
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash is nil' do
+      let(:redacted_network_settings) { nil }
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        nil,
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings is not a hash' do
+      let(:redacted_network_settings) { 'I am not a hash' }
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        'I am not a hash',
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash cloud properties is absent' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1'
+          }
+        },
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
+
+    context 'when network settings hash cloud properties is not a hash' do
+      let(:redacted_network_settings) do
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1',
+            'cloud_properties' => 'i am not a hash'
+          }
+        }
+      end
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        {
+          'net' => {
+            'type' => 'manual',
+            'ip' => '10.10.0.2',
+            'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.2'],
+            'gateway' => '10.10.0.1',
+            'cloud_properties' => 'i am not a hash'
+          }
+        },
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
+        }
+      )
+    end
   end
 
   describe '#delete_vm' do
@@ -322,6 +483,10 @@ describe Bosh::Clouds::ExternalCpi do
 
   describe '#set_vm_metadata' do
     it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
+  end
+
+  describe '#set_disk_metadata' do
+    it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
   end
 
   describe '#create_disk' do
@@ -350,6 +515,10 @@ describe Bosh::Clouds::ExternalCpi do
 
   describe '#delete_snapshot' do
     it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
+  end
+
+  describe '#resize_disk' do
+    it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
   end
 
   describe '#get_disks' do

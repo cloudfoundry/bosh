@@ -25,7 +25,7 @@ describe 'nats.yml.erb' do
   let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/nats/templates/nats.yml.erb')) }
 
   subject(:parsed_yaml) do
-    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
+    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 

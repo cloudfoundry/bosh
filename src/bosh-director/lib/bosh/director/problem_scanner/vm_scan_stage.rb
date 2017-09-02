@@ -1,7 +1,5 @@
 module Bosh::Director
   class ProblemScanner::VmScanStage
-    include CloudFactoryHelper
-
     AGENT_TIMEOUT_IN_SECONDS = 10
 
     attr_reader :agent_disks
@@ -61,7 +59,7 @@ module Bosh::Director
 
       mounted_disk_cid = @problem_register.get_disk(instance)
 
-      agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, agent_options)
+      agent = AgentClient.with_agent_id(instance.agent_id, agent_options)
       begin
         agent.get_state
 
@@ -96,8 +94,10 @@ module Bosh::Director
     end
 
     def has_vm?(instance)
-      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
-      instance.active_vm && cloud.has_vm(instance.vm_cid)
+      cloud_factory = Bosh::Director::CloudFactory.create_from_deployment(@deployment)
+      cloud = cloud_factory.get_for_az(instance.availability_zone)
+      vm_cid = instance.vm_cid
+      !vm_cid.nil? && cloud.has_vm(vm_cid)
     end
 
     def add_disk_owner(disk_cid, vm_cid)

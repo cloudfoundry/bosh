@@ -1,37 +1,29 @@
 module Bosh::Spec
   class Vm
-    attr_reader :last_known_state, :cid, :agent_id, :resurrection, :ips, :availability_zone, :instance_uuid, :job_name, :index, :ignore
+    attr_reader :last_known_state, :cid, :ips, :availability_zone, :instance_uuid, :job_name
 
     def initialize(
       waiter,
       job_state,
       cid,
-      agent_id,
-      resurrection,
       ips,
       availability_zone,
       instance_uuid,
       job_name,
-      index,
-      ignore,
-      agent_base_dir,
       nats_port,
-      logger
+      logger,
+      agent_base_dir
     )
       @waiter = waiter
       @last_known_state = job_state
       @cid = cid
-      @agent_id = agent_id
-      @resurrection = resurrection
       @ips = ips
       @availability_zone = availability_zone
       @instance_uuid = instance_uuid
       @job_name = job_name
-      @index = index
-      @ignore = ignore
-      @agent_base_dir = agent_base_dir
       @nats_port = nats_port
       @logger = logger
+      @agent_base_dir = agent_base_dir
     end
 
     def read_job_template(template_name, template_path)
@@ -61,7 +53,7 @@ module Bosh::Spec
     def fail_job
       @logger.info("Failing job #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
-        msg = Yajl::Encoder.encode(
+        msg = JSON.dump(
           method: 'set_dummy_status',
           status: 'failing',
           reply_to: 'integration.tests',
@@ -73,7 +65,7 @@ module Bosh::Spec
     def fail_start_task
       @logger.info("Failing task #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
-        msg = Yajl::Encoder.encode(
+        msg = JSON.dump(
           method: 'set_task_fail',
           status: 'fail_task',
           reply_to: 'integration.tests',
@@ -84,9 +76,10 @@ module Bosh::Spec
 
     def unblock_package
       package_dir = package_path('blocking_package')
+      puts package_dir
       @waiter.wait(300) do
-        raise('Must find package dir') unless File.exists?(package_dir)
-        FileUtils.touch(File.join(package_dir, 'unblock_packaging'))
+        raise('Must find package dir') unless Dir.glob(package_dir).any?
+        FileUtils.touch(File.join(Dir.glob(package_dir).first, 'unblock_packaging'))
       end
     end
 
@@ -115,7 +108,7 @@ module Bosh::Spec
 
     def get_state
       spec_path = File.join(@agent_base_dir, 'bosh', 'spec.json')
-      Yajl::Parser.parse(File.read(spec_path))
+      JSON.parse(File.read(spec_path))
     end
 
     def read_etc_hosts

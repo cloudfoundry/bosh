@@ -11,4 +11,5 @@ db_adapter = Bosh::Director::DbBackup.create(Bosh::Director::Config.db_config)
 
 db_adapter.export("#{ENV['ARTIFACT_DIRECTORY']}/director_db.sql")
 tar_gzipper = Bosh::Director::Core::TarGzipper.new
-tar_gzipper.compress(ENV['ARTIFACT_DIRECTORY'], 'director_db.sql', "#{ENV['ARTIFACT_DIRECTORY']}/director_db.tgz")
+tar_gzipper.compress(ENV['ARTIFACT_DIRECTORY'], 'director_db.sql', "#{ENV['ARTIFACT_DIRECTORY']}/director_db.sql.gz")
+File.unlink("#{ENV['ARTIFACT_DIRECTORY']}/director_db.sql")

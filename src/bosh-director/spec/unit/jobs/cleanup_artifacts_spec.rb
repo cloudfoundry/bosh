@@ -136,6 +136,29 @@ module Bosh::Director
           end
         end
 
+        context 'when deleting multiple versions of the same release' do
+          it 'removes them in sequence' do
+            Models::ReleaseVersion.make(version: 10, release: release_1)
+            Models::ReleaseVersion.make(version: 9, release: release_1)
+
+            locks_acquired = []
+            allow(Bosh::Director::Lock).to receive(:new) do |name, *args|
+              locks_acquired << name
+              Support::FakeLocks::FakeLock.new
+            end
+
+            expect(event_log).to receive(:begin_stage).with('Deleting releases', 4)
+
+            allow(blobstore).to receive(:delete).with('package_blob_id_1')
+            result = subject.perform
+
+            expect(locks_acquired).to eq(locks_acquired.uniq)
+
+            expected_result = "Deleted 4 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}"
+            expect(result).to eq(expected_result)
+          end
+        end
+
         context 'when there is at least one deployment' do
           let!(:blob1) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000) }
           let!(:most_recent_blob) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 1) }

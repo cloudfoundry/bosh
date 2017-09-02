@@ -8,9 +8,10 @@ module Bosh::Director
 
   module Core::Templates
     class JobTemplateLoader
-      def initialize(logger, caching_job_template_fetcher)
+      def initialize(logger, template_blob_cache, dns_encoder)
         @logger = logger
-        @caching_job_template_fetcher = caching_job_template_fetcher
+        @template_blob_cache = template_blob_cache
+        @dns_encoder = dns_encoder
       end
 
       def process(job_template)
@@ -29,7 +30,7 @@ module Bosh::Director
           source_erbs << SourceErb.new(src_name, dest_name, erb_file, job_template.name)
         end
 
-        JobTemplateRenderer.new(job_template.name, template_name, monit_source_erb, source_erbs, @logger)
+        JobTemplateRenderer.new(job_template, template_name, monit_source_erb, source_erbs, @logger, @dns_encoder)
       ensure
         FileUtils.rm_rf(template_dir) if template_dir
       end
@@ -38,7 +39,7 @@ module Bosh::Director
 
       def extract_template(job_template)
         @logger.debug("Extracting job #{job_template.name}")
-        cached_blob_path = @caching_job_template_fetcher.download_blob(job_template)
+        cached_blob_path = @template_blob_cache.download_blob(job_template)
         template_dir = Dir.mktmpdir('template_dir')
 
         output = `tar -C #{template_dir} -xzf #{cached_blob_path} 2>&1`

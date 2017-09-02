@@ -38,10 +38,9 @@ install_ruby() {
     chruby "ruby-$version"
     ruby -v
     gem update --system
-    gem install bundler -v 1.11.2
+    gem install bundler -v 1.15.3
 
 }
 
-install_ruby 1.9.3 ef588ed3ff53009b4c1833c83187ae252dd6c20db45e21a326cd4a16a102ef4c
 install_ruby 2.1.7 b02c1a5ecd718e3f6b316384d4ed6572f862a46063f5ae23d0340b0a245859b6
 install_ruby 2.3.1 4a7c5f52f205203ea0328ca8e1963a7a88cf1f7f0e246f857d595b209eac0a4d

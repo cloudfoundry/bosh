@@ -1,6 +1,9 @@
 ---
 name: <%= director_name %>
 uuid: deadbeef
+runtime:
+  ip: 127.1.127.1
+  instance: some-name/some-id
 
 port: <%= director_ruby_port %>
 mbus: nats://localhost:<%= nats_port %>
@@ -45,6 +48,7 @@ trusted_certs: <%= trusted_certs %>
 local_dns:
   enabled: <%= local_dns['enabled'] %>
   include_index: <%= local_dns['include_index'] %>
+  use_dns_addresses: <%= local_dns['use_dns_addresses'] %>
 
 verify_multidigest_path: <%= verify_multidigest_path %>
 
@@ -111,6 +115,7 @@ user_management:
 
 enable_post_deploy: <%= enable_post_deploy %>
 enable_nats_delivered_templates: <%= enable_nats_delivered_templates %>
+enable_cpi_resize_disk: <%= enable_cpi_resize_disk %>
 
 <% if config_server_enabled %>
 config_server:

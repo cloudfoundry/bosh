@@ -45,6 +45,7 @@ module Bosh::Director
 
         {
           :vm_cid => instance.vm_cid,
+          :vm_created_at => instance.vm_created_at,
           :disk_cid => instance.managed_persistent_disk_cid,
           :disk_cids => instance.active_persistent_disks.collection.map{|d| d.model.disk_cid},
           :ips => ips(instance),
@@ -84,7 +85,7 @@ module Bosh::Director
 
         if instance.vm_cid
           begin
-            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
+            agent = AgentClient.with_agent_id(instance.agent_id, :timeout => TIMEOUT)
             agent_state = agent.get_state(@format)
             agent_state['networks'].each_value do |network|
               ips << network['ip']

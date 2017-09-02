@@ -414,15 +414,9 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', credentials_json: '{"something":"jsony"}', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha', instance_id: subject.id)
+        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha', instance_id: subject.id)
         subject.active_vm = vm
         subject.save
-      end
-
-      describe 'credentials' do
-        it 'references credentials from active vm' do
-          expect(subject.credentials).to eq({'something' => 'jsony'})
-        end
       end
 
       describe 'agent_id' do
@@ -437,6 +431,12 @@ module Bosh::Director::Models
         end
       end
 
+      describe 'vm_created_at' do
+        it 'references created_at from active vm' do
+          expect(subject.vm_created_at).to eq(subject.active_vm.created_at.utc.iso8601)
+        end
+      end
+
       describe 'trusted_certs_sha1' do
         it 'returns active vms trusted_certs_sha1' do
           expect(subject.trusted_certs_sha1).to eq('trusted-sha')
@@ -445,12 +445,6 @@ module Bosh::Director::Models
     end
 
     context 'without active vm' do
-      describe 'credentials' do
-        it 'is nil' do
-          expect(subject.credentials).to be_nil
-        end
-      end
-
       describe 'agent_id' do
         it 'is nil' do
           expect(subject.agent_id).to be_nil
@@ -460,6 +454,12 @@ module Bosh::Director::Models
       describe 'vm_cid' do
         it 'is nil' do
           expect(subject.vm_cid).to be_nil
+        end
+      end
+
+      describe 'vm_created_at' do
+        it 'is nil' do
+          expect(subject.vm_created_at).to be_nil
         end
       end
 

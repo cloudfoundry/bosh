@@ -83,14 +83,13 @@ module Bosh::Director
             global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
             ip_provider_factory: IpProviderFactory.new(true, logger),
             disk_types: [],
-            availability_zones_list: [],
+            availability_zones_list: {},
             vm_type: vm_type,
             resource_pools: resource_pools,
             compilation: nil,
             logger: logger,
           })
           planner.cloud_planner = cloud_planner
-          allow(Config).to receive(:dns_enabled?).and_return(false)
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
           task = Models::Task.make(state: 'processing')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
@@ -285,6 +284,84 @@ module Bosh::Director
 
           it 'return instance groups with errand lifecylce' do
             expect(subject.errand_instance_groups).to match_array([instance_group_2, instance_group_3])
+          end
+        end
+
+        describe '#use_dns_addresses?' do
+          context 'when director use_dns_addresses flag is TRUE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
+            end
+
+            context 'when deployment use_dns_addresses is defined' do
+              context 'when deployment use_dns_addresses is TRUE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(true))
+                end
+
+                it 'returns TRUE' do
+                  expect(subject.use_dns_addresses?).to eq(true)
+                end
+              end
+
+              context 'when deployment use_dns_addresses is FALSE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(false))
+                end
+
+                it 'returns FALSE' do
+                  expect(subject.use_dns_addresses?).to eq(false)
+                end
+              end
+            end
+
+            context 'when deployment use_dns_addresses is NOT defined' do
+              before do
+                subject.set_features(DeploymentFeatures.new)
+              end
+
+              it 'returns TRUE' do
+                expect(subject.use_dns_addresses?).to eq(true)
+              end
+            end
+          end
+
+          context 'when director use_dns_addresses flag is FALSE' do
+            before do
+              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
+            end
+
+            context 'when deployment use_dns_addresses is defined' do
+              context 'when deployment use_dns_addresses is TRUE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(true))
+                end
+
+                it 'returns TRUE' do
+                  expect(subject.use_dns_addresses?).to eq(true)
+                end
+              end
+
+              context 'when deployment use_dns_addresses is FALSE' do
+                before do
+                  subject.set_features(DeploymentFeatures.new(false))
+                end
+
+                it 'returns FALSE' do
+                  expect(subject.use_dns_addresses?).to eq(false)
+                end
+              end
+            end
+
+            context 'when deployment use_dns_addresses is NOT defined' do
+              before do
+                subject.set_features(DeploymentFeatures.new)
+              end
+
+              it 'returns FALSE' do
+                expect(subject.use_dns_addresses?).to eq(false)
+              end
+            end
           end
         end
       end

@@ -57,7 +57,7 @@ module Bosh::Monitor
             'Content-Type'  => 'application/json',
             'authorization' => auth_provider(director_info).auth_header
           },
-          body: Yajl::Encoder.encode(payload)
+          body: JSON.dump(payload)
         }
         
         @url.path = "/events"
@@ -85,7 +85,7 @@ module Bosh::Monitor
         response               = send_http_get_request(director_info_url.to_s)
         return nil if response.status_code != 200
         
-        @director_info = Yajl::Parser.parse(response.body)
+        @director_info = JSON.parse(response.body)
       end
     end
   end

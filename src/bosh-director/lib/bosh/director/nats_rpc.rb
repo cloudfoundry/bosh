@@ -25,17 +25,21 @@ module Bosh::Director
     end
 
     # Sends a request (encoded as JSON) and listens for the response
-    def send_request(client, request, &callback)
+    def send_request(client, request, options, &callback)
       request_id = generate_request_id
       request["reply_to"] = "#{@inbox_name}.#{request_id}"
       @lock.synchronize do
-        @requests[request_id] = callback
+        @requests[request_id] = [callback, options]
       end
-      message = JSON.generate(request)
-      @logger.debug("SENT: #{client} #{message}")
+
+      sanitized_log_message = sanitize_log_message(request)
+      request_body = JSON.generate(request)
+
+      @logger.debug("SENT: #{client} #{sanitized_log_message}") unless options['logging'] == false
+
       EM.schedule do
         subscribe_inbox
-        nats.publish(client, message)
+        nats.publish(client, request_body)
       end
       request_id
     end
@@ -80,16 +84,27 @@ module Bosh::Director
     end
 
     def handle_response(message, subject)
-      @logger.debug("RECEIVED: #{subject} #{message}")
       begin
         request_id = subject.split(".").last
-        callback = @lock.synchronize { @requests.delete(request_id) }
+        callback, options = @lock.synchronize { @requests.delete(request_id) }
+        @logger.debug("RECEIVED: #{subject} #{message}") if (options && options['logging'])
         if callback
           message = message.empty? ? nil : JSON.parse(message)
           callback.call(message)
         end
       rescue Exception => e
         @logger.warn(e.message)
+      end
+    end
+
+    def sanitize_log_message(request)
+      if request[:method].to_s == 'upload_blob'
+        cloned_request = Bosh::Common::DeepCopy.copy(request)
+        cloned_request[:arguments].first['checksum'] = '<redacted>'
+        cloned_request[:arguments].first['payload'] = '<redacted>'
+        JSON.generate(cloned_request)
+      else
+        JSON.generate(request)
       end
     end
 

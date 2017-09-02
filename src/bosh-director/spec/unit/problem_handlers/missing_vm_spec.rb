@@ -93,7 +93,7 @@ module Bosh::Director
         prepare_deploy(manifest, manifest)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(fake_new_agent)
+        allow(AgentClient).to receive(:with_agent_id).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered

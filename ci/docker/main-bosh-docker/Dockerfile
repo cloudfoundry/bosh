@@ -1,13 +1,14 @@
-FROM bosh/main-ruby-go
+FROM ubuntu:xenial
 
-ADD ./install-docker.sh /tmp/install-docker.sh
-RUN /tmp/install-docker.sh
-RUN rm /tmp/install-docker.sh
+ADD install.sh /tmp/install.sh
+RUN /tmp/install.sh && rm /tmp/install.sh
+ENV GOROOT /usr/local/go
+ENV PATH $GOROOT/bin:$PATH
 
 COPY bosh /usr/local/bin/
 RUN chmod +x /usr/local/bin/bosh
 
 COPY bosh-deployment /usr/local/bosh-deployment/
 
-COPY start-bosh /usr/local/bin/
+COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh

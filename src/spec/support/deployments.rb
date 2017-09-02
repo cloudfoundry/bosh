@@ -5,9 +5,9 @@ module Bosh::Spec
     def self.minimal_cloud_config
       {
         'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
+          'name' => 'a',
+          'subnets' => [],
+        }],
 
         'compilation' => {
           'workers' => 1,
@@ -923,6 +923,31 @@ module Bosh::Spec
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
       manifest['jobs'] << simple_errand_job
       manifest
+    end
+
+    def self.manifest_with_errand_job_on_service_instance
+      manifest = simple_manifest
+      manifest['jobs'] = [service_job_with_errand]
+      manifest
+    end
+
+    def self.service_job_with_errand
+      {
+        'name' => 'service_with_errand',
+        'templates' => [{'release' => 'bosh-release', 'name' => 'errand1'}],
+        'lifecycle' => 'service',
+        'resource_pool' => 'a',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+        'properties' => {
+          'errand1' => {
+            'exit_code' => 0,
+            'stdout' => 'fake-errand-stdout-service',
+            'stderr' => 'fake-errand-stderr-service',
+            'run_package_file' => true,
+          },
+        },
+      }
     end
 
     def self.simple_errand_job

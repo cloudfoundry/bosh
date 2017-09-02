@@ -34,6 +34,16 @@ module Bosh::Dev
         'no-upload-blob-action-e82bdd1c',
         'b791ca6d4841478dcf25bfca91c96dc7b1cc72b719f4488c190d93ca33386fa9', # darwin
         '2a6f42496f1eed4b88871825511af97e9c6c691ab2402c13ea43748dd2873fa4' # linux
+      ),
+      LegacyAgentInfo.new(
+        'upload-blob-action-error-file-not-found',
+        'd380e1b780d86dc885ebd4dbec920d31b9f6288a34b8a083324fd6659931ab0e', # darwin
+        '20d2d4c5812a0ae4a54623b5d93ccf04e8106dea47e546bbd774e8bb2730bbf1' # linux
+      ),
+      LegacyAgentInfo.new(
+        'before-info-endpoint-20170719',
+        'c5e115ba3197b1aca3c311cebe94aee8e6ef7f1523770af6879484de773e470e', # darwin
+        '60f3364e828ba1a49532aa97163a4053f0fbf6aa679509cbd0d5dabf412bbf37' # linux
       )
     ]
 

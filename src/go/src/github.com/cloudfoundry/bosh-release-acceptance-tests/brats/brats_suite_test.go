@@ -6,12 +6,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-
 	"fmt"
 	"testing"
 
-	"github.com/cloudfoundry/bosh-utils/system"
+	"github.com/onsi/gomega/gexec"
+	"os/exec"
+	"time"
+	"path/filepath"
 )
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
@@ -21,20 +22,37 @@ func TestBrats(t *testing.T) {
 	RunSpecs(t, "Brats Suite")
 }
 
-var cmdRunner system.CmdRunner
-var boshBinaryPath, directorIp, sshPrivateKeyPath, boshRelease string
+var (
+	outerBoshBinaryPath,
+	boshBinaryPath,
+	innerBoshPath,
+	innerBoshJumpboxPrivateKeyPath,
+	bbrBinaryPath,
+	innerDirectorIP,
+	boshRelease,
+	candidateWardenLinuxStemcellPath,
+	dnsReleasePath string
+)
 
 var _ = BeforeSuite(func() {
-	cmdRunner = system.NewExecCmdRunner(boshlog.NewLogger(boshlog.LevelNone))
-	boshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
-	directorIp = assertEnvExists("BOSH_DIRECTOR_IP")
-	sshPrivateKeyPath = assertEnvExists("BOSH_SSH_PRIVATE_KEY_PATH")
-	boshRelease = assertEnvExists("BOSH_RELEASE")
+	outerBoshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
 
-	assertEnvExists("BOSH_CLIENT")
-	assertEnvExists("BOSH_CLIENT_SECRET")
-	assertEnvExists("BOSH_CA_CERT")
+	innerBoshPath = "/tmp/inner-bosh/director/"
+	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
+	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")
+	bbrBinaryPath = assertEnvExists("BBR_BINARY_PATH")
+	boshRelease = assertEnvExists("BOSH_RELEASE")
+	innerDirectorIP = "10.245.0.34"
+	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
+	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
+
 	assertEnvExists("BOSH_ENVIRONMENT")
+})
+
+var _ = AfterSuite(func() {
+	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-n", "clean-up", "--all"), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, time.Minute).Should(gexec.Exit(0))
 })
 
 func assertEnvExists(envName string) string {
@@ -43,4 +61,16 @@ func assertEnvExists(envName string) string {
 		Fail(fmt.Sprintf("Expected %s", envName))
 	}
 	return val
+}
+
+func startInnerBosh() {
+	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+}
+
+func stopInnerBosh() {
+	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 }

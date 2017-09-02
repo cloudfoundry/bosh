@@ -74,7 +74,7 @@ module Bosh::Director
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_models, @options)
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
-            deployment_assembler.bind_models
+            deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
           end
 
           if deployment_plan.instance_models.any?(&:ignore)
@@ -87,18 +87,16 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-            if is_deploy_action
-              update_instance_groups_variable_set(deployment_plan.instance_groups, current_variable_set)
-            end
+            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan.availability_zones.map(&:name))
 
-            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
+            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
             if dry_run?
               return "/deployments/#{deployment_plan.name}"
             else
               compilation_step(deployment_plan).perform
 
-              update_step(deployment_plan).perform
+              update_step(deployment_plan, dns_encoder).perform
 
               if check_for_changes(deployment_plan)
                 PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
@@ -117,7 +115,7 @@ module Bosh::Director
               "/deployments/#{deployment_plan.name}"
             end
           ensure
-            deployment_plan.job_renderer.clean_cache!
+            deployment_plan.template_blob_cache.clean_cache!
           end
         end
       rescue Exception => e
@@ -141,12 +139,6 @@ module Bosh::Director
 
       private
 
-      def update_instance_groups_variable_set(instance_groups, current_variable_set)
-        instance_groups.each do |instance_group|
-          instance_group.assign_variable_set(current_variable_set)
-        end
-      end
-
       def remove_unused_variable_sets(deployment, instance_groups)
         variable_sets_to_keep = []
         variable_sets_to_keep << deployment.current_variable_set
@@ -154,7 +146,11 @@ module Bosh::Director
           variable_sets_to_keep += instance_group.referenced_variable_sets
         end
 
-        deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
+        begin
+          deployment.cleanup_variable_sets(variable_sets_to_keep.uniq)
+        rescue Sequel::ForeignKeyConstraintViolation => e
+          logger.warn("Unable to clean up variable_sets. Error: #{e.inspect}")
+        end
       end
 
       def add_event(context = {}, parent_id = nil, error = nil)
@@ -187,24 +183,24 @@ module Bosh::Director
         DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
       end
 
-      def update_step(deployment_plan)
+      def update_step(deployment_plan, dns_encoder)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           deployment_plan,
-          multi_job_updater(deployment_plan)
+          multi_job_updater(deployment_plan, dns_encoder)
         )
       end
 
       # Job dependencies
 
-      def multi_job_updater(deployment_plan)
+      def multi_job_updater(deployment_plan, dns_encoder)
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.job_renderer))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder))
         end
       end
 
-      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set)
-        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.job_renderer)
+      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
+        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache, dns_encoder)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
         unless errors.empty?
@@ -214,11 +210,16 @@ module Bosh::Director
         end
       end
 
-      def render_instance_groups_templates(instance_groups, job_renderer)
+      def render_instance_groups_templates(instance_groups, template_blob_cache, dns_encoder)
         errors = []
         instance_groups.each do |instance_group|
           begin
-            job_renderer.render_job_instances(instance_group.unignored_instance_plans)
+            JobRenderer.render_job_instances_with_cache(
+              instance_group.unignored_instance_plans,
+              template_blob_cache,
+              dns_encoder,
+              logger,
+            )
           rescue Exception => e
             errors.push e
           end
@@ -239,10 +240,13 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          begin
-            variables_interpolator.interpolate_link_spec_properties(instance_group.resolved_links || {}, current_variable_set)
-          rescue Exception => e
-            instance_group_errors.push e
+          instance_group_links = instance_group.resolved_links || {}
+          instance_group_links.each do |job_name, links|
+            begin
+              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+            rescue Exception => e
+              instance_group_errors.push e
+            end
           end
 
           unless instance_group_errors.empty?

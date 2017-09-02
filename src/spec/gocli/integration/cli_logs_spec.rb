@@ -13,6 +13,15 @@ describe 'cli: logs', type: :integration do
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
     }
+
+    manifest_hash['jobs']<< {
+      'name' => 'fake-errand-name',
+      'template' => 'errand_without_package',
+      'resource_pool' => 'a',
+      'instances' => 1,
+      'lifecycle' => 'errand',
+      'networks' => [{'name' => 'a'}]
+    }
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -35,7 +44,8 @@ describe 'cli: logs', type: :integration do
     expect(output_single_job).to include "Fetching logs for #{instance_1.job_name}/#{instance_1.id} (#{instance_1.index})"
     expect(output_single_job).to include "Fetching group of logs: Packing log files together"
 
-    output_deployment = bosh_runner.run("-d #{deployment_name} logs")
+    output_deployment, exit_code = bosh_runner.run("-d #{deployment_name} logs", return_exit_code: true)
+    expect(exit_code).to eq(0)
     expect(output_deployment).to match /#{deployment_name}-.*\.tgz/
 
     expect(output_deployment).to include "Fetching logs for #{instance_0.job_name}/#{instance_0.id} (#{instance_0.index})"

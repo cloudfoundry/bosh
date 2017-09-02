@@ -20,7 +20,6 @@ module Bosh::Director
       fake_locks
       allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
       Bosh::Director::Config.current_job = job
-      allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
       Bosh::Director::Config.current_job.task_id = task.id
       allow(job).to receive(:task_cancelled?) { false }
       blobstore = double(:blobstore)
@@ -210,7 +209,7 @@ module Bosh::Director
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
-                allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
+                allow(job).to receive(:create_instance_group_with_all_the_jobs_so_everything_compiles)
               }
 
               it 'skips links binding' do
@@ -328,20 +327,9 @@ module Bosh::Director
 
         it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
-             manifest_file = File.open(File.join(download_dir, 'release.MF'), 'r')
-             manifest_file_content = manifest_file.read
-
-             File.write(output_path, 'Some glorious content')
-
-             expect(manifest_file_content).to eq(%q(---
+             manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
+             expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
-- name: ruby
-  version: ruby_version
-  fingerprint: ruby_fingerprint
-  sha1: rubycompiledpackagesha1
-  stemcell: ubuntu/1
-  dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
@@ -349,6 +337,12 @@ compiled_packages:
   stemcell: ubuntu/1
   dependencies:
   - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
 jobs:
 - name: foobar
   version: foo_version
@@ -358,7 +352,20 @@ commit_hash: unknown
 uncommitted_changes: false
 name: bosh-release
 version: 0.1-dev
-))}
+))
+
+             File.write(output_path, 'Some glorious content')
+
+             expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
+             expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
+
+             manifest_hash.delete('compiled_packages')
+             expected_manifest_hash.delete('compiled_packages')
+             manifest_hash.delete('jobs')
+             expected_manifest_hash.delete('jobs')
+
+             expect(manifest_hash).to eq(expected_manifest_hash)
+          }
 
           allow(blobstore_client).to receive(:get)
           allow(blobstore_client).to receive(:create).and_return('blobstore_id')

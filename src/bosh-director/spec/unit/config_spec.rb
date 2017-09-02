@@ -106,8 +106,12 @@ describe Bosh::Director::Config do
     context 'when hash has value set' do
       it 'returns the configuration value' do
         test_config['local_dns']['enabled'] = true
+        test_config['local_dns']['include_index'] = true
+        test_config['local_dns']['use_dns_addresses'] = true
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(true)
+        expect(described_class.local_dns_include_index?).to eq(true)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(true)
       end
     end
 
@@ -115,6 +119,8 @@ describe Bosh::Director::Config do
       it 'returns default value of false' do
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(false)
+        expect(described_class.local_dns_include_index?).to eq(false)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(false)
       end
     end
   end
@@ -149,16 +155,39 @@ describe Bosh::Director::Config do
   end
 
   describe '#configure' do
-    context 'when the config specifies a file logger' do
-      before { test_config['logging']['file'] = 'fake-file' }
+    context 'logger' do
+      let(:log_dir) { Dir.mktmpdir }
+      let(:log_file) { File.join(log_dir,'logfile') }
+      after { FileUtils.rm_rf(log_dir) }
 
-      it 'configures the logger with a file appender' do
-        appender = Logging::Appender.new('file')
-        expect(Logging.appenders).to receive(:file).with(
-          'DirectorLogFile',
-          hash_including(filename: 'fake-file')
-        ).and_return(appender)
+      context 'when the config specifies a file logger' do
+        before { test_config['logging']['file'] = 'fake-file' }
+
+        it 'configures the logger with a file appender' do
+          appender = Logging::Appender.new('file')
+          expect(Logging.appenders).to receive(:file).with(
+            'DirectorLogFile',
+            hash_including(filename: 'fake-file')
+          ).and_return(appender)
+          described_class.configure(test_config)
+        end
+      end
+
+      it 'filters out log message that matches blacklist' do
+        test_config['logging']['file'] = log_file
+        test_config['logging']['level'] = 'debug'
+
         described_class.configure(test_config)
+
+        described_class.logger.debug('before')
+        described_class.logger.debug('(10.01s) SELECT NULL')
+        described_class.logger.debug('after')
+
+        log_contents = File.read(log_file)
+
+        expect(log_contents).to include('before')
+        expect(log_contents).to include('after')
+        expect(log_contents).not_to include('SELECT NULL')
       end
     end
 
@@ -354,6 +383,25 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'log_director_start_event' do
+    it 'stores an event' do
+      described_class.configure(test_config)
+
+      expect {
+        described_class.log_director_start_event('custom-type', 'custom-name', {'custom' => 'context'})
+      }.to change {
+        Bosh::Director::Models::Event.count
+      }.from(0).to(1)
+
+      expect(Bosh::Director::Models::Event.count).to eq(1)
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('custom-type')
+      expect(event.object_name).to eq('custom-name')
+      expect(event.context).to eq({'custom' => 'context'})
+    end
+  end
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do
@@ -389,6 +437,33 @@ describe Bosh::Director::Config do
       expect(event.object_type).to eq('director')
       expect(event.object_name).to eq('director-uuid')
       expect(event.context).to eq({'version' => '0.0.2'})
+    end
+  end
+
+  describe 'enable_cpi_resize_disk' do
+    it 'defaults to false' do
+      described_class.configure(test_config)
+      expect(described_class.enable_cpi_resize_disk).to be_falsey
+    end
+
+    context 'when explicitly set' do
+      context 'when set to true' do
+        before { test_config['enable_cpi_resize_disk'] = true }
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_truthy
+        end
+      end
+
+      context 'when set to false' do
+        before { test_config['enable_cpi_resize_disk'] = false }
+
+        it 'resolves to false' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_falsey
+        end
+      end
     end
   end
 end

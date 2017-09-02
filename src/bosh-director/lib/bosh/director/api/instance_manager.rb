@@ -45,7 +45,7 @@ module Bosh::Director
           raise VmAgentIdMissing, "Instance '#{instance.vm_cid}' doesn't have an agent id"
         end
 
-        AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
+        AgentClient.with_agent_id(instance.agent_id)
       end
 
       def fetch_logs(username, deployment, job, index_or_id, options = {})
@@ -55,18 +55,19 @@ module Bosh::Director
         end
 
         instance_ids = []
-        if !index_or_id.nil?
-          # This is for backwards compatibility and can be removed when we move to referencing job by instance id only.
-          if index_or_id.to_s =~ /^\d+$/
-            instance = find_by_name(deployment, job, index_or_id)
-          else
-            instance = filter_by(deployment, uuid: index_or_id).first
-          end
-          instance_ids << instance.id
-        elsif job.nil?
-          instance_ids = find_instances_by_deployment(deployment).map(&:id)
+        # This is for backwards compatibility and can be removed when we move to referencing job by instance id only.
+        if !index_or_id.nil? && index_or_id.to_s =~ /^\d+$/
+          instance = find_by_name(deployment, job, index_or_id)
+          instance_ids << instance.id unless instance.active_vm.nil?
         else
-          instance_ids = filter_by(deployment, job: job).map(&:id)
+          filter = {}
+          filter[:uuid] = index_or_id unless index_or_id.nil?
+          filter[:job] = job unless job.nil?
+          instance_ids = filter_by(deployment, filter).reject {|i| i.active_vm.nil?}.map(&:id)
+        end
+
+        if instance_ids.empty?
+          raise "No appropriate instance with a VM was found in deployment '#{deployment.name}'"
         end
 
         JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance_ids, options], deployment)

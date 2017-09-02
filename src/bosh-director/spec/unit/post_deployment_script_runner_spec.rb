@@ -20,7 +20,7 @@ module Bosh::Director
       before do
         allow(Bosh::Director::Models::Instance).to receive(:filter).and_return(instance_data_set)
         allow(instance_data_set).to receive(:reject).and_return([instance, instance])
-        allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent)
       end
 
       it "runs 'post_deploy' on each instance of that deployment after resurrection" do

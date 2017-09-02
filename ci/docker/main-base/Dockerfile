@@ -22,7 +22,7 @@ RUN curl -L --output /usr/local/bin/jq https://github.com/stedolan/jq/releases/d
 ADD install-java.sh /tmp/install-java.sh
 RUN chmod a+x /tmp/install-java.sh
 RUN cd /tmp && ./install-java.sh && rm install-java.sh
-ENV JAVA_HOME /usr/lib/jvm/zulu1.8.0_25-8.4.0.1-x86lx64
+ENV JAVA_HOME /usr/lib/jvm/zulu8.23.0.3-jdk8.0.144-linux_x64
 ENV PATH $JAVA_HOME/bin:$PATH
 
 RUN git config --global user.email "cf-bosh-eng+bosh-ci@pivotal.io"

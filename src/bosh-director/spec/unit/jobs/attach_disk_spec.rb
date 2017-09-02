@@ -4,7 +4,11 @@ module Bosh::Director
   describe Jobs::AttachDisk do
 
     let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
-    let(:deployment) { Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest)) }
+    let(:deployment) {
+      deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
+      Models::VariableSet.make(deployment_id: deployment.id)
+      deployment
+    }
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }
@@ -248,7 +252,7 @@ module Bosh::Director
         before do
           allow(Config.cloud).to receive(:attach_disk)
           allow(Config.cloud).to receive(:set_disk_metadata)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
         it 'attaches the new disk and sets disk metadata' do
@@ -282,7 +286,7 @@ module Bosh::Director
         before do
           allow(Config.cloud).to receive(:attach_disk)
           allow(Config.cloud).to receive(:set_disk_metadata)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
         it 'attaches the new disk' do

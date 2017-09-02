@@ -184,7 +184,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when stemcell already exists' do
         before do
-          Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5", :cid=>"old-stemcell-cid")
+          Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5", :cid => "old-stemcell-cid")
         end
 
         it "should quietly ignore duplicate upload and not create a stemcell in the cloud" do
@@ -241,7 +241,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'when having multiple cpis' do
         let(:cloud_factory) { instance_double(BD::CloudFactory) }
         before {
-          allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+          allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         }
 
         it 'creates multiple stemcell records with different cpi attributes' do
@@ -256,11 +256,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud2).to receive(:info).and_return({"stemcell_formats" => ["dummy1"]})
           expect(cloud3).to receive(:info).and_return({"stemcell_formats" => ["dummy"]})
 
-          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([
-                                                                                        {name: 'cloud1', cpi: cloud1},
-                                                                                        {name: 'cloud2', cpi: cloud2},
-                                                                                        {name: 'cloud3', cpi: cloud3},
-                                                                                    ])
+          expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1', 'cloud2', 'cloud3'])
+          expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
+          expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
+          expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
 
           expected_steps = 11
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
@@ -303,7 +302,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return({"stemcell_formats" => ["dummy"]})
           expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid')
 
-          expect(cloud_factory).to receive(:all_configured_clouds).twice.and_return([{name: '', cpi: cloud}])
+          expect(cloud_factory).to receive(:all_names).twice.and_return([''])
+          expect(cloud_factory).to receive(:get).with('').and_return(cloud)
 
           expected_steps = 5
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)

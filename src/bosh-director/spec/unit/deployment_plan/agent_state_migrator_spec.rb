@@ -4,14 +4,13 @@ module Bosh::Director
   describe DeploymentPlan::AgentStateMigrator do
     let(:agent_state_migrator) { described_class.new(Config.logger) }
     let(:client) { instance_double(AgentClient) }
-    let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
 
-    let!(:vm_model) { Models::Vm.make(credentials_json: JSON.generate(credentials), agent_id: 'agent-1', instance: instance_model, active: true) }
+    let!(:vm_model) { Models::Vm.make(agent_id: 'agent-1', instance: instance_model, active: true) }
     let(:instance_model) { Models::Instance.make }
 
     describe '#get_state' do
       before do
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, 'agent-1').and_return(client)
+        expect(AgentClient).to receive(:with_agent_id).with('agent-1').and_return(client)
       end
 
       it 'should return the processed agent state' do
@@ -49,9 +48,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -73,9 +70,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -99,9 +94,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -123,9 +116,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end

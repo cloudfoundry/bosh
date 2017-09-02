@@ -15,7 +15,7 @@ describe Bosh::Registry::ApiController do
 
   def expect_json_response(response, status, body)
     expect(response.status).to eq(status)
-    expect(Yajl::Parser.parse(response.body)).to eq(body)
+    expect(JSON.parse(response.body)).to eq(body)
   end
 
   it "returns settings for given instance (IP check)" do

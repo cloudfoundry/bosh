@@ -31,7 +31,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
         EOF
 
-        expect(director.instances.length).to eq(0)
+        expect(director.vms.length).to eq(0)
       end
     end
 
@@ -41,8 +41,26 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         deploy_from_scratch(manifest_hash: manifest_hash, dry_run: true)
 
-        expect(director.instances).to eq ([])
+        expect(director.vms).to eq ([])
       end
+    end
+  end
+
+  context 'a very simple deploy' do
+    with_reset_sandbox_before_each
+
+    before do
+      deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.simple_manifest)
+    end
+
+    it 'should contain the worker name in the debug log' do
+      output = bosh_runner.run("task --debug 3")
+
+      # sanity test with static expectation
+      expect(output).to match(/Starting task: 3$/)
+
+      # we currently run three workers
+      expect(output).to match(/Running from worker 'worker_(0|1|2)' on some-name\/some-id \(127\.1\.127\.1\)$/)
     end
   end
 

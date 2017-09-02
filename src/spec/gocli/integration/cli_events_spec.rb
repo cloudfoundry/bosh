@@ -36,16 +36,19 @@ describe 'cli: events', type: :integration do
     expect(stable_data).to all(include('id' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_0', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_1', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
+      {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_2', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
-      {'action' => 'update', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
-      {'action' => 'start', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => "'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update. Review logs for failed jobs: process-3"},
+      {'action' => 'update', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'error' => "'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' is not running after update. Review logs for failed jobs: process-3"},
+      {'action' => 'start', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => "'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' is not running after update. Review logs for failed jobs: process-3"},
       {'action' => 'start', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'update', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore: {}", 'error' => ''},
@@ -91,11 +94,16 @@ describe 'cli: events', type: :integration do
     columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
     expect(get_details(data, columns)).to contain_exactly(
         {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'delete', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'delete', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
         {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
         {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
         {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action orphan", deployment_name: 'simple', json: true)
+    data = table(output)
+    columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
+    expect(get_details(data, columns)).to contain_exactly(
+        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
   end
 
   def get_details(table, keys)

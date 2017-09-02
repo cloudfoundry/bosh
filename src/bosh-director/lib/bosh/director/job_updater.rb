@@ -1,9 +1,10 @@
 module Bosh::Director
   class JobUpdater
-    def initialize(ip_provider, instance_group, disk_manager, job_renderer)
+    def initialize(ip_provider, instance_group, disk_manager, template_blob_cache, dns_encoder)
       @ip_provider = ip_provider
       @instance_group = instance_group
-      @job_renderer = job_renderer
+      @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
 
       @logger = Config.logger
       @event_log = Config.event_log
@@ -84,17 +85,16 @@ module Bosh::Director
 
     def delete_unneeded_instances
       unneeded_instance_plans = @instance_group.obsolete_instance_plans
-      unneeded_instances = @instance_group.unneeded_instances
-      if unneeded_instances.empty?
+      if unneeded_instance_plans.empty?
         return
       else
         @instance_group.did_change = true
       end
 
-      event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@instance_group.name])
+      event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instance_plans.size, [@instance_group.name])
       powerdns_manager = PowerDnsManagerProvider.create
       deleter = InstanceDeleter.new(@ip_provider, powerdns_manager, @disk_manager)
-      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @instance_group.update.max_in_flight(unneeded_instances.size))
+      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @instance_group.update.max_in_flight(unneeded_instance_plans.size))
 
       @logger.info('Deleted no longer needed instances')
     end
@@ -110,7 +110,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
         with_thread_name("canary_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan, :canary => true)
+            InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -129,7 +129,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
         with_thread_name("instance_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new_instance_updater(@ip_provider, @job_renderer).update(instance_plan)
+            InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

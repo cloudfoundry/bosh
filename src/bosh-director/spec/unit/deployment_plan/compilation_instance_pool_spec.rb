@@ -31,8 +31,9 @@ module Bosh::Director
 
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
+    let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([]) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:compilation_config) do
       compilation_spec = {
@@ -53,7 +54,7 @@ module Bosh::Director
         name: 'mycloud',
         ip_provider: ip_provider,
         recreate: false,
-        job_renderer: job_renderer,
+        template_blob_cache: template_blob_cache,
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
@@ -102,7 +103,7 @@ module Bosh::Director
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:name).and_return('fake-director-name')
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
@@ -273,12 +274,12 @@ module Bosh::Director
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
         let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
-
+        let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([availability_zone]) }
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do
           allow(vm_creator).to receive(:create_for_instance_plan)
-          allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster).and_return(vm_creator)
+          allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster).and_return(vm_creator)
         end
 
         it 'spins up vm in the az' do
@@ -415,11 +416,12 @@ module Bosh::Director
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
         allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
         allow(Config).to receive(:logger).and_return(logger)
         allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)
+        allow(deployment_plan).to receive(:availability_zones).and_return([])
 
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
       end

@@ -5,8 +5,7 @@ require 'bosh/director/job_updater'
 module Bosh::Director
   module DeploymentPlan::Steps
     describe PreCleanupStep do
-      subject { PreCleanupStep.new(base_job, deployment_plan) }
-      let(:base_job) { Jobs::BaseJob.new }
+      subject { PreCleanupStep.new(logger, deployment_plan) }
       let(:event_log) { Config.event_log }
       let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
       let(:existing_instance) { Models::Instance.make }
@@ -25,8 +24,7 @@ module Bosh::Director
       before do
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
 
-        allow(base_job).to receive(:logger).and_return(logger)
-        allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([existing_instance_plan])
+        allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([existing_instance_plan])
         allow(event_log).to receive(:begin_stage)
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)
         allow(instance_deleter).to receive(:delete_instance_plans)
@@ -54,10 +52,10 @@ module Bosh::Director
 
         context 'when no instance plans require deletion' do
           before do
-            allow(deployment_plan).to receive(:unneeded_instance_plans).and_return([])
+            allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([])
           end
 
-          it 'exists early and logs the lack of work needed' do
+          it 'exits early and logs the lack of work needed' do
             expect(logger).to receive(:info).with('Deleting no longer needed instances')
             expect(logger).to receive(:info).with('No unneeded instances to delete')
             expect(instance_deleter).to_not receive(:delete_instance_plans)

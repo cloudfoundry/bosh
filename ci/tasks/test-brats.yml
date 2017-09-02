@@ -7,8 +7,9 @@ image_resource:
     repository: bosh/main-bosh-docker
 
 inputs:
-  - name: bosh-dev-release
   - name: bosh-src
+  - name: dns-release
+  - name: candidate-warden-ubuntu-stemcell
 
 params: []
 

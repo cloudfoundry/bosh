@@ -1,0 +1,9 @@
+<%=
+  config = {
+      'works.too' => p('nested.properties.works.too'),
+      'works' => p('nested.properties.works'),
+  }
+
+  require 'json'
+  JSON.dump(config)
+%>

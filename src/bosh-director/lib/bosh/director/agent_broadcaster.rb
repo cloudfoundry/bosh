@@ -14,7 +14,7 @@ module Bosh::Director
       @logger.info("deleting arp entries for the following ip addresses: #{ip_addresses}")
       instances = filter_instances(vm_cid_to_exclude)
       instances.each do |instance|
-        agent_client(instance.credentials, instance.agent_id).delete_arp_entries(ips: ip_addresses)
+        agent_client(instance.agent_id).delete_arp_entries(ips: ip_addresses)
       end
     end
 
@@ -33,9 +33,21 @@ module Bosh::Director
 
       instances.each do |instance|
         pending.add(instance)
-        instance_to_request_id[instance] = agent_client(instance.credentials, instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
+        instance_to_request_id[instance] = agent_client(instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
-          Models::AgentDnsVersion.find_or_create(agent_id: instance.agent_id).update(dns_version: version) if valid_response
+
+          if valid_response
+            updated_rows = Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+
+            if updated_rows == 0
+              begin
+                Models::AgentDnsVersion.create(agent_id: instance.agent_id, dns_version: version)
+              rescue Sequel::UniqueConstraintViolation
+                Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+              end
+            end
+          end
+
           lock.synchronize do
             if valid_response
               num_successful += 1
@@ -66,14 +78,19 @@ module Bosh::Director
           pending_clone = pending.clone
         end
 
+        unresponsive_agents = []
         pending_clone.each do |instance|
-          agent_client = agent_client(instance.credentials, instance.agent_id)
+          agent_client = agent_client(instance.agent_id)
           agent_client.cancel_sync_dns(instance_to_request_id[instance])
 
           lock.synchronize do
             num_unresponsive += 1
           end
-          @logger.warn("agent_broadcaster: sync_dns[#{instance.agent_id}]: no response received")
+
+          unresponsive_agents << instance.agent_id
+        end
+        if num_unresponsive > 0
+          @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
         end
 
         elapsed_time = ((Time.now - start_time) * 1000).ceil
@@ -91,17 +108,13 @@ module Bosh::Director
 
     private
 
-    def agent_client(instance_credentials, instance_agent_id)
-      AgentClient.with_vm_credentials_and_agent_id(instance_credentials, instance_agent_id)
+    def agent_client(instance_agent_id)
+      AgentClient.with_agent_id(instance_agent_id)
     end
   end
 
   class EmReactorLoop
     def queue(&blk)
-      mutex = Mutex.new
-      resource = ConditionVariable.new
-      EM.next_tick { mutex.synchronize { resource.signal } }
-      mutex.synchronize { resource.wait(mutex) }
       blk.call
     end
   end

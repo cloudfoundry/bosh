@@ -14,7 +14,7 @@ module Bosh::Director
       if @enable_nats_delivery
         begin
           send_templates_to_agent(instance_plan)
-        rescue AgentUnsupportedAction
+        rescue Bosh::Director::AgentUnsupportedAction, Bosh::Director::AgentUploadBlobUnableToOpenFile
           persist_on_blobstore(instance_plan)
         end
       else

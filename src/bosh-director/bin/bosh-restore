@@ -8,4 +8,4 @@ config = Bosh::Director::Config.load_file(config_file)
 Bosh::Director::App.new(config)
 
 restore_manager = Bosh::Director::Api::RestoreManager.new
-restore_manager.restore_db("#{ENV['ARTIFACT_DIRECTORY']}/director_db.tgz")
+restore_manager.restore_db("#{ENV['ARTIFACT_DIRECTORY']}/director_db.sql.gz")

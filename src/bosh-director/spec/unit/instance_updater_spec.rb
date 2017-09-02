@@ -4,8 +4,8 @@ module Bosh::Director
   describe InstanceUpdater do
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:job_renderer) { JobRenderer.create }
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, job_renderer) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
     let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -13,7 +13,7 @@ module Bosh::Director
     let(:credentials_json) { JSON.generate(credentials) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
-      vm_model = Models::Vm.make(agent_id: 'scool', credentials_json: credentials_json, instance_id: instance.id)
+      vm_model = Models::Vm.make(agent_id: 'scool', instance_id: instance.id)
       instance.active_vm = vm_model
       instance
     end
@@ -43,7 +43,8 @@ module Bosh::Director
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
-    let (:disk_manager) { instance_double(DiskManager) }
+    let(:disk_manager) { instance_double(DiskManager) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
 
     before do
       Models::VariableSet.create(deployment: deployment_model)
@@ -55,6 +56,7 @@ module Bosh::Director
       allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
       allow(DiskManager).to receive(:new).and_return(disk_manager)
+      allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
     end
 
@@ -67,7 +69,7 @@ module Bosh::Director
         allow(state_applier).to receive(:apply)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(instance_plan).to receive(:already_detached?).and_return(true)
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         allow(updater).to receive(:needs_recreate?).and_return(false)
         allow(disk_manager).to receive(:update_persistent_disk)
         allow(instance).to receive(:update_instance_settings)
@@ -95,7 +97,7 @@ module Bosh::Director
 
     context 'when stopping instances' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -188,7 +190,7 @@ module Bosh::Director
       let(:instance_desired_state) { 'started' }
 
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -263,7 +265,7 @@ module Bosh::Director
         expect(instance_model.state).to eq('started')
         expect(Models::Event.count).to eq 0
 
-        expect(AgentClient).not_to receive(:with_vm_credentials_and_agent_id)
+        expect(AgentClient).not_to receive(:with_agent_id)
 
         subnet_spec = {
           'range' => '10.10.10.0/24',
@@ -274,9 +276,9 @@ module Bosh::Director
         reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
         instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
 
-        expect(Bosh::Director::RenderedTemplatesPersister).to_not receive(:persist).with(logger, blobstore_client, instance_plan)
-
-        updater.update(instance_plan)
+        expect{
+          updater.update(instance_plan)
+        }.not_to change { Models::RenderedTemplatesArchive.count }
 
         expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
         expect(instance_model.update_completed).to eq true
@@ -293,7 +295,7 @@ module Bosh::Director
 
       it 'updates the instance settings' do
         allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
 
         allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
 
@@ -312,7 +314,7 @@ module Bosh::Director
 
     context 'when something goes wrong in the update procedure' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(rendered_templates_persistor).to receive(:persist)
       end
@@ -324,7 +326,7 @@ module Bosh::Director
         expect(agent_client).to receive(:drain).and_raise(drain_error)
 
         expect { updater.update(instance_plan) }.to raise_error drain_error
-        expect(Models::Event.map(&:error)).to eq([nil, 'Oh noes!'])
+        expect(Models::Event.map(&:error)).to match_array([nil, 'Oh noes!'])
       end
     end
   end

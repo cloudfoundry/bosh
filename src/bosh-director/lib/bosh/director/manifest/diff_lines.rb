@@ -27,6 +27,7 @@ module Bosh::Director
       releases
       update
       jobs
+      release
       addons
       variables
     )

@@ -256,6 +256,7 @@ module Bosh::Director
   AgentDiskOutOfSync = err(400010)
   AgentInvalidTaskResult = err(400011)
   AgentUnsupportedAction = err(400012)
+  AgentUploadBlobUnableToOpenFile = err(400013)
 
   # Cloud check task errors
   CloudcheckTooManySimilarProblems = err(410001)
@@ -306,12 +307,14 @@ module Bosh::Director
   ConfigServerDeploymentNameMissing = err(540006)
   ConfigServerIncorrectVariablePlacement = err(540007)
   ConfigServerInconsistentVariableState = err(540008)
+  ConfigServerDisabledError = err(540009)
 
   # CPI config
   CpiDuplicateName = err(550000)
 
-  # Variables
+  # Spec Parser
   VariablesInvalidFormat = err(560000)
+  FeaturesInvalidFormat = err(560001)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
@@ -321,4 +324,7 @@ module Bosh::Director
 
   # Invalid YAML
   InvalidYamlError = err(710000)
+
+  # Resolving Links
+  LinkLookupError = err(810000)
 end

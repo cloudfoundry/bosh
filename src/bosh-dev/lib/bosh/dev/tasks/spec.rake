@@ -14,27 +14,18 @@ require 'parallel_tests/tasks'
 
 namespace :spec do
   namespace :integration do
-    desc 'Run BOSH integration tests against a local sandbox'
-    task :agent => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      run_integration_specs
-    end
-
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task :gocli => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
     task :health_monitor => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      run_integration_specs(tags: 'hm')
+      run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
     end
 
     desc 'Run BOSH gocli upgrade tests against a local sandbox'
     task :upgrade => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
@@ -67,6 +58,8 @@ namespace :spec do
           Bosh::Dev::VerifyMultidigestManager.install
         end
       end
+
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
     end
 
     desc 'Download BOSH Agent. Use only for local dev environment'
@@ -101,7 +94,7 @@ namespace :spec do
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
-      spec_path = options.fetch(:spec_path, 'spec/integration')
+      spec_path = options.fetch(:spec_path)
 
       puts "Launching parallel execution of #{spec_path}"
       run_in_parallel(spec_path, options)
@@ -123,8 +116,6 @@ namespace :spec do
       abort unless system(command)
     end
   end
-
-  task :integration => %w(spec:integration:agent)
 
   task :integration_gocli => %w(spec:integration:gocli)
 
@@ -169,7 +160,13 @@ namespace :spec do
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
     puts "Release unit tests (ERB templates)"
-    system("cd .. && rspec --tty --backtrace -c -f p spec/")
+    sh("cd .. && rspec --tty --backtrace -c -f p spec/")
+  end
+
+  desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
+  task :template_test_unit do
+    puts "Template test unit tests (ERB templates)"
+    sh("rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb")
   end
 
   namespace :unit do
@@ -209,8 +206,8 @@ namespace :spec do
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby)
+  task :unit => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
 end
 
-desc 'Run unit and integration specs'
-task :spec => %w(spec:unit spec:integration)
+desc 'Run unit and gocli integration specs'
+task :spec => %w(spec:unit spec:integration:gocli)

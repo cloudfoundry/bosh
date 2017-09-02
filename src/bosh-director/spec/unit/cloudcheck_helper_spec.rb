@@ -33,10 +33,11 @@ module Bosh::Director
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
+    let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, job_renderer, agent_broadcaster) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, template_cache, dns_encoder, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-    let(:job_renderer) { JobRenderer.create }
+    let(:template_cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:agent_client) { instance_double(AgentClient) }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
@@ -45,12 +46,12 @@ module Bosh::Director
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     before do
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id).and_return(agent_client)
       allow(agent_client).to receive(:sync_dns) do |_,_,_,&blk|
         blk.call({'value' => 'synced'})
       end.and_return(0)
-      allow(JobRenderer).to receive(:create).and_return(job_renderer)
+      allow(Bosh::Director::Core::Templates::TemplateBlobCache).to receive(:new).and_return(template_cache)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(Config).to receive(:current_job).and_return(update_job)
@@ -66,9 +67,9 @@ module Bosh::Director
       let(:cloud) { Config.cloud }
       let(:cloud_factory) { instance_double(CloudFactory) }
       before do
-        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
+        allow(CloudFactory).to receive(:create_from_deployment).with(deployment_model).and_return(cloud_factory)
         expect(cloud).to receive(:reboot_vm).with(vm.cid)
-        expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+        expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 
       it 'reboots the vm on success' do
@@ -93,13 +94,40 @@ module Bosh::Director
       end
     end
 
+    describe '#delete_vm_reference' do
+      before { fake_job_context }
+
+      it 'deletes VM reference' do
+        expect {
+          test_problem_handler.delete_vm_reference(instance)
+        }.to change {
+          vm = Models::Vm.where(instance_id: instance.id).first
+          vm.nil? ? 0 : Models::Vm.where(instance_id: instance.id, active: true).count
+        }.from(1).to(0)
+      end
+
+      context 'instance active_vm is nil' do
+        before do
+          vm_model = instance.active_vm
+          instance.active_vm = nil
+          vm_model.delete
+        end
+
+        it 'does not error' do
+          expect {
+            test_problem_handler.delete_vm_reference(instance)
+          }.to_not raise_error
+        end
+      end
+    end
+
     describe '#delete_vm' do
       before { fake_job_context }
       context 'when VM does not have disks' do
         before { allow(agent_client).to receive(:list_disk).and_return([]) }
 
         it 'deletes VM using vm_deleter' do
-          expect(vm_deleter).to receive(:delete_vm).with(instance)
+          expect(vm_deleter).to receive(:delete_for_instance).with(instance)
           test_problem_handler.delete_vm(instance)
         end
       end
@@ -197,7 +225,7 @@ module Bosh::Director
             expect(powerdns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' => nil, 'uuid.record.name' => nil})
             expect(powerdns_manager).to receive(:flush_dns_cache)
 
-            expect(job_renderer).to receive(:clean_cache!)
+            expect(template_cache).to receive(:clean_cache!)
           end
 
           it 'recreates the VM' do

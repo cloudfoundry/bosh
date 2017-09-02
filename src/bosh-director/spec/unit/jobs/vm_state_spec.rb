@@ -35,12 +35,14 @@ module Bosh::Director
       let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
-    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id) }
+
+    let(:time) {Time.now}
+    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
     let(:instance) { Models::Instance.make(deployment: @deployment) }
 
     describe '#perform' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).with(anything, timeout: 5).and_return(agent)
         instance.active_vm = vm
         instance.save
       end
@@ -68,6 +70,7 @@ module Bosh::Director
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
         expect(status['vitals']).to be_nil
+        expect(status['vm_created_at']).to eq(time.utc.iso8601)
       end
 
       context 'when there are two networks' do
@@ -117,6 +120,7 @@ module Bosh::Director
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
+        expect(status['vm_created_at']).to eq(time.utc.iso8601)
         expect(status['vitals']['load']).to eq(['1', '5', '15'])
         expect(status['vitals']['cpu']).to eq({'user' => 'u', 'sys' => 's', 'wait' => 'w'})
         expect(status['vitals']['mem']).to eq({'percent' => 'p', 'kb' => 'k'})
@@ -157,6 +161,7 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['vm_created_at']).to eq(time.utc.iso8601)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('unresponsive agent')
         expect(status['resurrection_paused']).to be_truthy
@@ -295,7 +300,7 @@ module Bosh::Director
         it 'does not try to contact the agent' do
           instance.active_vm = nil
 
-          expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
+          expect(AgentClient).to_not receive(:with_agent_id)
 
           Jobs::VmState.new(@deployment.id, 'full', true).perform
 

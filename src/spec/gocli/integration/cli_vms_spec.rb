@@ -87,6 +87,7 @@ describe 'cli: vms', type: :integration do
     expect(first_row).to include('ips')
     expect(first_row).to include('vm_cid')
     expect(first_row).to include('vm_type')
+    expect(first_row).to include('vm_created_at')
     expect(first_row).to include('uptime')
     expect(first_row).to include('load_1m_5m_15m')
     expect(first_row).to include('cpu_total')

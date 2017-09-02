@@ -1,15 +1,15 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe EnabledClient do
-    subject(:client) { EnabledClient.new(http_client, director_name, logger) }
+  describe ConfigServerClient do
+    subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
     let(:deployment_attrs) { { id: 1, name: deployment_name } }
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
     let(:success_post_response) {
-      generate_success_response({ "id": "some_id1" }.to_json)
+      generate_success_response({ :id => 'some_id1'}.to_json)
     }
     let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
@@ -97,7 +97,44 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when object to be interpolated is NOT nil' do
+
         context 'when object to be interpolated is a hash' do
+
+          context 'when hash does NOT contain any placeholders' do
+            let(:raw_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => '1',
+                  'nil_allowed' => nil,
+                  'empty_allowed' => ''
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => 'string'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => {}}}
+                ],
+                'my_value_will_be_a_hash' => {}
+              }
+            end
+
+            it 'does not raise an error' do
+              expect {
+                client.interpolate(raw_hash)
+              }.to_not raise_error
+            end
+
+            it 'returns an equivalent hash' do
+              interpolated_hash = client.interpolate(raw_hash)
+              expect(interpolated_hash).to eq(raw_hash)
+            end
+          end
+
           context 'when all placeholders syntax is correct' do
             let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
             let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
@@ -179,20 +216,24 @@ module Bosh::Director::ConfigServer
                 {'response' => 'Invalid JSON response',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
 
-                {'response' => {'x' => {}},
+                {'response' => '{"x" : {}}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
-                {'response' => {'data' => {'value' => 'x'}},
+                {'response' => '{"data" : {"value" : "x"}}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
 
-                {'response' => {'data' => []},
+                {'response' => '{"data" : []}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
 
-                {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
+                {'response' => '{"data" : [{"name" : "name1", "id" : "id1", "val" : "x"}]}',
                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+
+                {'response' => '{"data" : [{"name" : "name1", "value" : "x"}]}',
+                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\''},
+
               ].each do |entry|
                 it 'raises an error' do
-                  allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response'].to_json))
+                  allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response']))
                   expect {
                     client.interpolate(manifest_hash)
                   }.to raise_error { |error|
@@ -330,6 +371,7 @@ module Bosh::Director::ConfigServer
             end
           end
         end
+
         context 'when object to be interpolated is NOT a hash' do
           it 'raises an error' do
             expect {
@@ -343,7 +385,7 @@ module Bosh::Director::ConfigServer
           it 'should return nil' do
             expect(client.interpolate(nil)).to be_nil
           end
-        end
+      end
     end
 
     describe '#interpolate_with_versioning' do
@@ -488,14 +530,46 @@ module Bosh::Director::ConfigServer
         allow(variable_set_model).to receive(:deployment).and_return(deployment_model)
       end
 
-      # shared_examples_for :variable_name_dot_syntax do
-
-      # end
-
       context 'when object to be interpolated is NOT nil' do
-        context 'when object to be interpolated is a hash' do
-          context 'when all placeholders syntax is correct' do
 
+        context 'when object to be interpolated is a hash' do
+
+          context 'when hash does NOT contain any placeholders' do
+            let(:raw_hash) do
+              {
+                'properties' => {
+                  'integer_allowed' => '1',
+                  'nil_allowed' => nil,
+                  'empty_allowed' => ''
+                },
+                'i_am_a_hash' => {
+                  'i_am_an_array' => [
+                    {
+                      'name' => 'test_job',
+                      'properties' => {'job_prop' => 'string'}
+                    }
+                  ]
+                },
+                'i_am_another_array' => [
+                  {'env' => {'env_prop' => {}}}
+                ],
+                'my_value_will_be_a_hash' => {}
+              }
+            end
+
+            it 'does not raise an error' do
+              expect {
+                client.interpolate_with_versioning(raw_hash, variable_set_model)
+              }.to_not raise_error
+            end
+
+            it 'returns an equivalent hash' do
+                interpolated_hash = client.interpolate_with_versioning(raw_hash, variable_set_model)
+                expect(interpolated_hash).to eq(raw_hash)
+            end
+          end
+
+          context 'when all placeholders syntax is correct' do
 
             let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
             let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
@@ -782,27 +856,24 @@ module Bosh::Director::ConfigServer
                   {'response' => 'Invalid JSON response',
                    'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response"},
 
-                  {'response' => {'x' => {}},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => '{"id" : "some-id"}',
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'value'"},
 
-                  {'response' => {'data' => {'value' => 'x'}},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => '{"value" : "some-value-foo"}',
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => {'data' => []},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => '{}',
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
 
-                  {'response' => {'data' => [{'name' => 'name1', 'id' => 'id1', 'val' => 'x'}]},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
-
-                  {'response' => {'data' => [{'name' => 'name1', 'value' => 'x'}]},
-                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                  {'response' => '[{"name" : "name1", "id" : "id1", "val" : "x"}, {"name" : "name2", "id" : "id2", "val" : "y"}]',
+                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to be a hash, got 'Array'"},
                 ].each do |entry|
                   it 'raises an error' do
                     variable_model = instance_double(Bosh::Director::Models::Variable)
                     allow(variable_model).to receive(:variable_name).and_return('/bad')
                     allow(variable_model).to receive(:variable_id).and_return('20')
                     allow(variable_set_model).to receive(:find_variable_by_name).with('/bad').and_return(variable_model)
-                    allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response'].to_json))
+                    allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response']))
 
                     expect {
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
@@ -885,7 +956,6 @@ module Bosh::Director::ConfigServer
                 end
               end
             end
-
           end
 
           context 'when some placeholders have invalid name syntax' do
@@ -926,7 +996,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      context 'when object to be interpolated in is nil' do
+      context 'when object to be interpolated is nil' do
         it 'should return nil' do
           expect(client.interpolate_with_versioning(nil, variable_set_model)).to be_nil
         end
@@ -1009,7 +1079,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      context 'when links spec passed is not a hash' do
+      context 'when links spec passed is NOT a hash' do
         it 'throws an error' do
           expect {
             client.interpolate_cross_deployment_link('vroooom', consumer_variable_set, provider_variable_set)
@@ -1018,6 +1088,34 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when links spec passed is a hash' do
+
+        context 'when links spec hash does NOT contain any placeholders' do
+          let(:links_properties_spec) do
+            {
+              'age' => 6,
+              'hash_value' => '0123456789',
+              'dots_allowed' => true,
+              'nil_allowed' => true,
+              'empty_allowed' => true,
+              'nested_allowed' => {
+                'level_1' => ''
+              },
+              'absolute_allowed' => 'why?'
+            }
+          end
+
+          it 'does not raise an error' do
+            expect {
+              client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+            }.to_not raise_error
+          end
+
+          it 'returns a hash equivalent to the links spec hash' do
+            interpolated_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
+            expect(interpolated_spec).to eq(links_properties_spec)
+          end
+        end
+
         context 'when the consumer variable_set already has all the variables' do
           before do
             mock_config_store.each do |name, value|
@@ -1202,9 +1300,23 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when property value is NOT nil' do
+
+        context 'when property value does NOT contain a placeholder' do
+          it 'does not raise an error' do
+            expect {
+              expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name))
+            }.to_not raise_error
+          end
+
+          it 'returns the provided property value' do
+            expect {
+              expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
+            }.to_not raise_error
+          end
+        end
+
         context 'when property value is NOT a full placeholder (NOT padded with brackets)' do
           it 'returns that property value' do
-            expect(client.prepare_and_get_property('my_smurf', 'my_default_value', nil, deployment_name)).to eq('my_smurf')
             expect(client.prepare_and_get_property('((my_smurf', 'my_default_value', nil, deployment_name)).to eq('((my_smurf')
             expect(client.prepare_and_get_property('my_smurf))', 'my_default_value', 'whatever', deployment_name)).to eq('my_smurf))')
             expect(client.prepare_and_get_property('((my_smurf))((vroom))', 'my_default_value', 'whatever', deployment_name)).to eq('((my_smurf))((vroom))')
@@ -1347,6 +1459,18 @@ module Bosh::Director::ConfigServer
                     expect(saved_variable.variable_id).to eq('some_id1')
                   end
 
+                  it 'should raise an error when id is not present in generated  response' do
+                    allow(http_client).to receive(:post).and_return(generate_success_response({value: 'some-foo'}.to_json))
+
+                    expect{
+                      client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
+                    }.to raise_error(
+                           Bosh::Director::ConfigServerGenerationError,
+                           "Failed to version generated variable '#{prepend_namespace('my_smurf')}'. Expected Config Server response to have key 'id'"
+                    )
+
+                  end
+
                   context 'when placeholder starts with exclamation mark' do
                     it 'generates the value and returns the user provided placeholder' do
                       expect(http_client).to receive(:post).with({'name' => "#{full_key}", 'type' => 'any-type-you-like', 'parameters' => {}}).and_return(success_post_response)
@@ -1455,7 +1579,9 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#generate_values' do
+      
       context 'when given a variables object' do
+
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
             [
@@ -1619,7 +1745,7 @@ module Bosh::Director::ConfigServer
             expect(event_3.context).to eq({'id'=>3,'name'=>'/placeholder_c'})
           end
 
-          context 'when variable options contains a ca key' do
+          context 'when variable options contains a CA key' do
 
             context 'when variable type is certificate & ca is relative' do
               let(:variables_spec) do
@@ -1787,8 +1913,6 @@ module Bosh::Director::ConfigServer
               expect(models.length).to eq(0)
             end
           end
-
-
         end
       end
     end
@@ -1797,84 +1921,6 @@ module Bosh::Director::ConfigServer
       result = SampleSuccessResponse.new
       result.body = body
       result
-    end
-  end
-
-  describe DisabledClient do
-    subject(:disabled_client) { DisabledClient.new }
-    let(:deployment_name) { 'smurf_deployment' }
-
-    it 'responds to all methods of EnabledClient and vice versa' do
-      expect(EnabledClient.instance_methods - DisabledClient.instance_methods).to be_empty
-      expect(DisabledClient.instance_methods - EnabledClient.instance_methods).to be_empty
-    end
-
-    it 'has the same arity as EnabledClient methods' do
-      EnabledClient.instance_methods.each do |method_name|
-        expect(EnabledClient.instance_method(method_name).arity).to eq(DisabledClient.instance_method(method_name).arity)
-      end
-    end
-
-    describe '#interpolate' do
-      let(:src) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate(src)).to eq(src)
-      end
-    end
-
-    describe '#interpolate_with_versioning' do
-      let(:src) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-      let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate_with_versioning(src, variable_set)).to eq(src)
-      end
-    end
-
-    describe '#interpolate_cross_deployment_link' do
-      let(:link_spec) do
-        {
-          'test' => 'smurf',
-          'test2' => '((placeholder))'
-        }
-      end
-
-      let(:consumer_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-      let(:provider_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-
-      it 'returns src as is' do
-        expect(disabled_client.interpolate_cross_deployment_link(link_spec, consumer_variable_set, provider_variable_set)).to eq(link_spec)
-      end
-    end
-
-    describe '#prepare_and_get_property' do
-      it 'returns manifest property value if defined' do
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name)).to eq('provided prop')
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name, {})).to eq('provided prop')
-        expect(disabled_client.prepare_and_get_property('provided prop', 'default value is here', nil, deployment_name, {'whatever' => 'hello'})).to eq('provided prop')
-      end
-      it 'returns default value when manifest value is nil' do
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name)).to eq('default value is here')
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {})).to eq('default value is here')
-        expect(disabled_client.prepare_and_get_property(nil, 'default value is here', nil, deployment_name, {'whatever' => 'hello'})).to eq('default value is here')
-      end
-    end
-
-    describe '#generate_values' do
-      it 'exists' do
-        expect { disabled_client.generate_values(anything, anything) }.to_not raise_error
-      end
     end
   end
 

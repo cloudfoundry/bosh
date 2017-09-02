@@ -6,6 +6,7 @@ Sham.define do
   object_name      { |index| "deployment-#{index}" }
   password         { |index| "password-#{index}" }
   version          { |index| "version-#{index}" }
+  fingerprint      { |index| "fingerprint-#{index}" }
   manifest         { |index| "manifest-#{index}" }
   job              { |index| "job-#{index}"}
   vm_cid           { |index| "vm-cid-#{index}" }
@@ -67,6 +68,7 @@ module Bosh::Director::Models
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
     package_names_json  { "[]" }
+    fingerprint         { Sham.fingerprint }
   end
 
   Stemcell.blueprint do
@@ -117,11 +119,6 @@ module Bosh::Director::Models
     output      { nil }
     result_output { nil }
     event_output { nil }
-  end
-
-  User.blueprint do
-    username { Sham.username }
-    password { Sham.password }
   end
 
   PersistentDisk.blueprint do
@@ -208,10 +205,7 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
-  ErrandRun.blueprint do
-    instance_id { Instance.make.id }
-    successful  { false }
-  end
+  ErrandRun.blueprint {}
 
   Blob.blueprint do
     blobstore_id { Sham.blobstore_id }
@@ -239,6 +233,7 @@ module Bosh::Director::Models
   Vm.blueprint do
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
+    created_at { Time.now }
   end
 
   module Dns

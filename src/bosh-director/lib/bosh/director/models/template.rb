@@ -9,6 +9,40 @@ module Bosh::Director::Models
       validates_format VALID_ID, [:name, :version]
     end
 
+    def self.find_or_init_from_release_meta(release:, job_meta:, job_manifest:)
+      template = first(
+        name: job_meta['name'],
+        release_id: release.id,
+        fingerprint: job_meta['fingerprint'],
+        version: job_meta['version']
+      )
+
+      if template
+        template.sha1 = job_meta['sha1']
+      else
+        template = new(
+          name: job_meta['name'],
+          release_id: release.id,
+          fingerprint: job_meta['fingerprint'],
+          version: job_meta['version'],
+          sha1: job_meta['sha1'],
+        )
+      end
+
+      template.spec = job_manifest
+      template.package_names = parse_package_names(job_manifest)
+
+      template
+    end
+
+    def spec
+      object_or_nil(self.spec_json) || {}
+    end
+
+    def spec=(spec)
+      self.spec_json = json_encode(spec)
+    end
+
     def package_names
       object_or_nil(self.package_names_json)
     end
@@ -17,42 +51,34 @@ module Bosh::Director::Models
       self.package_names_json = json_encode(packages)
     end
 
-    def logs=(logs_spec)
-      self.logs_json = json_encode(logs_spec)
-    end
-
     def logs
-      object_or_nil(self.logs_json)
+      spec['logs'] || []
     end
 
-    # @param [Object] property_spec Property spec from job spec
-    def properties=(property_spec)
-      self.properties_json = json_encode(property_spec)
-    end
-
-    # @return [Hash] Template properties (as provided in job spec)
-    # @return [nil] if no properties have been defined in job spec
     def properties
-      object_or_nil(self.properties_json) || {}
-    end
-
-    def consumes=(consumes_spec)
-      self.consumes_json = json_encode(consumes_spec)
+      spec['properties'] || {}
     end
 
     def consumes
-      object_or_nil(self.consumes_json)
-    end
-
-    def provides=(provides_spec)
-      self.provides_json = json_encode(provides_spec)
+      spec['consumes'] || []
     end
 
     def provides
-      object_or_nil(self.provides_json)
+      spec['provides'] || []
+    end
+
+    def runs_as_errand?
+      return false if templates == nil
+
+      templates.values.include?('bin/run') ||
+        templates.values.include?('bin/run.ps1')
     end
 
     private
+
+    def templates
+      spec['templates'] || {}
+    end
 
     def object_or_nil(value)
       if value == 'null' || value == nil
@@ -64,6 +90,13 @@ module Bosh::Director::Models
 
     def json_encode(value)
       value.nil? ? 'null' : JSON.generate(value)
+    end
+
+    def self.parse_package_names(job_manifest)
+      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
+        raise Bosh::Director::JobInvalidPackageSpec, "Job '#{name}' has invalid package spec format"
+      end
+      job_manifest['packages'] || []
     end
   end
 end

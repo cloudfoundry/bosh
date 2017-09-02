@@ -189,20 +189,14 @@ module Bosh::Director
       before do
         allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
         allow(consolidated_runtime_config).to receive(:raw_manifest).and_return({})
-        # allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return({})
       end
+
       it 'generates empty manifests' do
         result_manifest  = Manifest.generate_empty_manifest
         expect(result_manifest.hybrid_manifest_hash).to eq({})
         expect(result_manifest.raw_manifest_hash).to eq({})
         expect(result_manifest.hybrid_cloud_config_hash).to eq(nil)
         expect(result_manifest.hybrid_runtime_config_hash).to eq({})
-      end
-
-      it 'does not call config server client even if config server is enabled' do
-        allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:interpolate)
-        Manifest.generate_empty_manifest
       end
     end
 

@@ -181,6 +181,7 @@ module Bosh::Dev::Sandbox
         trusted_certs: @trusted_certs,
         users_in_manifest: @users_in_manifest,
         enable_post_deploy: @enable_post_deploy,
+        enable_cpi_resize_disk: @enable_cpi_resize_disk,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
@@ -286,12 +287,13 @@ module Bosh::Dev::Sandbox
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
-      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false})
+      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false, use_dns_addresses: false})
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
+      @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
@@ -353,7 +355,7 @@ module Bosh::Dev::Sandbox
         load_db_and_populate_blobstore(@test_initial_state)
       end
 
-      @uaa_service.start if @user_authentication == 'uaa'
+      @uaa_service.restart_if_needed if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
 
       @director_service.start(director_config, @drop_database)

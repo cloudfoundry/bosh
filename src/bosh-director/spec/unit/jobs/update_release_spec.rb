@@ -450,7 +450,7 @@ module Bosh::Director
                   'fingerprint' => 'fake-fingerprint-2',
                   'name' => 'fake-job-2',
                   'version' => 'fake-version-2',
-                  'templates' => {}
+                  'templates' => {},
               }
           ], release_dir)
           job.perform

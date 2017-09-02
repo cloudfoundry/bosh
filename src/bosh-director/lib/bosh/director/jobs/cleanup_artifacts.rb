@@ -46,16 +46,18 @@ module Bosh::Director
           dns_blob_age, dns_blobs_to_keep = 3600, 10
         end
 
-        unused_release_name_and_version = @releases_to_delete_picker.pick(releases_to_keep)
-        release_stage = Config.event_log.begin_stage('Deleting releases', unused_release_name_and_version.count)
+        unused_release_name_and_versions = @releases_to_delete_picker.pick(releases_to_keep)
+        release_count = unused_release_name_and_versions.map{|r| r['versions']}.flatten.count
+        release_stage = Config.event_log.begin_stage('Deleting releases', release_count)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-          unused_release_name_and_version.each do |name_and_version|
+          unused_release_name_and_versions.each do |release|
             pool.process do
-              name = name_and_version['name']
-              version = name_and_version['version']
-              release_stage.advance_and_track("#{name}/#{version}") do
-                with_release_lock(name, :timeout => 10) do
-                  @name_version_release_deleter.find_and_delete_release(name, version, false)
+              name = release['name']
+              with_release_lock(name, :timeout => 10) do
+                release['versions'].each do |version|
+                  release_stage.advance_and_track("#{name}/#{version}") do
+                    @name_version_release_deleter.find_and_delete_release(name, version, false)
+                  end
                 end
               end
             end
@@ -107,7 +109,7 @@ module Bosh::Director
           dns_blob_message = ScheduledDnsBlobsCleanup.new(cleanup_params).perform
         end
 
-        "Deleted #{unused_release_name_and_version.count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{exported_releases_count} exported release(s)\n#{dns_blob_message}"
+        "Deleted #{release_count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{exported_releases_count} exported release(s)\n#{dns_blob_message}"
       end
     end
   end

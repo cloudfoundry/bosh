@@ -292,13 +292,15 @@ module Bosh::Director
             release_version = Models::ReleaseVersion.find(:version => '1')
 
             dummy_template = Models::Template.make(
-                :release_id => 1,
-                :name => 'dummy_template',
-                :version => '2',
-                :blobstore_id => '123',
-                :sha1 => '12a',
-                :consumes => {'link-consumed' => 'consumed'},
-                :provides => {'link-provided' => 'provided'},
+              release_id: 1,
+              name: 'dummy_template',
+              version: '2',
+              blobstore_id: '123',
+              sha1: '12a',
+              spec: {
+                consumes: {'link-consumed' => 'consumed'},
+                provides: {'link-provided' => 'provided'},
+              },
             )
 
             release_version.add_template(dummy_template)

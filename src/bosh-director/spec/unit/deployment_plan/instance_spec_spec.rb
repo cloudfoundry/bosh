@@ -3,29 +3,37 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe InstanceSpec do
     include Support::StemcellHelpers
-    subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan)}
-    let(:job_spec) { {'name' => 'job', 'release' => 'release', 'templates' => []} }
-    let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
-    let(:properties) { {'key' => 'value'} }
+    subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan) }
+    let(:job_spec) { { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] } }
+    let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
+    let(:properties) { { 'key' => 'value' } }
     let(:links) do
-      {'link_name' =>
-         {'deployment_name' => 'dep1',
-          'some_key' => 'some_value',
-          "networks"=> ["default"],
-          "properties"=> {
-            "listen_port"=> "Kittens"
-          },
-          "instances"=> [{
-                           "name"=> "provider",
-                           "index"=> 0,
-                           "bootstrap"=> true,
-                           "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
-                           "az"=> "z1",
-                           "address"=> "10.244.0.4"
-                         }
-          ]}
+      { 'smurf-job' =>
+        { 'link_name' =>
+          { 'deployment_name' => 'dep1',
+            'some_key' => 'some_value',
+            'networks' => ['default'],
+            'properties' => {
+              'listen_port' => 'Kittens'
+            },
+            'address' => 'some.address.com',
+            'instances' => [{
+              'name' => 'provider',
+              'index' => 0,
+              'bootstrap' => true,
+              'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
+              'az' => 'z1',
+              'address' => '10.244.0.4'
+            }],
+            'instance_group' => 'smurf-ig',
+            'default_network' => 'smurf-net',
+            'domain' => 'smurf.bosh'
+          }
+        }
       }
     end
+    let(:smurf_job_links) { links['smurf-job'] }
+
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
       {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
@@ -37,7 +45,7 @@ module Bosh::Director::DeploymentPlan
         spec: job_spec,
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {"gateway" => "default"},
+        default_network: { 'gateway' => 'default' },
         vm_type: vm_type,
         vm_extensions: [],
         stemcell: stemcell,
@@ -54,10 +62,10 @@ module Bosh::Director::DeploymentPlan
     end
     let(:index) { 0 }
     let(:instance_state) { {} }
-    let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
     let(:instance) {
       instance = Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
-      instance.variable_set = variable_set
+      instance.desired_variable_set = desired_variable_set
       instance
     }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
@@ -128,27 +136,34 @@ module Bosh::Director::DeploymentPlan
     describe '#template_spec' do
       let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:expected_links) do
-        {'link_name' =>
-           {
-             "properties"=> {
-               "listen_port"=> "Kittens"
-             },
-             "instances"=> [{
-                              "name"=> "provider",
-                              "index"=> 0,
-                              "bootstrap"=> true,
-                              "id"=> "3d46803d-1527-4209-8e1f-822105fece7c",
-                              "az"=> "z1",
-                              "address"=> "10.244.0.4"
-                            }
-             ]}
+        {
+          'smurf-job' => {
+            'link_name' => {
+              'properties' => {
+                'listen_port' => 'Kittens'
+              },
+              'address' => 'some.address.com',
+              'instances' => [{
+                'name' => 'provider',
+                'index' => 0,
+                'bootstrap' => true,
+                'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
+                'az' => 'z1',
+                'address' => '10.244.0.4'
+              }],
+              'instance_group' => 'smurf-ig',
+              'default_network' => 'smurf-net',
+              'deployment_name' => 'dep1',
+              'domain' => 'smurf.bosh'
+            }
+          }
         }
       end
 
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-        allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', variable_set).and_return(properties)
-        allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links, variable_set).and_return(links)
+        allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(properties)
+        allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(smurf_job_links)
       end
 
       context 'links specs whitelisting' do
@@ -175,8 +190,10 @@ module Bosh::Director::DeploymentPlan
 
         let(:links) do
           {
-            'link_1' => first_link,
-            'link_2' => second_link
+            'smurf-job' => {
+              'link_1' => first_link,
+              'link_2' => second_link
+            }
           }
         end
 
@@ -197,14 +214,18 @@ module Bosh::Director::DeploymentPlan
 
         let(:resolved_links) do
           {
-            'link_1' => resolved_first_link,
-            'link_2' => resolved_second_link,
+            'smurf-job' => {
+              'link_1' => resolved_first_link,
+              'link_2' => resolved_second_link,
+            }
           }
         end
 
+        let(:resolved_smurf_job_links) { resolved_links['smurf-job'] }
+
         it 'resolves properties and links properties' do
-          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', variable_set).and_return(resolved_properties)
-          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(links, variable_set).and_return(resolved_links)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(resolved_smurf_job_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)
@@ -237,7 +258,7 @@ module Bosh::Director::DeploymentPlan
                 'ip' => '192.168.0.10',
                 'netmask' => '255.255.255.0',
                 'cloud_properties' => {'foo' => 'bar'},
-                'dns_record_name' => '0.job.default.fake-deployment.bosh',
+                'dns_record_name' => '0.smurf-job.default.fake-deployment.bosh',
                 'gateway' => '192.168.0.254'
                 })
 
@@ -271,7 +292,7 @@ module Bosh::Director::DeploymentPlan
                   'ip' => '127.0.0.1',
                   'netmask' => '127.0.0.1',
                   'gateway' => '127.0.0.1',
-                  'dns_record_name' => '0.job.default.fake-deployment.bosh',
+                  'dns_record_name' => '0.smurf-job.default.fake-deployment.bosh',
                   'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
                   )
 
@@ -315,7 +336,7 @@ module Bosh::Director::DeploymentPlan
                         'ip' => '192.0.2.19',
                         'netmask' => '255.255.255.0',
                         'gateway' => '192.0.2.1',
-                        'dns_record_name' => '0.job.default.fake-deployment.bosh',
+                        'dns_record_name' => '0.smurf-job.default.fake-deployment.bosh',
                         'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
                     )
 

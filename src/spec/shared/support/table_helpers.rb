@@ -1,4 +1,4 @@
-require 'csv'
+require 'json'
 
 module Support
   module TableHelpers
@@ -12,23 +12,19 @@ module Support
       end
 
       def data
-        table = parsed.dup
-        head = table.shift
-        table.map { |row| Hash[head.zip(row)] }
-      end
+        begin
+          table_data = JSON.parse(@source)
+        rescue JSON::ParserError => e
+          raise 'Be sure to pass `json: true` arg to bosh_runner.run'
+        end
 
-      private
+        table_entries = []
 
-      def parsed
-        @parsed ||= parse(@source).map { |row| row.map(&:strip) }
-      end
+        table_data['Tables'].each do |table|
+          table_entries += table['Rows'] || []
+        end
 
-      def clean(content)
-        content.strip.gsub(/^[^|].*\n?/, '')
-      end
-
-      def parse(content)
-        CSV.parse(clean(content), { col_sep: "|", quote_char: "\x00" }).map(&:compact)
+        table_entries
       end
     end
   end

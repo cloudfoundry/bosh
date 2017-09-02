@@ -50,7 +50,7 @@ describe Bhm::Events::Alert do
 
   it "has json representation" do
     alert = make_alert
-    expect(alert.to_json).to eq(Yajl::Encoder.encode(alert.to_hash))
+    expect(alert.to_json).to eq(JSON.dump(alert.to_hash))
   end
 
   it "has string representation" do

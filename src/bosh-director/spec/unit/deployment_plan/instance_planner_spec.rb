@@ -326,7 +326,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: undesired_az.name)
 
           obsolete_instance = instance_double(BD::DeploymentPlan::Instance, update_description: nil)
-          allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { obsolete_instance }
 
           instance_plans = instance_planner.plan_instance_group_instances(instance_group, [], [existing_instance_model])
 

@@ -42,7 +42,7 @@ module Bosh::Clouds
     def initialize(cpi_path, director_uuid, properties_from_cpi_config = nil)
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = Config.logger
+      @logger = ::Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
       @properties_from_cpi_config = properties_from_cpi_config
     end
 
@@ -62,6 +62,7 @@ module Bosh::Clouds
     def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def info; invoke_cpi_method(__method__.to_s); end
@@ -69,9 +70,10 @@ module Bosh::Clouds
     private
 
     def invoke_cpi_method(method_name, *arguments)
+      request_id = "cpi-#{Random.rand(100000..999999)}"
       context = {
         'director_uuid' => @director_uuid,
-        'request_id' => "#{Random.rand(100000..999999)}"
+        'request_id' => request_id
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
@@ -81,9 +83,11 @@ module Bosh::Clouds
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
 
-      @logger.debug("External CPI sending request: #{redacted_request} with command: #{cpi_exec_path}")
+      logger = ::Bosh::Director::TaggedLogger.new(@logger, request_id)
+
+      logger.debug("request: #{redacted_request} with command: #{cpi_exec_path}")
       cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
-      @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
+      logger.debug("response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
       parsed_response = parsed_response(cpi_response)
       validate_response(parsed_response)
@@ -113,6 +117,7 @@ module Bosh::Clouds
     def redact_arguments(method_name, arguments)
       if method_name == 'create_vm'
         arguments = redact_from_env_in_create_vm_arguments(arguments)
+        arguments = redact_network_cloud_property_in_create_vm_arguments(arguments)
         redact_cloud_property_values(arguments, 2)
       elsif method_name == 'create_disk'
         redact_cloud_property_values(arguments, 1)
@@ -126,6 +131,24 @@ module Bosh::Clouds
       cloud_properties = redacted_arguments[position]
       redacted_cloud_properties = redactAllBut([], cloud_properties)
       redacted_arguments[position] = redacted_cloud_properties
+      redacted_arguments
+    end
+
+    def redact_network_cloud_property_in_create_vm_arguments(arguments)
+      redacted_arguments = arguments.clone
+      networks_hash = redacted_arguments[3]
+
+      if networks_hash && networks_hash.is_a?(Hash)
+        cloned_networks_hash = Bosh::Common::DeepCopy.copy(networks_hash)
+
+        cloned_networks_hash.each do |_, network_hash|
+          cloud_properties = network_hash['cloud_properties']
+          network_hash['cloud_properties'] = redactAllBut([], cloud_properties) if (cloud_properties && cloud_properties.is_a?(Hash))
+        end
+
+        redacted_arguments[3] = cloned_networks_hash
+      end
+
       redacted_arguments
     end
 
@@ -177,7 +200,6 @@ module Bosh::Clouds
 
       raise Bosh::Clouds::NotImplemented, message if error_type == "InvalidCall" && error_message.start_with?('Method is not known, got')
       raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::CloudError' && error_message.start_with?('Invalid Method:')
-      raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::NotSupported' && error_message =~ /^Method .+ not supported in photon CPI/
     end
 
     def save_cpi_log(output)

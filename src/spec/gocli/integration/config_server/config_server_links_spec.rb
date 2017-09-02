@@ -502,5 +502,69 @@ describe 'using director with config server and deployments having links', type:
         end
       end
     end
+
+    context 'given a successful provider deployment with ' do
+      let(:provider_deployment_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'provider_deployment_node',
+          templates: [
+            {
+              'name' => 'database',
+              'properties' => {
+                'foo' => '((smurfy-variable))',
+                'test' => 'whatever'
+              },
+              'provides' => {
+                'db' => {
+                  'as' => 'provider_db',
+                  'shared' => true
+                }
+              }
+            }
+          ],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:consumer_deployment_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'consumer_deployment_node',
+          templates: [
+            {
+              'name' => 'errand_with_links',
+              'release' => 'bosh-release',
+              'consumes' => {
+                'db' => {
+                  'from' => 'provider_db',
+                  'deployment' => 'provider_deployment_name'
+                },
+                'backup_db' => {
+                  'from' => 'provider_db',
+                  'deployment' => 'provider_deployment_name'
+                },
+              }
+            }
+          ],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec['lifecycle'] = 'errand'
+        job_spec
+      end
+
+      it 'replaces variables in properties from a cross deployment link' do
+        config_server_helper.put_value("/#{director_name}/provider_deployment_name/smurfy-variable", 'some-smurfy-value')
+
+        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+
+        run_result = bosh_runner.run('run-errand consumer_deployment_node', deployment_name: 'consumer_deployment_name', include_credentials: false,  env: client_env)
+        expect(run_result).to include('some-smurfy-value')
+      end
+    end
   end
 end

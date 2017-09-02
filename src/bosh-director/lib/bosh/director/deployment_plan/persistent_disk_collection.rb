@@ -48,11 +48,11 @@ module Bosh::Director
         collection.length > 0
       end
 
-      def changed_disk_pairs(old_persistent_disk_collection)
+      def self.changed_disk_pairs(old_disk_collection, old_variable_set, new_disk_collection, new_variable_set)
         paired = []
 
-        each do |new_disk|
-          old_disk = old_persistent_disk_collection.find { |disk| new_disk.name == disk.name }
+        new_disk_collection.each do |new_disk|
+          old_disk = old_disk_collection.find { |disk| new_disk.name == disk.name }
 
           paired << {
             old: old_disk,
@@ -60,8 +60,8 @@ module Bosh::Director
           }
         end
 
-        old_persistent_disk_collection.each do |old_disk|
-          new_disk = find { |disk| old_disk.name == disk.name }
+        old_disk_collection.each do |old_disk|
+          new_disk = new_disk_collection.find { |disk| old_disk.name == disk.name }
 
           if new_disk.nil?
             paired << {
@@ -71,7 +71,13 @@ module Bosh::Director
           end
         end
 
-        paired.select { |disk_pair| disk_pair[:old] != disk_pair[:new] }
+        disk_comparator = Bosh::Director::Disk::PersistentDiskComparator.new
+
+        paired.select do |disk_pair|
+          old_pair = Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_pair[:old], old_variable_set)
+          new_pair = Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_pair[:new], new_variable_set)
+          !disk_comparator.is_equal?(old_pair, new_pair)
+        end
       end
 
       def generate_spec
@@ -120,6 +126,12 @@ module Bosh::Director
           return false unless other.is_a? PersistentDisk
           cloud_properties == other.cloud_properties &&
             size == other.size && name == other.name
+        end
+
+        def size_diff_only?(other)
+          return false unless other.is_a? PersistentDisk
+          cloud_properties == other.cloud_properties &&
+            size != other.size && name == other.name
         end
       end
 

@@ -302,7 +302,8 @@ describe 'CPI calls', type: :integration do
             'index' => 0,
             'director_name' => 'TestDirector',
             'director_uuid' => 'deadbeef',
-            'agent_id' => String
+            'agent_id' => String,
+            'instance_id' => String
           }
         })
 

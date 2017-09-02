@@ -39,7 +39,7 @@ module Bosh::Monitor
     end
 
     def parse_json(json, expected_type = nil)
-      result = Yajl::Parser.parse(json)
+      result = JSON.parse(json)
 
       if expected_type && !result.kind_of?(expected_type)
         raise DirectorError, "Invalid JSON response format, expected #{expected_type}, got #{result.class}"
@@ -47,7 +47,7 @@ module Bosh::Monitor
 
       result
 
-    rescue Yajl::ParseError => e
+    rescue JSON::ParserError => e
       raise DirectorError, "Cannot parse director response: #{e.message}"
     end
 

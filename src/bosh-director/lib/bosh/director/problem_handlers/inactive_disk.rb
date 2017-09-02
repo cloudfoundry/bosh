@@ -68,10 +68,12 @@ module Bosh::Director
           handler_error('Disk is currently in use')
         end
 
-        if @instance.vm_cid
+        active_vm = @instance.active_vm
+
+        if active_vm
           begin
-            cloud = cloud_factory.for_availability_zone(@instance.availability_zone)
-            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
+            cloud = CloudFactory.create_with_latest_configs.get(active_vm.cpi)
+            cloud.detach_disk(active_vm.cid, @disk.disk_cid)
           rescue => e
             # We are going to delete this disk anyway
             # and we know it's not in use, so we can ignore
@@ -85,7 +87,7 @@ module Bosh::Director
 
       def disk_mounted?
         return false unless @instance.vm_cid
-        agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
+        agent_timeout_guard(@instance.vm_cid, @instance.agent_id) do |agent|
           agent.list_disk.include?(@disk.disk_cid)
         end
       end

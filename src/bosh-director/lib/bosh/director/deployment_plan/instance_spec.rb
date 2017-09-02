@@ -34,7 +34,7 @@ module Bosh::Director
           'properties_need_filtering' => true,
           'dns_domain_name' => powerdns_manager.root_domain,
           'links' => instance_group.resolved_links,
-          'address' => instance_plan.network_settings.network_address,
+          'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }
 
@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @variables_interpolator, @instance.variable_set).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set).spec
       end
 
       def as_apply_spec
@@ -117,17 +117,27 @@ module Bosh::Director
 
         whitelisted_link_spec_keys = [
           'instances',
-          'properties'
+          'properties',
+          'instance_group',
+          'default_network',
+          'deployment_name',
+          'domain',
+          'address',
         ]
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
         template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
-        interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(@full_spec.fetch('links', {}), @variable_set)
 
         template_hash['links'] = {}
-        interpolated_links_spec.each do |link_name, link_spec|
-          template_hash['links'][link_name] = link_spec.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+        links_hash = @full_spec.fetch('links', {})
+        links_hash.each do |job_name, links|
+          template_hash['links'][job_name] ||= {}
+          interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(links, @variable_set)
+
+          interpolated_links_spec.each do |link_name, link_spec|
+            template_hash['links'][job_name][link_name] = link_spec.select {|k,v| whitelisted_link_spec_keys.include?(k) }
+          end
         end
 
         networks_hash = template_hash['networks']

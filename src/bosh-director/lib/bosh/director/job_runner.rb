@@ -1,15 +1,18 @@
+require 'common/logging/filters'
+
 module Bosh::Director
   class JobRunner
 
     # @param [Class] job_class Job class to instantiate and run
     # @param [Integer] task_id Existing task id
-    def initialize(job_class, task_id)
+    def initialize(job_class, task_id, worker_name)
       unless job_class.kind_of?(Class) &&
         job_class <= Jobs::BaseJob
         raise DirectorError, "Invalid director job class '#{job_class}'"
       end
 
       @task_id = task_id
+      @worker_name = worker_name
       setup_task_logging_for_files
       task_manager = Bosh::Director::Api::TaskManager.new
 
@@ -24,6 +27,7 @@ module Bosh::Director
     def run(*args)
       Config.current_job = nil
 
+      @task_logger.info("Running from worker '#{@worker_name}' on #{Config.runtime['instance']} (#{Config.runtime['ip']})")
       @task_logger.info("Starting task: #{@task_id}")
       started_at = Time.now
 
@@ -47,7 +51,8 @@ module Bosh::Director
       shared_appender = Logging.appenders.file(
         'DirectorJobRunnerFile',
         filename: debug_log,
-        layout: ThreadFormatter.layout
+        layout: ThreadFormatter.layout,
+        filters: Bosh::Common::Logging.default_filters,
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
@@ -86,27 +91,12 @@ module Bosh::Director
 
       @task_logger.info("Performing task: #{@task.inspect}")
 
-      @task.state = :processing
       @task.timestamp = Time.now
       @task.started_at = Time.now
       @task.checkpoint_time = Time.now
       @task.save
 
-      result = nil
-      if job.dry_run?
-        Bosh::Director::Config.db.transaction(:rollback => :always) do
-          if Bosh::Director::Config.dns_db
-            Bosh::Director::Config.dns_db.transaction(:rollback => :always) do
-              result = job.perform
-            end
-          else
-            result = job.perform
-          end
-        end
-      else
-        result = job.perform
-      end
-
+      result = job.perform
 
       @task_logger.info('Done')
       finish_task(:done, result)

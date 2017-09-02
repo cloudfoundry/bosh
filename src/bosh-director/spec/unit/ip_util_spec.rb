@@ -69,4 +69,16 @@ describe Bosh::Director::IpUtil do
       expect(@obj.format_ip(168427582)).to eq('10.10.0.62')
     end
   end
+
+  describe 'ip_address?' do
+    it 'verifies ip address' do
+      expect(@obj.ip_address?("127.0.0.1")).to eq(true)
+      expect(@obj.ip_address?("2001:0db8:85a3:0000:0000:8a2e:0370:7334")).to eq(true)
+
+      expect(@obj.ip_address?("2001:0db8:85a3:0000:0000:8a2e:0370:7334 ")).to eq(false)
+      expect(@obj.ip_address?("255.255.255.256")).to eq(false)
+      expect(@obj.ip_address?("999.999.999.999")).to eq(false)
+      expect(@obj.ip_address?("dns.com")).to eq(false)
+    end
+  end
 end

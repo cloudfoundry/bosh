@@ -1,6 +1,5 @@
 module Bosh::Director
   module CloudcheckHelper
-    include CloudFactoryHelper
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
@@ -13,10 +12,13 @@ module Bosh::Director
     DEFAULT_AGENT_TIMEOUT = 10
 
     def reboot_vm(instance)
-      cloud = cloud_factory.for_availability_zone(instance.availability_zone)
-      cloud.reboot_vm(instance.vm_cid)
+      vm = instance.active_vm
+
+      cloud = CloudFactory.create_from_deployment(instance.deployment).get(vm.cpi)
+      cloud.reboot_vm(vm.cid)
+
       begin
-        agent_client(instance.credentials, instance.agent_id).wait_until_ready
+        agent_client(instance.agent_id).wait_until_ready
       rescue Bosh::Director::RpcTimeout
         handler_error('Agent still unresponsive after reboot')
       rescue Bosh::Director::TaskCancelled
@@ -26,7 +28,10 @@ module Bosh::Director
 
     def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id) { |agent| agent.list_disk }
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.agent_id) do |agent|
+        agent.list_disk
+      end
+
       if disk_list.size != 0
         handler_error('VM has persistent disk attached')
       end
@@ -37,7 +42,9 @@ module Bosh::Director
     def delete_vm_reference(instance)
       vm_model = instance.active_vm
       instance.active_vm = nil
-      vm_model.delete
+      if vm_model != nil
+        vm_model.delete
+      end
     end
 
     def delete_vm_from_cloud(instance_model)
@@ -58,69 +65,70 @@ module Bosh::Director
       delete_vm_from_cloud(instance_model)
 
       instance_plan_to_create = create_instance_plan(instance_model)
-      job_renderer = JobRenderer.create
-      vm_creator(job_renderer).create_for_instance_plan(
-        instance_plan_to_create,
-        Array(instance_model.managed_persistent_disk_cid),
-        instance_plan_to_create.tags,
-        true
-      )
 
-      powerdns_manager = PowerDnsManagerProvider.create
-      local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
-      dns_names_to_ip = {}
-
-      root_domain = Config.root_domain
-
-      apply_spec = instance_plan_to_create.existing_instance.spec
-      apply_spec['networks'].each do |network_name, network|
-        index_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
-          instance_model.index,
-          instance_model.job,
-          network_name,
-          instance_model.deployment.name,
-          root_domain,
-        )
-        dns_names_to_ip[index_dns_name] = network['ip']
-
-        id_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
-          instance_model.uuid,
-          instance_model.job,
-          network_name,
-          instance_model.deployment.name,
-          root_domain,
-        )
-        dns_names_to_ip[id_dns_name] = network['ip']
-      end
-
-      @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
-      powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
-      local_dns_manager.update_dns_record_for_instance(instance_model)
-
-      powerdns_manager.flush_dns_cache
-
-      cloud_check_procedure = lambda do
-        blobstore_client = App.instance.blobstores.blobstore
-
-        cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
-        templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
-
-        templates_persister.persist(instance_plan_to_create)
-
-        # for backwards compatibility with instances that don't have update config
-        update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
-
-        InstanceUpdater::StateApplier.new(
+      Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
+        dns_encoder = LocalDnsEncoderManager.create_dns_encoder
+        vm_creator(template_cache, dns_encoder).create_for_instance_plan(
           instance_plan_to_create,
-          agent_client(instance_model.credentials, instance_model.agent_id),
-          cleaner,
-          @logger,
-          {}
-        ).apply(update_config, run_post_start)
+          Array(instance_model.managed_persistent_disk_cid),
+          instance_plan_to_create.tags,
+          true
+        )
+
+        powerdns_manager = PowerDnsManagerProvider.create
+        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
+        dns_names_to_ip = {}
+
+        root_domain = Config.root_domain
+
+        apply_spec = instance_plan_to_create.existing_instance.spec
+        apply_spec['networks'].each do |network_name, network|
+          index_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
+            instance_model.index,
+            instance_model.job,
+            network_name,
+            instance_model.deployment.name,
+            root_domain,
+          )
+          dns_names_to_ip[index_dns_name] = network['ip']
+
+          id_dns_name = Bosh::Director::DnsNameGenerator.dns_record_name(
+            instance_model.uuid,
+            instance_model.job,
+            network_name,
+            instance_model.deployment.name,
+            root_domain,
+          )
+          dns_names_to_ip[id_dns_name] = network['ip']
+        end
+
+        @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
+        powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
+        local_dns_manager.update_dns_record_for_instance(instance_model)
+
+        powerdns_manager.flush_dns_cache
+
+        cloud_check_procedure = lambda do
+          blobstore_client = App.instance.blobstores.blobstore
+
+          cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
+          templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
+
+          templates_persister.persist(instance_plan_to_create)
+
+          # for backwards compatibility with instances that don't have update config
+          update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
+
+          InstanceUpdater::StateApplier.new(
+            instance_plan_to_create,
+            agent_client(instance_model.agent_id),
+            cleaner,
+            @logger,
+            {}
+          ).apply(update_config, run_post_start)
+        end
+        InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
       end
-      InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
-    ensure
-      job_renderer.clean_cache! if job_renderer
     end
 
     private
@@ -165,17 +173,17 @@ module Bosh::Director
       raise Bosh::Director::ProblemHandlerError, message
     end
 
-    def agent_client(vm_credentials, agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
+    def agent_client(agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         :timeout => timeout,
         :retry_methods => {:get_state => retries}
       }
       @clients ||= {}
-      @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options)
+      @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, options)
     end
 
-    def agent_timeout_guard(vm_cid, vm_credentials, agent_id, &block)
-      yield agent_client(vm_credentials, agent_id)
+    def agent_timeout_guard(vm_cid, agent_id, &block)
+      yield agent_client(agent_id)
     rescue Bosh::Director::RpcTimeout
       handler_error("VM '#{vm_cid}' is not responding")
     end
@@ -184,10 +192,10 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
-    def vm_creator(job_renderer)
+    def vm_creator(template_cache, dns_encoder)
       disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
-      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, template_cache, dns_encoder, agent_broadcaster)
     end
 
     def validate_spec(spec)

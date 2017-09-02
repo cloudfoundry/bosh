@@ -18,9 +18,6 @@ describe Bhm::EventProcessor do
 
     @logger_plugin = Bhm::Plugins::Logger.new
     @email_plugin = Bhm::Plugins::Email.new(email_options)
-
-    allow(@logger_plugin).to receive(:deliver)
-    allow(@email_plugin).to receive(:deliver)
   end
 
   it 'registers plugin handlers for different event kinds' do
