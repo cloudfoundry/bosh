@@ -32,10 +32,7 @@ module Bosh::Director
         new(applicable_jobs, applicable_deployment_names, applicable_stemcells, applicable_networks, applicable_teams, filter_type)
       end
 
-      def applies?(deployment, deployment_instance_group)
-        deployment_name = deployment ? deployment.name : nil
-        deployment_teams = deployment ? deployment.model.teams.map(&:name) : nil
-
+      def applies?(deployment_name, deployment_teams, deployment_instance_group)
         if has_teams? && !has_applicable_team?(deployment_teams)
           return false
         end
@@ -122,7 +119,7 @@ module Bosh::Director
       end
 
       def has_applicable_team?(deployment_teams)
-        return false if deployment_teams.nil? || deployment_teams.empty? || !has_teams?
+        return false if deployment_teams.nil? || deployment_teams.empty? || !@applicable_teams.nil?
         !(@applicable_teams & deployment_teams).empty?
       end
     end
