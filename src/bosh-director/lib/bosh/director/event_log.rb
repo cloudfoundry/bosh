@@ -94,7 +94,7 @@ module Bosh::Director
         @index_lock = Mutex.new
       end
 
-      def advance_and_track(task_name, log_exception = true, &blk)
+      def advance_and_track(task_name, &blk)
         task = @index_lock.synchronize do
           @index += 1
           Task.new(self, task_name, @index)
@@ -104,7 +104,7 @@ module Bosh::Director
         begin
           blk.call(task) if blk
         rescue => e
-          task.failed(e.to_s) if log_exception
+          task.failed(e.to_s)
           raise
         end
         task.finish

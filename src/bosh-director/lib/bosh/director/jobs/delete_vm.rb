@@ -18,7 +18,7 @@ module Bosh::Director
       def perform
         logger.info("deleting vm: #{@vm_cid}")
         event_log_stage = Config.event_log.begin_stage("Delete VM", 1)
-        event_log_stage.advance_and_track(@vm_cid, false) do
+        event_log_stage.advance_and_track(@vm_cid) do
           begin
             begin
               instance = Bosh::Director::Api::InstanceLookup.new.by_vm_cid(@vm_cid).first

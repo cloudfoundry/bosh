@@ -73,29 +73,6 @@ describe Bosh::Director::EventLog::Log do
     expect(events.size).to eq(6)
   end
 
-  context 'when error' do
-    it 'logs exception' do
-      stage1 = event_log.begin_stage(:stage1, 2)
-      expect { stage1.advance_and_track(:stage1_task1) { puts "#{variable_does_not_exist}" } }.to raise_exception
-      stage1.advance_and_track(:stage1_task2)
-      stage1.advance_and_track(:stage1_task3)
-
-      events = sent_events
-      expect(events.size).to eq(6)
-      expect(events[1]["data"]["error"]).to match /undefined local variable or method `variable_does_not_exist'/
-    end
-
-    it 'does not log exception' do
-      stage1 = event_log.begin_stage(:stage1, 2)
-      expect { stage1.advance_and_track(:stage1_task1, false) { puts "#{variable_does_not_exist}" } }.to raise_exception
-      stage1.advance_and_track(:stage1_task2)
-      stage1.advance_and_track(:stage1_task3)
-
-      events = sent_events
-      expect(events.size).to eq(5)
-    end
-  end
-
   it 'issues deprecation warnings' do
     time = Time.now
     Timecop.freeze(time) do
