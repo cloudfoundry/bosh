@@ -14,5 +14,12 @@ Sequel.migration do
       add_index [:address_str], unique: true, address_str: 'unique_address_str'
       set_column_not_null :address_str
     end
+
+
+    if [:mysql2, :mysql].include?(adapter_scheme)
+      alter_table :ip_addresses do
+        drop_index([:address_temp], name: :address_temp)
+      end
+    end
   end
 end

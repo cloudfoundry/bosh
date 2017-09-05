@@ -21,7 +21,7 @@ module Bosh::Director
 
       expect {
         db[:ip_addresses] << {id: 3, instance_id: nil, address_str: nil}
-      }.to raise_error(Sequel::NotNullConstraintViolation, /ip_addresses.address/)
+      }.to raise_error(Sequel::NotNullConstraintViolation, /address_str/)
     end
   end
 end
