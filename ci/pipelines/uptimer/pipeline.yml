@@ -1,0 +1,52 @@
+---
+jobs:
+- name: check-dns-uptime
+  plan:
+  - task: run-uptime
+    tags:
+    - "uptimer"
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      params:
+        BOSH_CLIENT: ((BOSH_CLIENT))
+        BOSH_CLIENT_SECRET: ((BOSH_CLIENT_SECRET))
+        BOSH_ENVIRONMENT: ((BOSH_ENVIRONMENT))
+        BOSH_CA_CERT: |
+          ((BOSH_CA_CERT))
+        ADMIN_PASSWORD: ((ADMIN_PASSWORD))
+        API: ((API))
+        APP_DOMAIN: ((APP_DOMAIN))
+      run:
+        path: sh
+        args:
+        - -ec
+        - |
+          cat << EOF > $(pwd)/config.json
+          {
+              "while": [
+                  {
+                      "command": "bosh",
+                      "command_args": ["-n", "restart", "-d", "cf"]
+                  }
+              ],
+              "cf": {
+                  "api": "((API))",
+                  "app_domain": "((APP_DOMAIN))",
+                  "admin_user": "admin",
+                  "admin_password": "((ADMIN_PASSWORD))"
+              },
+              "allowed_failures": {
+                  "app_pushability": 2,
+                  "http_availability": 5,
+                  "recent_logs": 2,
+                  "streaming_logs": 2
+              }
+          }
+          EOF
+          uptimer -configFile $(pwd)/config.json
+
