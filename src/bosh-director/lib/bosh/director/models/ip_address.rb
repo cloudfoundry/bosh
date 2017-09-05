@@ -29,7 +29,7 @@ module Bosh::Director::Models
     end
 
     def address
-      unless address_str.to_s =~ /\A\d+\z/
+      unless address_str =~ /\A\d+\z/
         raise "Unexpected address '#{address_str}' (#{info rescue "missing info"})"
       end
       address_str.to_i

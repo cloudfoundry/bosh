@@ -48,7 +48,7 @@ describe Bosh::Director::Config do
       ])
     end
 
-    it 'should select the non-loopback, ipv4 ips off of the the Socket class' do
+    it 'should select the non-loopback ips off of the the Socket class' do
       described_class.configure(test_config)
       expect(described_class.director_ips).to eq(['10.10.0.6', '10.11.0.16', 'fd7a::'])
     end
