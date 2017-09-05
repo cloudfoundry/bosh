@@ -180,7 +180,7 @@ module Bosh::Director
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
-        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
+        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || addr.ipv4_loopback? || addr.ipv6_loopback? || addr.ipv6_linklocal? }.map { |addr| addr.ip_address }
 
         @config_server = config.fetch('config_server', {})
         @config_server_enabled = @config_server['enabled']

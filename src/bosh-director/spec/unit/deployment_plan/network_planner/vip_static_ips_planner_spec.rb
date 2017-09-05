@@ -59,8 +59,8 @@ module Bosh::Director
       context 'when instance already has vip networks' do
         context 'when existing instance IPs can be reused' do
           before do
-            Models::IpAddress.make(address: ip_to_i('69.69.69.69'), network_name: 'fake-network-1', instance: instance_plan.existing_instance)
-            Models::IpAddress.make(address: ip_to_i('79.79.79.79'), network_name: 'fake-network-2', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('69.69.69.69').to_s, network_name: 'fake-network-1', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('79.79.79.79').to_s, network_name: 'fake-network-2', instance: instance_plan.existing_instance)
           end
 
           it 'assigns vip static IP that instance is currently using' do
@@ -75,8 +75,8 @@ module Bosh::Director
 
         context 'when existing instance static IP is no longer in the list of IPs' do
           before do
-            Models::IpAddress.make(address: ip_to_i('65.65.65.65'), network_name: 'fake-network-1', instance: instance_plan.existing_instance)
-            Models::IpAddress.make(address: ip_to_i('79.79.79.79'), network_name: 'fake-network-2', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('65.65.65.65').to_s, network_name: 'fake-network-1', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('79.79.79.79').to_s, network_name: 'fake-network-2', instance: instance_plan.existing_instance)
           end
 
           it 'picks new IP for instance' do
@@ -96,8 +96,8 @@ module Bosh::Director
           end
 
           before do
-            Models::IpAddress.make(address: ip_to_i('68.68.68.68'), network_name: 'fake-network-1', instance: instance_plans[1].existing_instance)
-            Models::IpAddress.make(address: ip_to_i('77.77.77.77'), network_name: 'fake-network-2', instance: instance_plans[1].existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('68.68.68.68').to_s, network_name: 'fake-network-1', instance: instance_plans[1].existing_instance)
+            Models::IpAddress.make(address_str: ip_to_i('77.77.77.77').to_s, network_name: 'fake-network-2', instance: instance_plans[1].existing_instance)
           end
 
           it 'properly assigns vip IPs based on current instance IPs' do
