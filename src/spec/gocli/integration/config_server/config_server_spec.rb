@@ -665,7 +665,108 @@ Error: Unable to render instance groups for deployment. Errors are:
           expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
         end
 
-        # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
+        context 'when runtime config has variables defined' do
+          let(:runtime_config) do
+            {
+                'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
+                'addons' => [
+                  {
+                    'name' => 'addon1',
+                    'jobs' => [
+                      {
+                        'name' => 'job_2_with_many_properties',
+                        'release' => 'bosh-release',
+                        'properties' => {
+                          'gargamel' => {'color' => '((/bob))'},
+                          'certificate' => '((/JoeService))'
+                        }
+                      }
+                    ]
+                  }],
+                'variables' => [
+                  {
+                    'name' => '/bob',
+                    'type' => 'password'
+                  },
+                  {
+                    'name' => '/joeCA',
+                    'type' => 'certificate',
+                    'options' => {
+                      'is_ca' => true,
+                      'common_name' => 'Joe CA'
+                    }
+                  },
+                  {
+                    'name' => '/JoeService',
+                    'type' => 'certificate',
+                    'options' => {
+                      'ca' => '/joeCA'
+                    }
+                  }
+                ]
+            }
+          end
+
+          let(:named_runtime_config) do
+            {
+              'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
+              'variables' => [
+                {
+                  'name' => '/bob2',
+                  'type' => 'password'
+                },
+                {
+                  'name' => '/joeCA2',
+                  'type' => 'certificate',
+                  'options' => {
+                    'is_ca' => true,
+                    'common_name' => 'Joe CA'
+                  }
+                },
+                {
+                  'name' => '/JoeService2',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => '/joeCA2'
+                  }
+                }
+              ]
+            }
+          end
+
+          before do
+            config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
+            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'value')
+          end
+
+          it 'generates and saves variables' do
+            expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+            expect(config_server_helper.get_value('/bob')).to match(/......../)
+            expect(config_server_helper.get_value('/joeCA')['certificate']).to include('BEGIN CERTIFICATE')
+            expect(config_server_helper.get_value('/JoeService')['certificate']).to include('BEGIN CERTIFICATE')
+          end
+
+          context 'with multiple runtime configs with variables' do
+            it 'saves all variables' do
+              expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+              expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named_runtime_config')).to include('Succeeded')
+
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+              expect(config_server_helper.get_value('/bob')).to match(/......../)
+              expect(config_server_helper.get_value('/joeCA')['certificate']).to include('BEGIN CERTIFICATE')
+              expect(config_server_helper.get_value('/JoeService')['certificate']).to include('BEGIN CERTIFICATE')
+              expect(config_server_helper.get_value('/bob2')).to match(/......../)
+              expect(config_server_helper.get_value('/joeCA2')['certificate']).to include('BEGIN CERTIFICATE')
+              expect(config_server_helper.get_value('/JoeService2')['certificate']).to include('BEGIN CERTIFICATE')
+            end
+          end
+
+        end
+
 
         context 'when property cannot be found at render time' do
           let(:runtime_config) do

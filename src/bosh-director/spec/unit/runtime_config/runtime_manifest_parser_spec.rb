@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe RuntimeConfig::RuntimeManifestParser do
-    subject(:parser) { described_class.new() }
+    subject(:parser) { described_class.new(logger) }
     let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
 
@@ -126,6 +126,26 @@ module Bosh::Director
             it 'throws an error' do
               expect { subject.parse(runtime_manifest) }.to raise_error(AddonIncompleteFilterJobSection)
             end
+          end
+        end
+
+        context 'when variables section present' do
+          let(:runtime_manifest) do
+            runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+
+            variables_spec = [{'name' => 'var_a', 'type' => 'a'}, {'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}}]
+            runtime_manifest.merge!('variables' => variables_spec)
+
+            runtime_manifest
+          end
+          it 'parses variables' do
+            result = subject.parse(runtime_manifest)
+
+            variables = result.variables
+            expect(variables.spec.length).to eq(2)
+
+            expect(variables.get_variable('var_a')).to eq({'name' => 'var_a', 'type' => 'a'})
+            expect(variables.get_variable('var_b')).to eq({'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}})
           end
         end
       end

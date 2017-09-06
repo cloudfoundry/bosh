@@ -64,5 +64,45 @@ module Bosh::Director::DeploymentPlan
         expect(variables_object.spec).to_not equal(variables_spec)
       end
     end
+
+    describe '#add' do
+      context 'given non empty variables to add' do
+        it 'appends to end of non-empty existing spec' do
+          variables_spec = [{'name' => 'a', 'type' => 'password'}, {'name' => 'b', 'type' => 'password'}, {'name' => 'c', 'type' => 'password'}]
+          variables_object = Variables.new(variables_spec)
+          new_variables = Variables.new([{'name' => 'd', 'type' => 'password'}])
+          variables_object.add(new_variables)
+          expect(variables_object.spec.first).to eq(variables_spec[0])
+          expect(variables_object.spec[1]).to eq(variables_spec[1])
+          expect(variables_object.spec[2]).to eq(variables_spec[2])
+          expect(variables_object.spec[3]).to eq(new_variables.spec.first)
+        end
+
+        it 'adds to empty existing spec' do
+          variables_object = Variables.new([])
+          new_variables = Variables.new([{'name' => 'd', 'type' => 'password'}])
+          variables_object.add(new_variables)
+          expect(variables_object.spec.first).to eq(new_variables.spec.first)
+          expect(variables_object.spec.length).to eq(1)
+        end
+      end
+
+      context 'given empty variables to add' do
+        it 'does not change existing non-empty spec' do
+          variables_spec = [{'name' => 'a', 'type' => 'password'}]
+          variables_object = Variables.new(variables_spec)
+          new_variables = Variables.new([])
+          variables_object.add(new_variables)
+          expect(variables_object.spec).to eq(variables_spec)
+        end
+
+        it 'does not change existing empty spec' do
+          variables_object = Variables.new([])
+          new_variables = Variables.new([])
+          variables_object.add(new_variables)
+          expect(variables_object.spec.length).to eq(0)
+        end
+      end
+    end
   end
 end

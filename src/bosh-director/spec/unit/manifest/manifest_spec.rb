@@ -546,12 +546,16 @@ module Bosh::Director
         })
       end
       
-      context 'when runtime config contains same release/version as deployment manifest' do
+      context 'when runtime config contains same release/version or variables as deployment manifest' do
         let(:hybrid_manifest_hash) do
           {
               'releases' => [
                   {'name' => 'simple', 'version' => '2'},
                   {'name' => 'hard', 'version' => 'latest'}
+              ],
+              'variables' => [
+                {'name' => 'variable', 'type' => 'password'},
+                {'name' => 'another_variable', 'type' => 'smurfs'}
               ]
           }
         end
@@ -560,6 +564,9 @@ module Bosh::Director
           {
               'releases' => [
                   {'name' => 'simple', 'version' => '2'}
+              ],
+              'variables' => [
+                  {'name' => 'variable', 'type' => 'password'}
               ]
           }
         end
@@ -569,6 +576,13 @@ module Bosh::Director
                {'name' => 'simple', 'version' => '2'},
                {'name' => 'hard', 'version' => 'latest'}
            ])
+        end
+
+        it 'includes only one copy of the variable in to_hash output' do
+          variablesHash = manifest_object.to_hash['variables']
+          expect(variablesHash.length).to eq(2)
+          expect(variablesHash).to include({'name' => 'variable', 'type' => 'password'})
+          expect(variablesHash).to include({'name' => 'another_variable', 'type' => 'smurfs'})
         end
       end
     end

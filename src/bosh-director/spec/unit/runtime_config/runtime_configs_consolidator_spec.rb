@@ -83,6 +83,30 @@ module Bosh::Director
         }
       }
 
+      let(:variable_1) {
+        {
+          'name' => '/dns_healthcheck_tls_ca',
+          'type' => 'certificate',
+          'options' => {'is_ca' => true, 'common_name' => 'dns-healthcheck-tls-ca'}
+        }
+      }
+
+      let(:variable_2) {
+        {
+          'name' => '/dns_healthcheck_server_tls',
+          'type' => 'certificate',
+          'options' => {'is_ca' => true, 'common_name' => 'health.bosh-dns', 'extended_key_usage' => ['server_auth']}
+        }
+      }
+
+      let(:variable_3) {
+        {
+          'name' => '/dns_healthcheck_client_tls',
+          'type' => 'certificate',
+          'options' => {'is_ca' => true, 'common_name' => 'health.bosh-dns', 'extended_key_usage' => ['client_auth']}
+        }
+      }
+
       let(:runtime_config_1) {
         {
           'releases' => [
@@ -104,6 +128,10 @@ module Bosh::Director
           ],
           'addons' => [
             addon_3
+          ],
+          'variables' => [
+            variable_1,
+            variable_2
           ]
         }
       }
@@ -115,6 +143,9 @@ module Bosh::Director
           ],
           'addons' => [
             addon_4
+          ],
+          'variables' => [
+            variable_3
           ]
         }
       }
@@ -133,6 +164,11 @@ module Bosh::Director
             addon_2,
             addon_3,
             addon_4,
+          ],
+          'variables' => [
+            variable_1,
+            variable_2,
+            variable_3
           ]
         }
       }
