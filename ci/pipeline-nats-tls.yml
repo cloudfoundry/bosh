@@ -677,6 +677,7 @@ jobs:
       tags: ["worker-brats"]
       privileged: true
       input_mapping:
+        candidate-warden-ubuntu-stemcell: warden-ubuntu-trusty
         bosh-dev-release: bosh-release
 
 ############################
@@ -866,6 +867,9 @@ resources:
     name: bosh-vsphere-esxi-centos-7-go_agent
 
 - name: vsphere-esxi-ubuntu-trusty
-  type: bosh-io-stemcell
+  type: s3
   source:
-    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+    access_key_id: {{tls_nats_key_id}}
+    secret_access_key: {{tls_nats_access_key}}
+    bucket: {{tls_nats_bucket}}
+    regexp: stemcell/vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz
