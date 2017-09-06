@@ -533,7 +533,7 @@ module Bosh
               allow(private_key).to receive(:to_pem).and_return('pkey begin\npkey content\npkey end\n')
               allow(cert).to receive(:to_pem).and_return('certificate begin\ncertificate content\ncertificate end\n')
               allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
-              expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh/).and_return({
+              expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh-internal/).and_return({
                 :cert => cert,
                 :key => private_key
               })

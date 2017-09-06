@@ -73,7 +73,7 @@ describe 'CPI calls', type: :integration do
       raw_cert = invocations[2].inputs['env']['bosh']['mbus']['cert']['certificate']
       cert = OpenSSL::X509::Certificate.new raw_cert
       cn = cert.subject.to_a.select { |attr| attr[0] == 'CN' }.first
-      expect("#{agent_id}.agent.bosh").to eq(cn[1])
+      expect("#{agent_id}.agent.bosh-internal").to eq(cn[1])
 
       expect(invocations[3].method_name).to eq('set_vm_metadata')
       expect(invocations[3].inputs).to match({
