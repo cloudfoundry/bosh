@@ -4,6 +4,7 @@ set -eu
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../../"
+stemcell="${src_dir}/../candidate-warden-ubuntu-stemcell/bosh-stemcell-*-go_agent.tgz"
 
 cd /usr/local/bosh-deployment
 
@@ -31,11 +32,7 @@ bosh int bosh.yml \
   -v local_bosh_release="${src_dir}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
-bosh upload-stemcell \
-  --sha1=70c2584a8ad8e2b417c32809c34377728a6d6f86 \
-  --name=bosh-warden-boshlite-ubuntu-trusty-go_agent \
-  --version=3363.20 \
-  https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3363.20
+bosh upload-stemcell ${stemcell}
 
 # point to our outer director and launch the inner director
 source "${local_bosh_dir}/env"
