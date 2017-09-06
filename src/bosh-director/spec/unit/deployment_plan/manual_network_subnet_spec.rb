@@ -38,6 +38,38 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       expect(subnet.dns).to eq(nil)
     end
 
+    it 'should create an IPv6 subnet spec' do
+      subnet = make_subnet(
+        {
+          'range' => 'fdab:d85c:118d:8a46::/64',
+          'gateway' => 'fdab:d85c:118d:8a46::1',
+          'reserved' => [
+            'fdab:d85c:118d:8a46::10-fdab:d85c:118d:8a46::ff',
+            'fdab:d85c:118d:8a46::101',
+          ],
+          'static' => [
+            'fdab:d85c:118d:8a46::210-fdab:d85c:118d:8a46::2ff',
+            'fdab:d85c:118d:8a46::301',
+          ],
+          'dns' => [
+            '2001:4860:4860::8888',
+            '2001:4860:4860::8844',
+          ],
+          'cloud_properties' => {'foo' => 'bar'}
+        },
+        [],
+      )
+
+      expect(subnet.range.ip).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0000')
+      subnet.range.ip.size == 2**64
+      expect(subnet.netmask).to eq('ffff:ffff:ffff:ffff:0000:0000:0000:0000')
+      expect(subnet.gateway).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0001')
+      expect(subnet.dns).to eq([
+        "2001:4860:4860:0000:0000:0000:0000:8888",
+        "2001:4860:4860:0000:0000:0000:0000:8844",
+      ])
+    end
+
     it 'should require a range' do
       expect {
         make_subnet(

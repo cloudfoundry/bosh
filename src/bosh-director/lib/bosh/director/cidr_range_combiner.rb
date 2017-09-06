@@ -33,13 +33,22 @@ module Bosh::Director
         can_combine = true
         while can_combine
           next_range_tuple = range_tuples[i+1]
-          if !next_range_tuple.nil? && (range_tuple[1].succ == next_range_tuple[0])
-            range_tuple[1] = next_range_tuple[1]
-            i += 1
-          elsif !next_range_tuple.nil? && (range_tuple[0] < next_range_tuple[0] && range_tuple[1] > next_range_tuple[1])
-            i += 1
-          else
+          if next_range_tuple.nil?
             can_combine = false
+          else
+            if range_tuple.map(&:version).uniq != next_range_tuple.map(&:version).uniq
+              can_combine = false
+              break
+            end
+            if (range_tuple[1].succ == next_range_tuple[0])
+              range_tuple[1] = next_range_tuple[1]
+              i += 1
+            # does not cover all cases: 10/32, 10/8
+            elsif ((range_tuple[0] < next_range_tuple[0]) && (range_tuple[1] > next_range_tuple[1]))
+              i += 1
+            else
+              can_combine = false
+            end
           end
         end
         combined_ranges << range_tuple

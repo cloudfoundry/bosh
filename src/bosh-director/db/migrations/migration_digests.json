@@ -120,5 +120,6 @@
   "20170804191205_add_deployment_and_errand_name_to_errand_runs": "4429f1e811e064c236ee4c32b3964992ec7004e5",
   "20170815175515_change_variable_ids_to_bigint": "0488ede3a8d8611f8414e6a9c4f54ec9828a3bff",
   "20170821141953_remove_unused_credentials_json_columns": "0daf4d1363029304fc84d0df7b7b69fa04713e37",
+  "20170825141953_change_address_to_be_string_for_ipv6": "7807ac7e3e692d54c091421836bcaac826ae86e9",
   "20170828174622_add_spec_json_to_templates": "ecd7869cd86c451b0ff134aff944b6e2c22f9b31"
 }

@@ -382,6 +382,7 @@ module Bosh
               'deployment' => 'deployment_name',
               'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
               'job' => 'fake-job',
+              'instance_group' => 'fake-job',
               'index' => '5',
               'director' => 'fake-director-name',
               'id' => instance_model.uuid,

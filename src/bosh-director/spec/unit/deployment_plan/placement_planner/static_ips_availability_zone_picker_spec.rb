@@ -922,7 +922,7 @@ module Bosh::Director::DeploymentPlan
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
       instance = Bosh::Director::Models::Instance.make(availability_zone: az, deployment: deployment_model, job: job.name)
       ips.each do |ip|
-        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i, network_name: network_name))
+        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: NetAddr::CIDR.create(ip).to_i.to_s, network_name: network_name))
       end
       instance
     end
