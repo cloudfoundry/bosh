@@ -3,7 +3,8 @@
 set -eu
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-src_dir="${script_dir}/../../../"
+src_dir="${bosh_release_path:-${script_dir}/../../../}"
+local_bosh_ops_file="${bosh_ops_file:-local-bosh-release.yml}"
 
 cd /usr/local/bosh-deployment
 
@@ -26,7 +27,7 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
-  -o /usr/local/bosh-deployment/local-bosh-release.yml \
+  -o "/usr/local/bosh-deployment/${local_bosh_ops_file}" \
   -v local_bosh_release="${src_dir}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 

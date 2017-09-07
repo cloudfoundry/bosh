@@ -774,10 +774,9 @@ resources:
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
   - name: dns-release
-    type: git
+    type: bosh-io-release
     source:
-      uri: https://github.com/cloudfoundry/dns-release
-      branch: master
+      repository: cloudfoundry/dns-release
 
   #
   # BATS

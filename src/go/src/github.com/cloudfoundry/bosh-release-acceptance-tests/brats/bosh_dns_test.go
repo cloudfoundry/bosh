@@ -2,14 +2,15 @@ package brats_test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 )
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
@@ -27,7 +28,7 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 	return out
 }
 
-var _ = Describe("BoshDns", func() {
+var _ = FDescribe("BoshDns", func() {
 	Context("When deploy vms across different azs", func() {
 		var deploymentName = "dns-with-templates"
 
@@ -46,6 +47,7 @@ var _ = Describe("BoshDns", func() {
 				"-d", deploymentName,
 				manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
+				"-v", fmt.Sprintf("dns-release-version=%s", dnsReleaseVersion),
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
