@@ -49,6 +49,20 @@ You can also use a [Concourse CI](https://concourse.ci/) instance with the rake 
 bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
 ```
 
+You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` as described in the [workstation setup docs](docs/workstation_setup.md).
+
+```
+bosh/src$ bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+Run tests against a specific database by setting the `DB` environment variable.
+
+```
+bosh/src$ DB=mysql bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
+
 ### Acceptance Tests (BATs)
 
 BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not easily tested at lower levels. BATs verify integration between all BOSH components and infrastructures. They run against a deployed Director and use the CLI to perform tasks. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployments, handling broken deployments). The assertions are made against CLI commands exit status, output and state of VMs after performing the command. Since BATs run on real infrastructures, they help verify that specific combinations of the Director and stemcell works.

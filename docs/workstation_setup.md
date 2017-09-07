@@ -65,7 +65,22 @@
     cd ~/workspace/bosh/src
     bundle install
     ```
-9. Special instructions for nginx on  Mac
+
+## Issues
+
+If you have trouble bundling, you may have to install pg gem manually by specifying your architecture:
+
+```
+(sudo) env ARCHFLAGS="-arch x86_64" gem install pg -v '0.15.1'
+```
+
+## Notes
+
+### Custom bosh-cli
+
+To use a custom go-cli in integration tests change `gobosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
+
+### Special instructions for nginx on  Mac
 
     Before running `rake spec:integration:install_dependencies`, modify the nginx packaging script to fix compilation on OSX.
 
@@ -87,14 +102,11 @@
          make install
     ```
 
-## Issues
+### Cleaning the sandbox cache manually
 
-If you have trouble bundling, you may have to install pg gem manually by specifying your architecture:
+Preparing the sandbox for integration tests caches dependencies like nginx. 
+To force a recompilation either delete the complete `src/tmp` folder or just the 'work' folder:
 
 ```
-(sudo) env ARCHFLAGS="-arch x86_64" gem install pg -v '0.15.1'
-```
-
-## Notes
-
-* to use a custom go-cli in integration tests change `gobosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
+bosh/src$ rm -fr tmp/integration-nginx-work/
+```  
