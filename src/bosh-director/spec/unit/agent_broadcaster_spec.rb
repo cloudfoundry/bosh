@@ -67,7 +67,7 @@ module Bosh::Director
         agent_broadcast = AgentBroadcaster.new
         instances = agent_broadcast.filter_instances(vm_being_created_cid)
 
-        expect(instances).to eq [instance]
+        expect(instances.map(&:id)).to eq [instance.id]
       end
     end
 
