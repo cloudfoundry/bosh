@@ -28,7 +28,7 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 	return out
 }
 
-var _ = FDescribe("BoshDns", func() {
+var _ = Describe("BoshDns", func() {
 	Context("When deploy vms across different azs", func() {
 		var deploymentName = "dns-with-templates"
 
