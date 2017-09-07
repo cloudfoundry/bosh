@@ -142,6 +142,7 @@ require 'bosh/director/disk/persistent_disk_comparators'
 
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
+require 'bosh/director/manifest/redactor'
 require 'bosh/director/manifest/diff_lines'
 
 require 'bosh/director/log_bundles_cleaner'
