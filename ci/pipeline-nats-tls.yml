@@ -505,7 +505,7 @@ jobs:
   - task: test
     privileged: true
     file: bosh-load-tests-workspace/ci/tasks/test.yml
-    tags: ["bosh-load-tests"]
+    tags: ["bosh-load-tests-gonats"]
     input_mapping:
       bosh-candidate-stemcell: warden-ubuntu-trusty
       bosh-candidate-release: bosh-candidate-release-tarballs
@@ -528,7 +528,7 @@ jobs:
   - task: test
     privileged: true
     file: bosh-load-tests-workspace/ci/tasks/test.yml
-    tags: ["bosh-load-tests"]
+    tags: ["bosh-load-tests-gonats"]
     input_mapping:
       bosh-candidate-stemcell: warden-ubuntu-trusty
       bosh-candidate-release: bosh-candidate-release-tarballs
@@ -551,7 +551,7 @@ jobs:
   - task: test
     privileged: true
     file: bosh-load-tests-workspace/ci/tasks/test.yml
-    tags: ["bosh-load-tests"]
+    tags: ["bosh-load-tests-gonats"]
     input_mapping:
       bosh-candidate-stemcell: warden-ubuntu-trusty
       bosh-candidate-release: bosh-candidate-release-tarballs
@@ -575,7 +575,7 @@ jobs:
   - task: test
     privileged: true
     file: bosh-load-tests-workspace/ci/tasks/test.yml
-    tags: ["bosh-load-tests"]
+    tags: ["bosh-load-tests-gonats"]
     input_mapping:
       bosh-candidate-stemcell: warden-ubuntu-trusty
       bosh-candidate-release: bosh-candidate-release-tarballs
