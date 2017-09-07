@@ -1,0 +1,58 @@
+---
+jobs:
+  - name: test
+    public: true
+    plan:
+      - aggregate:
+        - get: gnatsd
+          trigger: true
+        - get: bosh-src
+      - task: test
+        file: bosh-src/ci/pipelines/gnatsd/tasks/test.yml
+
+  - name: build
+    public: true
+    plan:
+      - aggregate:
+        - get: gnatsd
+          trigger: true
+          passed: [ test ]
+        - get: bosh-src
+      - aggregate:
+        - task: build-linux
+          file: bosh-src/ci/pipelines/gnatsd/tasks/build-linux.yml
+        - task: build-darwin
+          file: bosh-src/ci/pipelines/gnatsd/tasks/build-darwin.yml
+
+      - aggregate:
+        - {put: release-bucket-linux, params: {file: compiled-linux/gnatsd-*-linux-amd64}}
+        - {put: release-bucket-darwin, params: {file: compiled-darwin/gnatsd-*-darwin-amd64}}
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: gonats-the-sequel
+
+  - name: gnatsd
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/gnatsd.git
+      branch: bosh-gnatsd
+
+  - name: release-bucket-linux
+    type: s3
+    source:
+      regexp: gnatsd-(.*)-linux-amd64
+      access_key_id: {{tls_nats_key_id}}
+      secret_access_key: {{tls_nats_access_key}}
+      bucket: {{tls_nats_bucket}}
+
+  - name: release-bucket-darwin
+    type: s3
+    source:
+      regexp: gnatsd-(.*)-darwin-amd64
+      access_key_id: {{tls_nats_key_id}}
+      secret_access_key: {{tls_nats_access_key}}
+      bucket: {{tls_nats_bucket}}
