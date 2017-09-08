@@ -79,6 +79,11 @@ module Bosh
           result = subject.generate_nats_client_certificate 'test.123'
           expect(result[:cert].not_before + (2 * 365 * 24 * 60 * 60)).to eq(result[:cert].not_after)
         end
+
+        it 'private_key is 3072 bit' do
+          result = subject.generate_nats_client_certificate 'test.123'
+          expect(result[:key].to_text).to match(/(3072 bit)/)
+        end
       end
     end
   end

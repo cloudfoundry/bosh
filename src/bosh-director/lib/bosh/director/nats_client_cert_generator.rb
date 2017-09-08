@@ -29,7 +29,7 @@ module Bosh::Director
     end
 
     def generate_nats_client_certificate(common_name)
-      key = OpenSSL::PKey::RSA.new 2048
+      key = OpenSSL::PKey::RSA.new 3072
       cert = OpenSSL::X509::Certificate.new
       cert.version = 2
 
