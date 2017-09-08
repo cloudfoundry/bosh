@@ -12,10 +12,10 @@ cd gopath/src/github.com/nats-io/gnatsd
 out="${base}/compiled-${GOOS}"
 
 semver=`grep "VERSION =" server/const.go | cut -d\" -f2`
-timestamp=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+timestamp=`date -u +"%Y-%m-%dT%H_%M_%SZ"`
 git_rev=`git rev-parse --short HEAD`
 
-version="${semver}-${git_rev}-${timestamp}"
+version="${semver}+${git_rev}-${timestamp}"
 
 filename="gnatsd-${version}-${GOOS}-${GOARCH}"
 
