@@ -8,6 +8,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `vxxVQGzR9vsFq47PAGVvtgakKGD67U2A`
+  - Periodic bump
+  - built from 3363.x (b94db5461afe654e08a8591b70f3a9ff5d4445fe)
+
 * `3RjPMdjnyOyr_DW83T66hvf0zUZH0XwG`
   - Bump os-image to get logrotate 3.8.7.1ubuntu12
   - built from 3363.x (5ce9a5f23bd75db4599c1eb833cebda476114d79)
