@@ -364,6 +364,15 @@ module Bosh::Director
             end
           end
         end
+
+        describe '#team_names' do
+          let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
+          before { deployment_model.teams = teams }
+
+          it 'returns team names from the deployment' do
+            expect(subject.team_names).to match_array(["team_1", "team_3"])
+          end
+        end
       end
     end
   end

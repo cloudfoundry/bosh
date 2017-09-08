@@ -287,6 +287,10 @@ module Bosh::Director
       def availability_zone_names
         @cloud_planner.availability_zone_names
       end
+
+      def team_names
+        @model.teams.map(&:name)
+      end
     end
   end
 end
