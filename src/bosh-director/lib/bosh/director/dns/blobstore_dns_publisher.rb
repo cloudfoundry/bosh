@@ -15,7 +15,7 @@ module Bosh::Director
         max_dns_record_version = nil
 
         Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
-          local_dns_blob = Models::LocalDnsBlob.order(:id).last
+          local_dns_blob = Models::LocalDnsBlob.order(:version).last
           max_dns_record_version = Models::LocalDnsRecord.max(:id)
         end
 

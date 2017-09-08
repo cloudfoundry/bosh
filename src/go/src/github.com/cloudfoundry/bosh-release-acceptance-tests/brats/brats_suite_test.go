@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/onsi/gomega/gexec"
+	"path/filepath"
 )
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
@@ -31,6 +31,9 @@ var (
 	bbrBinaryPath,
 	innerDirectorIP,
 	boshRelease,
+	directorBackupName,
+	innerDirectorUser,
+	deploymentName,
 	boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
 	dnsReleaseVersion,
@@ -40,6 +43,9 @@ var (
 var _ = BeforeSuite(func() {
 	outerBoshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
 
+	deploymentName = "dns-with-templates"
+	directorBackupName = "director-backup"
+	innerDirectorUser = "jumpbox"
 	innerBoshPath = "/tmp/inner-bosh/director/"
 	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
 	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")

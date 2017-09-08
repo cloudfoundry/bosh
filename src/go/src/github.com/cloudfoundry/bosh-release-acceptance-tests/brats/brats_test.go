@@ -5,12 +5,12 @@ import (
 	. "github.com/onsi/gomega"
 
 	"fmt"
+	"github.com/onsi/gomega/gexec"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
-	"github.com/onsi/gomega/gexec"
-	"os/exec"
 )
 
 var _ = Describe("Brats", func() {
