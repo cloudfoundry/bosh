@@ -67,9 +67,9 @@ describe 'nats.cfg.erb' do
             }
 
             certificate_clients: [
-              {client_name: director.bosh, permissions: $DIRECTOR_PERMISSIONS},
-              {client_name: agent.bosh, permissions: $AGENT_PERMISSIONS},
-              {client_name: hm.bosh, permissions: $HM_PERMISSIONS},
+              {client_name: director.bosh-internal, permissions: $DIRECTOR_PERMISSIONS},
+              {client_name: agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
+              {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
             ]
 
             timeout: 10
@@ -150,9 +150,9 @@ describe 'nats.cfg.erb' do
             }
 
             certificate_clients: [
-              {client_name: director.bosh, permissions: $DIRECTOR_PERMISSIONS},
-              {client_name: agent.bosh, permissions: $AGENT_PERMISSIONS},
-              {client_name: hm.bosh, permissions: $HM_PERMISSIONS},
+              {client_name: director.bosh-internal, permissions: $DIRECTOR_PERMISSIONS},
+              {client_name: agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
+              {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
             ]
 
             timeout: 10
