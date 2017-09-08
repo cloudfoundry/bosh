@@ -82,7 +82,6 @@ var _ = Describe("BoshDns", func() {
 				"-d", deploymentName,
 				manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
-				"-v", fmt.Sprintf("dns-release-version=%s", dnsReleaseVersion),
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())

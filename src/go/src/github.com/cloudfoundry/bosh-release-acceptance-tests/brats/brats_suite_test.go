@@ -12,8 +12,9 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/onsi/gomega/gexec"
 	"path/filepath"
+
+	"github.com/onsi/gomega/gexec"
 )
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
@@ -34,9 +35,8 @@ var (
 	directorBackupName,
 	innerDirectorUser,
 	deploymentName,
-	boshDirectorReleasePath,
+	//boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
-	dnsReleaseVersion,
 	dnsReleasePath string
 )
 
@@ -53,8 +53,6 @@ var _ = BeforeSuite(func() {
 	boshRelease = assertEnvExists("BOSH_RELEASE")
 	innerDirectorIP = "10.245.0.34"
 	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
-	dnsReleaseVersion = assertEnvExists("DNS_RELEASE_VERSION")
-	boshDirectorReleasePath = assertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 
 	assertEnvExists("BOSH_ENVIRONMENT")
@@ -75,12 +73,7 @@ func assertEnvExists(envName string) string {
 }
 
 func startInnerBosh() {
-	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"))
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
-	cmd.Env = append(cmd.Env, "bosh_ops_file=local-bosh-release-tarball.yml")
-
-	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
 }
