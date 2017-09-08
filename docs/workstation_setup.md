@@ -110,3 +110,12 @@ To force a recompilation either delete the complete `src/tmp` folder or just the
 ```
 bosh/src$ rm -fr tmp/integration-nginx-work/
 ```  
+
+### Running integration test databases in docker
+
+Instead of installing MySQL and PostgreSQL locally use `docker-compose` to spin up containers:
+
+```
+cd docs
+docker-compose up
+```
