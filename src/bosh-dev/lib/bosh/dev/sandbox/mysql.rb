@@ -5,7 +5,7 @@ module Bosh::Dev::Sandbox
   class Mysql
     attr_reader :db_name, :username, :password, :adapter, :port, :host
 
-    def initialize(db_name, logger, runner = Bosh::Core::Shell.new, username = 'root', password = 'password', host = 'localhost')
+    def initialize(db_name, logger, runner = Bosh::Core::Shell.new, username = 'root', password = 'password', host = '127.0.0.1')
       @db_name = db_name
       @logger = logger
       @runner = runner
