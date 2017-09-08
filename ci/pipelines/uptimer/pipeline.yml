@@ -386,9 +386,9 @@ jobs:
             eval "$(bbl --state-dir=bbl-state print-env)"
           set -ux
           set +x
-          echo '{}' | jq --arg cf_api api.((system-domain-plain)) \
+          echo '{}' | jq --arg cf_api api.((system-domain-dns)) \
             --arg admin_password $(bosh int --path=/cf_admin_password vars-store/deployment-vars.yml) \
-            --arg app_domain ((system-domain-plain)) \
+            --arg app_domain ((system-domain-dns)) \
             -f uptimer-config/uptimer-config.json > config.json
           set -x
           uptimer -configFile config.json
