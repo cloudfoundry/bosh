@@ -119,7 +119,7 @@ module Bosh::Director
       end
 
       def has_applicable_team?(deployment_teams)
-        return false if deployment_teams.nil? || deployment_teams.empty? || !@applicable_teams.nil?
+        return false if deployment_teams.nil? || deployment_teams.empty? || @applicable_teams.nil?
         !(@applicable_teams & deployment_teams).empty?
       end
     end
