@@ -5,12 +5,14 @@ module Bosh::Director
   module Api
     describe InstanceLookup do
       subject(:instance_lookup) { InstanceLookup.new }
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index) }
+      let (:spec)  { {} }
+      let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index, spec: spec) }
       let!(:another_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: another_job_index) }
       let(:deployment) { Models::Deployment.make(name: 'foobar') }
       let(:job_name) { 'my_job' }
       let(:job_index) { '6' }
       let(:another_job_index) { '0' }
+      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
       describe '.by_id' do
         it 'finds instance for id' do
@@ -51,7 +53,7 @@ module Bosh::Director
 
       describe '.by_filter' do
         it 'finds only instances that match sql filter' do
-          expect(instance_lookup.by_filter(id: instance.id).all).to eq([instance])
+          expect(instance_lookup.by_filter(id: instance.id)).to eq([instance])
         end
 
         # it 'finds only instances that are not excluded' do
@@ -63,6 +65,49 @@ module Bosh::Director
             expect {
               instance_lookup.by_filter(id: 987654321)
             }.to raise_error(InstanceNotFound, "No instances matched {:id=>987654321}")
+          end
+        end
+
+        context 'when ip address was passed in' do
+          let(:filter) { {job: '1.1.1.1', deployment_id: deployment.id} }
+
+          context 'when ip_address not exist' do
+            it 'raises an error' do
+              expect { instance_lookup.by_filter(filter, deployment.name)
+              }.to raise_error InstanceNotFound, "No instances in deployment 'foobar' matched ip address 1.1.1.1"
+            end
+          end
+
+          context 'when ip address is stored in db' do
+            before do
+              ip_addresses_params = {
+                'instance_id' => instance.id,
+                'task_id' => task.id,
+                'address' => NetAddr::CIDR.create('1.1.1.1')
+              }
+              Models::IpAddress.create(ip_addresses_params)
+            end
+
+            it 'finds instance by ip address' do
+              expect(instance_lookup.by_filter(filter)).to eq([instance])
+            end
+          end
+
+          context 'when ip address is in memory' do
+            let(:spec) { {networks: {ip: '1.1.1.1'}} }
+
+            it 'finds instance by ip address' do
+              expect(instance_lookup.by_filter(filter)).to eq([instance])
+            end
+          end
+
+          context 'when ip address is also an instance job name' do
+            let(:job_name) { '1.1.1.1' }
+            let(:filter) { {job: job_name, index: job_index, deployment_id: deployment.id} }
+
+            it 'finds instance by based on job name and generates response' do
+              expect(instance_lookup.by_filter(filter)).to eq([instance])
+            end
           end
         end
       end

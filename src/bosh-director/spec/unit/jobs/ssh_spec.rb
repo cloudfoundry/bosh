@@ -92,11 +92,6 @@ module Bosh::Director
     context 'when instance id was passed in' do
       let(:target) { {'job' => 'fake-job', 'ids' => ['fake-uuid-1']} }
 
-      it "identifies job is not ip address" do
-        expect(Models::IpAddress).not_to receive(:where)
-        job.perform
-      end
-
       context 'when id is instance uuid' do
         it 'finds instance by its id and generates response with id' do
           job.perform
@@ -127,11 +122,11 @@ module Bosh::Director
     end
 
     context 'when ip address was passed in' do
-      let(:target) {{'job' => '1.1.1.1'}}
+      let(:target) {{'job' => '1.1.1.1', 'ids' => []}}
 
       context 'when ip_address not exist' do
         it 'raises an error' do
-          expect {job.perform}.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+          expect {job.perform}.to raise_error InstanceNotFound, "No instances in deployment 'name-1' matched ip address 1.1.1.1"
         end
       end
 
@@ -148,7 +143,7 @@ module Bosh::Director
         context 'when instance does not have active vm' do
           it 'raises an error' do
             is.active_vm = nil
-            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:job=>\"1.1.1.1\"}"
           end
         end
 
@@ -166,7 +161,7 @@ module Bosh::Director
         context 'when instance does not have active vm' do
           it 'raises an error' do
             is.active_vm = nil
-            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:ip=>1.1.1.1}"
+            expect { job.perform }.to raise_error RuntimeError, "No instance with a VM in deployment 'name-1' matched filter {:job=>\"1.1.1.1\"}"
           end
         end
 

@@ -1,8 +1,10 @@
 require 'bosh/director/api/deployment_lookup'
+require 'bosh/director/ip_util'
 
 module Bosh::Director
   module Api
     class InstanceLookup
+      include Bosh::Director::IpUtil
       def by_id(instance_id)
         instance = Models::Instance[instance_id]
         if instance.nil?
@@ -32,10 +34,14 @@ module Bosh::Director
         instance
       end
 
-      def by_filter(filter)
-        instances = Models::Instance.filter(filter)
+      def by_filter(filter, deployment_name = "")
+        instances = Models::Instance.filter(filter).all
         if instances.empty?
-          raise InstanceNotFound, "No instances matched #{filter.inspect}"
+          if !filter[:job].nil? && ip_address?(filter[:job])
+            instances = [by_ip(filter[:job], filter[:deployment_id], deployment_name)]
+          else
+            raise InstanceNotFound, "No instances matched #{filter.inspect}"
+          end
         end
         instances
       end
@@ -54,6 +60,23 @@ module Bosh::Director
           raise InstanceNotFound, "No instances matched vm cid '#{vm_cid}'"
         end
         [vm.instance]
+      end
+
+      private
+
+      def by_ip(ip_address, deployment_id, deployment_name)
+        net_address = ip_to_netaddr(ip_address)
+        ipaddress_model = Models::IpAddress.where(address: net_address.to_i).first
+        if ipaddress_model.nil?
+          instance = Models::Instance.filter([{ deployment_id: deployment_id }, Sequel.like(:spec_json, "%\\\"ip\\\":\\\"#{ip_address}\\\"%")]).first
+          raise InstanceNotFound if instance.nil?
+        else
+          instance = by_id(ipaddress_model.instance_id)
+        end
+        instance
+      rescue InstanceNotFound
+        raise InstanceNotFound,
+          "No instances in deployment '#{deployment_name}' matched ip address #{ip_address}"
       end
     end
   end
