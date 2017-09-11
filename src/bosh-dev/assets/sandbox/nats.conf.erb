@@ -49,6 +49,8 @@ authorization {
     {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
     {client_name: integration.test.bosh-internal, permissions: $FULL_PERMISSIONS},
   ]
+
+  timeout: 5
 }
 
 tls {
@@ -56,7 +58,7 @@ tls {
   key_file:  "<%= nats_certificate_paths['server']['private_key_path'] %>"
   ca_file:   "<%= nats_certificate_paths['ca_path'] %>"
   verify:    true
-  timeout: 2
+  timeout: 5
   enable_cert_authorization: true
 <% if nats_allow_legacy_clients %>
   allow_legacy_clients: true
