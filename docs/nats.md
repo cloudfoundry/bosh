@@ -6,6 +6,6 @@ The fork lives here : [https://github.com/cloudfoundry/gnatsd](https://github.co
 
 ### How to update GNATSD version: 
 
-- Pull changes of the forked gnatsd by running the script bin/update-gnatsd. This script will fetch the code of https://github.com/cloudfoundry/gnatsd , bosh-gnatsd branch, and dump it in src/go/src/github.com/nats-io/gnatsd.
-
-At each run of the bin/update-gnatsd, a text file gnatsd-version.txt will be created/changed to point towards the latest commit of https://github.com/cloudfoundry/gnatsd , bosh-gnatsd branch. This is to track the version of gnatsd that was pulled in.
+- Get the latest binary from the [gnatsd
+  pipeline](https://main.bosh-ci.cf-app.com/teams/main/pipelines/gnatsd)
+and update the blob
