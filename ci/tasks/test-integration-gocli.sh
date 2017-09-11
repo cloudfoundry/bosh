@@ -50,7 +50,13 @@ agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
 mkdir -p $agent_path
 cp -r bosh-agent $agent_path
 
-cd bosh-src/src
+cd bosh-src
+
+gobosh sync-blobs
+mv ./blobs/gnatsd/* /usr/local/bin/gnatsd
+chmod +x /usr/local/bin/gnatsd
+
+cd src
 
 print_git_state
 
