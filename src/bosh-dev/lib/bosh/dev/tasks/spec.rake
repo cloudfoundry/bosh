@@ -118,7 +118,6 @@ namespace :spec do
 
     def compile_dependencies
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      sh('go/src/github.com/nats-io/gnatsd/bin/build')
     end
   end
 
