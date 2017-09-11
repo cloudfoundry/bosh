@@ -18,11 +18,15 @@ module Bosh::Director
 
       def perform
         persistent_disk = Models::PersistentDisk[:disk_cid => @disk_cid]
-        if persistent_disk.nil?
-          logger.info("disk #{@disk_cid} does not exist")
-        else
-          logger.info("orphaning disk: #{@disk_cid}")
-          @orphan_disk_manager.orphan_disk(persistent_disk)
+        event_log_stage = Config.event_log.begin_stage("Orphan disk", 1)
+        event_log_stage.advance_and_track(@disk_cid) do
+          if persistent_disk.nil?
+            logger.info("disk #{@disk_cid} does not exist")
+            Config.event_log.warn("Disk #{@disk_cid} does not exist. Orphaning is skipped")
+          else
+            logger.info("orphaning disk: #{@disk_cid}")
+            @orphan_disk_manager.orphan_disk(persistent_disk)
+          end
         end
         return "disk #{@disk_cid} orphaned"
       end
