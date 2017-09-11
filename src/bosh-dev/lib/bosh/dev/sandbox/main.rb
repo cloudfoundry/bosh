@@ -492,7 +492,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_nats
-      gnatsd_path = File.join(REPO_ROOT, 'go', 'src', 'github.com', 'nats-io', 'gnatsd', 'out', 'bosh-gnatsd')
+      gnatsd_path = 'gnatsd'
       conf = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(
