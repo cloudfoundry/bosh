@@ -157,6 +157,7 @@ var _ = Describe("BoshDns", func() {
 			session, err := gexec.Start(exec.Command("ssh",
 				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
 				"-i", innerBoshJumpboxPrivateKeyPath,
+				"-oStrictHostKeyChecking=no",
 				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force"),
 				GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())

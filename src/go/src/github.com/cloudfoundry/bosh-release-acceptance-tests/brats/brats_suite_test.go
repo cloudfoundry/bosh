@@ -35,7 +35,6 @@ var (
 	directorBackupName,
 	innerDirectorUser,
 	deploymentName,
-	//boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
 	dnsReleasePath string
 )
