@@ -1,12 +1,5 @@
 set -x
 
-export GOROOT=$(readlink -nf /var/vcap/packages/golang)
-export GOPATH=$PWD
-export PATH=$GOROOT/bin:$PATH
+mkdir -p $BOSH_INSTALL_TARGET/bin
 
-mkdir $BOSH_INSTALL_TARGET/bin
-
-mv go/src ./src
-
-# Compile go-nats
-go build -o $BOSH_INSTALL_TARGET/bin/gnatsd github.com/nats-io/gnatsd
+mv gnatsd/* $BOSH_INSTALL_TARGET/bin/gnatsd
