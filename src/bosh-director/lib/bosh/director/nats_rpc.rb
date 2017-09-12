@@ -2,6 +2,8 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
 
+    MAX_RECONNECT_ATTEMPTS = 4
+
     def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
       @nats_uri = nats_uri
       @nats_server_ca_path = nats_server_ca_path
@@ -82,13 +84,21 @@ module Bosh::Director
               @logger.error(redacted_message)
             end
             options = {
-              :uri => @nats_uri,
+              # The NATS client library has a built-in reconnection logic.
+              # This logic only works when a cluster of servers is provided, by passing
+              # a list of them (it will not retry a server if it receives an error from it, for
+              # example a timeout). We are getting around the issue by passing the same URI
+              # multiple times so the library will retry the connection. This way we are
+              # adding retry logic to the director NATS connections by relying on the built-in
+              # library logic.
+              :uris => Array.new(MAX_RECONNECT_ATTEMPTS, @nats_uri),
+              :max_reconnect_attempts => MAX_RECONNECT_ATTEMPTS,
+              :reconnect_time_wait => 2,
+              :reconnect => true,
               :ssl => true,
               :tls => {
                 :private_key_file => @nats_client_private_key_path,
                 :cert_chain_file  => @nats_client_certificate_path,
-                # Can enable verify_peer functionality optionally by passing
-                # the location of a ca_file.
                 :verify_peer => true,
                 :ca_file => @nats_server_ca_path
               }
