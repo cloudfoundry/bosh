@@ -13,7 +13,8 @@ module Bosh::Registry
         @aws_options = {
           retry_limit: @aws_properties["max_retries"] || AWS_MAX_RETRIES,
           endpoint: @aws_properties['ec2_endpoint'] || "ec2.#{@aws_properties['region']}.amazonaws.com",
-          logger: @logger
+          logger: @logger,
+          region: @aws_properties['region']
         }
         if URI(@aws_options[:endpoint]).scheme.nil?
           @aws_options[:endpoint].prepend("https://")
