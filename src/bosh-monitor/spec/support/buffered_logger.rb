@@ -19,8 +19,9 @@ RSpec.configure do |c|
   c.before do
     @test_log_buffer = StringIO.new
     @test_logger = Logging.logger(@test_log_buffer)
+    @test_stdlib_logger = Logger.new(@test_log_buffer)
     allow(Logging).to receive(:logger).and_return(@test_logger)
-    allow(Logger).to receive(:new).and_return(@test_logger)
+    allow(Logger).to receive(:new).and_return(@test_stdlib_logger)
   end
 
   c.after do |example|

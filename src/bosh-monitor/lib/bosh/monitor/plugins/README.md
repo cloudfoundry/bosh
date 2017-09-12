@@ -1,8 +1,5 @@
 #Using Bosh Monitor Plugins
 
-##AWS CloudWatch
-Sends various events to Amazon's CloudWatch using their
-
 ##DataDog
 Sends various events to DataDog.com using their API
 

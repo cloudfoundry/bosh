@@ -13,7 +13,7 @@ Sequel.migration do
     rename_table :local_dns_blobs, :local_dns_blobs_old
 
     create_table :local_dns_blobs do
-      primary_key :id, Bignum
+      primary_key :id, :Bignum
       foreign_key :blob_id, :blobs, foreign_key_constraint_name: 'local_dns_blobs_blob_id_fkey', null: false
       Bignum :version, null: false
       Time :created_at, null: false

@@ -3,7 +3,7 @@ require "spec_helper"
 describe Bosh::Registry::InstanceManager do
   before(:each) do
     @ec2 = double("ec2")
-    allow(AWS::EC2).to receive(:new).and_return(@ec2)
+    allow(Aws::EC2::Resource).to receive(:new).and_return(@ec2)
   end
 
   let(:manager) do

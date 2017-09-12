@@ -98,7 +98,6 @@ module Bosh
            'n3' => [3, 2, 1, 5, 4],
           }
           sorted_property = @helper.sort_property(prop)
-          puts sorted_property
           expect(sorted_property.to_json).to eq(
             {
               'n1' => 'foo',

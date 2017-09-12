@@ -11,9 +11,9 @@ Sequel.migration do
       drop_foreign_key [:variable_set_id]
     end
 
-    set_column_type :variable_sets, :id, Bignum
-    set_column_type :instances, :variable_set_id, Bignum
-    set_column_type :variables, :variable_set_id, Bignum
+    set_column_type :variable_sets, :id, :Bignum
+    set_column_type :instances, :variable_set_id, :Bignum
+    set_column_type :variables, :variable_set_id, :Bignum
 
     alter_table(:instances) do
       add_foreign_key [:variable_set_id], :variable_sets, :name=>:instance_table_variable_set_fkey
@@ -22,7 +22,7 @@ Sequel.migration do
       add_foreign_key [:variable_set_id], :variable_sets, :name=>:variable_table_variable_set_fkey, :on_delete => :cascade
     end
 
-    set_column_type :variables, :id, Bignum
+    set_column_type :variables, :id, :Bignum
 
   end
 end

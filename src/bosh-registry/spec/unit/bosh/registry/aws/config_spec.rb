@@ -43,8 +43,8 @@ describe Bosh::Registry::InstanceManager do
       @config["cloud"]["aws"]["ssl_ca_file"] = '/custom/cert/ca-certificates'
       @config["cloud"]["aws"]["ssl_ca_path"] = '/custom/cert/'
 
-      instance_double('AWS::EC2')
-      expect(AWS::EC2).to receive(:new) do |config|
+      instance_double('Aws::EC2::Resource')
+      expect(Aws::EC2::Resource).to receive(:new) do |config|
         expect(config[:access_key_id]).to eq('foo')
         expect(config[:secret_access_key]).to eq('bar')
         expect(config[:ssl_verify_peer]).to be false
@@ -54,30 +54,30 @@ describe Bosh::Registry::InstanceManager do
       Bosh::Registry.configure(@config)
     end
 
-    it "uses default ec2_endpoint if none specified" do
+    it "uses default endpoint if none specified" do
       @config["cloud"]["aws"]["access_key_id"] = "foo"
       @config["cloud"]["aws"]["secret_access_key"] = "bar"
-      instance_double('AWS::EC2')
-      expect(AWS::EC2).to receive(:new) do |config|
-        expect(config[:ec2_endpoint]).to eq("ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
+      instance_double('Aws::EC2::Resource')
+      expect(Aws::EC2::Resource).to receive(:new) do |config|
+        expect(config[:endpoint]).to eq("https://ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
       end
       Bosh::Registry.configure(@config)
     end
 
-    it "uses specified ec2_endpoint" do
+    it "uses specified endpoint" do
       @config["cloud"]["aws"]["access_key_id"] = "foo"
       @config["cloud"]["aws"]["secret_access_key"] = "bar"
       @config["cloud"]["aws"]["ec2_endpoint"] = "ec2endpoint.websites.com"
-      instance_double('AWS::EC2')
-      expect(AWS::EC2).to receive(:new) do |config|
-        expect(config[:ec2_endpoint]).to eq("ec2endpoint.websites.com")
+      instance_double('Aws::EC2::Resource')
+      expect(Aws::EC2::Resource).to receive(:new) do |config|
+        expect(config[:endpoint]).to eq("https://ec2endpoint.websites.com")
       end
       Bosh::Registry.configure(@config)
     end
 
     it "raises an error when using an invalid credentials_source" do
       @config["cloud"]["aws"]["credentials_source"] = "NotACredentialsSource"
-      instance_double('AWS::EC2')
+      instance_double('Aws::EC2::Resource')
       expect {
         Bosh::Registry.configure(@config)
       }.to raise_error(Bosh::Registry::ConfigError, "Unknown credentials_source NotACredentialsSource")
@@ -85,8 +85,8 @@ describe Bosh::Registry::InstanceManager do
 
     it "validates the env_or_profile credentials_source" do
       @config["cloud"]["aws"]["credentials_source"] = "env_or_profile"
-      instance_double('AWS::EC2')
-      expect(AWS::EC2).to receive(:new) do |config|
+      instance_double('Aws::EC2::Resource')
+      expect(Aws::EC2::Resource).to receive(:new) do |config|
         expect(config[:access_key_id]).to be nil
         expect(config[:secret_access_key]).to be nil
       end
@@ -97,7 +97,7 @@ describe Bosh::Registry::InstanceManager do
       @config["cloud"]["aws"]["credentials_source"] = "env_or_profile"
       @config["cloud"]["aws"]["access_key_id"] = "foo"
       @config["cloud"]["aws"]["secret_access_key"] = "bar"
-      instance_double('AWS::EC2')
+      instance_double('Aws::EC2::Resource')
       expect {
         Bosh::Registry.configure(@config)
       }.to raise_error(Bosh::Registry::ConfigError, "Can't use access_key_id and secret_access_key with env_or_profile credentials_source")
