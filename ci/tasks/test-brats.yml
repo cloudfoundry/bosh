@@ -10,8 +10,10 @@ inputs:
   - name: bosh-src
   - name: dns-release
   - name: candidate-warden-ubuntu-stemcell
+  - name: bosh-release
 
-params: []
+params:
+  DNS_RELEASE_FILE_PATH: "dns-release/release.tgz"
 
 run:
   path: bosh-src/ci/tasks/test-brats.sh

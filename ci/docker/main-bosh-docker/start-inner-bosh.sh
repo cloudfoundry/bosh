@@ -3,7 +3,16 @@
 set -eu
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-src_dir="${script_dir}/../../../"
+bosh_path="${bosh_release_path:-${script_dir}/../../../}"
+
+if [[ -d ${bosh_path} ]]; then
+  export bosh_release_path="${bosh_path}/release.tgz"
+  pushd ${bosh_path}
+    bosh create-release --tarball $bosh_release_path
+  popd
+else
+  export bosh_release_path="${bosh_path}"
+fi
 
 cd /usr/local/bosh-deployment
 
@@ -26,8 +35,8 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
-  -o /usr/local/bosh-deployment/local-bosh-release.yml \
-  -v local_bosh_release="${src_dir}" \
+  -o "/usr/local/bosh-deployment/local-bosh-release-tarball.yml" \
+  -v local_bosh_release="${bosh_release_path}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
 bosh upload-stemcell \

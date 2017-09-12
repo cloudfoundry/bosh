@@ -38,7 +38,7 @@ instance_groups:
 
 releases:
 - name: bosh-dns
-  version: create
+  version: latest
   url: file://((dns-release-path))
 - name: linked-template-release
   version: create
