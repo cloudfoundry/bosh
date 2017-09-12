@@ -439,6 +439,7 @@ jobs:
     serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
+    - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
     - { get: warden-ubuntu-trusty }
     - { get: bosh-candidate-release-tarballs }
@@ -463,6 +464,7 @@ jobs:
     serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
+    - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
@@ -487,6 +489,7 @@ jobs:
     serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
+    - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
@@ -511,7 +514,7 @@ jobs:
     serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
-    - { get: fuzz-interval-trigger, trigger: true }
+    - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
@@ -760,6 +763,11 @@ resources:
     type: time
     source:
       interval: 15m
+
+  - name: load-tests-interval
+    type: time
+    source:
+      interval: 1h
 
   - name: slack-alert
     type: slack-notification
