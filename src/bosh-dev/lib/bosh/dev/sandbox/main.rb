@@ -492,7 +492,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_nats
-      gnatsd_path = 'gnatsd'
+      gnatsd_path = Bosh::Dev::GnatsdManager.executable_path
       conf = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(
