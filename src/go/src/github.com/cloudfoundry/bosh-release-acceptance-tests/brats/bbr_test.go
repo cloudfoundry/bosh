@@ -76,13 +76,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("wipe system, recreate inner director", func() {
-				session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+				stopInnerBosh()
 
-				session, err = gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				startInnerBosh()
 			})
 
 			By("expect deploy to fail because the release/stemcell won't be there", func() {

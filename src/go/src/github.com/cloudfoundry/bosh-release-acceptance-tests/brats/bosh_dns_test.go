@@ -66,7 +66,7 @@ func extractDnsVersionsList(sshContents string) []int {
 }
 
 var _ = Describe("BoshDns", func() {
-	Context("When deploy vms across different azs", func() {
+	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
 			startInnerBosh()
 
@@ -85,7 +85,7 @@ var _ = Describe("BoshDns", func() {
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 6*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		AfterEach(stopInnerBosh)
