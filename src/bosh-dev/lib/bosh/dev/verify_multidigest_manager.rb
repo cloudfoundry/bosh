@@ -1,26 +1,8 @@
 require 'common/retryable'
+require_relative './install_info'
 
 module Bosh::Dev
   class VerifyMultidigestManager
-    class VerifyMultidigestInfo < Struct.new(:multidigest_name_rev, :darwin_sha256, :linux_sha256)
-      def sha256
-        darwin? ? darwin_sha256 : linux_sha256
-      end
-
-      def platform
-        darwin? ? 'darwin' : 'linux'
-      end
-
-      def file_name_to_download
-        "verify-multidigest-#{multidigest_name_rev}-#{platform}-amd64"
-      end
-
-      private
-
-      def darwin?
-        RUBY_PLATFORM =~ /darwin/
-      end
-    end
 
     REPO_ROOT = File.expand_path('../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'verify-multidigest')
@@ -28,7 +10,7 @@ module Bosh::Dev
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      multidigest_info = VerifyMultidigestInfo.new('0.0.29', 'cb5c51d6912f829d482e0a52aeef0286c646f48c07bd2aecfe3969ddcb44c6dc', '0a4f79232cf7752712c8825624ef78da6de5dbc56c809324c24d614fbb9e3990')
+      multidigest_info = InstallInfo.new('verify-multidigest', '0.0.29', 'cb5c51d6912f829d482e0a52aeef0286c646f48c07bd2aecfe3969ddcb44c6dc', '0a4f79232cf7752712c8825624ef78da6de5dbc56c809324c24d614fbb9e3990')
       executable_file_path = generate_executable_full_path('verify-multidigest')
       downloaded_file_path = download(multidigest_info)
       FileUtils.copy(downloaded_file_path, executable_file_path)

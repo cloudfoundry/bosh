@@ -1,28 +1,9 @@
 require 'common/retryable'
+require_relative './install_info'
 
 module Bosh::Dev
   class LegacyAgentManager
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/bosh-dependencies/legacy-agents'
-
-    class LegacyAgentInfo < Struct.new(:agent_name_rev, :darwin_sha256, :linux_sha256)
-      def sha256
-        darwin? ? darwin_sha256 : linux_sha256
-      end
-
-      def platform
-        darwin? ? 'darwin' : 'linux'
-      end
-
-      def file_name_to_download
-        "agent-#{agent_name_rev}-#{platform}-amd64"
-      end
-
-      private
-
-      def darwin?
-        RUBY_PLATFORM =~ /darwin/
-      end
-    end
 
     # When testing with a legacy agent, it should be compiled (for both Darwin and Linux) and uploaded to the S3 bucket.
     # For clarity, the file name should contain a description of the agent's purpose and the agent's git commit hash of
@@ -30,17 +11,20 @@ module Bosh::Dev
     #
     # To use, you must specify the cloud property "legacy_agent_path" and use the method "get_legacy_agent_path(agent_name)"
     LEGACY_AGENTS_LIST = [
-      LegacyAgentInfo.new(
+      InstallInfo.new(
+        'agent',
         'no-upload-blob-action-e82bdd1c',
         'b791ca6d4841478dcf25bfca91c96dc7b1cc72b719f4488c190d93ca33386fa9', # darwin
         '2a6f42496f1eed4b88871825511af97e9c6c691ab2402c13ea43748dd2873fa4' # linux
       ),
-      LegacyAgentInfo.new(
+      InstallInfo.new(
+        'agent',
         'upload-blob-action-error-file-not-found',
         'd380e1b780d86dc885ebd4dbec920d31b9f6288a34b8a083324fd6659931ab0e', # darwin
         '20d2d4c5812a0ae4a54623b5d93ccf04e8106dea47e546bbd774e8bb2730bbf1' # linux
       ),
-      LegacyAgentInfo.new(
+      InstallInfo.new(
+        'agent',
         'before-info-endpoint-20170719',
         'c5e115ba3197b1aca3c311cebe94aee8e6ef7f1523770af6879484de773e470e', # darwin
         '60f3364e828ba1a49532aa97163a4053f0fbf6aa679509cbd0d5dabf412bbf37' # linux
@@ -54,7 +38,7 @@ module Bosh::Dev
       FileUtils.mkdir_p(INSTALL_DIR)
 
       LEGACY_AGENTS_LIST.each do |legacy_agent_info|
-        executable_file_path = generate_executable_full_path(legacy_agent_info.agent_name_rev)
+        executable_file_path = generate_executable_full_path(legacy_agent_info.rev)
         downloaded_file_path = download(legacy_agent_info)
         FileUtils.copy(downloaded_file_path, executable_file_path)
         FileUtils.remove(downloaded_file_path, :force => true)
@@ -63,7 +47,7 @@ module Bosh::Dev
     end
 
     def self.generate_executable_full_path(agent_name)
-      raise "Unable to find legacy agent with name #{agent_name}" unless LEGACY_AGENTS_LIST.map(&:agent_name_rev).include? agent_name
+      raise "Unable to find legacy agent with name #{agent_name}" unless LEGACY_AGENTS_LIST.map(&:rev).include? agent_name
       File.expand_path(File.join(INSTALL_DIR, agent_name), REPO_ROOT)
     end
 

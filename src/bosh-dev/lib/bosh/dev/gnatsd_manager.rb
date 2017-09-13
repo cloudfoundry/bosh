@@ -1,4 +1,5 @@
 require 'common/retryable'
+require_relative './install_info'
 
 module Bosh::Dev
   class GnatsdManager
@@ -11,7 +12,7 @@ module Bosh::Dev
     INSTALL_DIR = File.join('tmp', 'gnatsd')
     EXECUTABLE_NAME = 'gnatsd'
 
-    class GnatsdInfo < Struct.new(:gnatsd_name_rev, :darwin_sha256, :linux_sha256)
+    class GnatsdInfo < Struct.new(:name, :rev, :darwin_sha256, :linux_sha256)
       def sha256
         darwin? ? darwin_sha256 : linux_sha256
       end
@@ -21,7 +22,7 @@ module Bosh::Dev
       end
 
       def file_name_to_download
-        "gnatsd-#{gnatsd_name_rev}-#{platform}-amd64"
+        "#{name}-#{rev}-#{platform}-amd64"
       end
 
       private
@@ -34,13 +35,13 @@ module Bosh::Dev
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      gnatsd_info = GnatsdInfo.new(VERSION, DARWIN_SHA256, LINUX_SHA256)
+      gnatsd_info = InstallInfo.new('gnatsd', VERSION, DARWIN_SHA256, LINUX_SHA256)
 
       downloaded_file_path = download(gnatsd_info)
 
       FileUtils.copy(downloaded_file_path, executable_path)
       FileUtils.remove(downloaded_file_path, :force => true)
-      File.chmod(0700, executable_file_path)
+      File.chmod(0700, executable_path)
     end
 
     def self.executable_path(gnatsd_name=EXECUTABLE_NAME)
