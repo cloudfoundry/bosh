@@ -664,7 +664,7 @@ jobs:
         - get: bosh-src
           passed:
           - candidate-release
-        - get: dns-release
+        - get: bosh-dns-release
         - get: candidate-warden-ubuntu-stemcell
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
@@ -782,7 +782,7 @@ resources:
       bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
       region_name: {{bosh_cli_aws_s3_release_bucket_region}}
 
-  - name: dns-release
+  - name: bosh-dns-release
     type: bosh-io-release
     source:
       repository: cloudfoundry/dns-release
