@@ -15,7 +15,7 @@ require 'bosh/dev/sandbox/services/nginx_service'
 require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
-require 'bosh/dev/gantsd_manager'
+require 'bosh/dev/gnatsd_manager'
 require 'cloud/dummy'
 require 'logging'
 
