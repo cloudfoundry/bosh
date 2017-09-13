@@ -659,6 +659,7 @@ jobs:
       - {put: environment, params: {release: environment}}
 
 - name: brats-ubuntu
+  serial: true
   plan:
   - do:
     - aggregate:
