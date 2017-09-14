@@ -4,7 +4,7 @@ module Bosh::Director::ConfigServer
     # @param [String] value string to be checked
     # @return [Boolean] true if it starts with '((' and ends with '))'
     def self.is_full_variable?(value)
-      value.to_s.match(/^\(\([^\(]*\)\)$/)
+      value.to_s.match(/\A\(\([^(]*\)\)\z/)
     end
 
     # Extracts all variables from given string
@@ -19,7 +19,7 @@ module Bosh::Director::ConfigServer
     # @return [String] variable name stripped from starting and ending brackets
     # @raise [Error] if name does not meet specs
     def self.extract_variable_name(variable)
-      name = variable.to_s.gsub(/(^\(\(|\)\)$)/, '')
+      name = variable.to_s.gsub(/(\A\(\(|\)\)\z)/, '')
       validate_placeholder_name(name)
       process_name!(name)
     end
@@ -37,7 +37,7 @@ module Bosh::Director::ConfigServer
     # @param [String] name the variable name
     # @raise [Error] if name does not meet variable name specs
     def self.validate_variable_name(name)
-      unless /^[a-zA-Z0-9_\-\/]+$/ =~ name
+      unless /\A[a-zA-Z0-9_\-\/]+\z/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
               "Variable name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end
@@ -68,7 +68,7 @@ module Bosh::Director::ConfigServer
 
     private_class_method def self.validate_placeholder_name(name)
       # Allowing exclamation mark for spiff
-      unless /^[a-zA-Z0-9_\-\.!\/]+$/ =~ name
+      unless /\A[a-zA-Z0-9_\-\.!\/]+\z/ =~ name
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,
               "Variable name '#{name}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
       end
@@ -107,7 +107,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      slug_after_last_slash = name[/[^\/]+$/]
+      slug_after_last_slash = name[/[^\/]+\z/]
 
       if slug_after_last_slash.start_with? '.'
         raise Bosh::Director::ConfigServerIncorrectNameSyntax,

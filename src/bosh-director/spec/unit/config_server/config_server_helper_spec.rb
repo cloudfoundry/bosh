@@ -18,7 +18,8 @@ module Bosh::Director::ConfigServer
       it 'should return false if value is not a full variable' do
         not_placeholders = [
           '((smurf', '(!smurf))', 'smurf))', '((smurf', '(( smurf)',
-          '(()', '((', '()', '((hello))((bye))'
+          '(()', '((', '()', '((hello))((bye))',
+          "foo//foo\n((blah))", # 151110778
         ]
 
         not_placeholders.each do |not_variable|
@@ -93,7 +94,8 @@ module Bosh::Director::ConfigServer
           it 'should raise a ConfigServerIncorrectNameSyntax error' do
             invalid_placeholders_names = [
               '(())', '(( ))', '((%))', '((  ))', '((123 345))', '((@bosh))',
-              '((hello_)))', '((t*))', '(()))', '((())))', '((smurf cat))'
+              '((hello_)))', '((t*))', '(()))', '((())))', '((smurf cat))',
+              "((invalid\ninvalid))", "test\n((invalid))\ntest", # 151110778
             ]
 
             invalid_placeholders_names.each do |invalid_entity|
@@ -101,7 +103,7 @@ module Bosh::Director::ConfigServer
                 ConfigServerHelper.extract_variable_name(invalid_entity)
               }.to raise_error(
                      Bosh::Director::ConfigServerIncorrectNameSyntax,
-                     "Variable name '#{invalid_entity.gsub(/(^\(\(|\)\)$)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+                     "Variable name '#{invalid_entity.gsub(/(\A\(\(|\)\)\z)/, '')}' must only contain alphanumeric, underscores, dashes, or forward slash characters"
                    )
             end
           end
@@ -253,7 +255,8 @@ module Bosh::Director::ConfigServer
           it 'should raise a ConfigServerIncorrectNameSyntax error' do
             invalid_variable_names = [
               '', ' ', '%', '  ', '123 345', '@bosh',
-              'hello_)', 't*', 'smurf cat', 'smurf.cat'
+              'hello_)', 't*', 'smurf cat', 'smurf.cat',
+              "valid\nvalid", # 151110778
             ]
 
             invalid_variable_names.each do |invalid_entity|
