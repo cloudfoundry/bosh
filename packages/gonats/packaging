@@ -3,3 +3,5 @@ set -x
 mkdir -p $BOSH_INSTALL_TARGET/bin
 
 mv gnatsd/* $BOSH_INSTALL_TARGET/bin/gnatsd
+chmod a+x $BOSH_INSTALL_TARGET/bin/gnatsd
+
