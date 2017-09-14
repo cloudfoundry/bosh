@@ -8,7 +8,7 @@ templates:
 
 packages:
   - health_monitor
-  - ruby
+  - ruby-2.4
 
 properties:
   #

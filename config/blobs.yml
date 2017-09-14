@@ -70,22 +70,6 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-ruby/bundler-1.15.3.gem:
-  size: 336384
-  object_id: faae3244-82c9-400b-542b-2da1741f01e7
-  sha: bd1e1ba80789ea013a11a2909a154dcee118ebbc
-ruby/ruby-2.4.1.tar.gz:
-  size: 14174752
-  object_id: a2dfcdff-d732-4b25-6f39-74f5652a2775
-  sha: 47909a0f77ea900573f027d27746960ad6d07d15
-ruby/rubygems-2.6.4.tgz:
-  size: 478582
-  object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
-  sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
-ruby/yaml-0.1.7.tar.gz:
-  size: 527518
-  object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
-  sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
 s3cli/s3cli-0.0.55-linux-amd64:
   size: 10330042
   object_id: 7131652f-fdc7-4a84-4437-c22c908e0148

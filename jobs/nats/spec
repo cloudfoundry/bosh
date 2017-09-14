@@ -7,7 +7,7 @@ templates:
 
 packages:
   - nats
-  - ruby
+  - ruby-2.4
 
 properties:
   nats.listen_address:

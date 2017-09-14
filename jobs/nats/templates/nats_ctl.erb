@@ -4,7 +4,7 @@
 sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
 sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
 
-export PATH=/var/vcap/packages/ruby/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
 export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
 
 RUN_DIR=/var/vcap/sys/run/nats

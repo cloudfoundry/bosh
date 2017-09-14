@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH=/var/vcap/packages/ruby/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
 
 export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
