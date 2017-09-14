@@ -3,9 +3,9 @@ require_relative './artifact'
 
 module Bosh::Dev
   class GnatsdManager
-    VERSION = '0.9.6-bosh.1'
-    DARWIN_SHA256 = 'daed34467ca9e9a176c12e45089d860d5a28790c0899b5e71d29653aa72db843'
-    LINUX_SHA256 = '6490559096960bf408c40f129a710a4960deb5a0c05477c541ea33d016069726'
+    VERSION = '0.9.6-bosh.2'
+    DARWIN_SHA256 = '14eafe9f708a1cce0f03c134f25c1e6fdd41ae0b007d560f23a9a7a2c23bf91c'
+    LINUX_SHA256 = '672d952724c3c7ad60a61202831b6e254c971b19ee20ea0d859af0ef94803623'
     BUCKET_NAME = 'bosh-nats-tls'
 
     REPO_ROOT = File.expand_path('../../../../', File.dirname(__FILE__))
