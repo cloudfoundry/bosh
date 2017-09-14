@@ -42,4 +42,4 @@ install_ruby() {
 
 }
 
-install_ruby 2.4.2 93b9e75e00b262bc4def6b26b7ae8717efc252c47154abb7392e54357e6c8c9c
+install_ruby 2.4.2 08e72d0cbe870ed1317493600fbbad5995ea3af2d0166585e7ecc85d04cc50dc
