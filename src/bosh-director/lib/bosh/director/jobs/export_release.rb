@@ -24,7 +24,7 @@ module Bosh::Director
         @stemcell_version = stemcell_version
         @sha2 = sha2
         @multi_digest = Digest::MultiDigest.new(logger)
-        @jobs = options.fetch('jobs', nil)
+        @jobs = options.fetch('jobs', [])
       end
 
       # @return [void]
@@ -89,7 +89,7 @@ module Bosh::Director
       end
 
       def is_template_to_be_exported?(template)
-        !@jobs || @jobs.any? { |job| job['name'] == template.name }
+        @jobs.empty? || @jobs.any? { |job| job['name'] == template.name }
       end
 
       def create_tarball(release_version_model, stemcell)

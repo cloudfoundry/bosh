@@ -406,16 +406,38 @@ version: 0.1-dev
           end
         end
 
-        context 'when specific jobs are specified' do
-          let(:deployment_manifest) do
-            manifest = Bosh::Spec::Deployments.simple_manifest
-            manifest['jobs'].first['templates'] = [
-              {'name' => 'foobar'},
-              {'name' => 'foobaz'},
-              {'name' => 'foofoo'},
-            ]
-            manifest
+        context 'when an empty list of jobs are specified' do
+          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+          let(:options) {
+            {
+              'jobs' => []
+            }
+          }
+
+          it 'should contain all jobs' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              files = Dir.entries(download_dir)
+              expect(files).to include('compiled_packages', 'release.MF', 'jobs')
+
+              files = Dir.entries(File.join(download_dir, 'compiled_packages'))
+              expect(files).to include('postgres.tgz')
+
+              files = Dir.entries(File.join(download_dir, 'jobs'))
+              expect(files).to contain_exactly('.', '..', 'foobaz.tgz', 'foobar.tgz', 'foofoo.tgz')
+
+              File.write(output_path, 'Some glorious content')
+            }
+
+            expect(blobstore_client).to receive(:create).and_return('blobstore_id')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            allow(blobstore_client).to receive(:get)
+            job.perform
           end
+        end
+
+        context 'when specific jobs are specified' do
+          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
 
           let(:options) {
             {
