@@ -160,9 +160,10 @@ module Bosh::Director
               unless release
                 raise InstanceGroupMissingRelease, "Cannot tell what release template '#{template_name}' (instance group '#{@instance_group.name}') is supposed to use, please explicitly specify one"
               end
+              release_name = release.name
             end
 
-            if !release_versions_templates_models_hash.has_key?(release_name)
+            unless release_versions_templates_models_hash.has_key?(release_name)
               release_model = release_manager.find_by_name(release.name)
               current_release_version = release_manager.find_version(release_model, release.version)
               release_versions_templates_models_hash[release_name] = current_release_version.templates

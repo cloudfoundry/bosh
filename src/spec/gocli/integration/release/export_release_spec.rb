@@ -12,10 +12,10 @@ describe 'export-release', type: :integration do
 
     it 'compiles all packages of the release against the requested stemcell with classic manifest' do
       out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal_legacy_manifest')
-      expect(out).to match /Compiling packages/
-      expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Task ([0-9]+) done/
+      expect(out).to match(/Compiling packages/)
+      expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Task ([0-9]+) done/)
     end
   end
 
@@ -150,45 +150,45 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       it 'compiles all packages of the release against the requested stemcell' do
         out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
-        expect(out).to match /Compiling packages/
-        expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-        expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-        expect(out).to match /Task ([0-9]+) done/
+        expect(out).to match(/Compiling packages/)
+        expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+        expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+        expect(out).to match(/Task ([0-9]+) done/)
       end
     end
 
     it 'compiles all packages of the release against the requested stemcell with cloud config' do
       out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
-      expect(out).to match /Compiling packages/
-      expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Task ([0-9]+) done/
+      expect(out).to match(/Compiling packages/)
+      expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Task ([0-9]+) done/)
     end
 
     it 'does not compile packages that were already compiled' do
       bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
       out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
-      expect(out).to_not match /Compiling packages/
-      expect(out).to_not match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to_not match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Task ([0-9]+) done/
+      expect(out).to_not match(/Compiling packages/)
+      expect(out).to_not match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to_not match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Task ([0-9]+) done/)
     end
 
     it 'compiles any release that is in the targeted deployment' do
       out = bosh_runner.run('export-release test_release_2/2 toronto-os/1', deployment_name: 'minimal')
-      expect(out).to match /Compiling packages/
-      expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Task ([0-9]+) done/
+      expect(out).to match(/Compiling packages/)
+      expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Task ([0-9]+) done/)
     end
 
     it 'compiles against a stemcell that is not in the resource pool of the targeted deployment' do
       out = bosh_runner.run('export-release test_release/1 toronto-centos/2', deployment_name: 'minimal')
 
-      expect(out).to match /Compiling packages/
-      expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /Task ([0-9]+) done/
+      expect(out).to match(/Compiling packages/)
+      expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/Task ([0-9]+) done/)
     end
 
     it 'returns an error when the release does not exist' do
@@ -259,8 +259,8 @@ Can't use release 'test_release/1'. It references packages without source code a
       end
 
       out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
-      expect(out).to match /Downloading resource '[0-9a-f-]{36}' to '.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz'.../
-      expect(out).to match /Succeeded/
+      expect(out).to match(/Downloading resource '[0-9a-f-]{36}' to '.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz'.../)
+      expect(out).to match(/Succeeded/)
 
       output_file = File.basename(out.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
 
@@ -279,12 +279,12 @@ Can't use release 'test_release/1'. It references packages without source code a
     it 'logs the packages and jobs names and versions while copying them' do
       out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
 
-      expect(out).to match /copying packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /copying packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
+      expect(out).to match(/copying packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/copying packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
 
-      expect(out).to match /copying jobs: job_using_pkg_1\/9a5f09364b2cdc18a45172c15dca21922b3ff196 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /copying jobs: job_using_pkg_1_and_2\/673c3689362f2adb37baed3d8d4344cf03ff7637 \(\d{2}:\d{2}:\d{2}\)/
-      expect(out).to match /copying jobs: job_using_pkg_2\/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 \(\d{2}:\d{2}:\d{2}\)/
+      expect(out).to match(/copying jobs: job_using_pkg_1\/9a5f09364b2cdc18a45172c15dca21922b3ff196 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/copying jobs: job_using_pkg_1_and_2\/673c3689362f2adb37baed3d8d4344cf03ff7637 \(\d{2}:\d{2}:\d{2}\)/)
+      expect(out).to match(/copying jobs: job_using_pkg_2\/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 \(\d{2}:\d{2}:\d{2}\)/)
     end
 
     it 'logs the full release.MF in the director debug log' do
@@ -301,6 +301,27 @@ Can't use release 'test_release/1'. It references packages without source code a
       expect(debug_task_output).to include('- name: job_using_pkg_1')
       expect(debug_task_output).to include('- name: job_using_pkg_1_and_2')
       expect(debug_task_output).to include('- name: job_using_pkg_2')
+    end
+
+    context 'when specifying a job to export' do
+      it 'exports only the selected job and its package dependencies' do
+        export_release_output = bosh_runner.run("export-release test_release/1 toronto-os/1 --job job_using_pkg_1", deployment_name: 'minimal')
+        output_file = File.basename(export_release_output.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
+
+        dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, "client-sandbox", "bosh_work_dir")
+        files = Dir.entries(dir)
+        expect(files).to include(output_file)
+
+        Dir.mktmpdir do |temp_dir|
+          tarball_path = File.join(dir, output_file)
+          `tar xzf #{tarball_path} -C #{temp_dir}`
+          files = Dir.entries(temp_dir)
+          expect(files).to include("compiled_packages","release.MF","jobs")
+          release_manifest = YAML.load_file(File.join(temp_dir, "release.MF"))
+          expect(release_manifest['compiled_packages'].map { |p| p['name'] }).to contain_exactly('pkg_1')
+          expect(release_manifest['jobs'].map {|p| p['name']}).to contain_exactly('job_using_pkg_1')
+        end
+      end
     end
   end
 
